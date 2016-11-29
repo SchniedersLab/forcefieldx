@@ -37,9 +37,6 @@
  */
 package ffx.xray;
 
-import ffx.xray.parsers.MTZFilter;
-import ffx.xray.parsers.CIFFilter;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
@@ -67,14 +64,16 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
+import ffx.xray.parsers.CIFFilter;
+import ffx.xray.parsers.MTZFilter;
 
 /**
  * @author Timothy D. Fenn and Michael J. Schnieders
  */
 @RunWith(Parameterized.class)
-public class XrayMinimizeTest {
+public class XRayMinimizeTest {
 
-    private static final Logger logger = Logger.getLogger(XrayMinimizeTest.class.getName());
+    private static final Logger logger = Logger.getLogger(XRayMinimizeTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -138,7 +137,7 @@ public class XrayMinimizeTest {
     private final boolean ci;
     private final boolean ciOnly;
 
-    public XrayMinimizeTest(boolean ciOnly,
+    public XRayMinimizeTest(boolean ciOnly,
             String info, String pdbname, String mtzname, String cifname,
             double r, double rFree, double sigmaA, double sigmaW) {
         this.ciOnly = ciOnly;
@@ -148,13 +147,7 @@ public class XrayMinimizeTest {
         this.sigmaA = sigmaA;
         this.sigmaW = sigmaW;
 
-        String ffxCi = System.getProperty("ffx.ci");
-        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
-            ci = true;
-        } else {
-            ci = false;
-        }
-
+        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             crystalStats = null;
             return;

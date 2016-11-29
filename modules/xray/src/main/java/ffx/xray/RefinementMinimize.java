@@ -37,6 +37,8 @@
  */
 package ffx.xray;
 
+import ffx.realspace.RealSpaceData;
+
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -225,7 +227,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             int resnum = -1;
             if (data instanceof DiffractionData) {
                 DiffractionData diffractionData = (DiffractionData) data;
-                int nres = diffractionData.nResidueBFactor + 1;
+                int nres = diffractionData.getnResidueBFactor() + 1;
                 for (Atom a : activeAtomArray) {
                     // Ignore hydrogens or inactive atoms.
                     if (a.getAtomicNumber() == 1) {
@@ -236,9 +238,9 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                             scaling[i + j] = anisouscale;
                         }
                         i += 6;
-                    } else if (diffractionData.residueBFactor) {
+                    } else if (diffractionData.isResidueBFactor()) {
                         if (resnum != a.getResidueNumber()) {
-                            if (nres >= diffractionData.nResidueBFactor) {
+                            if (nres >= diffractionData.getnResidueBFactor()) {
                                 if (resnum > -1 && i < nXYZ + nB - 1) {
                                     i++;
                                 }
@@ -271,13 +273,13 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
             if (data instanceof DiffractionData) {
 
                 int i = nXYZ + nB;
-                for (ArrayList<Residue> list : refinementModel.altResidues) {
+                for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
                         i++;
                     }
                 }
-                for (ArrayList<Molecule> list : refinementModel.altMolecules) {
+                for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
                     for (int j = 0; j < list.size(); j++) {
                         scaling[i] = occscale;
                         i++;

@@ -43,33 +43,24 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InterruptedIOException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
 
-import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
-import edu.rit.pj.Comm;
-import edu.rit.pj.cluster.JobBackend;
 
 import ffx.numerics.Potential;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
 
@@ -78,62 +69,10 @@ import ffx.potential.parsers.PDBFilter;
  *
  * @author Michael J. Schnieders, Wei Yang and Pengyu Ren
  */
-public class OSRW implements Potential {
+public class OSRW extends AbstractOSRW {
 
     private static final Logger logger = Logger.getLogger(OSRW.class.getName());
-    /**
-     * A potential energy that implements the LambdaInterface.
-     */
-    private final LambdaInterface lambdaInterface;
-    /**
-     * The potential energy of the system.
-     */
-    private final Potential potential;
-    /**
-     * The AlgorithmListener is called each time a count is added.
-     */
-    private final AlgorithmListener algorithmListener;
-    /**
-     * Number of variables.
-     */
-    private final int nVariables;
-    /**
-     * Each walker has a unique lambda restart file.
-     */
-    private final File lambdaFile;
-    /**
-     * Each walker reads the same histogram restart file. Only the walker of
-     * rank 0 writes the histogram restart file.
-     */
-    private final File histogramFile;
-    /**
-     * State variable lambda ranges from 0.0 .. 1.0.
-     */
-    private double lambda;
-    /**
-     * Flag to indicate that the Lambda particle should be propogated.
-     */
-    private boolean propagateLambda = true;
-    /**
-     * Number of times the OSRW biasing potential has been evaluated with the
-     * "propagateLambda" flag true.
-     */
-    private int energyCount;
-    /**
-     * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
-     * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
-     *
-     * With this scheme, the maximum of biasing Gaussians is at the edges.
-     */
-    private int lambdaBins = 201;
-    /**
-     * It is useful to have an odd number of bins, so that there is a bin from
-     * FL=-dFL/2 to dFL/2 so that as FL approaches zero its contribution to
-     * thermodynamic integration goes to zero. Otherwise a contribution of zero
-     * from a L bin can only result from equal sampling of the ranges -dFL to 0
-     * and 0 to dFL.
-     */
-    private int FLambdaBins = 401;
+
     /**
      * The recursion kernel stores the number of visits to each
      * [lambda][Flambda] bin.
@@ -152,219 +91,17 @@ public class OSRW implements Potential {
      */
     private final DoubleBuf recursionCountsBuf[];
     private final DoubleBuf myRecursionCountBuf;
-    /**
-     * Parallel Java world communicator.
-     */
-    private final Comm world;
-    /**
-     * Number of processes.
-     */
-    private final int numProc;
-    /**
-     * Rank of this process.
-     */
-    private final int rank;
-    /**
-     * A reference to the JobBackend to log messages for the Webserver.
-     */
-    private final JobBackend jobBackend;
-    /**
-     * When evaluating the biasing potential, contributions from Gaussians
-     * centered more the "biasCutoff" away will be neglected.
-     */
-    private int biasCutoff = 5;
-    /**
-     * Width of the lambda bin.
-     */
-    private double dL = 1.0 / (lambdaBins - 1);
-    /**
-     * Half the width of a lambda bin.
-     */
-    private double dL_2 = dL / 2.0;
-    /**
-     * The width of the F_lambda bin.
-     */
-    private double dFL = 2.0;
-    /**
-     * Half the width of the F_lambda bin.
-     */
-    private double dFL_2 = dFL / 2.0;
-    /**
-     * The minimum value of the first lambda bin.
-     */
-    private double minLambda = -dL_2;
-    /**
-     * The minimum value of the first F_lambda bin.
-     */
-    private double minFLambda = -(dFL * FLambdaBins) / 2.0;
-    /**
-     * The maximum value of the last F_lambda bin.
-     */
-    private double maxFLambda = minFLambda + FLambdaBins * dFL;
-    /**
-     * Total partial derivative of the potential being sampled w.r.t. lambda.
-     */
-    private double dEdLambda;
-    /**
-     * 2nd partial derivative of the potential being sampled w.r.t lambda.
-     */
-    private double d2EdLambda2;
-    private double dUdXdL[] = null;
-    private double biasMag = 0.002;
-    private final double FLambda[];
-    /**
-     * Gas constant (in Kcal/mole/Kelvin).
-     */
-    public static final double R = 1.9872066e-3;
-    private double theta;
-    /**
-     * Reasonable thetaFriction is 60 1/ps.
-     */
-    private double thetaFriction = 1.0e-19;
-    /**
-     * Reasonable thetaMass is 100 a.m.u.
-     */
-    private double thetaMass = 1.0e-18;
-    private double halfThetaVelocity = 0.0;
-    private final Random stochasticRandom;
-    /**
-     * Random force conversion to kcal/mol/A;
-     */
-    private static final double randomConvert = sqrt(4.184) / 10e9;
-    /**
-     * randomConvert squared.
-     */
-    private static final double randomConvert2 = randomConvert * randomConvert;
-    /**
-     * Time step in picoseconds.
-     */
-    private final double dt;
-    /**
-     * Temperature in Kelvin.
-     */
-    private double temperature;
-    /**
-     * Interval between adding a count to the Recursion kernel in steps.
-     */
-    private int countInterval = 10;
-    /**
-     * Interval between printing information on the lambda particle in steps.
-     */
-    private int printFrequency = 100;
-    /**
-     * Whether to write out lambda-traversal snapshots.
-     */
-    private boolean writeTraversalSnapshots = false;
-    /**
-     * Keeps track of full lambda-traversals for snapshot output.
-     */
-    private int traversalSnapshotTarget = -1;
-    /**
-     * Ensemble files containing full-traversal snapshots, plus an assembly,
-     * filter, and counter for each.
-     */
-    private File lambdaOneFile;
-    private int lambdaOneStructures = 0;
-    private MolecularAssembly lambdaOneAssembly;
-    private PDBFilter lambdaOneFilter;
-    private File lambdaZeroFile;
-    private int lambdaZeroStructures = 0;
-    private MolecularAssembly lambdaZeroAssembly;
-    private PDBFilter lambdaZeroFilter;
-    /**
-     * Once the lambda reset value is reached, OSRW statistics are reset.
-     */
-    private final double lambdaResetValue = 0.99;
-    /**
-     * Flag set to false once OSRW statistics are reset at lambdaResetValue.
-     */
-    private boolean resetStatistics = false;
-    /**
-     * Stores a traversal snapshot that has not yet been written to file.
-     */
-    private ArrayList<String> traversalInHand = new ArrayList<>();
-    /**
-     * Holds the lowest potential-energy parameters from among all visits to
-     * lambda < 0.1 and > 0.9
-     */
-    private double lowEnergyCoordsZero[], lowEnergyCoordsOne[];
-    private double lowEnergyZero = Double.MAX_VALUE, lowEnergyOne = Double.MAX_VALUE;
 
-    /**
-     * Holds the lowest potential-energy parameters for loopBuilder runs from
-     * all visits to lambda > 0.9
-     */
-    private double osrwOptimumCoords[];
-    private double osrwOptimum = Double.MAX_VALUE;
 
-    /**
-     * Interval between how often the free energy is updated from the count
-     * matrix.
-     */
-    private final int fLambdaPrintInterval = 10;
-    private int fLambdaUpdates = 0;
-    /**
-     * Interval between writing an OSRW restart file in steps.
-     */
-    private int saveFrequency = 1000;
-    /**
-     * Print detailed energy information.
-     */
-    private final boolean print = false;
-    /**
-     * Total system energy.
-     */
-    private double totalEnergy;
-    /**
-     * Free energy at Lambda=1.
-     */
-    private double totalFreeEnergy;
     /**
      * Total histogram counts.
      */
     private int totalCounts;
     /**
-     * Equilibration counts
-     */
-    private int equilibrationCounts = 0;
-    /**
-     * Are FAST varying energy terms being computed, SLOW varying energy terms,
-     * or BOTH. OSRW is not active when only FAST varying energy terms are being
-     * propagated.
-     */
-    private Potential.STATE state = Potential.STATE.BOTH;
-    /**
-     * Flag to indicate if OSRW should send and receive counts between processes
-     * synchronously or asynchronously. The latter is faster by ~40% because
-     * simulation with Lambda > 0.75 must compute two condensed phase
-     * self-consistent fields to interpolate polarization.
-     */
-    private final boolean asynchronous;
-    /**
-     * An energy-value positive scalar parameter in the units of temperature
-     */
-    private final double dT = 1;
-    /**
      * The ReceiveThread accumulates OSRW statistics from multiple asynchronous
      * walkers.
      */
     private final ReceiveThread receiveThread;
-    /**
-     * Running average and standard deviation
-     */
-    private double totalAverage = 0;
-    private double totalSquare = 0;
-    private int periodCount = 0;
-    private int window = 1000;
-
-    private boolean osrwOptimization = false;
-    private int osrwOptimizationFrequency = 10000;
-    private double osrwOptimizationLambdaCutoff = 0.5;
-    private double osrwOptimizationEps = 0.1;
-    private double osrwOptimizationTolerance = 1.0e-8;
-    private MolecularAssembly molecularAssembly;
-    private PDBFilter pdbFilter = null;
-    private File pdbFile = null;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -416,70 +153,7 @@ public class OSRW implements Potential {
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous, boolean resetNumSteps,
             AlgorithmListener algorithmListener) {
-        this.lambdaInterface = lambdaInterface;
-        this.potential = potential;
-        this.lambdaFile = lambdaFile;
-        this.histogramFile = histogramFile;
-        this.temperature = temperature;
-        this.asynchronous = asynchronous;
-        this.algorithmListener = algorithmListener;
-
-        nVariables = potential.getNumberOfVariables();
-        lowEnergyCoordsZero = new double[nVariables];
-        lowEnergyCoordsOne = new double[nVariables];
-
-        /**
-         * Convert the time step to picoseconds.
-         */
-        this.dt = dt * 0.001;
-
-        /**
-         * Convert the print interval to a print frequency.
-         */
-        printFrequency = 100;
-        if (printInterval >= this.dt) {
-            printFrequency = (int) (printInterval / this.dt);
-        }
-
-        /**
-         * Convert the save interval to a save frequency.
-         */
-        saveFrequency = 1000;
-        if (saveInterval >= this.dt) {
-            saveFrequency = (int) (saveInterval / this.dt);
-        }
-
-        biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-        biasMag = properties.getDouble("bias-gaussian-mag", 0.002);
-        dL = properties.getDouble("lambda-bin-width", 0.005);
-        dFL = properties.getDouble("flambda-bin-width", 2.0);
-
-        /**
-         * Require modest sampling of the lambda path.
-         */
-        if (dL > 0.1) {
-            dL = 0.1;
-        }
-
-        /**
-         * Many lambda bin widths do not evenly divide into 1.0; here we correct
-         * for this by computing an integer number of bins, then re-setting the
-         * lambda variable appropriately. Note that we also choose to have an
-         * odd number of lambda bins, so that the centers of the first and last
-         * bin are at 0 and 1.
-         */
-        lambdaBins = (int) (1.0 / dL);
-        if (lambdaBins % 2 == 0) {
-            lambdaBins++;
-        }
-
-        /**
-         * The initial number of FLambda bins does not really matter, since a
-         * larger number is automatically allocated as needed. The center of the
-         * central bin is at 0.
-         */
-        FLambdaBins = 401;
-        minFLambda = -(dFL * FLambdaBins) / 2.0;
+        super(lambdaInterface, potential, lambdaFile, histogramFile, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
 
         /**
          * Allocate space for the recursion kernel that stores counts.
@@ -501,8 +175,6 @@ public class OSRW implements Potential {
             }
         }
 
-        energyCount = -1;
-
         /**
          * Load the OSRW lambda restart file if it exists.
          */
@@ -515,24 +187,6 @@ public class OSRW implements Potential {
                 logger.info(" Lambda restart file could not be found and will be ignored.");
             }
         }
-
-        dL = 1.0 / (lambdaBins - 1);
-        dL_2 = dL / 2.0;
-        minLambda = -dL_2;
-        dFL_2 = dFL / 2.0;
-        maxFLambda = minFLambda + FLambdaBins * dFL;
-        FLambda = new double[lambdaBins];
-        dUdXdL = new double[nVariables];
-        stochasticRandom = new Random(0);
-
-        /**
-         * Set up the multi-walker communication variables for Parallel Java
-         * communication between nodes.
-         */
-        world = Comm.world();
-        numProc = world.size();
-        rank = world.rank();
-        jobBackend = JobBackend.getJobBackend();
 
         if (asynchronous) {
             /**
@@ -557,14 +211,7 @@ public class OSRW implements Potential {
             myRecursionCountBuf = recursionCountsBuf[rank];
             receiveThread = null;
         }
-
-        /**
-         * Log OSRW parameters.
-         */
-        logger.info(" Orthogonal Space Random Walk Parameters");
-        logger.info(String.format(" Gaussian Bias Magnitude:        %6.5f (kcal/mole)", biasMag));
-        logger.info(String.format(" Gaussian Bias Cutoff:           %6d bins", biasCutoff));
-
+        
         /**
          * Update and print out the recursion slave.
          */
@@ -572,31 +219,6 @@ public class OSRW implements Potential {
             updateFLambda(true);
         }
 
-    }
-
-    public void setPropagateLambda(boolean propagateLambda) {
-        this.propagateLambda = propagateLambda;
-    }
-
-    private int binForLambda(double lambda) {
-        int lambdaBin = (int) floor((lambda - minLambda) / dL);
-        if (lambdaBin < 0) {
-            lambdaBin = 0;
-        }
-        if (lambdaBin >= lambdaBins) {
-            lambdaBin = lambdaBins - 1;
-        }
-        return lambdaBin;
-    }
-
-    private int binForFLambda(double dEdLambda) {
-        int FLambdaBin = (int) floor((dEdLambda - minFLambda) / dFL);
-        if (FLambdaBin == FLambdaBins) {
-            FLambdaBin = FLambdaBins - 1;
-        }
-        assert (FLambdaBin < FLambdaBins);
-        assert (FLambdaBin >= 0);
-        return FLambdaBin;
     }
 
     @Override
@@ -607,7 +229,7 @@ public class OSRW implements Potential {
         /**
          * OSRW is propagated with the slowly varying terms.
          */
-        if (state == Potential.STATE.FAST) {
+        if (state == STATE.FAST) {
             return e;
         }
 
@@ -624,23 +246,28 @@ public class OSRW implements Potential {
                 Minimize minimize = new Minimize(null, potential, null);
                 minimize.minimize(osrwOptimizationEps);
 
-                // Remove the scaling of coordinates & gradient set by the minimizer.
-                potential.setScaling(null);
-
-                // Reset lambda value.
-                lambdaInterface.setLambda(lambda);
-
                 // Collect the minimum energy.
                 double minEnergy = potential.getTotalEnergy();
                 // If a new minimum has been found, save its coordinates.
                 if (minEnergy < osrwOptimum) {
                     osrwOptimum = minEnergy;
                     logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
+                    int n = potential.getNumberOfVariables();
+                    osrwOptimumCoords = new double[n];
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     if (pdbFilter.writeFile(pdbFile, false)) {
                         logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
                     }
                 }
+
+                // Reset lambda value.
+                lambdaInterface.setLambda(lambda);
+
+                // Remove the scaling of coordinates & gradient set by the minimizer.
+                potential.setScaling(null);
+
+                // Reset the Potential State
+                potential.setEnergyTermState(state);
 
                 // Revert to the coordinates and gradient prior to optimization.
                 double eCheck = potential.energyAndGradient(x, gradient);
@@ -993,10 +620,6 @@ public class OSRW implements Potential {
         }
     }
 
-    public double getTotaldEdLambda() {
-        return dEdLambda;
-    }
-
     /**
      * If necessary, allocate more space.
      */
@@ -1141,58 +764,17 @@ public class OSRW implements Potential {
         return freeEnergy;
     }
 
-    private double currentFreeEnergy() {
-        double biasEnergy = 0.0;
-        for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
-            int iL1 = iL0 + 1;
-            /**
-             * Find bin centers and values for interpolation / extrapolation
-             * points.
-             */
-            double L0 = iL0 * dL;
-            double L1 = L0 + dL;
-            double FL0 = FLambda[iL0];
-            double FL1 = FLambda[iL1];
-            double deltaFL = FL1 - FL0;
-            /**
-             * If the lambda is less than or equal to the upper limit, this is
-             * the final interval. Set the upper limit to L, compute the partial
-             * derivative and break.
-             */
-            boolean done = false;
-            if (lambda <= L1) {
-                done = true;
-                L1 = lambda;
-            }
-            /**
-             * Upper limit - lower limit of the integral of the extrapolation /
-             * interpolation.
-             */
-            biasEnergy += (FL0 * L1 + deltaFL * L1 * (0.5 * L1 - L0) / dL);
-            biasEnergy -= (FL0 * L0 + deltaFL * L0 * (-0.5 * L0) / dL);
-            if (done) {
-                /**
-                 * Compute the gradient d F(L) / dL at L.
-                 */
-                dEdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
-                break;
-            }
+
+    @Override
+    public boolean destroy() {
+        if (receiveThread != null) {
+            receiveThread.interrupt();
         }
-        return -biasEnergy;
+        return true;
     }
 
-    public void evaluatePMF() {
-        StringBuffer sb = new StringBuffer();
-        for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-            for (int fLambdaBin = 0; fLambdaBin < FLambdaBins; fLambdaBin++) {
-                sb.append(String.format(" %16.8f", evaluateKernel(lambdaBin, fLambdaBin)));
-            }
-            sb.append("\n");
-        }
-        logger.info(sb.toString());
-    }
-
-    private double evaluateKernel(int cLambda, int cF_Lambda) {
+    @Override
+    protected double evaluateKernel(int cLambda, int cF_Lambda) {
         /**
          * Compute the value of L and FL for the center of the current bin.
          */
@@ -1247,226 +829,6 @@ public class OSRW implements Potential {
             }
         }
         return sum;
-    }
-
-    public void setLambda(double lambda) {
-        lambdaInterface.setLambda(lambda);
-        this.lambda = lambda;
-        theta = Math.asin(Math.sqrt(lambda));
-    }
-
-    public LambdaInterface getLambdaInterface() {
-        return lambdaInterface;
-    }
-
-    public void setTraversalOutput(File lambdaOneFile, MolecularAssembly topology1, File lambdaZeroFile, MolecularAssembly topology2) {
-        this.writeTraversalSnapshots = true;
-        this.lambdaOneFile = lambdaOneFile;
-        this.lambdaOneAssembly = topology1;
-        this.lambdaZeroFile = lambdaZeroFile;
-        this.lambdaZeroAssembly = topology2;
-    }
-
-    public void setThetaMass(double thetaMass) {
-        this.thetaMass = thetaMass;
-    }
-
-    public void setResetStatistics(boolean resetStatistics) {
-        this.resetStatistics = resetStatistics;
-    }
-
-    public void setThetaFrication(double thetaFriction) {
-        this.thetaFriction = thetaFriction;
-    }
-
-    /**
-     * Set the OSRW Gaussian biasing potential magnitude (kcal/mole).
-     *
-     * @param biasMag Gaussian biasing potential magnitude (kcal/mole)
-     */
-    public void setBiasMagnitude(double biasMag) {
-        this.biasMag = biasMag;
-    }
-
-    /**
-     * Set the OSRW count interval. Every 'countInterval' steps the
-     * recursionKernel will be incremented based on the current value of the
-     * lambda state variable and the derivative of the energy with respect to
-     * lambda (dU/dL).
-     *
-     * @param countInterval Molecular dynamics steps between counts.
-     */
-    public void setCountInterval(int countInterval) {
-        if (countInterval > 0) {
-            this.countInterval = countInterval;
-        } else {
-            logger.info(" OSRW count interval must be greater than 0.");
-        }
-    }
-
-    /**
-     * Propagate Lambda using Langevin dynamics.
-     */
-    private void langevin() {
-        double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
-        double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
-        double dEdL = -dEdLambda * sin(2.0 * theta);
-        halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
-                + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
-                / (2.0 * thetaMass + thetaFriction * dt);
-        theta = theta + dt * halfThetaVelocity;
-
-        if (theta > PI) {
-            theta -= 2.0 * PI;
-        } else if (theta <= -PI) {
-            theta += 2.0 * PI;
-        }
-
-        double sinTheta = sin(theta);
-        lambda = sinTheta * sinTheta;
-        lambdaInterface.setLambda(lambda);
-    }
-
-    @Override
-    public void setScaling(double[] scaling) {
-        potential.setScaling(scaling);
-    }
-
-    @Override
-    public double[] getScaling() {
-        return potential.getScaling();
-    }
-
-    @Override
-    public double[] getCoordinates(double[] doubles) {
-        return potential.getCoordinates(doubles);
-    }
-
-    /**
-     * Return a copy of the parameter array containing lowest-energy parameters
-     * from amongst visits to the specified end state (either 0 or 1).
-     *
-     * @param endState
-     *
-     * @return a double array of parameters
-     */
-    public double[] getLowEnergyCoordinates(int endState) {
-        if (endState == 0) {
-            return lowEnergyCoordsZero;
-        } else if (endState == 1) {
-            return lowEnergyCoordsOne;
-        } else {
-            logger.severe("Improper function call.");
-            return null;
-        }
-    }
-
-    public void setOSRWOptimum(double prevOSRWOptimum) {
-        osrwOptimum = prevOSRWOptimum;
-    }
-
-    public double getOSRWOptimum(){
-        return osrwOptimum;
-    }
-    public double[] getLowEnergyLoop() {
-        if (osrwOptimum < Double.MAX_VALUE) {
-            return osrwOptimumCoords;
-        } else {
-            logger.info("Lambda > 0.9 was not reached. Try increasing number of timesteps.");
-            return null;
-        }
-    }
-
-    public void setOptimization(boolean osrwOptimization, MolecularAssembly molAss) {
-        this.osrwOptimization = osrwOptimization;
-        this.molecularAssembly = molAss;
-        File file = molecularAssembly.getFile();
-        String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
-        if (pdbFilter == null) {
-            pdbFile = new File(fileName + "_opt.pdb");
-            pdbFilter = new PDBFilter(new File(fileName + "_opt.pdb"), molecularAssembly, null, null);
-        }
-
-    }
-
-    @Override
-    public double[] getMass() {
-        return potential.getMass();
-    }
-
-    /**
-     * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
-     */
-    @Override
-    public Potential.VARIABLE_TYPE[] getVariableTypes() {
-        return potential.getVariableTypes();
-    }
-
-    @Override
-    public double getTotalEnergy() {
-        return totalEnergy;
-    }
-
-    @Override
-    public int getNumberOfVariables() {
-        return potential.getNumberOfVariables();
-    }
-
-    @Override
-    public void setEnergyTermState(Potential.STATE state) {
-        this.state = state;
-        potential.setEnergyTermState(state);
-    }
-
-    @Override
-    public STATE getEnergyTermState() {
-        return state;
-    }
-
-    @Override
-    public double energy(double[] x) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public void setVelocity(double[] velocity) {
-        potential.setVelocity(velocity);
-    }
-
-    @Override
-    public void setAcceleration(double[] acceleration) {
-        potential.setAcceleration(acceleration);
-    }
-
-    @Override
-    public void setPreviousAcceleration(double[] previousAcceleration) {
-        potential.setPreviousAcceleration(previousAcceleration);
-    }
-
-    @Override
-    public double[] getVelocity(double[] velocity) {
-        return potential.getVelocity(velocity);
-    }
-
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        return potential.getAcceleration(acceleration);
-    }
-
-    @Override
-    public double[] getPreviousAcceleration(double[] previousAcceleration) {
-        return potential.getPreviousAcceleration(previousAcceleration);
-    }
-
-    /**
-     * Returns the number of energy evaluations performed by this ttOSRW,
-     * including those picked up in the lambda file.
-     * @return Number of energy steps taken by this walker.
-     */
-    public int getEnergyCount() {
-        return energyCount;
     }
 
     private class OSRWHistogramWriter extends PrintWriter {
@@ -1586,6 +948,9 @@ public class OSRW implements Potential {
             while (true) {
                 try {
                     world.receive(null, recursionCountBuf);
+                } catch (InterruptedIOException ioe) {
+                    logger.log(Level.FINE, " ReceiveThread was interrupted at world.receive", ioe);
+                    break;
                 } catch (Exception e) {
                     String message = e.getMessage();
                     logger.log(Level.WARNING, message, e);
@@ -1614,8 +979,11 @@ public class OSRW implements Potential {
                  * walker.
                  */
                 recursionKernel[walkerLambda][walkerFLambda]++;
+                if (this.isInterrupted()) {
+                    logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution");
+                    break;
+                }
             }
         }
     }
-
 }

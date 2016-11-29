@@ -35,12 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray;
-
-import ffx.xray.parsers.MTZFilter;
-import ffx.xray.parsers.CNSFilter;
-import ffx.xray.parsers.CIFFilter;
-import ffx.xray.parsers.DiffractionFileFilter;
+package ffx.xray.parsers;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,10 +58,11 @@ import ffx.potential.MolecularAssembly;
 public class DiffractionFile {
 
     private static final Logger logger = Logger.getLogger(DiffractionFile.class.getName());
-    protected final String filename;
-    protected final double weight;
-    protected final boolean neutron;
-    protected final DiffractionFileFilter diffractionfilter;
+
+    private final String fileName;
+    private final double weight;
+    private final boolean neutron;
+    private final DiffractionFileFilter diffractionFilter;
 
     /**
      * read in a diffraction file, weight set to 1.0 and neutron value of false
@@ -101,30 +97,30 @@ public class DiffractionFile {
         }
 
         if (isExtension(filename, "mtz")) {
-            diffractionfilter = new MTZFilter();
+            diffractionFilter = new MTZFilter();
         } else if (isExtension(filename, new String[]{"cif", "ent", "sf"})) {
-            diffractionfilter = new CIFFilter();
+            diffractionFilter = new CIFFilter();
         } else if (isExtension(filename, new String[]{"cns", "hkl"})) {
-            diffractionfilter = new CNSFilter();
+            diffractionFilter = new CNSFilter();
         } else {
-            diffractionfilter = null;
+            diffractionFilter = null;
         }
 
-        if (diffractionfilter == null) {
+        if (diffractionFilter == null) {
             logger.severe("input data file format not recognized!\n Please use an appropriate file extension: [MTZ: mtz] [CIF: cif, ent, sf] [CNS: cns, hkl] to identify your data file type!");
         }
 
-        this.filename = filename;
+        this.fileName = filename;
         this.weight = weight;
         this.neutron = neutron;
     }
 
     /**
-     * read in a diffraction file based on the molecular assembly filename,
-     * using a weight of 1.0 and neutron value of false
+     * read in a diffraction file based on the molecular assembly fileName,
+ using a weight of 1.0 and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     * filename will be determined
+ fileName will be determined
      */
     public DiffractionFile(MolecularAssembly assembly[]) {
         this(assembly[0], 1.0, false);
@@ -157,22 +153,22 @@ public class DiffractionFile {
     }
 
     /**
-     * read in a diffraction file based on the molecular assembly filename,
-     * using a weight of 1.0 and neutron value of false
+     * read in a diffraction file based on the molecular assembly fileName,
+ using a weight of 1.0 and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     * filename will be determined
+ fileName will be determined
      */
     public DiffractionFile(MolecularAssembly assembly) {
         this(assembly, 1.0, false);
     }
 
     /**
-     * read in a diffraction file based on the molecular assembly filename,
-     * using a neutron value of false
+     * read in a diffraction file based on the molecular assembly fileName,
+ using a neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     * filename will be determined
+ fileName will be determined
      * @param weight the weight of the data
      */
     public DiffractionFile(MolecularAssembly assembly, double weight) {
@@ -180,11 +176,11 @@ public class DiffractionFile {
     }
 
     /**
-     * read in a diffraction file based on the molecular assembly filename,
-     * using a weight of 1.0 and neutron value of false
+     * read in a diffraction file based on the molecular assembly fileName,
+ using a weight of 1.0 and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     * filename will be determined
+ fileName will be determined
      * @param weight the weight of the data
      * @param neutron if true, this is a neutron data set
      */
@@ -195,42 +191,42 @@ public class DiffractionFile {
         File tmp = new File(name + ".mtz");
         if (tmp.exists()) {
             //logger.info("\n Data file: " + tmp.getName());
-            diffractionfilter = new MTZFilter();
+            diffractionFilter = new MTZFilter();
         } else {
             tmp = new File(name + ".cif");
             if (tmp.exists()) {
                 //logger.info("\n Data file: " + tmp.getName());
-                diffractionfilter = new CIFFilter();
+                diffractionFilter = new CIFFilter();
             } else {
                 tmp = new File(name + ".ent");
                 if (tmp.exists()) {
                     //logger.info("\n Data file: " + tmp.getName());
-                    diffractionfilter = new CIFFilter();
+                    diffractionFilter = new CIFFilter();
                 } else {
                     tmp = new File(name + ".sf");
                     if (tmp.exists()) {
                         //logger.info("\n Data file: " + tmp.getName());
-                        diffractionfilter = new CIFFilter();
+                        diffractionFilter = new CIFFilter();
                     } else {
                         tmp = new File(name + ".cns");
                         if (tmp.exists()) {
                             //logger.info("\n Data file: " + tmp.getName());
-                            diffractionfilter = new CNSFilter();
+                            diffractionFilter = new CNSFilter();
                         } else {
                             tmp = new File(name + ".hkl");
                             if (tmp.exists()) {
                                 //logger.info("\n Data file: " + tmp.getName());
-                                diffractionfilter = new CNSFilter();
+                                diffractionFilter = new CNSFilter();
                             } else {
                                 logger.severe("no input data found!");
-                                diffractionfilter = null;
+                                diffractionFilter = null;
                             }
                         }
                     }
                 }
             }
         }
-        String filenameHolder; // Compiler complains if I set this.filename directly.
+        String filenameHolder; // Compiler complains if I set this.fileName directly.
         try {
             Path filepath = Paths.get(tmp.getCanonicalPath());
             Path pwdPath = Paths.get(new File("").getCanonicalPath());
@@ -239,7 +235,7 @@ public class DiffractionFile {
             logger.warning(" Relative path to provided data file could not be resolved: using data file name instead.");
             filenameHolder = tmp.getName();
         }
-        this.filename = filenameHolder;
+        this.fileName = filenameHolder;
         this.weight = weight;
         this.neutron = neutron;
     }
@@ -261,4 +257,19 @@ public class DiffractionFile {
     public boolean isNeutron() {
         return neutron;
     }
+
+    /**
+     * @return the fileName
+     */
+    public String getFilename() {
+        return fileName;
+    }
+
+    /**
+     * @return the diffractionFilter
+     */
+    public DiffractionFileFilter getDiffractionfilter() {
+        return diffractionFilter;
+    }
+
 }

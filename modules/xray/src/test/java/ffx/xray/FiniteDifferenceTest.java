@@ -37,8 +37,6 @@
  */
 package ffx.xray;
 
-import ffx.xray.parsers.MTZFilter;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
@@ -67,6 +65,7 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.MTZFilter;
 
 import static ffx.numerics.VectorMath.b2u;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.NONE;
@@ -102,13 +101,7 @@ public class FiniteDifferenceTest {
         this.ciOnly = ciOnly;
         this.atoms = atoms;
 
-        String ffxCi = System.getProperty("ffx.ci");
-        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
-            ci = true;
-        } else {
-            ci = false;
-        }
-
+        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             atomArray = null;
             refinementData = null;

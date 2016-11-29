@@ -49,6 +49,8 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+import javax.xml.crypto.NoSuchMechanismException;
+
 import org.apache.commons.io.FilenameUtils;
 
 import static org.apache.commons.math3.util.FastMath.max;
@@ -107,6 +109,7 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
 import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
+import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
@@ -240,10 +243,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * *************************************
      */
     /*      Extended System Variables       */
-    private ExtendedSystem esvSystem;
-    private final boolean ESV_DEBUG = false;
-    private final boolean pmeQI = (System.getProperty("pme-qi") != null);
-    private final boolean pmeOnly = (System.getProperty("ffe-pmeOnly") != null);
+    private ExtendedSystem esvSystem = null;
+    private final boolean pmeQI = prop("pme-qi");
+    private final boolean decomposeEsvEnergy = prop("esv-decompose");
     /**
      * *************************************
      */
@@ -335,7 +337,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
         lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
-        esvTerm = forceField.getBoolean(ForceFieldBoolean.ESVTERM, false);
         printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, true);
 
         // For RESPA
@@ -711,36 +712,46 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         molecularAssembly.setPotential(this);
     }
 
+    /**
+     * Overwrites current esvSystem if present.
+     * Multiple ExtendedSystems is possible but unnecessary; add all ESVs to one system (per FFE, at least).
+     * @param system 
+     */
     public void attachExtendedSystem(ExtendedSystem system) {
-        if (esvSystem != null) {
-//            logger.warning("Multiple esvSystems is untested; overwriting instead.");
+        if (system == null) {
+            throw new IllegalArgumentException();
         }
         esvTerm = true;
         esvSystem = system;
-        if (vanderWaals != null) {
+        if (vanderWaalsTerm) {
+            if (vanderWaals == null) {
+                logger.warning("Null vdW during ESV setup.");
+            }
             vanderWaals.attachExtendedSystem(system);
-        } else {
-            logger.warning("Couldn't attach extended system to vdW.");
         }
-//        if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
-//            ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
-//        } else {
-//            if (multipoleTerm) {
-//                logger.warning("Couldn't attach extended system to PME.");
-//            }
-//        }
+        if (multipoleTerm) {
+            if (particleMeshEwald == null) {
+                throw new NoSuchMechanismException();
+            }
+            if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
+                logger.severe("Extended systems can attach only to Quasi-Internal PME. Try -Dpme-qi=true.");
+            }
+            ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
+        }
         reInit();
     }
     
     public void detachExtendedSystem() {
         esvTerm = false;
         esvSystem = null;
-        if (vanderWaals != null) {
+        if (vanderWaalsTerm && vanderWaals != null) {
             vanderWaals.detachExtendedSystem();
         }
-//        if (particleMeshEwald != null && particleMeshEwald instanceof ParticleMeshEwaldQI) {
-//            ((ParticleMeshEwaldQI) particleMeshEwald).detachExtendedSystem();
-//        }
+        if (multipoleTerm && particleMeshEwald != null) {
+            if (particleMeshEwald instanceof ParticleMeshEwaldQI) {
+                ((ParticleMeshEwaldQI) particleMeshEwald).detachExtendedSystem();
+            }
+        }
         reInit();
     }
 
@@ -786,10 +797,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             assert (i == index);
             atom.setXYZIndex(i + 1);
         }
-
+        
         // Collect, count, pack and sort bonds.
         if (bondTerm) {
             ArrayList<ROLS> bond = molecularAssembly.getBondList();
+//            List<BondedTerm> bond = molecularAssembly.getDescendants(Bond.class);
             nBonds = 0;
             for (ROLS r : bond) {
                 if (keep((Bond) r)) {
@@ -818,6 +830,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort angles.
         if (angleTerm) {
             ArrayList<ROLS> angle = molecularAssembly.getAngleList();
+//            List<BondedTerm> angle = molecularAssembly.getDescendants(Angle.class);
             nAngles = 0;
             for (ROLS r : angle) {
                 if (keep((Angle) r)) {
@@ -847,6 +860,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort stretch-bends.
         if (stretchBendTerm) {
             ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
+//            List<BondedTerm> stretchBend = molecularAssembly.getDescendants(StretchBend.class);
             nStretchBends = 0;
             for (ROLS r : stretchBend) {
                 if (keep((StretchBend) r)) {
@@ -875,6 +889,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort Urey-Bradleys.
         if (ureyBradleyTerm) {
             ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
+//            List<BondedTerm> ureyBradley = molecularAssembly.getDescendants(UreyBradley.class);
             nUreyBradleys = 0;
             for (ROLS r : ureyBradley) {
                 if (keep((UreyBradley) r)) {
@@ -938,6 +953,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort out-of-plane bends.
         if (outOfPlaneBendTerm) {
             ArrayList<ROLS> outOfPlaneBend = molecularAssembly.getOutOfPlaneBendList();
+//            List<BondedTerm> outOfPlaneBend = molecularAssembly.getDescendants(OutOfPlaneBend.class);
             nOutOfPlaneBends = 0;
             for (ROLS r : outOfPlaneBend) {
                 if (keep((OutOfPlaneBend) r)) {
@@ -966,6 +982,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort torsions.
         if (torsionTerm) {
             ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
+//            List<BondedTerm> torsion = molecularAssembly.getDescendants(Torsion.class);
             nTorsions = 0;
             for (ROLS r : torsion) {
                 if (keep((Torsion) r)) {
@@ -994,6 +1011,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort pi-orbital torsions.
         if (piOrbitalTorsionTerm) {
             ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
+//            List<BondedTerm> piOrbitalTorsion = molecularAssembly.getDescendants(PiOrbitalTorsion.class);
             nPiOrbitalTorsions = 0;
             for (ROLS r : piOrbitalTorsion) {
                 if (keep((PiOrbitalTorsion) r)) {
@@ -1021,6 +1039,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort torsion-torsions.
         if (torsionTorsionTerm) {
             ArrayList<ROLS> torsionTorsion = molecularAssembly.getTorsionTorsionList();
+//            List<BondedTerm> torsionTorsion = molecularAssembly.getDescendants(TorsionTorsion.class);
             nTorsionTorsions = 0;
             for (ROLS r : torsionTorsion) {
                 if (keep((TorsionTorsion) r)) {
@@ -1048,6 +1067,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort improper torsions.
         if (improperTorsionTerm) {
             ArrayList<ROLS> improperTorsion = molecularAssembly.getImproperTorsionList();
+//            List<BondedTerm> improperTorsion = molecularAssembly.getDescendants(ImproperTorsion.class);
             nImproperTorsions = 0;
             for (ROLS r : improperTorsion) {
                 if (keep((ImproperTorsion) r)) {
@@ -1179,17 +1199,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (pmeOnly) {
-                totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
-                permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
-                if (totalElectrostaticEnergy != permanentMultipoleEnergy) {
-                    logger.warning("FFE detected incorrect debug code path.");
-                }
-                totalEnergy = permanentMultipoleEnergy;
-                logger.fine(this.toString());
-                return totalEnergy;
-            }
-
             /**
              * Computed the bonded energy terms in parallel.
              */
@@ -1263,28 +1272,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
 
-            if (esvTerm) {
-                if (esvSystem == null) {
-                    logger.severe("Extended system not properly initialized.");
-                }
-                // Calculate contribution to bonded terms.
-                boolean[] termFlags = new boolean[]{
-                    bondTerm, angleTerm, stretchBendTerm, ureyBradleyTerm,
-                    outOfPlaneBendTerm, torsionTerm, piOrbitalTorsionTerm, torsionTorsionTerm,
-                    improperTorsionTerm, restraintBondTerm};
-                BondedTerm[][] termArrays = new BondedTerm[][]{
-                    bonds, angles, stretchBends, ureyBradleys,
-                    outOfPlaneBends, torsions, piOrbitalTorsions, torsionTorsions,
-                    improperTorsions, restraintBonds
-                };
-                // Bonded ESV energy is included at the term level.
-                // Nonbonded energy due to pH and zero/unity bias:
-                esvBias = esvSystem.biases();
-
-//                esvLogger.append(format("  Total ESV Energy (bonded,nonbond,PME+vdW,sum):  %g  %g  %s  %g\n",
-//                        esvBondedEnergy, esvNonbondEnergy, "no_decomp", esvBondedEnergy + esvNonbondEnergy));
-            }
-
             totalTime = System.nanoTime() - totalTime;
 
             totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy
@@ -1294,6 +1281,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
             totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
             if (esvTerm) {
+                esvBias = esvSystem.biasEnergy(null);
                 totalEnergy += esvBias;
             }
         } catch (EnergyException ex) {
@@ -1312,10 +1300,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
             if (ex.doCauseSevere()) {
                 logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+                return 0.0;
             } else {
                 throw ex; // Rethrow exception
             }
-            return 0;
         }
 
         if (print || printOverride) {
@@ -1564,6 +1552,15 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (relativeSolvationTerm) {
             sb.append(String.format("  %s %16.8f %12d\n",
                     "Relative Solvation", relativeSolvationEnergy, nRelativeSolvations));
+        }
+        
+        if (esvTerm) {
+            sb.append(String.format("  %s %16.8f %12d    %s\n",
+                    "ExtendedSystemBias", esvBias, esvSystem.num(), esvSystem.getLambdaList()));
+            sb.append(String.format("      %s %16.8f\n", 
+                    "Discretization", esvSystem.getLatestDiscrBias()));
+            sb.append(String.format("      %s %16.8f\n", 
+                    "pH Electrostat", esvSystem.getLatestPhBias()));
         }
 
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
@@ -1933,9 +1930,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public double getdEdL() {
         double dEdLambda = 0.0;
-        if (pmeOnly) {
-            return particleMeshEwald.getdEdL();
-        }
         if (!lambdaBondedTerms) {
             if (vanderWaalsTerm) {
                 dEdLambda = vanderWaals.getdEdL();
@@ -2036,9 +2030,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     @Override
     public double getd2EdL2() {
         double d2EdLambda2 = 0.0;
-        if (pmeOnly) {
-            return particleMeshEwald.getd2EdL2();
-        }
         if (!lambdaBondedTerms) {
             if (vanderWaalsTerm) {
                 d2EdLambda2 = vanderWaals.getd2EdL2();

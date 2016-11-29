@@ -362,6 +362,35 @@ public class CoordRestraint implements LambdaInterface {
         this.lambdaTerm = lambdaTerm;
         setLambda(lambda);
     }
+    
+    public void setCoordinatePin(double[][] newInitialCoordinates) {
+        if (newInitialCoordinates.length != initialCoordinates.length) {
+            throw new IllegalArgumentException(" Incorrect number of atoms!");
+        }
+        for (int i = 0; i < initialCoordinates.length; i++) {
+            System.arraycopy(newInitialCoordinates[i], 0, initialCoordinates[i], 0, 3);
+        }
+    }
+    
+    public void resetCoordinatePin() {
+        double aixyz[] = new double[3];
+        for (int i = 0; i < nAtoms; i++) {
+            atoms[i].getXYZ(aixyz);
+            System.arraycopy(aixyz, 0, initialCoordinates[i], 0, 3);
+        }
+    }
+    
+    public double[][] getCoordinatePin(double[][] xyz) {
+        if (xyz == null) {
+            xyz = new double[nAtoms][3];
+        } else if (xyz.length != nAtoms) {
+            throw new IllegalArgumentException(" Incorrect number of atoms!");
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            System.arraycopy(initialCoordinates[i], 0, xyz, 0, 3);
+        }
+        return xyz;
+    }
 
     @Override
     public double getLambda() {

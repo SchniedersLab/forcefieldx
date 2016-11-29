@@ -49,30 +49,25 @@ import groovy.util.CliBuilder;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 
-// Force Field X X-ray Imports
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.DiffractionFile;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-
-// Force Field X Minimize imports
+// FFX Imports
 import ffx.algorithms.Minimize;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MolecularAssembly;
 import ffx.potential.parsers.CoordinateFileFilter;
-
-// Force Field X real-space Imports
-import ffx.xray.RealSpaceData;
-import ffx.xray.RealSpaceFile;
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceFile;
+import ffx.utilities.DoubleIndexPair;
+import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.DiffractionData;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.RescoreAndCluster
+import ffx.xray.parsers.DiffractionFile;
+import ffx.xray.RefinementMinimize;
+import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.Rescore;
 
-// Other Force Field X imports.
-import ffx.utilities.DoubleIndexPair;
 
 double boltzRestraint = 0.0;
 String targetFunct = "xray_energy";

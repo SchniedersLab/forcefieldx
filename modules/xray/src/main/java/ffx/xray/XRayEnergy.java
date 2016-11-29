@@ -38,7 +38,6 @@
 package ffx.xray;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;
@@ -124,18 +123,18 @@ public class XRayEnergy implements LambdaInterface, Potential {
         this.diffractionData = diffractionData;
         this.refinementModel = diffractionData.getRefinementModel();
         this.refinementMode = refinementMode;
-        this.atomArray = refinementModel.totalAtomArray;
+        this.atomArray = refinementModel.getTotalAtomArray();
         this.nAtoms = atomArray.length;
         this.nXYZ = nXYZ;
         this.nB = nB;
         this.nOCC = nOCC;
 
-        bMass = diffractionData.bMass;
-        kTbNonzero = 0.5 * kBkcal * temperature * diffractionData.bNonZeroWeight;
-        kTbSimWeight = kBkcal * temperature * diffractionData.bSimWeight;
-        occMass = diffractionData.occMass;
+        bMass = diffractionData.getbMass();
+        kTbNonzero = 0.5 * kBkcal * temperature * diffractionData.getbNonZeroWeight();
+        kTbSimWeight = kBkcal * temperature * diffractionData.getbSimWeight();
+        occMass = diffractionData.getOccMass();
 
-        ForceField forceField = diffractionData.assembly[0].getForceField();
+        ForceField forceField = diffractionData.getAssembly()[0].getForceField();
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
         // Fill an active atom array.
@@ -162,8 +161,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
         if (refineB) {
             logger.info(" B-Factor Refinement Parameters");
             logger.info("  Temperature:                 " + temperature);
-            logger.info("  Non-zero restraint weight:   " + diffractionData.bNonZeroWeight);
-            logger.info("  Similarity restraint weight: " + diffractionData.bSimWeight);
+            logger.info("  Non-zero restraint weight:   " + diffractionData.getbNonZeroWeight());
+            logger.info("  Similarity restraint weight: " + diffractionData.getbSimWeight());
         }
 
         logger.info(String.format(" XRayEnergy variables:  %d (nXYZ %d, nB %d, nOcc %d)\n",
@@ -508,7 +507,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         double grad[] = null;
         int index = nXYZ;
         int resnum = -1;
-        int nres = diffractionData.nResidueBFactor + 1;
+        int nres = diffractionData.getnResidueBFactor() + 1;
         for (Atom a : activeAtomArray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -522,9 +521,9 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 g[index++] = grad[3];
                 g[index++] = grad[4];
                 g[index++] = grad[5];
-            } else if (diffractionData.residueBFactor) {
+            } else if (diffractionData.isResidueBFactor()) {
                 if (resnum != a.getResidueNumber()) {
-                    if (nres >= diffractionData.nResidueBFactor) {
+                    if (nres >= diffractionData.getnResidueBFactor()) {
                         if (resnum > -1
                                 && index < nXYZ + nB - 1) {
                             index++;
@@ -554,7 +553,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         int index = nXYZ + nB;
 
         // First: Alternate Residues
-        for (ArrayList<Residue> list : refinementModel.altResidues) {
+        for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
             ave = 0.0;
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
@@ -578,7 +577,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         // Now the molecules (HETATMs).
-        for (ArrayList<Molecule> list : refinementModel.altMolecules) {
+        for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
             ave = 0.0;
             for (Molecule m : list) {
                 for (Atom a : m.getAtomList()) {
@@ -642,7 +641,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
             double anisou[] = null;
             int resnum = -1;
             int nat = 0;
-            int nres = diffractionData.nResidueBFactor + 1;
+            int nres = diffractionData.getnResidueBFactor() + 1;
             for (Atom a : activeAtomArray) {
                 // ignore hydrogens!!!
                 if (a.getAtomicNumber() == 1) {
@@ -656,9 +655,9 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     x[index++] = anisou[3];
                     x[index++] = anisou[4];
                     x[index++] = anisou[5];
-                } else if (diffractionData.residueBFactor) {
+                } else if (diffractionData.isResidueBFactor()) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres >= diffractionData.nResidueBFactor) {
+                        if (nres >= diffractionData.getnResidueBFactor()) {
                             if (resnum > -1
                                     && index < nXYZ + nB - 1) {
                                 x[index] /= nat;
@@ -681,7 +680,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 }
             }
 
-            if (diffractionData.residueBFactor) {
+            if (diffractionData.isResidueBFactor()) {
                 if (nat > 1) {
                     x[index] /= nat;
                 }
@@ -689,7 +688,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         }
 
         if (refineOCC) {
-            for (ArrayList<Residue> list : refinementModel.altResidues) {
+            for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
                 for (Residue r : list) {
                     for (Atom a : r.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -699,7 +698,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     }
                 }
             }
-            for (ArrayList<Molecule> list : refinementModel.altMolecules) {
+            for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
                 for (Molecule m : list) {
                     for (Atom a : m.getAtomList()) {
                         if (a.getOccupancy() < 1.0) {
@@ -724,7 +723,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
         int index = nXYZ;
         int nneg = 0;
         int resnum = -1;
-        int nres = diffractionData.nResidueBFactor + 1;
+        int nres = diffractionData.getnResidueBFactor() + 1;
         for (Atom a : activeAtomArray) {
             // ignore hydrogens!!!
             if (a.getAtomicNumber() == 1) {
@@ -732,9 +731,9 @@ public class XRayEnergy implements LambdaInterface, Potential {
             }
             if (a.getAnisou(null) == null) {
                 double biso = x[index];
-                if (diffractionData.residueBFactor) {
+                if (diffractionData.isResidueBFactor()) {
                     if (resnum != a.getResidueNumber()) {
-                        if (nres >= diffractionData.nResidueBFactor) {
+                        if (nres >= diffractionData.getnResidueBFactor()) {
                             if (resnum > -1
                                     && index < nXYZ + nB - 1) {
                                 index++;
@@ -829,7 +828,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
     public void setOccupancies(double x[]) {
         double occ = 0.0;
         int index = nXYZ + nB;
-        for (ArrayList<Residue> list : refinementModel.altResidues) {
+        for (ArrayList<Residue> list : refinementModel.getAltResidues()) {
             for (Residue r : list) {
                 occ = x[index++];
                 for (Atom a : r.getAtomList()) {
@@ -839,7 +838,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                 }
             }
         }
-        for (ArrayList<Molecule> list : refinementModel.altMolecules) {
+        for (ArrayList<Molecule> list : refinementModel.getAltMolecules()) {
             for (Molecule m : list) {
                 occ = x[index++];
                 for (Atom a : m.getAtomList()) {

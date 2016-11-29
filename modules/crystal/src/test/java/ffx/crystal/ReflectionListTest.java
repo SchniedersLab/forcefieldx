@@ -110,13 +110,7 @@ public class ReflectionListTest {
         this.epsilon = epsilon;
         this.allowed = allowed;
 
-        String ffxCi = System.getProperty("ffx.ci");
-        if (ffxCi != null && ffxCi.equalsIgnoreCase("true")) {
-            ci = true;
-        } else {
-            ci = false;
-        }
-
+        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             this.crystal = null;
             this.resolution = null;

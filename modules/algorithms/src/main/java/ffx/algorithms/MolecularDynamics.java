@@ -115,6 +115,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean notifyMonteCarlo = true;
     private ExtendedSystem extendedSystem;
     private DynamicsState dynamicsState;
+    private double totalSimTime = 0.0;
 
     /**
      * <p>
@@ -331,6 +332,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         ArrayList<File> aFiles = new ArrayList<>();
         assemblies.forEach((ai) -> { aFiles.add(ai.archiveFile); });
         return aFiles;
+        // Below may be more thread-safe and less prone to side effects.
+        // Would definitely be safer than stream().forEach(add to external list).
+        //return assemblies.stream().map((AssemblyInfo ai) -> {return ai.archiveFile;}).collect(Collectors.toList());
     }
     
     public void addAssembly(MolecularAssembly mola) {
@@ -344,7 +348,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
     
     /**
-     * Finds and removes an assembly, searching by equality. Removes all instances
+     * Finds and removes an assembly, searching by reference equality. 
+     * Removes all instances of the assembly.
      * @param mola Assembly to remove.
      * @return Number of times found and removed.
      */
@@ -355,7 +360,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         List<AssemblyInfo> toRemove = assemblies.stream().filter((AssemblyInfo ai) -> {
             return mola == ai.getAssembly();
         }).collect(Collectors.toList());
-        //int nRemoved = assemblies.size() - newList.size();
         assemblies.removeAll(toRemove);
         return toRemove.size();
     }
@@ -407,6 +411,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         this.nSteps = nSteps;
+        totalSimTime = 0.0;
         /**
          * Convert the time step from femtoseconds to picoseconds.
          */
@@ -529,6 +534,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         skipIntro = true;
         
         this.nSteps = nSteps;
+        totalSimTime = 0.0;
 //        this.dt = timeStep * 1.0e-3;
 //        printFrequency = (int) (printInterval / this.dt);
 //        saveSnapshotFrequency = (int) (saveInterval / this.dt);
@@ -870,10 +876,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Log the current state every printFrequency steps.
              */
+            totalSimTime += dt;
             if (step % printFrequency == 0) {
-                double simTime = step * dt;
                 time = System.nanoTime() - time;
-                logger.info(String.format(" %7.3e%13.4f%13.4f%13.4f%9.2f%9.3f", simTime, currentKineticEnergy, currentPotentialEnergy,
+                logger.info(String.format(" %7.3e%13.4f%13.4f%13.4f%9.2f%9.3f", totalSimTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * 1.0e-9));
                 time = System.nanoTime();
             }

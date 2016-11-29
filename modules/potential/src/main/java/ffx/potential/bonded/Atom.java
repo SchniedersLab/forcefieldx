@@ -202,11 +202,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * Contiguous atom index ranging from 0..nAtoms - 1.
+     * Contiguous atom index ranging from 1..nAtoms.
      *
      * @since 1.0
      */
     public int xyzIndex = -1;
+    /**
+     * Persistent index parallel to xyzIndex.
+     */
+    public static int indexer = 0;
     /**
      * PDB "resname" record.
      *
@@ -399,6 +403,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         currentCol = previousCol = RendererCache.toAtomColor(name);
         colorModel = ColorModel.CPK;
         redXYZ = null;
+        indexer++;
         //this.atomSerial = atomSerialCount.getAndIncrement();
     }
 
@@ -937,7 +942,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public String getIdent() {
         return atomType.environment;
     }
-
+    
     /**
      * Gets the atom Key
      *

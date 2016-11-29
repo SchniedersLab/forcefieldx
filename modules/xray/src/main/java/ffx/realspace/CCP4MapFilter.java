@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray.parsers;
+package ffx.realspace;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -48,7 +48,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
-import ffx.xray.RealSpaceRefinementData;
 
 /**
  * <p>

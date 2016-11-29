@@ -60,7 +60,7 @@
  */
 package ffx.xray;
 
-import ffx.xray.parsers.RealSpaceFile;
+import ffx.realspace.RealSpaceData;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -85,6 +85,8 @@ import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
+import ffx.realspace.RealSpaceFile;
 
 import static ffx.algorithms.ClusterStructures.generatePath;
 import static ffx.xray.Rescore.RescoreStrategy.ENERGY_EVAL;

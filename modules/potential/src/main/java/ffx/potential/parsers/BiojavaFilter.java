@@ -78,7 +78,6 @@ import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parsers.PDBFilter.HetAtoms;
 import ffx.utilities.Hybrid36;
 
@@ -579,7 +578,7 @@ public class BiojavaFilter extends ConversionFilter {
     public void numberAtoms() {
         int index = 1;
         for (Atom a : activeMolecularAssembly.getAtomArray()) {
-            a.xyzIndex = index++;
+            a.setXYZIndex(index++);
         }
         index--;
         if (logger.isLoggable(Level.INFO)) {

@@ -6753,7 +6753,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     @Override
-    public double[] getdEdLdh() {
+    public double[] getdEdEsv() {
         throw new UnsupportedOperationException();
     }
 
