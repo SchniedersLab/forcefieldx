@@ -72,6 +72,7 @@ public class GenerateRotamers {
     private final File outFile;
     private final MolecularAssembly mola;
     private final AlgorithmListener listener;
+    private final RotamerLibrary library;
     
     private final Potential potential;
     private double[] x;
@@ -106,6 +107,22 @@ public class GenerateRotamers {
      */
     public GenerateRotamers(MolecularAssembly mola, Potential potential, 
             Residue residue, File file, int nChi, AlgorithmListener listener) {
+        this(mola, potential, residue, file, nChi, listener, RotamerLibrary.getDefaultLibrary());
+    }
+    
+    /**
+     * Intended to create rotamer sets for nonstandard amino acids.
+     * @param mola
+     * @param potential
+     * @param residue
+     * @param file Output file
+     * @param nChi Number of rotameric torsions in the residue
+     * @param listener
+     * @param library Rotamer library to use
+     */
+    public GenerateRotamers(MolecularAssembly mola, Potential potential, 
+            Residue residue, File file, int nChi, AlgorithmListener listener, 
+            RotamerLibrary library) {
         this.residue = residue;
         this.nChi = nChi;
         endDepth = nChi - 1;
@@ -113,6 +130,7 @@ public class GenerateRotamers {
         this.mola = mola;
         this.listener = listener;
         this.currentChi = new double[nChi];
+        this.library = library;
         Arrays.fill(currentChi, 0.0);
         File outputFile = file;
         if (outputFile.exists()) {
@@ -129,7 +147,7 @@ public class GenerateRotamers {
         }
         outFile = outputFile;
         this.baselineAAres = residue.getAminoAcid3();
-        baselineRotamers = RotamerLibrary.getRotamers(baselineAAres);
+        baselineRotamers = library.getRotamers(baselineAAres);
     }
     
     /**
@@ -140,12 +158,12 @@ public class GenerateRotamers {
     public void setBaselineAARes(AminoAcid3 aa3) {
         this.baselineAAres = aa3;
         if (aa3 == aa3.UNK) {
-            boolean orig = RotamerLibrary.getUsingOrigCoordsRotamer();
-            RotamerLibrary.setUseOrigCoordsRotamer(false);
-            baselineRotamers = residue.getRotamers();
-            RotamerLibrary.setUseOrigCoordsRotamer(orig);
+            boolean orig = library.getUsingOrigCoordsRotamer();
+            library.setUseOrigCoordsRotamer(false);
+            baselineRotamers = residue.getRotamers(library);
+            library.setUseOrigCoordsRotamer(orig);
         } else {
-            baselineRotamers = RotamerLibrary.getRotamers(aa3);
+            baselineRotamers = library.getRotamers(aa3);
         }
         aroundLibrary = true;
     }

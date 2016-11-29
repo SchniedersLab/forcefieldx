@@ -84,36 +84,49 @@ public class RotamerLibrary {
      * instantiated into an array, which is stored in the cache. Subsequently
      * the reference is simply returned.
      */
-    private static final Rotamer[][] aminoAcidRotamerCache = new Rotamer[numberOfAminoAcids][];
+    private final Rotamer[][] aminoAcidRotamerCache = new Rotamer[numberOfAminoAcids][];
     /**
      * The first time rotamers are requested for a nucleic acid type, they are
      * instantiated into an array, which is stored in the cache. Subsequently
      * the reference is simply returned.
      */
-    private static final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
-    private static ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
+    private final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
+    private ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
+    
     // Can easily add an naSolvationLibrary when we want to do NA sequence optimization.
-    private static boolean useOrigCoordsRotamer = false;
-    //private static final HashMap<Residue, Rotamer[]> origCoordsCache = new HashMap<>();
+    private boolean useOrigCoordsRotamer = false;
+    
+    // May have to become instance variable, would break staticness of measureRotamer methods.
     private static final Map<String, NonstandardRotLibrary> nonstdRotCache = new HashMap<>();
+    
+    private static final RotamerLibrary defaultRotamerLibrary = new RotamerLibrary(ProteinLibrary.PonderAndRichards, false);
+    
+    public RotamerLibrary(ProteinLibrary name, boolean origCoords) {
+        proteinLibrary = name;
+        useOrigCoordsRotamer = origCoords;
+    }
+    
+    public static RotamerLibrary getDefaultLibrary() {
+        return defaultRotamerLibrary;
+    }
 
     /**
      * Set the protein rotamer library to use.
      *
      * @param name the ProteinLibrary to use.
      */
-    public static void setLibrary(ProteinLibrary name) {
+    public void setLibrary(ProteinLibrary name) {
         proteinLibrary = name;
         for (int i = 0; i < numberOfAminoAcids; i++) {
             aminoAcidRotamerCache[i] = null;
         }
     }
 
-    public static boolean getUsingOrigCoordsRotamer() {
+    public boolean getUsingOrigCoordsRotamer() {
         return useOrigCoordsRotamer;
     }
 
-    public static void setUseOrigCoordsRotamer(boolean set) {
+    public void setUseOrigCoordsRotamer(boolean set) {
         useOrigCoordsRotamer = set;
     }
 
@@ -122,7 +135,7 @@ public class RotamerLibrary {
      *
      * @return the ProteinLibrary in use.
      */
-    public static ProteinLibrary getLibrary() {
+    public ProteinLibrary getLibrary() {
         return proteinLibrary;
     }
 
@@ -132,9 +145,9 @@ public class RotamerLibrary {
      * @param residue the Residue to examine.
      * @return Array of Rotamers for Residue's type.
      */
-    static Rotamer[] getRotamers(Residue residue) {
+    Rotamer[] getRotamers(Residue residue) {
         // Package-private; intended to be accessed only by Residue and extensions
-        // thereof. Otherwise, use Residue.getRotamers().
+        // thereof. Otherwise, use Residue.getRotamers(RotamerLibrary library).
         if (residue == null) {
             return null;
         }
@@ -215,7 +228,7 @@ public class RotamerLibrary {
      * @param name The name of the amino acid.
      * @return An array of Rotamers.
      */
-    public static Rotamer[] getRotamers(AminoAcid3 name) {
+    public Rotamer[] getRotamers(AminoAcid3 name) {
         Rotamer[] rotamers = null;
         switch (proteinLibrary) {
             case PonderAndRichards:
@@ -234,7 +247,7 @@ public class RotamerLibrary {
      * @param name The name of the nucleic acid.
      * @return An array of Rotamers.
      */
-    public static Rotamer[] getRotamers(NucleicAcid3 name) {
+    public Rotamer[] getRotamers(NucleicAcid3 name) {
         return getRichardsonRNARotamers(name);
     }
 
@@ -277,7 +290,7 @@ public class RotamerLibrary {
      * @param name Type of amino acid.
      * @return Rotamer cache (double[] of torsions).
      */
-    private static Rotamer[] getPonderAndRichardsRotamers(AminoAcid3 name) {
+    private Rotamer[] getPonderAndRichardsRotamers(AminoAcid3 name) {
         int n = name.ordinal();
         if (aminoAcidRotamerCache[n] != null) {
             return aminoAcidRotamerCache[n];
@@ -515,7 +528,7 @@ public class RotamerLibrary {
      * @param name Type of amino acid.
      * @return Rotamer cache (double[] of torsions).
      */
-    private static Rotamer[] getRichardsonRotamers(AminoAcid3 name) {
+    private Rotamer[] getRichardsonRotamers(AminoAcid3 name) {
         int n = name.ordinal();
         if (aminoAcidRotamerCache[n] != null) {
             return aminoAcidRotamerCache[n];
@@ -817,7 +830,7 @@ public class RotamerLibrary {
      * @param name Type of nucleic acid.
      * @return Rotamer cache (double[] of torsions).
      */
-    private static Rotamer[] getRichardsonRNARotamers(NucleicAcid3 name) {
+    private Rotamer[] getRichardsonRNARotamers(NucleicAcid3 name) {
         int n = name.ordinal();
         if (nucleicAcidRotamerCache[n] != null) {
             return nucleicAcidRotamerCache[n];
@@ -4026,25 +4039,6 @@ public class RotamerLibrary {
             logger.warning(String.format(" Exception in parsing rotamer patch "
                     + "file %s: %s", rpatchFile.getName(), ex.toString()));
             return false;
-        }
-    }
-
-    /**
-     * Will check for consistency of 5'-terminal Rotamers with original PDB
-     * coordinates. Not yet implemented; would have to store location of P in
-     * Residue, and I do not presently have time to make another addition to the
-     * overall algorithm.
-     *
-     * @param residue
-     * @param rotamer Rotamer to be checked for consistency with original XYZ.
-     * @param correctionThreshold Maximum allowable distance from P or H5T of
-     * rotamer's structure to P or H5T of original PDB file.
-     * @throws NACorrectionException If distance .GT.
-     * correctionThreshold.
-     */
-    private static void startingResidueConsistencyCheck(Residue residue, Rotamer rotamer, double correctionThreshold) throws NACorrectionException {
-        if (correctionThreshold > 0 && residue.getPreviousResidue() == null) {
-            // Not yet implemented.
         }
     }
 

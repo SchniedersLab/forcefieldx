@@ -194,6 +194,8 @@ int numParallel = 1;
 @Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
 @Field int threadsPer = threadsAvail;
 
+RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -743,7 +745,7 @@ void optStructure(MolecularAssembly mola, Potential pot) {
         for (Polymer p : mola.getChains()) {
             if (p.getChainID() == chainID) {
                 for (Residue r : p.getResidues()) {
-                    if (r.getResidueNumber() == resNum && r.getRotamers() != null) {
+                    if (r.getResidueNumber() == resNum && r.getRotamers(rLib) != null) {
                         resList.add(r);
                     }
                 }
@@ -766,8 +768,8 @@ void optStructure(MolecularAssembly mola, Potential pot) {
     ropt.setPrintFiles(false);
     def addedResList = ropt.setResiduesIgnoreNull(resList);
     
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-    RotamerLibrary.setUseOrigCoordsRotamer(false);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setUseOrigCoordsRotamer(false);
     RotamerLibrary.measureRotamers(resList, false);
     
     String oldLazyMat = System.getProperty("ro-lazyMatrix");

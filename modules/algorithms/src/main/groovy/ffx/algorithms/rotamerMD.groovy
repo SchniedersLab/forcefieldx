@@ -105,6 +105,7 @@ double printInterval = 0.01;
 double saveInterval = 10;
 boolean initVelocities = true;
 double temperature = 298.15;
+RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc rotamer.md [options] <filename>');
@@ -535,13 +536,13 @@ if (useEnergyRestart) {
     rotamerOptimization.setEnergyRestartFile(energyRestartFile);
 }
 if (library == 1) {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
 } else {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
 if (useOrigCoordsRotamer) {
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    rLib.setUseOrigCoordsRotamer(true);
 }
 
 if (algorithm != 5) {
@@ -555,7 +556,7 @@ if (algorithm != 5) {
             int nResidues = residues.size();
             for (int i=0; i<nResidues; i++) {
                 Residue residue = residues.get(i);
-                Rotamer[] rotamers = residue.getRotamers();
+                Rotamer[] rotamers = residue.getRotamers(rLib);
                 if (rotamers != null) {
                     int nrot = rotamers.length;
                     if (nrot == 1) {
@@ -590,7 +591,7 @@ if (algorithm != 5) {
         int nResidues = residues.size();
         for (int i=0; i<nResidues; i++) {
             Residue residue = residues.get(i);
-            Rotamer[] rotamers = residue.getRotamers();
+            Rotamer[] rotamers = residue.getRotamers(rLib);
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {
@@ -623,7 +624,7 @@ energy();
 RotamerLibrary.measureRotamers(residueList, false);
 
 if (decomposeOriginal && master) {
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    rLib.setUseOrigCoordsRotamer(true);
     if (options.x) {
         rotamerOptimization.decomposeOriginal();
     } else {

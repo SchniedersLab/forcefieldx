@@ -111,6 +111,7 @@ public class DiscountPh {
     private final Random rng = new Random();
     private int movesAccepted;
     private int snapshotIndex = 0;
+    private RotamerLibrary library;
     
     // Molecular Dynamics parameters
     private final double dt;
@@ -163,6 +164,7 @@ public class DiscountPh {
         this.esvSystem = new ExtendedSystem(mola);
         this.originalFilename = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath()) + "_dyn.pdb";
         SystemFilter.setVersioning(SystemFilter.Versioning.PREFIX_ABSOLUTE);
+        library = RotamerLibrary.getDefaultLibrary();
         
         // Print system props.
         logger.info(" Advanced option flags:");
@@ -175,8 +177,8 @@ public class DiscountPh {
                         key.toString(), System.getProperty(key.toString()))));
         
         // Set the rotamer library in case we do rotamer MC moves.
-        RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        RotamerLibrary.setUseOrigCoordsRotamer(false);
+        library.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+        library.setUseOrigCoordsRotamer(false);
 
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", pH));
@@ -213,8 +215,12 @@ public class DiscountPh {
                 totalSteps, totalSteps / titrationFrequency, movesAccepted));
     }
     
+    public void setRotamerLibrary(RotamerLibrary library) {
+        this.library = library;
+    }
+    
     private Stream<Residue> parallelResidueStream(MolecularAssembly mola) {
-        return Arrays.asList(mola.getChains()).stream()
+        return Arrays.stream(mola.getChains()).parallel()
                 .flatMap(poly -> ((Polymer) poly).getResidues().stream());
     }
     
@@ -504,7 +510,7 @@ public class DiscountPh {
 
             // Check whether rotamer moves are possible for the selected residue.
             Residue targetMultiActive = targetMulti.getActive();
-            Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers();
+            Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers(library);
             if (targetMultiRotamers != null && targetMultiRotamers.length > 1) {
                 // forceFieldEnergy.checkAtoms();
                 // boolean accepted = tryRotamerStep(targetMulti);
@@ -634,8 +640,7 @@ public class DiscountPh {
         AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
         Rotamer origCoordsRotamer = new Rotamer(aa, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
         // Select a new rotamer and swap to it.
-        //Rotamer rotamers[] = residue.getRotamers();
-        Rotamer[] rotamers = residue.getRotamers();
+        Rotamer[] rotamers = residue.getRotamers(library);
         int rotaRand = rng.nextInt(rotamers.length);
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
 

@@ -55,6 +55,7 @@ import ffx.potential.parameters.ForceField;
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
+import java.util.stream.Collectors;
 
 /**
  * The MultiResidue class allows switching between residues for uses such as
@@ -318,23 +319,23 @@ public class MultiResidue extends Residue {
     }
 
     @Override
-    public Rotamer[] getRotamers() {
+    public Rotamer[] getRotamers(RotamerLibrary library) {
         if (rotamers != null) {
             return rotamers;
         }
         
         List<Rotamer[]> usual = new ArrayList<>();
         int nRots = 0;
-
+        
         for (Residue residue : consideredResidues) {
-            Rotamer[] rotamers = RotamerLibrary.getRotamers(residue);
+            Rotamer[] rotamers = library.getRotamers(residue);
             if (rotamers != null && rotamers.length > 0) {
                 usual.add(rotamers);
                 nRots += rotamers.length;
             }
         }
 
-        if (RotamerLibrary.getUsingOrigCoordsRotamer()) {
+        if (library.getUsingOrigCoordsRotamer()) {
             if (originalRotamer == null && (residueType == ResidueType.AA
                     || residueType == ResidueType.NA)) {
                 ResidueState origState = storeState();

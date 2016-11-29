@@ -519,6 +519,10 @@ public class ForceField {
         }
         return key.toUpperCase().replace("-", "_");
     }
+    
+    public CompositeConfiguration getProperties() {
+        return properties;
+    }
 
     /**
      * <p>

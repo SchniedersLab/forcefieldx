@@ -399,10 +399,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 totalSquare += Math.pow(totalFreeEnergy, 2);
                 periodCount++;
                 if (periodCount == window - 1) {
-                    double average = totalAverage / window;
-                    double stdev = Math.sqrt((totalSquare - Math.pow(totalAverage, 2) / window) / window);
+                    lastAverage = totalAverage / window;
+                    //lastStdDev = Math.sqrt((totalSquare - Math.pow(totalAverage, 2) / window) / window);
+                    lastStdDev = Math.sqrt((totalSquare - (totalAverage * totalAverage)) / (window * window));
                     logger.info(String.format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.",
-                            average, stdev));
+                            lastAverage, lastStdDev));
                     totalAverage = 0;
                     totalSquare = 0;
                     periodCount = 0;

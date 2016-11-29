@@ -59,7 +59,10 @@ import groovy.util.CliBuilder;
 // FFX Imports
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction;
+
+// PJ Imports
 import edu.rit.pj.Comm
+// Java Imports
 import java.util.Scanner;
 
 // Things below this line normally do not need to be changed.
@@ -119,6 +122,8 @@ boolean video_skipEnergies = false;
 
 double largePairCutoff = 0.0;
 double largeTrimerCutoff = 0.0;
+
+RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc rotamer [options] <filename>');
@@ -569,13 +574,13 @@ rotamerOptimization.setBoxOrder(boxOrder);
 }*/
 
 if (library == 1) {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
 } else {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
 if (useOrigCoordsRotamer) {
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    rLib.setUseOrigCoordsRotamer(true);
 }
 
 if (algorithm != 5) {
@@ -589,7 +594,7 @@ if (algorithm != 5) {
             int nResidues = residues.size();
             for (int i=0; i<nResidues; i++) {
                 Residue residue = residues.get(i);
-                Rotamer[] rotamers = residue.getRotamers();
+                Rotamer[] rotamers = residue.getRotamers(rLib);
                 if (rotamers != null) {
                     int nrot = rotamers.length;
                     if (nrot == 1) {
@@ -621,7 +626,7 @@ if (algorithm != 5) {
                     for (Residue r : rs) {
                         if (r.getResidueNumber() == i) {
                             residueList.add(r);
-                            Rotamer[] rotamers = r.getRotamers();
+                            Rotamer[] rotamers = r.getRotamers(rLib);
                             if (rotamers != null) {
                                 n++;
                             }
@@ -657,7 +662,7 @@ if (algorithm != 5) {
             if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
                 continue;
             }
-            Rotamer[] rotamers = residue.getRotamers();
+            Rotamer[] rotamers = residue.getRotamers(rLib);
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {
@@ -739,7 +744,7 @@ energy();
 RotamerLibrary.measureRotamers(residueList, false);
 
 if (decomposeOriginal) {
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    rLib.setUseOrigCoordsRotamer(true);
     boolean doQuadsInParallel = true;
     if (options.lR) {
         rotamerOptimization.decomposeOriginal(residueList.toArray(new Residue[0]));
