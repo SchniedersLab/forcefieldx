@@ -519,6 +519,10 @@ public class ForceField {
         }
         return key.toUpperCase().replace("-", "_");
     }
+    
+    public CompositeConfiguration getProperties() {
+        return properties;
+    }
 
     /**
      * <p>
@@ -1424,6 +1428,7 @@ public class ForceField {
     public enum ForceFieldName {
 
         AMBER99SB,
+        AMBER99SB_TIP3F,
         AMOEBA_WATER,
         AMOEBA_WATER_2003,
         AMOEBA_WATER_2014,

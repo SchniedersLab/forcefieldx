@@ -77,6 +77,7 @@ double repackDistance = 7.0;
 boolean threeBodyRepack = true;
 boolean useEnergyRestart = false;
 int destRotamer = 0;
+RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -156,8 +157,8 @@ if (repack) {
     molecularAssembly.setPotential(forceFieldEnergy);
     
     // Do a sliding-window rotamer optimization on a single one-residue window with a radius-inclusion criterion.
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setUseOrigCoordsRotamer(true);
     
     RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
     rotamerOptimization.setThreeBodyEnergy(threeBodyRepack);
@@ -184,10 +185,10 @@ if (repack) {
 }
 
 if (options.R) {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
     Polymer polymer = molecularAssembly.getChain(chain.toString());
     Residue residue = polymer.getResidue(resID);
-    Rotamer[] rotamers = residue.getRotamers();
+    Rotamer[] rotamers = residue.getRotamers(rLib);
     RotamerLibrary.applyRotamer(residue, rotamers[destRotamer]);
 }
 

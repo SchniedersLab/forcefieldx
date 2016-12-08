@@ -75,6 +75,7 @@ cli.x(longOpt:'all', args:1, argName:'1', 'Optimize all residues in the system b
 int algorithm = 2;
 int library = 2;
 boolean threeBodyTerm = false;
+RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -119,11 +120,11 @@ open(filename);
 
 RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
 rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
-RotamerLibrary.setUseOrigCoordsRotamer(true);
+rLib.setUseOrigCoordsRotamer(true);
 if (library == 1) {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
 } else {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
 ArrayList<Residue> residueList = new ArrayList<>();
@@ -138,7 +139,7 @@ if (options.x) {
         int nResidues = residues.size();
         for (int i=0; i<nResidues; i++) {
             Residue residue = residues.get(i);
-            Rotamer[] rotamers = residue.getRotamers();
+            Rotamer[] rotamers = residue.getRotamers(rLib);
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {
@@ -164,7 +165,7 @@ if (options.x) {
                 for (Residue r : rs) {
                     if (r.getResidueNumber() == i) {
                         residueList.add(r);
-                        Rotamer[] rotamers = r.getRotamers();
+                        Rotamer[] rotamers = r.getRotamers(rLib);
                         if (rotamers != null && rotamers.size() > 1) {
                             n++;
                         }

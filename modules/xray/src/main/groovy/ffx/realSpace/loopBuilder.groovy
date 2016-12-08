@@ -147,6 +147,8 @@ boolean localMin = false;
 // Check if OSRW found any loop
 boolean loopBuildError = false;
 
+RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -715,13 +717,13 @@ if (runRotamer){
     rotamerOptimization = new RotamerOptimization(active, refinementEnergy, null);
 
     rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setUseOrigCoordsRotamer(true);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 
     //Rotamer Optimization inclusion list building (grab residues within 7A of the built loop)
     boolean expandList = true
     double expansionDistance = 7.0;
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    rLib.setUseOrigCoordsRotamer(true);
 
     if (expandList) {
         // Do a sliding-window rotamer optimization on loop window with a radius-inclusion criterion.

@@ -39,28 +39,32 @@
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;
 
-import java.util.Scanner;
+// ENERGY
+import ffx.potential.MolecularAssembly;
+import ffx.potential.ForceFieldEnergy;
+
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.ResidueEnumerations;
+import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
+import ffx.potential.bonded.Residue.ResidueType;
+import ffx.utilities.LoggerSevereError;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
 
-// Parallel Java
-import edu.rit.pj.Comm
-
 // FFX Imports
 import ffx.algorithms.RotamerOptimization;
 import ffx.algorithms.RotamerOptimization.Direction;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResidueType;
-import ffx.potential.bonded.ResidueEnumerations;
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
+
+// PJ Imports
+import edu.rit.pj.Comm
+// Java Imports
+import java.util.Scanner;
+
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceFile;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
@@ -117,15 +121,21 @@ int forceResiduesEnd = -1;
 double superpositionThreshold = 0.1;
 double singletonClashThreshold = 20.0;
 double pairClashThreshold = 50.0;
+boolean monteCarlo = false;
+int nMCsteps = 1000000;
 
 // prototype
 boolean video_writeVideo = false;
 boolean video_ignoreInactiveAtoms = false;
 boolean video_skipEnergies = false;
 
+double largePairCutoff = 0.0;
+double largeTrimerCutoff = 0.0;
+
+RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+
 // maximum number of refinement cycles
 int maxiter = 1000;
-
 // suffix to append to output data
 String suffix = "_rsrefine";
 
@@ -158,29 +168,12 @@ cli.bC(longOpt:'boxInclusionCriterion', args: 1, argName: '1', 'Criterion to use
 cli.fR(longOpt:'forceResidues', args: 1, argName: '-1,-1', 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.');
 cli.lR(longOpt:'listResidues', args: 1, argName: '-1', 'Choose a list of individual residues to optimize (eg. A11,A24,B40).');
 cli.vw(longOpt:'videoWriter', args: 0, 'Prototype video snapshot output; skips energy calculation.');
-cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of individual residues to sequence optimize.');
+cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of individual residues to sequence optimize (example: A2.A3.A5).');
 cli.tO(longOpt:'titrationOptimization', args:1, argName: '-1', 'Choose a list of individual residues to titrate (protonation state optimization).');
 cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
 cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
-/**
- * Now handled by system keys.
-// bD is used as a single string argument to allow for easier argument size checking.
-cli.bD(longOpt:'boxDimensions', args:1, argName:'buffer,xmin,xmax,ymin,ymax,zmin,zmax', 'If set, box optimization only uses supplied coordinates plus buffer.');
-cli.i(longOpt:'increment', args:1, argName:'3', 'Distance sliding window shifts with respect to adjacent residues');
-cli.d(longOpt:'direction', args:1, argName:'Forward', 'Direction of the sliding window or box optimization (boxes indexed by increasing Z,Y,X): [Forward / Backward]');
-cli.z(longOpt:'undo', args:1, argName:'false', 'Window optimizations that do not lower the energy are discarded.');
-cli.g(longOpt:'Goldstein', args:1, argName:'true', 'True to use Goldstein Criteria, False to use DEE');
-cli.pE(longOpt:'parallelEnergies', args: 1, argName:'true', 'Compute rotamer energies in parallel.');
-cli.sT(longOpt:'superpositionThreshold', args: 1, argName: '0.1', 'Sets the maximum atom-atom distance (Angstroms) which will cause a pair or triple energy to be defaulted to 1.0E100 kcal/mol.');
-cli.e(longOpt:'ensemble', args:1, argName:'1', 'Produce an ensemble of this many of the most favorable structures.');
-cli.eT(longOpt: 'ensembleTarget', args:1, argName:'0.0', 'Produces an ensemble of structures with energies between GMEC and GMEC + value (kcal/mol).');
-cli.b(longOpt:'buffer', args:1, argName:'0.0/5.0', 'Sets a starting energy buffer value for use with ensemble search.');
-cli.td(longOpt:'threeBodyCutoffDist', args:1, argName: '9.0', 'Angstrom distance beyond which three-body interactions will be truncated (-1 for no cutoff).');
-cli.pf(longOpt:'pruningFactor', args:1, argName: '1.0', 'Multiplier of pruning constraints for nucleic acids.');
-cli.sf(longOpt:'nucleicSinglesPruningFactor', args:1, argName: '1.5', 'Constant multiplier of singleton pruning constraint for nucleic acids');
-cli.sC(longOpt:'singletonClashThreshold', args: 1, argName: '20.0', 'Sets the threshold for singleton pruning.');
-cli.pC(longOpt:'pairClashThreshold', args: 1, argName: '50.0', 'Sets the threshold for pair pruning');
-*/
+cli.li(longOpt:'printLargeInteractions', args:2, valueSeparator: ',' as char, argName: '0.0,0.0', 'Prints a summary of pair and trimer absolute energies larger than [arg] kcal.')
+cli.mc(longOpt: 'monteCarlo', args:1, argName: '-1', 'If set, follow DEE with n Monte Carlo steps (if fewer permutations remaining, enumerates all remaining instead).');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -192,7 +185,7 @@ List<String> resList = new ArrayList<>();
 if (options.lR) {
     def tok = (options.lR).tokenize('.');
     for (String t : tok) {
-        logger.info("Adding " + t);
+        logger.info(" Adding " + t);
         resList.add(t);
     }
 }
@@ -204,8 +197,8 @@ if (options.sO) {
         logger.info(" Sequence optimizing " + t);
         sequenceOptimizationList.add(t);
     }
-    if (System.getProperty("RELATIVE_SOLVATION") == null) {
-        System.setProperty("RELATIVE_SOLVATION", "AUTO");
+    if (System.getProperty("relative-solvation") == null) {
+        System.setProperty("relative-solvation", "AUTO");
     }
 }
 
@@ -216,6 +209,11 @@ if (options.tO) {
         logger.info(" Protonation state optimizing " + t);
         titrationOptimizationList.add(t);
     }
+}
+
+if (options.li) {
+    largePairCutoff = Math.abs(Double.parseDouble(options.lis[0]));
+    largeTrimerCutoff = Math.abs(Double.parseDouble(options.lis[1]));
 }
 
 if (options.vw) {
@@ -237,6 +235,13 @@ if (options.e) {
 // Buffer.
 if (options.b) {
     buffer = Double.parseDouble(options.b);
+}
+
+if (options.mc) {
+    nMCsteps = Integer.parseInt(options.mc);
+    if (nMCsteps > 1) {
+        monteCarlo = true;
+    }
 }
 
 // Rotamer Library.
@@ -343,47 +348,6 @@ if (options.p) {
 
 // Read in command line.
 String filename = arguments.get(0);
-
-systems = open(filename);
-systems[0].getPotentialEnergy().setPrintOnFailure(false, false);
-
-// set up real space map data (can be multiple files)
-List mapFiles = new ArrayList();
-int nDiffractionData = 0;
-if (arguments.size() > 1) {
-    String dataFileName = arguments.get(1);
-    if (FilenameUtils.isExtension(dataFileName, "map")) {
-        RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, 1.0);
-        mapFiles.add(realspacefile);
-    } else {
-        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
-        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
-        diffractionData.scaleBulkFit();
-        diffractionData.printStats();
-        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
-        diffractionData.writeMaps(mapFileName);
-        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
-    }
-}
-
-if (options.dt) {
-    for (int i=0; i<options.dts.size(); i+=2) {
-	double wA = Double.parseDouble(options.dts[i+1]);
-        String dataFileName = options.dts[i];
-        if (FilenameUtils.isExtension(dataFileName, "map")) {
-            RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, wA);
-            mapFiles.add(realspacefile);
-        } else {
-            DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
-            DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
-            diffractionData.scaleBulkFit();
-            diffractionData.printStats();
-            String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
-            diffractionData.writeMaps(mapFileName);
-            mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", wA));
-        }
-    }
-}
 
 if (options.I) {
     maxiter = Integer.parseInt(options.I);
@@ -597,6 +561,46 @@ if (singletonNAPruningFactor < 0) {
 }
 */
 
+systems = open(filename);
+systems[0].getPotentialEnergy().setPrintOnFailure(false, false);
+
+// set up real space map data (can be multiple files)
+List mapFiles = new ArrayList();
+int nDiffractionData = 0;
+if (arguments.size() > 1) {
+    String dataFileName = arguments.get(1);
+    if (FilenameUtils.isExtension(dataFileName, "map")) {
+        RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, 1.0);
+        mapFiles.add(realspacefile);
+    } else {
+        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
+        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+        diffractionData.scaleBulkFit();
+        diffractionData.printStats();
+        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
+        diffractionData.writeMaps(mapFileName);
+        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
+    }
+}
+
+if (options.dt) {
+    for (int i=0; i<options.dts.size(); i+=2) {
+	double wA = Double.parseDouble(options.dts[i+1]);
+        String dataFileName = options.dts[i];
+        if (FilenameUtils.isExtension(dataFileName, "map")) {
+            RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, wA);
+            mapFiles.add(realspacefile);
+        } else {
+            DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
+            DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
+            diffractionData.scaleBulkFit();
+            diffractionData.printStats();
+            String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
+            diffractionData.writeMaps(mapFileName);
+            mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", wA));
+        }
+    }
+}
 if (mapFiles.size() == 0) {
     RealSpaceFile realspacefile = new RealSpaceFile(systems);
     mapFiles.add(realspacefile);
@@ -619,22 +623,6 @@ rotamerOptimization.setWindowSize(windowSize);
 rotamerOptimization.setDistanceCutoff(distance);
 rotamerOptimization.setNucleicCorrectionThreshold(nucleicCorrectionThreshold);
 rotamerOptimization.setMinimumNumberAcceptedNARotamers(minimumNumberAcceptedNARotamers);
-/**
- * Now handled by system keys.
-rotamerOptimization.setIncrement(increment);
-rotamerOptimization.setDirection(direction);
-rotamerOptimization.setRevert(revert);
-rotamerOptimization.setGoldstein(useGoldstein);
-rotamerOptimization.setEnsemble(ensemble, buffer);
-rotamerOptimization.setEnsembleTarget(ensembleTarget);
-rotamerOptimization.setThreeBodyCutoffDist(threeBodyCutoffDist);
-rotamerOptimization.setPruningFactor(pruningFactor);
-rotamerOptimization.setSingletonNAPruningFactor(singletonNAPruningFactor);
-rotamerOptimization.setSingletonClashThreshold(singletonClashThreshold);
-rotamerOptimization.setPairClashThreshold(pairClashThreshold);
-rotamerOptimization.setParallelEnergies(parallelEnergies);
-rotamerOptimization.setSuperpositionThreshold(superpositionThreshold);
-*/
 rotamerOptimization.setVerboseEnergies(verboseEnergies);
 rotamerOptimization.setBoxBorderSize(boxBorderSize);
 rotamerOptimization.setApproxBoxLength(approxBoxLength);
@@ -644,6 +632,10 @@ rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
 if (useEnergyRestart) {
     rotamerOptimization.setEnergyRestartFile(energyRestartFile);
 }
+if (monteCarlo) {
+    rotamerOptimization.setMonteCarlo(true, nMCsteps);
+}
+
 /*if (useBoxDimensions) {
     rotamerOptimization.setBoxDimensions(boxDimensions, superboxBuffer);
 }*/
@@ -659,13 +651,13 @@ rotamerOptimization.setBoxOrder(boxOrder);
 }*/
 
 if (library == 1) {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
 } else {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
 if (useOrigCoordsRotamer) {
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    rLib.setUseOrigCoordsRotamer(true);
 }
 
 if (algorithm != 5) {
@@ -679,15 +671,14 @@ if (algorithm != 5) {
             int nResidues = residues.size();
             for (int i=0; i<nResidues; i++) {
                 Residue residue = residues.get(i);
-                Rotamer[] rotamers = residue.getRotamers();
+                Rotamer[] rotamers = residue.getRotamers(rLib);
                 if (rotamers != null) {
                     int nrot = rotamers.length;
                     if (nrot == 1) {
                         RotamerLibrary.applyRotamer(residue, rotamers[0]);
-                    } else if (nrot > 1) {
-                        if (counter >= allStartResID) {
-                            residueList.add(residue);
-                        }
+                    }
+                    if (counter >= allStartResID) {
+                        residueList.add(residue);
                     }
                 } else if (options.fR) {
                     if (counter >= allStartResID && counter >= forceResiduesStart
@@ -712,8 +703,8 @@ if (algorithm != 5) {
                     for (Residue r : rs) {
                         if (r.getResidueNumber() == i) {
                             residueList.add(r);
-                            Rotamer[] rotamers = r.getRotamers();
-                            if (rotamers != null && rotamers.size() > 1) {
+                            Rotamer[] rotamers = r.getRotamers(rLib);
+                            if (rotamers != null) {
                                 n++;
                             }
                         }
@@ -748,7 +739,7 @@ if (algorithm != 5) {
             if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
                 continue;
             }
-            Rotamer[] rotamers = residue.getRotamers();
+            Rotamer[] rotamers = residue.getRotamers(rLib);
             if (rotamers != null) {
                 int nrot = rotamers.length;
                 if (nrot == 1) {
@@ -793,7 +784,8 @@ if (options.sO) {
                     }
                 }
                 multiRes.finalize();
-                multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
+                //multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
+                multiRes.setActiveResidue(res);
                 active.getPotentialEnergy().reInit();
                 residueList.remove(i);
                 residueList.add(i, multiRes);
@@ -833,9 +825,11 @@ energy();
 RotamerLibrary.measureRotamers(residueList, false);
 
 if (decomposeOriginal) {
-    RotamerLibrary.setUseOrigCoordsRotamer(true);
+    rLib.setUseOrigCoordsRotamer(true);
     boolean doQuadsInParallel = true;
-    if (!doQuadsInParallel) {
+    if (options.lR) {
+        rotamerOptimization.decomposeOriginal(residueList.toArray(new Residue[0]));
+    } else if (!doQuadsInParallel) {
         String quadsProp = System.getProperty("evalQuad");
         if (quadsProp != null && quadsProp.equalsIgnoreCase("true")) {
             Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
@@ -865,14 +859,20 @@ if (decomposeOriginal) {
             rotamerOptimization.decomposeOriginalQuads(quadsCutoff, numQuads);
         }
     } else if (options.x) {
+        Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
+        //rotamerOptimization.decomposeOriginal(residueArray);
         rotamerOptimization.decomposeOriginalParallel();
     } else {
         Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-        rotamerOptimization.decomposeOriginal(residueArray);
+        //rotamerOptimization.decomposeOriginal(residueArray);
+        rotamerOptimization.decomposeOriginalParallel();
     }
     if (master) {
         logger.info(String.format("\n"));
         energy();
+        if (largePairCutoff > 0.0 || largeTrimerCutoff > 0.0) {
+            rotamerOptimization.printLargeInteractions(largePairCutoff,largeTrimerCutoff,true);
+        }
     }
     return;
 }
@@ -895,6 +895,9 @@ if (master) {
     }
     logger.info(" Final Minimum Energy");
     energy();
+    if (largePairCutoff > 0.0 || largeTrimerCutoff > 0.0) {
+        rotamerOptimization.printLargeInteractions(largePairCutoff,largeTrimerCutoff,false);
+    }
     String ext = FilenameUtils.getExtension(filename);
     filename = FilenameUtils.removeExtension(filename);
     if (ext.toUpperCase().contains("XYZ")) {

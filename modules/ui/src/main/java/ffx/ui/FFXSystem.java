@@ -98,6 +98,7 @@ public class FFXSystem extends MolecularAssembly {
      * @return a {@link org.apache.commons.configuration.CompositeConfiguration}
      * object.
      */
+    @Override
     public CompositeConfiguration getProperties() {
         return properties;
     }
