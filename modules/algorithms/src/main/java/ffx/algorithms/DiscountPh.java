@@ -53,7 +53,6 @@ import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
-import ffx.algorithms.DiscountPh.Mode;
 import ffx.algorithms.mc.RosenbluthCBMC;
 import ffx.potential.AssemblyState;
 import ffx.potential.ForceFieldEnergy;
@@ -79,6 +78,8 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.SystemTemperatureException;
 
+import static ffx.potential.extended.ExtUtils.DebugHandler.VERBOSE;
+import static ffx.potential.extended.ExtUtils.DebugHandler.buglog;
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**
@@ -122,16 +123,15 @@ public class DiscountPh {
     private final File dynLoader;
     
     // Advanced Options
-    private final Mode mode = prop(Mode.class, "cphmd-mode", Mode.USE_CURRENT);
+    private final SeedMode mode;
     private final MCOverride mcOverride = prop(MCOverride.class, "cphmd-override", MCOverride.NONE);
     private final Snapshots snapshotType = prop(Snapshots.class, "cphmd-snapshotType", Snapshots.NONE);
     private final Histidine histidineMode = prop(Histidine.class, "cphmd-histidineMode", Histidine.SINGLE_HIE);
-    private final static int debugLogLevel = prop("cphmd-debugLog", 0);
     private final OptionalDouble referenceOverride = prop("cphmd-referenceOverride", null);
     private final double tempMonitor = prop("cphmd-tempMonitor", 6000.0);
-    private final boolean logTimings = prop("cphmd-logTimings");
-    private final boolean titrateTermini = prop("cphmd-termini");
-    private final boolean zeroReferences = prop("cphmd-zeroReferences");
+    private final boolean logTimings = prop("cphmd-logTimings", false);
+    private final boolean titrateTermini = prop("cphmd-termini", false);
+    private final boolean zeroReferences = prop("cphmd-zeroReferences", true);
     private final int snapshotVersioning = prop("cphmd-snapshotVers", 0);
     
     /**
@@ -145,7 +145,7 @@ public class DiscountPh {
      * @param thermostat the MD thermostat
      */
     // java.lang.Double, java.lang.Integer, java.lang.Integer, java.lang.Boolean, java.lang.String, java.lang.Integer, null)
-    DiscountPh(MolecularAssembly mola, MolecularDynamics molDyn, Mode mode, 
+    DiscountPh(MolecularAssembly mola, MolecularDynamics molDyn, SeedMode mode, 
             double timeStep, double printInterval, double saveInterval, 
             boolean initVelocities, String fileType, double writeRestartInterval, File dyn) {
         this.mola = mola;
@@ -157,6 +157,7 @@ public class DiscountPh {
         this.fileType = fileType;
         this.writeRestartInterval = writeRestartInterval;
         this.dynLoader = dyn;
+        this.mode = mode;
         
         this.ff = mola.getForceField();
         this.ffe = mola.getPotentialEnergy();
@@ -247,7 +248,7 @@ public class DiscountPh {
     private List<ExtendedVariable> createESVs(List<Residue> chosen) {
         for (Residue res : chosen) {
             MultiResidue titr = TitrationUtils.titrationFactory(mola, res);
-            TitrationESV esv = new TitrationESV(pH, titr, 1.0);
+            TitrationESV esv = new TitrationESV(pH, titr);
             esv.readyup();
             esvSystem.addVariable(esv);
             titratingESVs.add(esv);
@@ -498,7 +499,7 @@ public class DiscountPh {
         propagateInactiveResidues(titratingMultiResidues);
 
         // If rotamer moves have been requested, do that first (separately).
-        if (mode == Mode.RANDOM) {  // TODO Mode.RANDOM -> Two Modes
+        if (mode == SeedMode.RANDOMIZE) {  // TODO Mode.RANDOM -> Two Modes
             int random = rng.nextInt(titratingMultiResidues.size());
             MultiResidue targetMulti = titratingMultiResidues.get(random);
 
@@ -525,12 +526,12 @@ public class DiscountPh {
         writeSnapshot(".pre-store");
         
         // Assign starting titration lambdas.
-        if (mode == Mode.HALF_LAMBDA) {
+        if (mode == SeedMode.HALF_LAMBDA) {
             discountLogger.append(format("   Setting all ESVs to one-half...\n"));
             for (ExtendedVariable esv : esvSystem) {
                 esv.setLambda(0.5);
             }
-        } else if (mode == Mode.RANDOM) {
+        } else if (mode == SeedMode.RANDOMIZE) {
             discountLogger.append(format("   Setting all ESVs to [random]...\n"));
             for (ExtendedVariable esv : esvSystem) {
                 esv.setLambda(rng.nextDouble());
@@ -541,14 +542,12 @@ public class DiscountPh {
         }
 
         /*
-         * (1) Take current energy for criterion.
+         * (1) Take pre-move energy.
          * (2) Hook the ExtendedSystem up to MolecularDynamics.
-         * (3) Terminate the thread currently running MolDyn... if possible.
-         *          (if this execution dies, try chopping up nSteps from the setup)
-         * (3) Run these (now continuous-titration) dynamics for discountSteps steps, 
-         *          WITHOUT callbacks to mcUpdate().
-         * (4) Round continuous titratables to zero/unity.
-         * (5) Take energy and test criterion.
+         * (3) Launch dynamics for nSteps = Monte-Carlo Frequency.
+         * (4) Note that no callbacks to mcUpdate() occur during this period.
+         * (5) Floor/ceil to discretize hydrogen occupancies.
+         * (6) Take post-move energy and test on the combined Metropolis criterion.
          */
 
         final double eo = currentTotalEnergy();
@@ -568,7 +567,7 @@ public class DiscountPh {
         final double dGmc = en - eo;
                 
         final double temperature = molDyn.getThermostat().getCurrentTemperature();
-        double kT = ExtConstants.BOLTZMANN * temperature;
+        double kT = ExtConstants.Boltzmann * temperature;
         final double crit = exp(-dGmc / kT);
         final double rand = rng.nextDouble();
         logger.info(format("   Final energy:    %10.4g", en));
@@ -644,7 +643,7 @@ public class DiscountPh {
 
         // Check the MC criterion.
         double temperature = currentTemp();
-        double kT = ExtConstants.BOLTZMANN * temperature;
+        double kT = ExtConstants.Boltzmann * temperature;
         double postTotalEnergy = currentTotalEnergy();
         double dG_tot = postTotalEnergy - previousTotalEnergy;
         double criterion = exp(-dG_tot / kT);
@@ -746,7 +745,7 @@ public class DiscountPh {
         for (Atom a : multiRes.getInactive().get(0).getAtomList()) {
             sb.append(String.format("  %s\n", a));
         }
-        debug(1, sb.toString());
+        buglog(sb);
 
         return;
     }
@@ -784,7 +783,7 @@ public class DiscountPh {
                     Atom inactiveAtom = (Atom) inactive.getAtomNode(activeName);
 //                    debug(3, String.format(" inactiveAtom = %s", inactiveAtom));
                     if (inactiveAtom != null) {
-                        debug(4, String.format(" Propagating %s\n          to %s.", activeAtom, inactiveAtom));
+                        buglog(4, String.format(" Propagating %s\n          to %s.", activeAtom, inactiveAtom));
                         // Propagate position and gradient.
                         double activeXYZ[] = activeAtom.getXYZ(null);
                         inactiveAtom.setXYZ(activeXYZ);
@@ -801,7 +800,7 @@ public class DiscountPh {
                         double activePrevAcc[] = new double[3];
                         activeAtom.getPreviousAcceleration(activePrevAcc);
                         inactiveAtom.setPreviousAcceleration(activePrevAcc);
-                        debug(4, String.format("\n          to %s.", activeAtom, inactiveAtom));
+                        buglog(4, String.format("\n          to %s.", activeAtom, inactiveAtom));
                     } else {
                         if (activeName.equals("C") || activeName.equals("O") || activeName.equals("N") || activeName.equals("CA")
                                 || activeName.equals("H") || activeName.equals("HA")) {
@@ -825,8 +824,10 @@ public class DiscountPh {
             }
         }
 
-        // If inactive residue is a protonated form, move the stranded hydrogen to new coords (based on propagated heavies).
-        // Also give the stranded hydrogen a maxwell velocity and remove its accelerations.
+        /**
+         * If inactive residue is a protonated form, move the stranded hydrogen to new coords (based on propagated heavies).
+         * Also give the stranded hydrogen a maxwell velocity and remove its accelerations.
+         */
         for (MultiResidue multiRes : multiResidues) {
             Residue active = multiRes.getActive();
             List<Residue> inactives = multiRes.getInactive();
@@ -840,7 +841,7 @@ public class DiscountPh {
                         Atom HZ1 = (Atom) inactive.getAtomNode("HZ1");
                         BondedUtils.intxyz(HZ3, NZ, 1.02, CE, 109.5, HZ1, 109.5, -1);
                         resetMe = HZ3;
-                        debug(4, String.format(" Moved 'stranded' hydrogen %s.", HZ3));
+                        buglog(4, " Moved 'stranded' hydrogen %s.", HZ3);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HZ3 = buildHydrogen(inactive, "HZ3", NZ, 1.02, CE, 109.5, HZ1, 109.5, -1, k + 9, forceField, null);
                         break;
@@ -852,7 +853,7 @@ public class DiscountPh {
                         Atom OD1 = (Atom) inactive.getAtomNode("OD1");
                         BondedUtils.intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
                         resetMe = HD2;
-                        debug(4, String.format(" Moved 'stranded' hydrogen %s.", HD2));
+                        buglog(4, " Moved 'stranded' hydrogen %s.", HD2);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HD2 = buildHydrogen(residue, "HD2", OD2, 0.98, CG, 108.7, OD1, 0.0, 0, k + 5, forceField, bondList);
                         break;
@@ -864,7 +865,7 @@ public class DiscountPh {
                         Atom OE1 = (Atom) inactive.getAtomNode("OE1");
                         BondedUtils.intxyz(HE2, OE2, 0.98, CD, 108.7, OE1, 0.0, 0);
                         resetMe = HE2;
-                        debug(4, String.format(" Moved 'stranded' hydrogen %s.", HE2));
+                        buglog(4, " Moved 'stranded' hydrogen %s.", HE2);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HE2 = buildHydrogen(residue, "HE2", OE2, 0.98, CD, 108.7, OE1, 0.0, 0, k + 7, forceField, bondList);
                         break;
@@ -889,8 +890,8 @@ public class DiscountPh {
                         HD1.setVelocity(molDyn.getThermostat().maxwellIndividual(HD1.getMass()));
                         HD1.setAcceleration(new double[]{0, 0, 0});
                         HD1.setPreviousAcceleration(new double[]{0, 0, 0});
-                        debug(4, String.format(" Moved 'stranded' hydrogen %s.", HE2));
-                        debug(4, String.format(" Moved 'stranded' hydrogen %s.", HD1));
+                        buglog(4, " Moved 'stranded' hydrogen %s.", HE2);
+                        buglog(4, " Moved 'stranded' hydrogen %s.", HD1);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HE2 = buildHydrogen(residue, "HE2", NE2, 1.02, CD2, 126.0, CE1, 126.0, 1, k + 10, forceField, bondList);
                         // Atom HD1 = buildHydrogen(residue, "HD1", ND1, 1.02, CG, 126.0, CB, 0.0, 0, k + 4, forceField, bondList);
@@ -925,7 +926,7 @@ public class DiscountPh {
                         Atom CA = (Atom) inactive.getAtomNode("CA");
                         BondedUtils.intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
                         resetMe = HG;
-                        debug(4, String.format(" Moved 'stranded' hydrogen %s.", HG));
+                        buglog(4, " Moved 'stranded' hydrogen %s.", HG);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HG = buildHydrogen(residue, "HG", SG, 1.34, CB, 96.0, CA, 180.0, 0, k + 3, forceField, bondList);
                         break;
@@ -937,7 +938,7 @@ public class DiscountPh {
                         Atom CE2 = (Atom) inactive.getAtomNode("CE2");
                         BondedUtils.intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
                         resetMe = HH;
-                        debug(4, String.format(" Moved 'stranded' hydrogen %s.", HH));
+                        buglog(4, " Moved 'stranded' hydrogen %s.", HH);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HH = buildHydrogen(residue, "HH", OH, 0.97, CZ, 108.0, CE2, 0.0, 0, k + 9, forceField, bondList);
                         break;
@@ -954,16 +955,17 @@ public class DiscountPh {
         }
 
         // Print out atomic comparisons.
-        if (debugLogLevel >= 4) {
+        if (VERBOSE()) {
             for (MultiResidue multiRes : multiResidues) {
                 Residue active = multiRes.getActive();
                 List<Residue> inactives = multiRes.getInactive();
                 for (Atom activeAtom : active.getAtomList()) {
                     for (Residue inactive : inactives) {
                         Atom inactiveAtom = (Atom) inactive.getAtomNode(activeAtom.getName());
-                        StringBuilder sb = new StringBuilder();
-                        sb.append(String.format(" %s\n %s\n", activeAtom, inactiveAtom));
-                        debug(4, sb.toString());
+                        // TODO add check for null inactive
+                        /* TODO also loop the other way (for each inactive: active.getAtomNode(inactive.getName())
+                                to ensure that all atoms get treated? */
+                        buglog(4, " %s\n %s\n", activeAtom, inactiveAtom);
                     }
                 }
             }
@@ -1034,22 +1036,22 @@ public class DiscountPh {
      */
     public enum Titration {
 
-        Ctoc(8.18, -60.168, TitrationType.DEP, AminoAcid3.CYS, AminoAcid3.CYD),
+        Ctoc(8.18, -60.168, TitrationType.DEPT, AminoAcid3.CYS, AminoAcid3.CYD),
         ctoC(8.18, +60.168, TitrationType.PROT, AminoAcid3.CYD, AminoAcid3.CYS),
         Dtod(3.90, +53.188, TitrationType.PROT, AminoAcid3.ASP, AminoAcid3.ASH),
-        dtoD(3.90, -53.188, TitrationType.DEP, AminoAcid3.ASH, AminoAcid3.ASP),
+        dtoD(3.90, -53.188, TitrationType.DEPT, AminoAcid3.ASH, AminoAcid3.ASP),
         Etoe(4.25, +59.390, TitrationType.PROT, AminoAcid3.GLU, AminoAcid3.GLH),
-        etoE(4.25, -59.390, TitrationType.DEP, AminoAcid3.GLH, AminoAcid3.GLU),
-        Ktok(10.53, +50.440, TitrationType.DEP, AminoAcid3.LYS, AminoAcid3.LYD),    // new dG_elec: 48.6928
+        etoE(4.25, -59.390, TitrationType.DEPT, AminoAcid3.GLH, AminoAcid3.GLU),
+        Ktok(10.53, +50.440, TitrationType.DEPT, AminoAcid3.LYS, AminoAcid3.LYD),    // new dG_elec: 48.6928
         ktoK(10.53, -50.440, TitrationType.PROT, AminoAcid3.LYD, AminoAcid3.LYS),
-        Ytoy(10.07, -34.961, TitrationType.DEP, AminoAcid3.TYR, AminoAcid3.TYD),
+        Ytoy(10.07, -34.961, TitrationType.DEPT, AminoAcid3.TYR, AminoAcid3.TYD),
         ytoY(10.07, +34.961, TitrationType.PROT, AminoAcid3.TYD, AminoAcid3.TYR),
-        HtoU(6.00, +42.923, TitrationType.DEP, AminoAcid3.HIS, AminoAcid3.HID),
+        HtoU(6.00, +42.923, TitrationType.DEPT, AminoAcid3.HIS, AminoAcid3.HID),
         UtoH(6.00, -42.923, TitrationType.PROT, AminoAcid3.HID, AminoAcid3.HIS),
-        HtoZ(6.00, +00.000, TitrationType.DEP, AminoAcid3.HIS, AminoAcid3.HIE),
+        HtoZ(6.00, +00.000, TitrationType.DEPT, AminoAcid3.HIS, AminoAcid3.HIE),
         ZtoH(6.00, +00.000, TitrationType.PROT, AminoAcid3.HIE, AminoAcid3.HIS),
         
-        TerminusNH3toNH2 (8.23, +00.00, TitrationType.DEP, AminoAcid3.UNK, AminoAcid3.UNK),
+        TerminusNH3toNH2 (8.23, +00.00, TitrationType.DEPT, AminoAcid3.UNK, AminoAcid3.UNK),
         TerminusCOOtoCOOH(3.55, +00.00, TitrationType.PROT, AminoAcid3.UNK, AminoAcid3.UNK);
 
         public final double pKa, refEnergy;
@@ -1075,7 +1077,7 @@ public class DiscountPh {
     }
 
     private enum TitrationType {
-        PROT, DEP;
+        PROT, DEPT;
     }
 
     public enum Histidine {
@@ -1085,13 +1087,7 @@ public class DiscountPh {
     /**
      * Discount flavors differ in the way that they seed titration lambdas at the start of a move.
      */
-    public enum Mode {
-        USE_CURRENT, HALF_LAMBDA, RANDOM;
-    }
-    
-    private static void debug(int level, String message) {
-        if (debugLogLevel >= level) {
-            logger.info(message);
-        }
+    public enum SeedMode {
+        CURRENT_VALUES, HALF_LAMBDA, RANDOMIZE;
     }
 }
