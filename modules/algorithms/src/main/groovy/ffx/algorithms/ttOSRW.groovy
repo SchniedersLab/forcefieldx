@@ -194,7 +194,7 @@ int numParallel = 1;
 @Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
 @Field int threadsPer = threadsAvail;
 
-RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+@Field RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
