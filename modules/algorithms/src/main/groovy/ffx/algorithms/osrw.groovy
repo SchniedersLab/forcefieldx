@@ -503,8 +503,10 @@ if (arguments.size() >= 2) {
 if (!lambdaRestart.exists()) {
     if (lambda < 0.0 || lambda > 1.0) {
         if (size > 1) {
-            dL = 1.0 / (size - 1.0);
-            lambda = rank * dL;
+            //dL = 1.0 / (size - 1.0);
+            //lambda = rank * dL;
+            dL = 1.0 / (size + 1.0);
+            lambda = dL * (rank + 1);
             if (lambda > 1.0) {
                 lambda = 1.0;
             }
@@ -1013,7 +1015,7 @@ if (arguments.size() == 1) {
     QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB, uniqueA, uniqueB);
     if (numParallel >= 2) {
         qte.setParallel(true);
-        if (numParallel == 2) {
+        if (numParallel == 4) {
             dtA.setParallel(true);
             dtB.setParallel(true);
         }
