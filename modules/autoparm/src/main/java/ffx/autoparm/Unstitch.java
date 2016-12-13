@@ -35,7 +35,6 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-
 package ffx.autoparm;
 
 import java.io.BufferedReader;
@@ -347,19 +346,19 @@ public class Unstitch {
         //if (mol.getAtomCount() < SIZE) {
         if (fragContainer.getAtomCount() < SIZE) {
             //Builds 3D model of fragment molecule
-            /*System.out.println("mb3d for fragment" + number);
-             ModelBuilder3D mb3d;
-             mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
-             IAtomContainer molecule = null;
+            System.out.println("mb3d for fragment" + number);
+            ModelBuilder3D mb3d;
+            mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
+            IAtomContainer molecule = null;
 
-             String[] originalAtomTypeNames = new String[fragContainer.getAtomCount()];
-             for (int i = 0; i < originalAtomTypeNames.length; i++) {
-             originalAtomTypeNames[i] = fragContainer.getAtom(i).getAtomTypeName();
-             System.out.println("Atom "+(i+1)+" type: "+originalAtomTypeNames[i]);
-             }*/
+            String[] originalAtomTypeNames = new String[fragContainer.getAtomCount()];
+            for (int i = 0; i < originalAtomTypeNames.length; i++) {
+                originalAtomTypeNames[i] = fragContainer.getAtom(i).getAtomTypeName();
+                System.out.println("Atom " + (i + 1) + " type: " + originalAtomTypeNames[i]);
+            }
 
             //molecule = mb3d.generate3DCoordinates(mol, false);
-            //molecule = mb3d.generate3DCoordinates(fragContainer, false);
+            //molecule = mb3d.generate3DCoordinates(fragContainer, true);
             //"eaten" fragments checked for already
             //write output to SDF
             File fragsdf = writeSDF(fragContainer, number);
@@ -429,10 +428,10 @@ public class Unstitch {
                 IAtom test2 = iAtomContainer.getAtom(k);
                 printWriter.println(test2.getID());
             }
-        } catch(IOException e){
+        } catch (IOException e) {
             logger.warning(e.toString());
-        } finally{
-            if(printWriter != null){
+        } finally {
+            if (printWriter != null) {
                 printWriter.close();
             }
         }

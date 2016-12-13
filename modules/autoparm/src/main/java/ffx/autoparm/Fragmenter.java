@@ -163,7 +163,7 @@ public class Fragmenter {
                     for (int j = 0; j < molecule.getAtomCount(); j++) {
                         IAtom test2 = molecule.getAtom(j);
                        // System.out.println("atomType: " + test2.getAtomTypeName());
-                       // System.out.println("test2ID: " + test2.getID());
+                        // System.out.println("test2ID: " + test2.getID());
                     }
 
                     //Fragmentation call
@@ -303,14 +303,6 @@ public class Fragmenter {
             }
         }
 
-       /* System.out.println("Map: ");
-        for (int pc = 0; pc < mapfinal.length; pc++) {
-            for (int pc2 = 0; pc2 < mapfinal[pc].length; pc2++) {
-                System.out.print(mapfinal[pc][pc2] + "   ");
-            }
-            System.out.println();
-        }*/
-
     } //end "fragment" fragmenter
 
     //Convert SMILES strings to an object to be passed on to converter
@@ -406,9 +398,9 @@ public class Fragmenter {
             //writeSDF
             File fragsdf = writeSDF(molecule, number);
             //writeXYZ(molecule, number);
-            int fraglen = mol.getAtomCount();
-            int fulllen = full.getAtomCount();
-            map(fragsdf, number, fraglen, fulllen);
+            //int fraglen = mol.getAtomCount();
+            //int fulllen = full.getAtomCount();
+            //map(fragsdf, number, fraglen, fulllen);
 
             fragcounter++;
         }
@@ -416,6 +408,25 @@ public class Fragmenter {
     } //end "iAtomContainerTo3DModel" IAtomContainer to 3D model converter
 
     protected File writeSDF(IAtomContainer iAtomContainer, int n) throws Exception {
+
+        //AtomTypeMatcher for frag
+        try {
+            CDKAtomTypeMatcher matcher = CDKAtomTypeMatcher.getInstance(iAtomContainer.getBuilder());
+            for (IAtom atom : iAtomContainer.atoms()) {
+                IAtomType type = matcher.findMatchingAtomType(iAtomContainer, atom);
+                AtomTypeManipulator.configure(atom, type);
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+        // Add implicit hydrogens to fragments
+        try {
+            CDKHydrogenAdder fha = CDKHydrogenAdder.getInstance(iAtomContainer.getBuilder());
+            fha.addImplicitHydrogens(iAtomContainer);
+            AtomContainerManipulator.convertImplicitToExplicitHydrogens(iAtomContainer);
+        } catch (CDKException e) {
+            System.out.println(e);
+        }
 
         String fileBegin = "fragment";
         String fileEnd = Integer.toString(n);
@@ -988,7 +999,7 @@ public class Fragmenter {
 //murk.generateFragments(molecule);
 //System.out.println("MURCKO FRAGMENTS");
 //fArray = murk.getFragments();
-        //System.out.println(Arrays.toString(fArray));
+//System.out.println(Arrays.toString(fArray));
 //XYZ writer
 /*protected void writeXYZ(IAtomContainer sm, int n) throws Exception{
 
