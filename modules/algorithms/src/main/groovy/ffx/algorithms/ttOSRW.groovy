@@ -194,6 +194,8 @@ int numParallel = 1;
 @Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
 @Field int threadsPer = threadsAvail;
 
+@Field RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
@@ -506,8 +508,10 @@ if (arguments.size() >= 2) {
 if (!lambdaRestart.exists()) {
     if (lambda < 0.0 || lambda > 1.0) {
         if (size > 1) {
-            dL = 1.0 / (size - 1.0);
-            lambda = rank * dL;
+            //dL = 1.0 / (size - 1.0);
+            //lambda = rank * dL;
+            dL = 1.0 / (size + 1.0);
+            lambda = dL * (rank + 1);
             if (lambda > 1.0) {
                 lambda = 1.0;
             }
@@ -743,7 +747,7 @@ void optStructure(MolecularAssembly mola, Potential pot) {
         for (Polymer p : mola.getChains()) {
             if (p.getChainID() == chainID) {
                 for (Residue r : p.getResidues()) {
-                    if (r.getResidueNumber() == resNum && r.getRotamers() != null) {
+                    if (r.getResidueNumber() == resNum && r.getRotamers(rLib) != null) {
                         resList.add(r);
                     }
                 }
@@ -766,8 +770,8 @@ void optStructure(MolecularAssembly mola, Potential pot) {
     ropt.setPrintFiles(false);
     def addedResList = ropt.setResiduesIgnoreNull(resList);
     
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-    RotamerLibrary.setUseOrigCoordsRotamer(false);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setUseOrigCoordsRotamer(false);
     RotamerLibrary.measureRotamers(resList, false);
     
     String oldLazyMat = System.getProperty("ro-lazyMatrix");
@@ -1016,7 +1020,7 @@ if (arguments.size() == 1) {
     QuadTopologyEnergy qte = new QuadTopologyEnergy(dtA, dtB, uniqueA, uniqueB);
     if (numParallel >= 2) {
         qte.setParallel(true);
-        if (numParallel == 2) {
+        if (numParallel == 4) {
             dtA.setParallel(true);
             dtB.setParallel(true);
         }

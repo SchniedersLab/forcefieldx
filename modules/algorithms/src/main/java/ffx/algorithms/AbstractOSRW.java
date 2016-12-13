@@ -294,6 +294,8 @@ public abstract class AbstractOSRW implements Potential {
      * where the free energy has changed.
      */
     protected double previousFreeEnergy = 0.0;
+    protected double lastAverage = 0.0;
+    protected double lastStdDev = 0.0;
     
     /**
      * Equilibration counts
@@ -541,6 +543,18 @@ public abstract class AbstractOSRW implements Potential {
         }
         return -biasEnergy;
     }
+    
+    public double lastFreeEnergy() {
+        return totalFreeEnergy;
+    }
+    
+    public double movingAverageEnergy() {
+        return lastAverage;
+    }
+    
+    public double movingAverageSD() {
+        return lastStdDev;
+    }
 
     public void evaluatePMF() {
         StringBuffer sb = new StringBuffer();
@@ -680,6 +694,7 @@ public abstract class AbstractOSRW implements Potential {
     public double getOSRWOptimum(){
         return osrwOptimum;
     }
+    
     public double[] getLowEnergyLoop() {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;

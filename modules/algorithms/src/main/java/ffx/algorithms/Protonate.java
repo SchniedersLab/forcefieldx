@@ -212,6 +212,8 @@ public class Protonate implements MonteCarloListener {
     public enum Mode {
         DISCRETE, HALF_LAMBDA, RANDOM, USE_CURRENT;
     }
+    
+    private RotamerLibrary library;
 
     /**
      * Construct a Monte-Carlo protonation state switching mechanism.
@@ -282,8 +284,9 @@ public class Protonate implements MonteCarloListener {
 
         numMovesAccepted = 0;
         // Set the rotamer library in case we do rotamer MC moves.
-        RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        RotamerLibrary.setUseOrigCoordsRotamer(false);
+        library = RotamerLibrary.getDefaultLibrary();
+        library.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+        library.setUseOrigCoordsRotamer(false);
 
         this.mola = mola;
         this.ff = mola.getForceField();
@@ -687,7 +690,7 @@ public class Protonate implements MonteCarloListener {
 
             // Check whether rotamer moves are possible for the selected residue.
             Residue targetMultiActive = targetMulti.getActive();
-            Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers();
+            Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers(library);
             if (targetMultiRotamers == null || targetMultiRotamers.length <= 1) {
                 if (stepType == StepType.ROTAMER) {
                     return false;
@@ -744,7 +747,7 @@ public class Protonate implements MonteCarloListener {
 
                 // Check whether rotamer moves are possible for the selected residue.
                 Residue targetMultiActive = targetMulti.getActive();
-                Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers();
+                Rotamer[] targetMultiRotamers = targetMultiActive.getRotamers(library);
                 if (targetMultiRotamers != null && targetMultiRotamers.length > 1) {
                     // forceFieldEnergy.checkAtoms();
                     // boolean accepted = tryRotamerStep(targetMulti);
@@ -1155,8 +1158,7 @@ public class Protonate implements MonteCarloListener {
         AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
         Rotamer origCoordsRotamer = new Rotamer(aa, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
         // Select a new rotamer and swap to it.
-        //Rotamer rotamers[] = residue.getRotamers();
-        Rotamer[] rotamers = residue.getRotamers();
+        Rotamer[] rotamers = residue.getRotamers(library);
         int rotaRand = rng.nextInt(rotamers.length);
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
 
@@ -1241,8 +1243,7 @@ public class Protonate implements MonteCarloListener {
         Rotamer origCoordsRotamer = new Rotamer(aa, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
 
         // Swap to the new rotamer.
-        //Rotamer rotamers[] = residue.getRotamers();
-        Rotamer[] rotamers = residue.getRotamers();
+        Rotamer[] rotamers = residue.getRotamers(library);
         int rotaRand = rng.nextInt(rotamers.length);
         RotamerLibrary.applyRotamer(residue, rotamers[rotaRand]);
 

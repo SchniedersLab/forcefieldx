@@ -60,6 +60,7 @@ import ffx.potential.parameters.ForceField;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
+import java.util.stream.Collectors;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.
@@ -208,15 +209,29 @@ public class Residue extends MSGroup {
         assignResidueType();
         finalize(true, forceField);
     }
+    
+    /**
+     * Deprecated method to get this Residue's rotamers (should now pass in an
+     * instance of a RotamerLibrary, where previously RotamerLibrary was largely
+     * a static class).
+     * 
+     * @return Rotamers
+     */
+    @Deprecated
+    public Rotamer[] getRotamers() {
+        logger.warning(" Deprecated code path; use Residue.getRotamers(RotamerLibrary library) instead!");
+        return this.getRotamers(RotamerLibrary.getDefaultLibrary());
+    }
 
     /**
      * Gets the Rotamers for this residue, potentially incorporating the
      * original coordinates if RotamerLibrary's original coordinates rotamer
      * flag has been set.
      *
+     * @param library Rotamer library to use
      * @return An array of Rotamer.
      */
-    public Rotamer[] getRotamers() {
+    public Rotamer[] getRotamers(RotamerLibrary library) {
 
         /**
          * If the rotamers for this residue have been cached, return them.
@@ -228,7 +243,7 @@ public class Residue extends MSGroup {
         /**
          * Return rotamers for this residue from the RotamerLibrary.
          */
-        Rotamer[] libRotamers = RotamerLibrary.getRotamers(this);
+        Rotamer[] libRotamers = library.getRotamers(this);
         
         /**
          * If there are no rotamers, and addOrigRot is true, return an array with
@@ -269,7 +284,7 @@ public class Residue extends MSGroup {
             } else {
                 return libRotamers;
             }
-        } else if (!RotamerLibrary.getUsingOrigCoordsRotamer()) {
+        } else if (!library.getUsingOrigCoordsRotamer()) {
             return libRotamers;
         }
 

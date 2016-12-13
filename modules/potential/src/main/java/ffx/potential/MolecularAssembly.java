@@ -75,6 +75,8 @@ import com.sun.j3d.utils.picking.PickTool;
 import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import edu.rit.pj.ParallelTeam;
 
 import ffx.crystal.Crystal;
@@ -119,6 +121,7 @@ public class MolecularAssembly extends MSGroup {
     private File file;
     protected ForceField forceField;
     private ForceFieldEnergy potentialEnergy;
+    private CompositeConfiguration properties;
     private Vector3d offset;
     private int cycles = 1;
     private int currentCycle = 1;
@@ -176,6 +179,11 @@ public class MolecularAssembly extends MSGroup {
     public MolecularAssembly(String name, MSNode Polymers) {
         super(name, Polymers);
     }
+    
+    public MolecularAssembly(String name, MSNode Polymers, CompositeConfiguration properties) {
+        this(name, Polymers);
+        this.properties = properties;
+    }
 
     /**
      * <p>
@@ -185,6 +193,10 @@ public class MolecularAssembly extends MSGroup {
      */
     public void setForceField(ForceField forceField) {
         this.forceField = forceField;
+    }
+    
+    public void setPropertiesFromForceField() {
+        this.properties = forceField.getProperties();
     }
 
     /**
@@ -1002,6 +1014,10 @@ public class MolecularAssembly extends MSGroup {
      */
     public TransformGroup getOriginToRot() {
         return originToRot;
+    }
+    
+    public CompositeConfiguration getProperties() {
+        return properties == null ? forceField.getProperties() : properties;
     }
 
     /**

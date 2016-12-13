@@ -75,6 +75,7 @@ int finish = -1;
 int allStart = 0;
 // Will be checked for validity, and set false if invalid.
 boolean upstreamPucker = true;
+RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Residue number.
 if (options.r) {
@@ -144,12 +145,12 @@ if (residue == null) {
 }
 
 if (library == 1) {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
 } else {
-    RotamerLibrary.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+    rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
 }
 
-Rotamer[] rotamers = residue.getRotamers();
+Rotamer[] rotamers = residue.getRotamers(rLib);
 if (rotamers == null) {
     logger.severe(" There are no rotamers for residue + " + residue.toString());
 }
