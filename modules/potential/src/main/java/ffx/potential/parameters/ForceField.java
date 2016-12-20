@@ -1429,6 +1429,7 @@ public class ForceField {
 
         AMBER99SB,
         AMBER99SB_TIP3F,
+        AMBER99SB_TIP3AMOEBA,
         AMOEBA_WATER,
         AMOEBA_WATER_2003,
         AMOEBA_WATER_2014,
