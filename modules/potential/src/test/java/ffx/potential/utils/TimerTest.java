@@ -59,15 +59,14 @@ public class TimerTest {
          * Load the test system.
          */
         ClassLoader cl = this.getClass().getClassLoader();
-        structure = new File(cl.getResource("ffx/potential/structures/dhfr.xyz").getPath());
+        structure = new File(cl.getResource("ffx/potential/structures/ubiquitin.xyz").getPath());
         PotentialsUtils potentialUtils = new PotentialsUtils();
         molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
     }
 
     @Test
     public void testTimer() {
-        logger.info(String.format("\n N-Body Test: "));
-        int nEvals = 1;
+        int nEvals = 5;
         boolean gradient = true;
         boolean print = true;
 
