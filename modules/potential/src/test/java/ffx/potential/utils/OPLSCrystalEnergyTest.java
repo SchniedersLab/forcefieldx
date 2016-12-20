@@ -66,27 +66,6 @@ public class OPLSCrystalEnergyTest {
 
     private static final Logger logger = Logger.getLogger(OPLSCrystalEnergyTest.class.getName());
 
-    /*
-    Tests run: 5, Failures: 3, Errors: 0, Skipped: 0, Time elapsed: 1.234 sec <<< FAILURE! - in ffx.potential.utils.OPLSCrystalEnergyTest
-testEnergy[0](ffx.potential.utils.OPLSCrystalEnergyTest)  Time elapsed: 0.024 sec  <<< FAILURE!
-java.lang.AssertionError: OPLS Acetanilide Benchmark Permanent Multipole Count expected:<1469> but was:<2229>
-	at ffx.potential.utils.OPLSCrystalEnergyTest.testEnergy(OPLSCrystalEnergyTest.java:230)
-
-testEnergy[2](ffx.potential.utils.OPLSCrystalEnergyTest)  Time elapsed: 0.009 sec  <<< FAILURE!
-java.lang.AssertionError: OPLS Methylparaben Benchmark Permanent Multipole Energy expected:<-16.38121309> but was:<-16.384524645738537>
-	at ffx.potential.utils.OPLSCrystalEnergyTest.testEnergy(OPLSCrystalEnergyTest.java:228)
-
-testEnergy[4](ffx.potential.utils.OPLSCrystalEnergyTest)  Time elapsed: 0.01 sec  <<< FAILURE!
-java.lang.AssertionError: OPLS Phenacetin Benchmark Permanent Multipole Energy expected:<-31.56032495> but was:<-31.561832525438113>
-	at ffx.potential.utils.OPLSCrystalEnergyTest.testEnergy(OPLSCrystalEnergyTest.java:228)
-
-      OPLSCrystalEnergyTest.testEnergy:248 OPLS Methylparaben Benchmark Permanent Multipole Count expected:<1526> but was:<2302>
-  OPLSCrystalEnergyTest.testEnergy:248 OPLS Phenacetin Benchmark Permanent Multipole Count expected:<2118> but was:<3116>
-
-
-    */
-
-
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
@@ -158,7 +137,7 @@ java.lang.AssertionError: OPLS Phenacetin Benchmark Permanent Multipole Energy e
     private final double vanDerWaalsEnergy;
     private final double permanentEnergy;
     private final double tolerance = 1.0e-3;
-    private final double gradientTolerance = 1.0e-4;
+    private final double gradientTolerance = 1.0e-3;
     private final boolean ci;
     private final boolean ciOnly;
     private boolean mpoleTerm;

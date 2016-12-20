@@ -66,53 +66,6 @@ public class CrystalEnergyTest {
 
     private static final Logger logger = Logger.getLogger(CrystalEnergyTest.class.getName());
 
-    /*
-
-    Tests run: 5, Failures: 5, Errors: 0, Skipped: 0, Time elapsed: 3.667 sec <<< FAILURE! - in ffx.potential.utils.CrystalEnergyTest
-testEnergy[0](ffx.potential.utils.CrystalEnergyTest)  Time elapsed: 0.085 sec  <<< FAILURE!
-java.lang.AssertionError: Acetanilide Benchmark Permanent Multipole Energy expected:<-26.0732941> but was:<-26.0720131242538>
-	at ffx.potential.utils.CrystalEnergyTest.testEnergy(CrystalEnergyTest.java:304)
-
-testEnergy[1](ffx.potential.utils.CrystalEnergyTest)  Time elapsed: 0.082 sec  <<< FAILURE!
-java.lang.AssertionError: Ethylparaben Benchmark Permanent Multipole Energy expected:<-45.56554007> but was:<-45.55012417320137>
-	at ffx.potential.utils.CrystalEnergyTest.testEnergy(CrystalEnergyTest.java:304)
-
-testEnergy[2](ffx.potential.utils.CrystalEnergyTest)  Time elapsed: 0.058 sec  <<< FAILURE!
-java.lang.AssertionError: Methylparaben Benchmark Permanent Multipole Energy expected:<-26.55680786> but was:<-26.558577471708134>
-	at ffx.potential.utils.CrystalEnergyTest.testEnergy(CrystalEnergyTest.java:304)
-
-testEnergy[3](ffx.potential.utils.CrystalEnergyTest)  Time elapsed: 0.073 sec  <<< FAILURE!
-java.lang.AssertionError: Paracetamol Benchmark Permanent Multipole Energy expected:<-32.03804278> but was:<-32.02011297249507>
-	at ffx.potential.utils.CrystalEnergyTest.testEnergy(CrystalEnergyTest.java:304)
-
-testEnergy[4](ffx.potential.utils.CrystalEnergyTest)  Time elapsed: 0.069 sec  <<< FAILURE!
-java.lang.AssertionError: Phenacetin Benchmark Permanent Multipole Energy expected:<-25.42277465> but was:<-25.42173449818894>
-	at ffx.potential.utils.CrystalEnergyTest.testEnergy(CrystalEnergyTest.java:304)
-
-
-      CrystalEnergyTest.testEnergy:332 Acetanilide Benchmark Permanent Multipole Count expected:<1456> but was:<2231>
-  CrystalEnergyTest.testEnergy:332 Ethylparaben Benchmark Permanent Multipole Count expected:<3256> but was:<5012>
-  CrystalEnergyTest.<init>:276->testGradient:405      19-H (   3.11,   1.59,   3.48) expected:<0.0> but was:<1.053756330783205E-4>
-  CrystalEnergyTest.testEnergy:332 Paracetamol Benchmark Permanent Multipole Count expected:<1505> but was:<2357>
-  CrystalEnergyTest.testEnergy:332 Phenacetin Benchmark Permanent Multipole Count expected:<2115> but was:<3138>
-
-      CrystalEnergyTest.testEnergy:343 Acetanilide Benchmark Polarization Energy expected:<-1.97396298> but was:<-1.9856761645305012>
-  CrystalEnergyTest.testEnergy:343 Ethylparaben Benchmark Polarization Energy expected:<-3.96630319> but was:<-3.9707985867340034>
-  CrystalEnergyTest.testEnergy:340 Methylparaben Benchmark Permanent Multipole Count expected:<1538> but was:<2314>
-  CrystalEnergyTest.testEnergy:343 Paracetamol Benchmark Polarization Energy expected:<-4.92282076> but was:<-4.966499923878512>
-  CrystalEnergyTest.testEnergy:343 Phenacetin Benchmark Polarization Energy expected:<-2.07980993> but was:<-2.093854167861881>
-
-
-      CrystalEnergyTest.testEnergy:351 Acetanilide Benchmark Polarization Count expected:<1456> but was:<2231>
-  CrystalEnergyTest.testEnergy:351 Ethylparaben Benchmark Polarization Count expected:<3256> but was:<5012>
-  CrystalEnergyTest.testEnergy:351 Methylparaben Benchmark Polarization Count expected:<1538> but was:<2314>
-  CrystalEnergyTest.testEnergy:351 Paracetamol Benchmark Polarization Count expected:<1505> but was:<2357>
-  CrystalEnergyTest.testEnergy:351 Phenacetin Benchmark Polarization Count expected:<2115> but was:<3138>
-
-
-    */
-
-
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
