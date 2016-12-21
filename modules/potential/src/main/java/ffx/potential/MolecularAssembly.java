@@ -72,10 +72,9 @@ import javax.vecmath.Vector3d;
 
 import com.sun.j3d.utils.picking.PickTool;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
-
-import org.apache.commons.configuration.CompositeConfiguration;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -733,6 +732,7 @@ public class MolecularAssembly extends MSGroup {
             List<Atom> atomList = molecule.getAtomList();
             for (Atom atom : atomList) {
                 moleculeNumber[atom.xyzIndex - 1] = current;
+                atom.setMoleculeNumber(current);
             }
             current++;
         }

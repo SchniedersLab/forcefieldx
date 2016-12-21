@@ -179,7 +179,7 @@ public class Protonate implements MonteCarloListener {
     /**
      * True once the titratingResidues list is ready.
      */
-    private boolean finalized = false;
+    private boolean ready = false;
     /**
      * Debug mode: all reference energies set to zero.
      */
@@ -474,7 +474,7 @@ public class Protonate implements MonteCarloListener {
                 // Then some form of DISCOUNT.
                 double dt = (System.getProperty("cphmd-dt") == null) ? 1.0
                         : Double.parseDouble(System.getProperty("cphmd-dt"));
-                TitrationESV esv = new TitrationESV(pH, TitrationUtils.titrationFactory(mola, res), dt);
+                TitrationESV esv = new TitrationESV(TitrationUtils.titrationFactory(mola, res), pH, dt);
                 esv.readyup();
                 titratingESVs.add(esv);
                 titratingMultis.add(esv.getMultiRes());
@@ -489,7 +489,7 @@ public class Protonate implements MonteCarloListener {
             mola.getPotentialEnergy().attachExtendedSystem(esvSystem);
         }
 
-        finalized = true;
+        ready = true;
     }
 
     /**
@@ -500,7 +500,7 @@ public class Protonate implements MonteCarloListener {
      * @param multiRes
      */
     private void recursiveMap(Residue member, MultiResidue multiRes) {
-        if (finalized) {
+        if (ready) {
             logger.severe("Programming error: improper function call.");
         }
         // Map titrations for this member.
@@ -540,7 +540,7 @@ public class Protonate implements MonteCarloListener {
      * @return list of Titrations available for the given residue
      */
     private List<Titration> mapTitrations(Residue res, boolean store) {
-        if (finalized) {
+        if (ready) {
             logger.severe("Programming error: improper function call.");
         }
         if (store && titrationMap.containsKey(res)) {
@@ -634,7 +634,7 @@ public class Protonate implements MonteCarloListener {
     @Override
     public boolean mcUpdate(MolecularAssembly molAss) {
         startTime = System.nanoTime();
-        if (!finalized) {
+        if (!ready) {
             logger.severe("Monte-Carlo protonation engine was not finalized!");
         }
         if (thermostat.getCurrentTemperature() > temperatureMonitor) {

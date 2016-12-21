@@ -271,10 +271,8 @@ for (int i = 0; i < numESVs; i++) {
         logger.severe("Couldn't find target residue " + rlTokens[i]);
     }
     
-    TitrationESV esv = new TitrationESV(constPh, TitrationUtils.titrationFactory(mola, target.get()), temperature, dt);
-    esv.readyup();
+    TitrationESV esv = new TitrationESV(TitrationUtils.titrationFactory(mola, target.get()), constPh, biasMag);
     esvSystem.addVariable(esv);
-    esvList.add(esv);
 }
 
 logger.info("\n Running molecular dynmaics on " + modelfilename);

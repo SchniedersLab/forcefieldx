@@ -820,10 +820,10 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         if (multipoleType1 == null || multipoleType2 == null || multipoleFrameTypes != null) {
             return null;
         }
-        MultipoleFrameDefinition frameDefinition = multipoleType1.frameDefinition;
-        if (frameDefinition != multipoleType1.frameDefinition) {
+        if (multipoleType1.frameDefinition != multipoleType2.frameDefinition) {
             return null;
         }
+        MultipoleFrameDefinition frame = multipoleType1.frameDefinition;
         double charge = (multipoleType1.charge + multipoleType2.charge) / 2.0;
         double[] dipole = new double[3];
         double[][] quadrupole = new double[3][3];
@@ -833,7 +833,48 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
                 quadrupole[i][j] = (multipoleType1.quadrupole[i][j] + multipoleType2.quadrupole[i][j]) / 2.0;
             }
         }
-        return new MultipoleType(charge, dipole, quadrupole, multipoleFrameTypes, frameDefinition);
+        return new MultipoleType(charge, dipole, quadrupole, multipoleFrameTypes, frame);
+    }
+    
+    /**
+     * Create a new MultipoleType representing the weighted average of 
+     * @param types
+     * @param weights
+     * @param frameTypes
+     * @return 
+     */
+    public static MultipoleType scale(MultipoleType[] types, double[] weights, int[] frameTypes) {
+        if (types == null || weights == null || types.length != weights.length) {
+            throw new IllegalArgumentException();
+        }
+        MultipoleFrameDefinition frame = types[0].frameDefinition;
+        for (MultipoleType type : types) {
+            if (type.frameDefinition != frame) {
+                logger.severe("All frame definitions must match.");
+            }
+        }
+        double denominator = Arrays.stream(weights).sum();
+        if (denominator != 1.0) {
+            logger.warning("Input multipole weights did not sum to unity.");
+            for (int w = 0; w < weights.length; w++) {
+                weights[w] = weights[w] / denominator;
+            }
+        }
+        double weightedCharge = types[0].charge*weights[0];
+        double weightedDipole[] = new double[3];
+        double weightedQuadrupole[][] = new double[3][3];
+        for (int i = 0; i < types.length; i++) {
+            MultipoleType type = types[i];
+            double weight = weights[i];
+            weightedCharge += type.charge * weight;
+            for (int d = 0; d < 3; d++) {
+                weightedDipole[d] += type.dipole[d] * weight;
+                for (int q = 0; q < 3; q++) {
+                    weightedQuadrupole[d][q] += type.quadrupole[d][q] * weight;
+                }
+            }
+        }
+        return new MultipoleType(weightedCharge, weightedDipole, weightedQuadrupole, frameTypes, frame);
     }
 
     /**

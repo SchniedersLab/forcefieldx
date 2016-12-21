@@ -231,7 +231,7 @@ public class PotentialEnergyTest {
     private final double polarizationEnergy;
     private final double solvationEnergy;
     private final double tolerance = 1.0e-3;
-    private final double gradientTolerance = 1.0e-4;
+    private final double gradientTolerance = 1.0e-3;
     private final boolean ci;
     private final boolean ciOnly;
     private boolean mpoleTerm;
@@ -253,7 +253,7 @@ public class PotentialEnergyTest {
             double vanDerWaalsEnergy, int nVanDerWaals,
             double permanentEnergy, int nPermanent,
             double polarizationEnergy, int nPolar,
-            double solvationEnergy, int nSolv) {
+            double solvationEnergy, int nSolv) {        
         this.ciOnly = ciOnly;
         this.info = info;
         this.bondEnergy = bondEnergy;

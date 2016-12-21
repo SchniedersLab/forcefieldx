@@ -194,7 +194,7 @@ for (int i = 0; i < numESVs; i++) {
     }
     
     MultiResidue titrating = TitrationUtils.titrationFactory(mola, target.get());
-    TitrationESV esv = new TitrationESV(7.4, titrating, biasMag);
+    TitrationESV esv = new TitrationESV(titrating, 7.4, biasMag);
     esvSystem.addVariable(esv);
 }
 

@@ -448,7 +448,12 @@ public abstract class BondedTerm extends MSNode {
     @Override
     public abstract void update();
     
-    public void setEsvLambda(double esvLambda) {
-        this.esvLambda = esvLambda;
+    @Deprecated
+    public void setEsvLambda(double lambda) {
+        esvLambda = lambda;
+    }
+    @Deprecated
+    public double getEsvLambda() {
+        return esvLambda;
     }
 }

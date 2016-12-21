@@ -51,6 +51,7 @@ import static java.lang.String.format;
 import org.apache.commons.io.FilenameUtils;
 
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.random;
 
 import ffx.algorithms.mc.RosenbluthCBMC;
@@ -59,6 +60,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedUtils;
+import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.MultiTerminus;
 import ffx.potential.bonded.Polymer;
@@ -69,17 +71,22 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.extended.ExtConstants;
+import ffx.potential.extended.ExtUtils;
+import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
 import ffx.potential.extended.TitrationESV.TitrationUtils;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.SystemTemperatureException;
 
 import static ffx.potential.extended.ExtUtils.DebugHandler.VERBOSE;
 import static ffx.potential.extended.ExtUtils.DebugHandler.buglog;
+import static ffx.potential.extended.ExtUtils.formatArray;
+import static ffx.potential.extended.ExtUtils.logf;
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**
@@ -124,16 +131,20 @@ public class DiscountPh {
     private final File dynLoader;
     
     // Advanced Options
-    private final SeedMode mode;
+    private final SeedMode mode = prop(SeedMode.class, "cphmd-seedMode", SeedMode.CURRENT_VALUES);
     private final MCOverride mcOverride = prop(MCOverride.class, "cphmd-override", MCOverride.NONE);
     private final Snapshots snapshotType = prop(Snapshots.class, "cphmd-snapshotType", Snapshots.NONE);
     private final Histidine histidineMode = prop(Histidine.class, "cphmd-histidineMode", Histidine.SINGLE_HIE);
-    private final OptionalDouble referenceOverride = prop("cphmd-referenceOverride", null);
+    private final OptionalDouble referenceOverride = prop("cphmd-referenceOverride", OptionalDouble.empty());
     private final double tempMonitor = prop("cphmd-tempMonitor", 6000.0);
     private final boolean logTimings = prop("cphmd-logTimings", false);
     private final boolean titrateTermini = prop("cphmd-termini", false);
     private final boolean zeroReferences = prop("cphmd-zeroReferences", true);
     private final int snapshotVersioning = prop("cphmd-snapshotVers", 0);
+    
+    // Debug Only
+    private static final String keyPrefixes[] = new String[]{"cphmd", "esv", "md", "sys", "db", "sdl"};
+    private final boolean testInterpolation = prop("sdl-interp", false);
     
     /**
      * Construct a "Discrete-Continuous" Monte-Carlo titration engine.
@@ -146,10 +157,11 @@ public class DiscountPh {
      * @param thermostat the MD thermostat
      */
     // java.lang.Double, java.lang.Integer, java.lang.Integer, java.lang.Boolean, java.lang.String, java.lang.Integer, null)
-    DiscountPh(MolecularAssembly mola, MolecularDynamics molDyn, SeedMode mode, 
+    DiscountPh(MolecularAssembly mola, ExtendedSystem esvSystem, MolecularDynamics molDyn,
             double timeStep, double printInterval, double saveInterval, 
             boolean initVelocities, String fileType, double writeRestartInterval, File dyn) {
         this.mola = mola;
+        this.esvSystem = esvSystem;
         this.molDyn = molDyn;
         this.dt = timeStep;
         this.printInterval = printInterval;
@@ -158,34 +170,141 @@ public class DiscountPh {
         this.fileType = fileType;
         this.writeRestartInterval = writeRestartInterval;
         this.dynLoader = dyn;
-        this.mode = mode;
         
         this.ff = mola.getForceField();
         this.ffe = mola.getPotentialEnergy();
-        this.esvSystem = new ExtendedSystem(mola);
         this.originalFilename = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath()) + "_dyn.pdb";
         SystemFilter.setVersioning(SystemFilter.Versioning.PREFIX_ABSOLUTE);
         library = RotamerLibrary.getDefaultLibrary();
-        
+        ExtUtils.setLogSource(logger);
+
         // Print system props.
-        logger.info(" Advanced option flags:");
         System.getProperties().keySet().stream()
                 .filter(k -> {
                     String key = k.toString().toLowerCase();
-                    return key.startsWith("cphmd") || key.startsWith("md");
+                    for (String prefix : keyPrefixes) {
+                        if (key.startsWith(prefix)) {
+                            return true;
+                        }
+                    }
+                    return false;
                 })
-                .forEach(key -> logger.info(format(" #%s=%s\n", 
-                        key.toString(), System.getProperty(key.toString()))));
+                .forEach(key -> SB.logfn(" #%s=%s", 
+                        key.toString(), System.getProperty(key.toString())));
+        SB.printIfPresent(" Advanced option flags:");
+        
+        if (testInterpolation) {
+            testInterpolation();
+            System.exit(0);
+        }
         
         // Set the rotamer library in case we do rotamer MC moves.
         library.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
         library.setUseOrigCoordsRotamer(false);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", pH));
-        logger.info(sb.toString());
+        logf(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", pH);
 
         ffe.reInit();
+    }
+    
+    /**
+     * Bicubic Interpolation:
+     * p(x,y) = sumi(sumj(alphaij * x^i * y^j))
+     *  alpha =
+     *          0           0    3.0000   -2.0000
+     *          0           0         0         0
+     *          0      1.5000         0   -9.0000
+     *    -1.0000           0    6.0000   -4.0000
+     */
+    public void testInterpolation() {
+        // Take an energy to get all the types assigned.
+        currentTotalEnergy();
+        
+        logf(" Testing interpolation of Histidine: ");
+        Residue his = null, hie = null, hid = null;
+        List<Residue> resList = mola.getResidueList();
+        for (Residue res : resList) {
+            if (res.getAminoAcid3() == AminoAcid3.HIS) {
+                his = res;
+            } else if (res.getAminoAcid3() == AminoAcid3.HIE) {
+                hie = res;
+            } else if (res.getAminoAcid3() == AminoAcid3.HID) {
+                hid = res;
+            }
+        }
+        if (his == null || hie == null || hid == null) {
+            logger.severe("Please provide peptide.pdb instead.");
+        }
+        Atom hisNd = null, hidNd = null, hieNd = null;
+        for (Atom hisAtom : his.getAtomList()) {
+            Atom hidAtom = (Atom) hid.getAtomNode(hisAtom.getName());
+            Atom hieAtom = (Atom) hie.getAtomNode(hisAtom.getName());
+            if (hidAtom == null || hieAtom == null) {
+                logf(" No triplet for atom %s", hisAtom);
+            } else {
+                logf(" Triplet: %s %s %s\n", ((MSNode) hisAtom).getName(), ((MSNode) hidAtom).getName(), ((MSNode) hieAtom).getName());
+                if (((MSNode) hisAtom).getName().equalsIgnoreCase("ND1")) {
+                    hisNd = hisAtom;
+                    hidNd = hidAtom;
+                    hieNd = hieAtom;
+                    logf("  Found the Nd atoms!");
+                }
+            }
+        }
+        
+        /* Bicubic Interpolation:
+         * p(x,y) = sumi(sumj(alphaij * x^i * y^j)) where, 
+         *  from MATLAB, for input hie=0, hid=1, his=0.5:
+         *  alpha =
+         *          0           0    3.0000   -2.0000
+         *          0           0         0         0
+         *          0      1.5000         0   -9.0000
+         *    -1.0000           0    6.0000   -4.0000
+            */
+        SB.logf(" Bicubic Interpolation (0.0 0.5 1.0): \n");
+        double[][] alpha = new double[][]{{0, 0, 3, -2}, {0, 0, 0, 0}, {0, 1.5, 0, -9}, {-1, 0, 6, -4}};
+        double sum = 0.0;
+        for (double lp = 0.0; lp < 1.0; lp += 0.1) {
+            for (double lt = 0.0; lt < 1.0; lt += 0.1) {
+                double p = 0.0;
+                for (int i = 0; i <= 3; i++) {
+                    for (int j = 0; j <= 3; j++) {
+                        p += alpha[i][j] * pow(lp,i) * pow(lt,j);
+                    }
+                }
+//                SB.logf(" lp,lt,p: %.2f %.2f %g", lp, lt, p);
+                SB.logf(" %g", p);
+            }
+            SB.nl();
+        }
+        SB.nl();
+        SB.print();
+        
+        MultipoleType hisNdType = hisNd.getMultipoleType();
+        hisNd.getMultipoleType();
+        MultipoleType hieNdType = hieNd.getMultipoleType();
+        MultipoleType hidNdType = hidNd.getMultipoleType();
+        if (hisNdType == null) {
+            logger.severe("No multipole type for HIS.");
+        }
+        int[] frameAtomTypes = null;
+        
+        SB.logf(" Successive cubic interpolation (ND): \n");
+        for (double lt = 0.0; lt < 1.0; lt += 0.25) {
+            MultipoleType scaleTaut[] = new MultipoleType[]{hidNdType, hieNdType};
+            double weightTaut[] = new double[]{lt, 1.0 - lt};
+            MultipoleType tautType = MultipoleType.scale(scaleTaut, weightTaut, frameAtomTypes);
+            for (double lp = 0.0; lp < 1.0; lp += 0.25) {
+                MultipoleType scaleProt[] = new MultipoleType[]{hisNdType, tautType};
+                double weightProt[] = new double[]{lp, 1.0 - lp};
+                MultipoleType protType = MultipoleType.scale(scaleProt, weightProt, frameAtomTypes);
+                SB.logf(" lt,lp,finalType{c,d,q}: %.2f %.2f %g %s %s\n",
+                        lt, lp, protType.charge, formatArray(protType.dipole), formatArray(protType.quadrupole));
+            }
+        }
+        SB.print();
+        
+//            AtomType his0type = his.getAtomList().get(0).getMultipoleType().charge;
     }
     
     /**dynamic(totalSteps, pH, temperature, titrationFrequency, titrationDuration, rotamerMoveRatio);
@@ -202,18 +321,18 @@ public class DiscountPh {
         while (stepsTaken < totalSteps) {
             tryContinuousTitrationMove(titrationDuration, temperature);
             if (stepsTaken + titrationFrequency < totalSteps) {
-                logger.info(format(" Re-launching DISCOuNT-pH MD for %d steps.", titrationFrequency));
+                logf(" Re-launching DISCOuNT-pH MD for %d steps.", titrationFrequency);
                 molDyn.redynamic(titrationFrequency, temperature);
                 stepsTaken += titrationFrequency;
             } else {
-                logger.info(format(" Launching final run of DISCOuNT-pH MD for %d steps.", totalSteps - stepsTaken));
+                logf(" Launching final run of DISCOuNT-pH MD for %d steps.", totalSteps - stepsTaken);
                 molDyn.redynamic(totalSteps - stepsTaken, temperature);
                 stepsTaken = totalSteps;
                 break;
             }
         }
-        logger.info(format(" DISCOuNT-pH completed %d steps and %d moves, of which %d were accepted.", 
-                totalSteps, totalSteps / titrationFrequency, movesAccepted));
+        logf(" DISCOuNT-pH completed %d steps and %d moves, of which %d were accepted.", 
+                totalSteps, totalSteps / titrationFrequency, movesAccepted);
     }
     
     public void setRotamerLibrary(RotamerLibrary library) {
@@ -254,32 +373,12 @@ public class DiscountPh {
     private List<ExtendedVariable> createESVs(List<Residue> chosen) {
         for (Residue res : chosen) {
             MultiResidue titr = TitrationUtils.titrationFactory(mola, res);
-            TitrationESV esv = new TitrationESV(pH, titr);
+            TitrationESV esv = new TitrationESV(titr, pH);
             esv.readyup();
             esvSystem.addVariable(esv);
             titratingESVs.add(esv);
         }
         return titratingESVs;
-    }
-    
-    /**
-     * Selecting titrating residues by a list of names, i.e. "LYS,TYR,HIS" will get all K/k/Y/y/H/U/D.
-     * @param names 
-     */
-    public List<Residue> findTitrations(String names) {
-        List<Residue> chosen = new ArrayList<>();
-        String tok[] = names.split(",");
-        parallelResidueStream(mola)
-            .filter((Residue res) -> mapTitrations(res).stream()
-                .anyMatch((Titration titr) -> {
-                    return Arrays.stream(tok).anyMatch((String name) -> {
-                        return AminoAcid3.valueOf(name) == titr.source
-                                || AminoAcid3.valueOf(name) == titr.target;
-                    });
-                })
-            )
-            .forEach(chosen::add);
-        return chosen;
     }
 
     /**
@@ -287,33 +386,23 @@ public class DiscountPh {
      */
     public List<Residue> findTitrations(ArrayList<String> crIDs) {
         List<Residue> chosen = new ArrayList<>();
-        parallelResidueStream(mola)
-            .filter((Residue res) -> {
-                    return crIDs.stream().anyMatch((String crID) -> {
-                        Polymer p = findResiduePolymer(res,mola);
-                        return p.getChainID() == crID.charAt(0)
-                            && p.getResidues().stream().anyMatch((Residue or) -> 
-                                or.getResidueNumber() == Integer.parseInt(crID.substring(1)));
-                    });
-            })
-            .forEach(chosen::add);
-        return chosen;
-    }
-
-    /**
-     * Select one titration by chain and residue ID.
-     */
-    public List<Residue> findTitrations(char chain, int resID) {
-        List<Residue> chosen = new ArrayList<>();
-        Polymer polymers[] = mola.getChains();
-        for (Polymer polymer : polymers) {
-            if (polymer.getChainID() == chain) {
-                ArrayList<Residue> residues = polymer.getResidues();
-                for (Residue residue : residues) {
-                    if (residue.getResidueNumber() == resID) {
-                        chosen.add(residue);
+        List<Residue> allRes = mola.getResidueList();
+        for (String crID : crIDs) {
+            Character chain = crID.charAt(0);
+            int num = Integer.parseInt(crID.substring(1));
+            logf(" Looking for crID %c,%d.", chain, num);
+            boolean found = false;
+            for (Residue res : allRes) {
+                logf(" Checking residue %s,%c,%d...", 
+                        res, res.getChainID(), res.getResidueNumber());
+                if (res.getChainID().charValue() == chain) {
+                    if (res.getResidueNumber() == num) {
+                        chosen.add(res);
                     }
                 }
+            }
+            if (!found) {
+                logger.severe(format("DISCOUNT couldn't find residue for crID %c,%d.", chain, num));
             }
         }
         return chosen;
@@ -322,8 +411,16 @@ public class DiscountPh {
     /**
      * Must be called after all titratable residues have been chosen, but before
      * beginning MD.
+     * 
+     * @deprecated Handled better in groovy.
      */
+    @Deprecated
+    @SuppressWarnings("Unreachable")
     public void readyup() {
+        if (true) {
+            throw new UnsupportedOperationException();
+        }
+        
         // Create MultiTerminus objects to wrap termini.
         if (titrateTermini) {
             for (Residue res : mola.getResidueList()) {
@@ -339,16 +436,16 @@ public class DiscountPh {
         }
         // Create containers (MR or ESV) for titratables.
         for (Residue res : chosenResidues) {
-            // Then some form of DISCOUNT.
-            double dt = (System.getProperty("cphmd-dt") == null) ? 1.0 
-                    : Double.parseDouble(System.getProperty("cphmd-dt"));
-            TitrationESV esv = new TitrationESV(pH, TitrationUtils.titrationFactory(mola, res), dt);
+            TitrationESV esv = new TitrationESV(TitrationUtils.titrationFactory(mola, res), pH, dt);
             esv.readyup();
             titratingESVs.add(esv);
             titratingMultiResidues.add(esv.getMultiRes());
         }
         
         // Hook everything up to the ExtendedSystem.
+        if (titratingESVs.isEmpty()) {
+            logger.severe("DISCOUNT launched with empty titrating ESV list.");
+        }
         titratingESVs.forEach(esvSystem::addVariable);
         mola.getPotentialEnergy().attachExtendedSystem(esvSystem);
         
@@ -563,8 +660,8 @@ public class DiscountPh {
         molDyn.attachExtendedSystem(esvSystem);
         molDyn.setNotifyMonteCarlo(false);
         
-        logger.info(format(" Trying continuous titration move:"));
-        logger.info(format("   Starting energy: %10.4g", eo));        
+        logf(" Trying continuous titration move:");
+        logf("   Starting energy: %10.4g", eo);        
         molDyn.redynamic(titrationDuration, targetTemperature);
         logger.info(" Move finished; detaching extended system.");
         molDyn.detachExtendedSystem();
@@ -576,8 +673,8 @@ public class DiscountPh {
         double kT = ExtConstants.Boltzmann * temperature;
         final double crit = exp(-dGmc / kT);
         final double rand = rng.nextDouble();
-        logger.info(format("   Final energy:    %10.4g", en));
-        logger.info(format("   dG_mc,crit,rng:  %10.4g, %.4f, %.4f", dGmc, crit, rand));
+        logf("   Final energy:    %10.4g", en);
+        logf("   dG_mc,crit,rng:  %10.4g, %.4f, %.4f", dGmc, crit, rand);
         long took = System.nanoTime() - startTime;
         if (dGmc <= crit) {
             logger.info(" Move accepted!");
@@ -593,11 +690,6 @@ public class DiscountPh {
             writeSnapshot(".post-revert");
             return false;
         }
-    }
-    
-    private void log() {
-        logger.info(discountLogger.toString());
-        discountLogger = new StringBuilder();
     }
     
     private boolean tryCbmcMove(MultiResidue targetMulti) {

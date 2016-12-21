@@ -47,16 +47,18 @@ import groovy.util.CliBuilder;
 // Force Field X Imports
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.DiscountPh;
-import ffx.algorithms.DiscountPh.Mode;
 import ffx.algorithms.Protonate.DynamicsLauncher;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
+import ffx.potential.extended.TitrationESV.TitrationUtils;
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;
@@ -96,13 +98,8 @@ int rotamerMoveRatio = 0;
 // Simulation pH
 double pH = 7.4;
 
-// Single-residue titration option.
-Character chainID = ' ';
-int resID = -1;
-List<String> resList = new ArrayList<>();
-double window = 2.0;
-boolean titrateTermini = false;
-Mode mode = DiscountPh.Mode.USE_CURRENT;
+// Titrating residue list.
+List<String> rlTokens = new ArrayList<>();
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -128,7 +125,6 @@ cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.mc(longOpt:'titrationFrequency', args:1, argName:'100', 'Number of steps between Monte-Carlo proton attempts.')
 cli.mcd(longOpt:'titrationDuration', args:1, argName:'100', 'Number of steps for which to run continuous proton dynamics during MC move.');
 cli.mcr(longOpt:'rotamerMoveRatio', args:1, argName:'0', 'Number of steps between Monte-Carlo rotamer attempts.')
-cli.a(longOpt:'mode', args:1, argName:'useCurrent', 'Controls starting ESV lambda values: [random, halfLambda, useCurrent]');
 //cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
 def options = cli.parse(args);
 
@@ -136,32 +132,23 @@ if (options.h) {
     return cli.usage();
 }
 
-if (options.a) {
-    if ((options.a).equalsIgnoreCase("halfLambda")) {
-        mode = DiscountPh.Mode.HALF_LAMBDA;
-    } else if ((options.a).equalsIgnoreCase("useCurrent")) {
-        mode = DiscountPh.Mode.USE_CURRENT;
-    } else {
-        mode = DiscountPh.Mode.valueOf(options.a);
-    }
-}
-
-if (!options.pH) {
-    return cli.usage(" Must specify a solution pH.");
-}
-
-if (options.rl) {
+// Required Options
+if (!options.rl) {
+    logger.warning("Must list titrating residues (-rl).");
+    return;
+} else {
     def tok = (options.rl).tokenize('.');
     for (String t : tok) {
-        resList.add(t);
+        rlTokens.add(t);
     }
-} else {
-    return cli.usage(" Must specify residues, -rl.");
 }
 
-if (options.tt) {
-    titrateTermini = true;
-    System.setProperty("cphmd-termini","true");
+// Suggested Options
+if (!options.pH) {
+    logger.warning("No solution pH specified; 7.4 assumed.");
+    pH = 7.4;
+} else {
+    pH = Double.parseDouble(options.pH);
 }
 
 if (options.rw) {
@@ -178,10 +165,6 @@ if (options.mcd) {
 
 if (options.mcr) {
     rotamerMoveRatio = Integer.parseInt(options.mcr);
-}
-
-if (options.pH) {
-    pH = Double.parseDouble(options.pH);
 }
 
 // Load the number of molecular dynamics steps.
@@ -222,8 +205,6 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
-
-
 // Thermostat.
 if (options.b) {
     try {
@@ -251,11 +232,11 @@ System.setProperty("pme-qi","true");
 System.setProperty("polarization", "NONE");
 System.setProperty("ligand-vapor-elec","false");
 System.setProperty("no-ligand-condensed-scf","false");
-
 System.setProperty("mpoleterm","false");
+//System.setProperty("mpoleterm","true");
 
 /*  Available options:  Key                         Values (default first)
-    System.getProperty("cphmd-mode")                USE_CURRENT|RANDOM|HALF_LAMBDA
+    System.getProperty("cphmd-seedMode")            CURRENT_VALUES|RANDOM|HALF_LAMBDA
     System.getProperty("cphmd-override")            NONE|ACCEPT|REJECT
     System.getProperty("cphmd-snapshotsType")       SEPARATE|INTERLEAVED|NONE
     System.getProperty("cphmd-histidineMode")       HIE_ONLY|HID_ONLY|SINGLE|DOUBLE
@@ -287,34 +268,53 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
+// Create the ExtendedSystem.
 MolecularAssembly mola = (MolecularAssembly) active;
+ExtendedSystem esvSystem = new ExtendedSystem(mola);
+
+// Find the requested residues and create TitrationESVs from them.
+List<ExtendedVariable> esvList = new ArrayList<>();
+Polymer[] polymers = active.getChains();
+for (String token : rlTokens) {    
+    char chainID = token.charAt(0);
+    int resNum = Integer.parseInt(token.substring(1));    
+    Residue target = null;
+    for (Polymer p : polymers) {
+        char pid = p.getChainID().charValue();
+        if (pid == chainID) {
+            for (Residue res : p.getResidues()) {
+                if (res.getResidueNumber() == resNum) {
+                    target = res;
+                    break;
+                }
+            }
+            if (target != null) {
+                break;
+            }
+        }
+    }
+    if (target == null) {
+        logger.severe("Couldn't find target residue " + token);
+    }
+    
+    MultiResidue titrating = TitrationUtils.titrationFactory(mola, target);
+    TitrationESV esv = new TitrationESV(titrating, 7.4, biasMag);
+    esvSystem.addVariable(esv);
+}
+
+// Attach populated esvSystem to the potential.
+ForceFieldEnergy ffe = mola.getPotentialEnergy();
+ffe.attachExtendedSystem(esvSystem);
+
+// Create the MolecularDynamics.
 MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
-// create the Monte-Carlo listener and connect it to the MD
-DiscountPh cphmd = new DiscountPh(mola, molDyn, mode, dt, 
-    printInterval, saveInterval, initVelocities, 
+// Create the DISCOuNT object, linking it to the MD.
+DiscountPh cphmd = new DiscountPh(mola, esvSystem, molDyn,
+    dt, printInterval, saveInterval, initVelocities, 
     fileType, restartFrequency, dyn);
 
-// set residues to be titrated
-if (options.ra) {
-    cphmd.findTitrations();
-} else if (options.rl) {
-    cphmd.findTitrations(resList);
-} else if (options.rw) {
-    cphmd.findTitrations(pH, window);
-} else if (options.rn) {
-    cphmd.findTitrations(options.rn);
-}
-
-// finalize the ESV machinery and ready the MD (re-)launcher
-//Object[] opt = new Object[9];
-//opt[0] = new Integer(mcRunTime);    opt[1] = new Double(1.0);           opt[2] = new Double(1.0);
-//opt[3] = new Double(0.0);           opt[4] = new Double(temperature);   opt[5] = new Boolean(false);
-//opt[6] = fileType;                  opt[7] = new Double(0.0);           opt[8] = dyn;
-
-// launch
-cphmd.readyup();
-//mcProt.launch(molDyn, nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, fileType, restartFrequency);
+// Launch dynamics through the DISCOuNT controller.
 cphmd.dynamic(nSteps, pH, temperature, titrationFrequency, titrationDuration, rotamerMoveRatio);

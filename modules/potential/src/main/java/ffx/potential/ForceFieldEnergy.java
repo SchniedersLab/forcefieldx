@@ -244,8 +244,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     /*      Extended System Variables       */
     private ExtendedSystem esvSystem = null;
-    private final boolean pmeQI = prop("pme-qi");
-    private final boolean decomposeEsvEnergy = prop("esv-decompose");
+    private final boolean pmeQI = prop("pme-qi", false);
+    private final boolean decomposeEsvEnergy = prop("esv-decompose", false);
     /**
      * *************************************
      */
@@ -783,7 +783,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public void reInit() {
 
-        atoms = molecularAssembly.getAtomArray();
+        atoms = (esvTerm) ? esvSystem.getExtendedAtomArray() : molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
 
         if (xyz.length < 3 * nAtoms) {
@@ -1091,8 +1091,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nImproperTorsions = 0;
             improperTorsions = null;
         }
-
-        int molecule[] = molecularAssembly.getMoleculeNumbers();
+        
+        int[] molecule = (esvTerm) ? esvSystem.getExtendedMoleculeArray() : molecularAssembly.getMoleculeNumbers();
         if (vanderWaalsTerm) {
             vanderWaals.setAtoms(atoms, molecule);
         }
@@ -1555,12 +1555,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         
         if (esvTerm) {
-            sb.append(String.format("  %s %16.8f %12d    %s\n",
-                    "ExtendedSystemBias", esvBias, esvSystem.num(), esvSystem.getLambdaList()));
-            sb.append(String.format("      %s %16.8f\n", 
-                    "Discretization", esvSystem.getLatestDiscrBias()));
-            sb.append(String.format("      %s %16.8f\n", 
-                    "pH Electrostat", esvSystem.getLatestPhBias()));
+            sb.append(String.format("  %s %16.8f %12d     %s\n",
+                    "ExtendedSystemBias", esvBias, esvSystem.count(), esvSystem.getLambdaList()));
+            sb.append(esvSystem.getDecomposition());
         }
 
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
@@ -2364,7 +2361,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         return particleMeshEwald.getDispersionEnergy(false);
     }
 
-    public double getEsvEnergy() {
+    public double getEsvBiasEnergy() {
         return esvBias;
     }
 
@@ -2379,6 +2376,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * @return
      */
     public VanDerWaals getVdwNode() {
+        if (vanderWaals == null) {
+            logger.warning("FFE passed null VdW object.");
+        }
         return vanderWaals;
     }
 
@@ -2389,6 +2389,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      * @return
      */
     public ParticleMeshEwald getPmeNode() {
+        if (particleMeshEwald == null) {
+            logger.warning("FFE passed null PME object.");
+        }
         return particleMeshEwald;
     }
 

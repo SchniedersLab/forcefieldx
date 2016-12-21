@@ -210,7 +210,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * Persistent index parallel to xyzIndex.
      */
-    public static int indexer = 0;
+    public static int indexer = 1;
+    public final int persistentIndex;
     /**
      * PDB "resname" record.
      *
@@ -358,6 +359,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double globalQuadrupole[][] = null;
     private boolean applyState = false;
     private ExtendedVariable esv = null;
+    private int esvState = -1;
+    private int moleculeNumber = 0;
     // solvation
     private double bornRadius;
     // Connectivity information.
@@ -403,7 +406,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         currentCol = previousCol = RendererCache.toAtomColor(name);
         colorModel = ColorModel.CPK;
         redXYZ = null;
-        indexer++;
+        persistentIndex = indexer++;
         //this.atomSerial = atomSerialCount.getAndIncrement();
     }
 
@@ -897,17 +900,28 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.applyState = applyState;
     }
     
+    /**
+     * The (single) ExtendedVariable of which this atom is a part (or null otherwise).
+     */
     public ExtendedVariable getESV() {
         return esv;
     }
     
-    public void setESV(ExtendedVariable esv) {
-        if (this.esv != null && esv != this.esv) {
-            logger.warning(format("Mutiple ESVs for one atom is not currently supported.\n"
-                    + "    offending atom,ESVs: %s %s %s", 
-                    this.toString(), this.esv.toString(), esv.toString()));
+    public void setESV(ExtendedVariable set) {
+        if (esv != null && esv != set) {
+            logger.severe(format("Mutiple ESVs for one atom is not currently supported.\n"
+                               + "    offender: %s %s -> %s", 
+                    this.toString(), esv.toString(), set.toString()));
         }
-        this.esv = esv;
+        esv = set;
+    }
+    
+    public void setEsvState(int state) {
+        esvState = state;
+    }
+    
+    public int getEsvState() {
+        return esvState;
     }
 
     /**
@@ -2506,6 +2520,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.multipoleType = multipoleType;
         this.multipoleReferenceSites = multipoleReferenceSites;
     }
+    
+    public void setMoleculeNumber(int molecule) {
+        this.moleculeNumber = molecule;
+    }
+    
+    public int getMoleculeNumber() {
+        return moleculeNumber;
+    }
 
     /**
      * <p>
@@ -2646,6 +2668,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void setXYZIndex(int index) {
         xyzIndex = index;
+    }
+    
+    public void applyPersistentIndex() {
+        setXYZIndex(persistentIndex);
     }
 
     /**

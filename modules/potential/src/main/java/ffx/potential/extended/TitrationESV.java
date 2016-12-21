@@ -1,7 +1,6 @@
 package ffx.potential.extended;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -14,17 +13,14 @@ import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.BondedUtils;
-import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.extended.TitrationESV.TitrationUtils.Titr;
 import ffx.potential.parameters.ForceField;
-
-import static ffx.potential.extended.ExtUtils.printTreeFromNode;
 
 /**
  * An extended system variable that allows continuous fractional protonation of an amino acid.
@@ -44,132 +40,46 @@ public final class TitrationESV extends ExtendedVariable {
     
     // System handles
     private static final Logger logger = Logger.getLogger(TitrationESV.class.getName());
-    private final MultiResidue titrating;   // optimally, from TitrationUtils.titrationFactory()
     private final Titr titr;
-    private final double referenceEnergy;   // deprotonation free energy of a model tripeptide
-    private final MSNode termNode;          // modified to contain all applicable bonded terms
+    private final MultiResidue titrating;           // from TitrationUtils.titrationFactory()
+    private final double referenceEnergy;           // deprotonation free energy of a model tripeptide
     
-    // Handles on scaled terms
-    private Residue resOne, resZro;     // One*lamedh + Zero*(1-lamedh)
-    private List<Atom> atomsOne, atomsZro;     // just those that are changing with lamedh
-    private List<BondedTerm> bondedOne, bondedZro;
-    private static final List<String> backboneNames = Arrays.asList("N","CA","C","O","HA","H");
+    private final double constPh;                   // Simulation pH.
+    private final double pKaModel;                  // Reference pKa value.
+    private static final boolean HIEmode = false;   // Two-state or three-state treatment.
     
-    private static final boolean HIEmode = false;
-    private final double constPh;
-    private final double pKaModel;
-    
-    public TitrationESV(double constPh, MultiResidue titrating, double biasMag) {
-        super(biasMag, 1.0);
+    public TitrationESV(MultiResidue multiRes, double constPh, double biasMag) {
+        super(multiRes, biasMag, 1.0);
         this.constPh = constPh;
-        this.titrating = titrating;
-//        if (!titrating.isFinalized()) {
-//            logger.severe("Must finalize MultiResidues before creating of TitrationESVs.");
-//        }
+        this.titrating = multiRes;
         this.titr = TitrationUtils.titrationLookup(titrating.getActive());
         this.referenceEnergy = titr.refEnergy;
         this.pKaModel = titr.pKa;
-        
-        resOne = titrating.getActive();
-        termNode = resOne.getTerms();
-        resZro = titrating.getInactive().get(0);
     }
     
-    public TitrationESV(double constPh, MultiResidue titrating) {
-        this(constPh, titrating, 1.0);
+    public TitrationESV(MultiResidue titrating, double constPh) {
+        this(titrating, constPh, 1.0);
     }
     
     public MultiResidue getMultiRes() {
         return titrating;
     }
     
-    /**
-     * Fill the atoms array; set esvLambda in all bonded terms.
-     */
     @Override
-    public void readyup() {
-        atomsOne = new ArrayList<>();
-        atomsZro = new ArrayList<>();
-        // Fill the backbone list.
-        List<Atom> backboneAtoms = new ArrayList<>();
-        backboneNames.stream().forEach(name -> {
-            backboneAtoms.add((Atom) resOne.getAtomNode(name));
-        });
-        // Fill the atom lists.
-        resOne.getAtomList().stream().filter((Atom a) -> !backboneAtoms.contains(a)).forEachOrdered(atomsOne::add);
-        resZro.getAtomList().stream().filter((Atom a) -> !backboneAtoms.contains(a)).forEachOrdered(atomsZro::add);
-        resOne.getAtomList().stream().filter((Atom a) -> backboneNames.contains(a.getName().toUpperCase()))
-                .forEach(backbone::add);
-        
-        atoms.addAll(atomsOne);
-        atoms.addAll(atomsZro);
-        atoms.stream().forEach((Atom a) -> a.setESV(this));
-        
-        // Fill bonded term list and set all esvLambda values.
-        bondedOne = resOne.getDescendants(BondedTerm.class);
-        bondedZro = resZro.getDescendants(BondedTerm.class);
-        
-        printTreeFromNode(resOne);
-        printTreeFromNode(resZro);     
-        
-//        List<BondedTerm> termNodeBonded = termNode.getDescendants(BondedTerm.class);
-//        for (BondedTerm term : bondedOne) {
-//            if (!termNodeBonded.contains(term)) {
-//                termNode.add(term);
-//            }
-//        }
-//        for (BondedTerm term : bondedZro) {
-//            if (!termNodeBonded.contains(term)) {
-//                termNode.add(term);
-//            }
-//        }
-        
-        MSNode esvBondedInactive = new MSNode("ESV Bonded (1-L)");
-        List<BondedTerm> activeBTs = titrating.getActive().getTerms().getDescendants(BondedTerm.class);
-        for (Residue inactive : titrating.getInactive()) {
-            List<BondedTerm> inactiveBTs = inactive.getTerms().getDescendants(BondedTerm.class);
-            for (BondedTerm term : inactiveBTs) {
-                if (!activeBTs.contains(term)) {
-                    esvBondedInactive.add(term);
-                }
-            }
-        }
-        termNode.add(esvBondedInactive);
-        updateBondedLambdas();
-        
-        ready = true;
-        describe();
-    }
-
-    @Override
-    public void updateBondedLambdas() {
-        if (!scaleBondedTerms) {
-            return;
-        }
-        double lambda = getLambda();
-        bondedOne.stream().forEach((BondedTerm bt) -> bt.setEsvLambda(lambda));
-        bondedZro.stream().forEach((BondedTerm bt) -> bt.setEsvLambda(1.0 - lambda));
-    }
-    
-    @Override
-    public double totalBiasEnergy(double temperature, StringBuilder sb) {
+    public double totalBiasEnergy(double temperature) {
         double eDiscr = discretizationBiasEnergy();
         double ePh = phBiasEnergy(temperature);
-        if (sb != null) {
-            sb.append(format(" eDiscr %d: %g\n", index, eDiscr));
-            sb.append(format(" epH    %d: %g\n", index, ePh));
-        }
+        SB.logfn(" eDiscr %d: %g", index, eDiscr);
+        SB.logfn(" epH    %d: %g", index, ePh);
         return (eDiscr + ePh);
     }
     
     @Override
-    public double totalBiasDeriv(double temperature, StringBuilder sb) {
+    public double totalBiasDeriv(double temperature) {
         double dDiscr = discretizationBiasDeriv();
         double dPh = phBiasDeriv(temperature);
-        if (sb != null) {
-            sb.append(format("  Discr %d: %g\n", index, dDiscr));
-            sb.append(format("  pH    %d: %g\n", index, dPh));
-        }
+        SB.logfn("  Discr %d: %g", index, dDiscr);
+        SB.logfn("  pH    %d: %g", index, dPh);
         return (dDiscr + dPh);
     }
     
@@ -182,20 +92,20 @@ public final class TitrationESV extends ExtendedVariable {
      */
     public double phBiasEnergy(double temperature) {
         double lambda = getLambda();
-        double uph = ExtConstants.log10*ExtConstants.BOLTZMANN*temperature*(pKaModel - constPh)*lambda;
-        logger.log(Level.CONFIG, format(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g", 
-                ExtConstants.log10*ExtConstants.BOLTZMANN*temperature, 
-                pKaModel, constPh, lambda, uph));
+        double uph = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*lambda;
+//        buglog(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g", 
+//                ExtConstants.log10*ExtConstants.Boltzmann*temperature, 
+//                pKaModel, constPh, lambda, uph);
         double umod = referenceEnergy * lambda;     // TODO PRIO find PMFs for monomers/trimers/pentapeptides
 //        return uph + umod;
         return umod;
     }
     
     public double phBiasDeriv(double temperature) {
-        double duphdl = ExtConstants.log10*ExtConstants.BOLTZMANN*temperature*(pKaModel - constPh);
-        logger.log(Level.CONFIG, format(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g", 
-                ExtConstants.log10*ExtConstants.BOLTZMANN*temperature, 
-                pKaModel, constPh, duphdl));
+        double duphdl = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh);
+//        buglog(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g", 
+//                ExtConstants.log10*ExtConstants.Boltzmann*temperature, 
+//                pKaModel, constPh, duphdl);
         double dumoddl = referenceEnergy;
 //        return duphdl + dumoddl;
         return dumoddl;
@@ -203,27 +113,7 @@ public final class TitrationESV extends ExtendedVariable {
     
     @Override
     public String toString() {
-        return format("ESV%d-Titr", index);
-    }
-    
-    /**
-     * List all the atoms and bonded terms associated with each end state.
-     */
-    public void describe() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.toString() + format("\n"));
-        sb.append(format("    State 1: Atoms\n"));
-        atomsOne.stream().forEachOrdered(a -> sb.append(format("   %s\n", a)));
-        sb.append(format("    State 1: Bonded Terms\n"));
-        sb.append(format("      %s\n", resOne.getTerms().toString()));
-        resOne.getTerms().getChildList().stream().filter(n -> !n.getName().startsWith("Valence Terms"))
-                .forEachOrdered(bt -> sb.append( format("      %s\n", bt)));
-        sb.append(format("    State 0: Atoms\n"));
-        atomsZro.stream().forEachOrdered(a -> sb.append(format("   %s\n", a)));
-        sb.append(format("    State 0: Bonded Terms\n"));
-        resZro.getTerms().getChildList().stream().filter(n -> !n.getName().startsWith("Valence Terms"))
-                .forEachOrdered(bt -> sb.append( format("      %s\n", bt)));
-        logger.info(sb.toString());
+        return format(" ESV%d-Titr", index);
     }
 
     /**
@@ -252,11 +142,9 @@ public final class TitrationESV extends ExtendedVariable {
             multiRes.addResidue(newRes);
             multiRes.setActiveResidue(res);
             setMultiResXYZIndices(mola, multiRes);
-            propagateInactiveResidues(multiRes);
-            multiRes.finalize(false, ff);
+            propagateInactiveResidues(multiRes, false);
             ffe.reInit();
             multiRes.getActive().getBondList();
-            logger.info(String.format(" Added Ldh-coupled titrating group: %s", res));
             return multiRes;
         }
         
@@ -301,7 +189,7 @@ public final class TitrationESV extends ExtendedVariable {
          * counterparts. Inactive hydrogen coordinates are updated by geometry
          * with the propagated heavies.
          */
-        private static void propagateInactiveResidues(MultiResidue multiRes) {
+        private static void propagateInactiveResidues(MultiResidue multiRes, boolean propagateDynamics) {
             // Propagate all atom coordinates from active residues to their inactive counterparts.
             Residue active = multiRes.getActive();
             String activeResName = active.getName();
@@ -317,40 +205,101 @@ public final class TitrationESV extends ExtendedVariable {
                         double grad[] = new double[3];
                         activeAtom.getXYZGradient(grad);
                         inactiveAtom.setXYZGradient(grad[0], grad[1], grad[2]);
-                        // Propagate velocity, acceleration, and previous acceleration.
-                        double activeVelocity[] = new double[3];
-                        activeAtom.getVelocity(activeVelocity);
-                        inactiveAtom.setVelocity(activeVelocity);
-                        double activeAccel[] = new double[3];
-                        activeAtom.getAcceleration(activeAccel);
-                        inactiveAtom.setAcceleration(activeAccel);
-                        double activePrevAcc[] = new double[3];
-                        activeAtom.getPreviousAcceleration(activePrevAcc);
-                        inactiveAtom.setPreviousAcceleration(activePrevAcc);
+                        if (propagateDynamics) {
+                            // Propagate velocity, acceleration, and previous acceleration.
+                            double activeVelocity[] = new double[3];
+                            activeAtom.getVelocity(activeVelocity);
+                            inactiveAtom.setVelocity(activeVelocity);
+                            double activeAccel[] = new double[3];
+                            activeAtom.getAcceleration(activeAccel);
+                            inactiveAtom.setAcceleration(activeAccel);
+                            double activePrevAcc[] = new double[3];
+                            activeAtom.getPreviousAcceleration(activePrevAcc);
+                            inactiveAtom.setPreviousAcceleration(activePrevAcc);
+                        }
                     } else {
                         if (activeName.equals("C") || activeName.equals("O") || activeName.equals("N") || activeName.equals("CA")
                                 || activeName.equals("H") || activeName.equals("HA")) {
                             // Backbone atoms aren't supposed to exist in inactive multiResidue components; so no problem.
-                        } else if ((activeResName.equals("LYS") && activeName.equals("HZ3"))
+                        } else if (isTitratableHydrogen(activeAtom)) {
+                            /** i.e.
+                                  ((activeResName.equals("LYS") && activeName.equals("HZ3"))
                                 || (activeResName.equals("TYR") && activeName.equals("HH"))
                                 || (activeResName.equals("CYS") && activeName.equals("HG"))
                                 || (activeResName.equals("HIS") && (activeName.equals("HD1") || activeName.equals("HE2")))
                                 || (activeResName.equals("HID") && activeName.equals("HD1"))
                                 || (activeResName.equals("HIE") && activeName.equals("HE2"))
                                 || (activeResName.equals("ASH") && activeName.equals("HD2"))
-                                || (activeResName.equals("GLH") && activeName.equals("HE2"))) {
+                                || (activeResName.equals("GLH") && activeName.equals("HE2")))   */
                             // These titratable protons are handled below; so no problem.
                         } else {
                             // Now we have a problem.
-                            logger.warning(String.format("Couldn't copy atom_xyz: %s: %s, %s",
+                            logger.warning(String.format("Couldn't propagate inactive MultiResidue atom: %s: %s, %s",
                                     multiRes, activeName, activeAtom.toString()));
                         }
                     }
                 }
             }
 
+            rebuildStrandedProtons(multiRes);
+        }
+    
+        public static boolean isTitratableHydrogen(Atom atom) {
+            String name = atom.getName();
+            switch (atom.getResidueName()) {
+                case "LYS":
+                    if (name.equals("HZ3")) {
+                        return true;
+                    }
+                    break;
+                case "TYR":
+                    if (name.equals("HH")) {
+                        return true;
+                    }
+                    break;
+                case "CYS":
+                    if (name.equals("HG")) {
+                        return true;
+                    }
+                    break;
+                case "HIS":
+                    if (name.equals("HD1") || name.equals("HE2")) {
+                        return true;
+                    }
+                    break;
+                case "HID":
+                    if (name.equals("HD1")) {
+                        return true;
+                    }
+                    break;
+                case "HIE":
+                    if (name.equals("HE2")) {
+                        return true;
+                    }
+                    break;
+                case "ASH":
+                    if (name.equals("HD2")) {
+                        return true;
+                    }
+                    break;
+                case "GLH":
+                    if (name.equals("HE2")) {
+                        return true;
+                    }
+                    break;
+            }
+            return false;
+        }
+        
+        /**
+         * Rebuild stranded titratable protons from ideal geometry.
+         * "Stranded protons" are titrating H+ atoms on inactive MultiRes members; when 
+         * propagating new coordinates to inactive residues, no coords/velocity exist for them.
+         */
+        private static void rebuildStrandedProtons(MultiResidue multiRes) {
             // If inactive residue is a protonated form, move the stranded hydrogen to new coords (based on propagated heavies).
             // Also give the stranded hydrogen a maxwell velocity and remove its accelerations.
+            List<Residue> inactives = multiRes.getInactive();
             for (Residue inactive : inactives) {
                 List<Atom> resetMe = new ArrayList<>();
                 switch (inactive.getName()) {
@@ -442,7 +391,7 @@ public final class TitrationESV extends ExtendedVariable {
                 }
             }
         }
-    
+        
         /**
          * All described as protonation reactions.
          */

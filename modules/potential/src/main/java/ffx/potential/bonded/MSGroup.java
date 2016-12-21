@@ -702,6 +702,16 @@ public abstract class MSGroup extends MSNode {
         }
         return null;
     }
+    
+    public Atom getNodeAsAtom(String n) {
+        ArrayList<MSNode> list = getAtomNodeList();
+        for (MSNode msNode : list) {
+            if (msNode.getName().compareTo(n) == 0) {
+                return (Atom) msNode;
+            }
+        }
+        return null;
+    }
 
     /**
      * Returns an ArrayList of the AtomNode's children.

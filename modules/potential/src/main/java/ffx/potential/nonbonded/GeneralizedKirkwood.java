@@ -39,12 +39,12 @@ package ffx.potential.nonbonded;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.HashSet;
-import java.util.Set;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -1053,20 +1053,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
     
     public static NonPolar getNonPolarModel(String nonpolarModel) {
-        switch (nonpolarModel) {
-            case "CAV":
-                return NonPolar.CAV;
-            case "CAV_DISP":
-                return NonPolar.CAV_DISP;
-            case "HYDROPHOBIC_PMF":
-                return NonPolar.HYDROPHOBIC_PMF;
-            case "BORN_SOLV":
-                return NonPolar.BORN_SOLV;
-            case "BORN_CAV_DISP":
-                return NonPolar.BORN_CAV_DISP;
-            case "NONE":
-            default:
-                return NonPolar.NONE;
+        try {
+            return NonPolar.valueOf(nonpolarModel);
+        } catch (IllegalArgumentException ex) {
+            logger.warning("Unrecognized nonpolar model requested; defaulting to NONE.");
+            return NonPolar.NONE;
         }
     }
 
