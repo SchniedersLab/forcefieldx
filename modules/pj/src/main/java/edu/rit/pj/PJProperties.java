@@ -218,6 +218,8 @@ public class PJProperties {
             }
             if (k < 1) {
                 throw new IllegalArgumentException("pj.nt system property is not an integer >= 1");
+            } else {
+                System.setProperty("java.util.concurrent.ForkJoinPool.common.parallelism", pj_nt);
             }
         }
         return k;

@@ -52,10 +52,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
+import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.fill;
 
@@ -218,16 +219,16 @@ public class RotamerOptimization implements Terminatable {
      * The potential energy of the system with all side-chains to be optimized
      * turned off.
      */
-    private double backboneEnergy;
+    protected double backboneEnergy;
     /**
      * Self-energy of each residue for each rotamer. [residue][rotamer]
      */
-    private double selfEnergy[][];
+    protected double selfEnergy[][];
     /**
      * Pair-energies for each pair of residue and pair of rotamers.
      * [residue1][rotamer1][residue2][rotamer2]
      */
-    private double twoBodyEnergy[][][][];
+    protected double twoBodyEnergy[][][][];
     /**
      * The minimum distance between atoms of a residue pair, taking into account
      * interactions with symmetry mates.
@@ -244,15 +245,15 @@ public class RotamerOptimization implements Terminatable {
      * Trimer-energies for each trimer of rotamers.
      * [residue1][rotamer1][residue2][rotamer2][residue3][rotamer3]
      */
-    private double threeBodyEnergy[][][][][][];
+    protected double threeBodyEnergy[][][][][][];
     /**
      * Flag to prune clashes.
      */
-    private boolean pruneClashes = true;
+    protected boolean pruneClashes = true;
     /**
      * Flag to prune pair clashes.
      */
-    private boolean prunePairClashes = true;
+    protected boolean prunePairClashes = true;
     /**
      * Flag to prune individual pairs (and not just entire rotamers) on pair
      * clashes. Presently set constitutively false.
@@ -278,7 +279,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Flag to control use of 3-body terms.
      */
-    private boolean threeBodyTerm = true;
+    protected boolean threeBodyTerm = true;
     /**
      * Flag to set 3-body energies to zero outside of a cutoff.
      */
@@ -427,14 +428,16 @@ public class RotamerOptimization implements Terminatable {
      * Stores states of each ensemble if printFiles is false.
      */
     private List<ObjectPair<ResidueState[], Double>> ensembleStates;
-    private RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
+    protected RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
     
     /**
      * Represents the method called to obtain the directory corresponding to
      * the current energy; will be a simple return null for potential energy
-     * evaluations.
+     * evaluations. While current energy calls will fill the rotamer list with
+     * the current rotamers of the residue, other methods may skip applying
+     * the rotamer directly.
      */
-    private Function<List<Residue>, File> dirSupplier;
+    private BiFunction<List<Residue>, List<Rotamer>, File> dirSupplier;
     /**
      * Represents the method called to obtain energy for the current rotamer or
      * state; defaults to the existing potential energy code. May discard the
@@ -456,7 +459,7 @@ public class RotamerOptimization implements Terminatable {
         this.potential = potential;
         this.algorithmListener = algorithmListener;
         eFunction = this::currentPE;
-        dirSupplier = (List<Residue> lst) -> null;
+        dirSupplier = (List<Residue> resList, List<Rotamer> rotList) -> null;
         world = Comm.world();
         numProc = world.size();
         rank = world.rank();
@@ -4199,7 +4202,7 @@ public class RotamerOptimization implements Terminatable {
         */
     }
 
-    private void applyEliminationCriteria(Residue residues[], boolean getEnergies, boolean verbose) {
+    protected void applyEliminationCriteria(Residue residues[], boolean getEnergies, boolean verbose) {
         Level prevLevel = logger.getLevel();
         if (verbose == false) {
             logger.setLevel(Level.WARNING);
@@ -4471,7 +4474,10 @@ public class RotamerOptimization implements Terminatable {
             potential.getCoordinates(x);
             return potential.energy(x);
         }*/
-        File energyDir = dirSupplier.apply(resList);
+        List<Rotamer> rots = resList.stream().
+                map(Residue::getRotamer).
+                collect(Collectors.toList());
+        File energyDir = dirSupplier.apply(resList, rots);
         if (catchError) {
             try {
                 return eFunction.applyAsDouble(energyDir);
@@ -4515,7 +4521,7 @@ public class RotamerOptimization implements Terminatable {
      * Sets the directory provider used.
      * @param dirProvider A function of residue list to appropriate directory
      */
-    public void setDirectoryProvider(Function<List<Residue>,File> dirProvider) {
+    public void setDirectoryProvider(BiFunction<List<Residue>,List<Rotamer>,File> dirProvider) {
         this.dirSupplier = dirProvider;
     }
 
@@ -4575,12 +4581,14 @@ public class RotamerOptimization implements Terminatable {
                         Rotamer roti[] = resi.getRotamers(library);
                         selfEnergy[i] = new double[roti.length];
                         for (int ri = 0; ri < roti.length; ri++) {
+                            if (!check(i, ri)) {
                             //logIfMaster(String.format("(sdl %d) singleJob %d: %d %d", BOXNUM, singleJobIndex, i, ri));
-                            Integer selfJob[] = {i, ri};
-                            if (decomposeOriginal && ri != 0) {
-                                continue;
+                                Integer selfJob[] = {i, ri};
+                                if (decomposeOriginal && ri != 0) {
+                                    continue;
+                                }
+                                jobMapSingles.put(singleJobIndex++, selfJob);
                             }
-                            jobMapSingles.put(singleJobIndex++, selfJob);
                         }
                     }
                 }
@@ -4604,7 +4612,7 @@ public class RotamerOptimization implements Terminatable {
                         Rotamer roti[] = resi.getRotamers(library);
                         twoBodyEnergy[i] = new double[roti.length][][];
                         for (int ri = 0; ri < roti.length; ri++) {
-                            if (pruneClashes && check(i, ri)) {
+                            if (check(i, ri)) {
                                 continue;
                             }
                             twoBodyEnergy[i][ri] = new double[nResidues][];
@@ -4613,7 +4621,10 @@ public class RotamerOptimization implements Terminatable {
                                 Rotamer rotj[] = resj.getRotamers(library);
                                 twoBodyEnergy[i][ri][j] = new double[rotj.length];
                                 for (int rj = 0; rj < rotj.length; rj++) {
-                                    if ((pruneClashes && check(j, rj)) || (prunePairClashes && check(i, ri, j, rj))) {
+                                    /*if (check(j, rj) || check(i, ri, j, rj)) {
+                                        continue;
+                                    }*/
+                                    if (checkToJ(i,ri,j,rj)) {
                                         continue;
                                     }
                                     //logIfMaster(String.format("(sdl %d) pairJob %d: %d %d %d %d", BOXNUM, pairJobIndex, i, ri, j, rj));
@@ -4646,7 +4657,7 @@ public class RotamerOptimization implements Terminatable {
                             Rotamer roti[] = resi.getRotamers(library);
                             threeBodyEnergy[i] = new double[roti.length][][][][];
                             for (int ri = 0; ri < roti.length; ri++) {
-                                if (pruneClashes && check(i, ri)) {
+                                if (check(i, ri)) {
                                     continue;
                                 }
                                 threeBodyEnergy[i][ri] = new double[nResidues][][][];
@@ -4655,7 +4666,10 @@ public class RotamerOptimization implements Terminatable {
                                     Rotamer rotj[] = resj.getRotamers(library);
                                     threeBodyEnergy[i][ri][j] = new double[rotj.length][][];
                                     for (int rj = 0; rj < rotj.length; rj++) {
-                                        if ((pruneClashes && check(j, rj)) || (prunePairClashes && check(i, ri, j, rj))) {
+                                        /*if (check(j, rj) || check(i, ri, j, rj)) {
+                                            continue;
+                                        }*/
+                                        if (checkToJ(i,ri,j,rj)) {
                                             continue;
                                         }
                                         threeBodyEnergy[i][ri][j][rj] = new double[nResidues][];
@@ -4664,7 +4678,10 @@ public class RotamerOptimization implements Terminatable {
                                             Rotamer rotk[] = resk.getRotamers(library);
                                             threeBodyEnergy[i][ri][j][rj][k] = new double[rotk.length];
                                             for (int rk = 0; rk < rotk.length; rk++) {
-                                                if ((pruneClashes && check(k, rk)) || (prunePairClashes && (check(i, ri, k, rk) || check(j, rj, k, rk)))) {
+                                                /*if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk) || check(i, ri, j, rj, k, rk)) {
+                                                    continue;
+                                                }*/
+                                                if (checkToK(i,ri,j,rj,k,rk)) {
                                                     continue;
                                                 }
                                                 //logIfMaster(String.format("(sdl %d) trimerJob %d: %d %d %d %d %d %d", BOXNUM, trimerJobIndex, i, ri, j, rj, k, rk));
@@ -4699,29 +4716,40 @@ public class RotamerOptimization implements Terminatable {
                         Residue resi = residues[i];
                         Rotamer roti[] = resi.getRotamers(library);
                         for (int ri = 0; ri < roti.length; ri++) {
-                            if (pruneClashes && check(i, ri)) {
+                            if (check(i, ri)) {
                                 continue;
                             }
                             for (int j = i + 1; j < nResidues; j++) {
                                 Residue resj = residues[j];
                                 Rotamer rotj[] = resj.getRotamers(library);
                                 for (int rj = 0; rj < rotj.length; rj++) {
-                                    if ((pruneClashes && check(j, rj)) || (prunePairClashes && check(i, ri, j, rj))) {
+                                    /*if (check(j, rj) || check(i, ri, j, rj)) {
+                                        continue;
+                                    }*/
+                                    if (checkToJ(i,ri,j,rj)) {
                                         continue;
                                     }
                                     for (int k = j + 1; k < nResidues; k++) {
                                         Residue resk = residues[k];
                                         Rotamer rotk[] = resk.getRotamers(library);
                                         for (int rk = 0; rk < rotk.length; rk++) {
-                                            if ((pruneClashes && check(k, rk)) || (prunePairClashes && (check(i, ri, k, rk) || check(j, rj, k, rk)))) {
+                                            /*if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk) || check(i, ri, j, rj, k, rk)) {
+                                                continue;
+                                            }*/
+                                            if (checkToK(i,ri,j,rj,k,rk)) {
                                                 continue;
                                             }
                                             for (int l = k + 1; l < nResidues; l++) {
                                                 Residue resl = residues[l];
                                                 Rotamer rotl[] = resl.getRotamers(library);
                                                 for (int rl = 0; rl < rotl.length; rl++) {
-                                                    if ((pruneClashes && check(l, rl))
-                                                            || (prunePairClashes && (check(i, ri, l, rl) || check(j, rj, l, rl) || check(k, rk, l, rl)))) {
+                                                    /*if (check(l, rl) || check(i, ri, l, rl) || 
+                                                            check(j, rj, l, rl) || check(k, rk, l, rl) || 
+                                                            check(i, ri, j, rj, l, rl) || check(i, ri, k, rk, l, rl) || 
+                                                            check(j, rj, k, rk, l, rl)) {
+                                                        continue;
+                                                    }*/
+                                                    if (checkToL(i,ri,j,rj,k,rk,l,rl)) {
                                                         continue;
                                                     }
                                                     Integer quadJob[] = {i, ri, j, rj, k, rk, l, rl};
@@ -5621,16 +5649,18 @@ public class RotamerOptimization implements Terminatable {
                 if (symOp != null) {
                     crystal.applySymOp(xj, xj, symOp);
                 }
-                double r = Math.sqrt(crystal.image(xi[0] - xj[0], xi[1] - xj[1], xi[2] - xj[2]));
+                // Generally: compare on square-of-distance, and square root only at return.
+                //double r = Math.sqrt(crystal.image(xi[0] - xj[0], xi[1] - xj[1], xi[2] - xj[2]));
+                double r = crystal.image(xi[0] - xj[0], xi[1] - xj[1], xi[2] - xj[2]);
                 if (r < dist) {
                     dist = r;
                 }
             }
         }
-        return dist;
+        return Math.sqrt(dist);
     }
 
-    private void allocateEliminationMemory(Residue[] residues) {
+    protected void allocateEliminationMemory(Residue[] residues) {
         int nres = residues.length;
         eliminatedSingles = new boolean[nres][];
         eliminatedPairs = new boolean[nres][][][];
@@ -6598,7 +6628,7 @@ public class RotamerOptimization implements Terminatable {
      * @param ri Rotamer ri.
      * @return True if rotamer eliminated.
      */
-    private boolean check(int i, int ri) {
+    protected boolean check(int i, int ri) {
         return eliminatedSingles[i][ri];
     }
 
@@ -6611,7 +6641,7 @@ public class RotamerOptimization implements Terminatable {
      * @param rj Rotamer rj.
      * @return True if eliminated pair.
      */
-    private boolean check(int i, int ri, int j, int rj) {
+    protected boolean check(int i, int ri, int j, int rj) {
         // If j is an earlier residue than i, swap j with i, as eliminated
         // rotamers are stored with the earlier residue listed first.
         if (j < i) {
@@ -6636,7 +6666,7 @@ public class RotamerOptimization implements Terminatable {
      * @param rk Rotamer rk.
      * @return True if eliminated triple.
      */
-    private boolean check(int i, int ri, int j, int rj, int k, int rk) {
+    protected boolean check(int i, int ri, int j, int rj, int k, int rk) {
         if (j < i) {
             int ii = i;
             int iri = ri;
@@ -6662,6 +6692,162 @@ public class RotamerOptimization implements Terminatable {
             rk = jrj;
         }
         return eliminatedTriples[i][ri][j][rj][k][rk];
+    }
+    
+    /**
+     * Presently constitutively returns false, as we do not eliminate quads at
+     * this point.
+     * @param i Residue i.
+     * @param ri Rotamer ri.
+     * @param j Residue j.
+     * @param rj Rotamer rj.
+     * @param k Residue k.
+     * @param rk Rotamer rk.
+     * @param l Residue l
+     * @param rl Rotamer rl
+     * @return False (quad eliminations unimplemented)
+     */
+    protected boolean check(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+        return false;
+    }
+    
+    protected boolean checkAll(int... iris) {
+        int nVals = iris.length;
+        int i = iris[0];
+        int ri = iris[1];
+        // Fall-through switch behavior.
+        switch (nVals) {
+            case 8:
+                int j = iris[2];
+                int rj = iris[3];
+                int k = iris[4];
+                int rk = iris[5];
+                int l = iris[6];
+                int rl = iris[7];
+                if (checkToL(i,ri,j,rj,k,rk,l,rl)) {
+                    return true;
+                }
+            case 6:
+                j = iris[2];
+                rj = iris[3];
+                k = iris[4];
+                rk = iris[5];
+                if (checkToK(i,ri,j,rj,k,rk)) {
+                    return true;
+                }
+            case 4:
+                j = iris[2];
+                rj = iris[3];
+                if (checkToJ(i,ri,j,rj)) {
+                    return true;
+                }
+            case 2:
+                return check(i,ri);
+            default:
+                throw new IllegalArgumentException(" checkAll function only implemented for selfs, pairs, triples, or quads");
+        }
+    }
+    
+    protected boolean checkTo(int... iris) {
+        int nVals = iris.length;
+        switch (nVals) {
+            case 2:
+                int i = iris[0];
+                int ri = iris[1];
+                return check(i,ri);
+            case 4:
+                i = iris[0];
+                ri = iris[1];
+                int j = iris[2];
+                int rj = iris[3];
+                return checkToJ(i,ri,j,rj);
+            case 6:
+                i = iris[0];
+                ri = iris[1];
+                j = iris[2];
+                rj = iris[3];
+                int k = iris[4];
+                int rk = iris[5];
+                return checkToK(i,ri,j,rj,k,rk);
+            case 8:
+                i = iris[0];
+                ri = iris[1];
+                j = iris[2];
+                rj = iris[3];
+                k = iris[4];
+                rk = iris[5];
+                int l = iris[6];
+                int rl = iris[7];
+                return checkToL(i,ri,j,rj,k,rk,l,rl);
+            default:
+                throw new IllegalArgumentException(" checkTo function only implemented for selfs, pairs, triples, or quads");
+        }
+    }
+    
+    /**
+     * Wrapper for check(i,ri); ideally just call check(i,ri). Checks if residue-
+     * rotamer self i,ri has been eliminated
+     * @param i Residue i
+     * @param ri Rotamer ri
+     * @return Eliminated
+     */
+    protected boolean checkToI(int i, int ri) {
+        return check(i,ri);
+    }
+    
+    /**
+     * Checks to see if any eliminations with j,rj have occurred; assumes i,ri
+     * self has already been checked. Checks j,rj self and i,ri,j,rj pair. The
+     * intent is to be part of a loop over i,ri,j,rj, and check for eliminations
+     * at the j,rj point.
+     * 
+     * @param i Residue i
+     * @param ri Rotamer ri
+     * @param j Residue j
+     * @param rj Rotamer rj
+     * @return j eliminated with i
+     */
+    protected boolean checkToJ(int i, int ri, int j, int rj) {
+        return (check(j, rj) || check(i,ri,j,rj));
+    }
+    
+    /**
+     * Checks to see if any eliminations with k,rk have occurred; assumes 
+     * i,ri,j,rj pair has already been checked. Checks the k,rk self, all pairs
+     * with k,rk, and the i,ri,j,rj,k,rk triple. The intent is to be part of a
+     * loop over i,ri,j,rj,k,rk, and check for eliminations at the k,rk point.
+     * 
+     * @param i Residue i
+     * @param ri Rotamer ri
+     * @param j Residue j
+     * @param rj Rotamer rj
+     * @param k Residue k
+     * @param rk Rotamer rk
+     * @return k eliminated with i,j
+     */
+    protected boolean checkToK(int i, int ri, int j, int rj, int k, int rk) {
+        return (check(k,rk) || check(i,ri,k,rk) || check(j,rj,k,rk) || check(i,ri,j,rj,k,rk));
+    }
+    
+    /**
+     * Checks to see if any eliminations with l,rl have occurred; assumes 
+     * i,ri,j,rj,k,rk triple has already been checked. Checks the l,rl self, all
+     * pairs with l,rl, all triples with l,rl, and the quad. The intent is to be 
+     * part of a loop over i,ri,j,rj,k,rk,l,rl, and check for eliminations at 
+     * the l,rl point.
+     * 
+     * @param i Residue i
+     * @param ri Rotamer ri
+     * @param j Residue j
+     * @param rj Rotamer rj
+     * @param k Residue k
+     * @param rk Rotamer rk
+     * @param l Residue l
+     * @param rl Rotamer rl
+     * @return l eliminated with i,j,k
+     */
+    protected boolean checkToL(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+        return (check(l,rl) || check(i,ri,l,rl) || check(j,rj,l,rl) || check(k,rk,l,rl) || check(i,ri,j,rj,l,rl) || check(i,ri,k,rk,l,rl) || check(j,rj,k,rk,l,rl) || check(i,ri,j,rj,k,rk,l,rl));
     }
 
     private boolean validateDEE(Residue residues[]) {

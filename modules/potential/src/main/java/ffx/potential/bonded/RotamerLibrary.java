@@ -212,7 +212,7 @@ public class RotamerLibrary {
         }
     }
     
-    /**
+    /**      
      * Checks if a Residue has a PTM.
      * @param residue
      * @return 
@@ -229,16 +229,15 @@ public class RotamerLibrary {
      * @return An array of Rotamers.
      */
     public Rotamer[] getRotamers(AminoAcid3 name) {
-        Rotamer[] rotamers = null;
         switch (proteinLibrary) {
             case PonderAndRichards:
-                rotamers = getPonderAndRichardsRotamers(name);
-                break;
+                return getPonderAndRichardsRotamers(name);
             case Richardson:
-                rotamers = getRichardsonRotamers(name);
-                break;
+                return getRichardsonRotamers(name);
+            case None:
+            default:
+                return null;
         }
-        return rotamers;
     }
 
     /**
@@ -4044,7 +4043,7 @@ public class RotamerLibrary {
 
     public enum ProteinLibrary {
 
-        PonderAndRichards, Richardson
+        PonderAndRichards, Richardson, None
     }
     
     /**

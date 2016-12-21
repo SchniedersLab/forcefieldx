@@ -783,7 +783,6 @@ if (options.sO) {
                         multiRes.addResidue(new Residue(aa.toString(), res.getResidueNumber(), ResidueType.AA));
                     }
                 }
-                multiRes.finalize();
                 //multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
                 multiRes.setActiveResidue(res);
                 active.getPotentialEnergy().reInit();

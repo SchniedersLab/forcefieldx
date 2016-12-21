@@ -37,8 +37,14 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Set;
+//import java.util.stream.Collectors;
+//import java.util.stream.IntStream;
 
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
@@ -56,6 +62,7 @@ import edu.rit.pj.reduction.SharedInteger;
 import edu.rit.util.Range;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 
 /**
@@ -544,6 +551,105 @@ public class NeighborList extends ParallelRegion {
      */
     public int[][][] getNeighborList() {
         return lists;
+    }
+    
+    /**
+     * Takes a list of Atoms and obtains the local indices for these atoms.
+     * @param atomsToIndex Atoms to index
+     * @return Indices thereof
+     */
+    public List<Integer> atomsToIndices(List<Atom> atomsToIndex) {
+        Set<Atom> indexedAtoms = new HashSet<>(atomsToIndex);
+        //IntStream.range(0, atoms.length).filter(i -> { return indexedAtoms.contains(atoms[i]); }).boxed().collect(Collectors.toList());
+        List<Integer> indices = new ArrayList<>(atomsToIndex.size());
+        for (int i = 0; i < atoms.length; i++) {
+            if (indexedAtoms.contains(atoms[i])) {
+                indices.add(i);
+            }
+        }
+        return indices;
+    }
+    
+    /**
+     * Returns the indices of atoms neighboring the passed set of atom indices.
+     * Returned Set is exclusive of the passed-in indices.
+     * @param atomIndices Atom indices
+     * @param maxDist Maximum distance to consider
+     * @return Set of neighboring atoms indices
+     */
+    public Set<Integer> getNeighborIndices(List<Integer> atomIndices, double maxDist) {
+        double md2 = maxDist * maxDist;
+        Set<Integer> neighbors = new HashSet<>();
+        for (Integer intI : atomIndices) {
+            int i = intI.intValue();
+            double[] xyzI = new double[3];
+            atoms[i].getXYZ(xyzI);
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
+                int[] listi = lists[iSymm][i];
+                int nListI = listi.length;
+                for (int j = 0; j < nListI; j++) {
+                    int indexJ = listi[j];
+                    if (atomIndices.contains(indexJ) || neighbors.contains(indexJ)) {
+                        continue;
+                    }
+                    double[] xyzJ = new double[3];
+                    atoms[indexJ].getXYZ(xyzJ);
+                    crystal.applySymOp(xyzJ, xyzJ, symOp);
+                    for (int k = 0; k < 3; k++) {
+                        xyzJ[k] -= xyzI[k];
+                    }
+                    if (crystal.image(xyzJ) <= md2) {
+                        neighbors.add(indexJ);
+                    }
+                }
+            }
+        }
+        
+        /*Set<Integer> neighbors = atomIndices.parallelStream().
+                mapToInt(Integer::intValue).
+                flatMap(i -> {
+                    double[] xyzI = new double[3];
+                    atoms[i].getXYZ(xyzI);
+                    return IntStream.range(0, nSymm).flatMap(iSymm -> {
+                        SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
+                        int[] listi = lists[iSymm][i];
+                        return IntStream.range(0, listi.length).
+                            map(j -> listi[j]).
+                            filter(indexJ -> {
+                                if (atomIndices.contains(indexJ)) {
+                                    return false;
+                                }
+                                double[] xyzJ = new double[3];
+                                atoms[indexJ].getXYZ(xyzJ);
+                                crystal.applySymOp(xyzJ, xyzJ, symOp);
+                                for (int k = 0; k < 3; k++) {
+                                    xyzJ[k] -= xyzI[k];
+                                }
+                                return crystal.image(xyzJ) <= md2;
+                            });
+                    }); // Filtering on distinct elements here requires boxing & unboxing.
+                }).boxed().collect(Collectors.toSet());*/
+        return neighbors;
+    }
+    
+    /**
+     * Returns a set of Atoms neighboring those passed in. If their indices are
+     * already available, preferentially use getNeighborIndices instead. Is 
+     * exclusive of passed atoms.
+     * 
+     * @param atomList Atoms to find neighbors of
+     * @param maxDist Maximum distance to consider a neighbor
+     * @return Set of neighboring Atoms
+     */
+    public Set<Atom> getNeighborAtoms(List<Atom> atomList, double maxDist) {
+        //return getNeighborIndices(atomsToIndices(atomList), maxDist).stream().map(i -> atoms[i]).collect(Collectors.toSet());
+        Set<Integer> atomIndices = getNeighborIndices(atomsToIndices(atomList), maxDist);
+        Set<Atom> atomSet = new HashSet<>();
+        for (Integer ai : atomIndices) {
+            atomSet.add(atoms[ai]);
+        }
+        return atomSet;
     }
 
     /**
