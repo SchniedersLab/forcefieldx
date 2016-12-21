@@ -190,7 +190,7 @@ public class VanDerWaals implements MaskingInterface,
     private double d2sc1dL2 = 0.0;
     private double d2sc2dL2 = 0.0;
     /**
-     * Generalized extended system (lamedh) variables.
+     * Generalized extended system variables.
      */
     private ExtendedSystem esvSystem;
     private int numESVs = 0;
@@ -208,14 +208,10 @@ public class VanDerWaals implements MaskingInterface,
      */
     private double reduced[][];
     private double reducedXYZ[];
-    private double reducedExt[][];
-    private double reducedExtXYZ[];
     /**
      * Neighbor lists for each atom. Size: [nSymm][nAtoms][nNeighbors]
      */
     private int[][][] neighborLists;
-    private int[][][] extendedNeighborLists;
-    private boolean buildExtended = false;
     private static final byte XX = 0;
     private static final byte YY = 1;
     private static final byte ZZ = 2;
@@ -233,7 +229,6 @@ public class VanDerWaals implements MaskingInterface,
      * hydrogen.
      */
     private int reductionIndex[];
-    private int reductionIndexExt[];
     private int bondMask[][];
     private int angleMask[][];
     private int torsionMask[][];
@@ -251,7 +246,6 @@ public class VanDerWaals implements MaskingInterface,
     private final ParallelTeam parallelTeam;
     private final int threadCount;
     private IntegerSchedule pairwiseSchedule;
-    private IntegerSchedule extendedPairwiseSchedule;
     private final SharedInteger sharedInteractions;
     private final SharedDouble sharedEnergy;
     private final SharedDouble shareddEdL;
@@ -293,7 +287,6 @@ public class VanDerWaals implements MaskingInterface,
      * interactions fully.
      */
     private NeighborList neighborList;
-    private NeighborList extendedNeighborList;
     private final VanDerWaalsRegion vanDerWaalsRegion;
     private boolean neighborListOnly = true;
     /**
@@ -604,22 +597,15 @@ public class VanDerWaals implements MaskingInterface,
 
     public final void buildNeighborList(Atom[] atoms) {
         neighborList.setAtoms(atoms);
-        neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
+        neighborListOnly = true;
+        try {
+            parallelTeam.execute(vanDerWaalsRegion);
+        } catch (Exception e) {
+            String message = " Fatal exception expanding coordinates.\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+        neighborListOnly = false;
     }
-    
-//    public final void buildExtendedNeighborList(Atom[] atoms) {
-//        Object[] args = neighborList.getConstructorArgs();
-//        extendedNeighborList = new NeighborList(
-//                (MaskingInterface) args[0], (Crystal) args[1], atoms, 
-//                (double) args[3], (double) args[4], (ParallelTeam) args[5]);
-//        extendedNeighborList.setAtoms(atoms);
-//        extendedPairwiseSchedule = extendedNeighborList.getPairwiseSchedule();
-//        extendedNeighborLists = new int[nSymm][][];
-//        extendedNeighborList.buildList(reduced, extendedNeighborLists, null, buildExtended, true);
-//        
-//        neighborList = extendedNeighborList;
-//        neighborLists = extendedNeighborLists;
-//    }
     
     public void setAtoms(Atom atoms[], int molecule[]) {
         this.atoms = atoms;
