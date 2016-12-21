@@ -60,7 +60,6 @@ import ffx.potential.parameters.ForceField;
 
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
-import java.util.stream.Collectors;
 
 /**
  * The Residue class represents individual amino acids or nucleic acid bases.

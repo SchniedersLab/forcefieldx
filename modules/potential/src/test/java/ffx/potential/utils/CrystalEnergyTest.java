@@ -83,8 +83,8 @@ public class CrystalEnergyTest {
                 0.0, 0,
                 0.0, 0,
                 -3.62572228, 7295,
-                -26.07329410, 1456,
-                -1.97396298, 1456},
+                -26.0720131242538, 2231,
+                -1.9856761645305, 2231},
             {
                 false,
                 "Ethylparaben Benchmark",
@@ -99,8 +99,8 @@ public class CrystalEnergyTest {
                 0.0, 0,
                 0.0, 0,
                 -4.52561611, 16755,
-                -45.56554007, 3256,
-                -3.96630319, 3256},
+                -45.55012417320137, 5012,
+                -3.97079858673400, 5012},
             {
                 false,
                 "Methylparaben Benchmark",
@@ -115,8 +115,8 @@ public class CrystalEnergyTest {
                 0.0, 0,
                 0.0, 0,
                 0.20573979, 7639,
-                -26.55680786, 1538,
-                -2.35904592, 1538},
+                -26.558577471708134, 2314,
+                -2.35904592, 2314},
             {
                 false,
                 "Paracetamol Benchmark",
@@ -131,8 +131,8 @@ public class CrystalEnergyTest {
                 0.0, 0,
                 0.0, 0,
                 0.76621272, 7832,
-                -32.03804278, 1505,
-                -4.92282076, 1505},
+                -32.02011297249507, 2357,
+                 -4.96649992387851, 2357},
             {
                 false,
                 "Phenacetin Benchmark",
@@ -147,8 +147,8 @@ public class CrystalEnergyTest {
                 0.0, 0,
                 0.0, 0,
                 -5.62144406, 10340,
-                -25.42277465, 2115,
-                -2.07980993, 2115}
+                -25.42173449818894, 3138,
+                 -2.09385416786188, 3138}
         });
     }
     private final String info;
@@ -179,7 +179,7 @@ public class CrystalEnergyTest {
     private final double permanentEnergy;
     private final double polarizationEnergy;
     private final double tolerance = 1.0e-3;
-    private final double gradientTolerance = 1.0e-4;
+    private final double gradientTolerance = 1.0e-3;
     private final boolean ci;
     private final boolean ciOnly;
     private boolean mpoleTerm;

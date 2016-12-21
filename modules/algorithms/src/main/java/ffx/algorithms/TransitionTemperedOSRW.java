@@ -766,7 +766,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      * @param print
      * @return the current free energy.
      */
-    private double updateFLambda(boolean print) {
+    @Override
+    protected double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
         double minFL = Double.MAX_VALUE;
         totalWeight = 0;

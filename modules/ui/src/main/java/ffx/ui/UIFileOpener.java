@@ -92,7 +92,7 @@ public class UIFileOpener implements FileOpener {
             }
         }
     }
-    
+
     public void setNThreads(int nThreads) {
         this.nThreads = nThreads;
     }
@@ -158,16 +158,16 @@ public class UIFileOpener implements FileOpener {
                         mainPanel.getHierarchy().addSystemNode(newSystem);
                         //energy = new ForceFieldEnergy(newSystem, pdbFilter.getCoordRestraints());
                         if (nThreads > 0) {
-                            energy = new ForceFieldEnergy(ffxSystem, systemFilter.getCoordRestraints(), nThreads);
+                            energy = new ForceFieldEnergy(newSystem, systemFilter.getCoordRestraints(), nThreads);
                         } else {
-                            energy = new ForceFieldEnergy(ffxSystem, systemFilter.getCoordRestraints());
+                            energy = new ForceFieldEnergy(newSystem, systemFilter.getCoordRestraints());
                         }
                         newSystem.setPotential(energy);
                     }
                 }
             }
         } else {
-            logger.warning(String.format(" Failed to read file %s", 
+            logger.warning(String.format(" Failed to read file %s",
                     systemFilter.getFile().getName()));
         }
         mainPanel.setCursor(Cursor.getDefaultCursor());
