@@ -62,6 +62,8 @@ import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.transpose3;
+import java.util.OptionalDouble;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -1350,6 +1352,30 @@ public class Crystal {
         xf[2] = (x[2] / gamma_term) / c;
         xf[1] = ((x[1] - xf[2] * c * beta_term) / sin_gamma) / b;
         xf[0] = (x[0] - xf[1] * b * cos_gamma - xf[2] * c * cos_beta) / a;
+    }
+    
+    /**
+     * Minimum distance between two coordinates over all symmetry operators.
+     * @param xyzA Coordinate A
+     * @param xyzB Coordinate B
+     * @return Minimum distance in crystal
+     */
+    public double minDistOverSymOps(double[] xyzA, double[] xyzB) {
+        double dist = 0;
+        for (int i = 0; i < 3; i++) {
+            double dx = xyzA[i] - xyzB[i];
+            dist += (dx * dx);
+        }
+        double[] symB = new double[3];
+        for (SymOp symOp : spaceGroup.symOps) {
+            applySymOp(xyzB, symB, symOp);
+            for (int i = 0; i < 3; i++) {
+                symB[i] -= xyzA[i];
+            }
+            double d = image(symB);
+            dist = d < dist ? d : dist;
+        }
+        return FastMath.sqrt(dist);
     }
 
     /**

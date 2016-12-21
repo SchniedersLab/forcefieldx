@@ -574,6 +574,17 @@ public abstract class AbstractOSRW implements Potential {
     public abstract boolean destroy();
     
     protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
+    
+    /**
+     * Evaluates current free energy of the OSRW; intended to be called before
+     * any dynamics have been run.
+     * @return 
+     */
+    public double evaluateEnergy() {
+        return updateFLambda(false);
+    }
+    
+    protected abstract double updateFLambda(boolean print);
 
     public void setLambda(double lambda) {
         lambdaInterface.setLambda(lambda);

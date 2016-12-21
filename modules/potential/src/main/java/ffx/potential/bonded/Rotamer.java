@@ -41,6 +41,7 @@ import static org.apache.commons.math3.util.FastMath.max;
 
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import java.util.Arrays;
 
 /**
  * The Rotamer Class usually represents one immutable amino acid Rotamer. It is
@@ -71,6 +72,62 @@ public class Rotamer {
     public final int length;
     public final ResidueState originalState;
     public final boolean isState;
+    
+    /**
+     * Constructs a Rotamer from a Residue, an array of torsions, and optionally
+     * an array of torsion bin widths. Intended to be agnostic to AA vs. NA vs.
+     * other, and not require explicitly passed-in sigmas.
+     * 
+     * @param res Residue to construct rotamer for
+     * @param chis Torsion angles
+     * @param sigmas Torsion angle bin widths (optional)
+     */
+    public Rotamer(Residue res, double[] chis, double[] sigmas) {
+        int nChi = chis.length;
+        angles = new double[nChi];
+        Arrays.fill(angles, 0);
+        System.arraycopy(chis, 0, angles, 0, nChi);
+        
+        // Hooray, 
+        double[] tempVals = new double[7];
+        Arrays.fill(tempVals, 0);
+        System.arraycopy(chis, 0, tempVals, 0, nChi);
+        
+        chi1 = tempVals[0];
+        chi2 = tempVals[1];
+        chi3 = tempVals[2];
+        chi4 = tempVals[3];
+        chi5 = tempVals[4];
+        chi6 = tempVals[5];
+        chi7 = tempVals[6];
+        
+        this.sigmas = new double[nChi];
+        if (sigmas != null) {
+            System.arraycopy(sigmas, 0, this.sigmas, 0, nChi);
+        } else {
+            Arrays.fill(sigmas, 0);
+        }
+        
+        switch(res.getResidueType()) {
+            case AA:
+                this.name = res.getAminoAcid3();
+                this.nucleicName = null;
+                break;
+            case NA:
+                this.name = null;
+                this.nucleicName = res.getNucleicAcid3();
+                break;
+            case UNK:
+            default:
+                this.name = null;
+                this.nucleicName = null;
+                break;
+        }
+        
+        length = nChi;
+        originalState = null;
+        isState = false;
+    }
 
     public Rotamer(AminoAcid3 name, double... values) {
         length = values.length / 2;

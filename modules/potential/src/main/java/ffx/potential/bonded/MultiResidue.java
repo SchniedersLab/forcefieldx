@@ -55,7 +55,6 @@ import ffx.potential.parameters.ForceField;
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
-import java.util.stream.Collectors;
 
 /**
  * The MultiResidue class allows switching between residues for uses such as
@@ -77,6 +76,8 @@ public class MultiResidue extends Residue {
      * List of residues under consideration.
      */
     ArrayList<Residue> consideredResidues;
+    
+    private final List<MultiResidue> linkedMultiRes = new ArrayList<>(4);
 
     /**
      * Force field in use.
@@ -417,16 +418,26 @@ public class MultiResidue extends Residue {
 
     @Override
     public void revertState(ResidueState state) {
+        revertState(state, true);
+    }
+    
+    private void revertState(ResidueState state, boolean isFirst) {
         Residue res = state.getStateResidue();
-        //if (!res.equals(activeResidue)) {
         if (!setActiveResidue(res)) {
             throw new IllegalArgumentException(String.format(" Could not revert "
                     + "multi-residue %s to residue identity %s", this.toString(),
                     state.getStateResidue().toString()));
         }
-        //}
         for (Atom atom : getAtomList()) {
             atom.moveTo(state.getAtomCoords(atom));
+        }
+        if (isFirst && !linkedMultiRes.isEmpty()) {
+            double[] chi = RotamerLibrary.measureRotamer(this, false);
+            Rotamer rot = new Rotamer(res, chi, null);
+            for (MultiResidue multiRes : linkedMultiRes) {
+                multiRes.setActiveResidue(res.getAminoAcid3(), false);
+                RotamerLibrary.applyRotamer(multiRes, rot);
+            }
         }
     }
 
@@ -608,8 +619,38 @@ public class MultiResidue extends Residue {
             }
         }
     }
-
+    
+    public void addResiduesByName(List<String> resNames) {
+        boolean resAdded = false;
+        Residue currentRes = activeResidue;
+        for (String resName : resNames) {
+            try {
+                AminoAcid3 aa3 = AminoAcid3.valueOf(resName.toUpperCase());
+                logger.info(String.format(" Adding residue %s to multi-residue "
+                        + "%s", aa3.toString(), this.toString()));
+                addResidue(new Residue(aa3.toString(), getResidueNumber(), getResidueType()));
+                resAdded = true;
+            } catch (IllegalArgumentException e) {
+                logger.warning(String.format(" Could not parse %s as an amino "
+                        + "acid; not adding to multi-residue %s", resName, 
+                        this.toString()));
+            }
+        }
+        if (resAdded) {
+            setActiveResidue(currentRes);
+            forceFieldEnergy.reInit();
+        }
+    }
+    
+    public void addLinkedMultiRes(MultiResidue mres) {
+        linkedMultiRes.add(mres);
+    }
+    
     public void addResidue(Residue newResidue) {
+        addResidue(newResidue, true);
+    }
+
+    private void addResidue(Residue newResidue, boolean isFirst) {
         /**
          * Add the new residue to list.
          */
@@ -665,6 +706,14 @@ public class MultiResidue extends Residue {
         }
         newResidue.finalize(true, forceField);
         updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
+        
+        // If you are the residue pinged by the API, update linked MultiResidues.
+        if (isFirst) {
+            for (MultiResidue mres : linkedMultiRes) {
+                Residue newRes = new Residue(newResidue.getAminoAcid3().toString(), newResidue.getResidueNumber(), ResidueType.AA);
+                mres.addResidue(newRes, false);
+            }
+        }
     }
 
     /**
@@ -741,6 +790,10 @@ public class MultiResidue extends Residue {
         }
         return setActiveResidue(consideredResidues.get(i));
     }
+    
+    public boolean setActiveResidue(Residue residue) {
+        return setActiveResidue(residue, true);
+    }
 
     /**
      * Request the passed residue be set active.
@@ -749,7 +802,7 @@ public class MultiResidue extends Residue {
      *
      * @return true if the passed residue is now active.
      */
-    public boolean setActiveResidue(Residue residue) {
+    private boolean setActiveResidue(Residue residue, boolean isFirst) {
         if (!consideredResidues.contains(residue)) {
             return false;
         }
@@ -779,17 +832,27 @@ public class MultiResidue extends Residue {
         add(activeResidue);
 
         forceFieldEnergy.reInit();
+        if (isFirst) {
+            for (MultiResidue mres : linkedMultiRes) {
+                if (!mres.setActiveResidue(residue.getAminoAcid3(), false)) {
+                    return false;
+                }
+            }
+        }
         return true;
     }
-
     /**
      * Method may be redundant with requestSetActiveResidue. Will not function 
      * correctly if there is more than one residue of type UNK (unknown).
      *
      * @param aa
      * @return True if successful
-     */
+     */  
     public boolean setActiveResidue(AminoAcid3 aa) {
+        return setActiveResidue(aa, true);
+    }
+
+    private boolean setActiveResidue(AminoAcid3 aa, boolean isFirst) {
         Residue residue = null;
         for (Residue res : consideredResidues) {
             if (res.getAminoAcid3() == aa) {
@@ -800,7 +863,7 @@ public class MultiResidue extends Residue {
         if (residue == null) {
             return false;
         }
-        return setActiveResidue(residue);
+        return setActiveResidue(residue, isFirst);
     }
 
     public int getResidueCount() {

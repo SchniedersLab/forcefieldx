@@ -687,7 +687,8 @@ public class OSRW extends AbstractOSRW {
      * @param print
      * @return the current free energy.
      */
-    private double updateFLambda(boolean print) {
+    @Override
+    protected double updateFLambda(boolean print) {
         double freeEnergy = 0.0;
         totalCounts = 0;
         if (print) {
