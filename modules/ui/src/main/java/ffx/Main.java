@@ -159,8 +159,11 @@ public class Main extends JFrame {
         sb.append(MainPanel.aboutString).append("\n");
         sb.append(MainPanel.border);
         sb.append("\n ").append(new Date());
-        sb.append("\n Command line arguments:\n ");
-        sb.append(Arrays.toString(args));
+        // Print out command line arguments if the array is not null.
+        if (args != null && args.length > 0) {
+            sb.append("\n Command line arguments:\n ");
+            sb.append(Arrays.toString(args));
+        }
         logger.info(sb.toString());
     }
 

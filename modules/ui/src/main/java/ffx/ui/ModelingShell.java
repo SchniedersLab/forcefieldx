@@ -178,6 +178,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             clearOutput();
             //initMenus();
         }
+
         initContext();
         loadPrefs();
     }
@@ -805,6 +806,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             return false;
         }
     }
+
     private static final Preferences preferences = Preferences.userNodeForPackage(ModelingShell.class);
 
     /**
