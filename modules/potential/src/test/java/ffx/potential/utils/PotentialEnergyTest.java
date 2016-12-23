@@ -85,7 +85,8 @@ public class PotentialEnergyTest {
                 13183.92864934, 1483768,
                 -33012.66179952, 623490,
                 -13041.30955459, 623490,
-                0.0, 0},
+                0.0, 0, 
+                1.0e-3, 1.0e-3},
             {false,
                 "OPLS-AA/L Peptide",
                 "ffx/potential/structures/peptide-oplsaal.xyz",
@@ -101,7 +102,8 @@ public class PotentialEnergyTest {
                 112122.04255274, 40511,
                 -671.66812023, 53628,
                 0.0, 53628,
-                0.0, 0},
+                0.0, 0, 
+                1.0e-3, 1.0e-3},
             {false,
                 "Amber99sb Peptide",
                 "ffx/potential/structures/peptide-amber99sb.xyz",
@@ -117,7 +119,8 @@ public class PotentialEnergyTest {
                 111362.79687915, 52696,
                 -413.54328593, 53628,
                 0.0, 53628,
-                0.0, 0},
+                0.0, 0, 
+                1.0e-3, 1.0e-3},
             {false,
                 "AMOEBA Protein 2013 GK Capped DMHD",
                 "ffx/potential/structures/dmhd-amoebapro13.xyz",
@@ -133,8 +136,8 @@ public class PotentialEnergyTest {
                 22.07765097, 2290,
                 -169.24655738, 2485,
                 -11.36055094, 2485,
-                -160.55923508, 2556,
-            },
+                -160.55923508, 2556, 
+                1.0e-2, 1.0e-2},
             {false,
                 "AMBER99SB GB (no dispersion) Capped DMHD",
                 "ffx/potential/structures/dmhd-amber99sb.xyz",
@@ -150,8 +153,8 @@ public class PotentialEnergyTest {
                 -4.31922323, 2290,
                 -71.00737570, 2485,
                 0.0, 2485,
-                -147.04162801, 2556,
-            },
+                -147.04162801, 2556, 
+                1.0e-2, 1.0e-2},
             {true,
                 "DHFR Benchmark",
                 "ffx/potential/structures/dhfr.xyz",
@@ -167,7 +170,8 @@ public class PotentialEnergyTest {
                 32630.94057333, 3480445,
                 -79396.71166429, 1463353,
                 -32141.39930772, 1463353,
-                0.0, 0},
+                0.0, 0, 
+                1.0e-2, 1.0e-2},
             {true,
                 "SNARE P1",
                 "ffx/potential/structures/1n7s.P1.xyz",
@@ -183,7 +187,8 @@ public class PotentialEnergyTest {
                 16013.08734188, 2966572,
                 -49215.72628076, 1328456,
                 -11245.82734685, 1328456,
-                0.0, 0},
+                0.0, 0, 
+                1.0e-2, 1.0e-2},
             {true,
                 "SNARE P212121",
                 "ffx/potential/structures/1n7s.P212121.xyz",
@@ -199,7 +204,8 @@ public class PotentialEnergyTest {
                 4003.27183547, 741643,
                 -12303.93157019, 332114,
                 -2811.45683671, 332114,
-                0.0, 0}});
+                0.0, 0, 
+                1.0e-2, 1.0e-2}});
     }
     private final String info;
     private final File structure;
@@ -230,8 +236,8 @@ public class PotentialEnergyTest {
     private final double permanentEnergy;
     private final double polarizationEnergy;
     private final double solvationEnergy;
-    private final double tolerance = 1.0e-3;
-    private final double gradientTolerance = 1.0e-3;
+    private final double tolerance;
+    private final double gradientTolerance;
     private final boolean ci;
     private final boolean ciOnly;
     private boolean mpoleTerm;
@@ -253,7 +259,8 @@ public class PotentialEnergyTest {
             double vanDerWaalsEnergy, int nVanDerWaals,
             double permanentEnergy, int nPermanent,
             double polarizationEnergy, int nPolar,
-            double solvationEnergy, int nSolv) {        
+            double solvationEnergy, int nSolv,
+            double tolerance, double gradTolerance) {        
         this.ciOnly = ciOnly;
         this.info = info;
         this.bondEnergy = bondEnergy;
@@ -282,6 +289,8 @@ public class PotentialEnergyTest {
         this.nPolar = nPolar;
         this.solvationEnergy = solvationEnergy;
         this.nSolvation = nSolv;
+        this.tolerance = tolerance;
+        this.gradientTolerance = gradTolerance;
 
         ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
