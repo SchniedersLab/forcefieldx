@@ -143,9 +143,10 @@ public class VanDerWaals implements MaskingInterface,
     private boolean esvTerm = false;
     private boolean useEsvInterpLambda;
     private boolean isSoft[];
-    // [nAtoms]: Stores precomputed lambda_total = lambda_metadyn * lambda_ESV
+    
     private double esvLambda[];
     private boolean esvAtoms[];
+    private int esvAtomStates[];
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -597,14 +598,18 @@ public class VanDerWaals implements MaskingInterface,
 
     public final void buildNeighborList(Atom[] atoms) {
         neighborList.setAtoms(atoms);
-        neighborListOnly = true;
-        try {
-            parallelTeam.execute(vanDerWaalsRegion);
-        } catch (Exception e) {
-            String message = " Fatal exception expanding coordinates.\n";
-            logger.log(Level.SEVERE, message, e);
+        if (esvTerm) {
+            neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
+        } else {
+            neighborListOnly = true;
+            try {
+                parallelTeam.execute(vanDerWaalsRegion);
+            } catch (Exception e) {
+                String message = " Fatal exception expanding coordinates.\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+            neighborListOnly = false;
         }
-        neighborListOnly = false;
     }
     
     public void setAtoms(Atom atoms[], int molecule[]) {
@@ -1575,13 +1580,11 @@ public class VanDerWaals implements MaskingInterface,
                         if (esvi && esvk) {
                             // Prevent atoms in different, non-zero ESV states from seeing each other.
                             // This check takes the place of modified neighbor lists.
-                            final int esvStateI = atomi.getEsvState();
-                            final int esvStateK = atomk.getEsvState();
-                            if (atomi.getESV() == atomk.getESV()            // if same ESV, and
-                                    && esvStateI != -1 && esvStateK != -1   // neither atom is backbone/env, and
-                                    && esvStateI != esvStateK) {            // atoms don't belong to same state,
-                                buglog(" VdW skipping interaction: %s <--> %s", atomi, atomk);
-                                continue;                                   // then skip interaction.
+                            final int esvStateI = esvAtomStates[i];
+                            final int esvStateK = esvAtomStates[k];
+                            if (atomStates[i] != 0 && atomStates[k] != 0 && atomStates[i] != atomStates[k]) {
+                                buglog(" (VdW) Skipping interaction: %s, %s", atomi, atomk);
+                                continue;
                             }
                         }   */
                         // Hide these global variable names for thread safety.

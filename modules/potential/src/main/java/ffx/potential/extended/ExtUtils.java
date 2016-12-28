@@ -162,39 +162,36 @@ public final class ExtUtils {
         if (defaultVal == null) {
             throw new IllegalArgumentException();
         }
+        T parsed = defaultVal;
         try {
             if (System.getProperty(key) == null) {
                 if (System.getProperty(key.toLowerCase()) != null) {
                     key = key.toLowerCase();
                 } else if (System.getProperty(key.toLowerCase()) != null) {
                     key = key.toUpperCase();
-                } else {
-                    return defaultVal;
                 }
             }
             if (defaultVal instanceof String) {
-                return (System.getProperty(key) != null)
+                parsed = (System.getProperty(key) != null)
                         ? (T) System.getProperty(key) : defaultVal;
             } else if (defaultVal instanceof Integer) {
                 return (System.getProperty(key) != null) 
                         ? (T) Integer.valueOf(System.getProperty(key)) : defaultVal;
             } else if (defaultVal instanceof OptionalInt) {
-                return (System.getProperty(key) != null) 
+                parsed = (System.getProperty(key) != null) 
                         ? (T) OptionalInt.of(Integer.parseInt(System.getProperty(key))) : defaultVal;
             } else if (defaultVal instanceof Double) {
-                return (System.getProperty(key) != null) 
+                parsed = (System.getProperty(key) != null) 
                         ? (T) Double.valueOf(System.getProperty(key)) : defaultVal;
             } else if (defaultVal instanceof OptionalDouble) {
-                return (System.getProperty(key) != null)
+                parsed = (System.getProperty(key) != null)
                         ? (T) OptionalDouble.of(Double.parseDouble(System.getProperty(key))) : defaultVal;
             } else if (defaultVal instanceof Boolean) {
                 if (System.getProperty(key) != null) {
                     if (System.getProperty(key).equals("")) {
                         System.setProperty(key,"true");
                     }
-                    return (T) Boolean.valueOf(System.getProperty(key));
-                } else {
-                    return defaultVal;
+                    parsed = (T) Boolean.valueOf(System.getProperty(key));
                 }
             } else {
                 throw new IllegalArgumentException();
@@ -205,6 +202,8 @@ public final class ExtUtils {
                     key, value, defaultVal.toString()));
             throw ex;
         }
+        logfn(" ESV Properties Manager: %s = %s", key, parsed.toString());
+        return parsed;
     }
     
     /**
@@ -212,7 +211,9 @@ public final class ExtUtils {
      */
     public static <T extends Enum<T>> T prop(Class<T> type, String key, T def)
             throws IllegalArgumentException {
-        return (System.getProperty(key) != null) ? T.valueOf(type, System.getProperty(key)) : def;
+        T parsed = (System.getProperty(key) != null) ? T.valueOf(type, System.getProperty(key)) : def;
+        logfn(" ESV Properties Manager: %s = %s", key, parsed.toString());
+        return parsed;
     }
     
     /**

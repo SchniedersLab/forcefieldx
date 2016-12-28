@@ -42,8 +42,8 @@ public abstract class ExtendedVariable {
     private boolean ready = false;
     
     // Properties
-    protected static final boolean esvPropagation = prop("esv-propagation", true);
-    protected static final boolean scaleBondedTerms = prop("esv-scaleBonded", true);
+    protected static final boolean esvPropagation = prop("esv-propagation", false);
+    protected static final boolean scaleBondedTerms = prop("esv-scaleBonded", false);
     protected static final OptionalDouble biasOverride = prop("esv-bias", OptionalDouble.empty());
     private final double thetaMass = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
     private final double thetaFriction = prop("esv-thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
