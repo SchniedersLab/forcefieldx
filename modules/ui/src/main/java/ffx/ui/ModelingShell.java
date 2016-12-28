@@ -67,7 +67,6 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.MethodClosure;
 
 import groovy.ui.Console;
@@ -304,7 +303,8 @@ public final class ModelingShell extends Console implements AlgorithmListener {
                 logger.log(Level.SEVERE, " Uncaught severe error: FFX shutting down", ex);
             }
             after();
-        } catch (IOException | CompilationFailedException e) {
+
+        } catch (Exception e) { // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in some versions of Groovy.
             String message = "Error evaluating script.";
             logger.log(Level.WARNING, message, e);
         }
