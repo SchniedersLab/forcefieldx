@@ -338,6 +338,6 @@ logger.info(sb.toString());
 
 sb = new StringBuilder();
 sb.append(format(" Smoothness Verification: \n"));
-for (int la = 0.0; la < 1.0; ls += 0.01) {
+for (int la = 0.0; la < 1.0; la += 0.01) {
     
 }
