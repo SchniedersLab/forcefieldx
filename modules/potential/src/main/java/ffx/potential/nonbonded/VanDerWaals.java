@@ -37,6 +37,10 @@
  */
 package ffx.potential.nonbonded;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -146,7 +150,23 @@ public class VanDerWaals implements MaskingInterface,
     
     private double esvLambda[];
     private boolean esvAtoms[];
-    private int esvAtomStates[];
+    /**
+     * Debugging; set at energy invocation to "vdw-printInteractions".
+     */
+    private boolean printInteractions = false;
+    private BufferedWriter interactionWriter = null;
+    /**
+     * TODO: To enable multi-dimensional lambda variables.
+     * Preload this with the effective (combined) lambda for each atom state.
+     * [nAtoms][nStates]
+     */
+    private double esvStateLambda[][];
+    /**
+     * TODO: To enable multi-dimensional lambda variables.
+     * Preload this with the effective (combined) radEps for each atom state.
+     * [nAtoms][nStates]
+     */
+    private double esvStateRadEps[][];
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -430,7 +450,7 @@ public class VanDerWaals implements MaskingInterface,
         if (lambdaTerm) {
             logger.info("  Lambda,ESV Parameters");
             logger.info(format("   Softcore Alpha:                        %5.3f", vdwLambdaAlpha));
-            logger.info(format("   Lambda Exponent:                       %5.3f", vdwLambdaExponent));
+            logger.info(format("   Lambda Exponent:                       %5.3f\n", vdwLambdaExponent));
         }
     }
 
@@ -869,12 +889,27 @@ public class VanDerWaals implements MaskingInterface,
      * @since 1.0
      */
     private void log(int i, int k, double r, double eij) {
-        int classi = atoms[i].getAtomType().atomClass;
-        int classk = atoms[k].getAtomType().atomClass;
-        logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
-                atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                1.0 / vdwForm.radEps[classi][classk * 2 + vdwForm.RADMIN], r, eij));
+        final Atom ai = atoms[i];
+        final Atom ak = atoms[k];
+        int classi = ai.getAtomType().atomClass;
+        int classk = ak.getAtomType().atomClass;
+        double combined = 1.0 / vdwForm.radEps[classi][classk * 2 + VanDerWaalsForm.RADMIN];
+        
+        if (interactionWriter != null) {
+            try {
+                interactionWriter.write(format("VDW %s%d-%s %s%d-%s %10.4f  %10.4f  %10.4f\n",
+                        ai.getResidueName(), ai.getResidueNumber(), ai.getAtomType().name,
+                        ak.getResidueName(), ak.getResidueNumber(), ak.getAtomType().name,
+                        combined, r, eij));
+            } catch (IOException ex) {
+                logger.severe("Van der Waals interaction writer encountered I/O exception.");
+            }
+        } else {
+            logger.info(format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
+                    "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
+                    atoms[k].xyzIndex, atoms[k].getAtomType().name,
+                    combined, r, eij));
+        }
     }
     
     /**
@@ -917,8 +952,8 @@ public class VanDerWaals implements MaskingInterface,
             esvLambda = new double[nAtoms];
         }
         for (int i = 0; i < nAtoms; i++) {
-            esvAtoms[i] = esvSystem.hasAtom(i);
-            esvLambda[i] = esvSystem.atomLambda(i);
+            esvAtoms[i] = esvSystem.hasVdwAtom(i);
+            esvLambda[i] = esvSystem.atomVdwLambda(i);
         }
         if (esvDeriv == null || esvDeriv.length < numESVs) {
             esvDeriv = new SharedDouble[numESVs];
@@ -1040,6 +1075,10 @@ public class VanDerWaals implements MaskingInterface,
         }
         return dEdEsv;
     }
+    
+    public double getdEdEsv(int esvID) {
+        return esvDeriv[esvID].get();
+    }
 
     /**
      * {@inheritDoc}
@@ -1148,7 +1187,7 @@ public class VanDerWaals implements MaskingInterface,
          * @since 1.0
          */
         @Override
-        public void start() {
+        public void start() throws IOException {
             /**
              * Initialize the shared variables.
              */
@@ -1177,12 +1216,33 @@ public class VanDerWaals implements MaskingInterface,
                 lambdaGradY.alloc(nAtoms);
                 lambdaGradZ.alloc(nAtoms);
             }
+            
+            if (System.getProperty("vdw-printInteractions") != null) {
+                String fn = System.getProperty("vdw-printInteractions");
+                if (fn.equalsIgnoreCase("false") || fn.equalsIgnoreCase("null")) {
+                    printInteractions = false;
+                    interactionWriter = null;
+                } else if (fn.equalsIgnoreCase("true")) {
+                    // Print to console.
+                    printInteractions = true;
+                    interactionWriter = null;
+                } else {
+                    // Print to file.
+                    printInteractions = true;
+                    interactionWriter = new BufferedWriter(new FileWriter(new File(fn)));
+                }
+            }
         }
 
         @Override
-        public void finish() {
+        public void finish() throws IOException {
             neighborListOnly = false;
             runIDNumber++;
+            if (interactionWriter != null) {
+                interactionWriter.close();
+            }
+            printInteractions = false;
+            interactionWriter = null;
         }
 
         @Override
@@ -1574,19 +1634,6 @@ public class VanDerWaals implements MaskingInterface,
                             continue;
                         }
                         final boolean esvk = esvAtoms[k];
-                        /* The following check becomes necessary only when heavy atom VdW radii are
-                         * allowed to differ between ESV end states. For titration, this
-                         * occurs only for ASP/GLU oxygens (OD1,OD2) and CYS sulfur (SG).
-                        if (esvi && esvk) {
-                            // Prevent atoms in different, non-zero ESV states from seeing each other.
-                            // This check takes the place of modified neighbor lists.
-                            final int esvStateI = esvAtomStates[i];
-                            final int esvStateK = esvAtomStates[k];
-                            if (atomStates[i] != 0 && atomStates[k] != 0 && atomStates[i] != atomStates[k]) {
-                                buglog(" (VdW) Skipping interaction: %s, %s", atomi, atomk);
-                                continue;
-                            }
-                        }   */
                         // Hide these global variable names for thread safety.
                         final double sc1, dsc1dL, d2sc1dL2;
                         final double sc2, dsc2dL, d2sc2dL2;
@@ -1675,7 +1722,6 @@ public class VanDerWaals implements MaskingInterface,
                                 dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
                             }
                             eik *= taper;
-                            // Multiply the Dual-Topology ("outside") lambda
                             if (esvTerm && useEsvInterpLambda) {
                                 if (esvi) {
                                     eik *= esvLambda[i];
@@ -1685,7 +1731,9 @@ public class VanDerWaals implements MaskingInterface,
                                 }
                             }
                             e += eik;
-//                            log(i,k,r,e);
+                            if (printInteractions) {
+                                log(i,k,r,eik);
+                            }
                             count++;
                             if (!gradient && !soft) {
                                 continue;

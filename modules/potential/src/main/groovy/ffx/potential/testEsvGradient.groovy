@@ -59,6 +59,11 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
 import ffx.potential.extended.TitrationESV.TitrationUtils;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
 //import edu.rit.pj.ParallelTeam;
 
 // finite-difference parameters
@@ -67,6 +72,7 @@ double step = 0.0001;
 
 // ESV discretization bias height
 double biasMag = 1.0;
+double pH;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -79,7 +85,9 @@ cli.dx(longOpt:'stepSize', args:1, argName:'0.0001', 'Finite difference step siz
 cli.rl(longOpt:'resList', required:true, args:1, 'List of residues to titrate (e.g. A4.A8.B2.B34)');
 cli.bm(longOpt:'biasMag', args:1, argName:'1.0', 'ESV discretization bias height.');
 cli.st(longOpt:'singleThread', args:0, 'Limit PJ concurrency.');
+cli.fv(longOpt:'ffe-verbose', args:0, 'Always print FFE decomposition.');
 cli.v(longOpt:'verbose', 'Print out every atomic interaction.');
+cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -99,6 +107,12 @@ if (options.s) {
 
 // Read in command line file.
 String filename = arguments.get(0);
+
+if (options.pH) {
+    pH = Double.parseDouble(options.pH);
+} else {
+    pH = 7.4;
+}
 
 if (options.l) {
     lambda = Double.parseDouble(options.l);
@@ -120,7 +134,10 @@ if (options.st) {
 if (options.v) {
     System.setProperty("esv-verbose", "true");
 }
-//System.setProperty("esv-debug", "true");
+
+if (options.fv) {
+    System.setProperty("ffe-printOverride", "true");
+}
 
 if (arguments.size() == 1) {
     logger.info("\n Testing lambda derivatives for " + filename);
@@ -129,26 +146,28 @@ if (arguments.size() == 1) {
     return cli.usage();
 }
 
+// ForceField
+System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
 // ForceField: Active
-System.setProperty("ESVTERM", "true");
-System.setProperty("LAMBDATERM", "true");
-System.setProperty("VDWTERM", "true");
-System.setProperty("BONDTERM", "true");
-System.setProperty("ANGLETERM", "true");
-System.setProperty("STRBNDTERM", "true");
-System.setProperty("UREYTERM", "true");
-System.setProperty("OPBENDTERM", "true");
-System.setProperty("TORSIONTERM", "true");
-System.setProperty("PITORSTERM", "true");
-System.setProperty("TORTORTERM", "true");
-System.setProperty("IMPROPERTERM", "true");
+System.setProperty("esvterm", "true");
+System.setProperty("lambdaterm", "true");
+System.setProperty("vdwterm", "true");
+System.setProperty("bondterm", "true");
+System.setProperty("angleterm", "true");
+System.setProperty("strbndterm", "true");
+System.setProperty("ureyterm", "true");
+System.setProperty("opbendterm", "true");
+System.setProperty("torsionterm", "true");
+System.setProperty("pitorsterm", "true");
+System.setProperty("tortorterm", "true");
+System.setProperty("improperterm", "true");
 // ForceField: Inactive
-System.setProperty("MPOLETERM", "false");
-System.setProperty("POLARIZETERM", "false");
-System.setProperty("GKTERM", "false");
-System.setProperty("RESTRAINTERM", "false");
-System.setProperty("COMRESTRAINTERM", "false");
-System.setProperty("LAMBDA_TORSIONS", "false");
+System.setProperty("mpoleterm", "false");
+System.setProperty("polarizeterm", "false");
+System.setProperty("gkterm", "false");
+System.setProperty("restrainterm", "false");
+System.setProperty("comrestrainterm", "false");
+System.setProperty("lambda_torsions", "false");
 
 // Potential Settings
 System.setProperty("polarization", "NONE");
@@ -159,9 +178,10 @@ System.setProperty("no-ligand-condensed-scf", "false");     // don't need conden
 System.setProperty("vdw-cutoff", "1000");
 
 // ESV Settings
+System.setProperty("ffe-combineBonded", "true");
 System.setProperty("esv-propagation", "false");             // don't allow ESV particle to undergo dynamics
-System.setProperty("esv-biasTerm", "true");                 // include discretization and pH biases
-System.setProperty("esv-scaleBonded", "true");              // include effects on bonded terms
+//System.setProperty("esv-biasTerm", "true");                 // include discretization and pH biases
+//System.setProperty("esv-scaleBonded", "false");             // include effects on bonded terms
 
 // Open the first topology.
 open(filename);
@@ -173,7 +193,6 @@ MolecularAssembly mola = (MolecularAssembly) active;
 ForceFieldEnergy ffe = mola.getPotentialEnergy();
 ExtendedSystem esvSystem = new ExtendedSystem(mola);
 
-List<ExtendedVariable> esvList = new ArrayList<>();
 Polymer[] polymers = active.getChains();
 double temperature = 298.15;
 int numESVs = rlTokens.length;
@@ -194,7 +213,7 @@ for (int i = 0; i < numESVs; i++) {
     }
     
     MultiResidue titrating = TitrationUtils.titrationFactory(mola, target.get());
-    TitrationESV esv = new TitrationESV(titrating, 7.4, biasMag);
+    TitrationESV esv = new TitrationESV(titrating, pH, biasMag);
     esvSystem.addVariable(esv);
 }
 
@@ -214,42 +233,104 @@ double[][] esvLambdaGrad = new double[numESVs][n];
 double[][][] esvLambdaGradFD = new double[2][numESVs][n];
 ffe.getCoordinates(xyz);
 
-// Compute the end states.
-esvSystem.setAllLambdas(0.0);
-double e0 = ffe.energyAndGradient(xyz,gradient);
-esvSystem.setAllLambdas(1.0);
-double e1 = ffe.energyAndGradient(xyz,gradient);
-logger.info(String.format(" E(1),E(0),diff:  %14.6f - %14.6f = %14.6f", e1, e0, e1-e0));
-
 double width = 2.0 * step;      // default step = 0.0001
 double tolerance = 1.0e-3;      // pass-fail margin
-ffe.setPrintOverride(true);
 
 /*******************************************************************************
 Finite Difference tests of each ESV.
 First derivatives only; dEdLdX and dEdL2 not yet implemented in PME.
 *******************************************************************************/
 for (int i = 0; i < numESVs; i++) {
-    esvSystem.setAllLambdas(lambda - step);
+    esvSystem.setLambda(i, 0.0);
+    double e0 = ffe.energyAndGradient(xyz,gradient);
+    esvSystem.setLambda(i, 1.0);
+    double e1 = ffe.energyAndGradient(xyz,gradient);
+    logger.info(String.format(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f\n", i, e1, e0, e1-e0));
+    
+    esvSystem.setLambda(i, lambda - step);
     double eLower = ffe.energyAndGradient(xyz,esvLambdaGradFD[1][i]);
 
-    esvSystem.setAllLambdas(lambda + step);
+    esvSystem.setLambda(i, lambda + step);
     double eUpper = ffe.energyAndGradient(xyz,esvLambdaGradFD[0][i]);
 
-    esvSystem.setAllLambdas(lambda);
+    esvSystem.setLambda(i, lambda);
     double center = ffe.energyAndGradient(xyz,esvLambdaGrad[i]);
-    double[] esvAnalytics = esvSystem.getdEdL(false, 0.0);
-    double analytic = esvAnalytics[i];
-
+    
+    double analytic = esvSystem.getdEdL(i, null, false, false);
     double numeric = (eUpper - eLower) / (2 * step);
     double error = Math.abs(numeric - analytic);
 
     StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" (ESV%d) Numeric FD @ upper,lower,width,dEdL: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", i, eUpper, eLower, width, numeric));
-    sb.append(String.format(" (ESV%d) Analytic Derivative @ lambda %4.2f  >  dEdL: %+9.6g\n\n", i, lambda, analytic));
+    sb.append(String.format(" ESV%d> Numeric FD @ upper,lower,width,dEdL: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", i, eUpper, eLower, width, numeric));
+    sb.append(String.format(" ESV%d> Analytic Derivative @ lambda %4.2f  >  dEdL: %+9.6g\n", i, lambda, analytic));
     String passFail = (error < tolerance) ? "passed" : "failed";
-    sb.append(String.format(" (ESV%d) dE/dL %6s:   %+10.6f\n", i, passFail, error));
-    sb.append(String.format(" (ESV%d) Numeric:        %+10.6f\n", i, numeric));
-    sb.append(String.format(" (ESV%d) Analytic:       %+10.6f\n", i, analytic));
+    sb.append(String.format(" ESV%d> dE/dL %6s:   %+10.6f\n", i, passFail, error));
+    sb.append(String.format(" ESV%d> Numeric:        %+10.6f\n", i, numeric));
+    sb.append(String.format(" ESV%d> Analytic:       %+10.6f\n", i, analytic));
+    logger.info(sb.toString());
+}
+
+/*******************************************************************************
+Dilysine end-state analysis.
+*******************************************************************************/
+if (esvSystem.count() != 2
+        || !files.contains("lys-lys.pdb") || !files.contains("lyd-lyd.pdb")
+        || !files.contains("lys-lyd.pdb") || !files.contains("lyd-lys.pdb")) {
+    logger.info("Run me from examples directory.");
+} else {
+//    String fn = "ffx/potential/structures/dilysine-lydlyd.pdb";
+//    List<String> files = Arrays.asList(File.list());
+
+    esvSystem.setEsvBiasTerm(false);
+    ffe.setPrintOverride(true);
+    StringBuilder sb = new StringBuilder();
+    sb.append(format(" Two-site ESV Analysis: \n"));
+
+    esvSystem.setLambda(0, 0.0);
+    esvSystem.setLambda(1, 0.0);
+    //    System.setProperty("vdw-printInteractions", "inter-ddesv");
+    ffe.energy(false, false);
+    double esvVdw00 = ffe.getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "0-0", esvVdw00));
+    esvSystem.setLambda(0, 1.0);
+    esvSystem.setLambda(1, 0.0);
+    //    System.setProperty("vdw-printInteractions", "inter-sdesv");
+    ffe.energy(false, false);
+    double esvVdw10 = ffe.getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "1-0", esvVdw10));
+    esvSystem.setLambda(0, 0.0);
+    esvSystem.setLambda(1, 1.0);
+    //    System.setProperty("vdw-printInteractions", "inter-dsesv");
+    ffe.energy(false, false);
+    double esvVdw01 = ffe.getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "0-1", esvVdw01));
+    esvSystem.setLambda(0, 1.0);
+    esvSystem.setLambda(1, 1.0);
+    //    System.setProperty("vdw-printInteractions", "inter-ssesv");
+    ffe.energy(false, false);
+    double esvVdw11 = ffe.getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "1-1", esvVdw11));
+    logger.info(sb.toString());
+
+    sb = new StringBuilder();
+    sb.append(format(" Vanilla End-States: \n"));
+    Logger.getLogger("ffx").setLevel(Level.OFF);
+    //    System.setProperty("vdw-printInteractions", "inter-dd");
+    open("lyd-lyd.pdb");
+    double lydlyd = energy().getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "lyd-lyd", lydlyd));
+    //    System.setProperty("vdw-printInteractions", "inter-sd");
+    open("lys-lyd.pdb");
+    double lyslyd = energy().getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "lys-lyd", lyslyd));
+    //    System.setProperty("vdw-printInteractions", "inter-ds");
+    open("lyd-lys.pdb");
+    double lydlys = energy().getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "lyd-lys", lydlys));
+    //    System.setProperty("vdw-printInteractions", "inter-ss");
+    open("lys-lys.pdb");
+    double lyslys = energy().getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "lys-lys", lyslys));
+    Logger.getLogger("ffx").setLevel(Level.INFO);
     logger.info(sb.toString());
 }

@@ -1,15 +1,14 @@
 package ffx.potential.extended;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -26,7 +25,6 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
-import ffx.potential.utils.DebugException;
 import ffx.utilities.Keyword;
 
 import static ffx.potential.extended.ExtConstants.kB;
@@ -42,33 +40,10 @@ public final class ExtUtils {
     // Private constructor implies static class.
     private ExtUtils() {}
     
-    private static Logger logger = Logger.getLogger(ExtUtils.class.getName());    
+    private static final Logger logger = Logger.getLogger(ExtUtils.class.getName());    
     private static final Random rng = ThreadLocalRandom.current();
-    
-//    public void setR(double r[]) {
-//        setR(r, 0.0);
-//    }
-//    
-//    public void setR(double r[], double buffer) {
-//        switch (coordinates) {
-//            case QI:
-//                setQIRotationMatrix(r[0], r[1], r[2]);
-//                double zl = r[2] + buffer;
-//                r2 = r[0] * r[0] + r[1] * r[1] + zl * zl;
-//                x = 0.0;
-//                y = 0.0;
-//                z = sqrt(r2);
-//                R = z;
-//                break;
-//            case GLOBAL:
-//                r2 = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
-//                x = r[0];
-//                y = r[1];
-//                z = r[2] + buffer;
-//                R = sqrt(r2);
-//                break;
-//        }
-//    }
+    private static final CallerID cid = new CallerID();
+    private static final CompositeConfiguration config = new CompositeConfiguration();
     
     public static void mutateToProtonatedForms(MolecularAssembly mola) {
         if (true) {
@@ -89,25 +64,13 @@ public final class ExtUtils {
 //        pdbFilter.mutate(chain,resID,resName);
 //        pdbFilter.readFile();
 //        pdbFilter.applyAtomProperties();
-//        molecularAssembly.finalize(true, forceField);
-    }
-    
-    public static void setLogSource(Logger logger) {
-        ExtUtils.logger = logger;
     }
     
     /**
      * ("log-format") Shorthand for the ubiquitous logger.info(String.format("why",42));
      */
     public static void logf(String msg, Object... args) {
-        logger.info(format(msg, args));
-    }
-    
-    /**
-     * ("log-format") Shorthand for the ubiquitous logger.info(String.format("why",42));
-     */
-    public static void logfn(String msg, Object... args) {
-        logger.info(format(msg + "\n", args));
+        cid.getCallingLogger().info(format(msg, args));
     }
     
     /**
@@ -149,26 +112,33 @@ public final class ExtUtils {
         return sb.toString();
     }
     
-    public static void THROW_DEBUG(String message) {
-        throw new DebugException(message);
-    }
-
     /**
      * Parse system properties of type String, Boolean, Integer, Double, OptionalInt, and OptionalDouble.
-     * Default value determines the return type; null assigned to String.
+     * Default value determines the return type. Provides case-insensitivity in property keys.
      */
-    public static <T> T prop(String key, T defaultVal)
+    @SuppressWarnings("unchecked")
+    public static final <T> T prop(String key, T defaultVal)
             throws NoSuchElementException, NumberFormatException {
         if (defaultVal == null) {
             throw new IllegalArgumentException();
         }
-        T parsed = defaultVal;
+        T parsed = null;
         try {
             if (System.getProperty(key) == null) {
                 if (System.getProperty(key.toLowerCase()) != null) {
                     key = key.toLowerCase();
-                } else if (System.getProperty(key.toLowerCase()) != null) {
+                } else if (System.getProperty(key.toUpperCase()) != null) {
                     key = key.toUpperCase();
+                } else {
+                    boolean found = false;
+                    for (Object search : System.getProperties().keySet()) {
+                        if (search instanceof String && ((String) search).equalsIgnoreCase(key)) {
+                            key = (String) search;
+                        }
+                    }
+                    if (!found) {
+                        return defaultVal;
+                    }
                 }
             }
             if (defaultVal instanceof String) {
@@ -188,7 +158,7 @@ public final class ExtUtils {
                         ? (T) OptionalDouble.of(Double.parseDouble(System.getProperty(key))) : defaultVal;
             } else if (defaultVal instanceof Boolean) {
                 if (System.getProperty(key) != null) {
-                    if (System.getProperty(key).equals("")) {
+                    if (System.getProperty(key).isEmpty()) {
                         System.setProperty(key,"true");
                     }
                     parsed = (T) Boolean.valueOf(System.getProperty(key));
@@ -196,44 +166,40 @@ public final class ExtUtils {
             } else {
                 throw new IllegalArgumentException();
             }
-        } catch (Exception ex) {
+        } catch (IllegalArgumentException ex) {
             String value = (System.getProperty(key) != null) ? System.getProperty(key) : "null";
             logger.warning(String.format("Error parsing property %s with value %s; the default is %s.", 
                     key, value, defaultVal.toString()));
             throw ex;
         }
-        logfn(" ESV Properties Manager: %s = %s", key, parsed.toString());
+        config.addProperty(key, parsed);
         return parsed;
     }
     
     /**
      * Parse system properties into an Enum class.
      */
-    public static <T extends Enum<T>> T prop(Class<T> type, String key, T def)
+    public static final <T extends Enum<T>> T prop(Class<T> type, String key, T def)
             throws IllegalArgumentException {
         T parsed = (System.getProperty(key) != null) ? T.valueOf(type, System.getProperty(key)) : def;
-        logfn(" ESV Properties Manager: %s = %s", key, parsed.toString());
+        config.addProperty(key, parsed);
+//        logf(" ESV Properties Manager: %s = %s", key, parsed.toString());
         return parsed;
     }
+        
+    public static final CompositeConfiguration getExtConfig() {
+        return config;
+    }
     
-    /**
-     * Parse multiple system properties into a single boolean; useful for handling synonyms.
-     */
-    public static boolean prop(String[] keys, boolean defaultValue) {
-        if (defaultValue) { // When default is true, any explicitly false member kills it.
-            for (String key : keys) {
-                if (!prop(key, defaultValue)) {
-                    return false;
-                }
-            }
-        } else {            // When default is false, any explicitly true member activates it.
-            for (String key : keys) {
-                if (prop(key, defaultValue)) {
-                    return true;
-                }
-            }
+    public static void printExtConfig() {
+        Iterator<String> it = config.getKeys();
+        SB.logfn("\n Extended Configuration: ");
+        while (it.hasNext()) {
+            String key = it.next();
+            SB.logfn("   %16s = %6s", it, config.getProperty(key));
         }
-        return defaultValue;
+        SB.nl();
+        SB.print();
     }
     
     /**
@@ -302,13 +268,22 @@ public final class ExtUtils {
             sb.append("\n");
         }
         public static void print() {
-            logger.info(sb.toString());
+            cid.getCallingLogger().info(sb.toString());
             clear();
+        }
+        public static void printIf(boolean print) {
+            if (print) {
+                print();
+            } else {
+                clear();
+            }
         }
         public static void printIfPresent(String header, Object... args) {
             if (queued > 0) {
-                logger.info(format(header, args));
+                cid.getCallingLogger().info(format(header, args));
                 print();
+            } else {
+                clear();
             }
         }
     }
@@ -319,19 +294,6 @@ public final class ExtUtils {
      *  is set or explicit class/hierarchy/method sources are requested.
      */
     public static class DebugHandler {
-        
-        public static void buglog(String msg, Object... args) {
-            buglog.info(format(msg, args));
-        }
-        public static void buglog(int depr, String msg, Object... args) {
-            buglog(msg, args);
-        }
-        public static void buglog(int depr, StringBuilder sb) {
-            buglog(sb.toString());
-        }
-        public static void buglog(StringBuilder sb) {
-            buglog(sb.toString());
-        }
         public static boolean DEBUG() { return DEBUG; }
         public static boolean VERBOSE() { return VERBOSE; }
         public static String debugFormat() { return debugFormat; }
@@ -343,12 +305,20 @@ public final class ExtUtils {
         private static final String debugFormat = prop("esv-debugFormat", "%.4g");
         private static final OptionalInt debugIntI = prop("esv-debugIntI", OptionalInt.empty());
         private static final OptionalInt debugIntK = prop("esv-debugIntK", OptionalInt.empty());
-        private static final Logger buglog = Logger.getLogger(DebugHandler.class.getName());
-        private static final List<String> debugClasses = new ArrayList<>();
-        private static final List<String> debugMethods = new ArrayList<>();
-        
-        static {
-            buglog.setLevel(Level.ALL);
+    }
+    
+    private static class CallerID extends SecurityManager {
+        public Class<?> getCallingClass() {
+            Class<?>[] callStack = getClassContext();
+            for (Class<?> caller : callStack) {
+                if (!caller.getName().contains("ExtUtils")) {
+                    return caller;
+                }
+            }
+            return ExtUtils.class;  // fallback
+        }
+        public Logger getCallingLogger() {
+            return Logger.getLogger(getCallingClass().getName());
         }
     }
     

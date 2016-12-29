@@ -298,7 +298,7 @@ for (String token : rlTokens) {
     }
     
     MultiResidue titrating = TitrationUtils.titrationFactory(mola, target);
-    TitrationESV esv = new TitrationESV(titrating, 7.4, biasMag);
+    TitrationESV esv = new TitrationESV(titrating, pH, biasMag);
     esvSystem.addVariable(esv);
 }
 

@@ -237,7 +237,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private double[] optimizationScaling = null;
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
-    private boolean printOverride = false;
+    private boolean printCompact = prop("ffe-combineBonded", false);
+    private boolean printOverride = prop("ffe-printOverride", false);
     private boolean printOnFailure;
     /**
      * *************************************
@@ -1281,7 +1282,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
             totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
             if (esvTerm) {
-                esvBias = esvSystem.biasEnergy(null);
+                esvBias = esvSystem.getBiasEnergy(null);
                 totalEnergy += esvBias;
             }
         } catch (EnergyException ex) {
@@ -1307,14 +1308,18 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
 
         if (print || printOverride) {
-            StringBuilder sb = new StringBuilder("\n");
-            if (gradient) {
-                sb.append(" Computed Potential Energy and Atomic Coordinate Gradients\n");
+            if (printCompact) {
+                logger.info(this.toString());
             } else {
-                sb.append(" Computed Potential Energy\n");
+                StringBuilder sb = new StringBuilder();
+                if (gradient) {
+                    sb.append("\n Computed Potential Energy and Atomic Coordinate Gradients\n");
+                } else {
+                    sb.append("\n Computed Potential Energy\n");
+                }
+                sb.append(this);
+                logger.info(sb.toString());
             }
-            sb.append(this);
-            logger.info(sb.toString());
         }
         return totalEnergy;
     }
@@ -1455,51 +1460,65 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("\n");
-        if (bondTerm && nBonds > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
-                    "Bond Stretching   ", bondEnergy, nBonds,
-                    bondTime * toSeconds, bondRMSD));
-        }
-        if (angleTerm && nAngles > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
-                    "Angle Bending     ", angleEnergy, nAngles,
-                    angleTime * toSeconds, angleRMSD));
-        }
-        if (stretchBendTerm && nStretchBends > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "Stretch-Bend      ", stretchBendEnergy,
-                    nStretchBends, stretchBendTime * toSeconds));
-        }
-        if (ureyBradleyTerm && nUreyBradleys > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "Urey-Bradley      ", ureyBradleyEnergy,
-                    nUreyBradleys, ureyBradleyTime * toSeconds));
-        }
-        if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "Out-of-Plane Bend ", outOfPlaneBendEnergy,
-                    nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
-        }
-        if (torsionTerm && nTorsions > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "Torsional Angle   ", torsionEnergy, nTorsions,
-                    torsionTime * toSeconds));
-        }
-        if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
-                    nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
-        }
-        if (torsionTorsionTerm && nTorsionTorsions > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "Torsion-Torsion   ", torsionTorsionEnergy,
-                    nTorsionTorsions, torsionTorsionTime * toSeconds));
-        }
-        if (improperTorsionTerm && nImproperTorsions > 0) {
-            sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                    "Improper Torsion  ", improperTorsionEnergy,
-                    nImproperTorsions, improperTorsionTime * toSeconds));
+        StringBuilder sb = new StringBuilder();
+        if (printCompact) {
+            double totalBondedEnergy = bondEnergy + angleEnergy + stretchBendEnergy
+                    + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy
+                    + piOrbitalTorsionEnergy + torsionTorsionEnergy + improperTorsionEnergy;
+            int totalBondedInteractions = nBonds + nAngles + nStretchBends
+                    + nUreyBradleys + nOutOfPlaneBends + nTorsions
+                    + nPiOrbitalTorsions + nTorsionTorsions + nImproperTorsions;
+            double totalBondedTime = (bondTime + angleTime) * toSeconds;
+            sb.append(String.format("  %s %16.8f %12d %12.3f (%6.4f, %6.4f)\n",
+                    "Bonded Terms      ", totalBondedEnergy, totalBondedInteractions,
+                    totalBondedTime, bondRMSD, angleRMSD));
+        } else {
+            sb.append("\n");
+            if (bondTerm && nBonds > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
+                        "Bond Stretching   ", bondEnergy, nBonds,
+                        bondTime * toSeconds, bondRMSD));
+            }
+            if (angleTerm && nAngles > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
+                        "Angle Bending     ", angleEnergy, nAngles,
+                        angleTime * toSeconds, angleRMSD));
+            }
+            if (stretchBendTerm && nStretchBends > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Stretch-Bend      ", stretchBendEnergy,
+                        nStretchBends, stretchBendTime * toSeconds));
+            }
+            if (ureyBradleyTerm && nUreyBradleys > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Urey-Bradley      ", ureyBradleyEnergy,
+                        nUreyBradleys, ureyBradleyTime * toSeconds));
+            }
+            if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Out-of-Plane Bend ", outOfPlaneBendEnergy,
+                        nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
+            }
+            if (torsionTerm && nTorsions > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Torsional Angle   ", torsionEnergy, nTorsions,
+                        torsionTime * toSeconds));
+            }
+            if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
+                        nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
+            }
+            if (torsionTorsionTerm && nTorsionTorsions > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Torsion-Torsion   ", torsionTorsionEnergy,
+                        nTorsionTorsions, torsionTorsionTime * toSeconds));
+            }
+            if (improperTorsionTerm && nImproperTorsions > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Improper Torsion  ", improperTorsionEnergy,
+                        nImproperTorsions, improperTorsionTime * toSeconds));
+            }
         }
         if (restraintBondTerm && nRestraintBonds > 0) {
             sb.append(String.format("  %s %16.8f %12d %12.3f\n",
@@ -1557,7 +1576,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (esvTerm) {
             sb.append(String.format("  %s %16.8f %12d     %s\n",
                     "ExtendedSystemBias", esvBias, esvSystem.count(), esvSystem.getLambdaList()));
-            sb.append(esvSystem.getDecomposition());
+            sb.append(esvSystem.getBiasDecomposition());
         }
 
         sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
@@ -1640,6 +1659,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public void setPrintOverride(boolean set) {
         this.printOverride = set;
+    }
+    
+    public void setBondedCombined(boolean set) {
+        this.printCompact = set;
     }
 
     /**

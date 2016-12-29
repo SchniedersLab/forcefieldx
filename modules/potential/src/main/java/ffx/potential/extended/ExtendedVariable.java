@@ -63,10 +63,10 @@ public abstract class ExtendedVariable {
     
     // Atom lists and scaled terms
     private MultiResidue multiRes;
-    private List<Atom> atoms = new ArrayList<>();
     private List<Atom> backbone = new ArrayList<>();
     private Residue resOne, resZro;                 // resOne*lamedh + resZero*(1-lamedh)
     private List<Atom> atomsOne, atomsZro;          // side-chain only; atomsZro stay unconnected to mola
+    private List<Atom> atomsShared, atomsUnshared;
     private List<BondedTerm> bondedOne, bondedZro;  // valence terms for each side; mola won't see zro by default
     private MSNode termNode;                  // modified to contain all applicable bonded terms
     private int moleculeNumber = 0;
@@ -91,9 +91,19 @@ public abstract class ExtendedVariable {
         this(multiRes, 0.0, 1.0);
     }
     
-    public int getMoleculeNumber() {
-        return moleculeNumber;
-    }
+    /**
+     * Called by readyUp() to populate atomsOne, atomsZro, atomsShared, atomsUnshared.
+     * Use this to move titration-specific initialization to TitrationESV.
+     */
+//    public abstract void fillAtomLists();
+    /**
+     * Should include at least the discretization bias; add any type-specific biases (eg pH).
+     */
+    public abstract double getTotalBias(double temperature, boolean print);
+    /**
+     * Should include at least the discretization bias; add any type-specific biases (eg pH).
+     */
+    public abstract double getTotalBiasDeriv(double temperature, boolean print);
         
     /**
      * Propagate lambda using Langevin dynamics.
@@ -143,33 +153,30 @@ public abstract class ExtendedVariable {
     }
     
     /**
-     * Should include at least the discretization bias; add any type-specific biases (eg pH).
-     */
-    public abstract double totalBiasEnergy(double temperature);
-    public abstract double totalBiasDeriv(double temperature);
-    
-    /**
      * From Shen&Huang 2016; drives ESVs to zero/unity.
      * bias = 4B*(L-0.5)^2
      */
-    public double discretizationBiasEnergy() {
+    public double getDiscrBias() {
         return discrBias;
     }
     
     /**
      * dBiasdL = -8B*(L-0.5)
      */
-    public double discretizationBiasDeriv() {
+    public double getDiscrBiasDeriv() {
         return dDiscrBiasdL;
     }
     
     /**
-     * Fill the atoms array; set esvLambda in all bonded terms.
+     * Fill the atom arrays; apply persistent indexing; set atom esv properties;
+     * fill the bonded term arrays; set esv lambda on bonded terms.
      */
     public void readyup() {
+        // Fill the atom lists.
         atomsOne = new ArrayList<>();
         atomsZro = new ArrayList<>();
-        // Fill the atom Lists
+        atomsShared = new ArrayList<>();
+        atomsUnshared = new ArrayList<>();
         for (String bbName : ExtConstants.backboneNames) {
             Atom bb = (Atom) resOne.getAtomNode(bbName);
             if (bb != null) {
@@ -177,13 +184,18 @@ public abstract class ExtendedVariable {
                 bb.applyPersistentIndex();
             }
         }
-        // Fill the atom lists.
         for (Atom a1 : resOne.getAtomList()) {
             if (!backbone.contains(a1)) {
                 a1.setESV(this);
                 a1.applyPersistentIndex();
-                atomsOne.add(a1);
-                a1.setEsvState(1);
+                if ((extInclusion == ExtInclusionMode.TITRATABLE_H && isTitratableHydrogen(a1))
+                        || extInclusion == ExtInclusionMode.ALL_ATOMS) {
+                    atomsOne.add(a1);
+                    a1.setEsvState(1);
+                    atomsUnshared.add(a1);
+                } else {
+                    atomsShared.add(a1);
+                }
             }
         }
         for (Atom a0 : resZro.getAtomList()) {
@@ -194,12 +206,10 @@ public abstract class ExtendedVariable {
                         || extInclusion == ExtInclusionMode.ALL_ATOMS) {
                     atomsZro.add(a0);
                     a0.setEsvState(0);
-                }                
+                    atomsUnshared.add(a0);
+                }
             }
         }
-        
-        atoms.addAll(atomsOne);
-        atoms.addAll(atomsZro);
         
         // Fill bonded term list and set all esvLambda values.
         bondedOne = resOne.getDescendants(BondedTerm.class);
@@ -243,35 +253,64 @@ public abstract class ExtendedVariable {
 //        printTreeFromNode(resZro);
         updateBondedLambdas();        
         ready = true;
-        describe();
+        describe(ExtUtils.DebugHandler.VERBOSE());
     }
     
     /**
      * List all the atoms and bonded terms associated with each end state.
      */
-    public void describe() {
-        SB.logfn(this.toString());
-//        SB.logfn("    Backbone");
-//        for (Atom atom : backbone) {
-//            SB.logfn(" %s", atom);
-//        }
-        SB.logfn("    State 1: Atoms");
-        for (Atom atom : atomsOne) {
-            SB.logfn(" %s", atom);
+    public void describe(boolean verbose) {
+        if (!ready) {
+            return;
         }
-        SB.logfn("    State 1: Bonded");
-        for (MSNode term : resOne.getTerms().getChildList()) {
-            SB.logfn("      %s", term);
-        }
-        SB.logfn("    State 0: Atoms");
-        for (Atom atom : atomsZro) {
-            SB.logfn(" %s", atom);
-        }
-        SB.logfn("    State 0: Bonded");
-        for (MSNode term : resZro.getTerms().getChildList()) {
-            SB.logfn("      %s", term);
+        if (!verbose) {
+            SB.logfn(this.toString());
+    //        SB.logfn("    Backbone");
+    //        for (Atom atom : backbone) {
+    //            SB.logfn(" %s", atom);
+    //        }
+            SB.logfn("    Shared Atoms");
+            for (Atom atom : atomsShared) {
+                SB.logfn(" %s", atom);
+            }
+            SB.logfn("    Unshared Atoms");
+            for (Atom atom : atomsUnshared) {
+                SB.logfn(" %s", atom);
+            }
+            SB.logfn("    Bonded");
+            for (MSNode term : resOne.getTerms().getChildList()) {
+                SB.logfn("      %s", term);
+                if (term.getName().trim().contains("Extended")) {
+                    for (MSNode ext : term.getChildList()) {
+                        SB.logfn("        %s", ext);
+                    }
+                }
+            }
+        } else {
+            SB.logfn("    State 1: Atoms");
+            for (Atom atom : atomsOne) {
+                SB.logfn(" %s", atom);
+            }
+            SB.logfn("    State 1: Bonded");
+            for (MSNode term : resOne.getTerms().getChildList()) {
+                SB.logfn("      %s", term);
+            }
+            SB.logfn("    State 0: Atoms");
+            for (Atom atom : atomsZro) {
+                SB.logfn(" %s", atom);
+            }
+            SB.logfn("    State 0: Bonded");
+            for (MSNode term : resZro.getTerms().getChildList()) {
+                SB.logfn("      %s", term);
+            }
         }
         SB.print();
+    }
+    
+    public List<Atom> getUnsharedAtoms() {
+        List<Atom> ret = new ArrayList<>();
+        ret.addAll(atomsUnshared);
+        return ret;
     }
     
     public boolean isReady() {
@@ -294,5 +333,8 @@ public abstract class ExtendedVariable {
         return atomsZro;
     }
     
+    public int getMoleculeNumber() {
+        return moleculeNumber;
+    }
     
 }

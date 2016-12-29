@@ -71,7 +71,6 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.extended.ExtConstants;
-import ffx.potential.extended.ExtUtils;
 import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
@@ -84,7 +83,6 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.SystemTemperatureException;
 
 import static ffx.potential.extended.ExtUtils.DebugHandler.VERBOSE;
-import static ffx.potential.extended.ExtUtils.DebugHandler.buglog;
 import static ffx.potential.extended.ExtUtils.formatArray;
 import static ffx.potential.extended.ExtUtils.logf;
 import static ffx.potential.extended.ExtUtils.prop;
@@ -176,7 +174,6 @@ public class DiscountPh {
         this.originalFilename = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath()) + "_dyn.pdb";
         SystemFilter.setVersioning(SystemFilter.Versioning.PREFIX_ABSOLUTE);
         library = RotamerLibrary.getDefaultLibrary();
-        ExtUtils.setLogSource(logger);
 
         // Print system props.
         System.getProperties().keySet().stream()
@@ -189,7 +186,7 @@ public class DiscountPh {
                     }
                     return false;
                 })
-                .forEach(key -> SB.logfn(" #%s=%s", 
+                .forEach(key -> SB.logf(" #%s=%s", 
                         key.toString(), System.getProperty(key.toString())));
         SB.printIfPresent(" Advanced option flags:");
         
@@ -834,15 +831,15 @@ public class DiscountPh {
         molDyn.reInit();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Active:\n");
+        SB.logfn("Active:");
         for (Atom a : multiRes.getActive().getAtomList()) {
-            sb.append(String.format("  %s\n", a));
+            SB.logfn("  %s", a);
         }
-        sb.append("Inactive:\n");
+        SB.logfn("Inactive:");
         for (Atom a : multiRes.getInactive().get(0).getAtomList()) {
-            sb.append(String.format("  %s\n", a));
+            SB.logfn("  %s", a);
         }
-        buglog(sb);
+        SB.print();
 
         return;
     }
@@ -880,7 +877,7 @@ public class DiscountPh {
                     Atom inactiveAtom = (Atom) inactive.getAtomNode(activeName);
 //                    debug(3, String.format(" inactiveAtom = %s", inactiveAtom));
                     if (inactiveAtom != null) {
-                        buglog(4, String.format(" Propagating %s\n          to %s.", activeAtom, inactiveAtom));
+//                        logf(String.format(" Propagating %s\n          to %s.", activeAtom, inactiveAtom));
                         // Propagate position and gradient.
                         double activeXYZ[] = activeAtom.getXYZ(null);
                         inactiveAtom.setXYZ(activeXYZ);
@@ -897,7 +894,7 @@ public class DiscountPh {
                         double activePrevAcc[] = new double[3];
                         activeAtom.getPreviousAcceleration(activePrevAcc);
                         inactiveAtom.setPreviousAcceleration(activePrevAcc);
-                        buglog(4, String.format("\n          to %s.", activeAtom, inactiveAtom));
+                        logf(String.format("\n          to %s.", activeAtom, inactiveAtom));
                     } else {
                         if (activeName.equals("C") || activeName.equals("O") || activeName.equals("N") || activeName.equals("CA")
                                 || activeName.equals("H") || activeName.equals("HA")) {
@@ -938,7 +935,7 @@ public class DiscountPh {
                         Atom HZ1 = (Atom) inactive.getAtomNode("HZ1");
                         BondedUtils.intxyz(HZ3, NZ, 1.02, CE, 109.5, HZ1, 109.5, -1);
                         resetMe = HZ3;
-                        buglog(4, " Moved 'stranded' hydrogen %s.", HZ3);
+//                        logf(" Moved 'stranded' hydrogen %s.", HZ3);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HZ3 = buildHydrogen(inactive, "HZ3", NZ, 1.02, CE, 109.5, HZ1, 109.5, -1, k + 9, forceField, null);
                         break;
@@ -950,7 +947,7 @@ public class DiscountPh {
                         Atom OD1 = (Atom) inactive.getAtomNode("OD1");
                         BondedUtils.intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
                         resetMe = HD2;
-                        buglog(4, " Moved 'stranded' hydrogen %s.", HD2);
+//                        logf(" Moved 'stranded' hydrogen %s.", HD2);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HD2 = buildHydrogen(residue, "HD2", OD2, 0.98, CG, 108.7, OD1, 0.0, 0, k + 5, forceField, bondList);
                         break;
@@ -962,7 +959,7 @@ public class DiscountPh {
                         Atom OE1 = (Atom) inactive.getAtomNode("OE1");
                         BondedUtils.intxyz(HE2, OE2, 0.98, CD, 108.7, OE1, 0.0, 0);
                         resetMe = HE2;
-                        buglog(4, " Moved 'stranded' hydrogen %s.", HE2);
+//                        logf(" Moved 'stranded' hydrogen %s.", HE2);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HE2 = buildHydrogen(residue, "HE2", OE2, 0.98, CD, 108.7, OE1, 0.0, 0, k + 7, forceField, bondList);
                         break;
@@ -987,8 +984,8 @@ public class DiscountPh {
                         HD1.setVelocity(molDyn.getThermostat().maxwellIndividual(HD1.getMass()));
                         HD1.setAcceleration(new double[]{0, 0, 0});
                         HD1.setPreviousAcceleration(new double[]{0, 0, 0});
-                        buglog(4, " Moved 'stranded' hydrogen %s.", HE2);
-                        buglog(4, " Moved 'stranded' hydrogen %s.", HD1);
+//                        logf(" Moved 'stranded' hydrogen %s.", HE2);
+//                        logf(" Moved 'stranded' hydrogen %s.", HD1);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HE2 = buildHydrogen(residue, "HE2", NE2, 1.02, CD2, 126.0, CE1, 126.0, 1, k + 10, forceField, bondList);
                         // Atom HD1 = buildHydrogen(residue, "HD1", ND1, 1.02, CG, 126.0, CB, 0.0, 0, k + 4, forceField, bondList);
@@ -1023,7 +1020,7 @@ public class DiscountPh {
                         Atom CA = (Atom) inactive.getAtomNode("CA");
                         BondedUtils.intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
                         resetMe = HG;
-                        buglog(4, " Moved 'stranded' hydrogen %s.", HG);
+//                        logf(" Moved 'stranded' hydrogen %s.", HG);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HG = buildHydrogen(residue, "HG", SG, 1.34, CB, 96.0, CA, 180.0, 0, k + 3, forceField, bondList);
                         break;
@@ -1035,7 +1032,7 @@ public class DiscountPh {
                         Atom CE2 = (Atom) inactive.getAtomNode("CE2");
                         BondedUtils.intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
                         resetMe = HH;
-                        buglog(4, " Moved 'stranded' hydrogen %s.", HH);
+//                        logf(" Moved 'stranded' hydrogen %s.", HH);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HH = buildHydrogen(residue, "HH", OH, 0.97, CZ, 108.0, CE2, 0.0, 0, k + 9, forceField, bondList);
                         break;
@@ -1062,7 +1059,7 @@ public class DiscountPh {
                         // TODO add check for null inactive
                         /* TODO also loop the other way (for each inactive: active.getAtomNode(inactive.getName())
                                 to ensure that all atoms get treated? */
-                        buglog(4, " %s\n %s\n", activeAtom, inactiveAtom);
+//                        logf(" %s\n %s\n", activeAtom, inactiveAtom);
                     }
                 }
             }

@@ -66,20 +66,24 @@ public final class TitrationESV extends ExtendedVariable {
     }
     
     @Override
-    public double totalBiasEnergy(double temperature) {
-        double eDiscr = discretizationBiasEnergy();
-        double ePh = phBiasEnergy(temperature);
-        SB.logfn(" eDiscr %d: %g", index, eDiscr);
-        SB.logfn(" epH    %d: %g", index, ePh);
+    public double getTotalBias(double temperature, boolean print) {
+        double eDiscr = getDiscrBias();
+        double ePh = getPhBias(temperature);
+        if (print) {
+            SB.logfn(" eDiscr %d: %g", index, eDiscr);
+            SB.logfn(" epH    %d: %g", index, ePh);
+        }
         return (eDiscr + ePh);
     }
     
     @Override
-    public double totalBiasDeriv(double temperature) {
-        double dDiscr = discretizationBiasDeriv();
-        double dPh = phBiasDeriv(temperature);
-        SB.logfn("  Discr %d: %g", index, dDiscr);
-        SB.logfn("  pH    %d: %g", index, dPh);
+    public double getTotalBiasDeriv(double temperature, boolean print) {
+        double dDiscr = getDiscrBiasDeriv();
+        double dPh = getPhBiasDeriv(temperature);
+        if (print) {
+            SB.logfn("  Discr %d: %g", index, dDiscr);
+            SB.logfn("  pH    %d: %g", index, dPh);
+        }
         return (dDiscr + dPh);
     }
     
@@ -90,7 +94,7 @@ public final class TitrationESV extends ExtendedVariable {
      * U_star = sum(ldh) { U_pH(ldh) + U_mod_prot(ldh) + U_barr(ldh)
      * This method returns U_pH + U_mod_prot.
      */
-    public double phBiasEnergy(double temperature) {
+    public double getPhBias(double temperature) {
         double lambda = getLambda();
         double uph = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*lambda;
 //        buglog(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g", 
@@ -101,7 +105,7 @@ public final class TitrationESV extends ExtendedVariable {
         return umod;
     }
     
-    public double phBiasDeriv(double temperature) {
+    public double getPhBiasDeriv(double temperature) {
         double duphdl = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh);
 //        buglog(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g", 
 //                ExtConstants.log10*ExtConstants.Boltzmann*temperature, 
