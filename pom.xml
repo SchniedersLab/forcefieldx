@@ -764,7 +764,7 @@
         <repository>
             <name>FFX Dependency Repository</name>
             <id>ffx.dependencies</id>
-            <url>http://kenai.com/projects/ffx/sources/dependency-repo/content</url>
+            <url>https://github.com/mjschnie/dependency/raw/master</url>
             <releases>
                 <checksumPolicy>ignore</checksumPolicy>
                 <enabled>true</enabled>
@@ -960,7 +960,7 @@
         </plugins>
     </reporting>
     <distributionManagement>
-        <downloadUrl>http://ffx.eng.uiowa.edu/download.html</downloadUrl>
+        <downloadUrl>http://ffx.biochem.uiowa.edu/download.html</downloadUrl>
         <site>
             <id>Kenai</id>
             <name>Force Field X Website Deploy Location</name>
