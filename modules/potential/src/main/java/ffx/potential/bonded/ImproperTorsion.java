@@ -362,7 +362,7 @@ public class ImproperTorsion extends BondedTerm implements
             //energy = ImproperTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3);
             //double dedphi = ImproperTorsionType.units * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
             energy = units * (v2 * phi2) * scaleFactor * esvLambda;
-            double dedphi = units * (v2 * dphi2) * scaleFactor * esvLambda;
+            double dedphi = units * (v2 * dphi2) * scaleFactor;
 
             if (gradient) {
                 /**
@@ -416,7 +416,7 @@ public class ImproperTorsion extends BondedTerm implements
         // log();
         return energy;
     }
-
+    
     /**
      * Log details for this Improper Torsion energy term.
      */

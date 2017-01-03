@@ -72,7 +72,13 @@ public abstract class BondedTerm extends MSNode {
     public Bond bonds[]; // Bonds that are used to form this term
     protected double value; // Value of the term
     protected double energy; // Energy of the term
-    protected final double esvLambda = 1.0; // Lambda value of ESV, if present
+    protected double esvLambda = 1.0;       // Lambda value of ESV, if present
+    /**
+     * d(lambda_switching_function)/dL.
+     * For the linear switch E=L*E1+(1-L)*E0, chain is +/- unity.
+     * For other switches E=S(L)*E1+(1-S(L))*E0, set chain to dSdL.
+     */
+    protected double dedesvChain = 1.0; // Handles sign flip d.t. d[(1-L)*E]/dL
 
     /**
      * Default Constructor
@@ -448,12 +454,20 @@ public abstract class BondedTerm extends MSNode {
     @Override
     public abstract void update();
     
-    @Deprecated
-    public void setEsvLambda(double lambda) {
-//        esvLambda = lambda;   // TODO REMOVE
+    /**
+     * Under a linear switching function, E=L*E1+(1-L)*E0, chainRule is +1 or -1
+     * for lambda and (1-lambda) terms, respectively. Other switches should 
+     * set this to d(switch)/d(lambda) as well.
+     */
+    public void setEsvLambda(double lambda, double chainRule) {
+        esvLambda = lambda;
+        dedesvChain = chainRule;
     }
-    @Deprecated
-    public double getEsvLambda() {
-        return esvLambda;
+    
+    /**
+     * Derivative with respect to attached ExtendedVariable lambda, if any.
+     */
+    public final double getdEdEsv() {
+        return dedesvChain * energy / esvLambda;
     }
 }

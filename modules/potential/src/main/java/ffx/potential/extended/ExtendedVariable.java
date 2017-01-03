@@ -20,6 +20,7 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtUtils.SB;
+import ffx.potential.nonbonded.MultiplicativeSwitch;
 
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.TitrationESV.TitrationUtils.isTitratableHydrogen;
@@ -54,12 +55,26 @@ public abstract class ExtendedVariable {
     }
     
     // Lambda and derivative variables
-    private double lambda;                        // ESVs travel on {0,1}
-    private double theta;                           // Propagates lamedh particle via "lamedh=sin(theta)^2"
+    private double lambda;                          // ESVs travel on {0,1}
+    private double theta;                           // Propagates lambda particle via "lambda=sin(theta)^2"
     private double halfThetaVelocity = 0.0;         // from OSRW, start theta with zero velocity
     private final Random stochasticRandom = ThreadLocalRandom.current();
-    private final double betat;
+    /**
+     * Magnitude of the discretization bias in kcal/mol.
+     */
+    private final double discrBiasBeta;
+    /**
+     * Discretization bias and its (chain rule) derivative.
+     */
     private double discrBias, dDiscrBiasdL;
+    /**
+     * Switched lambda value and its (chain rule) derivative.
+     */
+    private double lSwitch, dlSwitch;
+    /**
+     * Sigmoidal switching function. Maps lambda -> S(lambda) which has a flatter deriv near zero/unity.
+     */
+    private final MultiplicativeSwitch switchingFunction;
     
     // Atom lists and scaled terms
     private MultiResidue multiRes;
@@ -68,14 +83,14 @@ public abstract class ExtendedVariable {
     private List<Atom> atomsOne, atomsZro;          // side-chain only; atomsZro stay unconnected to mola
     private List<Atom> atomsShared, atomsUnshared;
     private List<BondedTerm> bondedOne, bondedZro;  // valence terms for each side; mola won't see zro by default
-    private MSNode termNode;                  // modified to contain all applicable bonded terms
+    private MSNode termNode;                        // modified to contain all applicable bonded terms
     private int moleculeNumber = 0;
     
-    public ExtendedVariable(MultiResidue multiRes, double biasMag, double initialLamedh) {
+    public ExtendedVariable(MultiResidue multiRes, double biasMag, double initialLambda) {
         index = esvIndexer++;
-        betat = biasOverride.isPresent() ? biasOverride.getAsDouble() : biasMag;
-        lambda = initialLamedh;
-        theta = Math.asin(Math.sqrt(lambda));
+        discrBiasBeta = biasOverride.isPresent() ? biasOverride.getAsDouble() : biasMag;
+        this.switchingFunction = new MultiplicativeSwitch(0.0, 1.0);
+        setLambda(initialLambda);
 
         this.multiRes = multiRes;
         resOne = multiRes.getActive();
@@ -133,14 +148,28 @@ public abstract class ExtendedVariable {
     
     public void setLambda(double lambda) {
         this.lambda = lambda;
+        this.lSwitch = switchingFunction.taper(lambda);
+        this.dlSwitch = switchingFunction.dtaper(lambda);
         theta = Math.asin(Math.sqrt(lambda));
-        discrBias = betat - 4*betat*(lambda-0.5)*(lambda-0.5);
-        dDiscrBiasdL = -8*betat*(lambda-0.5);
+        discrBias = discrBiasBeta - 4*discrBiasBeta*(lambda-0.5)*(lambda-0.5);
+        dDiscrBiasdL = -8*discrBiasBeta*(lambda-0.5);
         updateBondedLambdas();
     }
     
+    /**
+     * The unswitched lambda value, ie input to S(L).
+     * This is probably not what you want.
+     */
     public final double getLambda() {
-        return lambda;
+        return lambda;      // L
+    }
+
+    public final double getLambdaSwitch() {
+        return lSwitch;     // S(L)
+    }
+    
+    public final double getSwitchDeriv() {
+        return dlSwitch;    // dS(L)dL
     }
     
     public final int getIndex() {
@@ -149,7 +178,8 @@ public abstract class ExtendedVariable {
     
     @Override
     public String toString() {
-        return String.format("ESV%d", index);
+        return String.format(" ESV%d:(%4.2f->%4.2f)", 
+                index, getLambda(), getLambdaSwitch());
     }
     
     /**
@@ -171,7 +201,7 @@ public abstract class ExtendedVariable {
      * Fill the atom arrays; apply persistent indexing; set atom esv properties;
      * fill the bonded term arrays; set esv lambda on bonded terms.
      */
-    public void readyup() {
+    public void readyup() {        
         // Fill the atom lists.
         atomsOne = new ArrayList<>();
         atomsZro = new ArrayList<>();
@@ -265,6 +295,11 @@ public abstract class ExtendedVariable {
         }
         if (!verbose) {
             SB.logfn(this.toString());
+        // Print the switching function.
+            SB.logfn(" Switching on (%.2f,%.2f) with e0,de0,e1,de1: %.2f %.2f %.2f %.2f",
+                    0.0, 1.0,
+                    switchingFunction.taper(0.0), switchingFunction.dtaper(0.0),
+                    switchingFunction.taper(1.0), switchingFunction.dtaper(1.0));
     //        SB.logfn("    Backbone");
     //        for (Atom atom : backbone) {
     //            SB.logfn(" %s", atom);
@@ -321,12 +356,13 @@ public abstract class ExtendedVariable {
         if (!scaleBondedTerms) {
             return;
         }
-        double lambda = getLambda();
+        double Sl = getLambdaSwitch();
+        double dSldL = getSwitchDeriv();
         for (BondedTerm bt1 : bondedOne) {
-            bt1.setEsvLambda(lambda);
+            bt1.setEsvLambda(Sl, dSldL);
         }
         for (BondedTerm bt0 : bondedZro) {
-            bt0.setEsvLambda(1.0 - lambda);
+            bt0.setEsvLambda(1.0 - Sl, -dSldL);
         }
     }
     public List<Atom> getAtomListZro() {

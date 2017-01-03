@@ -37,6 +37,8 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.logging.Logger;
+
 import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
@@ -65,6 +67,8 @@ public class MultiplicativeSwitch {
     private final double fourC4;
     private final double fiveC5;
 
+    private final static Logger logger = Logger.getLogger(MultiplicativeSwitch.class.getName());
+    
     public MultiplicativeSwitch(double off, double cut) {
 
         double off2 = off * off;
@@ -81,6 +85,14 @@ public class MultiplicativeSwitch {
         threeC3 = 3.0 * c3;
         fourC4 = 4.0 * c4;
         fiveC5 = 5.0 * c5;
+    }
+    
+    public double taper(double r) {
+        return taper(r, r*r, r*r*r, r*r*r*r, r*r*r*r*r);
+    }
+    
+    public double dtaper(double r) {
+        return dtaper(r, r*r, r*r*r, r*r*r*r);
     }
 
     public double taper(double r, double r2, double r3, double r4, double r5) {

@@ -95,7 +95,7 @@ public final class TitrationESV extends ExtendedVariable {
      * This method returns U_pH + U_mod_prot.
      */
     public double getPhBias(double temperature) {
-        double lambda = getLambda();
+        double lambda = getLambdaSwitch();
         double uph = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*lambda;
 //        buglog(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g", 
 //                ExtConstants.log10*ExtConstants.Boltzmann*temperature, 
@@ -106,18 +106,20 @@ public final class TitrationESV extends ExtendedVariable {
     }
     
     public double getPhBiasDeriv(double temperature) {
+        double chain = getSwitchDeriv();
         double duphdl = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh);
 //        buglog(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g", 
 //                ExtConstants.log10*ExtConstants.Boltzmann*temperature, 
 //                pKaModel, constPh, duphdl);
-        double dumoddl = referenceEnergy;
+        double dumoddl = referenceEnergy * chain;
 //        return duphdl + dumoddl;
         return dumoddl;
     }
     
     @Override
     public String toString() {
-        return format(" ESV%d-Titr", index);
+        return format(" EsvTitr%d:(%4.2f->%4.2f)", 
+                index, getLambda(), getLambdaSwitch());
     }
 
     /**

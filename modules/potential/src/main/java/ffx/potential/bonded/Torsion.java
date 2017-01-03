@@ -386,9 +386,8 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 cosprev = cosn;
                 sinprev = sinn;
             }
-            energy = units * energy;
-            dEdL = energy;
-            energy = lambda * energy * esvLambda;   // At least one of {lambda,esvLambda} must be unity.
+            energy = units * energy * esvLambda * lambda;
+            dEdL = units * energy * esvLambda;
 
             if (gradient || lambdaTerm) {
                 dedphi = units * dedphi;

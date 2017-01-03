@@ -121,10 +121,18 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return (esvByAtom[i] != null) ? esvByAtom[i].getLambda() : 1.0;
     }
     
+    public double atomLambdaSwitch(int i) {
+        return (esvByAtom[i] != null) ? esvByAtom[i].getLambdaSwitch() : 1.0;
+    }
+    
     public double atomVdwLambda(int i) {
         return (hasVdwAtom(i)) ? esvByAtom[i].getLambda() : 1.0;
     }
-        
+    
+    public double atomVdwLambdaSwitch(int i) {
+        return (hasVdwAtom(i)) ? esvByAtom[i].getLambdaSwitch() : 1.0;
+    }
+    
     public Atom[] getExtendedAtomArray() {
         return atomsExt;
     }
@@ -221,14 +229,15 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         } else {
             propagationTemperature = temperature;
         }
-        double[] dEdLdh = getdEdL(temperature, false, false);
+        double[] dedl = getdEdL(temperature, false, false);
         if (esvList != null && !esvList.isEmpty()) {
             for (ExtendedVariable esv : esvList) {
-                double was = esv.getLambda();
-                esv.propagate(dEdLdh[esv.index], dt, temperature);
-                logger.config(format(" Propagating ESV[%d]: %g --> %g @ psec,temp,L,bias: %g %g %.2f %.2f %.2f",
-                        esv.index, was, esv.getLambda(), currentTimePs, temperature, 
-                        esv.getLambda(), esv.getTotalBias(temperature, false)));
+                double oldLambda = esv.getLambda();
+                esv.propagate(dedl[esv.index], dt, temperature);
+                double newLambda = esv.getLambda();
+                logger.info(format(" Propagating ESV[%d]: %g --> %g @ psec,temp,bias: %g %g %.2f",
+                        esv.index, oldLambda, newLambda,
+                        currentTimePs, temperature, esv.getTotalBias(temperature, false)));
             }
             if (esvUseVdw) {
                 vdw.updateEsvLambda();
@@ -330,6 +339,22 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return esvDeriv;
     }
     
+    public double[] getdEdL() {
+        return getdEdL(null, false, false);
+    }
+    
+    public double getdEdL(int esvID) {
+        return getdEdL(esvID, null, false, false);
+    }
+    
+    public double getdEdL(int esvID, boolean print) {
+        return getdEdL(esvID, null, false, print);
+    }
+    
+    public double getdVdwdL(int esvID) {
+        return (esvUseVdw) ? vdw.getdEdEsv(esvID) : 0.0;
+    }
+    
     public double getdEdL(int esvID, Double temperature, boolean lambdaBondedTerms, boolean print) {
         if (esvTempOverride) {
             temperature = ExtConstants.roomTemperature;
@@ -416,9 +441,10 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     public String getLambdaList() {
         StringBuilder sb = new StringBuilder();
-        sb.append("L:");
+        sb.append(format("Lambdas (%d):", esvList.size()));
         for (int i = 0; i < numESVs; i++) {
-            sb.append(format(" %6.4f", esvList.get(i).getLambda()));
+            sb.append(format(" %4.2f->%4.2f", 
+                    esvList.get(i).getLambda(), esvList.get(i).getLambdaSwitch()));
         }
         return sb.toString();
     }

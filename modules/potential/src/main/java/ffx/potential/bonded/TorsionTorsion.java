@@ -385,14 +385,14 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
             dxy[2] = torsionTorsionType.dxy[pos2 + 1];
             dxy[3] = torsionTorsionType.dxy[pos2];
             if (!gradient && !lambdaTerm) {
-                energy = units * bcuint(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy);
-                dEdL = energy;
-                energy = lambda * energy * esvLambda;
+                double bcu = bcuint(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy);
+                energy = units * bcu * esvLambda * lambda;
+                dEdL = units * bcu * esvLambda;
             } else {
                 double ansy[] = new double[2];
-                energy = units * bcuint1(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy, ansy);
-                dEdL = energy;
-                energy = lambda * energy * esvLambda;
+                double bcu1 = bcuint1(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy, ansy);
+                energy = units * bcu1 * esvLambda * lambda;
+                dEdL = units * bcu1 * esvLambda;
                 double dedang1 = sign * units * toDegrees(ansy[0]);
                 double dedang2 = sign * units * toDegrees(ansy[1]);
                 /**

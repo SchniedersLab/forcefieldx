@@ -1574,8 +1574,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         
         if (esvTerm) {
-            sb.append(String.format("  %s %16.8f %12d     %s\n",
-                    "ExtendedSystemBias", esvBias, esvSystem.count(), esvSystem.getLambdaList()));
+            sb.append(String.format("  %s %16.8f  %s\n",
+                    "ExtendedSystemBias", esvBias, esvSystem.getLambdaList()));
             sb.append(esvSystem.getBiasDecomposition());
         }
 
@@ -1879,7 +1879,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
                     sb.append("   Mass:  " + a.getMass() + "\n");
                     if (atoms[i].getESV() != null) {
-                        sb.append("   ESV:   " + "idx " + atoms[i].getESV().index + ", ldh " + atoms[i].getESV().getLambda() + "\n");
+                        sb.append(atoms[i].getESV().toString());
                     }
                 } catch (Exception e) {}
                 logger.info(sb.toString());

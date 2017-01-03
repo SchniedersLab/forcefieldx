@@ -88,6 +88,9 @@ cli.st(longOpt:'singleThread', args:0, 'Limit PJ concurrency.');
 cli.fv(longOpt:'ffe-verbose', args:0, 'Always print FFE decomposition.');
 cli.v(longOpt:'verbose', 'Print out every atomic interaction.');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
+cli.t1(longOpt:'test1', 'Test 1: Lambda derivatives by finite difference.');
+cli.t2(longOpt:'test2', 'Test 2: End state energies verification.');
+cli.t3(longOpt:'test3', 'Test 3: Switching function and path smoothness.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -107,6 +110,20 @@ if (options.s) {
 
 // Read in command line file.
 String filename = arguments.get(0);
+
+boolean test1 = true, test2 = true, test3 = true;
+if (options.t1 || options.t2 || options.t3) {
+    test1 = false; test2 = false; test3 = false;
+    if (options.t1) {
+        test1 = true;
+    }
+    if (options.t2) {
+        test2 = true;
+    }
+    if (options.t3) {
+        test3 = true;
+    }
+}
 
 if (options.pH) {
     pH = Double.parseDouble(options.pH);
@@ -181,7 +198,7 @@ System.setProperty("vdw-cutoff", "1000");
 System.setProperty("ffe-combineBonded", "true");
 System.setProperty("esv-propagation", "false");             // don't allow ESV particle to undergo dynamics
 //System.setProperty("esv-biasTerm", "true");                 // include discretization and pH biases
-//System.setProperty("esv-scaleBonded", "false");             // include effects on bonded terms
+System.setProperty("esv-scaleBonded", "false");             // include effects on bonded terms
 
 // Open the first topology.
 open(filename);
@@ -237,107 +254,170 @@ double width = 2.0 * step;      // default step = 0.0001
 double tolerance = 1.0e-3;      // pass-fail margin
 
 /*******************************************************************************
-Finite Difference tests of each ESV.
-First derivatives only; dEdLdX and dEdL2 not yet implemented in PME.
+ * Finite Difference Tests of the VdW Lambda Derivative
+Check that the analytic lambda derivatives reported by van der Waals agree with
+the central finite difference.
 *******************************************************************************/
-for (int i = 0; i < numESVs; i++) {
-    esvSystem.setLambda(i, 0.0);
-    double e0 = ffe.energyAndGradient(xyz,gradient);
-    esvSystem.setLambda(i, 1.0);
-    double e1 = ffe.energyAndGradient(xyz,gradient);
-    logger.info(String.format(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f\n", i, e1, e0, e1-e0));
+if (test1) {
+    for (int i = 0; i < numESVs; i++) {
+        esvSystem.setLambda(i, 0.0);
+        double e0 = ffe.energyAndGradient(xyz,gradient);
+        esvSystem.setLambda(i, 1.0);
+        double e1 = ffe.energyAndGradient(xyz,gradient);
+        logger.info(String.format(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f\n", i, e1, e0, e1-e0));
+        ffe.setPrintOverride(true);
 
-    esvSystem.setLambda(i, lambda - step);
-    double eLower = ffe.energyAndGradient(xyz,esvLambdaGradFD[1][i]);
+        esvSystem.setLambda(i, lambda - step);
+        double eLower = ffe.energyAndGradient(xyz,esvLambdaGradFD[1][i]);
 
-    esvSystem.setLambda(i, lambda + step);
-    double eUpper = ffe.energyAndGradient(xyz,esvLambdaGradFD[0][i]);
+        esvSystem.setLambda(i, lambda + step);
+        double eUpper = ffe.energyAndGradient(xyz,esvLambdaGradFD[0][i]);
 
-    esvSystem.setLambda(i, lambda);
-    double center = ffe.energyAndGradient(xyz,esvLambdaGrad[i]);
+        esvSystem.setLambda(i, lambda);
+        double center = ffe.energyAndGradient(xyz,esvLambdaGrad[i]);
 
-    double analytic = esvSystem.getdEdL(i, null, false, false);
-    double numeric = (eUpper - eLower) / (2 * step);
-    double error = Math.abs(numeric - analytic);
+        double analytic = esvSystem.getdEdL(i, null, false, true);
+        double numeric = (eUpper - eLower) / (2 * step);
+        double error = Math.abs(numeric - analytic);
 
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format(" ESV%d> Numeric FD @ upper,lower,width,dEdL: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", i, eUpper, eLower, width, numeric));
+        sb.append(String.format(" ESV%d> Analytic Derivative @ lambda %4.2f  >  dEdL: %+9.6g\n", i, lambda, analytic));
+        String passFail = (error < tolerance) ? "passed" : "failed";
+        sb.append(String.format(" ESV%d> dE/dL %6s:   %+10.6f\n", i, passFail, error));
+        sb.append(String.format(" ESV%d> Numeric:        %+10.6f\n", i, numeric));
+        sb.append(String.format(" ESV%d> Analytic:       %+10.6f\n", i, analytic));
+        logger.info(sb.toString());
+    }
+}
+
+/*******************************************************************************
+ * Dilysine End-State Verification
+Verify that a lys-lys system with two ESVs can exactly reproduce the VdW
+energy yielded by vanilla energy() calls on mutated PDB files.
+*******************************************************************************/
+if (test2) {
+    esvSystem.setEsvBiasTerm(false);
+    ffe.setPrintOverride(true);
     StringBuilder sb = new StringBuilder();
-    sb.append(String.format(" ESV%d> Numeric FD @ upper,lower,width,dEdL: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", i, eUpper, eLower, width, numeric));
-    sb.append(String.format(" ESV%d> Analytic Derivative @ lambda %4.2f  >  dEdL: %+9.6g\n", i, lambda, analytic));
-    String passFail = (error < tolerance) ? "passed" : "failed";
-    sb.append(String.format(" ESV%d> dE/dL %6s:   %+10.6f\n", i, passFail, error));
-    sb.append(String.format(" ESV%d> Numeric:        %+10.6f\n", i, numeric));
-    sb.append(String.format(" ESV%d> Analytic:       %+10.6f\n", i, analytic));
+    sb.append(format(" Two-site ESV Analysis: \n"));
+
+    esvSystem.setLambda(0, 0.0);
+    esvSystem.setLambda(1, 0.0);
+    //    System.setProperty("vdw-printInteractions", "inter-ddesv");
+    ffe.energy(false, false);
+    double esvVdw00 = ffe.getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "0-0", esvVdw00));
+    esvSystem.setLambda(0, 1.0);
+    esvSystem.setLambda(1, 0.0);
+    //    System.setProperty("vdw-printInteractions", "inter-sdesv");
+    ffe.energy(false, false);
+    double esvVdw10 = ffe.getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "1-0", esvVdw10));
+    esvSystem.setLambda(0, 0.0);
+    esvSystem.setLambda(1, 1.0);
+    //    System.setProperty("vdw-printInteractions", "inter-dsesv");
+    ffe.energy(false, false);
+    double esvVdw01 = ffe.getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "0-1", esvVdw01));
+    esvSystem.setLambda(0, 1.0);
+    esvSystem.setLambda(1, 1.0);
+    //    System.setProperty("vdw-printInteractions", "inter-ssesv");
+    ffe.energy(false, false);
+    double esvVdw11 = ffe.getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "1-1", esvVdw11));
+    logger.info(sb.toString());
+
+    sb = new StringBuilder();
+    sb.append(format(" Vanilla End-States: \n"));
+    Logger.getLogger("ffx").setLevel(Level.OFF);
+    //    System.setProperty("vdw-printInteractions", "inter-dd");
+    open("lyd-lyd.pdb");
+    double lydlyd = energy().getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "lyd-lyd", lydlyd));
+    //    System.setProperty("vdw-printInteractions", "inter-sd");
+    open("lys-lyd.pdb");
+    double lyslyd = energy().getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "lys-lyd", lyslyd));
+    //    System.setProperty("vdw-printInteractions", "inter-ds");
+    open("lyd-lys.pdb");
+    double lydlys = energy().getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "lyd-lys", lydlys));
+    //    System.setProperty("vdw-printInteractions", "inter-ss");
+    open("lys-lys.pdb");
+    double lyslys = energy().getVanDerWaalsEnergy();
+    sb.append(format("   vdw %-7s %10.6f\n", "lys-lys", lyslys));
+    Logger.getLogger("ffx").setLevel(Level.INFO);
     logger.info(sb.toString());
 }
 
 /*******************************************************************************
-Dilysine end-state analysis.
+ * Switching and Smoothness
+Numerically ensure that the VdW energy and lambda derivatives are smooth all 
+along both ESV coordinates in the dilysine system.
 *******************************************************************************/
-//if (esvSystem.count() != 2
-//        || !files.contains("lys-lys.pdb") || !files.contains("lyd-lyd.pdb")
-//        || !files.contains("lys-lyd.pdb") || !files.contains("lyd-lys.pdb")) {
-//    logger.info("Run me from examples directory.");
-//    return;
-//}
-//    String fn = "ffx/potential/structures/dilysine-lydlyd.pdb";
-//    List<String> files = Arrays.asList(File.list());
-
-esvSystem.setEsvBiasTerm(false);
-ffe.setPrintOverride(true);
-StringBuilder sb = new StringBuilder();
-sb.append(format(" Two-site ESV Analysis: \n"));
-
-esvSystem.setLambda(0, 0.0);
-esvSystem.setLambda(1, 0.0);
-//    System.setProperty("vdw-printInteractions", "inter-ddesv");
-ffe.energy(false, false);
-double esvVdw00 = ffe.getVanDerWaalsEnergy();
-sb.append(format("   vdw %-7s %10.6f\n", "0-0", esvVdw00));
-esvSystem.setLambda(0, 1.0);
-esvSystem.setLambda(1, 0.0);
-//    System.setProperty("vdw-printInteractions", "inter-sdesv");
-ffe.energy(false, false);
-double esvVdw10 = ffe.getVanDerWaalsEnergy();
-sb.append(format("   vdw %-7s %10.6f\n", "1-0", esvVdw10));
-esvSystem.setLambda(0, 0.0);
-esvSystem.setLambda(1, 1.0);
-//    System.setProperty("vdw-printInteractions", "inter-dsesv");
-ffe.energy(false, false);
-double esvVdw01 = ffe.getVanDerWaalsEnergy();
-sb.append(format("   vdw %-7s %10.6f\n", "0-1", esvVdw01));
-esvSystem.setLambda(0, 1.0);
-esvSystem.setLambda(1, 1.0);
-//    System.setProperty("vdw-printInteractions", "inter-ssesv");
-ffe.energy(false, false);
-double esvVdw11 = ffe.getVanDerWaalsEnergy();
-sb.append(format("   vdw %-7s %10.6f\n", "1-1", esvVdw11));
-logger.info(sb.toString());
-
-sb = new StringBuilder();
-sb.append(format(" Vanilla End-States: \n"));
-Logger.getLogger("ffx").setLevel(Level.OFF);
-//    System.setProperty("vdw-printInteractions", "inter-dd");
-open("lyd-lyd.pdb");
-double lydlyd = energy().getVanDerWaalsEnergy();
-sb.append(format("   vdw %-7s %10.6f\n", "lyd-lyd", lydlyd));
-//    System.setProperty("vdw-printInteractions", "inter-sd");
-open("lys-lyd.pdb");
-double lyslyd = energy().getVanDerWaalsEnergy();
-sb.append(format("   vdw %-7s %10.6f\n", "lys-lyd", lyslyd));
-//    System.setProperty("vdw-printInteractions", "inter-ds");
-open("lyd-lys.pdb");
-double lydlys = energy().getVanDerWaalsEnergy();
-sb.append(format("   vdw %-7s %10.6f\n", "lyd-lys", lydlys));
-//    System.setProperty("vdw-printInteractions", "inter-ss");
-open("lys-lys.pdb");
-double lyslys = energy().getVanDerWaalsEnergy();
-sb.append(format("   vdw %-7s %10.6f\n", "lys-lys", lyslys));
-Logger.getLogger("ffx").setLevel(Level.INFO);
-logger.info(sb.toString());
-
-
-sb = new StringBuilder();
-sb.append(format(" Smoothness Verification: \n"));
-for (int la = 0.0; la < 1.0; la += 0.01) {
-    
+if (test3) {
+    logger.info(format(" Smoothness Verification: \n"));
+    Logger.getLogger("ffx").setLevel(Level.OFF);
+    //StringBuilder data = new StringBuilder("\n Raw Data \n");
+    StringBuilder energyTable = new StringBuilder("\n Energy  Table \n");
+    StringBuilder dedlaTable = new StringBuilder("\n dEdEsv1 Table \n");
+    StringBuilder dedlbTable = new StringBuilder("\n dEdEsv2 Table \n");
+    energyTable.append(format("     %10.1f  %10.1f  %10.1f  %10.1f  %10s  %10s  %10s  %10.1f  %10.1f  %10.1f  %10.1f", 
+            0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
+    dedlaTable.append(format("     %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f", 
+            0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
+    dedlbTable.append(format("     %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f", 
+            0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
+    for (double la = 0.0; la <= 1.0; la += 0.1) {
+        String label;
+        switch (la) {
+            case 0.4:
+                energyTable.append(format("\n    ^ "));
+                dedlaTable.append(format("\n    ^ "));
+                dedlbTable.append(format("\n    ^ "));
+                break;
+            case 0.5:
+                energyTable.append(format("\n   Ev2"));
+                dedlaTable.append(format("\n   Ev2"));
+                dedlbTable.append(format("\n   Ev2"));
+                break;
+            case 0.6:
+                energyTable.append(format("\n    v "));
+                dedlaTable.append(format("\n    v "));
+                dedlbTable.append(format("\n    v "));
+                break;
+            default:
+                energyTable.append(format("\n  %4.1f", la));
+                dedlaTable.append(format("\n  %4.1f", la));
+                dedlbTable.append(format("\n  %4.1f", la));
+        }
+        for (double lb = 0.0; lb <= 1.0; lb += 0.1) {
+            esvSystem.setLambda(0, la);
+            esvSystem.setLambda(1, lb);
+            ffe.energy(false, false);
+            double evdw = ffe.getVanDerWaalsEnergy();
+            double dvdwdla = esvSystem.getdVdwdL(0);
+            double dvdwdlb = esvSystem.getdVdwdL(1);
+    //        data.append(format(" la,lb,e,dla,dlb:  %4.2f  %4.2f  %10.6f  %8.6f  %8.6f\n", 
+    //                la, lb, evdw, dvdwdla, dvdwdlb));
+            energyTable.append(format("  %10.6f", evdw));
+            dedlaTable.append(format("  %8.6f", dvdwdla));
+            dedlbTable.append(format("  %8.6f", dvdwdlb));
+        }
+    //    if (la == 0.5) {
+    //        energyTable.append("\n  Esv2");
+    //        dedlaTable.append("\n  Esv2");
+    //        dedlbTable.append("\n  Esv2");
+    //    } else if (la <= 1.0) {
+    //        energyTable.append(format("\n  %4.1f", la));
+    //        dedlaTable.append(format("\n  %4.1f", la));
+    //        dedlbTable.append(format("\n  %4.1f", la));
+    //    }
+    }
+    Logger.getLogger("ffx").setLevel(Level.INFO);
+    //logger.info(data.toString());
+    logger.info(energyTable.toString());
+    logger.info(dedlaTable.toString());
+    logger.info(dedlbTable.toString());
 }
