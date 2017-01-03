@@ -1,4 +1,4 @@
-    
+
 /**
  * Title: Force Field X.
  *
@@ -213,7 +213,7 @@ ExtendedSystem esvSystem = new ExtendedSystem(mola);
 Polymer[] polymers = active.getChains();
 double temperature = 298.15;
 int numESVs = rlTokens.length;
-for (int i = 0; i < numESVs; i++) {    
+for (int i = 0; i < numESVs; i++) {
     Character chainID = rlTokens[i].charAt(0);
     int resNum = Integer.parseInt(rlTokens[i].substring(1));
     Optional<Residue> target = new Optional<>();
