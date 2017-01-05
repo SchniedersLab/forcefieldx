@@ -12,91 +12,38 @@
         <section name="Examples">
             <table>
                 <tr>
-                    <th>Module</th>
                     <th>Example</th>
+                    <th>Description</th>
                 </tr>
                 <tr>
-                    <td>Algorithms</td>
                     <td>
-                        <a href="modules/algorithms/examples.html">
-                            Water Solvation Free Energy
+                        <a href="examples-dee.html">Side-Chain Optimization via Many-Body Dead-End Elimination
                         </a>
-                        <a href="modules/algorithms/gauche.html">
+                    </td>
+                    <td>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="examples-gauche.html">
                             Organic Crystal Deposition/Sublimation Free Energy
                         </a>
                     </td>
+                    <td>
+                    </td>
                 </tr>
                 <tr>
-                    <td>Potential</td>
+                    <td><a href="modules/xray/examples.html">
+                            AMOEBA-assisted X-ray refinement at high and low resolution
+                        </a></td>
+                    <td>
 
-                    <td>
-                        <a href="modules/potential/examples.html">
-                            Dihydrofolate reductase (DHFR) in Water
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Rotamer Optimization via Many-Body Dead-End Elimination</td>
-                    <td>
-                        <a href="dee.html">
-                            Application to C1QTN5
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>X-ray Refinement</td>
-                    <td>
-                        <a href="modules/xray/examples.html">
-                            AMOEBA-assisted refinement at high and low resolution
-                        </a>
                     </td>
                 </tr>
             </table>
         </section>
-        <section name="Space Group Symmetry">
-            <p>
-                Force Field X implements state-of-the-art features for crystals.
-            </p>
-            <table>
-                <tr>
-                    <th>Chaperonin Unit Cell</th>
-                    <th>Chaperonin Asymmetric Unit</th>
-                </tr>
-                <tr>
-                    <td bgcolor="white" align="center">
-                        <img align="middle" src="images/mmcpn.P1.png" alt="P1"/>
-                    </td>
-                    <td bgcolor="white" align="center">
-                        <img align="middle" src="images/mmcpn.C2.png" alt="C2"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <p>Force Field X can be used to simulate the unit cell of this chaperonin crystal,
-                            which contains 4 copies of the asymmetric unit.
-                        </p>
-                        <p>Advantages include:</p>
-                        <ul>
-                            <li>Fluctuations of each asymmetric unit are correlated, but not strictly symmetric.</li>
-                            <li>For thermodynamic averages, each sample contains 4 observations of any asymmetric unit property.</li>
-                        </ul>
-                    </td>
-                    <td>
-                        <p>Rather than apply molecular physics to the entire unit cell (P1),
-                            Force Field X is also capable of using the native space group of a crystal
-                            (C2 in this case).
-                        </p>
-                        <p>Advantages include:</p>
-                        <ul>
-                            <li>Crystal space group symmetry is strictly enforced.</li>
-                            <li>Evaluation of the potential energy and gradients is significantly faster.</li>
-                            <li>Memory requirements are significantly reduced.</li>
-                        </ul>
-                    </td>
-                </tr>
-            </table>
-        </section>
-        <section name="Ewald X-Ray Refinement">
+
+        <!-- section name="Ewald X-Ray Refinement">
             <table>
                 <tbody>
                     <tr>
@@ -307,10 +254,11 @@
                 <li>Overall improvement of MolProbity score</li>
                 <li>Refinement of the hydrogen-bonding network within the binding pocket</li>
             </ol>
-        </section>
+        </section -->
+
         <section name="Homology Model Refinement">
             <p>The following structures represent a subset of the homology models available
-               for genes that are implicated in hearing loss.
+                for genes that are implicated in hearing loss.
             </p>
             <table>
                 <thead>

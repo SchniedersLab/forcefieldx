@@ -147,7 +147,7 @@ public class VanDerWaals implements MaskingInterface,
     private boolean esvTerm = false;
     private boolean useEsvInterpLambda;
     private boolean isSoft[];
-    
+
     private double esvLambda[];
     private boolean esvAtoms[];
     /**
@@ -156,15 +156,13 @@ public class VanDerWaals implements MaskingInterface,
     private boolean printInteractions = false;
     private BufferedWriter interactionWriter = null;
     /**
-     * TODO: To enable multi-dimensional lambda variables.
-     * Preload this with the effective (combined) lambda for each atom state.
-     * [nAtoms][nStates]
+     * TODO: To enable multi-dimensional lambda variables. Preload this with the
+     * effective (combined) lambda for each atom state. [nAtoms][nStates]
      */
     private double esvStateLambda[][];
     /**
-     * TODO: To enable multi-dimensional lambda variables.
-     * Preload this with the effective (combined) radEps for each atom state.
-     * [nAtoms][nStates]
+     * TODO: To enable multi-dimensional lambda variables. Preload this with the
+     * effective (combined) radEps for each atom state. [nAtoms][nStates]
      */
     private double esvStateRadEps[][];
     /**
@@ -526,7 +524,7 @@ public class VanDerWaals implements MaskingInterface,
         fill(softCore[HARD], false);
         fill(softCore[SOFT], false);
         softCoreInit = false;
-        
+
         esvAtoms = new boolean[nAtoms]; // Needs initialized regardless of esvTerm.
         fill(esvAtoms, false);
         if (esvTerm) {
@@ -631,17 +629,17 @@ public class VanDerWaals implements MaskingInterface,
             neighborListOnly = false;
         }
     }
-    
+
     public void setAtoms(Atom atoms[], int molecule[]) {
         this.atoms = atoms;
         this.nAtoms = atoms.length;
         this.molecule = molecule;
-        
+
         if (nAtoms != molecule.length) {
             logger.warning("Atom and molecule arrays are of different lengths.");
             throw new IllegalArgumentException();
         }
-        
+
         initAtomArrays();
         buildNeighborList(atoms);
     }
@@ -654,7 +652,7 @@ public class VanDerWaals implements MaskingInterface,
     public NeighborList getNeighborList() {
         return neighborList;
     }
-    
+
     /**
      * <p>
      * Getter for the field <code>pairwiseSchedule</code>.</p>
@@ -894,7 +892,7 @@ public class VanDerWaals implements MaskingInterface,
         int classi = ai.getAtomType().atomClass;
         int classk = ak.getAtomType().atomClass;
         double combined = 1.0 / vdwForm.radEps[classi][classk * 2 + VanDerWaalsForm.RADMIN];
-        
+
         if (interactionWriter != null) {
             try {
                 interactionWriter.write(format("VDW %s%d-%s %s%d-%s %10.4f  %10.4f  %10.4f\n",
@@ -911,7 +909,7 @@ public class VanDerWaals implements MaskingInterface,
                     combined, r, eij));
         }
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -941,12 +939,12 @@ public class VanDerWaals implements MaskingInterface,
             longRangeCorrection = 0.0;
         }
     }
-    
+
     public void updateEsvLambda() {
         if (!esvTerm) {
             return;
         }
-        
+
         numESVs = esvSystem.count();
         if (esvLambda == null || esvLambda.length < nAtoms) {
             esvLambda = new double[nAtoms];
@@ -964,7 +962,7 @@ public class VanDerWaals implements MaskingInterface,
         initSoftCore(true);
         // Call to long-range correction here, when it's trustworthy.
     }
-    
+
     private void initSoftCore(boolean rebuild) {
         /**
          * Initialize the softcore atom masks.
@@ -1018,7 +1016,7 @@ public class VanDerWaals implements MaskingInterface,
                 ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
         intramolecularSoftcore = forceField.getBoolean(
                 ForceField.ForceFieldBoolean.INTRAMOLECULAR_SOFTCORE, false);
-        
+
         previousAtoms = atoms;
         previousMolecule = molecule;
         Atom[] atomsExt = esvSystem.getExtendedAtomArray();
@@ -1075,7 +1073,7 @@ public class VanDerWaals implements MaskingInterface,
         }
         return dEdEsv;
     }
-    
+
     public double getdEdEsv(int esvID) {
         return esvDeriv[esvID].get();
     }
@@ -1161,8 +1159,8 @@ public class VanDerWaals implements MaskingInterface,
      * Test if both atoms match the set Resolution (or true when unset).
      */
     private boolean include(Atom atom1, Atom atom2) {
-        return ((resolution == null) ||
-                (atom1.getResolution() == resolution && atom2.getResolution() == resolution));
+        return ((resolution == null)
+                || (atom1.getResolution() == resolution && atom2.getResolution() == resolution));
     }
 
     private class VanDerWaalsRegion extends ParallelRegion {
@@ -1216,7 +1214,7 @@ public class VanDerWaals implements MaskingInterface,
                 lambdaGradY.alloc(nAtoms);
                 lambdaGradZ.alloc(nAtoms);
             }
-            
+
             if (System.getProperty("vdw-printInteractions") != null) {
                 String fn = System.getProperty("vdw-printInteractions");
                 if (fn.equalsIgnoreCase("false") || fn.equalsIgnoreCase("null")) {
@@ -1626,7 +1624,7 @@ public class VanDerWaals implements MaskingInterface,
                      */
                     final int neighbors[] = list[i];
                     final int npair = neighbors.length;
-                        
+
                     for (int j = 0; j < npair; j++) {
                         final int k = neighbors[j];
                         Atom atomk = atoms[k];
@@ -1686,9 +1684,11 @@ public class VanDerWaals implements MaskingInterface,
                             final double lambda5 = sc2;
                             /**
                              * Calculate van der Waals interaction energy.
-                             * Notation of Schnieders et al. The structure, thermodynamics, and
-                             * solubility of organic crystals from simulation with a polarizable
-                             * force field. J. Chem. Theory Comput. 8, 1721–1736 (2012).
+                             * Notation of Schnieders et al. The structure,
+                             * thermodynamics, and solubility of organic
+                             * crystals from simulation with a polarizable force
+                             * field. J. Chem. Theory Comput. 8, 1721–1736
+                             * (2012).
                              */
                             final double ev = mask[k] * radEpsi[a2 + EPS];
                             final double eps_lambda = ev * lambda5;
@@ -1732,7 +1732,7 @@ public class VanDerWaals implements MaskingInterface,
                             }
                             e += eik;
                             if (printInteractions) {
-                                log(i,k,r,eik);
+                                log(i, k, r, eik);
                             }
                             count++;
                             if (!gradient && !soft) {

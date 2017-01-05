@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>PME Electrostatics Properties</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="PME Electrostatics Properties">
+            <p>PME properties are used to specify parameters such as real space cutoff, interpolation order and mesh density.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Type</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ewald-alpha</td>
+                        <td>double</td>
+                        <td>0.545</td>
+                        <td>Specifies the Ewald convergence parameter.</td>
+                    </tr>
+                    <tr>
+                        <td>ewald-cutoff</td>
+                        <td>double</td>
+                        <td>7.0</td>
+                        <td>Specifies the cut-off for the real space portion of PME.</td>
+                    </tr>
+                    <tr>
+                        <td>pme-mesh-x</td>
+                        <td>integer</td>
+                        <td>
+                            <code>a-axis * pme-mesh-density</code>
+                        </td>
+                        <td>Specifies the number of mesh points along the
+                            <code>a-axis</code>.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>pme-mesh-y</td>
+                        <td>integer</td>
+                        <td>
+                            <code>b-axis * pme-mesh-density</code>
+                        </td>
+                        <td>Specifies the number of mesh points along the
+                            <code>b-axis</code>.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>pme-mesh-z</td>
+                        <td>integer</td>
+                        <td>
+                            <code>c-axis * pme-mesh-density</code>
+                        </td>
+                        <td>Specifies the number of mesh points along the
+                            <code>c-axis</code>.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>pme-mesh-density</td>
+                        <td>double</td>
+                        <td>1.2</td>
+                        <td>Specifies the number of mesh points per Angstrom
+                            for the reciprocal space mesh.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>pme-order</td>
+                        <td>integer</td>
+                        <td>5</td>
+                        <td>Specifies the PME b-Spline order, which must be
+                            greater than or equal to 5 for AMOEBA.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>

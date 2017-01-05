@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Structural Refinement Properties</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <p>Properties used to control details of structural refinement against experimental data sets and advanced force fields.</p>
+        <section name="X-ray, Neutron and Real Space Refinement Properties">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Type</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>fostring</td>
+                        <td>string</td>
+                        <td>null</td>
+                        <td>title of the Fo column in the input MTZ file
+                            (if it is not one of the default values of F, Fo,
+                            Fp or Fobs)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>sigfostring</td>
+                        <td>string</td>
+                        <td>null</td>
+                        <td>title of the sigFo column in the input MTZ file
+                            (if it is not one of the default values of sigF, sigFo,
+                            sigFp or SigFobs)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>rfreestring</td>
+                        <td>string</td>
+                        <td>null</td>
+                        <td>title of the Rfree column in the input MTZ file
+                            (if it is not one of the default values of Rfree, freeR,
+                            freeRflag, Rfreeflag, test, freer_flag or
+                            R-free-flags)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>use_3g</td>
+                        <td>boolean</td>
+                        <td>true</td>
+                        <td>uses 3 Gaussians in form factor equation rather than
+                            6 (set to false for atomic resolution data)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>aradbuff</td>
+                        <td>double</td>
+                        <td>0.5</td>
+                        <td>atom radius buffer for sampling grid density, added
+                            to dynamically determined radius
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>splinefit</td>
+                        <td>boolean</td>
+                        <td>true</td>
+                        <td>apply a resolution dependent spline fit between
+                            Fo and Fc
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>fsigfcutoff</td>
+                        <td>double</td>
+                        <td>-1.0</td>
+                        <td>F/sigF cutoff (negative: all values read in)</td>
+                    </tr>
+                    <tr>
+                        <td>resolution</td>
+                        <td>double</td>
+                        <td>-1.0</td>
+                        <td>resolution cutoff (negative: all data read in)</td>
+                    </tr>
+                    <tr>
+                        <td>rfreeflag</td>
+                        <td>integer</td>
+                        <td>-1</td>
+                        <td>integer flag for Rfree reflections (negative:
+                            automatically determined from data)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>nbins</td>
+                        <td>integer</td>
+                        <td>10</td>
+                        <td>number of bins to divide data into for purposes of
+                            statistics/sigmaA fits
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>gridsearch</td>
+                        <td>boolean</td>
+                        <td>false</td>
+                        <td>grid over bulk solvent parameters to determine
+                            optimal starting values
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>xrayscaletol</td>
+                        <td>double</td>
+                        <td>1e-4</td>
+                        <td>gradient rms tolerance for scaling</td>
+                    </tr>
+                    <tr>
+                        <td>sigmaatol</td>
+                        <td>double</td>
+                        <td>1.0</td>
+                        <td>gradient rms tolerance for sigmaA fit</td>
+                    </tr>
+                    <tr>
+                        <td>xweight</td>
+                        <td>double</td>
+                        <td>1.0</td>
+                        <td>weight for summed diffraction data (weights for
+                            individual data sets are provided at the script
+                            level)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>bsimweight</td>
+                        <td>double</td>
+                        <td>1.0</td>
+                        <td>harmonic restraint B-factor weight between bonded
+                            atoms (increase to 5 or 10 for low resolution structures
+                            if necessary)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>bnonzeroweight</td>
+                        <td>double</td>
+                        <td>1.0</td>
+                        <td>entropy term to prevent nonzero B factors</td>
+                    </tr>
+                    <tr>
+                        <td>bmass</td>
+                        <td>double</td>
+                        <td>5.0</td>
+                        <td>fictitious mass to assign to B factors for
+                            extended Lagrangian methods
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>residuebfactor</td>
+                        <td>boolean</td>
+                        <td>false</td>
+                        <td>set to true to refine a B factor for each
+                            residue
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>nresiduebfactor</td>
+                        <td>integer</td>
+                        <td>1</td>
+                        <td>number of residues per B factor (requires
+                            residuebfactor to be true)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>addanisou</td>
+                        <td>boolean</td>
+                        <td>false</td>
+                        <td>set to true to add ANISOU records to the PDB file
+                            based on isotropic B factors
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>refinemolocc</td>
+                        <td>boolean</td>
+                        <td>false</td>
+                        <td>set to true to refine occupancies of HETATMs, only
+                            performed if hetatms are in alternate conformers or occ
+                            &lt; 1.0
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>occmass</td>
+                        <td>double</td>
+                        <td>10.0</td>
+                        <td>fictitious mass to assign to occupancies for
+                            extended Lagrangian methods
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>

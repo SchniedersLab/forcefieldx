@@ -1,39 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
     name="Parallel Java"
-    xmlns="http://maven.apache.org/DECORATION/1.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
-    <bannerRight>
-        <name>Force Field X</name>
-        <src>images/forcefieldx.png</src>
-        <href>http://ffx.kenai.com</href>
-    </bannerRight>
-    <bannerLeft>
-        <name>Force Field X</name>
-        <src>images/helixBanner.jpg</src>
-        <href>http://ffx.kenai.com</href>
-    </bannerLeft>
+    xmlns="http://maven.apache.org/DECORATION/1.7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0 http://maven.apache.org/xsd/decoration-1.7.0.xsd">
     <body>
-        <head>
-            <script type="text/javascript">
-                var _gaq = _gaq || [];
-                _gaq.push(['_setAccount', 'UA-12576019-1']);
-                _gaq.push(['_trackPageview']);
-
-                (function() {
-                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-                })();
-            </script>
-        </head>
         <menu name="Parallel Java">
-            <item
-                name="Introduction"
-                href="/index.html"
-            />
+            <item name="Introduction" href="/index.html" />
         </menu>
-        <menu ref="parentProject"/>
     </body>
 </project>

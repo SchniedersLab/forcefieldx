@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Unit Cell and Space Group Properties</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <p>Properties used to define the size of the simulation cell, spece group symmetry and use of PBC.</p>
+        <section name="Unit Cell and Space Group Properties">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Type</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>a-axis</td>
+                        <td>double</td>
+                        <td>none</td>
+                        <td>Length of the
+                            <code>a-axis</code> of the unit cell in Angstroms. There is no
+                            default for
+                            <code>a-axis</code>. If it is not specified, the calculation is
+                            treated as aperiodic.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>b-axis</td>
+                        <td>double</td>
+                        <td>a-axis</td>
+                        <td>Length of the
+                            <code>b-axis</code> of the unit cell in Angstroms.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>c-axis</td>
+                        <td>double</td>
+                        <td>a-axis</td>
+                        <td>Length of the
+                            <code>c-axis</code> of the unit cell in Angstroms.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>alpha</td>
+                        <td>double</td>
+                        <td>90.0</td>
+                        <td>Angle between the
+                            <code>b-axis</code> and
+                            <code>c-axis</code>
+                            of the unit cell in degrees.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>beta</td>
+                        <td>double</td>
+                        <td>90.0</td>
+                        <td>Angle between the
+                            <code>a-axis</code> and
+                            <code>c-axis</code>
+                            of the unit cell in degrees.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>gamma</td>
+                        <td>double</td>
+                        <td>90.0</td>
+                        <td>Angle between the
+                            <code>a-axis</code> and
+                            <code>b-axis</code>
+                            of the unit cell in degrees.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>spacegroup</td>
+                        <td>string</td>
+                        <td>P 1</td>
+                        <td>One of the 230 space groups using the convention followed by the
+                            PDB CRYST1 record, which is to use a Hermann-Mauguin symbol without
+                            parenthesis, e.g.,
+                            <code>P 21 21 2</code> and using the full symbol,
+                            e.g.,
+                            <code>C 1 2 1</code> instead of
+                            <code>C 2</code>.
+                            The defaut is
+                            <code>P 1</code> if an a-axis is specified, but not a space group.
+                            Internal checks are performed to ensure unit cell parameters are
+                            consistent with the symmetry of the space group.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>

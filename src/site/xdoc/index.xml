@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Welcome</title>
+        <author email="michael-schnieders@uiowa.edu">
+            Michael J. Schnieders
+        </author>
+    </properties>
+    <body>
+        <section name="Welcome to the Force Field X Home Page">
+            <subsection name="Introduction">
+                <p>Force Field X is based on accurate polarizable atomic multipole force fields,
+                    local and global optimization algorithms, and rigorous statistical mechanics sampling.
+                    The FFX code is parallelized for clusters of many-core nodes with coprocessors
+                    using an open (GPL v. 3), modular and platform independent approach.
+                    If you are new to molecular modeling, please see examples of the types of
+                    systems studied <a href="scope.html">here</a>.
+                </p>
+            </subsection>
+            <subsection name="Modeling Algorithms">
+                <p>
+                    Modeling algorithms include:
+                </p>
+                <ul>
+                    <li>Polarizable AMOEBA force fields</li>
+                    <li>Particle-mesh Ewald electrostatics</li>
+                    <li>Generalized Kirkwood continuum electrostatics</li>
+                    <li>X-ray and neutron crystallography refinement</li>
+                    <li>Real space refinement for CryoEM</li>
+                    <li>Methods for structure based drug design</li>
+                </ul>
+                <p>See the Force Field X online manual for instructions on how to
+                    <a href="download.html">download and install</a> the program.
+                    The manual also describes available <a href="commands.html">modeling commands and properties</a>,
+                    and provides a few <a href="examples.html">examples</a> with more on the way.
+                </p>
+            </subsection>
+            <subsection name="Development">
+                <p>Contribute to Force Field X by learning how to clone the
+                <a href="source.html">code</a> from GitHub and then build it.
+                We also provide instructions for how to use its
+                <a href="modules.html">modules</a> in your own programs.
+                </p>
+                <script type="text/javascript" src="js/factoids.js"></script>
+            </subsection>
+        </section>
+    </body>
+</document>

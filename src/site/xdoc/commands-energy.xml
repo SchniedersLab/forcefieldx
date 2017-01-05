@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Commands</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Potential Energy Commands">
+            <p>Calculate Potential Energy, Test the Analytic Gradient, Time Energy and Gradient.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <a href="modules/potential/scripts/energy.groovy" >energy</a>
+                        </td>
+                        <td>Calculate the potential energy of the system.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/potential/scripts/testGradient.groovy" >testGradient</a>
+                        </td>
+                        <td>Test the analytic Cartesian coordinate energy gradient numerically.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/potential/scripts/testLambdaGradient.groovy" >testLambdaGradient</a>
+                        </td>
+                        <td>Test the analytic Lambda gradient numerically.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/potential/scripts/timer.groovy" >timer</a>
+                        </td>
+                        <td>Time the computation of the potential energy and gradient.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>

@@ -4,15 +4,15 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Xray Module Usage</title>
+        <title>X-ray Refinement Examples</title>
         <author email="tim.fenn@gmail.com">Timothy D. Fenn</author>
     </properties>
     <body>
-        <section name="X-Ray Examples">
-            <subsection name="Prior to using the X-Ray interface">
-                <p>In order to use the X-Ray interface, X-ray reflection data
-                    must be provided along with an atomic model. Currently accepted
-                    formats include:
+        <section name="X-Ray Refinement Examples">
+            <subsection name="Prequisites for using AMOEBA-Assisted X-Ray Refinement">
+                <p>In order to use AMOEBA-assisted X-Ray crystallography refinement,
+                    X-ray reflection data must be provided along with an atomic model.
+                    Currently accepted formats include:
                 </p>
                 <ul>
                     <li>CCP4 MTZ format (preferred)</li>

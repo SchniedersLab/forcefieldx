@@ -3,8 +3,40 @@
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
       title="Publications"
-      toplink="true">
-    Tests.
+      toplink="false">
+    <part id="2016">
+        <title>2016</title>
+        <faq id="21">
+            <question>
+                Nessler, I. J., Litman, J. M., and M. J. Schnieders,
+                Toward polarizable AMOEBA thermodynamics at fixed charge efficiency using a dual force field approach.
+                <i>Physical Chemistry Chemical Physics</i>
+                <b>2016</b>, 18 (44), 30313-30322.
+                <a href="http://dx.doi.org/10.1039/C6CP02595A">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>First principles prediction of the structure, thermodynamics and solubility of organic molecular crystals, which play a central role in chemical, material, pharmaceutical and engineering sciences, challenges both potential energy functions and sampling methodologies. Here we calculate absolute crystal deposition thermodynamics using a novel dual force field approach whose goal is to maintain the accuracy of advanced multipole force fields (e.g. the polarizable AMOEBA model) while performing more than 95% of the sampling in an inexpensive fixed charge (FC) force field (e.g. OPLS-AA). Absolute crystal sublimation/deposition phase transition free energies were determined using an alchemical path that grows the crystalline state from a vapor reference state based on sampling with the OPLS-AA force field, followed by dual force field thermodynamic corrections to change between FC and AMOEBA resolutions at both end states (we denote the three step path as AMOEBA/FC). Importantly, whereas the phase transition requires on the order of 200 ns of sampling per compound, only 5 ns of sampling was needed for the dual force field thermodynamic corrections to reach a mean statistical uncertainty of 0.05 kcal mol<sup>−1</sup>. For five organic compounds, the mean unsigned error between direct use of AMOEBA and the AMOEBA/FC dual force field path was only 0.2 kcal mol<sup>−1</sup> and not statistically significant. Compared to experimental deposition thermodynamics, the mean unsigned error for AMOEBA/FC (1.4 kcal mol<sup>−1</sup>) was more than a factor of two smaller than uncorrected OPLS-AA (3.2 kcal mol<sup>−1</sup>). Overall, the dual force field thermodynamic corrections reduced condensed phase sampling in the expensive force field by a factor of 40, and may prove useful for protein stability or binding thermodynamics in the future.
+                </p>
+            </answer>
+        </faq>
+        <faq id="20">
+            <question>
+                Bell, D., Qi, R., Jing, Z., Xiang, J. Y., Mejias, C., Schnieders, M., Ponder, J., and P. Ren,
+                Calculating binding free energies of host-guest systems using AMOEBA polarizable force field.
+                <i>Physical Chemistry Chemical Physics</i>
+                <b>2016</b>, 18 (44), 30261-30269.
+                <a href="http://dx.doi.org/10.1039/C6CP02509A">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>Molecular recognition is of paramount interest in many applications. Here we investigate a series of host–guest systems previously used in the SAMPL4 blind challenge by using molecular simulations and the AMOEBA polarizable force field. The free energy results computed by Bennett's acceptance ratio (BAR) method using the AMOEBA polarizable force field ranked favorably among the entries submitted to the SAMPL4 host–guest competition. In this work we conduct an in-depth analysis of the AMOEBA force field host–guest binding thermodynamics by using both BAR and the orthogonal space random walk (OSRW) methods. The binding entropy–enthalpy contributions are analyzed for each host–guest system. For systems of inordinate binding entropy–enthalpy values, we further examine the hydrogen bonding patterns and configurational entropy contribution. The binding mechanism of this series of host–guest systems varies from ligand to ligand, driven by enthalpy and/or entropy changes. Convergence of BAR and OSRW binding free energy methods is discussed. Ultimately, this work illustrates the value of molecular modelling and advanced force fields for the exploration and interpretation of binding thermodynamics.
+                </p>
+            </answer>
+        </faq>
+    </part>
     <part id="2015">
         <title>2015</title>
         <faq id="19">

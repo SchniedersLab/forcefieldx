@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
     name="Force Field X"
-    xmlns="http://maven.apache.org/DECORATION/1.4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.4.0 http://maven.apache.org/xsd/decoration-1.4.0.xsd">
+    xmlns="http://maven.apache.org/DECORATION/1.7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0 http://maven.apache.org/xsd/decoration-1.7.0.xsd">
     <version position="right" />
     <publishDate position="right" format="MMM dd yyyy" />
-    <skin>
+    <!-- skin>
         <groupId>lt.velykis.maven.skins</groupId>
         <artifactId>reflow-maven-skin</artifactId>
         <version>1.1.1</version>
-    </skin>
-    <!-- skin>
+    </skin -->
+    <skin>
         <groupId>org.apache.maven.skins</groupId>
         <artifactId>maven-fluido-skin</artifactId>
-        <version>1.3.0</version>
-    </skin -->
+        <version>1.6</version>
+    </skin>
     <poweredBy>
         <logo
             target="_blank"
@@ -27,7 +27,11 @@
     <bannerLeft>
         <name>
             <![CDATA[
-            <span style="color:black">Force Field X</span>
+             <span style="color:black">Force Field X</span>
+             <br>
+             <h4>
+             <span style="color:green">Sustainable</span><span style="color:black"> Software for Molecular Biophysics</span>
+             </h4>
             ]]>
         </name>
         <href>http://ffx.biochem.uiowa.edu</href>
@@ -36,83 +40,52 @@
         <name>The University of Iowa</name>
         <src>/images/UofI.png</src>
         <href>http://www.uiowa.edu</href>
-        <width>120px</width>
-        <height>120px</height>
+        <width>100px</width>
+        <height>100px</height>
     </bannerRight>
+
     <custom>
-        <reflowSkin>
-            <localResources>true</localResources>
-            <skinAttribution>false</skinAttribution>
-            <!-- theme>bootswatch-flatly</theme -->
-            <theme>site</theme>
-            <highlightJs>true</highlightJs>
-            <imgLightbox>false</imgLightbox>
-            <navbarInverse>true</navbarInverse>
-            <brand>
-                <name>
-                    <![CDATA[
-                    Force Field<span style="color:yellow"> X</span>
-                    ]]>
-                </name>
-                <href>http://ffx.eng.uiowa.edu</href>
-            </brand>
-            <slogan position="bannerLeft">
-                <![CDATA[
-                <span style="color:green">Sustainable</span> Software for Molecular Biophysics
-                ]]>
-            </slogan>
-            <titleTemplate>%2$s</titleTemplate>
-            <toc>top</toc>
-            <topNav>Overview|Manual|Modules|Project Info|Algorithms|Crystal|Numerics|Potential|User Interfaces|Utilities|X-Ray Refinement</topNav>
-            <bottomNav>
-                <column>Overview</column>
-                <column>Manual</column>
-                <column>Modules</column>
-                <column>Algorithms|Crystal|Numerics|Potential|User Interfaces|Utilities|X-Ray Refinement</column>
-            </bottomNav>
-            <!-- bottomDescription>
-                <script type="text/javascript" src="js/search.js"></script>
-            </bottomDescription -->
-            <pages>
-                <index project="ffx">
-                    <toc>false</toc>
-                    <shortTitle>Force Field X</shortTitle>
-                    <sections>
-                        <carousel />
-                        <columns>3</columns>
-                    </sections>
-                </index>
-                <license>
-                    <toc>sidebar</toc>
-                </license>
-                <publications>
-                    <shortTitle>Publications</shortTitle>
-                    <toc>sidebar</toc>
-                    <sections>
-                        <body />
-                    </sections>
-                </publications>
-                <modules>
-                    <toc>none</toc>
-                </modules>
-                <project-info>
-                    <toc>none</toc>
-                </project-info>
-                <team-list>
-                    <toc>none</toc>
-                </team-list>
-            </pages>
-        </reflowSkin>
+        <fluidoSkin>
+            <!-- leftColumnClass (span2) plus bodyColumnClass (span10) should sum to 12 -->
+            <leftColumnClass>span2</leftColumnClass>
+            <bodyColumnClass>span10</bodyColumnClass>
+            <sideBarEnabled>true</sideBarEnabled>
+            <topBarEnabled>true</topBarEnabled>
+            <topBarContainerStyle>width: 90%;</topBarContainerStyle>
+            <topBarIcon>
+                <name>Force Field X</name>
+                <alt>Force Field X</alt>
+                <src>/images/icon90.png</src>
+                <href>/index.html</href>
+            </topBarIcon>
+            <navBarStyle>navbar-inverse</navBarStyle>
+            <googleSearch/>
+            <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
+            <copyrightClass>pull-right</copyrightClass>
+            <gitHub>
+                <projectId>mjschnie/ffx</projectId>
+                <!-- ribbonOrientation: left/right -->
+                <ribbonOrientation>right</ribbonOrientation>
+                <!-- ribbonColor: red/green/black/darkblue/orange/gray -->
+                <ribbonColor>green</ribbonColor>
+            </gitHub>
+            <!-- profile: pre-release|sandbox|retired -->
+            <profile>production</profile>
+            <!-- ohloh>
+                <projectId>487436</projectId>
+                <widget>factoids</widget>
+            </ohloh -->
+            <!-- default is a forward / -->
+            <breadcrumbDivider>»</breadcrumbDivider>
+        </fluidoSkin>
     </custom>
     <body>
         <head>
-            <script type="text/javascript"
-                    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-            </script>
+            <![CDATA[<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript" />]]>
         </head>
         <!-- links>
-            <item name="Biochemistry" href="http://www.medicine.uiowa.edu/biochemistry"/>
-            <item name="Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
+            <item name="Biochem." href="http://www.medicine.uiowa.edu/biochemistry"/>
+            <item name="BME"  href="http://www.engineering.uiowa.edu/bme"/>
             <item name="CBCB" href="https://genome.uiowa.edu/home"/>
             <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
             <item name="IVR"  href="http://ivr.uiowa.edu"/>
@@ -124,21 +97,38 @@
         </breadcrumbs>
         <menu name="Overview" inherit="top">
             <item name="Welcome" href="/index.html"/>
-            <item name="Scope and Collaborations" href="/scope.html"/>
-            <item name="Manual" href="/download.html"/>
-            <item name="Modules" href="/modules.html"/>
-            <item name="License" href="/license.html"/>
+            <item name="Recent Work" href="/recentWork.html"/>
+            <item name="Download" href="/download.html"/>
+            <item name="Install" href="/install.html"/>
+            <item name="Source Code" href="/source.html"/>
             <item name="Publications" href="/publications.html"/>
-            <item name="FFX Team" href="/team-list.html"/>
+            <item name="Collaborations" href="/scope.html"/>
         </menu>
         <menu name="Manual" inherit="top">
-            <item name="Download &amp; Install" href="/download.html"/>
-            <item name="Commands &amp; Properties" href="/commands.html"/>
-            <item name="Examples" href="/examples.html"/>
-            <item name="Source Code" href="/source.html"/>
+            <item name="Commands" href="/commands.html" collapse="true">
+                <item name="Optimization and Sampling" href="/commands-opt.html"/>
+                <item name="Potential Energy" href="/commands-energy.html"/>
+                <item name="Realspace Refinement" href="/commands-realspace.html"/>
+                <item name="Utilities" href="/commands-util.html"/>
+                <item name="X-ray Refinement" href="/commands-xray.html"/>
+            </item>
+            <item name="Properties" href="/properties.html" collapse="true">
+                <item name="Force Field" href="/properties-forcefield.html"/>
+                <item name="PME Electrostatics" href="/properties-pme.html"/>
+                <item name="Unit Cell and Space Ggroup" href="/properties-spacegroup.html"/>
+                <item name="Structural Refinement" href="/properties-refine.html"/>
+            </item>
+            <item name="Examples" href="/examples.html" collapse="true">
+               <item name="Side-Chain Optimization via Many-Body DEE" href="/examples-dee.html"/>
+               <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html" />
+               <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html" />
+            </item>
+            <item name="License" href="/license.html"/>
+            <item name="FFX Team" href="/team-list.html"/>
             <!-- item name="Launch Webstart" href="/webstart.html"/ -->
         </menu>
         <menu name="Modules" inherit="top">
+            <item name="Modules" href="/modules.html"/>
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
             <!--item name="Automatic Parameterization"  href="modules/autoparm/index.html"/ -->
             <!-- item name="Binding Affinity"  href="modules/binding/index.html"/ -->
@@ -154,29 +144,4 @@
         </menu>
         <menu name="Project Info" ref="reports"/>
     </body>
-    <!-- fluidoSkin>
-        <sideBarEnabled>false</sideBarEnabled>
-        <topBarEnabled>true</topBarEnabled>
-        <topBarContainerStyle>width: 90%;</topBarContainerStyle>
-        <topBarIcon>
-            <name>Force Field X Development</name>
-            <alt>Force Field X Development</alt>
-            <target>_blank</target>
-            <src>/images/icon90.png</src>
-            <href>http://kenai.com/projects/ffx</href>
-        </topBarIcon>
-        <navBarStyle>navbar-inverse</navBarStyle>
-        <leftColumnClass>span0</leftColumnClass>
-        <bodyColumnClass>span12</bodyColumnClass>
-        <googleSearch>
-            <sitesearch>true</sitesearch>
-        </googleSearch>
-        <ohloh>
-            <projectId>487436</projectId>
-            <widget>thin-badge</widget>
-        </ohloh>
-        <facebookLike/>
-        <googlePlusOne/>
-        <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
-    </fluidoSkin -->
 </project>
