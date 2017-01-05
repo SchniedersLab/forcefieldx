@@ -70,7 +70,7 @@ import static ffx.potential.parameters.AngleType.units;
  * @since 1.0
  *
  */
-public class Angle extends BondedTerm implements Comparable<Angle> {
+public class Angle extends BondedTerm implements Comparable<Angle>, BondedEnergy {
 
     private static final Logger logger = Logger.getLogger(Angle.class.getName());
 
@@ -282,20 +282,6 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Update recomputes <b>this</b> Angle's value and energy.
-     */
-    @Override
-    public void update() {
-        energy(false);
-    }
-
-    public double energy(boolean gradient) {
-        return energy(gradient, 0, null, null, null);
-    }
-
-    /**
      * Evaluate this Angle energy.
      *
      * @param gradient Evaluate the gradient.
@@ -305,11 +291,14 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
      * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient,
-            int threadID,
+    @Override
+    public double energy(boolean gradient, int threadID,
             AtomicDoubleArray gradX,
             AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ) {
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -651,6 +640,9 @@ public class Angle extends BondedTerm implements Comparable<Angle> {
                         break;
                 }
                 break;
+        }
+        if (esvTerm) {
+            addToEsvDeriv(energy * dedesvChain / esvLambda, Angle.class);
         }
         return energy;
     }

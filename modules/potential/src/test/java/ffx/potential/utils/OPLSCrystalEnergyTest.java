@@ -136,8 +136,8 @@ public class OPLSCrystalEnergyTest {
     private final double improperTorsionEnergy;
     private final double vanDerWaalsEnergy;
     private final double permanentEnergy;
-    private final double tolerance = 1.0e-3;
-    private final double gradientTolerance = 1.0e-3;
+    private final double tolerance = 1.0e-2;
+    private final double gradientTolerance = 1.0e-2;
     private final boolean ci;
     private final boolean ciOnly;
     private boolean mpoleTerm;

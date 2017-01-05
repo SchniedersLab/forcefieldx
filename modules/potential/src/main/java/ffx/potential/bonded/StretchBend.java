@@ -149,20 +149,6 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Update recomputes the StrechBend's value and energy.
-     */
-    @Override
-    public void update() {
-        energy(false);
-    }
-
-    public double energy(boolean gradient) {
-        return energy(gradient, 0, null, null, null);
-    }
-
-    /**
      * Evaluate the Stretch-Bend energy.
      *
      * @param gradient Evaluate the gradient.
@@ -172,11 +158,14 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
      * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient,
-            int threadID,
+    @Override
+    public double energy(boolean gradient, int threadID,
             AtomicDoubleArray gradX,
             AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ) {
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -218,19 +207,20 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
             double e1 = rcb - bond1Eq;
             double dt = value - angleEq;
             double dr = force0 * e0 + force1 * e1;
-            energy = rigidScale * dr * dt * esvLambda;
+            double prefactor = rigidScale * esvLambda;
+            energy = prefactor * dr * dt;
             if (gradient) {
                 // angle chain rule terms
-                double term1 = -rigidScale * dr * toDegrees(1.0 / (rab2 * rp));
-                double term2 = rigidScale * dr * toDegrees(1.0 / (rcb2 * rp));
+                double term1 = -prefactor * dr * toDegrees(1.0 / (rab2 * rp));
+                double term2 = prefactor * dr * toDegrees(1.0 / (rcb2 * rp));
                 cross(v10, p, dta);
                 scalar(dta, term1, dta);
                 cross(v12, p, dtc);
                 scalar(dtc, term2, dtc);
 
                 // bond chain rule terms
-                term1 = rigidScale * force0 * dt / rab;
-                term2 = rigidScale * force1 * dt / rcb;
+                term1 = prefactor * force0 * dt / rab;
+                term2 = prefactor * force1 * dt / rcb;
                 scalar(v10, term1, v10);
                 scalar(v12, term2, v12);
 
@@ -255,6 +245,9 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
                 gradY.add(threadID, i2, g2[1]);
                 gradZ.add(threadID, i2, g2[2]);
             }
+        }
+        if (esvTerm) {
+            addToEsvDeriv(energy * dedesvChain / esvLambda, StretchBend.class);
         }
         return energy;
     }

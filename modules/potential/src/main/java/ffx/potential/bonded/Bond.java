@@ -619,10 +619,6 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         }
     }
 
-    public double energy(boolean gradient) {
-        return energy(gradient, 0, null, null, null);
-    }
-
     /**
      * Evaluate this Bond energy.
      *
@@ -633,11 +629,14 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient,
-            int threadID,
+    @Override
+    public double energy(boolean gradient, int threadID,
             AtomicDoubleArray gradX,
             AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ) {
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ) {
 
         /**
          * The vector from Atom 1 to Atom 0.
@@ -707,6 +706,9 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
             }
         }
         value = dv;
+        if (esvTerm) {
+            addToEsvDeriv(energy * dedesvChain / esvLambda, Bond.class);
+        }
         return energy;
     }
 

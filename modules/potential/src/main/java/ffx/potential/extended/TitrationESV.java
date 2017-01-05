@@ -81,8 +81,8 @@ public final class TitrationESV extends ExtendedVariable {
         double dDiscr = getDiscrBiasDeriv();
         double dPh = getPhBiasDeriv(temperature);
         if (print) {
-            SB.logfn("  Discr %d: %g", index, dDiscr);
-            SB.logfn("  pH    %d: %g", index, dPh);
+            SB.logfn("  Discr  %d: %g", index, dDiscr);
+            SB.logfn("  pH     %d: %g", index, dPh);
         }
         return (dDiscr + dPh);
     }

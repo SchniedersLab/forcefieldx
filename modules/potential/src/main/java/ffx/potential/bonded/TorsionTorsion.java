@@ -154,20 +154,6 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update() {
-        energy(false);
-    }
-
-    public double energy(boolean gradient) {
-        return energy(gradient, 0,
-                null, null, null,
-                null, null, null);
-    }
-
-    /**
      * Evaluate the Torsion-Torsion energy.
      *
      * @param gradient Evaluate the gradient.
@@ -180,6 +166,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      * @param lambdaGradZ
      * @return Returns the energy.
      */
+    @Override
     public double energy(boolean gradient,
             int threadID,
             AtomicDoubleArray gradX,
@@ -387,14 +374,20 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
             if (!gradient && !lambdaTerm) {
                 double bcu = bcuint(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy);
                 energy = units * bcu * esvLambda * lambda;
+                if (esvTerm) {
+                    addToEsvDeriv(units * bcu * dedesvChain * lambda, TorsionTorsion.class);
+                }
                 dEdL = units * bcu * esvLambda;
             } else {
                 double ansy[] = new double[2];
                 double bcu1 = bcuint1(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy, ansy);
                 energy = units * bcu1 * esvLambda * lambda;
+                if (esvTerm) {
+                    addToEsvDeriv(units * bcu1 * dedesvChain * lambda, TorsionTorsion.class);
+                }
                 dEdL = units * bcu1 * esvLambda;
-                double dedang1 = sign * units * toDegrees(ansy[0]);
-                double dedang2 = sign * units * toDegrees(ansy[1]);
+                double dedang1 = sign * units * toDegrees(ansy[0]) * esvLambda * lambda;
+                double dedang2 = sign * units * toDegrees(ansy[1]) * esvLambda * lambda;
                 /**
                  * Derivative components for the first angle.
                  */

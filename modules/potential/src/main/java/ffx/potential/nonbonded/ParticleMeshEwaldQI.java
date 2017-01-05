@@ -1103,7 +1103,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             esvAtoms = new boolean[nAtoms];  // Needed regardless of esvTerm state.
             fill(esvAtoms, false);
             if (esvTerm) {
-                numESVs = esvSystem.count();
+                numESVs = esvSystem.n();
                 esvRealSpaceDeriv = new SharedDouble[numESVs];
             }
             isSoft = new boolean[nAtoms];
@@ -6731,7 +6731,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     public void attachExtendedSystem(ExtendedSystem system) {
         esvTerm = true;
         esvSystem = system;
-        numESVs = system.count();
+        numESVs = system.n();
         initAtomArrays();
         updateEsvLambda();
         
@@ -6774,7 +6774,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         if (!esvTerm) {
             return; // ESV removal in detach().
         }
-        numESVs = esvSystem.count();
+        numESVs = esvSystem.n();
         esvRealSpaceDeriv = new SharedDouble[numESVs];
         
         /**
