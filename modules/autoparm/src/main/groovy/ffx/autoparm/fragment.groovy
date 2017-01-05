@@ -57,15 +57,29 @@ import ffx.autoparm.Wizard
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
+
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc fragment [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
+cli.max(longOpt:'max frag. size', args:1, argName:'30', 'Maximum fragment size.');
+cli.min(longOpt:'min frag. size', args:1, argName:'20', 'Minimum fragment size.');
+
 def options = cli.parse(args);
 
 List<String> arguments = options.arguments();
 //if (options.h || arguments == null || arguments.size() != 1){ original code
 if (options.h || arguments == null) {
     return cli.usage();
+}
+
+// Maximum fragment size.
+if (options.max) {
+    max = Integer.parseInt(options.max);
+}
+
+// Minimum fragment size.
+if (options.min) {
+    min = Integer.parseInt(options.min);
 }
 
 // Read in command line argument.

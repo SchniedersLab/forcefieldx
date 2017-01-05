@@ -8,7 +8,7 @@
         <author email="jooyeon-park@uiowa.edu">Julia Park</author>
     </properties>
     <body>
-        <section name="Organic Crystal Deposition/Sublimation Free Energy">
+        <section name="Absolute Organic Crystal Thermodynamic Stability">
             <subsection name="Growth of the Asymmetric Unit into a Crystal via Alchemy (GAUCHE)">
                 <p>The general procedure for calculating the organic crystal deposition/sublimation
                     free energy using GAUCHE method is as follows:

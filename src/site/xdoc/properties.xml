@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Properties</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Property Overview">
+            <p>Force Field X <b>properties</b> are defined using the following precedence order:
+            </p>
+            <ol>
+                <li>Highest precedence is given to the Java system properties mechanism:
+                    <ul>
+                        <li>
+                            <code>-Dkey=value</code> from the Force Field X command line
+                        </li>
+                        <li>
+                            Equivalently, use the following code within a script
+                            <b>before</b> the structure file is opened.
+                            <source>System.setProperty("key","value")</source>
+                        </li>
+                    </ul>
+                </li>
+                <li>Second highest precedence is given to structure specific properties.
+                    For example, when opening a structure named filename.pdb or filename.xyz,
+                    Force Field X will attempt to read properties from:
+                    <ol>
+                        <li>fileame.properties
+                        </li>
+                        <li>filename.key (only if fileame.properties is not found)
+                        </li>
+                    </ol>
+                </li>
+                <li>
+                    User specific properties from the file
+                    <code>~/.ffx/ffx.properties</code>.
+                </li>
+                <li>Properties in the file defined by the environment variable
+                    <code>FFX_PROPERTIES</code>
+                </li>
+                <li>
+                    Finally, properties are read in from force field definition
+                    files that are stored internally by Force Field X.
+                </li>
+            </ol>
+            <subsection name="Property Groups">
+                <p>Force Field X properties are grouped into the following categories:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Property Group</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <p>
+                                    <a href="properties-forcefield.html">Force Field</a>
+                                </p>
+                            </td>
+                            <td>
+                                <p>Specify the functional form of the force field, including bonded terms, van der Waals and electrostatics.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <p>
+                                    <a href="properties-pme.html">Particle Mesh Ewald Electrostatics</a>
+                                </p>
+                            </td>
+                            <td>
+                                <p>Define PME electrostatics parameters such as real space cutoff, interpolation order and mesh density.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <p>
+                                    <a href="properties-refine.html">X-ray, Neutron and Real Space Refinement</a>
+                                </p>
+                            </td>
+                            <td>
+                                <p>Control details of structural refinement against experimental data sets and advanced force fields.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <p>
+                                    <a href="properties-spacegroup.html">Unit Cell, Space Group and Periodic Boundary Conditions</a>
+                                </p>
+                            </td>
+                            <td>
+                                <p>Define the size of the simulation cell, spece group symmetry and use of PBC.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </subsection>
+        </section>
+    </body>
+</document>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Commands</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="Optimization and Sampling">
+            <p>Minimization Algorithms, Simulated Annealing, MD, Alchemical Free Energy Simulations.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <a href="modules/algorithms/scripts/anneal.groovy" >anneal</a>
+                        </td>
+                        <td>Run simulated annealing to optimize a structure.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/potential/scripts/energy.groovy" >energy</a>
+                        </td>
+                        <td>Calculate the AMOEBA potential energy.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/algorithms/scripts/md.groovy" >md</a>
+                        </td>
+                        <td>Run NVE or NVT molecular dynamics.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/algorithms/scripts/minimize.groovy" >minimize</a>
+                        </td>
+                        <td>Minimize a structure under the AMOEBA potential.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>

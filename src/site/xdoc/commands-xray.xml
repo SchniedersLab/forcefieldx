@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+    xmlns="http://maven.apache.org/XDOC/2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>X-ray Commands</title>
+        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+    </properties>
+    <body>
+        <section name="X-ray Crystallography Refinement">
+            <p>Algorithms to optimize an atomic resolution crystal structure against X-ray diffraction data.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/anneal.groovy" >xray.anneal</a>
+                        </td>
+                        <td>Apply simulated annealing using a reciprocal space objective function.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/minimize.groovy" >xray.minimize</a>
+                        </td>
+                        <td>X-ray Refinement using a reciprocal space objective function.</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <a href="modules/xray/scripts/xray/scaleBulk.groovy" >xray.scaleBulk</a>
+                        </td>
+                        <td>Compute the bulk solvent contribution to the X-ray target.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </body>
+</document>

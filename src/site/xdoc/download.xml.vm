@@ -4,11 +4,11 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Download and Install</title>
+        <title>Download &amp; Install</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <section name="Overview">
+        <section name="Download">
             <p>A single Force Field X <b>download</b> supports Linux, Mac OS X and Microsoft Windows
                 operating systems for both 32-Bit and 64-Bit hardware.
             </p>
@@ -22,9 +22,7 @@
             <ul>
                 <li>A Java Runtime Environment (JRE) of version ${targetVersion} or later.</li>
             </ul>
-        </section>
-        <section name="Download">
-            <subsection name="Force Field X">
+            <subsection name="Current Force Field X Distributions">
                 <table>
                     <thead>
                         <tr>
@@ -56,156 +54,6 @@
                             </td>
                         </tr>
                     </tbody>
-                </table>
-            </subsection>
-            <subsection name="Java">
-                <p>Please install version ${targetVersion} or later of the Java Runtime Environment from
-                    <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank"> Oracle</a>.
-                </p>
-                <p>Detailed Java installation instructions for
-                    <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html">
-                        Linux, Mac OS X, and  Microsoft Windows are available.</a>
-                </p>
-            </subsection>
-        </section>
-        <section name="Install">
-            <subsection name="Linux">
-                <table>
-                    <tr>
-                        <td bgcolor="white">
-                            <p align="left">
-                                <img src="images/tux.jpg" alt="LINUX" />
-                            </p>
-                        </td>
-                        <td>
-                            <ol>
-                                <li>
-                                    <p>In a shell execute:</p>
-                                    <source>echo $JAVA_HOME</source>
-                                    <p>If <code>JAVA_HOME</code> is not set or the JRE version is less than ${targetVersion},
-                                        then follow the instructions above to install Java and/or set the
-                                        <code>JAVA_HOME</code> environment variable.
-                                    </p>
-                                </li>
-                                <li>
-                                    <p>Commands to unpack the three distribution formats are:
-                                        <source>tar -xzf ffx-${project.version}-bin.tar.gz</source>
-                                        <source>tar -xjf ffx-${project.version}-bin.tar.bz2</source>
-                                        <source>unzip ffx-${project.version}-bin.zip</source>
-                                    </p>
-                                </li>
-                                <li>
-                                    <p>Add the directory
-                                        <code>ffx/bin</code> to your path. For example,
-                                        if ffx is unpacked into
-                                        <code>/Users/shared/ffx</code>, then
-                                    </p>
-                                    <ul>
-                                        <li>
-                                            <p>Within a BASH shell:</p>
-                                            <source>export PATH="/Users/shared/ffx/bin:$PATH"</source>
-                                        </li>
-                                        <li>
-                                            <p>Within a CSH shell:</p>
-                                            <source>setenv PATH "/Users/shared/ffx/bin:$PATH"</source>
-                                        </li>
-                                    </ul>
-                                    <p>To check please execute:
-                                        <source>echo $PATH</source>
-                                        and
-                                        <source>which ffxc</source>
-                                    </p>
-                                    <!--
-                                    Both the graphical
-                                    <code>ffx</code> and command line
-                                    compiler
-                                    <code>ffxc</code> versions are now be available. -->
-                                </li>
-                            </ol>
-                        </td>
-                    </tr>
-                </table>
-            </subsection>
-            <subsection name="Mac OS X">
-                <table>
-                    <tr>
-                        <td bgcolor="white">
-                            <p align="left">
-                                <img src="images/mac.jpg" alt="MAC OS X" />
-                            </p>
-                        </td>
-                        <td>
-                            <ol>
-                                <li>
-                                    <p>Type "<code>echo $JAVA_HOME</code>" in a shell. The result should resemble this:
-                                        <source>
-                                            echo $JAVA_HOME
-                                            /Library/Java/JavaVirtualMachines/jdk1.8.0_20.jdk/Contents/Home
-                                        </source>
-                                        If the version is less than ${targetVersion}, then please follow the instructions above
-                                        to install Java and/or set the <code>JAVA_HOME</code> environment variable.
-                                    </p>
-                                </li>
-                                <li>
-                                    <p>Commands to unpack the distributions are:</p>
-                                    <source>
-                                        tar -xzf ffx-${project.version}-bin.tar.gz
-                                        tar -xjf ffx-${project.version}-bin.tar.bz2
-                                        unzip ffx-${project.version}-bin.zip
-                                    </source>
-                                </li>
-                                <li>
-                                    <p>Add the directory <code>ffx/bin</code> to your path.
-                                        For example, if ffx is unpacked into <code>/Users/shared/ffx</code>, then
-                                    </p>
-                                    <ul>
-                                        <li>
-                                            <p>Within a BASH shell:</p>
-                                            <source>export PATH="/Users/shared/ffx/bin:$PATH"</source>
-                                        </li>
-                                        <li>
-                                            <p>Within a CSH shell:</p>
-                                            <source>setenv PATH "/Users/shared/ffx/bin:$PATH"</source>
-                                        </li>
-                                    </ul>
-                                    <p>To check please execute:</p>
-                                    <source>
-                                        echo $PATH
-                                        which ffxc
-                                    </source>
-                                    <!--
-                                    Both the graphical
-                                    <code>ffx</code> and command line
-                                    compiler
-                                    <code>ffxc</code> versions are now be available. -->
-                                </li>
-                            </ol>
-                        </td>
-                    </tr>
-                </table>
-            </subsection>
-            <subsection name="Microsoft Windows">
-                <table>
-                    <tr>
-                        <td bgcolor="white">
-                            <p align="center">
-                                <img src="images/windows.jpg" alt="MS WINDOWS" />
-                            </p>
-                        </td>
-                        <td>
-                            <ol>
-                                <li>
-                                    <p>Type "
-                                        <code>echo %JAVA_HOME%</code>" at a Shell prompt.
-                                    </p>
-                                    <p>If
-                                        <code>JAVA_HOME</code> is not set or the version is less than ${targetVersion},
-                                        then please follow the Java installation instructions above.
-                                    </p>
-                                </li>
-                            </ol>
-                        </td>
-                    </tr>
                 </table>
             </subsection>
         </section>

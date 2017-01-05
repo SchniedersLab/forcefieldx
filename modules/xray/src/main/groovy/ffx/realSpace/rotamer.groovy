@@ -43,6 +43,7 @@ import org.apache.commons.io.FilenameUtils;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
 
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.MultiResidue;
@@ -608,7 +609,7 @@ if (mapFiles.size() == 0) {
 
 Atom[] atoms = systems[0].getAtomArray();
 RealSpaceData realSpaceData = new RealSpaceData(systems,
-    systems[0].getProperties(), systems[0],getParallelTeam(),
+    systems[0].getProperties(), systems[0].getParallelTeam(),
     mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
 
