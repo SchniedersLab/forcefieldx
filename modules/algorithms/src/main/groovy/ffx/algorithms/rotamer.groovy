@@ -132,7 +132,7 @@ cli.l(longOpt:'library', args:1, argName:'2', 'Available rotamer libraries are P
 cli.a(longOpt:'algorithm', args:1, argName:'1', 'Choices are independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5).');
 cli.w(longOpt:'window', args:1, argName:'7', 'Size of the sliding window with respect to adjacent residues');
 cli.r(longOpt:'cutoff', args:1, argName:'2.0', 'The sliding window cutoff radius (Angstroms).')
-cli.s(longOpt:'start', args:1, argName:'-1', 'Starting residue to perform the rotamer search on (-1 exits). For box optimization, first box to optimize.');
+//cli.s(longOpt:'start', args:1, argName:'-1', 'Starting residue to perform the rotamer search on (-1 exits). For box optimization, first box to optimize.');
 cli.f(longOpt:'finish', args:1, argName:'-1', 'Final residue to perform the rotamer search on (-1 exits). For box optimization, last box to optimize.');
 cli.c(longOpt:'chain', args:1, argName:'A', 'Chain the residue selection belongs to.');
 cli.m(longOpt:'minimize', args:1, argName:'0.01', 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).');
@@ -247,10 +247,10 @@ if (algorithm == 5) {
             return;
         }
     } else {
-        if (options.s) {
-            boxStart = Integer.parseInt(options.s);
-            --boxStart; // Internal machinery indexed 0 to (n-1)
-        }
+//        if (options.s) {
+//            boxStart = Integer.parseInt(options.s);
+//            --boxStart; // Internal machinery indexed 0 to (n-1)
+//        }
         if (options.f) {
             boxEnd = Integer.parseInt(options.f);
             --boxEnd; // Internal machinery indexed 0 to (n-1)
@@ -263,9 +263,9 @@ if (algorithm == 5) {
     // boxEnd is set to -1 by default as a flag for "no end box set".
 } else {
     // Starting residue.
-    if (options.s) {
-        startResID = Integer.parseInt(options.s);
-    }
+//    if (options.s) {
+//        startResID = Integer.parseInt(options.s);
+//    }
     // Load the number iterations.
     if (options.f) {
         finalResID = Integer.parseInt(options.f);
