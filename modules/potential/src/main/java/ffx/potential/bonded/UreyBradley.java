@@ -126,20 +126,6 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Update recomputes the UreyBradley's value and energy.
-     */
-    @Override
-    public void update() {
-        energy(false);
-    }
-
-    public double energy(boolean gradient) {
-        return energy(gradient, 0, null, null, null);
-    }
-
-    /**
      * Evaluate the Urey-Bradley energy.
      *
      * @param gradient Evaluate the gradient.
@@ -149,11 +135,14 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient,
-            int threadID,
+    @Override
+    public double energy(boolean gradient, int threadID,
             AtomicDoubleArray gradX,
             AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ) {
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a2[] = new double[3];
@@ -192,6 +181,9 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
             gradX.add(threadID, i2, g2[0]);
             gradY.add(threadID, i2, g2[1]);
             gradZ.add(threadID, i2, g2[2]);
+        }
+        if (esvTerm) {
+            addToEsvDeriv(energy * dedesvChain / esvLambda, UreyBradley.class);
         }
         return energy;
     }

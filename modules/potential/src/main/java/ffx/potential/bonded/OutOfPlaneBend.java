@@ -134,20 +134,6 @@ public class OutOfPlaneBend extends BondedTerm implements
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Update recomputes OutOfPlaneBend value and energy.
-     */
-    @Override
-    public void update() {
-        energy(false);
-    }
-
-    public double energy(boolean gradient) {
-        return energy(gradient, 0, null, null, null);
-    }
-
-    /**
      * Evaluate this Out-of-Plane Bend energy.
      *
      * @param gradient Evaluate the gradient.
@@ -157,11 +143,14 @@ public class OutOfPlaneBend extends BondedTerm implements
      * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient,
-            int threadID,
+    @Override
+    public double energy(boolean gradient, int threadID,
             AtomicDoubleArray gradX,
             AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ) {
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -245,7 +234,7 @@ public class OutOfPlaneBend extends BondedTerm implements
                 double deddt = units
                         * outOfPlaneBendType.forceConstant * dv
                         * toDegrees(2.0 + 3.0 * cubic * dv + 4.0 * quartic
-                                * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4)
+                            * dv2 + 5.0 * quintic * dv3 + 6.0 * sextic * dv4)
                         * esvLambda;
                 double dedcos = 0.0;
                 if (ee != 0.0) {
@@ -300,6 +289,9 @@ public class OutOfPlaneBend extends BondedTerm implements
                 gradY.add(threadID, i3, g3[1]);
                 gradZ.add(threadID, i3, g3[2]);
             }
+        }
+        if (esvTerm) {
+            addToEsvDeriv(energy * dedesvChain / esvLambda, OutOfPlaneBend.class);
         }
         return energy;
     }

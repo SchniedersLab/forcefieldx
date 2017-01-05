@@ -82,21 +82,28 @@ public class Unstitch {
     protected String sdffile;
     protected String ciffile;
     protected String smi;
+    protected int mx;
+    protected int mn;
 
     private final static Logger logger = Logger.getLogger(Unstitch.class.getName());
 
-    public Unstitch(String sdffile, String ciffile, String smi) {
+    public Unstitch(String sdffile, String ciffile, String smi, int mx, int mn) {
         this.sdffile = sdffile;
         this.ciffile = ciffile;
         this.smi = smi;
+        this.mx = mx;
+        this.mn = mn;
     }
 
-    private static final int SIZE = 30;
-    private static final int MINSIZE = 20;
+    //private static final int SIZE = 30;
+    //private static final int MINSIZE = 20;
+    private final int SIZE = mx;
+    private final int MINSIZE = mn;
     ArrayList<String> uniqueAtomNames = new ArrayList<>();
 
     //reads in full molecule CIF
     public void readCIF() throws FileNotFoundException, IOException {
+System.out.println("READ CIF");
 
         try {
             BufferedReader cread = new BufferedReader(new FileReader(ciffile));
@@ -106,19 +113,19 @@ public class Unstitch {
                 //test to see if the line read in contains unique atom name info.
                 //if there is a space at indice 3 and it's the correct length
                 if (line.startsWith(" ", 3) && (line.length() > 50) && line.length() < 100) {
-
+System.out.println("...");
                     String str4 = Character.toString(line.charAt(4));
                     String str5 = Character.toString(line.charAt(5));
                     String str6 = Character.toString(line.charAt(6));
                     String str7 = Character.toString(line.charAt(7));
-
+System.out.println(str4 + " " + str5 + " " + str6 + " " + str7);                
                     String start = str4.concat(str5);
                     String atomName = start.concat(str6);
 
                     if (line.charAt(7) != ' ') {
                         atomName = atomName.concat(str7);
                     }
-
+System.out.println("Atom Name: " + atomName);
                     //System.out.println("Atom Name: " + atomName);
                     uniqueAtomNames.add(atomName);
                 }
@@ -133,6 +140,7 @@ public class Unstitch {
 
     //reads in full molecule SDF
     public void readSDF() throws FileNotFoundException, IOException {
+System.out.println("READ SDF");
         File file = new File(sdffile);
         BufferedReader read = null;
 
@@ -146,13 +154,14 @@ public class Unstitch {
         IteratingSDFReader reader = null;
 
         try {
-
+System.out.println("We're in the iterating reader ...");
             reader = new IteratingSDFReader(read, SilentChemObjectBuilder.getInstance());
             while (reader.hasNext()) {
 
                 IAtomContainer molecule = reader.next();
 
                 try {
+System.out.println("We're another level in ...");                    
                     AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule);
                     CDKHydrogenAdder.getInstance(SilentChemObjectBuilder.getInstance()).addImplicitHydrogens(molecule);
 
@@ -166,6 +175,8 @@ public class Unstitch {
                     //test to see if setID worked
                     for (int j = 0; j < molecule.getAtomCount(); j++) {
                         IAtom test2 = molecule.getAtom(j);
+System.out.println("atomType: " + test2.getAtomTypeName());
+System.out.println("test2ID: " + test2.getID());
                         // System.out.println("atomType: " + test2.getAtomTypeName());
                         // System.out.println("test2ID: " + test2.getID());
                     }
@@ -200,7 +211,7 @@ public class Unstitch {
     //fragments full molecule according to exhaustive fragmentation algorithm
     //exhaustive fragments used in further functions
     protected void fragment(IAtomContainer molecule) throws Exception {
-
+System.out.println("Fragmenting ...");
         //ExhaustiveFragmenter implimentation
         ExhaustiveFragmenter exh = new ExhaustiveFragmenter();
         exh.setMinimumFragmentSize(MINSIZE);
@@ -215,6 +226,7 @@ public class Unstitch {
         //checking for "eaten" fragments
         //remove hydrogens for more accurate substructure checking
         for (String removedHydrogensStructureArray1 : removedHydrogensStructureArray) {
+System.out.println("Convert each array entry (SMILES) to IAtomContainer ...");
             //convert each array entry (SMILES) to IAtomContainer
             IAtomContainer molec = null;
             try {
@@ -236,10 +248,10 @@ public class Unstitch {
         for (int t = 0; t < removedHydrogensStructureList.size(); t++) {
             IAtomContainer query = removedHydrogensStructureList.get(t);
             Pattern pattern = VentoFoggia.findSubstructure(query);
-
+System.out.println("Query");
             for (int u = 0; u < removedHydrogensStructureList.size(); u++) {
                 IAtomContainer tester = removedHydrogensStructureList.get(u);
-
+System.out.println("Tester");
                 //is "Query" is a substructure of "Tester"
                 //makes sure query and tester aren't the same molecule and that
                 //     query is smaller than tester (substructures have to be
@@ -281,6 +293,7 @@ public class Unstitch {
         //System.out.println("fullSmiles: " + full + "\n");
 
         for (int i = 0; i < finalArray.length; i++) {
+System.out.println("iAtomContainerTo3DModel ...");            
             String content = finalArray[i];
             IAtomContainer container = finalIAtomContainerArray[i];
             //IAtomContainer container = finalArray
@@ -345,6 +358,7 @@ public class Unstitch {
         //30 atoms or less
         //if (mol.getAtomCount() < SIZE) {
         if (fragContainer.getAtomCount() < SIZE) {
+System.out.println("Building 3D model!");
             //Builds 3D model of fragment molecule
             System.out.println("mb3d for fragment" + number);
             ModelBuilder3D mb3d;
@@ -398,6 +412,7 @@ public class Unstitch {
         File sdfFromSMILES = new File(fragName);
 
         //write SDF
+System.out.println("Writing SDF ...");
         try {
             fileWriter = new FileWriter(sdfFromSMILES.getAbsoluteFile());
             bufferedWriter = new BufferedWriter(fileWriter);
@@ -420,6 +435,7 @@ public class Unstitch {
         }
 
         //write text file
+System.out.println("Writing text file ...");
         PrintWriter printWriter = null;
         File textFile = new File(textName);
         try {

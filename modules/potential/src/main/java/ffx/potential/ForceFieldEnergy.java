@@ -247,6 +247,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private ExtendedSystem esvSystem = null;
     private final boolean pmeQI = prop("pme-qi", false);
     private final boolean decomposeEsvEnergy = prop("esv-decompose", false);
+    private double[] esvBondedDerivs;
+    /**
+     * Derivative w.r.t. esvLambda of each extended variable.
+     */
+    private SharedDouble[] sharedEsvDerivs;
+    private int numESVs;
     /**
      * *************************************
      */
@@ -740,6 +746,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
         }
         reInit();
+        updateEsvLambda();
+    }
+    
+    public void updateEsvLambda() {
+        if (!esvTerm) {
+            return;
+        }
+        numESVs = esvSystem.n();
+        sharedEsvDerivs = new SharedDouble[numESVs];
+        for (int i = 0; i < numESVs; i++) {
+            sharedEsvDerivs[i] = new SharedDouble(0.0);
+        }
+        esvBondedDerivs = new double[numESVs];
     }
     
     public void detachExtendedSystem() {
@@ -754,6 +773,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
         }
         reInit();
+    }
+    
+    public double getEsvBondedDeriv(int esvID) {
+        if (!esvTerm) {
+            logger.warning("Called ForceFieldEnergy.getEsvBondedDeriv() while !esvTerm.");
+        }
+        return esvBondedDerivs[esvID];
     }
 
     public void setResolution(Resolution resolution) {
@@ -784,8 +810,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     public void reInit() {
 
-        atoms = (esvTerm) ? esvSystem.getExtendedAtomArray() : molecularAssembly.getAtomArray();
+        atoms = (esvTerm) ? esvSystem.getAtomsExtAll() : molecularAssembly.getAtomArray();
+        int[] molecule = (esvTerm) ? esvSystem.getMoleculeExtAll() : molecularAssembly.getMoleculeNumbers();
         nAtoms = atoms.length;
+//        SB.logfn(" FFE Atoms (%d)", nAtoms);
+//        for (int i = 0; i < atoms.length; i++) {
+//            SB.logfn(" %d: %s", i, atoms[i].toString());
+//        }
+//        SB.printIf(false);
 
         if (xyz.length < 3 * nAtoms) {
             xyz = new double[nAtoms * 3];
@@ -831,7 +863,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Collect, count, pack and sort angles.
         if (angleTerm) {
             ArrayList<ROLS> angle = molecularAssembly.getAngleList();
-//            List<BondedTerm> angle = molecularAssembly.getDescendants(Angle.class);
+            List<BondedTerm> angle2 = molecularAssembly.getDescendants(Angle.class);
             nAngles = 0;
             for (ROLS r : angle) {
                 if (keep((Angle) r)) {
@@ -1093,9 +1125,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             improperTorsions = null;
         }
         
-        int[] molecule = (esvTerm) ? esvSystem.getExtendedMoleculeArray() : molecularAssembly.getMoleculeNumbers();
         if (vanderWaalsTerm) {
-            vanderWaals.setAtoms(atoms, molecule);
+            if (esvTerm) {
+                vanderWaals.setAtoms(esvSystem.getAtomsExtH(), esvSystem.getMoleculeExtH());
+            } else {
+                vanderWaals.setAtoms(atoms, molecule);
+            }
         }
 
         if (multipoleTerm) {
@@ -1207,6 +1242,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 bondedRegion.setGradient(gradient);
                 parallelTeam.execute(bondedRegion);
             } catch (Exception e) {
+                e.printStackTrace();
                 logger.severe(e.toString());
             }
 
@@ -1473,7 +1509,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     "Bonded Terms      ", totalBondedEnergy, totalBondedInteractions,
                     totalBondedTime, bondRMSD, angleRMSD));
         } else {
-            sb.append("\n");
             if (bondTerm && nBonds > 0) {
                 sb.append(String.format("  %s %16.8f %12d %12.3f (%8.5f)\n",
                         "Bond Stretching   ", bondEnergy, nBonds,
@@ -1574,25 +1609,25 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         
         if (esvTerm) {
-            sb.append(String.format("  %s %16.8f %12d     %s\n",
-                    "ExtendedSystemBias", esvBias, esvSystem.count(), esvSystem.getLambdaList()));
+            sb.append(String.format("  %s %16.8f  %s\n",
+                    "ExtendedSystemBias", esvBias, esvSystem.getLambdaList()));
             sb.append(esvSystem.getBiasDecomposition());
         }
 
-        sb.append(String.format("  %s %16.8f  %s %12.3f (sec)\n",
+        sb.append(String.format("  %s %16.8f  %s %12.3f (sec)",
                 "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
 
         int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         if (nsymm > 1) {
-            sb.append(String.format("  %s %16.8f\n", "Unit Cell         ",
+            sb.append(String.format("\n  %s %16.8f", "Unit Cell         ",
                     totalEnergy * nsymm));
         }
         if (crystal.getUnitCell() != crystal) {
             nsymm = crystal.spaceGroup.getNumberOfSymOps();
-            sb.append(String.format("  %s %16.8f\n", "Replicates Cell   ",
+            sb.append(String.format("\n  %s %16.8f", "Replicates Cell   ",
                     totalEnergy * nsymm));
         }
-
+        sb.append("\n");
         return sb.toString();
     }
 
@@ -1796,7 +1831,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 ex.printStackTrace();
                 throw ex; // Rethrow exception
             }
-
+            
             return 0; // Should ordinarily be unreachable.
         }
     }
@@ -1879,7 +1914,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
                     sb.append("   Mass:  " + a.getMass() + "\n");
                     if (atoms[i].getESV() != null) {
-                        sb.append("   ESV:   " + "idx " + atoms[i].getESV().index + ", ldh " + atoms[i].getESV().getLambda() + "\n");
+                        sb.append(atoms[i].getESV().toString());
                     }
                 } catch (Exception e) {}
                 logger.info(sb.toString());
@@ -2606,6 +2641,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          * Z-component of the dU/dX/dL coordinate gradient.
          */
         private final AtomicDoubleArray lambdaGradZ;
+        private int numESVs;
 
         // Shared RMSD variables.
         private final SharedDouble sharedBondRMSD;
@@ -2632,18 +2668,18 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         private final GradReduceLoop gradReduceLoops[];
 
         // Force field bonded energy parallel loops.
-        private final BondLoop bondLoops[];
-        private final AngleLoop angleLoops[];
-        private final OutOfPlaneBendLoop outOfPlaneBendLoops[];
-        private final ImproperTorsionLoop improperTorsionLoops[];
-        private final PiOrbitalTorsionLoop piOrbitalTorsionLoops[];
-        private final StretchBendLoop stretchBendLoops[];
-        private final TorsionLoop torsionLoops[];
-        private final TorsionTorsionLoop torsionTorsionLoops[];
-        private final UreyBradleyLoop ureyBradleyLoops[];
+        private final BondedTermLoop[] bondLoops;
+        private final BondedTermLoop[] angleLoops;
+        private final BondedTermLoop[] outOfPlaneBendLoops;
+        private final BondedTermLoop[] improperTorsionLoops;
+        private final BondedTermLoop[] piOrbitalTorsionLoops;
+        private final BondedTermLoop[] stretchBendLoops;
+        private final BondedTermLoop[] torsionLoops;
+        private final BondedTermLoop[] torsionTorsionLoops;
+        private final BondedTermLoop[] ureyBradleyLoops;
 
         // Retraint energy parallel loops.
-        private final RestraintBondLoop restraintBondLoops[];
+        private final BondedTermLoop[] restraintBondLoops;
 
         public BondedRegion() {
 
@@ -2664,6 +2700,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             // Allocate shared restraint variables.
             sharedRestraintBondEnergy = new SharedDouble();
+            if (esvTerm) {
+                numESVs = esvSystem.n();
+                sharedEsvDerivs = new SharedDouble[numESVs];
+                for (int i = 0; i < numESVs; i++) {
+                    sharedEsvDerivs[i] = new SharedDouble(0.0);
+                }
+            }
 
             nThreads = parallelTeam.getThreadCount();
 
@@ -2672,18 +2715,18 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             gradReduceLoops = new GradReduceLoop[nThreads];
 
             // Allocate memory for force field bonded energy loop arrays.
-            angleLoops = new AngleLoop[nThreads];
-            bondLoops = new BondLoop[nThreads];
-            improperTorsionLoops = new ImproperTorsionLoop[nThreads];
-            outOfPlaneBendLoops = new OutOfPlaneBendLoop[nThreads];
-            piOrbitalTorsionLoops = new PiOrbitalTorsionLoop[nThreads];
-            stretchBendLoops = new StretchBendLoop[nThreads];
-            torsionLoops = new TorsionLoop[nThreads];
-            torsionTorsionLoops = new TorsionTorsionLoop[nThreads];
-            ureyBradleyLoops = new UreyBradleyLoop[nThreads];
+            angleLoops = new BondedTermLoop[nThreads];
+            bondLoops = new BondedTermLoop[nThreads];
+            improperTorsionLoops = new BondedTermLoop[nThreads];
+            outOfPlaneBendLoops = new BondedTermLoop[nThreads];
+            piOrbitalTorsionLoops = new BondedTermLoop[nThreads];
+            stretchBendLoops = new BondedTermLoop[nThreads];
+            torsionLoops = new BondedTermLoop[nThreads];
+            torsionTorsionLoops = new BondedTermLoop[nThreads];
+            ureyBradleyLoops = new BondedTermLoop[nThreads];
 
             // Allocate memory for restrain energy terms.
-            restraintBondLoops = new RestraintBondLoop[nThreads];
+            restraintBondLoops = new BondedTermLoop[nThreads];
 
             /**
              * Define how the gradient will be accumulated.
@@ -2766,6 +2809,13 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             // Zero out shared restraint energy values.
             sharedRestraintBondEnergy.set(0.0);
+            
+            if (esvTerm) {
+                esvSystem.resetBondedDerivs();
+                for (int i = 0; i < numESVs; i++) {
+                    sharedEsvDerivs[i].set(0.0);
+                }
+            }
 
             // Assure capacity of the gradient arrays.
             if (gradient) {
@@ -2804,6 +2854,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             // Load shared restraint energy values.
             restraintBondEnergy = sharedRestraintBondEnergy.get();
+            // Load the Extended Variable derivatives.
+            if (esvTerm) {
+                for (int i = 0; i < numESVs; i++) {
+                    esvBondedDerivs[i] = sharedEsvDerivs[i].get();
+                }
+            }
         }
 
         @Override
@@ -2821,7 +2877,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             // Evaluate force field bonded energy terms in parallel.
             if (angleTerm) {
                 if (angleLoops[threadID] == null) {
-                    angleLoops[threadID] = new AngleLoop();
+                    angleLoops[threadID] = 
+                            new BondedTermLoop(angles, sharedAngleEnergy, sharedAngleRMSD);
                 }
                 if (threadID == 0) {
                     angleTime = -System.nanoTime();
@@ -2834,7 +2891,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (bondTerm) {
                 if (bondLoops[threadID] == null) {
-                    bondLoops[threadID] = new BondLoop();
+                    bondLoops[threadID] = 
+                            new BondedTermLoop(bonds, sharedBondEnergy, sharedBondRMSD);
                 }
                 if (threadID == 0) {
                     bondTime = -System.nanoTime();
@@ -2847,7 +2905,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (improperTorsionTerm) {
                 if (improperTorsionLoops[threadID] == null) {
-                    improperTorsionLoops[threadID] = new ImproperTorsionLoop();
+                    improperTorsionLoops[threadID] = 
+                            new BondedTermLoop(improperTorsions, sharedImproperTorsionEnergy);
                 }
                 if (threadID == 0) {
                     improperTorsionTime = -System.nanoTime();
@@ -2860,7 +2919,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (outOfPlaneBendTerm) {
                 if (outOfPlaneBendLoops[threadID] == null) {
-                    outOfPlaneBendLoops[threadID] = new OutOfPlaneBendLoop();
+                    outOfPlaneBendLoops[threadID] = 
+                            new BondedTermLoop(outOfPlaneBends, sharedOutOfPlaneBendEnergy);
                 }
                 if (threadID == 0) {
                     outOfPlaneBendTime = -System.nanoTime();
@@ -2873,7 +2933,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (piOrbitalTorsionTerm) {
                 if (piOrbitalTorsionLoops[threadID] == null) {
-                    piOrbitalTorsionLoops[threadID] = new PiOrbitalTorsionLoop();
+                    piOrbitalTorsionLoops[threadID] = 
+                            new BondedTermLoop(piOrbitalTorsions, sharedPiOrbitalTorsionEnergy);
                 }
                 if (threadID == 0) {
                     piOrbitalTorsionTime = -System.nanoTime();
@@ -2886,7 +2947,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (stretchBendTerm) {
                 if (stretchBendLoops[threadID] == null) {
-                    stretchBendLoops[threadID] = new StretchBendLoop();
+                    stretchBendLoops[threadID] = 
+                            new BondedTermLoop(stretchBends, sharedStretchBendEnergy);
                 }
                 if (threadID == 0) {
                     stretchBendTime = -System.nanoTime();
@@ -2899,7 +2961,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (torsionTerm) {
                 if (torsionLoops[threadID] == null) {
-                    torsionLoops[threadID] = new TorsionLoop();
+                    torsionLoops[threadID] = 
+                            new BondedTermLoop(torsions, sharedTorsionEnergy);
                 }
                 if (threadID == 0) {
                     torsionTime = -System.nanoTime();
@@ -2912,7 +2975,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (torsionTorsionTerm) {
                 if (torsionTorsionLoops[threadID] == null) {
-                    torsionTorsionLoops[threadID] = new TorsionTorsionLoop();
+                    torsionTorsionLoops[threadID] = 
+                            new BondedTermLoop(torsionTorsions, sharedTorsionTorsionEnergy);
                 }
                 if (threadID == 0) {
                     torsionTorsionTime = -System.nanoTime();
@@ -2925,7 +2989,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (ureyBradleyTerm) {
                 if (ureyBradleyLoops[threadID] == null) {
-                    ureyBradleyLoops[threadID] = new UreyBradleyLoop();
+                    ureyBradleyLoops[threadID] = 
+                            new BondedTermLoop(ureyBradleys, sharedUreyBradleyEnergy);
                 }
                 if (threadID == 0) {
                     ureyBradleyTime = -System.nanoTime();
@@ -2939,7 +3004,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             // Evaluate restraint terms in parallel.
             if (restraintBondTerm) {
                 if (restraintBondLoops[threadID] == null) {
-                    restraintBondLoops[threadID] = new RestraintBondLoop();
+                    restraintBondLoops[threadID] = 
+                            new BondedTermLoop(restraintBonds, sharedRestraintBondEnergy);
                 }
                 if (threadID == 0) {
                     restraintBondTime = -System.nanoTime();
@@ -3002,13 +3068,29 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
         }
+        
+        private class BondedTermLoop extends IntegerForLoop {
 
-        private class AngleLoop extends IntegerForLoop {
-
+            private final BondedTerm[] terms;
+            private final SharedDouble sharedEnergy;
+            private final SharedDouble sharedRMSD;
+            private final boolean computeRMSD;
             private double localEnergy;
             private double localRMSD;
             private int threadID;
-
+            
+            public BondedTermLoop(BondedTerm[] terms, SharedDouble sharedEnergy) {
+                this(terms, sharedEnergy, null);
+            }
+            
+            public BondedTermLoop(BondedTerm[] terms, 
+                    SharedDouble sharedEnergy, SharedDouble sharedRMSD) {
+                this.terms = terms;
+                this.sharedEnergy = sharedEnergy;
+                this.sharedRMSD = sharedRMSD;
+                computeRMSD = (sharedRMSD != null);
+            }
+            
             @Override
             public void start() {
                 localEnergy = 0.0;
@@ -3018,360 +3100,41 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             @Override
             public void finish() {
-                sharedAngleEnergy.addAndGet(localEnergy);
-                sharedAngleRMSD.addAndGet(localRMSD);
+                sharedEnergy.addAndGet(localEnergy);
+                if (computeRMSD) {
+                    sharedRMSD.addAndGet(localRMSD);
+                }
             }
 
             @Override
             public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        Angle angle = angles[i];
-                        localEnergy += angle.energy(gradient, threadID, gradX, gradY, gradZ);
-                        double value = angle.getValue();
-                        localRMSD += value * value;
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        Angle angle = angles[i];
-                        if (angle.applyLambda()) {
-                            localEnergy += angle.energy(gradient, threadID, gradX, gradY, gradZ);
-                            double value = angle.getValue();
+                for (int i = first; i <= last; i++) {
+                    BondedTerm term = terms[i];
+                    if (!lambdaBondedTerms || term.applyLambda()) {
+                        localEnergy += term.energy(gradient, threadID,
+                                gradX, gradY, gradZ,
+                                lambdaGradX, lambdaGradY, lambdaGradZ);
+                        if (computeRMSD) {
+                            double value = term.getValue();
                             localRMSD += value * value;
                         }
                     }
+//                    if (esvTerm && term.getEsvID() >= 0) {
+//                        try {
+//                            logf(" dBonded esvid,crnt,add: %d %.4g %.4g", 
+//                                    term.getEsvID(), sharedEsvDerivs[term.getEsvID()].get(), term.getdEdEsv());
+//                            sharedEsvDerivs[term.getEsvID()].addAndGet(term.getdEdEsv());
+//                        } catch (Exception ex) {
+//                            logf(" thread:  %d", this.getThreadIndex());
+//                            logf(" slength: %d", sharedEsvDerivs.length);
+//                            logf(" current: %g", sharedEsvDerivs[term.getEsvID()].get());
+//                            logf(" adding:  %g", term.getdEdEsv());
+//                            throw ex;
+//                        }
+//                    }
                 }
             }
         }
-
-        private class BondLoop extends IntegerForLoop {
-
-            private double localEnergy;
-            private double localRMSD;
-            private int threadID;
-
-            @Override
-            public void start() {
-                localEnergy = 0.0;
-                localRMSD = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedBondEnergy.addAndGet(localEnergy);
-                sharedBondRMSD.addAndGet(localRMSD);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        Bond bond = bonds[i];
-                        localEnergy += bond.energy(gradient, threadID, gradX, gradY, gradZ);
-                        double value = bond.getValue();
-                        localRMSD += value * value;
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        Bond bond = bonds[i];
-                        if (bond.applyLambda()) {
-                            localEnergy += bond.energy(gradient, threadID, gradX, gradY, gradZ);
-                            double value = bond.getValue();
-                            localRMSD += value * value;
-                        }
-                    }
-                }
-            }
-        }
-
-        private class ImproperTorsionLoop extends IntegerForLoop {
-
-            private double improperTorsionEnergy;
-            private int threadID;
-
-            @Override
-            public void start() {
-                improperTorsionEnergy = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedImproperTorsionEnergy.addAndGet(improperTorsionEnergy);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        ImproperTorsion improperTorsion = improperTorsions[i];
-                        improperTorsionEnergy += improperTorsion.energy(gradient, threadID, gradX, gradY, gradZ);
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        ImproperTorsion improperTorsion = improperTorsions[i];
-                        if (improperTorsion.applyLambda()) {
-                            improperTorsionEnergy += improperTorsion.energy(gradient, threadID, gradX, gradY, gradZ);
-                        }
-
-                    }
-                }
-            }
-        }
-
-        private class OutOfPlaneBendLoop extends IntegerForLoop {
-
-            private double outOfPlaneBendEnergy;
-            private int threadID;
-
-            @Override
-            public void start() {
-                outOfPlaneBendEnergy = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedOutOfPlaneBendEnergy.addAndGet(outOfPlaneBendEnergy);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
-                        outOfPlaneBendEnergy += outOfPlaneBend.energy(gradient, threadID, gradX, gradY, gradZ);
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
-                        if (outOfPlaneBend.applyLambda()) {
-                            outOfPlaneBendEnergy += outOfPlaneBend.energy(gradient, threadID, gradX, gradY, gradZ);
-                        }
-                    }
-                }
-            }
-        }
-
-        private class PiOrbitalTorsionLoop extends IntegerForLoop {
-
-            private double piOrbitalTorsionEnergy;
-            private int threadID;
-
-            @Override
-            public void start() {
-                piOrbitalTorsionEnergy = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedPiOrbitalTorsionEnergy.addAndGet(piOrbitalTorsionEnergy);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
-                        piOrbitalTorsionEnergy += piOrbitalTorsion.energy(gradient,
-                                threadID, gradX, gradY, gradZ,
-                                lambdaGradX, lambdaGradY, lambdaGradZ);
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
-                        if (piOrbitalTorsion.applyLambda()) {
-                            piOrbitalTorsionEnergy += piOrbitalTorsion.energy(gradient,
-                                    threadID, gradX, gradY, gradZ,
-                                    lambdaGradX, lambdaGradY, lambdaGradZ);
-                        }
-                    }
-                }
-            }
-        }
-
-        private class RestraintBondLoop extends IntegerForLoop {
-
-            private double restraintBondEnergy;
-            private int threadID;
-
-            @Override
-            public void start() {
-                restraintBondEnergy = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedRestraintBondEnergy.addAndGet(restraintBondEnergy);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        RestraintBond restrainBond = restraintBonds[i];
-                        restraintBondEnergy += restrainBond.energy(gradient, threadID, gradX, gradY, gradZ);
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        RestraintBond restraintBond = restraintBonds[i];
-                        if (restraintBond.applyLambda()) {
-                            restraintBondEnergy += restraintBond.energy(gradient, threadID, gradX, gradY, gradZ);
-                        }
-                    }
-                }
-            }
-        }
-
-        private class StretchBendLoop extends IntegerForLoop {
-
-            private double stretchBendEnergy;
-            private int threadID;
-
-            @Override
-            public void start() {
-                stretchBendEnergy = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedStretchBendEnergy.addAndGet(stretchBendEnergy);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        StretchBend stretchBend = stretchBends[i];
-                        stretchBendEnergy += stretchBend.energy(gradient, threadID, gradX, gradY, gradZ);
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        StretchBend stretchBend = stretchBends[i];
-                        if (stretchBend.applyLambda()) {
-                            stretchBendEnergy += stretchBend.energy(gradient, threadID, gradX, gradY, gradZ);
-                        }
-                    }
-                }
-            }
-        }
-
-        private class TorsionLoop extends IntegerForLoop {
-
-            private double torsionEnergy;
-            private int threadID;
-
-            @Override
-            public void start() {
-                torsionEnergy = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedTorsionEnergy.addAndGet(torsionEnergy);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        Torsion torsion = torsions[i];
-                        torsionEnergy += torsion.energy(gradient,
-                                threadID, gradX, gradY, gradZ,
-                                lambdaGradX, lambdaGradY, lambdaGradZ);
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        Torsion torsion = torsions[i];
-                        if (torsion.applyLambda()) {
-                            torsionEnergy += torsion.energy(gradient,
-                                    threadID, gradX, gradY, gradZ,
-                                    lambdaGradX, lambdaGradY, lambdaGradZ);
-                        }
-
-                    }
-                }
-            }
-        }
-
-        private class TorsionTorsionLoop extends IntegerForLoop {
-
-            private double torsionTorsionEnergy;
-            private int threadID;
-
-            @Override
-            public void start() {
-                torsionTorsionEnergy = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedTorsionTorsionEnergy.addAndGet(torsionTorsionEnergy);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        TorsionTorsion torsionTorsion = torsionTorsions[i];
-                        torsionTorsionEnergy += torsionTorsion.energy(gradient,
-                                threadID, gradX, gradY, gradZ,
-                                lambdaGradX, lambdaGradY, lambdaGradZ);
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        TorsionTorsion torsionTorsion = torsionTorsions[i];
-                        if (torsionTorsion.applyLambda()) {
-                            torsionTorsionEnergy += torsionTorsion.energy(gradient,
-                                    threadID, gradX, gradY, gradZ,
-                                    lambdaGradX, lambdaGradY, lambdaGradZ);
-                        }
-                    }
-                }
-            }
-        }
-
-        private class UreyBradleyLoop extends IntegerForLoop {
-
-            private double ureyBradleyEnergy;
-            private int threadID;
-
-            @Override
-            public void start() {
-                ureyBradleyEnergy = 0.0;
-                threadID = getThreadIndex();
-            }
-
-            @Override
-            public void finish() {
-                sharedUreyBradleyEnergy.addAndGet(ureyBradleyEnergy);
-            }
-
-            @Override
-            public void run(int first, int last) throws Exception {
-                if (!lambdaBondedTerms) {
-                    for (int i = first; i <= last; i++) {
-                        UreyBradley ureyBradley = ureyBradleys[i];
-                        ureyBradleyEnergy += ureyBradley.energy(gradient, threadID, gradX, gradY, gradZ);
-                    }
-                } else {
-                    for (int i = first; i <= last; i++) {
-                        UreyBradley ureyBradley = ureyBradleys[i];
-                        if (ureyBradley.applyLambda()) {
-                            ureyBradleyEnergy += ureyBradley.energy(gradient, threadID, gradX, gradY, gradZ);
-                        }
-
-                    }
-                }
-            }
-        }
-
     }
 
 }

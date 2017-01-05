@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -36,71 +35,44 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
+package ffx.potential.bonded;
 
-
-// Groovy Imports
-import groovy.util.CliBuilder
-import groovy.lang.MissingPropertyException
-
-// FFX Imports
-import ffx.autoparm.Fragmenter
-import ffx.autoparm.Unstitch
-import ffx.autoparm.Wizard
+import ffx.numerics.AtomicDoubleArray;
 
 /**
- * SDF to SMILES Converter
- * Auto-fragmenting algorithm
+ * The BondedTerm class is extended by all Valence Geometry classes (bond,
+ * angle, dihedral, torsion, etc.).
  *
- * @author Rae Ann Corrigan
+ * @author slucore
+ * @since 1.0
+ *
  */
+public interface BondedEnergy {
+    
+    default void update() {
+        energy(false);
+    }
+    
+    default double energy(boolean gradient) {
+        return energy(gradient, 0,
+                null, null, null);
+    }
+    
+    default double energy(boolean gradient, int threadID,
+            AtomicDoubleArray gradX,
+            AtomicDoubleArray gradY,
+            AtomicDoubleArray gradZ) {
+        return energy(gradient, threadID,
+                gradX, gradY, gradZ,
+                null, null, null);
+    }
+    
+    public abstract double energy(boolean gradient, int threadID,
+            AtomicDoubleArray gradX,
+            AtomicDoubleArray gradY,
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ);
 
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
-
-
-// Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc fragment [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.max(longOpt:'max frag. size', args:1, argName:'30', 'Maximum fragment size.');
-cli.min(longOpt:'min frag. size', args:1, argName:'20', 'Minimum fragment size.');
-
-def options = cli.parse(args);
-
-List<String> arguments = options.arguments();
-//if (options.h || arguments == null || arguments.size() != 1){ original code
-if (options.h || arguments == null) {
-    return cli.usage();
 }
-
-// Maximum fragment size.
-if (options.max) {
-    max = Integer.parseInt(options.max);
-}
-
-// Minimum fragment size.
-if (options.min) {
-    min = Integer.parseInt(options.min);
-}
-
-// Read in command line argument.
-String filename = arguments.get(0);
-String smiles = new String();
-Wizard wi = new Wizard(filename);
-smiles = wi.readSDF();
-
-// Read in command line.
-String sdffile = arguments.get(0);
-String ciffile = arguments.get(1);
-String smi = new String();
-
-logger.info(String.format("\nExhaustively Fragmenting %s\n", sdffile));
-
-//System.out.println("\nFinished Wizard, calling Fragmenter\n");
-/*Fragmenter fr = new Fragmenter(sdffile, ciffile, smiles);
-fr.readCIF();
-fr.readSDF();*/
-
-Unstitch us = new Unstitch(sdffile, ciffile, smiles);
-us.readCIF();
-us.readSDF();
-

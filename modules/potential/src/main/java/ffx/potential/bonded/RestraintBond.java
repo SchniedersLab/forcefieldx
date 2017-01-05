@@ -617,10 +617,6 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         }
     }
 
-    public double energy(boolean gradient) {
-        return energy(gradient, 0, null, null, null);
-    }
-
     /**
      * Evaluate this Bond energy.
      *
@@ -631,11 +627,14 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
      * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient,
-            int threadID,
+    @Override
+    public double energy(boolean gradient, int threadID,
             AtomicDoubleArray gradX,
             AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ) {
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -661,7 +660,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         value = r(v10);
         double dv = value - bondType.distance;
         double dv2 = dv * dv;
-        double kx2 = units * bondType.forceConstant * dv2;
+        double kx2 = units * bondType.forceConstant * dv2 * esvLambda;
         energy = rL3 * kx2;
         dEdL = rL2 * kx2;
         d2EdL2 = rL1 * kx2;
@@ -700,6 +699,9 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         dEdXdL[1][2] = g1[2];
 
         value = dv;
+        if (esvTerm) {
+            addToEsvDeriv(energy * dedesvChain / esvLambda, RestraintBond.class);
+        }
         return energy;
     }
 

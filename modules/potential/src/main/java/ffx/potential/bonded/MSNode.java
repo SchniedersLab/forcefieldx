@@ -118,7 +118,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @param c Class
      * @return boolean
      */
-    public boolean canBeChild(Class c) {
+    public boolean canBeChild(Class<?> c) {
         try {
             int multiScaleLevel = c.getDeclaredField("MultiScaleLevel").getInt(null);
             if (multiScaleLevel >= this.MultiScaleLevel) {
@@ -154,7 +154,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
             return;
         }
         MSNode dataNode;
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             dataNode = (MSNode) e.nextElement();
             dataNode.drawLabel(graphics, g2d, node);
         }
@@ -352,7 +352,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     public ArrayList<MSNode> getChildList() {
         ArrayList<MSNode> l = new ArrayList<>();
-        Enumeration e = children();
+        Enumeration<?> e = children();
         while (e.hasMoreElements()) {
             l.add((MSNode) e.nextElement());
         }
@@ -376,7 +376,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     public double getExtent() {
         double extent = 0.0;
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             double temp = node.getExtent();
             if (temp > extent) {
@@ -390,14 +390,14 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * {@inheritDoc}
      */
     @Override
-    public ArrayList<ROLS> getList(Class c, ArrayList<ROLS> nodes) {
+    public ArrayList<ROLS> getList(Class<?> c, ArrayList<ROLS> nodes) {
         if (c.isInstance(this)) {
             nodes.add(this);
         }
         if (isLeaf() || !canBeChild(c)) {
             return nodes;
         }
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             ROLS node = (ROLS) e.nextElement();
             node.getList(c, nodes);
         }
@@ -408,25 +408,22 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * Request all descendants of the given type; returned list will automatically
      * conform to any superclass thereof.
      */
-    public <U, T extends U> List<U> getDescendants(Class<T> c) {
+    public <U extends MSNode, T extends U> List<U> getDescendants(Class<T> c) {
         List<U> nodes = new ArrayList<>();
         castDescendants(c, nodes);
         return nodes;
     }
 
-    private <U, T extends U> void castDescendants(Class<T> c, List<U> nodes) {
-        if (nodes == null) {
-            nodes = new ArrayList<>();
-        }
-        if (c.isInstance(this)) {
-            nodes.add((T) this);
+    private <U extends MSNode, T extends U> void castDescendants(Class<T> clas, List<U> nodes) {
+        if (clas.isInstance(this)) {
+            nodes.add(clas.cast(this));
         }
         if (isLeaf()) {
             return;
         }
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
-            node.castDescendants(c, nodes);
+            node.castDescendants(clas, nodes);
         }
     }
 
@@ -434,14 +431,14 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * {@inheritDoc}
      */
     @Override
-    public long getMSCount(Class c, long count) {
+    public long getMSCount(Class<?> c, long count) {
         if (c.isInstance(this)) {
             count++;
         }
         if (!canBeChild(c)) {
             return count;
         }
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             count += node.getMSCount(c, count);
         }
@@ -452,7 +449,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * {@inheritDoc}
      */
     @Override
-    public ROLS getMSNode(Class c) {
+    public ROLS getMSNode(Class<?> c) {
         TreeNode[] nodes = getPath();
         for (TreeNode n : nodes) {
             if (c.isInstance(n)) {
@@ -598,7 +595,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     @Override
     public void setColor(RendererCache.ColorModel colorModel, Color3f color,
             Material mat) {
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             node.setColor(colorModel, color, mat);
         }
@@ -621,7 +618,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     public void setSelected(boolean b) {
         selected = b;
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             node.setSelected(b);
         }
@@ -633,7 +630,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     @Override
     public void setView(RendererCache.ViewModel viewModel,
             List<BranchGroup> newShapes) {
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             node.setView(viewModel, newShapes);
         }
@@ -654,7 +651,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      */
     @Override
     public void update() {
-        for (Enumeration e = children(); e.hasMoreElements();) {
+        for (Enumeration<?> e = children(); e.hasMoreElements();) {
             MSNode node = (MSNode) e.nextElement();
             node.update();
         }

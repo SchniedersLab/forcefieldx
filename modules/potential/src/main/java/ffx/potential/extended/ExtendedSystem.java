@@ -2,17 +2,22 @@ package ffx.potential.extended;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
+import edu.rit.pj.reduction.SharedDouble;
+
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.BondedTerm;
 import ffx.potential.extended.ExtUtils.SB;
+import ffx.potential.extended.ExtendedVariable.AtomList;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -30,26 +35,39 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
     
     // Properties: Static Final
-    private static final boolean esvTempOverride = prop("esv-tempOverride", true);
-    private static final boolean esvInterpLambda = prop("esv-interpLambda", false);
-    private static final boolean esvUsePme = prop("esv-usePme", false);
-    private static final boolean esvUseVdw = prop("esv-useVdw", true);
-    private static final boolean ffePrintOverride = prop("ffe-printOverride", false);
-    
+    public static final boolean esvTempOverride = prop("esv-tempOverride", true);
+    public static final boolean esvUsePme = prop("esv-usePme", false);
+    public static final boolean esvUseVdw = prop("esv-useVdw", true);
+    public static final boolean ffePrintOverride = prop("ffe-printOverride", false);
+    public static final boolean esvScaleBonded = prop("esv-scaleBonded", true);
     // Properties: Mutable
     private boolean esvBiasTerm = prop("esv-biasTerm", true);
+
+    // Atom Lists
+    /**
+     * Foreground/background atom lists and arrays based on the 
+     * "Titratable Hydrogens Only" inclusion criterion.
+     * Heavy atoms of deprotonated forms are not present. Used by VdW.
+     */
+    private List<Atom> foregroundExtH, backgroundExtH;
+    private Atom[] atomsExtH;
+    private int[] moleculeExtH;
+    private int nAtomsExtH;
+    private ExtendedVariable[] esvByAtomExtH;
+    /**
+     * Foreground/background atoms lists and arrays based on the 
+     * "All Atoms" inclusion criterion. Used by bonded terms.
+     */
+    private List<Atom> foregroundExtAll, backgroundExtAll;
+    private Atom[] atomsExtAll;
+    private int[] moleculeExtAll;
+    private int nAtomsExtAll;
+    private ExtendedVariable[] esvByAtomExtAll;
     
     // ESV variables
     private int numESVs;
-    private int nAtomsExt;
     private List<ExtendedVariable> esvList;
-    private ExtendedVariable[] esvByAtom;
     private boolean esvTerm, phTerm, vdwTerm, mpoleTerm;
-    private Atom[] atomsExt;
-    private Atom[] atomsExtVdw;
-    private int[] moleculeExt;     // Corresponds to extendedAtoms[]
-    private List<Atom> atomListOne;
-    private List<Atom> atomListZro;
     private Double propagationTemperature;
     
     // Potential Objects
@@ -63,9 +81,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             throw new IllegalArgumentException();
         }
         mola = molecularAssembly;
-        if (mola.getAtomArray() != null) {
-            nAtomsExt = mola.getAtomArray().length;
-        }
         Potential potential = mola.getPotentialEnergy();
         if (!(potential instanceof ForceFieldEnergy)) {
             logger.severe("ExtendedSystem supported only for ForceFieldEnergy potentials.");
@@ -91,50 +106,68 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         } else {
             pme = null;
         }
-
+        
         esvList = new ArrayList<>();
-        atomListOne = new ArrayList<>();
-        atomListZro = new ArrayList<>();
-        atomListOne.addAll(Arrays.asList(mola.getAtomArray()));
-        atomsExt = mola.getAtomArray();
-        moleculeExt = mola.getMoleculeNumbers();
         propagationTemperature = ExtConstants.roomTemperature;
+        
+        // Hydrogens-only inclusion criterion.
+        foregroundExtH = new ArrayList<>();
+        backgroundExtH = new ArrayList<>();
+        foregroundExtH.addAll(Arrays.asList(mola.getAtomArray()));
+        atomsExtH = mola.getAtomArray();
+        moleculeExtH = mola.getMoleculeNumbers();
+        // All-atom inclusion criterion.
+        foregroundExtAll = new ArrayList<>();
+        backgroundExtAll = new ArrayList<>();
+        foregroundExtAll.addAll(Arrays.asList(mola.getAtomArray()));
+        atomsExtAll = mola.getAtomArray();
+        moleculeExtAll = mola.getMoleculeNumbers();        
     }
     
     public boolean hasAtom(int i) {
-        return esvByAtom[i] != null;
+        return esvByAtomExtH[i] != null;
     }
     
-    public boolean hasVdwAtom(int i) {
-        return esvByAtom[i] != null && esvByAtom[i].getUnsharedAtoms().contains(atomsExt[i]);
+    public boolean hasAtomExtH(int i) {
+        return esvByAtomExtH[i] != null && esvByAtomExtH[i].getUnsharedAtoms().contains(atomsExtH[i]);
     }
     
     public ExtendedVariable atomEsv(int i) {
-        return esvByAtom[i];
+        return esvByAtomExtH[i];
     }
     
     public int atomEsvId(int i) {
-        return (esvByAtom[i] != null) ? esvByAtom[i].index : -1;
+        return (esvByAtomExtH[i] != null) ? esvByAtomExtH[i].index : -1;
     }
     
     public double atomLambda(int i) {
-        return (esvByAtom[i] != null) ? esvByAtom[i].getLambda() : 1.0;
+        return (esvByAtomExtH[i] != null) ? esvByAtomExtH[i].getLambda() : 1.0;
+    }
+    
+    public double atomLambdaSwitch(int i) {
+        return (esvByAtomExtH[i] != null) ? esvByAtomExtH[i].getLambdaSwitch() : 1.0;
     }
     
     public double atomVdwLambda(int i) {
-        return (hasVdwAtom(i)) ? esvByAtom[i].getLambda() : 1.0;
-    }
-        
-    public Atom[] getExtendedAtomArray() {
-        return atomsExt;
+        return (hasAtomExtH(i)) ? esvByAtomExtH[i].getLambda() : 1.0;
     }
     
-    public int[] getExtendedMoleculeArray() {
-        return moleculeExt;
+    public double atomVdwLambdaSwitch(int i) {
+        return (hasAtomExtH(i)) ? esvByAtomExtH[i].getLambdaSwitch() : 1.0;
     }
     
-    public boolean useEsvInterpLambda() {
-        return esvInterpLambda;
+    public Atom[] getAtomsExtH() {
+        return atomsExtH;
+    }    
+    public int[] getMoleculeExtH() {
+        return moleculeExtH;
+    }
+    
+    public Atom[] getAtomsExtAll() {
+        return atomsExtAll;
+    }
+    public int[] getMoleculeExtAll() {
+        return moleculeExtAll;
     }
     
     /**
@@ -164,7 +197,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
     }
 
-    public int count() {
+    public int n() {
         return esvList.size();
     }
     
@@ -221,14 +254,15 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         } else {
             propagationTemperature = temperature;
         }
-        double[] dEdLdh = getdEdL(temperature, false, false);
+        double[] dedl = getdEdL(temperature, false, false);
         if (esvList != null && !esvList.isEmpty()) {
             for (ExtendedVariable esv : esvList) {
-                double was = esv.getLambda();
-                esv.propagate(dEdLdh[esv.index], dt, temperature);
-                logger.config(format(" Propagating ESV[%d]: %g --> %g @ psec,temp,L,bias: %g %g %.2f %.2f %.2f",
-                        esv.index, was, esv.getLambda(), currentTimePs, temperature, 
-                        esv.getLambda(), esv.getTotalBias(temperature, false)));
+                double oldLambda = esv.getLambda();
+                esv.propagate(dedl[esv.index], dt, temperature);
+                double newLambda = esv.getLambda();
+                logger.info(format(" Propagating ESV[%d]: %g --> %g @ psec,temp,bias: %g %g %.2f",
+                        esv.index, oldLambda, newLambda,
+                        currentTimePs, temperature, esv.getTotalBias(temperature, false)));
             }
             if (esvUseVdw) {
                 vdw.updateEsvLambda();
@@ -260,74 +294,100 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             logger.warning("Debug?");
         }
         
-        atomListOne = new ArrayList<>();
-        atomListOne.addAll(Arrays.asList(mola.getAtomArray()));
-        atomListZro.addAll(esv.getAtomListZro());
-        int nAtomsFG = atomListOne.size();
-        nAtomsExt = atomListOne.size() + atomListZro.size();
-        atomsExt = new Atom[nAtomsExt];
-        moleculeExt = new int[nAtomsExt];
+//        foregroundExtH.addAll(esv.getAtomList(AtomList.PMEVDW_ONE));
+        backgroundExtH.addAll(esv.getAtomList(AtomList.PMEVDW_ZRO));
+        nAtomsExtH = foregroundExtH.size() + backgroundExtH.size();
+        atomsExtH = new Atom[nAtomsExtH];
+        moleculeExtH = new int[nAtomsExtH];
         
-        SB.logfn("atoms,extAtoms,total: %d %d %d", atomListOne.size(), atomListZro.size(), nAtomsExt);
-        for (int i = 0; i < nAtomsExt; i++) {
-            if (i < nAtomsFG) {
-                atomsExt[i] = atomListOne.get(i);
+//        foregroundExtAll.addAll(esv.getAtomList(AtomList.BONDED_ONE));
+        backgroundExtAll.addAll(esv.getAtomList(AtomList.BONDED_ZRO));
+        nAtomsExtAll = foregroundExtAll.size() + backgroundExtAll.size();
+        atomsExtAll = new Atom[nAtomsExtAll];
+        moleculeExtAll = new int[nAtomsExtAll];
+        
+        SB.logfn(" ** ExtH **");
+        SB.logfn(" atoms,extAtoms,total: %d %d %d", foregroundExtH.size(), backgroundExtH.size(), nAtomsExtH);
+        int numForegroundExtH = foregroundExtH.size();
+        for (int i = 0; i < nAtomsExtH; i++) {
+            if (i < numForegroundExtH) {
+                atomsExtH[i] = foregroundExtH.get(i);
             } else {
-                if (i == nAtomsFG) {
+                if (i == numForegroundExtH) {
                     SB.logfn(" -- AtomsZro -- ");
                 }
-                atomsExt[i] = atomListZro.get(i - nAtomsFG);
+                atomsExtH[i] = backgroundExtH.get(i - numForegroundExtH);
             }
-            moleculeExt[i] = atomsExt[i].getMoleculeNumber();
-            SB.logfn(" %s", atomsExt[i]);
+            moleculeExtH[i] = atomsExtH[i].getMoleculeNumber();
+            SB.logfn(" %s", atomsExtH[i]);
         }
         SB.printIf(false);
         
-        if (esvByAtom == null || esvByAtom.length < nAtomsExt) {
-            esvByAtom = new ExtendedVariable[nAtomsExt];
+        SB.logfn(" ** ExtAll **");
+        SB.logfn(" atoms,extAtoms,total: %d %d %d", foregroundExtAll.size(), backgroundExtAll.size(), nAtomsExtAll);
+        int numForegroundExtAll = foregroundExtAll.size();
+        for (int i = 0; i < nAtomsExtAll; i++) {
+            if (i < numForegroundExtAll) {
+                atomsExtAll[i] = foregroundExtAll.get(i);
+            } else {
+                if (i == numForegroundExtAll) {
+                    SB.logfn(" -- AtomsZro -- ");
+                }
+                atomsExtAll[i] = backgroundExtAll.get(i - numForegroundExtAll);
+            }
+            moleculeExtAll[i] = atomsExtAll[i].getMoleculeNumber();
+            SB.logfn(" %s", atomsExtAll[i]);
         }
-        for (int i = 0; i < nAtomsExt; i++) {
-            final Atom ai = atomsExt[i];
-            esvByAtom[i] = ai.getESV();
+        SB.printIf(false);
+        
+        if (esvByAtomExtH == null || esvByAtomExtH.length < nAtomsExtH) {
+            esvByAtomExtH = new ExtendedVariable[nAtomsExtH];
         }
+        for (int i = 0; i < nAtomsExtH; i++) {
+            final Atom ai = atomsExtH[i];
+            esvByAtomExtH[i] = ai.getESV();
+        }
+        if (esvByAtomExtAll == null || esvByAtomExtAll.length < nAtomsExtAll) {
+            esvByAtomExtAll = new ExtendedVariable[nAtomsExtAll];
+        }
+        for (int i = 0; i < nAtomsExtAll; i++) {
+            esvByAtomExtAll[i] = atomsExtAll[i].getESV();
+        }
+        
         if (vdwTerm) {
             vdw.updateEsvLambda();
         }
         if (mpoleTerm) {
             pme.updateEsvLambda();
         }
+        ffe.updateEsvLambda();
     }
 
     /**
      * @return [numESVs] gradient w.r.t. each ESV
      */
     public double[] getdEdL(Double temperature, boolean lambdaBondedTerms, boolean print) {
-        if (esvTempOverride) {
-            temperature = ExtConstants.roomTemperature;
-        } else if (temperature == null) {
-            temperature = propagationTemperature;
-        }
-        SB.logfn(" ESV derivative components: ");
-        
-        double[] vdwDeriv = (esvUseVdw) ? vdw.getdEdEsv() : null;
-        double[] pmeDeriv = (esvUsePme) ? pme.getdEdEsv() : null;
         double esvDeriv[] = new double[numESVs];
         for (int i = 0; i < numESVs; i++) {
-            esvDeriv[i] = 0.0;
-            if (esvBiasTerm) {
-                esvDeriv[i] += esvList.get(i).getTotalBiasDeriv(temperature, print);
-            }
-            if (esvUseVdw) {
-                SB.logfn("  vdW   %d: %g", i, vdwDeriv[i]);
-                esvDeriv[i] += vdwDeriv[i];
-            }
-            if (esvUsePme) {
-                SB.logfn("  PME   %d: %g", i, pmeDeriv[i]);
-                esvDeriv[i] += pmeDeriv[i];
-            }
+            esvDeriv[i] = getdEdL(i, temperature, lambdaBondedTerms, print);
         }
-        SB.printIf(print);
         return esvDeriv;
+    }
+    
+    public double[] getdEdL() {
+        return getdEdL(null, false, false);
+    }
+    
+    public double getdEdL(int esvID) {
+        return getdEdL(esvID, null, false, false);
+    }
+    
+    public double getdEdL(int esvID, boolean print) {
+        return getdEdL(esvID, null, false, print);
+    }
+    
+    public double getdVdwdL(int esvID) {
+        return (esvUseVdw) ? vdw.getdEdEsv(esvID) : 0.0;
     }
     
     public double getdEdL(int esvID, Double temperature, boolean lambdaBondedTerms, boolean print) {
@@ -337,19 +397,42 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             temperature = propagationTemperature;
         }
         double esvDeriv = 0.0;
-        SB.logfn(" ESV derivative components: ");        
+        SB.logfn(" ESV derivative components: ");
         if (esvBiasTerm) {
             esvDeriv += esvList.get(esvID).getTotalBiasDeriv(temperature, print);
         }
         if (esvUseVdw) {
             double dVdw = vdw.getdEdEsv(esvID);
-            SB.logfn("  vdW   %d: %g", esvID, dVdw);
+            SB.logfn("  vdW    %d: %g", esvID, dVdw);
             esvDeriv += dVdw;
         }
         if (esvUsePme) {
             double dPme = pme.getdEdEsv(esvID);
-            SB.logfn("  PME   %d: %g", esvID, dPme);
+            SB.logfn("  PME    %d: %g", esvID, dPme);
             esvDeriv += dPme;
+        }
+        if (esvScaleBonded) {
+            double dBonded = esvList.get(esvID).getBondedDeriv();
+            SB.logfn("  Bonded %d: %g", esvID, dBonded);
+            esvDeriv += dBonded;
+            // Decompose the bonded derivative into term types.
+            HashMap<Class<? extends BondedTerm>,SharedDouble> bgMap = 
+                    esvList.get(esvID).getBackgroundBondedDerivDecomp();
+            HashMap<Class<? extends BondedTerm>,SharedDouble> fgMap = 
+                    esvList.get(esvID).getBackgroundBondedDerivDecomp();
+            SB.logf("    Foreground (%d)" , fgMap.keySet().size());
+            for (Class<? extends BondedTerm> clas : fgMap.keySet()) {
+                SB.logf("\n      %18s: %9.6f", 
+                        clas.getName().replaceAll("ffx.potential.bonded.", ""), 
+                        fgMap.get(clas).get());
+            }
+            SB.logf("\n    Background (%d)" , bgMap.keySet().size());
+            for (Class<? extends BondedTerm> clas : bgMap.keySet()) {
+                SB.logf("\n      %18s: %9.6f", 
+                        clas.getName().replaceAll("ffx.potential.bonded.", ""), 
+                        bgMap.get(clas).get());
+            }
+            SB.print();
         }
         SB.printIf(print);
         return esvDeriv;
@@ -384,9 +467,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             //terms.add(particleMeshEwald.getdEdXdEsv());
         }
         if (terms.isEmpty()) {
-            return new double[numESVs][3 * nAtomsExt];
+            return new double[numESVs][3 * nAtomsExtH];
         }
-        return eleSum2DArrays(terms, numESVs, 3 * nAtomsExt);
+        return eleSum2DArrays(terms, numESVs, 3 * nAtomsExtH);
     }
 
     /**
@@ -416,11 +499,27 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     public String getLambdaList() {
         StringBuilder sb = new StringBuilder();
-        sb.append("L:");
+        sb.append(format("Lambdas (%d):", esvList.size()));
         for (int i = 0; i < numESVs; i++) {
-            sb.append(format(" %6.4f", esvList.get(i).getLambda()));
+            sb.append(format(" %4.2f->%4.2f", 
+                    esvList.get(i).getLambda(), esvList.get(i).getLambdaSwitch()));
         }
         return sb.toString();
+    }
+    
+    /**
+     * Parallel Java constructs in ForceFieldEnergy, VanDerWaals, and ParticleMeshEwald
+     * loop over atom indices. This maps the range {0,nAtoms} to {0,numESVs} so 
+     * that parallelization of ESVs can be done in the same constructs.
+     */
+    public int parallelRangeConversion(int index) {
+        return (int) Math.floor((index / (double) nAtomsExtH) * numESVs);
+    }
+    
+    public void resetBondedDerivs() {
+        for (ExtendedVariable esv : this) {
+            esv.resetBondedDeriv();
+        }
     }
     
     /**
