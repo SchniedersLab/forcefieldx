@@ -43,6 +43,7 @@ import org.apache.commons.io.FilenameUtils;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.ForceFieldEnergy;
 
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.MultiResidue;
