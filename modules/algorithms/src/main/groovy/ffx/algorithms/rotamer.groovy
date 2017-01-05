@@ -500,13 +500,13 @@ if (algorithm != 5) {
             info += String.format("%s, ", i);
         }
         logger.info(info);
-    } else if (!options.x) {
+    } else if (options.x) {
         logger.info("\n Evaluating rotamers for residues " + startResID + " to " + finalResID);
     } else {
         logger.info("\n Evaluating rotamers for all residues beginning at " + allStartResID);
     }
 } else {
-    if (!options.x) {
+    if (options.x) {
         logger.info("\n Evaluating rotamers for boxes " + (boxStart + 1) + " to " + (boxEnd + 1));
     } else {
         logger.info("\n Evaluating rotamers for all boxes beginning at " + (boxStart + 1));
