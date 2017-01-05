@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -124,36 +125,41 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         moleculeExtAll = mola.getMoleculeNumbers();        
     }
     
-    public boolean hasAtom(int i) {
-        return esvByAtomExtH[i] != null;
+    public boolean isExtH(int i) {
+        return esvByAtomExtH[i] != null 
+                && esvByAtomExtH[i].getUnsharedAtoms().contains(atomsExtH[i]);
+    }
+    public boolean isExtAll(int i) {
+        return esvByAtomExtAll[i] != null 
+                && esvByAtomExtAll[i].getUnsharedAtoms().contains(atomsExtAll[i]);
     }
     
-    public boolean hasAtomExtH(int i) {
-        return esvByAtomExtH[i] != null && esvByAtomExtH[i].getUnsharedAtoms().contains(atomsExtH[i]);
-    }
-    
-    public ExtendedVariable atomEsv(int i) {
+    public ExtendedVariable exthEsv(int i) {
         return esvByAtomExtH[i];
     }
+    public ExtendedVariable extallEsv(int i) {
+        return esvByAtomExtAll[i];
+    }
     
-    public int atomEsvId(int i) {
+    public int exthEsvId(int i) {
         return (esvByAtomExtH[i] != null) ? esvByAtomExtH[i].index : -1;
     }
-    
-    public double atomLambda(int i) {
-        return (esvByAtomExtH[i] != null) ? esvByAtomExtH[i].getLambda() : 1.0;
+    public int extallEsvId(int i) {
+        return (esvByAtomExtAll[i] != null) ? esvByAtomExtAll[i].index : -1;
     }
     
-    public double atomLambdaSwitch(int i) {
-        return (esvByAtomExtH[i] != null) ? esvByAtomExtH[i].getLambdaSwitch() : 1.0;
+    public double exthLambda(int i) {
+        return (isExtH(i)) ? esvByAtomExtH[i].getLambda() : 1.0;
+    }
+    public double extallambda(int i) {
+        return (isExtAll(i)) ? esvByAtomExtAll[i].getLambda() : 1.0;
     }
     
-    public double atomVdwLambda(int i) {
-        return (hasAtomExtH(i)) ? esvByAtomExtH[i].getLambda() : 1.0;
+    public double exthLambdaSwitch(int i) {
+        return (isExtH(i)) ? esvByAtomExtH[i].getLambdaSwitch() : 1.0;
     }
-    
-    public double atomVdwLambdaSwitch(int i) {
-        return (hasAtomExtH(i)) ? esvByAtomExtH[i].getLambdaSwitch() : 1.0;
+    public double extallLambdaSwitch(int i) {
+        return (isExtAll(i)) ? esvByAtomExtAll[i].getLambdaSwitch() : 1.0;
     }
     
     public Atom[] getAtomsExtH() {
@@ -420,13 +426,15 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
                     esvList.get(esvID).getBackgroundBondedDerivDecomp();
             HashMap<Class<? extends BondedTerm>,SharedDouble> fgMap = 
                     esvList.get(esvID).getBackgroundBondedDerivDecomp();
-            SB.logf("    Foreground (%d)" , fgMap.keySet().size());
+            SB.logf("    Foreground, Total: %9.6f" , fgMap.values().stream()
+                    .collect(Collectors.summingDouble(sd -> sd.get())));
             for (Class<? extends BondedTerm> clas : fgMap.keySet()) {
                 SB.logf("\n      %18s: %9.6f", 
                         clas.getName().replaceAll("ffx.potential.bonded.", ""), 
                         fgMap.get(clas).get());
             }
-            SB.logf("\n    Background (%d)" , bgMap.keySet().size());
+            SB.logf("\n    Background, Total: %9.6f" , bgMap.values().stream()
+                    .collect(Collectors.summingDouble(sd -> sd.get())));
             for (Class<? extends BondedTerm> clas : bgMap.keySet()) {
                 SB.logf("\n      %18s: %9.6f", 
                         clas.getName().replaceAll("ffx.potential.bonded.", ""), 

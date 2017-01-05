@@ -320,7 +320,7 @@ public abstract class ExtendedVariable {
             for (Atom atom : atomsZroExtAll) {
                 SB.logfn("%s", atom);
             }
-            SB.logfn("   Bonded");
+            SB.logfn("   Bonded Terms");
             for (MSNode term : resOne.getTerms().getChildList()) {
                 SB.logfn("     %s", term);
                 if (term.toString().trim().contains("Extended")) {

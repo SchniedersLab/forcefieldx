@@ -103,8 +103,6 @@ public class VanDerWaals implements MaskingInterface,
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
 
-    private static int runIDNumber = 0;
-
     /**
      * This field specifies resolution for multi-scale modeling.
      */
@@ -529,7 +527,9 @@ public class VanDerWaals implements MaskingInterface,
         softCoreInit = false;
         
         esvAtoms = new boolean[nAtoms]; // Needs initialized regardless of esvTerm.
+        esvLambda = new double[nAtoms];
         fill(esvAtoms, false);
+        fill(esvLambda, 1.0);
         if (esvTerm) {
             updateEsvLambda();
         }
@@ -965,11 +965,11 @@ public class VanDerWaals implements MaskingInterface,
             fill(esvSwitchDeriv, 0.0);
         }
         for (int i = 0; i < nAtoms; i++) {
-            if (esvSystem.hasAtomExtH(i)) {
+            if (esvSystem.isExtH(i)) {
                 esvAtoms[i] = true;
-                esvLambda[i] = esvSystem.atomVdwLambda(i);
-                esvLambdaSwitch[i] = esvSystem.atomEsv(i).getLambdaSwitch();
-                esvSwitchDeriv[i] = esvSystem.atomEsv(i).getSwitchDeriv();
+                esvLambda[i] = esvSystem.exthLambda(i);
+                esvLambdaSwitch[i] = esvSystem.exthEsv(i).getLambdaSwitch();
+                esvSwitchDeriv[i] = esvSystem.exthEsv(i).getSwitchDeriv();
             }
         }
         if (esvDeriv == null || esvDeriv.length < numESVs) {
@@ -989,7 +989,7 @@ public class VanDerWaals implements MaskingInterface,
         if (!softCoreInit || rebuild) {
             for (int i = 0; i < nAtoms; i++) {
                 isSoft[i] = atoms[i].applyLambda();
-                if (esvTerm && esvSystem.hasAtomExtH(i)) {
+                if (esvTerm && esvSystem.isExtH(i)) {
                     isSoft[i] = true;
                 }
                 if (isSoft[i]) {
@@ -1046,9 +1046,9 @@ public class VanDerWaals implements MaskingInterface,
     public void detachExtendedSystem() {
         setAtoms(previousAtoms, molecule);
         fill(esvAtoms, false);
+        fill(esvLambda, 1.0);
         esvTerm = false;
         esvSystem = null;
-        esvLambda = null;
         esvDeriv = null;
         numESVs = 0;
         initSoftCore(true); // To remove entries from isSoft[] that were due only to ESVs.
@@ -1253,7 +1253,6 @@ public class VanDerWaals implements MaskingInterface,
         @Override
         public void finish() throws IOException {
             neighborListOnly = false;
-            runIDNumber++;
             if (interactionWriter != null) {
                 interactionWriter.close();
             }
@@ -1296,9 +1295,7 @@ public class VanDerWaals implements MaskingInterface,
              * Build the neighbor-list (if necessary) using reduced coordinates.
              */
             if (threadIndex == 0) {
-                if (!esvTerm) {
-                    neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
-                }
+                neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
             }
             barrier();
 
@@ -1671,25 +1668,15 @@ public class VanDerWaals implements MaskingInterface,
                                     || (intramolecularSoftcore && sameMolecule)
                                     || (esvTerm && (esvi || esvk));
                             if (soft) {
-                                if (esvi || esvk) {
-                                    // Load values to take derivative w.r.t. l_prod = lambda * l_i * l_k.
-                                    // Treat chain rule during reduction, e.g. d(l_prod)/d(l_i) = lambda*l_k.
-                                    final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
-                                    sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
-                                    dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
-                                    d2sc1dL2 = 2.0 * vdwLambdaAlpha;
-                                    sc2 = esvLambdaProduct;
-                                    dsc2dL = 1.0;
-                                    d2sc2dL2 = 0.0;
-                                } else {
-                                    // Use original OSRW definitions from outer class' setLambda() method.
-                                    sc1 = VanDerWaals.this.sc1;
-                                    dsc1dL = VanDerWaals.this.dsc1dL;
-                                    d2sc1dL2 = VanDerWaals.this.d2sc1dL2;
-                                    sc2 = VanDerWaals.this.sc2;
-                                    dsc2dL = VanDerWaals.this.dsc2dL;
-                                    d2sc2dL2 = VanDerWaals.this.d2sc2dL2;
-                                }
+                                // Load values to take derivative w.r.t. l_prod = lambda * l_i * l_k.
+                                // Treat chain rule during reduction, e.g. d(l_prod)/d(l_i) = lambda*l_k.
+                                final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
+                                sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
+                                dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
+                                d2sc1dL2 = 2.0 * vdwLambdaAlpha;
+                                sc2 = esvLambdaProduct;
+                                dsc2dL = 1.0;
+                                d2sc2dL2 = 0.0;
                             } else {
                                 sc1 = 0.0;
                                 dsc1dL = 0.0;
@@ -1822,11 +1809,11 @@ public class VanDerWaals implements MaskingInterface,
                                     lambdaGradY.sub(threadID, redk, redkv * dedldy);
                                     lambdaGradZ.sub(threadID, redk, redkv * dedldz);
                                 }
-                                if (esvTerm && (esvi || esvk)) {
+                                if (esvi || esvk) {
                                     // Assign this gradient to attached ESVs.
                                     final double dedlp = dedl * taper;
-                                    final int idxi = esvSystem.atomEsvId(i);
-                                    final int idxk = esvSystem.atomEsvId(k);
+                                    final int idxi = esvSystem.exthEsvId(i);
+                                    final int idxk = esvSystem.exthEsvId(k);
                                     if (esvi) {
                                         final double dlpdli = esvLambda[k] * lambda;
                                         final double dEsvI = dedlp * dlpdli;
@@ -1834,11 +1821,6 @@ public class VanDerWaals implements MaskingInterface,
                                         final double dSwEsvI =
                                                 esvSwitchDeriv[i]*esvLambdaSwitch[k]*eik_preswitch
                                                 + dEsvI*esvLambdaSwitch[i]*esvLambdaSwitch[k];
-//                                        logf("dSwEsvI: %2d-%3s %2d-%3s (%8.5g %8.5g %8.5g) + (%8.5g %8.5g %8.5g) = %8.5g", 
-//                                                i, atoms[i].getName(), k, atoms[k].getName(),
-//                                                esvSwitchDeriv[i], esvLambdaSwitch[k], eik_preswitch,
-//                                                dEsvI, esvLambdaSwitch[i], esvLambdaSwitch[k],
-//                                                dSwEsvI);
                                         esvDeriv[idxi].addAndGet(dSwEsvI);
                                     }
                                     if (esvk) {
@@ -1848,11 +1830,6 @@ public class VanDerWaals implements MaskingInterface,
                                         final double dSwEsvK =
                                                 esvLambdaSwitch[i]*esvSwitchDeriv[k]*eik_preswitch
                                                 + dEsvK*esvLambdaSwitch[i]*esvLambdaSwitch[k];
-//                                        logf("dSwEsvK: %2d-%3s %2d-%3s (%8.5g %8.5g %8.5g) + (%8.5g %8.5g %8.5g) = %8.5g", 
-//                                                k, atoms[k].getName(), i, atoms[i].getName(), 
-//                                                esvLambdaSwitch[i], esvSwitchDeriv[k], eik_preswitch,
-//                                                dEsvK, esvLambdaSwitch[i], esvLambdaSwitch[k],
-//                                                dSwEsvK);
                                         esvDeriv[idxk].addAndGet(dSwEsvK);
                                     }
                                 }
@@ -2102,8 +2079,8 @@ public class VanDerWaals implements MaskingInterface,
                                     if (esvTerm && (esvi || esvk)) {
                                         // Assign this gradient to attached ESVs.
                                         final double dedlp = selfScale * dedl * taper;
-                                        final int idxi = esvSystem.atomEsvId(i);
-                                        final int idxk = esvSystem.atomEsvId(k);
+                                        final int idxi = esvSystem.exthEsvId(i);
+                                        final int idxk = esvSystem.exthEsvId(k);
                                         if (esvi) {
                                             final double dlpdli = esvLambda[k] * lambda;
                                             final double dEsvPartI = dedlp * dlpdli;
