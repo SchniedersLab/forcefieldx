@@ -37,12 +37,15 @@
  */
 package ffx.potential.bonded;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
+
+import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.potential.bonded.Atom.Resolution;
 
@@ -57,7 +60,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  * @since 1.0
  *
  */
-public abstract class BondedTerm extends MSNode {
+public abstract class BondedTerm extends MSNode implements BondedEnergy {
 
     private static final Logger logger = Logger.getLogger(BondedTerm.class.getName());
     /**
@@ -72,13 +75,25 @@ public abstract class BondedTerm extends MSNode {
     public Bond bonds[]; // Bonds that are used to form this term
     protected double value; // Value of the term
     protected double energy; // Energy of the term
-    protected double esvLambda = 1.0;       // Lambda value of ESV, if present
+    
+    /**
+     * Extended system variables.
+     */
+    protected boolean esvTerm = false;
+    /**
+     * Lambda value of attached ESV, if present.
+     */
+    protected double esvLambda = 1.0;
     /**
      * d(lambda_switching_function)/dL.
      * For the linear switch E=L*E1+(1-L)*E0, chain is +/- unity.
      * For other switches E=S(L)*E1+(1-S(L))*E0, set chain to dSdL.
      */
     protected double dedesvChain = 1.0; // Handles sign flip d.t. d[(1-L)*E]/dL
+    /**
+     * Target for extended variable derivatives.
+     */
+    private SharedDouble esvDeriv;
 
     /**
      * Default Constructor
@@ -447,27 +462,58 @@ public abstract class BondedTerm extends MSNode {
     public String toString() {
         return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public abstract void update();
     
     /**
      * Under a linear switching function, E=L*E1+(1-L)*E0, chainRule is +1 or -1
      * for lambda and (1-lambda) terms, respectively. Other switches should 
      * set this to d(switch)/d(lambda) as well.
      */
-    public void setEsvLambda(double lambda, double chainRule) {
+    public void setEsvLambda(SharedDouble esvBondedDeriv, double lambda, double chainRule) {
+        if (esvBondedDeriv == null) {
+            logger.warning("BondedTerm.setEsvLambda() called with null shared derivative target.");
+            return;
+        }
+        esvTerm = true;
+        esvDeriv = esvBondedDeriv;
         esvLambda = lambda;
         dedesvChain = chainRule;
     }
     
+    public void unsetEsvLambda() {
+        esvTerm = false;
+        esvDeriv = null;
+        esvLambda = 1.0;
+        dedesvChain = 0.0;
+    }
+    
+    /**
+     * If this is set, BondedTerm derivative components are filed according
+     * to their source type.
+     */
+    private HashMap<Class<? extends BondedTerm>,SharedDouble> debugMap = null;
+    public void setDebugMap(HashMap<Class<? extends BondedTerm>,SharedDouble> map) {
+        debugMap = map;
+    }
+    
     /**
      * Derivative with respect to attached ExtendedVariable lambda, if any.
+     * Source class is optional; used to decompose BondedTerm derivative components for debugging.
+     * Double.isFinite() check protects against dEdEsv=(energy*chain/lambda) for lambda=0.0
      */
-    public final double getdEdEsv() {
-        return dedesvChain * energy / esvLambda;
+    protected final void addToEsvDeriv(double dEdEsv, Class<? extends BondedTerm> source) {
+        if (esvTerm && Double.isFinite(dEdEsv)) {
+            esvDeriv.addAndGet(dEdEsv);
+            if (debugMap != null) {
+                SharedDouble dub = debugMap.get(source);
+                if (dub == null) {
+                    debugMap.put(source, new SharedDouble(dEdEsv));
+                } else {
+                    dub.addAndGet(dEdEsv);
+                }
+            }
+        }
+    }
+    protected final void addToEsvDeriv(double dEdEsv) {
+        addToEsvDeriv(dEdEsv, BondedTerm.class);
     }
 }

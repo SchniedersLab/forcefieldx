@@ -195,10 +195,12 @@ System.setProperty("no-ligand-condensed-scf", "false");     // don't need conden
 System.setProperty("vdw-cutoff", "1000");
 
 // ESV Settings
-System.setProperty("ffe-combineBonded", "true");
+//System.setProperty("ffe-combineBonded", "true");
 System.setProperty("esv-propagation", "false");             // don't allow ESV particle to undergo dynamics
 //System.setProperty("esv-biasTerm", "true");                 // include discretization and pH biases
-System.setProperty("esv-scaleBonded", "false");             // include effects on bonded terms
+//System.setProperty("esv-scaleBonded", "true");             // include effects on bonded terms
+
+Logger ffxlog = Logger.getLogger("ffx");
 
 // Open the first topology.
 open(filename);
@@ -281,6 +283,8 @@ if (test1) {
         double error = Math.abs(numeric - analytic);
 
         StringBuilder sb = new StringBuilder();
+        sb.append(format("  Finite-Difference Derivative Testing \n"));
+        sb.append(format(" ************************************** \n"));
         sb.append(String.format(" ESV%d> Numeric FD @ upper,lower,width,dEdL: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", i, eUpper, eLower, width, numeric));
         sb.append(String.format(" ESV%d> Analytic Derivative @ lambda %4.2f  >  dEdL: %+9.6g\n", i, lambda, analytic));
         String passFail = (error < tolerance) ? "passed" : "failed";
@@ -300,7 +304,8 @@ if (test2) {
     esvSystem.setEsvBiasTerm(false);
     ffe.setPrintOverride(true);
     StringBuilder sb = new StringBuilder();
-    sb.append(format(" Two-site ESV Analysis: \n"));
+    sb.append(format("\n  Two-site ESV Analysis: \n"));
+    sb.append(format(" ************************ \n"));
 
     esvSystem.setLambda(0, 0.0);
     esvSystem.setLambda(1, 0.0);
@@ -330,7 +335,7 @@ if (test2) {
 
     sb = new StringBuilder();
     sb.append(format(" Vanilla End-States: \n"));
-    Logger.getLogger("ffx").setLevel(Level.OFF);
+    ffxlog.setLevel(Level.OFF);
     //    System.setProperty("vdw-printInteractions", "inter-dd");
     open("lyd-lyd.pdb");
     double lydlyd = energy().getVanDerWaalsEnergy();
@@ -347,7 +352,7 @@ if (test2) {
     open("lys-lys.pdb");
     double lyslys = energy().getVanDerWaalsEnergy();
     sb.append(format("   vdw %-7s %10.6f\n", "lys-lys", lyslys));
-    Logger.getLogger("ffx").setLevel(Level.INFO);
+    ffxlog.setLevel(Level.INFO);
     logger.info(sb.toString());
 }
 
@@ -357,20 +362,19 @@ Numerically ensure that the VdW energy and lambda derivatives are smooth all
 along both ESV coordinates in the dilysine system.
 *******************************************************************************/
 if (test3) {
-    logger.info(format(" Smoothness Verification: \n"));
-    Logger.getLogger("ffx").setLevel(Level.OFF);
-    //StringBuilder data = new StringBuilder("\n Raw Data \n");
-    StringBuilder energyTable = new StringBuilder("\n Energy  Table \n");
-    StringBuilder dedlaTable = new StringBuilder("\n dEdEsv1 Table \n");
-    StringBuilder dedlbTable = new StringBuilder("\n dEdEsv2 Table \n");
-    energyTable.append(format("     %10.1f  %10.1f  %10.1f  %10.1f  %10s  %10s  %10s  %10.1f  %10.1f  %10.1f  %10.1f", 
+    logger.info(format("  Smoothness Verification: "));
+    logger.info(format(" ************************** "));
+    ffxlog.setLevel(Level.OFF);
+    StringBuilder energyTable = new StringBuilder(format(" %6s", "Energy"));
+    StringBuilder dedlaTable = new StringBuilder(format("\n %6s", "dEdEv1"));
+    StringBuilder dedlbTable = new StringBuilder(format("\n %6s", "dEdEv2"));
+    energyTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %6s    %6s    %6s    %8.1f  %8.1f  %8.1f  %8.1f", 
             0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
-    dedlaTable.append(format("     %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f", 
+    dedlaTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f", 
             0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
-    dedlbTable.append(format("     %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f", 
+    dedlbTable.append(format(" %8.1f  %8.1f  %8.1f  %8.1f  %8s  %8s  %8s  %8.1f  %8.1f  %8.1f  %8.1f", 
             0.0, 0.1, 0.2, 0.3, "<", " Ev1", ">", 0.7, 0.8, 0.9, 1.0));
     for (double la = 0.0; la <= 1.0; la += 0.1) {
-        String label;
         switch (la) {
             case 0.4:
                 energyTable.append(format("\n    ^ "));
@@ -399,24 +403,12 @@ if (test3) {
             double evdw = ffe.getVanDerWaalsEnergy();
             double dvdwdla = esvSystem.getdVdwdL(0);
             double dvdwdlb = esvSystem.getdVdwdL(1);
-    //        data.append(format(" la,lb,e,dla,dlb:  %4.2f  %4.2f  %10.6f  %8.6f  %8.6f\n", 
-    //                la, lb, evdw, dvdwdla, dvdwdlb));
-            energyTable.append(format("  %10.6f", evdw));
+            energyTable.append(format("  %8.5f", evdw));
             dedlaTable.append(format("  %8.6f", dvdwdla));
             dedlbTable.append(format("  %8.6f", dvdwdlb));
         }
-    //    if (la == 0.5) {
-    //        energyTable.append("\n  Esv2");
-    //        dedlaTable.append("\n  Esv2");
-    //        dedlbTable.append("\n  Esv2");
-    //    } else if (la <= 1.0) {
-    //        energyTable.append(format("\n  %4.1f", la));
-    //        dedlaTable.append(format("\n  %4.1f", la));
-    //        dedlbTable.append(format("\n  %4.1f", la));
-    //    }
     }
-    Logger.getLogger("ffx").setLevel(Level.INFO);
-    //logger.info(data.toString());
+    ffxlog.setLevel(Level.INFO);
     logger.info(energyTable.toString());
     logger.info(dedlaTable.toString());
     logger.info(dedlbTable.toString());

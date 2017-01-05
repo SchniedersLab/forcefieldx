@@ -257,20 +257,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update() {
-        energy(false);
-    }
-
-    public double energy(boolean gradient) {
-        return energy(gradient, 0,
-                null, null, null,
-                null, null, null);
-    }
-
-    /**
      * Evaluate the Torsional Angle energy.
      *
      * @param gradient Evaluate the gradient.
@@ -283,6 +269,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
      * @param lambdaGradZ
      * @return Returns the energy.
      */
+    @Override
     public double energy(boolean gradient,
             int threadID,
             AtomicDoubleArray gradX,
@@ -386,11 +373,14 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 cosprev = cosn;
                 sinprev = sinn;
             }
+            if (esvTerm) {
+                addToEsvDeriv(units * energy * dedesvChain * lambda, Torsion.class);
+            }
             energy = units * energy * esvLambda * lambda;
             dEdL = units * energy * esvLambda;
 
             if (gradient || lambdaTerm) {
-                dedphi = units * dedphi;
+                dedphi = units * dedphi * esvLambda;
                 diff(a2, a0, v02);
                 diff(a3, a1, v13);
                 cross(x0112, v12, x1);

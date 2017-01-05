@@ -133,20 +133,6 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void update() {
-        energy(false);
-    }
-
-    public double energy(boolean gradient) {
-        return energy(gradient, 0,
-                null, null, null,
-                null, null, null);
-    }
-
-    /**
      * Evaluate the Pi-Orbital Torsion energy.
      *
      * @param gradient Evaluate the gradient.
@@ -159,6 +145,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
      * @param lambdaGradZ
      * @return Returns the energy.
      */
+    @Override
     public double energy(boolean gradient,
             int threadID,
             AtomicDoubleArray gradX,
@@ -278,12 +265,15 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
             double cosine2 = cosine * cosine - sine * sine;
             double phi2 = 1.0 - cosine2;
             energy = units * piTorsionType.forceConstant * phi2 * esvLambda;
+            if (esvTerm) {
+                addToEsvDeriv(units * piTorsionType.forceConstant * phi2 * dedesvChain, PiOrbitalTorsion.class);
+            }
             dEdL = energy;
             energy = lambda * energy;
             if (gradient || lambdaTerm) {
                 double sine2 = 2.0 * cosine * sine;
                 double dphi2 = 2.0 * sine2;
-                double dedphi = units * piTorsionType.forceConstant * dphi2;
+                double dedphi = units * piTorsionType.forceConstant * dphi2 * esvLambda;
                 diff(a3, vp, vpd);
                 diff(vq, a2, vcq);
                 cross(xt, v23, dedt);

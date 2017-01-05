@@ -243,20 +243,6 @@ public class ImproperTorsion extends BondedTerm implements
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Update recomputes ImproperTorsion value and energy.
-     */
-    @Override
-    public void update() {
-        energy(false);
-    }
-
-    public double energy(boolean gradient) {
-        return energy(gradient, 0, null, null, null);
-    }
-
-    /**
      * Evaluate this Improper Torsion energy.
      *
      * @param gradient Evaluate the gradient.
@@ -266,11 +252,14 @@ public class ImproperTorsion extends BondedTerm implements
      * @param gradZ
      * @return Returns the energy.
      */
-    public double energy(boolean gradient,
-            int threadID,
+    @Override
+    public double energy(boolean gradient, int threadID,
             AtomicDoubleArray gradX,
             AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ) {
+            AtomicDoubleArray gradZ,
+            AtomicDoubleArray lambdaGradX,
+            AtomicDoubleArray lambdaGradY,
+            AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -361,8 +350,13 @@ public class ImproperTorsion extends BondedTerm implements
             value = Math.toDegrees(Math.acos(cosine));
             //energy = ImproperTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3);
             //double dedphi = ImproperTorsionType.units * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
-            energy = units * (v2 * phi2) * scaleFactor * esvLambda;
-            double dedphi = units * (v2 * dphi2) * scaleFactor;
+            final double desvPrefactor = units * scaleFactor;
+            final double prefactor = units * scaleFactor * esvLambda;
+            energy = prefactor * (v2 * phi2);
+            double dedphi = prefactor * (v2 * dphi2);
+            if (esvTerm) {
+                addToEsvDeriv(desvPrefactor * (v2 * phi2) * dedesvChain, ImproperTorsion.class);
+            }
 
             if (gradient) {
                 /**

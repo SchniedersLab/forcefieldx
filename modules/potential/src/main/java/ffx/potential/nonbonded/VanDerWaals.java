@@ -145,7 +145,6 @@ public class VanDerWaals implements MaskingInterface,
     private boolean gradient;
     private boolean lambdaTerm;
     private boolean esvTerm = false;
-    private boolean useEsvInterpLambda;
     private boolean isSoft[];
     
     private double esvLambda[];
@@ -461,7 +460,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private void initAtomArrays() {
         if (esvTerm) {
-            atoms = esvSystem.getExtendedAtomArray();
+            atoms = esvSystem.getAtomsExtH();
             nAtoms = atoms.length;
         }
         if (atomClass == null || nAtoms > atomClass.length || esvTerm) {
@@ -643,6 +642,12 @@ public class VanDerWaals implements MaskingInterface,
             logger.warning("Atom and molecule arrays are of different lengths.");
             throw new IllegalArgumentException();
         }
+        
+//        SB.logfn(" Van der Waals' Atoms (%d)", atoms.length);
+//        for (int i = 0; i < atoms.length; i++) {
+//            SB.logfn(" %d: %s", i, atoms[i].toString());
+//        }
+//        SB.printIf(false);
         
         initAtomArrays();
         buildNeighborList(atoms);
@@ -949,7 +954,7 @@ public class VanDerWaals implements MaskingInterface,
             return;
         }
         
-        numESVs = esvSystem.count();
+        numESVs = esvSystem.n();
         if (esvLambda == null || esvLambda.length < nAtoms) {
             esvLambda = new double[nAtoms];
             esvLambdaSwitch = new double[nAtoms];
@@ -960,7 +965,7 @@ public class VanDerWaals implements MaskingInterface,
             fill(esvSwitchDeriv, 0.0);
         }
         for (int i = 0; i < nAtoms; i++) {
-            if (esvSystem.hasVdwAtom(i)) {
+            if (esvSystem.hasAtomExtH(i)) {
                 esvAtoms[i] = true;
                 esvLambda[i] = esvSystem.atomVdwLambda(i);
                 esvLambdaSwitch[i] = esvSystem.atomEsv(i).getLambdaSwitch();
@@ -984,7 +989,7 @@ public class VanDerWaals implements MaskingInterface,
         if (!softCoreInit || rebuild) {
             for (int i = 0; i < nAtoms; i++) {
                 isSoft[i] = atoms[i].applyLambda();
-                if (esvTerm && esvSystem.hasVdwAtom(i)) {
+                if (esvTerm && esvSystem.hasAtomExtH(i)) {
                     isSoft[i] = true;
                 }
                 if (isSoft[i]) {
@@ -1009,8 +1014,7 @@ public class VanDerWaals implements MaskingInterface,
         }
         esvTerm = true;
         esvSystem = system;
-        useEsvInterpLambda = esvSystem.useEsvInterpLambda();
-        numESVs = esvSystem.count();
+        numESVs = esvSystem.n();
 
         // Launch shared lambda/esvLambda initializers if missed (ie. !lambdaTerm) in constructor.
         vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
@@ -1033,8 +1037,8 @@ public class VanDerWaals implements MaskingInterface,
         
         previousAtoms = atoms;
         previousMolecule = molecule;
-        Atom[] atomsExt = esvSystem.getExtendedAtomArray();
-        int[] moleculeExt = esvSystem.getExtendedMoleculeArray();
+        Atom[] atomsExt = esvSystem.getAtomsExtH();
+        int[] moleculeExt = esvSystem.getMoleculeExtH();
         setAtoms(atomsExt, moleculeExt);
         updateEsvLambda();
     }
