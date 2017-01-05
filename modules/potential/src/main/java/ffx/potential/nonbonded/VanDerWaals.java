@@ -103,8 +103,6 @@ public class VanDerWaals implements MaskingInterface,
 
     private static final Logger logger = Logger.getLogger(VanDerWaals.class.getName());
 
-    private static int runIDNumber = 0;
-
     /**
      * This field specifies resolution for multi-scale modeling.
      */
@@ -117,9 +115,13 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * An array of all atoms in the system.
      */
-    private Atom[] atoms;
-    private Atom[] previousAtoms;
-    private int[] previousMolecule;
+    private Atom atoms[];
+    private Atom previousAtoms[];
+    /**
+     * Specification of the molecular index for each atom.
+     */
+    private int molecule[];
+    private int previousMolecule[];
     /**
      * The Force Field that defines the van der Waals interactions.
      */
@@ -147,25 +149,11 @@ public class VanDerWaals implements MaskingInterface,
     private boolean esvTerm = false;
     private boolean isSoft[];
 
-    private double esvLambda[];
-    private double esvLambdaSwitch[];
-    private double esvSwitchDeriv[];
-    private boolean esvAtoms[];
     /**
      * Debugging; set at energy invocation to "vdw-printInteractions".
      */
     private boolean printInteractions = false;
     private BufferedWriter interactionWriter = null;
-    /**
-     * TODO: To enable multi-dimensional lambda variables. Preload this with the
-     * effective (combined) lambda for each atom state. [nAtoms][nStates]
-     */
-    private double esvStateLambda[][];
-    /**
-     * TODO: To enable multi-dimensional lambda variables. Preload this with the
-     * effective (combined) radEps for each atom state. [nAtoms][nStates]
-     */
-    private double esvStateRadEps[][];
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -179,10 +167,7 @@ public class VanDerWaals implements MaskingInterface,
     private boolean softCoreInit;
     private static final byte HARD = 0;
     private static final byte SOFT = 1;
-    /**
-     * Specification of the molecular index for each atom.
-     */
-    private int molecule[];
+
     /**
      * Turn on inter-molecular softcore interactions using molecular index.
      */
@@ -209,11 +194,27 @@ public class VanDerWaals implements MaskingInterface,
     private double dsc2dL = 0.0;
     private double d2sc1dL2 = 0.0;
     private double d2sc2dL2 = 0.0;
+
     /**
      * Generalized extended system variables.
      */
     private ExtendedSystem esvSystem;
     private int numESVs = 0;
+    private double esvLambda[];
+    private double esvLambdaSwitch[];
+    private double esvSwitchDeriv[];
+    private boolean esvAtoms[];
+    /**
+     * TODO: To enable multi-dimensional lambda variables. Preload this with the
+     * effective (combined) lambda for each atom state. [nAtoms][nStates]
+     */
+    private double esvStateLambda[][];
+    /**
+     * TODO: To enable multi-dimensional lambda variables. Preload this with the
+     * effective (combined) radEps for each atom state. [nAtoms][nStates]
+     */
+    private double esvStateRadEps[][];
+
     /**
      * *************************************************************************
      * Coordinate arrays.
@@ -265,7 +266,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private final ParallelTeam parallelTeam;
     private final int threadCount;
-    private IntegerSchedule pairwiseSchedule;
+    private final IntegerSchedule pairwiseSchedule;
     private final SharedInteger sharedInteractions;
     private final SharedDouble sharedEnergy;
     private final SharedDouble shareddEdL;
@@ -555,6 +556,7 @@ public class VanDerWaals implements MaskingInterface,
             if (type == null) {
                 logger.info(" No vdW type for atom class " + atomClass[i]);
                 logger.severe(" No vdW type for atom " + ai.toString());
+                return;
             }
             ai.setVDWType(type);
             ArrayList<Bond> bonds = ai.getBonds();
@@ -1208,9 +1210,8 @@ public class VanDerWaals implements MaskingInterface,
                 sharedd2EdL2.set(0.0);
             }
             if (esvTerm) {
-                esvDeriv = new SharedDouble[numESVs];
                 for (int i = 0; i < numESVs; i++) {
-                    esvDeriv[i] = new SharedDouble(0.0);
+                    esvDeriv[i].set(0.0);
                 }
             }
 
@@ -1222,33 +1223,11 @@ public class VanDerWaals implements MaskingInterface,
                 lambdaGradY.alloc(nAtoms);
                 lambdaGradZ.alloc(nAtoms);
             }
-
-            if (System.getProperty("vdw-printInteractions") != null) {
-                String fn = System.getProperty("vdw-printInteractions");
-                if (fn.equalsIgnoreCase("false") || fn.equalsIgnoreCase("null")) {
-                    printInteractions = false;
-                    interactionWriter = null;
-                } else if (fn.equalsIgnoreCase("true")) {
-                    // Print to console.
-                    printInteractions = true;
-                    interactionWriter = null;
-                } else {
-                    // Print to file.
-                    printInteractions = true;
-                    interactionWriter = new BufferedWriter(new FileWriter(new File(fn)));
-                }
-            }
         }
 
         @Override
         public void finish() throws IOException {
             neighborListOnly = false;
-            runIDNumber++;
-            if (interactionWriter != null) {
-                interactionWriter.close();
-            }
-            printInteractions = false;
-            interactionWriter = null;
         }
 
         @Override
@@ -1286,9 +1265,7 @@ public class VanDerWaals implements MaskingInterface,
              * Build the neighbor-list (if necessary) using reduced coordinates.
              */
             if (threadIndex == 0) {
-                if (!esvTerm) {
-                    neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
-                }
+                neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
             }
             barrier();
 
@@ -1315,7 +1292,7 @@ public class VanDerWaals implements MaskingInterface,
             /**
              * Reduce derivatives.
              */
-            if (gradient || lambdaTerm || esvTerm) {
+            if (gradient || lambdaTerm) {
                 try {
                     if (threadIndex == 0) {
                         reductionTotal = -System.nanoTime();
@@ -1535,7 +1512,6 @@ public class VanDerWaals implements MaskingInterface,
             private double mask[];
             private final double dx_local[];
             private final double transOp[][];
-            private double running;
 
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -1599,6 +1575,10 @@ public class VanDerWaals implements MaskingInterface,
                     }
                     Atom atomi = atoms[i];
                     final boolean esvi = esvAtoms[i];
+                    int idxi = 0;
+                    if (esvi) {
+                        idxi = esvSystem.atomEsvId(i);
+                    }
                     int i3 = i * 3;
                     final double xi = reducedXYZ[i3++];
                     final double yi = reducedXYZ[i3++];
@@ -1659,7 +1639,7 @@ public class VanDerWaals implements MaskingInterface,
                             boolean soft = softCorei[k]
                                     || (intermolecularSoftcore && !sameMolecule)
                                     || (intramolecularSoftcore && sameMolecule)
-                                    || (esvTerm && (esvi || esvk));
+                                    || esvi || esvk;
                             if (soft) {
                                 if (esvi || esvk) {
                                     // Load values to take derivative w.r.t. l_prod = lambda * l_i * l_k.
@@ -1701,10 +1681,8 @@ public class VanDerWaals implements MaskingInterface,
                             final double ev = mask[k] * radEpsi[a2 + EPS];
                             final double eps_lambda = ev * lambda5;
                             final double rho = r * irv;
-                            //final double rhoDisp1 = pow(rho, vdwForm.dispersivePower1);
                             final double rhoDisp1 = vdwForm.rhoDisp1(rho);
                             final double rhoDisp = rhoDisp1 * rho;
-                            //final double rhoDelta1 = pow(rho + vdwForm.delta, vdwForm.repDispPower1);
                             final double rhoDelta1 = vdwForm.rhoDelta1(rho + vdwForm.delta);
                             final double rhoDelta = rhoDelta1 * (rho + vdwForm.delta);
                             final double alphaRhoDelta = alpha + rhoDelta;
@@ -1731,13 +1709,10 @@ public class VanDerWaals implements MaskingInterface,
                             }
                             eik *= taper;
                             final double eik_preswitch = eik;
-                            if (esvTerm && (esvi || esvk)) {
+                            if (esvi || esvk) {
                                 eik *= esvLambdaSwitch[i] * esvLambdaSwitch[k];
                             }
                             e += eik;
-                            if (printInteractions) {
-                                log(i, k, r, eik);
-                            }
                             count++;
                             if (!gradient && !soft) {
                                 continue;
@@ -1814,37 +1789,26 @@ public class VanDerWaals implements MaskingInterface,
                                     lambdaGradY.sub(threadID, redk, redkv * dedldy);
                                     lambdaGradZ.sub(threadID, redk, redkv * dedldz);
                                 }
-                                if (esvTerm && (esvi || esvk)) {
+                                if (esvi || esvk) {
                                     // Assign this gradient to attached ESVs.
                                     final double dedlp = dedl * taper;
-                                    final int idxi = esvSystem.atomEsvId(i);
                                     final int idxk = esvSystem.atomEsvId(k);
                                     if (esvi) {
                                         final double dlpdli = esvLambda[k] * lambda;
                                         final double dEsvI = dedlp * dlpdli;
                                         // d[S*E] = S'E + E'S
-                                        final double dSwEsvI =
-                                                esvSwitchDeriv[i]*esvLambdaSwitch[k]*eik_preswitch
-                                                + dEsvI*esvLambdaSwitch[i]*esvLambdaSwitch[k];
-//                                        logf("dSwEsvI: %2d-%3s %2d-%3s (%8.5g %8.5g %8.5g) + (%8.5g %8.5g %8.5g) = %8.5g",
-//                                                i, atoms[i].getName(), k, atoms[k].getName(),
-//                                                esvSwitchDeriv[i], esvLambdaSwitch[k], eik_preswitch,
-//                                                dEsvI, esvLambdaSwitch[i], esvLambdaSwitch[k],
-//                                                dSwEsvI);
+                                        final double dSwEsvI
+                                                = esvSwitchDeriv[i] * esvLambdaSwitch[k] * eik_preswitch
+                                                + dEsvI * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                         esvDeriv[idxi].addAndGet(dSwEsvI);
                                     }
                                     if (esvk) {
                                         final double dlpdlk = esvLambda[i] * lambda;
                                         final double dEsvK = dedlp * dlpdlk;
                                         // d[S*E] = S'E + E'S
-                                        final double dSwEsvK =
-                                                esvLambdaSwitch[i]*esvSwitchDeriv[k]*eik_preswitch
-                                                + dEsvK*esvLambdaSwitch[i]*esvLambdaSwitch[k];
-//                                        logf("dSwEsvK: %2d-%3s %2d-%3s (%8.5g %8.5g %8.5g) + (%8.5g %8.5g %8.5g) = %8.5g",
-//                                                k, atoms[k].getName(), i, atoms[i].getName(),
-//                                                esvLambdaSwitch[i], esvSwitchDeriv[k], eik_preswitch,
-//                                                dEsvK, esvLambdaSwitch[i], esvLambdaSwitch[k],
-//                                                dSwEsvK);
+                                        final double dSwEsvK
+                                                = esvLambdaSwitch[i] * esvSwitchDeriv[k] * eik_preswitch
+                                                + dEsvK * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                         esvDeriv[idxk].addAndGet(dSwEsvK);
                                     }
                                 }
