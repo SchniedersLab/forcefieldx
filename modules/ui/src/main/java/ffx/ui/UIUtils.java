@@ -40,10 +40,12 @@ package ffx.ui;
 import java.io.File;
 
 import ffx.algorithms.AlgorithmFunctions;
+import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
+import java.util.List;
 
 /**
  * The UIUtils class implements all Function interfaces, enabling lower modules
@@ -194,5 +196,20 @@ public class UIUtils implements AlgorithmFunctions {
     @Override
     public SystemFilter getFilter() {
         return lastFilter;
+    }
+    
+    @Override
+    public MolecularAssembly getActiveAssembly() {
+        return mainPanel.getHierarchy().getActive();
+    }
+    
+    @Override
+    public AlgorithmListener getDefaultListener() {
+        return modelingShell;
+    }
+    
+    @Override
+    public List<String> getArguments() {
+        return modelingShell.getArgs();
     }
 }

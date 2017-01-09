@@ -42,6 +42,7 @@ import java.io.File;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
+import java.util.List;
 
 /**
  * The PotentialsFunctions interface specifies utility methods such as opening
@@ -57,11 +58,11 @@ import ffx.potential.parsers.SystemFilter;
  */
 public interface PotentialsFunctions {
 
-    public boolean isLocal(); // Return true if the local implementation from Potentials.
+    abstract public boolean isLocal(); // Return true if the local implementation from Potentials.
 
-    public MolecularAssembly[] open(String file);
+    abstract public MolecularAssembly[] open(String file);
 
-    public MolecularAssembly[] open(String[] files);
+    abstract public MolecularAssembly[] open(String[] files);
     
     default public MolecularAssembly[] open(String file, int nThreads) {
         return open(file);
@@ -71,55 +72,81 @@ public interface PotentialsFunctions {
         return open(file);
     }
     
-    public MolecularAssembly[] convertDataStructure(Object data);
+    abstract public MolecularAssembly[] convertDataStructure(Object data);
     
-    public MolecularAssembly[] convertDataStructure(Object data, File file);
+    abstract public MolecularAssembly[] convertDataStructure(Object data, File file);
     
-    public MolecularAssembly[] convertDataStructure(Object data, String filename);
+    abstract public MolecularAssembly[] convertDataStructure(Object data, String filename);
     
-    /*public MolecularAssembly[] convertDataStructure(Object[] data);
+    /*abstract public MolecularAssembly[] convertDataStructure(Object[] data);
     
-    public MolecularAssembly[] convertDataStructure(Object[] data, File file);*/
+    abstract public MolecularAssembly[] convertDataStructure(Object[] data, File file);*/
 
-    public void close(MolecularAssembly assembly);
+    abstract public void close(MolecularAssembly assembly);
 
-    public void closeAll(MolecularAssembly[] assemblies);
+    abstract public void closeAll(MolecularAssembly[] assemblies);
 
-    public double time();
+    abstract public double time();
 
-    public void save(MolecularAssembly assembly, File file);
+    abstract public void save(MolecularAssembly assembly, File file);
 
-    public void saveAsXYZ(MolecularAssembly assembly, File file);
+    abstract public void saveAsXYZ(MolecularAssembly assembly, File file);
 
-    public void saveAsP1(MolecularAssembly assembly, File file);
+    abstract public void saveAsP1(MolecularAssembly assembly, File file);
 
-    public void saveAsPDB(MolecularAssembly assembly, File file);
+    abstract public void saveAsPDB(MolecularAssembly assembly, File file);
 
-    public void saveAsPDB(MolecularAssembly[] assemblies, File file);
+    abstract public void saveAsPDB(MolecularAssembly[] assemblies, File file);
     
-    // public void saveXYZSymMates(MolecularAssembly assembly, File file);
+    // abstract public void saveXYZSymMates(MolecularAssembly assembly, File file);
     
-    public void savePDBSymMates(MolecularAssembly assembly, File file);
+    abstract public void savePDBSymMates(MolecularAssembly assembly, File file);
     // Will use default suffix of _symMate
     
-    public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
+    abstract public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
 
-    public ForceFieldEnergy energy(MolecularAssembly assembly);
+    abstract public ForceFieldEnergy energy(MolecularAssembly assembly);
 
-    public double returnEnergy(MolecularAssembly assembly);
+    abstract public double returnEnergy(MolecularAssembly assembly);
     
     /**
      * Returns the last SystemFilter created by this (may be null).
      * @return 
      */
-    public SystemFilter getFilter();
+    abstract public SystemFilter getFilter();
+    
+    /**
+     * Returns either the active assembly from the overlying UI, or the "active"
+     * molecular assembly from the last used SystemFilter.
+     * @return A MolecularAssembly or null
+     */
+    default public MolecularAssembly getActiveAssembly() {
+        SystemFilter filt = getFilter();
+        if (filt != null) {
+            return filt.getActiveMolecularSystem();
+        } else {
+            return null;
+        }
+    }
+    
+    /**
+     * If available, returns CLI arguments; default implementation does not have
+     * access to CLI arguments, and throws UnsupportedOperationException.
+     * @return CLI arguments
+     * @throws UnsupportedOperationException If unimplemented
+     */
+    default public List<String> getArguments() throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+    
+    //default public String[] 
 
     // Subsequent methods were when I was duplicating MainPanel's open() methods,
     // instead of its openWait() methods.
-    /*public FileOpener open(String file);
-     public FileOpener open(String[] files);
-     public FileOpener open(File file, String commandDescription);
-     public FileOpener open(File[] files, String commandDescription);*/
+    /*abstract public FileOpener open(String file);
+     abstract public FileOpener open(String[] files);
+     abstract public FileOpener open(File file, String commandDescription);
+     abstract public FileOpener open(File[] files, String commandDescription);*/
     
     /**
      * Versions a file, attempting to find an unused filename in the set filename,

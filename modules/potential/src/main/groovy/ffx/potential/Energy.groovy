@@ -67,24 +67,24 @@ class Energy extends Script {
             modelFilename = active.getFile()
         }
 
-        logger.info("\n Running Energy on " + modelFilename)
+        logger.info("\n Running Energy on " + modelFilename);
 
         // This is an interface specifying the closure-like methods.
         PotentialsFunctions functions
         try {
             // Use a method closure to try to get an instance of UIUtils (the User Interfaces
             // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsFunctions()
+            functions = getPotentialsFunctions();
         } catch (MissingMethodException ex) {
             // If Groovy can't find the appropriate closure, catch the exception and build
             // an instance of the local implementation.
-            functions = new PotentialsUtils()
+            functions = new PotentialsUtils();
         }
 
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        functions.energy(activeAssembly)
+        MolecularAssembly[] assemblies = functions.open(modelFilename);
+        MolecularAssembly activeAssembly = assemblies[0];
+        functions.energy(activeAssembly);
 
     }
 }
