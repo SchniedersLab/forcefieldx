@@ -143,41 +143,9 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * @param mainPanel a reference to the MainPanel.
      */
     public ModelingShell(MainPanel mainPanel) {
+        super();
         this.mainPanel = mainPanel;
         headless = java.awt.GraphicsEnvironment.isHeadless();
-
-        /**
-         * Configure the Swing GUI for the shell.
-         */
-        if (!headless) {
-            run();
-            // Output JTextPane
-            JTextPane output = getOutputArea();
-            output.setBackground(Color.BLACK);
-            output.setForeground(Color.WHITE);
-            // Input JTextPane
-            JTextPane input = getInputArea();
-            input.setBackground(Color.WHITE);
-            input.setForeground(Color.BLACK);
-            // Output StyledDocument Styles
-            StyledDocument doc = output.getStyledDocument();
-            Style defStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
-            Style regular = doc.addStyle("regular", defStyle);
-            Style prompt = doc.addStyle("prompt", regular);
-            Style command = doc.addStyle("command", regular);
-            Style result = doc.addStyle("result", regular);
-            StyleConstants.setFontFamily(regular, "Monospaced");
-            setPromptStyle(prompt);
-            setCommandStyle(command);
-            setResultStyle(result);
-            StyleConstants.setForeground(prompt, Color.ORANGE);
-            StyleConstants.setForeground(command, Color.GREEN);
-            StyleConstants.setForeground(result, Color.GREEN);
-            StyleConstants.setBackground(result, Color.BLACK);
-            clearOutput();
-            //initMenus();
-        }
-
         initContext();
         loadPrefs();
     }
@@ -276,6 +244,55 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         menu.remove(4);
         menu.remove(5);
         menu.remove(7);
+    }
+
+    /**
+     * Configure the Swing GUI for the shell.
+     */
+    @Override
+    public void run() {
+        if (!headless) {
+            try {
+                super.run();
+                // Output JTextPane
+                JTextPane output = getOutputArea();
+                output.setBackground(Color.BLACK);
+                output.setForeground(Color.WHITE);
+                // Input JTextPane
+                JTextPane input = getInputArea();
+                input.setBackground(Color.WHITE);
+                input.setForeground(Color.BLACK);
+                // Output StyledDocument Styles
+                StyledDocument doc = output.getStyledDocument();
+                Style defStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
+                Style regular = doc.addStyle("regular", defStyle);
+                Style prompt = doc.addStyle("prompt", regular);
+                Style command = doc.addStyle("command", regular);
+                Style result = doc.addStyle("result", regular);
+                StyleConstants.setFontFamily(regular, "Monospaced");
+                setPromptStyle(prompt);
+                setCommandStyle(command);
+                setResultStyle(result);
+                StyleConstants.setForeground(prompt, Color.ORANGE);
+                StyleConstants.setForeground(command, Color.GREEN);
+                StyleConstants.setForeground(result, Color.GREEN);
+                StyleConstants.setBackground(result, Color.BLACK);
+                clearOutput();
+                //initMenus();
+
+                // Set labels and icon for Force Field X.
+                getStatusLabel().setText("Welcome to the Force Field X Shell.");
+                JFrame frame = (JFrame) this.getFrame();
+                frame.setTitle("Force Field X Shell");
+                URL iconURL = getClass().getClassLoader().getResource(
+                        "ffx/ui/icons/icon64.png");
+                ImageIcon icon = new ImageIcon(iconURL);
+                frame.setIconImage(icon.getImage());
+                frame.setSize(600, 600);
+            } catch (Exception e) {
+                logger.warning(e.toString());
+            }
+        }
     }
 
     /**
@@ -889,20 +906,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         } else {
             return true;
         }
-    }
-
-    @Override
-    public void run() {
-        super.run();
-        // Set labels and icon for Force Field X.
-        getStatusLabel().setText("Welcome to the Force Field X Shell.");
-        JFrame frame = (JFrame) this.getFrame();
-        frame.setTitle("Force Field X Shell");
-        URL iconURL = getClass().getClassLoader().getResource(
-                "ffx/ui/icons/icon64.png");
-        ImageIcon icon = new ImageIcon(iconURL);
-        frame.setIconImage(icon.getImage());
-        frame.setSize(800, 800);
     }
 
     @Override

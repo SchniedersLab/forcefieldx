@@ -35,19 +35,38 @@
             </roles>
             <timezone>-7</timezone>
         </developer>
-        <developer>
-            <id>pren</id>
-            <name>Pengyu Ren</name>
-            <email>pren@mail.utexas.edu</email>
-            <organization>Associate Professor, U. of Texas, Austin</organization>
-            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
-            <roles>
-                <role>Chief Force Field Architect</role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
     </developers>
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>groovydoc</id>
+                        <phase>site</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <taskdef name="groovydoc"
+                                         classname="org.codehaus.groovy.ant.Groovydoc"
+                                         classpathref="maven.compile.classpath"
+                                />
+                                <groovydoc destdir="${project.reporting.outputDirectory}/groovydoc"
+                                           sourcepath="${basedir}/src/main/groovy" use="true"
+                                           windowtitle="${project.name}"
+                                           doctitle="${project.name}"
+                                >
+                                </groovydoc>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <resources>
             <resource>
                 <directory>${basedir}/src/main/java/ffx/potential/parameters/ff
@@ -145,6 +164,12 @@
             <groupId>org.biojava</groupId>
             <artifactId>biojava3-structure</artifactId>
             <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy-all.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>

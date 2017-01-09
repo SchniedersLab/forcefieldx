@@ -110,6 +110,7 @@ exec "$JAVACMD" $JAVA_OPTS \
   -Djava.system.class.loader="ffx.FFXClassLoader" \
   -Dj3d.rend="jogl" \
   -Dapple.laf.useScreenMenuBar="true" \
+  -Xdock:name="Force Field X" \
   -Dcom.apple.mrj.application.apple.menu.about.name="Force Field X" \
   -Dapp.name="Force Field X" \
   -Dapp.pid="$$" \
