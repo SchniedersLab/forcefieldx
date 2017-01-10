@@ -37,10 +37,10 @@
  */
 package ffx.potential.nonbonded;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -144,14 +144,9 @@ public class VanDerWaals implements MaskingInterface,
      */
     private boolean gradient;
     private boolean lambdaTerm;
-    private boolean esvTerm = false;
+    private boolean esvTerm;
     private boolean isSoft[];
-
-    /**
-     * Debugging; set at energy invocation to "vdw-printInteractions".
-     */
-    private boolean printInteractions = false;
-    private BufferedWriter interactionWriter = null;
+    
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -186,13 +181,17 @@ public class VanDerWaals implements MaskingInterface,
      * Offset in Angstroms.
      */
     private double vdwLambdaAlpha = 0.05;
-    private double sc1 = 0.0;
-    private double sc2 = 1.0;
+    /**
+     * Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary.
+     * [nThreads]
+     */
+    private LambdaFactors[] lambdaFactors = null;
+    private double sc1 = 0.0;       // alpha * (1 - lambdaProduct)^2
+    private double sc2 = 1.0;       // lambdaProduct
     private double dsc1dL = 0.0;
     private double dsc2dL = 0.0;
     private double d2sc1dL2 = 0.0;
-    private double d2sc2dL2 = 0.0;
-
+    private double d2sc2dL2 = 0.0;    
     /**
      * Generalized extended system variables.
      */
@@ -536,6 +535,17 @@ public class VanDerWaals implements MaskingInterface,
         if (esvTerm) {
             updateEsvLambda();
         }
+        
+        lambdaFactors = new LambdaFactors[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            if (esvTerm) {
+                lambdaFactors[i] = new LambdaFactorsESV();
+            } else if (lambdaTerm) {
+                lambdaFactors[i] = new LambdaFactorsOSRW();
+            } else {
+                lambdaFactors[i] = new LambdaFactors();
+            }
+        }
 
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
@@ -623,7 +633,7 @@ public class VanDerWaals implements MaskingInterface,
 
     public final void buildNeighborList(Atom[] atoms) {
         neighborList.setAtoms(atoms);
-        if (esvTerm) {
+        if (esvTerm) {  // TODO: Move ESV neighborlist construction into the parallel team.
             neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
         } else {
             neighborListOnly = true;
@@ -898,22 +908,10 @@ public class VanDerWaals implements MaskingInterface,
         int classi = ai.getAtomType().atomClass;
         int classk = ak.getAtomType().atomClass;
         double combined = 1.0 / vdwForm.radEps[classi][classk * 2 + VanDerWaalsForm.RADMIN];
-
-        if (interactionWriter != null) {
-            try {
-                interactionWriter.write(format("VDW %s%d-%s %s%d-%s %10.4f  %10.4f  %10.4f\n",
-                        ai.getResidueName(), ai.getResidueNumber(), ai.getAtomType().name,
-                        ak.getResidueName(), ak.getResidueNumber(), ak.getAtomType().name,
-                        combined, r, eij));
-            } catch (IOException ex) {
-                logger.severe("Van der Waals interaction writer encountered I/O exception.");
-            }
-        } else {
-            logger.info(format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                    "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
-                    atoms[k].xyzIndex, atoms[k].getAtomType().name,
-                    combined, r, eij));
-        }
+        logger.info(format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
+                "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
+                atoms[k].xyzIndex, atoms[k].getAtomType().name,
+                combined, r, eij));
     }
 
     /**
@@ -933,7 +931,16 @@ public class VanDerWaals implements MaskingInterface,
         } else {
             d2sc2dL2 = 0.0;
         }
-
+        
+        /**
+         * If LambdaFactors are in OSRW mode, update them now.
+         */
+        if (!esvTerm) {
+            for (LambdaFactors lf : lambdaFactors) {
+                lf.setFactors();
+            }
+        }
+        
         initSoftCore(false);
 
         // Redo the long range correction.
@@ -955,6 +962,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     public void updateEsvLambda() {
         if (!esvTerm) {
+            logger.warning("Improper method call: updateEsvLambda().");
             return;
         }
         numESVs = esvSystem.n();
@@ -984,6 +992,70 @@ public class VanDerWaals implements MaskingInterface,
         initSoftCore(true);
         // Call to long-range correction here, when it's trustworthy.
     }
+    
+    /**
+     * The trick:
+     *  The setFactors(i,k) method is called every time through the inner VdW
+     *      loop, avoiding an "if (esv)" branch statement.
+     *  A plain OSRW run will have an object of type LambdaFactorsOSRW instead, 
+     *      which contains an empty version of setFactors(i,k). The OSRW version 
+     *      sets new factors only on lambda updates, in setLambda().
+     */
+    public class LambdaFactors {
+        protected double sc1 = 0.0;
+        protected double dsc1dL = 0.0;
+        protected double d2sc1dL2 = 0.0;
+        protected double sc2 = 1.0;
+        protected double dsc2dL = 0.0;
+        protected double d2sc2dL2 = 0.0;
+        /**
+         * Overriden by the OSRW version which updates only during setLambda().
+         */
+        public void setFactors() {}
+        /**
+         * Overriden by the ESV version which updates with every softcore interaction.
+         */
+        public void setFactors(int i, int k) {}
+    }
+    
+    public class LambdaFactorsOSRW extends LambdaFactors {
+        @Override
+        public void setFactors() {
+            sc1 = VanDerWaals.this.sc1;
+            dsc1dL = VanDerWaals.this.dsc1dL;
+            d2sc1dL2 = VanDerWaals.this.d2sc1dL2;
+            sc2 = VanDerWaals.this.sc2;
+            dsc2dL = VanDerWaals.this.dsc2dL;
+            d2sc2dL2 = VanDerWaals.this.d2sc2dL2;
+        }
+    }
+
+    public class LambdaFactorsESV extends LambdaFactors {
+        @Override
+        public void setFactors(int i, int k) {
+            final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
+            sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
+            dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
+            d2sc1dL2 = 2.0 * vdwLambdaAlpha;
+            sc2 = esvLambdaProduct;
+            dsc2dL = 1.0;
+            d2sc2dL2 = 0.0;
+        }
+    }
+    
+    public final BiFunction<Integer,Integer,Double[]> LambdaFactorsOSRW = (i,k) -> {
+        return new Double[]{sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2};
+    };
+    public final BiFunction<Integer,Integer,Double[]> LambdaFactorsESV = (i,k) -> {
+        final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
+        final double sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
+        final double dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
+        final double d2sc1dL2 = 2.0 * vdwLambdaAlpha;
+        final double sc2 = esvLambdaProduct;
+        final double dsc2dL = 1.0;
+        final double d2sc2dL2 = 0.0;
+        return new Double[]{sc1,dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2};
+    };
 
     private void initSoftCore(boolean rebuild) {
         /**
@@ -1018,7 +1090,7 @@ public class VanDerWaals implements MaskingInterface,
         esvTerm = true;
         esvSystem = system;
         numESVs = esvSystem.n();
-
+        
         // Launch shared lambda/esvLambda initializers if missed (ie. !lambdaTerm) in constructor.
         vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
         vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
@@ -1058,10 +1130,18 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
+        if (!(lambdaTerm || esvTerm)) {
+            logger.warning("Illegal softcoring.");
+            throw new IllegalArgumentException();
+        }
         this.intermolecularSoftcore = intermolecularSoftcore;
     }
 
     public void setIntramolecularSoftcore(boolean intramolecularSoftcore) {
+        if (!(lambdaTerm || esvTerm)) {
+            logger.warning("Illegal softcoring.");
+            throw new IllegalArgumentException();
+        }
         this.intramolecularSoftcore = intramolecularSoftcore;
     }
 
@@ -1223,6 +1303,10 @@ public class VanDerWaals implements MaskingInterface,
             if (esvTerm) {
                 for (int i = 0; i < numESVs; i++) {
                     esvDeriv[i].set(0.0);
+                }
+                lambdaFactors = new LambdaFactorsESV[threadCount];
+                for (int i = 0; i < threadCount; i++) {
+                    lambdaFactors[i] = new LambdaFactorsESV();
                 }
             }
 
@@ -1523,6 +1607,7 @@ public class VanDerWaals implements MaskingInterface,
             private double mask[];
             private final double dx_local[];
             private final double transOp[][];
+            private LambdaFactors lambdaFactorsLocal;
 
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -1531,7 +1616,7 @@ public class VanDerWaals implements MaskingInterface,
             public VanDerWaalsLoop() {
                 super();
                 dx_local = new double[3];
-                transOp = new double[3][3];
+                transOp = new double[3][3];                     
             }
 
             public int getCount() {
@@ -1553,7 +1638,10 @@ public class VanDerWaals implements MaskingInterface,
                     dEdL = 0.0;
                     d2EdL2 = 0.0;
                 }
-
+                lambdaFactorsLocal = lambdaFactors[threadID];
+                if (lambdaFactorsLocal == null) {
+                    System.exit(1);
+                }
                 if (mask == null || mask.length < nAtoms) {
                     mask = new double[nAtoms];
                     fill(mask, 1.0);
@@ -1650,14 +1738,19 @@ public class VanDerWaals implements MaskingInterface,
                                     || (intermolecularSoftcore && !sameMolecule)
                                     || (intramolecularSoftcore && sameMolecule)
                                     || esvi || esvk;
+                            /**
+                             * The setFactors(i,k) method is empty unless ESVs
+                             * are present. If OSRW lambda present, lambdaFactors 
+                             * will already have been updated during setLambda().
+                             */
                             if (soft) {
-                                final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
-                                sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
-                                dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
-                                d2sc1dL2 = 2.0 * vdwLambdaAlpha;
-                                sc2 = esvLambdaProduct;
-                                dsc2dL = 1.0;
-                                d2sc2dL2 = 0.0;
+                                lambdaFactorsLocal.setFactors(i, k);
+                                sc1 = lambdaFactorsLocal.sc1;
+                                dsc1dL = lambdaFactorsLocal.dsc1dL;
+                                d2sc1dL2 = lambdaFactorsLocal.d2sc1dL2;
+                                sc2 = lambdaFactorsLocal.sc2;
+                                dsc2dL = lambdaFactorsLocal.dsc2dL;
+                                d2sc2dL2 = lambdaFactorsLocal.d2sc2dL2;
                             } else {
                                 sc1 = 0.0;
                                 dsc1dL = 0.0;
@@ -1911,13 +2004,13 @@ public class VanDerWaals implements MaskingInterface,
                                 boolean soft = isSoft[i] || softCorei[k]
                                         || esvi || esvk;
                                 if (soft) {
-                                    final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
-                                    sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
-                                    dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
-                                    d2sc1dL2 = 2.0 * vdwLambdaAlpha;
-                                    sc2 = esvLambdaProduct;
-                                    dsc2dL = 1.0;
-                                    d2sc2dL2 = 0.0;
+                                    lambdaFactorsLocal.setFactors(i, k);
+                                    sc1 = lambdaFactorsLocal.sc1;
+                                    dsc1dL = lambdaFactorsLocal.dsc1dL;
+                                    d2sc1dL2 = lambdaFactorsLocal.d2sc1dL2;
+                                    sc2 = lambdaFactorsLocal.sc2;
+                                    dsc2dL = lambdaFactorsLocal.dsc2dL;
+                                    d2sc2dL2 = lambdaFactorsLocal.d2sc2dL2;
                                 } else {
                                     sc1 = 0.0;
                                     dsc1dL = 0.0;

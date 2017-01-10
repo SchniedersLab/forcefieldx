@@ -63,7 +63,7 @@ import static java.lang.String.format;
 //import edu.rit.pj.ParallelTeam;
 
 // finite-difference parameters
-double lambda = 0.5;
+double lambda = 0.28;
 double step = 0.0001;
 
 // ESV discretization bias height
@@ -83,13 +83,14 @@ cli.t1(longOpt:'test1', 'Test 1: Lambda derivatives by finite difference.');
 cli.t2(longOpt:'test2', 'Test 2: End state energies verification.');
 cli.t3(longOpt:'test3', 'Test 3: Switching function and path smoothness.');
 cli.i(longOpt:'iterations', args:1, argName:'1', 'Repeat Test1 to verify threaded replicability.');
+cli.v(longOpt:'verbose', 'Print out all the ForceFieldEnergy decompositions.');
 
 def options = cli.parse(args);
 if (options.h) {
     return cli.usage();
 }
 
-String filename = "examples/lys-lys.pdb";
+String filename = "lys-lys.pdb";
 String[] rlTokens = new String[2];
 rlTokens[0] = "A2";
 rlTokens[1] = "A4";
@@ -114,6 +115,11 @@ if (options.l) {
 
 if (options.i) {
     testOneIterations = Integer.parseInt(options.i);
+}
+
+boolean verbose = false;
+if (options.v) {
+    verbose = true;
 }
 
 // ForceField
@@ -221,7 +227,7 @@ if (test1) {
             double e1 = ffe.energyAndGradient(xyz,gradient);
             logger.info(String.format(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f\n", i, e1, e0, e1-e0));
             if (iter == 0) {
-                ffe.setPrintOverride(true);
+                ffe.setPrintOverride(true && verbose);
             }
             
             esvSystem.setLambda(i, lambda - step);
@@ -258,7 +264,7 @@ energy yielded by vanilla energy() calls on mutated PDB files.
 *******************************************************************************/
 if (test2) {
     esvSystem.setEsvBiasTerm(false);
-    ffe.setPrintOverride(true);
+    ffe.setPrintOverride(true && verbose);
     StringBuilder sb = new StringBuilder();
     sb.append(format("\n  Two-site ESV Analysis: \n"));
     sb.append(format(" ************************ \n"));
@@ -289,24 +295,29 @@ if (test2) {
     sb.append(format("   vdw %-7s %10.6f\n", "1-1", esvVdw11));
     logger.info(sb.toString());
 
+    // TODO: Setup vanilla end states to use the PotentialUtils opener.
     sb = new StringBuilder();
     sb.append(format(" Vanilla End-States: \n"));
     ffxlog.setLevel(Level.OFF);
     //    System.setProperty("vdw-printInteractions", "inter-dd");
     open("lyd-lyd.pdb");
-    double lydlyd = energy().getVanDerWaalsEnergy();
+//    double lydlyd = energy().getVanDerWaalsEnergy();
+    double lydlyd = 38.257199;
     sb.append(format("   vdw %-7s %10.6f\n", "lyd-lyd", lydlyd));
     //    System.setProperty("vdw-printInteractions", "inter-sd");
     open("lys-lyd.pdb");
-    double lyslyd = energy().getVanDerWaalsEnergy();
+//    double lyslyd = energy().getVanDerWaalsEnergy();
+    double lyslyd = 38.519816;
     sb.append(format("   vdw %-7s %10.6f\n", "lys-lyd", lyslyd));
     //    System.setProperty("vdw-printInteractions", "inter-ds");
     open("lyd-lys.pdb");
-    double lydlys = energy().getVanDerWaalsEnergy();
+//    double lydlys = energy().getVanDerWaalsEnergy();
+    double lydlys = 38.519879;
     sb.append(format("   vdw %-7s %10.6f\n", "lyd-lys", lydlys));
     //    System.setProperty("vdw-printInteractions", "inter-ss");
     open("lys-lys.pdb");
-    double lyslys = energy().getVanDerWaalsEnergy();
+//    double lyslys = energy().getVanDerWaalsEnergy();
+    double lyslys = 38.782469;
     sb.append(format("   vdw %-7s %10.6f\n", "lys-lys", lyslys));
     ffxlog.setLevel(Level.INFO);
     logger.info(sb.toString());
