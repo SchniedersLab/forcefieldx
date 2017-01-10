@@ -64,7 +64,7 @@ import static ffx.potential.parameters.StretchBendType.units;
  *
  * @since 1.0
  */
-public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
+public class StretchBend extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(StretchBend.class.getName());
     private static final long serialVersionUID = 1L;
@@ -247,7 +247,7 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
             }
         }
         if (esvTerm) {
-            addToEsvDeriv(energy * dedesvChain / esvLambda, StretchBend.class);
+            setEsvDeriv(energy * dedesvChain / esvLambda);
         }
         return energy;
     }
@@ -280,7 +280,10 @@ public class StretchBend extends BondedTerm implements Comparable<StretchBend> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(StretchBend sb) {
-        return angle.compareTo(sb.angle);
+    public int compareTo(BondedTerm sb) {
+        if (!sb.getClass().isInstance(this)) {
+            return super.compareTo(sb);
+        }
+        return angle.compareTo(((StretchBend) sb).angle);
     }
 }

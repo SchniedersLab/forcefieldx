@@ -266,7 +266,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
             double phi2 = 1.0 - cosine2;
             energy = units * piTorsionType.forceConstant * phi2 * esvLambda;
             if (esvTerm) {
-                addToEsvDeriv(units * piTorsionType.forceConstant * phi2 * dedesvChain, PiOrbitalTorsion.class);
+                setEsvDeriv(units * piTorsionType.forceConstant * phi2 * dedesvChain);
             }
             dEdL = energy;
             energy = lambda * energy;

@@ -1,77 +1,85 @@
-
 package ffx.potential
+// SAVE AS XYZ
+
+// Apache Imports
+import org.apache.commons.io.FilenameUtils;
 
 // Groovy Imports
 import groovy.cli.Option
+import groovy.util.CliBuilder;
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
-
-// PJ Imports
-import edu.rit.pj.ParallelTeam
 
 // FFX Imports
-import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+import ffx.potential.utils.PotentialsUtils;
 
 /**
- * The Timer script evaluates the wall clock time for energy and forces.
+ * The SaveAsXYZ script saves a file as an XYZ file
  * <br>
  * Usage:
  * <br>
- * ffxc Timer [options] &lt;filename&gt;
+ * ffxc SaveAsXYZ [options] &lt;filename&gt;
  */
-class Timer extends Script {
-
+class SaveAsXYZ extends Script {
     /**
-     * Options for the Timer script.
+     * Options for the SaveAsXYZ script
      * <br>
      * Usage:
      * <br>
-     * ffxc Timer [options] &lt;filename&gt;
-     */
-    public class Options {
+     * ffxc SaveAsXYZ [options] &lt;filename&gt;
+     */ 
+    public class Options{
         /**
          * -h or --help to print a help message
          */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
+        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
-         * -n or --iterations to set the number of iterations
+         * -p or --pos-offset to set the positive atom type offset
          */
-        @Option(longName='iterations', shortName='n', defaultValue='5', description='Number of iterations.') int iterations
+        @Option(longName='pos-offset', shortName='p', defaultValue='0', description='Positive offset of atom types in the new file') int posOffset;
         /**
-         * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
+         * -n or --neg-offset to set the negative atom type offset
          */
-        @Option(longName='threads', shortName='c', defaultValue='0', description='Number of SMP threads (the default of 0 specifies use of all CPU cores)') int threads
-        /**
-         * -g or --gradient to ignore computation of the atomic coordinates gradient
-         */
-        @Option(longName='gradient', shortName='g', defaultValue='false', description='Ignore computation of the atomic coordinates gradient') boolean gradient
-        /**
-         * -q or --quiet to suppress printing of the energy for each iteration
-         */
-        @Option(longName='quiet', shortName='q', defaultValue='false', description='Suppress printing of the energy for each iteration') boolean quiet
+        @Option(longName='neg-offset', shortName='n', defaultValue='0', description='Negative offset of atom types in the new file.') int negOffset
+        
         /**
          * The final argument(s) should be one or more filenames.
          */
         @Unparsed List<String> filenames
     }
-
+    
+    
     /**
      * Execute the script.
      */
     def run() {
+        int offset = 0;
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc Timer [options] <filename>')
+        def cli = new CliBuilder(usage:' ffxc SaveAsXYZ [options] <filename>');
         def options = new Options()
         cli.parseFromInstance(options, args)
+    
         if (options.help == true) {
             return cli.usage()
         }
+        
+        // Positive offset atom types.
+        if (options.posOffset > 0) {
+            offset = options.posOffset;
+        }
 
-        List<String> arguments = options.filenames
-        String modelFilename = null
+        // Negative offset atom types.
+        if (options.negOffset > 0) {
+            offset = options.negOffset;
+            offset = -offset;
+        }
+
+        List<String> arguments = options.filenames;
+
+       String modelFilename = null
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)
@@ -82,24 +90,8 @@ class Timer extends Script {
             modelFilename = active.getFile()
         }
 
-        // The number of iterations.
-        int nEvals = options.iterations
+        logger.info("\n Writing out XYZ for " + modelFilename);
 
-        // Compute the atomic coordinate gradient.
-        boolean noGradient = options.gradient
-
-        // Print the energy for each iteraction.
-        boolean quiet = options.quiet
-
-        // Set the number of threads.
-        if (options.threads > 0) {
-            int nThreads = options.threads
-            System.setProperty("pj.nt", nThreads);
-        }
-
-        logger.info("\n Timing energy and gradient for " + modelFilename);
-
-        // This is an interface specifying the closure-like methods.
         PotentialsFunctions functions
         try {
             // Use a method closure to try to get an instance of UIUtils (the User Interfaces
@@ -110,30 +102,24 @@ class Timer extends Script {
             // an instance of the local implementation.
             functions = new PotentialsUtils()
         }
-        // Use PotentialsFunctions methods instead of Groovy method closures to do work.
+        
+        
+
         MolecularAssembly[] assemblies = functions.open(modelFilename)
         MolecularAssembly activeAssembly = assemblies[0]
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy();
+        modelFilename = FilenameUtils.removeExtension(modelFilename) + ".xyz";
 
-        long minTime = Long.MAX_VALUE;
-        double sumTime2 = 0.0;
-        int halfnEvals = (nEvals % 2 == 1) ? (nEvals/2) : (nEvals/2) - 1; // Halfway point
-        for (int i=0; i<nEvals; i++) {
-            long time = -System.nanoTime();
-            energy.energy(!noGradient, !quiet);
-            time += System.nanoTime();
-            minTime = time < minTime ? time : minTime;
-            if (i >= (int) (nEvals/2)) {
-                double time2 = time * 1.0E-9;
-                sumTime2 += (time2*time2);
-            }
+        //open(modelFilename);
+        // Offset atom type numbers.
+        if (offset != 0) {
+            logger.info("\n Offset atom types by " + offset);
+            ForceField forceField = activeAssembly.getForceField();
+            forceField.renumberForceField(0,offset,0);
         }
-        ++halfnEvals;
-        double rmsTime = Math.sqrt(sumTime2/halfnEvals);
-        logger.info(String.format(" Minimum time: %14.5f (sec)", minTime * 1.0E-9));
-        logger.info(String.format(" RMS time (latter half): %14.5f (sec)", rmsTime));
+        
+        functions.save(activeAssembly, new File(modelFilename));
+        
     }
-
 }
 
 /**
