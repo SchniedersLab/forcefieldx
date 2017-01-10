@@ -1213,7 +1213,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             sb = new StringBuilder("\n ESV-PME Softcore:\n");
             for (int i = 0; i < nAtoms; i++) {
                 // Only add softcores due to ESVs; don't interfere with existing.
-                if (esvSystem.hasAtom(i)) {
+                if (esvSystem.isExtAll(i)) {
                     isSoft[i] = true;
                     sb.append(atoms[i].toString()).append("\n");
                 }
@@ -4971,7 +4971,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
                         eSelf += aewald1 * (cii + aewald2 * (dii / 3.0 + 2.0 * aewald2 * qii / 45.0));
                         if (esvTerm && esvAtoms[i]) {
-                            int esvi = esvSystem.atomEsvId(i);
+                            int esvi = esvSystem.exthEsvId(i);
                             // TODO verify that this is an add when eSelf above is += ...
                             esvRealSpaceDeriv[esvi].addAndGet(eSelf * dlPowPerm * dEdLSign);    // TODO
                         }
@@ -5056,7 +5056,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             }
                             if (esvTerm && esvi) {
                                 // TODO multiply esv chain term
-                                final int idxi = esvSystem.atomEsvId(i);
+                                final int idxi = esvSystem.exthEsvId(i);
                                 esvRealSpaceDeriv[idxi].addAndGet(dEdLSign * dlPowPerm * e);    // TODO check
                             }
                         }
@@ -5139,7 +5139,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 }
                 if (esvTerm) {
                     for (int i = 0; i < nAtoms; i++) {
-                        final int idxi = esvSystem.atomEsvId(i);    // TODO determine eSelf is += and this is add?
+                        final int idxi = esvSystem.exthEsvId(i);    // TODO determine eSelf is += and this is add?
                         esvRealSpaceDeriv[idxi].addAndGet(dEdLSign * dlPowPol * eSelf);
                     }
                 }
@@ -5254,7 +5254,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 }
                 if (esvTerm) {
                     for (int i = 0; i < nAtoms; i++) {
-                        final int idxi = esvSystem.atomEsvId(i);
+                        final int idxi = esvSystem.exthEsvId(i);
                         esvRealSpaceDeriv[idxi].addAndGet(dEdLSign * dlPowPol * eRecip);
                     }
                 }
@@ -6785,7 +6785,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         
         for (int i = 0; i < nAtoms; i++) {
             final Atom ai = atoms[i];
-            final double li = esvSystem.atomLambda(i);
+            final double li = esvSystem.exthLambda(i);
             
             final double L = (lambdaTerm) ? lambda*li : li;
             

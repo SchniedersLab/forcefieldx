@@ -37,7 +37,6 @@
  */
 package ffx.potential.bonded;
 
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -55,6 +54,7 @@ import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 

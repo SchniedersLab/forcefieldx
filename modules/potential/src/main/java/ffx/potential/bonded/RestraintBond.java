@@ -700,7 +700,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
 
         value = dv;
         if (esvTerm) {
-            addToEsvDeriv(energy * dedesvChain / esvLambda, RestraintBond.class);
+            setEsvDeriv(energy * dedesvChain / esvLambda);
         }
         return energy;
     }

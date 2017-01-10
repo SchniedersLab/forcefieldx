@@ -72,7 +72,7 @@ import static ffx.potential.parameters.BondType.units;
  * @since 1.0
  *
  */
-public class Bond extends BondedTerm implements Comparable<Bond> {
+public class Bond extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(Bond.class.getName());
 
@@ -80,12 +80,15 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(Bond b) {
+    public int compareTo(BondedTerm b) {
         if (b == null) {
             throw new NullPointerException();
         }
         if (b == this) {
             return 0;
+        }
+        if (!b.getClass().isInstance(this)) {
+            return super.compareTo(b);
         }
         int this0 = atoms[0].xyzIndex;
         int a0 = b.atoms[0].xyzIndex;
@@ -707,7 +710,7 @@ public class Bond extends BondedTerm implements Comparable<Bond> {
         }
         value = dv;
         if (esvTerm) {
-            addToEsvDeriv(energy * dedesvChain / esvLambda, Bond.class);
+            setEsvDeriv(energy * dedesvChain / esvLambda);
         }
         return energy;
     }

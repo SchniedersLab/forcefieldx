@@ -155,7 +155,7 @@ public final class TitrationESV extends ExtendedVariable {
     
     @Override
     public String toString() {
-        return format(" EsvTitr%d:(%4.2f->%4.2f)", 
+        return format("ESV_%d (Titration,%4.2f->%4.2f)", 
                 index, getLambda(), getLambdaSwitch());
     }
 

@@ -37,6 +37,7 @@
  */
 package ffx.potential.bonded;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -60,7 +61,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  * @since 1.0
  *
  */
-public abstract class BondedTerm extends MSNode implements BondedEnergy {
+public abstract class BondedTerm extends MSNode implements BondedEnergy, Comparable<BondedTerm> {
 
     private static final Logger logger = Logger.getLogger(BondedTerm.class.getName());
     /**
@@ -76,9 +77,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy {
     protected double value; // Value of the term
     protected double energy; // Energy of the term
     
-    /**
-     * Extended system variables.
-     */
     protected boolean esvTerm = false;
     /**
      * Lambda value of attached ESV, if present.
@@ -93,7 +91,13 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy {
     /**
      * Target for extended variable derivatives.
      */
-    private SharedDouble esvDeriv;
+    protected double esvDerivLocal = 0.0;
+    private SharedDouble esvDerivShared = null;
+    /**
+     * If set, derivative components are filed by source type.
+     */
+    private HashMap<Class<? extends BondedTerm>,SharedDouble> decompositionMap = null;
+    private boolean decomposeEsvDeriv = false;
 
     /**
      * Default Constructor
@@ -127,6 +131,40 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy {
             }
         }
         return true;
+    }
+    
+    /**
+     * To implement Comparable<BondedTerm>.
+     */
+    private static final List<Class<? extends BondedTerm>> naturalOrder = new ArrayList<>();
+    static {    // TODO flesh out with OPLS bonded term types
+        naturalOrder.add(0, Bond.class);
+        naturalOrder.add(1, Angle.class);
+        naturalOrder.add(2, StretchBend.class);
+        naturalOrder.add(3, OutOfPlaneBend.class);
+        naturalOrder.add(4, Torsion.class);
+        naturalOrder.add(5, PiOrbitalTorsion.class);
+    }
+    
+    @Override
+    public int compareTo(BondedTerm other) {
+        if (other == null) {
+            throw new NullPointerException();
+        }
+        if (other.equals(this)) {
+            return 0;
+        }
+        final Class<? extends BondedTerm> oc = other.getClass();
+        final Class<? extends BondedTerm> myc = this.getClass();
+        final int oidx = naturalOrder.indexOf(oc);
+        final int myidx = naturalOrder.indexOf(myc);
+        if (oidx < myidx) {
+            return -1;
+        } else if (oidx > myidx) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -468,52 +506,61 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy {
      * for lambda and (1-lambda) terms, respectively. Other switches should 
      * set this to d(switch)/d(lambda) as well.
      */
-    public void setEsvLambda(SharedDouble esvBondedDeriv, double lambda, double chainRule) {
-        if (esvBondedDeriv == null) {
-            logger.warning("BondedTerm.setEsvLambda() called with null shared derivative target.");
-            return;
-        }
+    public void attachExtendedVariable(double lambda, double chainRule, 
+            SharedDouble esvBondedDeriv,
+            HashMap<Class<? extends BondedTerm>,SharedDouble> decomposition) {
         esvTerm = true;
-        esvDeriv = esvBondedDeriv;
         esvLambda = lambda;
         dedesvChain = chainRule;
+        esvDerivShared = esvBondedDeriv;
+        esvDerivLocal = 0.0;        
+        if (decomposition != null) {
+            decompositionMap = decomposition;
+            decomposeEsvDeriv = true;
+        } else {
+            decompositionMap = null;
+            decomposeEsvDeriv = false;
+        }
+    }
+    public void attachExtendedVariable(double lambda, double chainRule,
+            SharedDouble esvBondedDeriv) {
+        attachExtendedVariable(lambda, chainRule, esvBondedDeriv, null);
     }
     
-    public void unsetEsvLambda() {
+    public void detachExtendedVariable() {
         esvTerm = false;
-        esvDeriv = null;
         esvLambda = 1.0;
         dedesvChain = 0.0;
-    }
-    
-    /**
-     * If this is set, BondedTerm derivative components are filed according
-     * to their source type.
-     */
-    private HashMap<Class<? extends BondedTerm>,SharedDouble> debugMap = null;
-    public void setDebugMap(HashMap<Class<? extends BondedTerm>,SharedDouble> map) {
-        debugMap = map;
+        esvDerivLocal = 0.0;
+        esvDerivShared = null;
+        decompositionMap = null;
+        decomposeEsvDeriv = false;
     }
     
     /**
      * Derivative with respect to attached ExtendedVariable lambda, if any.
-     * Source class is optional; used to decompose BondedTerm derivative components for debugging.
      * Double.isFinite() check protects against dEdEsv=(energy*chain/lambda) for lambda=0.0
      */
-    protected final void addToEsvDeriv(double dEdEsv, Class<? extends BondedTerm> source) {
-        if (esvTerm && Double.isFinite(dEdEsv)) {
-            esvDeriv.addAndGet(dEdEsv);
-            if (debugMap != null) {
-                SharedDouble dub = debugMap.get(source);
-                if (dub == null) {
-                    debugMap.put(source, new SharedDouble(dEdEsv));
-                } else {
-                    dub.addAndGet(dEdEsv);
-                }
-            }
+    protected final void setEsvDeriv(double dEdEsv) {
+        if (esvTerm) {
+            esvDerivLocal = dEdEsv;
         }
     }
-    protected final void addToEsvDeriv(double dEdEsv) {
-        addToEsvDeriv(dEdEsv, BondedTerm.class);
+
+    public void reduceEsvDeriv() {
+        if (esvTerm) {
+//            logf(" :: %.6f from %s", esvDerivLocal, this.toString());
+            esvDerivShared.addAndGet(esvDerivLocal);
+            if (decomposeEsvDeriv) {
+                Class<? extends BondedTerm> source = this.getClass();
+                SharedDouble dub = decompositionMap.get(source);
+                if (dub == null) {
+                    decompositionMap.put(source, new SharedDouble(esvDerivLocal));
+                } else {
+                    dub.addAndGet(esvDerivLocal);
+                }
+            }
+            esvDerivLocal = 0.0;
+        }
     }
 }

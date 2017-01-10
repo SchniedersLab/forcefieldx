@@ -59,6 +59,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.MSNode;
+import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -284,6 +285,50 @@ public final class ExtUtils {
             }
         }
         logger.info(sb.toString());
+    }
+    
+    /**
+     * Element-wise sum over a list of 1D double arrays. 
+     * This implementation benchmarks faster than the equivalent Java8 stream() API.
+     */
+    private static double[] eleSum1DArrays(List<double[]> terms, int numESVs) {
+        double[] termSum = new double[terms.size()];
+        for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
+            double[] currentTerm = terms.get(iTerm);
+            if (currentTerm.length != numESVs) {
+                logger.warning(format("iTerm %d length: %d, numESVs: %d", iTerm, terms.get(iTerm).length, numESVs));
+                throw new IndexOutOfBoundsException();
+            }
+            for (int iESV = 0; iESV < numESVs; iESV++) {
+                termSum[iESV] += currentTerm[iESV];
+            }
+        }
+        return termSum;
+    }
+    
+    /**
+     * Element-wise sum over a list of 2D double arrays.
+     */
+    private static double[][] eleSum2DArrays(List<double[][]> terms, int numESVs, int nVars) {
+        if (terms == null || terms.isEmpty()) {
+            throw new NullPointerException("Summing an empty or null terms list.");
+        }
+        double[][] termSum = new double[numESVs][nVars];
+        for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
+            double[][] currentTerm = terms.get(iTerm);
+            if (currentTerm.length != numESVs) {
+                throw new IndexOutOfBoundsException();
+            }
+            for (int iESV = 0; iESV < numESVs; iESV++) {
+                if (currentTerm[iESV].length != nVars) {
+                    throw new IndexOutOfBoundsException();
+                }
+                for (int iAtom = 0; iAtom < nVars; iAtom++) {
+                    termSum[iESV][iAtom] += currentTerm[iESV][iAtom];
+                }
+            }
+        }
+        return termSum;
     }
     
     public static class SB {

@@ -374,7 +374,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 sinprev = sinn;
             }
             if (esvTerm) {
-                addToEsvDeriv(units * energy * dedesvChain * lambda, Torsion.class);
+                esvDerivLocal = units * energy * dedesvChain * lambda;
             }
             energy = units * energy * esvLambda * lambda;
             dEdL = units * energy * esvLambda;

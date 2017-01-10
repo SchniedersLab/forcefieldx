@@ -59,15 +59,15 @@
                     </platforms>
                     <programs>
                         <program>
-                            <mainClass>ffx.ui.Main</mainClass>
+                            <mainClass>ffx.Main</mainClass>
                             <id>ffx</id>
                         </program>
                         <program>
-                            <mainClass>ffx.ui.Main</mainClass>
+                            <mainClass>ffx.Main</mainClass>
                             <id>ffxc</id>
                         </program>
                         <program>
-                            <mainClass>ffx.ui.Main</mainClass>
+                            <mainClass>ffx.Main</mainClass>
                             <id>scheduler</id>
                         </program>
                     </programs>

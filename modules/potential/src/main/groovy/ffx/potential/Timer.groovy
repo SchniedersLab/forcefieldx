@@ -24,7 +24,7 @@ import ffx.potential.utils.PotentialsUtils
 class Timer extends Script {
 
     /**
-     * The Timer script evaluates the wall clock time for energy and forces.
+     * Options for the Timer script.
      * <br>
      * Usage:
      * <br>
@@ -34,23 +34,23 @@ class Timer extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
+        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
         /**
          * -n or --iterations to set the number of iterations
          */
-        @Option(shortName='n', defaultValue='5', description='Number of iterations.') int iterations
+        @Option(longName='iterations', shortName='n', defaultValue='5', description='Number of iterations.') int iterations
         /**
          * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
          */
-        @Option(shortName='c', defaultValue='0', description='Number of SMP threads (the default of 0 specifies use of all CPU cores)') int threads
+        @Option(longName='threads', shortName='c', defaultValue='0', description='Number of SMP threads (the default of 0 specifies use of all CPU cores)') int threads
         /**
          * -g or --gradient to ignore computation of the atomic coordinates gradient
          */
-        @Option(shortName='g', defaultValue='false', description='Ignore computation of the atomic coordinates gradient') boolean gradient
+        @Option(longName='gradient', shortName='g', defaultValue='false', description='Ignore computation of the atomic coordinates gradient') boolean gradient
         /**
          * -q or --quiet to suppress printing of the energy for each iteration
          */
-        @Option(shortName='q', defaultValue='false', description='Suppress printing of the energy for each iteration') boolean quiet
+        @Option(longName='quiet', shortName='q', defaultValue='false', description='Suppress printing of the energy for each iteration') boolean quiet
         /**
          * The final argument(s) should be one or more filenames.
          */
@@ -84,13 +84,13 @@ class Timer extends Script {
 
         // The number of iterations.
         int nEvals = options.iterations
-        
-        // Compute the atomic coordinate gradient.        
+
+        // Compute the atomic coordinate gradient.
         boolean noGradient = options.gradient
 
         // Print the energy for each iteraction.
         boolean quiet = options.quiet
-        
+
         // Set the number of threads.
         if (options.threads > 0) {
             int nThreads = options.threads

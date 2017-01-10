@@ -903,7 +903,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /**
      * The (single) ExtendedVariable of which this atom is a part (or null otherwise).
      */
-    public ExtendedVariable getESV() {
+    public ExtendedVariable getEsv() {
         return esv;
     }
 

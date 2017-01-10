@@ -629,12 +629,12 @@ public class DiscountPh {
         if (mode == SeedMode.HALF_LAMBDA) {
             discountLogger.append(format("   Setting all ESVs to one-half...\n"));
             for (ExtendedVariable esv : esvSystem) {
-                esv.setLambda(0.5);
+                esvSystem.setLambda(esv.index, 0.5);
             }
         } else if (mode == SeedMode.RANDOMIZE) {
             discountLogger.append(format("   Setting all ESVs to [random]...\n"));
             for (ExtendedVariable esv : esvSystem) {
-                esv.setLambda(rng.nextDouble());
+                esvSystem.setLambda(esv.index, rng.nextDouble());
             }
         } else {
             // Intentionally empty.

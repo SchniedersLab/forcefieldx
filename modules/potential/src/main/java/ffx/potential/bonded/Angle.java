@@ -70,7 +70,7 @@ import static ffx.potential.parameters.AngleType.units;
  * @since 1.0
  *
  */
-public class Angle extends BondedTerm implements Comparable<Angle>, BondedEnergy {
+public class Angle extends BondedTerm implements BondedEnergy {
 
     private static final Logger logger = Logger.getLogger(Angle.class.getName());
 
@@ -642,7 +642,7 @@ public class Angle extends BondedTerm implements Comparable<Angle>, BondedEnergy
                 break;
         }
         if (esvTerm) {
-            addToEsvDeriv(energy * dedesvChain / esvLambda, Angle.class);
+            setEsvDeriv(energy * dedesvChain / esvLambda);
         }
         return energy;
     }
@@ -685,12 +685,15 @@ public class Angle extends BondedTerm implements Comparable<Angle>, BondedEnergy
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(Angle a) {
+    public int compareTo(BondedTerm a) {
         if (a == null) {
             throw new NullPointerException();
         }
         if (a == this) {
             return 0;
+        }
+        if (!a.getClass().isInstance(this)) {
+            return super.compareTo(a);
         }
         int this1 = atoms[1].xyzIndex;
         int a1 = a.atoms[1].xyzIndex;
