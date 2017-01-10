@@ -1650,9 +1650,7 @@ public class VanDerWaals implements MaskingInterface,
                                     || (intermolecularSoftcore && !sameMolecule)
                                     || (intramolecularSoftcore && sameMolecule)
                                     || esvi || esvk;
-                            if (esvi || esvk) {    // ESV softcoring
-                                // Load values to take derivative w.r.t. l_prod = lambda * l_i * l_k.
-                                // Treat chain rule during reduction, e.g. d(l_prod)/d(l_i) = lambda*l_k.
+                            if (soft) {
                                 final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
                                 sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
                                 dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
@@ -1660,20 +1658,7 @@ public class VanDerWaals implements MaskingInterface,
                                 sc2 = esvLambdaProduct;
                                 dsc2dL = 1.0;
                                 d2sc2dL2 = 0.0;
-                            } else if (soft) {      // traditional osrw_lambda softcore
-                                sc1 = VanDerWaals.this.sc1;
-                                dsc1dL = VanDerWaals.this.dsc1dL;
-                                d2sc1dL2 = VanDerWaals.this.d2sc1dL2;
-                                sc2 = VanDerWaals.this.sc2;
-                                dsc2dL = VanDerWaals.this.dsc2dL;
-                                d2sc2dL2 = VanDerWaals.this.d2sc2dL2;
-//                                sc1 = vdwLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-//                                dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - lambda);
-//                                d2sc1dL2 = 2.0 * vdwLambdaAlpha;
-//                                sc2 = lambda;
-//                                dsc2dL = 1.0;
-//                                d2sc2dL2 = 0.0;
-                            } else {                // full interaction
+                            } else {
                                 sc1 = 0.0;
                                 dsc1dL = 0.0;
                                 d2sc1dL2 = 0.0;
@@ -1681,37 +1666,6 @@ public class VanDerWaals implements MaskingInterface,
                                 dsc2dL = 0.0;
                                 d2sc2dL2 = 0.0;
                             }
-                            
-                            /* Debugging
-                            if (ExtUtils.DebugHandler.DEBUG()) {
-                                final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
-                                final double asc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
-                                final double adsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
-                                final double ad2sc1dL2 = 2.0 * vdwLambdaAlpha;
-                                final double asc2 = esvLambdaProduct;
-                                final double adsc2dL = 1.0;
-                                final double ad2sc2dL2 = 0.0;                
-                                final double bsc1 = VanDerWaals.this.sc1;
-                                final double bdsc1dL = VanDerWaals.this.dsc1dL;
-                                final double bd2sc1dL2 = VanDerWaals.this.d2sc1dL2;
-                                final double bsc2 = VanDerWaals.this.sc2;
-                                final double bdsc2dL = VanDerWaals.this.dsc2dL;
-                                final double bd2sc2dL2 = VanDerWaals.this.d2sc2dL2;
-                                SB.logf(" sc1 std,esv: (%g %g %g) (%g %g %g)", 
-                                        asc1, adsc1dL, ad2sc1dL2, bsc1, bdsc1dL, bd2sc1dL2);
-                                if (asc1 != bsc1 || adsc1dL != bdsc1dL || ad2sc1dL2 != bd2sc1dL2) {
-                                   SB.logf("  << sc1 MISMATCH");
-                                }
-                                SB.nl();
-                                SB.logf(" sc2 std,esv: (%g %g %g) (%g %g %g)", 
-                                        asc2, adsc2dL, ad2sc2dL2, bsc2, bdsc2dL, bd2sc2dL2);
-                                if (asc2 != bsc2 || adsc2dL != bdsc2dL || ad2sc2dL2 != bd2sc2dL2) {
-                                    SB.logf("  << sc2 MISMATCH");
-                                }
-                                SB.nl();
-                                SB.print();
-                            }                   */
-                            
                             final double alpha = sc1;
                             final double lambda5 = sc2;
                             /**
@@ -1956,9 +1910,7 @@ public class VanDerWaals implements MaskingInterface,
                                 final double r = sqrt(r2);
                                 boolean soft = isSoft[i] || softCorei[k]
                                         || esvi || esvk;
-                                if (esvi || esvk) {
-                                    // Load values to take derivative w.r.t. l_prod = lambda * l_i * l_k.
-                                    // Treat chain rule during reduction, e.g. d(l_prod)/d(l_i) = lambda*l_k.
+                                if (soft) {
                                     final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
                                     sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
                                     dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
@@ -1966,14 +1918,7 @@ public class VanDerWaals implements MaskingInterface,
                                     sc2 = esvLambdaProduct;
                                     dsc2dL = 1.0;
                                     d2sc2dL2 = 0.0;
-                                } else if (soft) {
-                                    sc1 = VanDerWaals.this.sc1;
-                                    dsc1dL = VanDerWaals.this.dsc1dL;
-                                    d2sc1dL2 = VanDerWaals.this.d2sc1dL2;
-                                    sc2 = VanDerWaals.this.sc2;
-                                    dsc2dL = VanDerWaals.this.dsc2dL;
-                                    d2sc2dL2 = VanDerWaals.this.d2sc2dL2;
-                                } else {    // not soft
+                                } else {
                                     sc1 = 0.0;
                                     dsc1dL = 0.0;
                                     d2sc1dL2 = 0.0;
