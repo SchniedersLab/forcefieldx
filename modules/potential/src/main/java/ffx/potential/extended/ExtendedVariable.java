@@ -3,7 +3,6 @@ package ffx.potential.extended;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.OptionalDouble;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
@@ -16,15 +15,11 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.reduction.SharedDouble;
 
-import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.StretchBend;
-import ffx.potential.bonded.Torsion;
 import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.nonbonded.MultiplicativeSwitch;
 
@@ -49,12 +44,10 @@ public abstract class ExtendedVariable {
     private boolean ready = false;
     
     // Properties
-    protected static final boolean esvPropagation = prop("esv-propagation", false);
-    protected static final OptionalDouble biasOverride = prop("esv-bias", OptionalDouble.empty());
-    private final double thetaMass = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
-    private final double thetaFriction = prop("esv-thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
-    private final ExtInclusionMode extInclusion = 
-            prop(ExtInclusionMode.class, "esv-atomInclusion", ExtInclusionMode.TITRATABLE_H);
+    private static final boolean esvPropagation = prop("esv-propagation", false);
+    private static final Double biasOverride = prop("esv-biasOverride", Double.NaN);
+    private static final double thetaMass = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
+    private static final double thetaFriction = prop("esv-thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
     
     // Enumerations
     public enum ExtInclusionMode {
@@ -101,12 +94,12 @@ public abstract class ExtendedVariable {
     private List<BondedTerm> bondedOne, bondedZro;  // valence terms for each side; mola won't see zro by default
     private MSNode termNode;                        // modified to contain all applicable bonded terms
     private final SharedDouble bondedDeriv = new SharedDouble();
-    private final HashMap<Class<? extends BondedTerm>,SharedDouble> foregroundDerivDecomp = new HashMap<>();
-    private final HashMap<Class<? extends BondedTerm>,SharedDouble> backgroundDerivDecomp = new HashMap<>();
+    private final HashMap<Class<? extends BondedTerm>,SharedDouble> inplayDerivDecomp;
+    private final HashMap<Class<? extends BondedTerm>,SharedDouble> backgroundDerivDecomp;
     
     public ExtendedVariable(MultiResidue multiRes, double biasMag, double initialLambda) {
         index = esvIndexer++;
-        discrBiasBeta = biasOverride.isPresent() ? biasOverride.getAsDouble() : biasMag;
+        discrBiasBeta = Double.isFinite(biasOverride) ? biasOverride : biasMag;
         this.switchingFunction = new MultiplicativeSwitch(0.0, 1.0);
         setLambda(initialLambda);
 
@@ -132,15 +125,13 @@ public abstract class ExtendedVariable {
         atomLists.put(AtomList.BONDED_ZRO, atomsZroExtAll);
         atomLists.put(AtomList.BONDED_ALL, bondedAllAtoms);
         
-        // Set up debug bondedTerm derivative lists
-        backgroundDerivDecomp.put(Bond.class, new SharedDouble(0.0));
-        backgroundDerivDecomp.put(Angle.class, new SharedDouble(0.0));
-        backgroundDerivDecomp.put(StretchBend.class, new SharedDouble(0.0));
-        backgroundDerivDecomp.put(Torsion.class, new SharedDouble(0.0));
-        foregroundDerivDecomp.put(Bond.class, new SharedDouble(0.0));
-        foregroundDerivDecomp.put(Angle.class, new SharedDouble(0.0));
-        foregroundDerivDecomp.put(StretchBend.class, new SharedDouble(0.0));
-        foregroundDerivDecomp.put(Torsion.class, new SharedDouble(0.0));
+        if (ExtendedSystem.esvDecomposeBonded) {
+            inplayDerivDecomp = new HashMap<>();
+            backgroundDerivDecomp = new HashMap<>();
+        } else {
+            inplayDerivDecomp = null;
+            backgroundDerivDecomp = null;
+        }
     }
     
     public ExtendedVariable(MultiResidue multiRes, double biasMag) {
@@ -166,7 +157,9 @@ public abstract class ExtendedVariable {
         
     /**
      * Propagate lambda using Langevin dynamics.
-     * Check that temperature goes to the value used below (when set as a constant) even when sim is decoupled.
+     * Check that temperature goes to the value used below (when set as a constant),
+     * even when sim is decoupled. Be sure it call setLambda() rather than using 
+     * direct access for array resizing, etc.
      */
     public void propagate(double dEdEsv, double dt, double setTemperature) {
         if (!esvPropagation) {
@@ -190,7 +183,7 @@ public abstract class ExtendedVariable {
         setLambda(sinTheta * sinTheta);
     }
     
-    public void setLambda(double lambda) {
+    final void setLambda(double lambda) {
         this.lambda = lambda;
         this.lSwitch = switchingFunction.taper(lambda);
         this.dlSwitch = switchingFunction.dtaper(lambda);
@@ -220,9 +213,13 @@ public abstract class ExtendedVariable {
         return index;
     }
     
+    public String getName() {
+        return String.format("ESV_%d", index);
+    }
+    
     @Override
     public String toString() {
-        return String.format("ESV%d:(%4.2f->%4.2f)", 
+        return String.format("ESV_%d (%4.2f->%4.2f)", 
                 index, getLambda(), getLambdaSwitch());
     }
     
@@ -259,8 +256,7 @@ public abstract class ExtendedVariable {
                 a1.setESV(this);
                 a1.applyPersistentIndex();
                 atomsOneExtAll.add(a1);
-                if ((extInclusion == ExtInclusionMode.TITRATABLE_H && isTitratableHydrogen(a1))
-                        || extInclusion == ExtInclusionMode.ALL_ATOMS) {
+                if (isTitratableHydrogen(a1)) {
                     atomsOneExtH.add(a1);
                     a1.setEsvState(1);
                     atomsUnsharedExtH.add(a1);
@@ -274,8 +270,7 @@ public abstract class ExtendedVariable {
                 a0.setESV(this);
                 a0.applyPersistentIndex();
                 atomsZroExtAll.add(a0);
-                if ((extInclusion == ExtInclusionMode.TITRATABLE_H && isTitratableHydrogen(a0))
-                        || extInclusion == ExtInclusionMode.ALL_ATOMS) {
+                if (isTitratableHydrogen(a0)) {
                     atomsZroExtH.add(a0);
                     a0.setEsvState(0);
                     atomsUnsharedExtH.add(a0);
@@ -368,15 +363,24 @@ public abstract class ExtendedVariable {
         if (!ExtendedSystem.esvScaleBonded || !ready) {
             return;
         }
+        bondedDeriv.set(0.0);
         double Sl = getLambdaSwitch();
         double dSldL = getSwitchDeriv();
         for (BondedTerm bt1 : bondedOne) {
-            bt1.setEsvLambda(bondedDeriv, Sl, dSldL);
-            bt1.setDebugMap(foregroundDerivDecomp);
+            if (ExtendedSystem.esvDecomposeBonded) {
+                bt1.attachExtendedVariable(Sl, dSldL, bondedDeriv, inplayDerivDecomp);
+                inplayDerivDecomp.clear();
+            } else {
+                bt1.attachExtendedVariable(Sl, dSldL, bondedDeriv);
+            }
         }
         for (BondedTerm bt0 : bondedZro) {
-            bt0.setEsvLambda(bondedDeriv, 1.0 - Sl, -dSldL);
-            bt0.setDebugMap(backgroundDerivDecomp);
+            if (ExtendedSystem.esvDecomposeBonded) {
+                bt0.attachExtendedVariable(1.0 - Sl, -dSldL, bondedDeriv, backgroundDerivDecomp);
+                backgroundDerivDecomp.clear();
+            } else {
+                bt0.attachExtendedVariable(1.0 - Sl, -dSldL, bondedDeriv);
+            }
         }
     }
     
@@ -384,14 +388,8 @@ public abstract class ExtendedVariable {
         return bondedDeriv.get();
     }
     
-    public void resetBondedDeriv() {
-        bondedDeriv.set(0.0);
-        foregroundDerivDecomp.clear();
-        backgroundDerivDecomp.clear();
-    }
-    
-    public HashMap<Class<? extends BondedTerm>,SharedDouble> getForegroundBondedDerivDecomp() {
-        return foregroundDerivDecomp;
+    public HashMap<Class<? extends BondedTerm>,SharedDouble> getBondedDerivDecomp() {
+        return inplayDerivDecomp;
     }
     
     public HashMap<Class<? extends BondedTerm>,SharedDouble> getBackgroundBondedDerivDecomp() {

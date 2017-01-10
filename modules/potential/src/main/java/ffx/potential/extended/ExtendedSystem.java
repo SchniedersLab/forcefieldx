@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -41,6 +40,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     public static final boolean esvUseVdw = prop("esv-useVdw", true);
     public static final boolean ffePrintOverride = prop("ffe-printOverride", false);
     public static final boolean esvScaleBonded = prop("esv-scaleBonded", true);
+    public static final boolean esvDecomposeBonded = prop("esv-decomposeBonded", true);
     // Properties: Mutable
     private boolean esvBiasTerm = prop("esv-biasTerm", true);
 
@@ -151,7 +151,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     public double exthLambda(int i) {
         return (isExtH(i)) ? esvByAtomExtH[i].getLambda() : 1.0;
     }
-    public double extallambda(int i) {
+    public double extallLambda(int i) {
         return (isExtAll(i)) ? esvByAtomExtAll[i].getLambda() : 1.0;
     }
     
@@ -176,25 +176,15 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return moleculeExtAll;
     }
     
-    /**
-     * For testing and debugging.
-     * The ExtendedSystem notifies VdW and PME of lambda changes.
-     * ExtendedVariables are responsible for updating their own bonded terms.
-     */
-    public void setAllLambdas(double lambda) {
-        for (ExtendedVariable esv : this) {
-            esv.setLambda(lambda);
-        }
-        if (esvUseVdw) {
-            vdw.updateEsvLambda();
-        }
-        if (esvUsePme) {
-            pme.updateEsvLambda();
-        }
-    }
-    
     public void setLambda(int esvID, double lambda) {
         esvList.get(esvID).setLambda(lambda);
+        updateListeners();
+    }
+    
+    public void updateListeners() {
+        if (esvScaleBonded) {
+            updateBondedEsvLambda();
+        }
         if (esvUseVdw) {
             vdw.updateEsvLambda();
         }
@@ -350,23 +340,16 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             esvByAtomExtH = new ExtendedVariable[nAtomsExtH];
         }
         for (int i = 0; i < nAtomsExtH; i++) {
-            final Atom ai = atomsExtH[i];
-            esvByAtomExtH[i] = ai.getESV();
+            esvByAtomExtH[i] = atomsExtH[i].getEsv();
         }
         if (esvByAtomExtAll == null || esvByAtomExtAll.length < nAtomsExtAll) {
             esvByAtomExtAll = new ExtendedVariable[nAtomsExtAll];
         }
         for (int i = 0; i < nAtomsExtAll; i++) {
-            esvByAtomExtAll[i] = atomsExtAll[i].getESV();
+            esvByAtomExtAll[i] = atomsExtAll[i].getEsv();
         }
         
-        if (vdwTerm) {
-            vdw.updateEsvLambda();
-        }
-        if (mpoleTerm) {
-            pme.updateEsvLambda();
-        }
-        ffe.updateEsvLambda();
+        updateListeners();
     }
 
     /**
@@ -402,10 +385,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         } else if (temperature == null) {
             temperature = propagationTemperature;
         }
+        ExtendedVariable esv = esvList.get(esvID);
         double esvDeriv = 0.0;
-        SB.logfn(" ESV derivative components: ");
+        SB.logfn(" %s derivative components: ", esv.getName());
         if (esvBiasTerm) {
-            esvDeriv += esvList.get(esvID).getTotalBiasDeriv(temperature, print);
+            esvDeriv += esv.getTotalBiasDeriv(temperature, print);
         }
         if (esvUseVdw) {
             double dVdw = vdw.getdEdEsv(esvID);
@@ -418,29 +402,38 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             esvDeriv += dPme;
         }
         if (esvScaleBonded) {
-            double dBonded = esvList.get(esvID).getBondedDeriv();
-            SB.logfn("  Bonded %d: %g", esvID, dBonded);
+            double dBonded = esv.getBondedDeriv();
             esvDeriv += dBonded;
-            // Decompose the bonded derivative into term types.
-            HashMap<Class<? extends BondedTerm>,SharedDouble> bgMap = 
-                    esvList.get(esvID).getBackgroundBondedDerivDecomp();
-            HashMap<Class<? extends BondedTerm>,SharedDouble> fgMap = 
-                    esvList.get(esvID).getBackgroundBondedDerivDecomp();
-            SB.logf("    Foreground, Total: %9.6f" , fgMap.values().stream()
-                    .collect(Collectors.summingDouble(sd -> sd.get())));
-            for (Class<? extends BondedTerm> clas : fgMap.keySet()) {
-                SB.logf("\n      %18s: %9.6f", 
-                        clas.getName().replaceAll("ffx.potential.bonded.", ""), 
-                        fgMap.get(clas).get());
+            if (print && esvDecomposeBonded) {
+                // Decompose the bonded derivative into term types.
+                SB.logfn("  Bonded %d: %g", esvID, dBonded);
+                // Foreground portion:
+                double fgSum = 0.0;
+                HashMap<Class<? extends BondedTerm>,SharedDouble> fgMap = 
+                        esv.getBondedDerivDecomp();
+                for (SharedDouble dub : fgMap.values()) {
+                    fgSum += dub.get();
+                }
+                SB.logf("    Foreground: %9.6f" , fgSum);
+                for (Class<? extends BondedTerm> clas : fgMap.keySet()) {
+                    SB.logf("\n      %-16s %9.6f", 
+                            clas.getName().replaceAll("ffx.potential.bonded.", "") + ":",
+                            fgMap.get(clas).get());
+                }
+                // Background portion:
+                double bgSum = 0.0;
+                HashMap<Class<? extends BondedTerm>,SharedDouble> bgMap = 
+                        esv.getBackgroundBondedDerivDecomp();
+                for (SharedDouble dub : bgMap.values()) {
+                    bgSum += dub.get();
+                }
+                SB.logf("\n    Background: %9.6f" , bgSum);                
+                for (Class<? extends BondedTerm> clas : bgMap.keySet()) {
+                    SB.logf("\n      %-16s %9.6f", 
+                            clas.getName().replaceAll("ffx.potential.bonded.", "") + ":",
+                            bgMap.get(clas).get());
+                }
             }
-            SB.logf("\n    Background, Total: %9.6f" , bgMap.values().stream()
-                    .collect(Collectors.summingDouble(sd -> sd.get())));
-            for (Class<? extends BondedTerm> clas : bgMap.keySet()) {
-                SB.logf("\n      %18s: %9.6f", 
-                        clas.getName().replaceAll("ffx.potential.bonded.", ""), 
-                        bgMap.get(clas).get());
-            }
-            SB.print();
         }
         SB.printIf(print);
         return esvDeriv;
@@ -460,49 +453,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
         return  format("    %16s %16.8f\n", "Discretization", discrBias) +
                 format("    %16s %16.8f\n", "pH Electrostat", phBias);
-    }
-    
-    /**
-     * @deprecated Until second derivatives w.r.t. esvLambda become tractable.
-     */
-    @Deprecated
-    public double[][] getdEdXdL() {
-        List<double[][]> terms = new ArrayList<>();
-        if (vdwTerm) {
-            //terms.add(vdw.getdEdXdEsv());
-        }
-        if (mpoleTerm) {
-            //terms.add(particleMeshEwald.getdEdXdEsv());
-        }
-        if (terms.isEmpty()) {
-            return new double[numESVs][3 * nAtomsExtH];
-        }
-        return eleSum2DArrays(terms, numESVs, 3 * nAtomsExtH);
-    }
-
-    /**
-     * @deprecated Until second derivatives w.r.t. esvLambda become tractable.
-     */
-    @Deprecated
-    public double[] getd2EdL2(boolean lambdaBondedTerms) {
-        List<double[]> terms = new ArrayList<>();
-        double[] bias = new double[numESVs];
-        for (ExtendedVariable esv : esvList) {
-            bias[esv.index] = esvList.get(esv.index).getDiscrBias();
-        }
-        terms.add(bias);
-        if (!lambdaBondedTerms) {
-            if (vdwTerm) {
-                //terms.add(vdw.getd2EdEsv2());
-            }
-            if (mpoleTerm) {
-                //terms.add(particleMeshEwald.getd2EdEsv2());
-            }
-        }
-        if (terms.isEmpty()) {
-            return new double[numESVs];
-        }
-        return eleSum1DArrays(terms, numESVs);
     }
 
     public String getLambdaList() {
@@ -524,54 +474,10 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return (int) Math.floor((index / (double) nAtomsExtH) * numESVs);
     }
     
-    public void resetBondedDerivs() {
+    public void updateBondedEsvLambda() {
         for (ExtendedVariable esv : this) {
-            esv.resetBondedDeriv();
+            esv.updateBondedLambdas();
         }
-    }
-    
-    /**
-     * Element-wise sum over a list of 1D double arrays. 
-     * This implementation benchmarks faster than the equivalent Java8 stream() API.
-     */
-    private static double[] eleSum1DArrays(List<double[]> terms, int numESVs) {
-        double[] termSum = new double[terms.size()];
-        for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
-            double[] currentTerm = terms.get(iTerm);
-            if (currentTerm.length != numESVs) {
-                logger.warning(format("iTerm %d length: %d, numESVs: %d", iTerm, terms.get(iTerm).length, numESVs));
-                throw new IndexOutOfBoundsException();
-            }
-            for (int iESV = 0; iESV < numESVs; iESV++) {
-                termSum[iESV] += currentTerm[iESV];
-            }
-        }
-        return termSum;
-    }
-    
-    /**
-     * Element-wise sum over a list of 2D double arrays.
-     */
-    private static double[][] eleSum2DArrays(List<double[][]> terms, int numESVs, int nVars) {
-        if (terms == null || terms.isEmpty()) {
-            throw new NullPointerException("Summing an empty or null terms list.");
-        }
-        double[][] termSum = new double[numESVs][nVars];
-        for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
-            double[][] currentTerm = terms.get(iTerm);
-            if (currentTerm.length != numESVs) {
-                throw new IndexOutOfBoundsException();
-            }
-            for (int iESV = 0; iESV < numESVs; iESV++) {
-                if (currentTerm[iESV].length != nVars) {
-                    throw new IndexOutOfBoundsException();
-                }
-                for (int iAtom = 0; iAtom < nVars; iAtom++) {
-                    termSum[iESV][iAtom] += currentTerm[iESV][iAtom];
-                }
-            }
-        }
-        return termSum;
     }
 
     /**

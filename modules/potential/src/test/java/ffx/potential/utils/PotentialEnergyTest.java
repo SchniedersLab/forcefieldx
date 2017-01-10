@@ -62,7 +62,7 @@ import ffx.potential.parameters.ForceField;
  * @since 1.0
  */
 @RunWith(Parameterized.class)
-public class PotentialEnergyTest {
+public final class PotentialEnergyTest {
 
     private static final Logger logger = Logger.getLogger(PotentialEnergyTest.class.getName());
 

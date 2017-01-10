@@ -375,7 +375,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 double bcu = bcuint(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy);
                 energy = units * bcu * esvLambda * lambda;
                 if (esvTerm) {
-                    addToEsvDeriv(units * bcu * dedesvChain * lambda, TorsionTorsion.class);
+                    setEsvDeriv(units * bcu * dedesvChain * lambda);
                 }
                 dEdL = units * bcu * esvLambda;
             } else {
@@ -383,7 +383,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 double bcu1 = bcuint1(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy, ansy);
                 energy = units * bcu1 * esvLambda * lambda;
                 if (esvTerm) {
-                    addToEsvDeriv(units * bcu1 * dedesvChain * lambda, TorsionTorsion.class);
+                    setEsvDeriv(units * bcu1 * dedesvChain * lambda);
                 }
                 dEdL = units * bcu1 * esvLambda;
                 double dedang1 = sign * units * toDegrees(ansy[0]) * esvLambda * lambda;
