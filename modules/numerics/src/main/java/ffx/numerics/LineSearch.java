@@ -50,12 +50,12 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import static ffx.numerics.LBFGS.XdotY;
 import static ffx.numerics.LBFGS.aXplusY;
-import static ffx.numerics.LBFGS.angMax;
-import static ffx.numerics.LBFGS.cappa;
-import static ffx.numerics.LBFGS.intMax;
-import static ffx.numerics.LBFGS.slopMax;
-import static ffx.numerics.LBFGS.stepMax;
-import static ffx.numerics.LBFGS.stepMin;
+import static ffx.numerics.LBFGS.CAPPA;
+import static ffx.numerics.LBFGS.STEPMIN;
+import static ffx.numerics.LBFGS.STEPMAX;
+import static ffx.numerics.LBFGS.SLOPEMAX;
+import static ffx.numerics.LBFGS.ANGLEMAX;
+import static ffx.numerics.LBFGS.INTMAX;
 
 /**
  * This class implements an algorithm for uni-dimensional line search. This file
@@ -136,7 +136,7 @@ public class LineSearch {
         /**
          * Scale step size if initial gradient change is too large
          */
-        if (abs(sgB / sgA) >= slopMax && restart) {
+        if (abs(sgB / sgA) >= SLOPEMAX && restart) {
             arraycopy(x0, 0, x, 0, n);
             step /= 10.0;
             info[0] = LineSearchResult.ScaleStep;
@@ -148,7 +148,7 @@ public class LineSearch {
          * We now have an appropriate step size. Return if the gradient is small
          * and function decreases.
          */
-        if (abs(sgB / sg0) <= cappa && fB < fA) {
+        if (abs(sgB / sg0) <= CAPPA && fB < fA) {
             if (info[0] == null) {
                 info[0] = LineSearchResult.Success;
             }
@@ -180,8 +180,8 @@ public class LineSearch {
             }
             step = parab;
         }
-        if (step > stepMax) {
-            step = stepMax;
+        if (step > STEPMAX) {
+            step = STEPMAX;
         }
         return step();
     }
@@ -214,7 +214,7 @@ public class LineSearch {
         functionEvaluations[0]++;
         fC = optimizationSystem.energyAndGradient(x, g);
         sgC = XdotY(n, s, 0, 1, g, 0, 1);
-        if (abs(sgC / sg0) <= cappa) {
+        if (abs(sgC / sg0) <= CAPPA) {
             if (info[0] == null) {
                 info[0] = LineSearchResult.Success;
             }
@@ -228,7 +228,7 @@ public class LineSearch {
          */
         if (fC <= fA || fC <= fB) {
             double cubstp = min(abs(cube), abs(step - cube));
-            if (cubstp >= stepMin && intpln < intMax) {
+            if (cubstp >= STEPMIN && intpln < INTMAX) {
                 if (sgA * sgB < 0.0) {
                     /**
                      * If the current brackets have slopes of opposite sign,
@@ -299,8 +299,8 @@ public class LineSearch {
             sg0 = -sg1;
         }
         step = max(cube, step - cube) / 10.0;
-        if (step < stepMin) {
-            step = stepMin;
+        if (step < STEPMIN) {
+            step = STEPMIN;
         }
         /**
          * If already restarted once, then return with the best point.
@@ -396,7 +396,7 @@ public class LineSearch {
         double cosang = -sg0 / gNorm;
         cosang = min(1.0, max(-1.0, cosang));
         angle[0] = toDegrees(acos(cosang));
-        if (angle[0] > angMax) {
+        if (angle[0] > ANGLEMAX) {
             info[0] = LineSearchResult.WideAngle;
             return f;
         }
@@ -407,11 +407,11 @@ public class LineSearch {
          */
         step = 2.0 * abs(fMove / sg0);
         step = min(step, sNorm);
-        if (step > stepMax) {
-            step = stepMax;
+        if (step > STEPMAX) {
+            step = STEPMAX;
         }
-        if (step < stepMin) {
-            step = stepMin;
+        if (step < STEPMIN) {
+            step = STEPMIN;
         }
 
         return begin();

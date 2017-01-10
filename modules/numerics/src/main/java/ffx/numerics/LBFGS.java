@@ -37,6 +37,7 @@
  */
 package ffx.numerics;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -48,7 +49,6 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.LineSearch.LineSearchResult;
-import java.util.logging.Level;
 
 /**
  * This class implements the limited-memory Broyden-Fletcher-Goldfarb-Shanno
@@ -95,11 +95,11 @@ public class LBFGS {
      *
      * If the function and gradient evaluations are inexpensive with respect to
      * the cost of the iteration (which is sometimes the case when solving very
-     * large problems) it may be advantageous to set <code>cappa</code> to a
+     * large problems) it may be advantageous to set <code>CAPPA</code> to a
      * small value. A typical small value is 0.1. Restriction:
-     * <code>cappa</code> should be greater than 1e-4.
+     * <code>CAPPA</code> should be greater than 1e-4.
      */
-    public static final double cappa = 0.9;
+    public static final double CAPPA = 0.9;
     /**
      * This specifies the lower bound for the step in the line search.
      *
@@ -107,7 +107,7 @@ public class LBFGS {
      * problem is extremely badly scaled (in which case the exponent should be
      * increased).
      */
-    public static final double stepMin = 1.0e-16;
+    public static final double STEPMIN = 1.0e-16;
     /**
      * This specifies the upper bound for the step in the line search.
      *
@@ -115,19 +115,19 @@ public class LBFGS {
      * problem is extremely badly scaled (in which case the exponent should be
      * increased).
      */
-    public static final double stepMax = 5.0;
+    public static final double STEPMAX = 5.0;
     /**
-     * Constant <code>slopMax=1.0e4</code>
+     * Constant <code>SLOPEMAX=1.0e4</code>
      */
-    public static final double slopMax = 1.0e4;
+    public static final double SLOPEMAX = 1.0e4;
     /**
-     * Constant <code>angMax=180.0</code>
+     * Constant <code>ANGLEMAX=180.0</code>
      */
-    public static final double angMax = 180.0;
+    public static final double ANGLEMAX = 180.0;
     /**
-     * Constant <code>intMax=5</code>
+     * Constant <code>INTMAX=5</code>
      */
-    public static final int intMax = 5;
+    public static final int INTMAX = 5;
 
     /**
      * Make the constructor private so that the L-BFGS cannot be instantiated.
@@ -275,7 +275,7 @@ public class LBFGS {
         final LineSearchResult info[] = {LineSearchResult.Success};
         final int nFunctionEvals[] = {0};
         final double angle[] = {0.0};
-        double df = 0.5 * stepMax * gnorm;
+        double df = 0.5 * STEPMAX * gnorm;
         int m = -1;
 
         while (true) {
@@ -330,7 +330,7 @@ public class LBFGS {
             arraycopy(g, 0, prevG, 0, n);
 
             /**
-             * Perform the line search along the new conjugate direction
+             * Perform the line search along the new conjugate direction.
              */
             nFunctionEvals[0] = 0;
             double prevF = f;
@@ -466,7 +466,8 @@ public class LBFGS {
      *
      * @since 1.0
      */
-    private static void log(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
+    private static void log(int iter, int nfun, double grms, double xrms,
+            double f, double df, double angle, LineSearchResult info) {
         if (iter == 0) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
             logger.info(" QN Iter    F Value      G RMS     F Move    X Move    Angle  FG Call  Comment\n");
@@ -483,21 +484,27 @@ public class LBFGS {
     /**
      * Compute the sum of a vector times a scalar plus another vector.
      *
-     * @param n Number of points.
-     * @param a scalar.
-     * @param x X array.
-     * @param x0 First point in the X array.
-     * @param dx X increment.
-     * @param y Y Array.
-     * @param y0 First point in the Y array.
-     * @param dy Y increment.
+     * @param n The number of points.
+     * @param a The scalar.
+     * @param x The X array.
+     * @param x0 The first point in the X array.
+     * @param dx The X array increment.
+     * @param y The Y array.
+     * @param y0 The first point in the Y array.
+     * @param dy The Y array increment.
+     *
      * @since 1.0
      */
     public static void aXplusY(final int n, final double a, final double[] x,
             final int x0, final int dx, final double[] y, final int y0, final int dy) {
+        /**
+         * Require the number of entries (n) to be greater than zero. If the
+         * scalar (a) is zero, then the Y array is unchanged.
+         */
         if (n <= 0 || a == 0) {
             return;
         }
+
         int stop = x0 + dx * n;
         for (int i = x0, j = y0; i != stop; i += dx, j += dy) {
             y[j] += a * x[i];
@@ -508,20 +515,26 @@ public class LBFGS {
      * Compute the dot product of two vectors.
      *
      * @param n Number of entries to include.
-     * @param x X array.
-     * @param x0 First point in the X array.
-     * @param dx X increment.
-     * @param y Y Array.
-     * @param y0 First point in the Y array.
-     * @param dy Y increment.
+     * @param x The X array.
+     * @param x0 The first point in the X array.
+     * @param dx The X array increment.
+     * @param y The Y array.
+     * @param y0 The first point in the Y array.
+     * @param dy The Y increment.
      * @return dot product
+     *
      * @since 1.0
      */
     public static double XdotY(final int n, final double[] x, final int x0,
             final int dx, final double[] y, final int y0, final int dy) {
+
+        /**
+         * Require the number of entries to be greater than zero.
+         */
         if (n <= 0) {
             return 0;
         }
+
         double sum = 0.0;
         int stop = x0 + dx * n;
         for (int i = x0, j = y0; i != stop; i += dx, j += dy) {

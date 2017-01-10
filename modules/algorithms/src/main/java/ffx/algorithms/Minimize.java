@@ -37,6 +37,7 @@
  */
 package ffx.algorithms;
 
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,6 +53,7 @@ import ffx.potential.MolecularAssembly;
  * convergence criteria.
  *
  * @author Michael J. Schnieders
+ * 
  * @since 1.0
  *
  */
@@ -91,9 +93,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
-        for (int i = 0; i < n; i++) {
-            scaling[i] = 12.0;
-        }
+        Arrays.fill(scaling, 12.0);
         potential.setScaling(scaling);
     }
 
@@ -118,9 +118,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
-        for (int i = 0; i < n; i++) {
-            scaling[i] = 12.0;
-        }
+        Arrays.fill(scaling, 12.0);
         potential.setScaling(scaling);
     }
 
@@ -173,6 +171,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     public Potential minimize(int m, double eps) {
         time = System.nanoTime();
         potential.getCoordinates(x);
+
         /**
          * Scale coordinates.
          */
@@ -181,9 +180,10 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
 
         done = false;
-        int status = 2;
         double e = potential.energyAndGradient(x, grad);
-        status = LBFGS.minimize(n, m, x, e, grad, eps, potential, this);
+        logger.info(String.format(" Minimize initial energy: %16.8f", e));
+
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, potential, this);
         done = true;
 
         switch (status) {
