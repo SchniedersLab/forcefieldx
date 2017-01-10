@@ -37,36 +37,6 @@
         </developer>
     </developers>
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.7</version>
-                <executions>
-                    <execution>
-                        <id>groovydoc</id>
-                        <phase>site</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <taskdef name="groovydoc"
-                                         classname="org.codehaus.groovy.ant.Groovydoc"
-                                         classpathref="maven.compile.classpath"
-                                />
-                                <groovydoc destdir="${project.reporting.outputDirectory}/groovydoc"
-                                           sourcepath="${basedir}/src/main/groovy" use="true"
-                                           windowtitle="${project.name}"
-                                           doctitle="${project.name}"
-                                >
-                                </groovydoc>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
         <resources>
             <resource>
                 <directory>${basedir}/src/main/java/ffx/potential/parameters/ff

@@ -6,55 +6,50 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.util.CliBuilder
 
-// PJ Imports
-import edu.rit.pj.ParallelTeam
+// Apache Imports
+import org.apache.commons.io.FilenameUtils
 
 // FFX Imports
-import ffx.potential.ForceFieldEnergy;
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.bonded.Loop
+import ffx.potential.parsers.PDBFilter
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
 /**
- * The Timer script evaluates the wall clock time for energy and forces.
+ * The LoopClosure script tests a loop closure algorithm for placing loops.
  * <br>
  * Usage:
  * <br>
- * ffxc Timer [options] &lt;filename&gt;
+ * ffxc LoopClosure [options] &lt;filename&gt;
  */
-class Timer extends Script {
+class LoopClosure extends Script {
 
     /**
-     * Options for the Timer script.
+     * Options for the LoopClosure Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc Timer [options] &lt;filename&gt;
+     * ffxc LoopClosure [options] &lt;filename&gt;
      */
     public class Options {
         /**
          * -h or --help to print a help message
          */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
+        @Option(shortName='h', description='Print this help message.') boolean help
         /**
-         * -n or --iterations to set the number of iterations
+         * -f or --first to set the first residue to draw (indexed from residue 0).
          */
-        @Option(longName='iterations', shortName='n', defaultValue='5', description='Number of iterations.') int iterations
+        @Option(shortName='f', defaultValue='2', description='First residue to draw. Indexed from residue 0.') boolean first
         /**
-         * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
+         * -l or --last to set the last residue to draw (indexed from residue 0).
          */
-        @Option(longName='threads', shortName='c', defaultValue='0', description='Number of SMP threads (the default of 0 specifies use of all CPU cores)') int threads
-        /**
-         * -g or --gradient to ignore computation of the atomic coordinates gradient
-         */
-        @Option(longName='gradient', shortName='g', defaultValue='false', description='Ignore computation of the atomic coordinates gradient') boolean gradient
-        /**
-         * -q or --quiet to suppress printing of the energy for each iteration
-         */
-        @Option(longName='quiet', shortName='q', defaultValue='false', description='Suppress printing of the energy for each iteration') boolean quiet
+        @Option(shortName='l', defaultValue='4', description='Last residue to draw. Indexed from residue 0.') boolean last
         /**
          * The final argument(s) should be one or more filenames.
          */
         @Unparsed List<String> filenames
+
     }
 
     /**
@@ -63,10 +58,10 @@ class Timer extends Script {
     def run() {
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc Timer [options] <filename>')
+        def cli = new CliBuilder(usage:' ffxc FracToCart <filename>', header:' Options:');
         def options = new Options()
         cli.parseFromInstance(options, args)
-        if (options.help == true) {
+        if (options.help) {
             return cli.usage()
         }
 
@@ -75,29 +70,13 @@ class Timer extends Script {
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)
-            //open(modelFilename)
         } else if (active == null) {
             return cli.usage()
         } else {
             modelFilename = active.getFile()
         }
 
-        // The number of iterations.
-        int nEvals = options.iterations
-
-        // Compute the atomic coordinate gradient.
-        boolean noGradient = options.gradient
-
-        // Print the energy for each iteraction.
-        boolean quiet = options.quiet
-
-        // Set the number of threads.
-        if (options.threads > 0) {
-            int nThreads = options.threads
-            System.setProperty("pj.nt", nThreads);
-        }
-
-        logger.info("\n Timing energy and gradient for " + modelFilename);
+        logger.info("\n Running LoopClosure on " + modelFilename + "\n");
 
         // This is an interface specifying the closure-like methods.
         PotentialsFunctions functions
@@ -112,29 +91,34 @@ class Timer extends Script {
         }
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
         MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy();
 
-        long minTime = Long.MAX_VALUE;
-        double sumTime2 = 0.0;
-        int halfnEvals = (nEvals % 2 == 1) ? (nEvals/2) : (nEvals/2) - 1; // Halfway point
-        for (int i=0; i<nEvals; i++) {
-            long time = -System.nanoTime();
-            energy.energy(!noGradient, !quiet);
-            time += System.nanoTime();
-            minTime = time < minTime ? time : minTime;
-            if (i >= (int) (nEvals/2)) {
-                double time2 = time * 1.0E-9;
-                sumTime2 += (time2*time2);
+        int firstResidue = options.first
+        int lastResidue = options.last
+
+        if (lastResidue - firstResidue != 3)
+        {
+            logger.info("\n\nInvalid residue range. Residue range must consist of 3 residues.\n\n");
+        }
+
+        boolean writeFile = true;
+        ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy();
+        forcefieldEnergy.setPrintOnFailure(false, false);
+        Loop loop = new Loop(assemblies[0]);
+        List<double[]> loopSolutions = loop.generateLoops(firstResidue, lastResidue);
+
+        for(int i = 0; i < loopSolutions.size(); i++){
+            //Test for using alternative coordinates with generateLoops method.
+            // loopSolutions = loop.generateLoops(stt_res+1, end_res+1,loopSolutions.get(i));
+            forceFieldEnergy.setCoordinates(loopSolutions.get(i));
+            File modifiedFile = new File("loop_" + modelFilename + "_" + i);
+            PDBFilter modFilter = new PDBFilter(modifiedFile, assemblies[0], null, null);
+            if (writeFile) {
+                modFilter.writeFile(modifiedFile, true);
             }
         }
-        ++halfnEvals;
-        double rmsTime = Math.sqrt(sumTime2/halfnEvals);
-        logger.info(String.format(" Minimum time: %14.5f (sec)", minTime * 1.0E-9));
-        logger.info(String.format(" RMS time (latter half): %14.5f (sec)", rmsTime));
     }
-
 }
+
 
 /**
  * Title: Force Field X.

@@ -35,7 +35,7 @@ class SaveAsPDB extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
+        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
         /**
          * The final argument(s) should be one or more filenames.
          */
