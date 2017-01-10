@@ -58,60 +58,190 @@ import java.util.List;
  */
 public interface PotentialsFunctions {
 
+    /**
+     * True if using a local implementation (not in a user interfaces module).
+     *
+     * @return If a local implementation
+     */
     abstract public boolean isLocal(); // Return true if the local implementation from Potentials.
-
+    
+    /**
+     * Opens a file and returns all created MolecularAssembly objects.
+     *
+     * @param file Filename to open
+     * @return Array of MolecularAssembly.
+     */
     abstract public MolecularAssembly[] open(String file);
 
+    /**
+     * Opens an array of files and returns the created MolecularAssembly
+     * objects.
+     *
+     * @param files Filenames to open.
+     * @return Array of MolecularAssembly.
+     */
     abstract public MolecularAssembly[] open(String[] files);
     
+    /**
+     * Opens a file and returns all created MolecularAssembly objects, setting
+     * any underlying Potential to use a certain number of threads. Default
+     * implementation simply ignores nThreads.
+     *
+     * @param file Filename to open
+     * @param nThreads Use non-default num threads
+     * @return Array of MolecularAssembly.
+     */
     default public MolecularAssembly[] open(String file, int nThreads) {
         return open(file);
     }
     
+    /**
+     * Opens an array of files and returns all created MolecularAssembly 
+     * objects, setting any underlying Potential to use a certain number of 
+     * threads. Default implementation simply ignores nThreads.
+     *
+     * @param file Filenames to open.
+     * @param nThreads Use non-default num threads
+     * @return Array of MolecularAssembly.
+     */
     default public MolecularAssembly[] open(String[] file, int nThreads) {
         return open(file);
     }
     
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     *
+     * @param data Structure to convert
+     * @return Array of MolecularAssembly
+     */
     abstract public MolecularAssembly[] convertDataStructure(Object data);
     
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     *
+     * @param data Structure to convert
+     * @param file Source file
+     * @return Array of MolecularAssembly
+     */
     abstract public MolecularAssembly[] convertDataStructure(Object data, File file);
     
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     *
+     * @param data Structure to convert
+     * @param filename Source file
+     * @return Array of MolecularAssembly
+     */
     abstract public MolecularAssembly[] convertDataStructure(Object data, String filename);
-    
-    /*abstract public MolecularAssembly[] convertDataStructure(Object[] data);
-    
-    abstract public MolecularAssembly[] convertDataStructure(Object[] data, File file);*/
 
+    /**
+     * Performs any necessary shutdown operations on a MolecularAssembly, 
+     * primarily shutting down Parallel Java threads and closing any other
+     * open resources.
+     *
+     * @param assembly Assembly to close.
+     */
     abstract public void close(MolecularAssembly assembly);
 
+    /**
+     * Performs any necessary shutdown operations on an array of 
+     * MolecularAssembly, primarily shutting down Parallel Java threads and 
+     * closing any other open resources.
+     *
+     * @param assemblies Assemblies to close.
+     */
     abstract public void closeAll(MolecularAssembly[] assemblies);
-
+    
+    /**
+     * Logs time elapsed since last call.
+     *
+     * @return Time.
+     */
     abstract public double time();
 
+    /**
+     * Saves the current state of a MolecularAssembly to an XYZ file.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file Destination .xyz
+     */
     abstract public void save(MolecularAssembly assembly, File file);
 
+    /**
+     * Saves the current state of a MolecularAssembly to an XYZ file.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file Destination .xyz
+     */
     abstract public void saveAsXYZ(MolecularAssembly assembly, File file);
 
+    /**
+     * Saves the current state of a MolecularAssembly to an XYZ file as a P1
+     * crystal.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file Destination .xyz
+     */
     abstract public void saveAsP1(MolecularAssembly assembly, File file);
 
+    /**
+     * Saves the current state of a MolecularAssembly to a PDB file.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file Destination .pdb
+     */
     abstract public void saveAsPDB(MolecularAssembly assembly, File file);
-
+    
+    /**
+     * Saves the current state of an array of MolecularAssemblys to a PDB file.
+     *
+     * @param assemblies MolecularAssembly array to save
+     * @param file Destination .pdb
+     */
     abstract public void saveAsPDB(MolecularAssembly[] assemblies, File file);
     
-    // abstract public void saveXYZSymMates(MolecularAssembly assembly, File file);
-    
+    /**
+     * Saves the symmetry mates of a MolecularAssembly to PDB files.
+     * 
+     * @param assembly To save
+     * @param file Destination file
+     */
     abstract public void savePDBSymMates(MolecularAssembly assembly, File file);
     // Will use default suffix of _symMate
     
+    /**
+     * Saves the symmetry mates of a MolecularAssembly to PDB files.
+     * 
+     * @param assembly To save
+     * @param file Destination file
+     * @param suffix Custom file suffix
+     */
     abstract public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
 
+    /**
+     * Evaluates the energy of a MolecularAssembly and returns its
+     * ForceFieldEnergy object.
+     *
+     * @param assembly To evaluate
+     * @return assembly's ForceFieldEnergy.
+     */
     abstract public ForceFieldEnergy energy(MolecularAssembly assembly);
 
+    /**
+     * Returns the energy of a MolecularAssembly in kcal/mol (as a double) and
+     * prints the energy evaluation
+     *
+     * @param assembly To evaluate energy of
+     * @return Potential energy (kcal/mol)
+     */
     abstract public double returnEnergy(MolecularAssembly assembly);
     
     /**
      * Returns the last SystemFilter created by this (may be null).
-     * @return 
+     * @return Last SystemFilter
      */
     abstract public SystemFilter getFilter();
     

@@ -131,7 +131,8 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * Opens a file and returns all created MolecularAssembly objects.
+     * Opens a file and returns all created MolecularAssembly objects, setting
+     * any underlying Potential to use a certain number of threads.
      *
      * @param file Filename to open
      * @param nThreads Use non-default num threads
@@ -147,8 +148,9 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * Opens an array of files and returns the created MolecularAssembly
-     * objects.
+     * Opens an array of files and returns all created MolecularAssembly 
+     * objects, setting any underlying Potential to use a certain number of 
+     * threads.
      *
      * @param files Filenames to open.
      * @param nThreads Use non-default num threads
@@ -219,41 +221,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         }
         return convertDataStructure(data, file);
     }
-
-    // Below methods not implemented on account of needing to figure out how to
-    // distinguish an Object from an Object[].
-    /**
-     * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects. Not implemented, on account of trying to
-     * figure out how to get constructors to distinguish an array or list of
-     * Object from a singular Object.
-     *
-     * @param data Structure(s) to convert
-     * @return Array of MolecularAssembly
-     */
-    /*@Override
-    public MolecularAssembly[] convertDataStructure(Object[] data) {
-        PotentialsDataConverter converter = new PotentialsDataConverter(data);
-        converter.run();
-        return converter.getAllAssemblies();
-    }*/
-    /**
-     * Converts a data structure (such as a Biojava Structure) into one or more
-     * MolecularAssembly objects. Not implemented, on account of trying to
-     * figure out how to get constructors to distinguish an array or list of
-     * Object from a singular Object.
-     *
-     * @param data Structure(s) to convert
-     * @param file File to save to
-     * @return Array of MolecularAssembly
-     */
-    /*@Override
-    public MolecularAssembly[] convertDataStructure(Object[] data, File file) {
-        PotentialsDataConverter converter = new PotentialsDataConverter(data, file);
-        converter.setFile(file);
-        converter.run();
-        return converter.getAllAssemblies();
-    }*/
+    
     /**
      * Shuts down parallel teams in the force field of the provided
      * MolecularAssembly. Kaminsky's ParallelTeamThreads' run() methods are

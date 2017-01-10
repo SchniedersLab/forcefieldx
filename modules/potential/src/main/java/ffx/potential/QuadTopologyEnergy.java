@@ -522,6 +522,14 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
     public int getNumberOfVariables() {
         return nVarTot;
     }
+    
+    /**
+     * Returns number of shared variables.
+     * @return Shared variables
+     */
+    public int getNumSharedVariables() {
+        return nShared;
+    }
 
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
