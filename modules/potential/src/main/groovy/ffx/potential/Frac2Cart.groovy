@@ -1,4 +1,3 @@
-
 package ffx.potential
 
 // Groovy Imports
@@ -6,51 +5,36 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.util.CliBuilder
 
-// PJ Imports
-import edu.rit.pj.ParallelTeam
+// Apache Imports
+import org.apache.commons.io.FilenameUtils
 
 // FFX Imports
-import ffx.potential.ForceFieldEnergy;
+import ffx.crystal.Crystal
+import ffx.potential.bonded.Atom
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
 /**
- * The Timer script evaluates the wall clock time for energy and forces.
+ * The FracToCart script converts from Fractional to Cartesian coordinates.
  * <br>
  * Usage:
  * <br>
- * ffxc Timer [options] &lt;filename&gt;
+ * ffxc FracToCart &lt;filename&gt;
  */
-class Timer extends Script {
+class FracToCart extends Script {
 
     /**
-     * Options for the Timer script.
+     * Options for the FracToCart Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc Timer [options] &lt;filename&gt;
+     * ffxc FracToCart &lt;filename&gt;
      */
     public class Options {
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
-        /**
-         * -n or --iterations to set the number of iterations
-         */
-        @Option(shortName='n', defaultValue='5', description='Number of iterations.') int iterations
-        /**
-         * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
-         */
-        @Option(shortName='c', defaultValue='0', description='Number of SMP threads (the default of 0 specifies use of all CPU cores)') int threads
-        /**
-         * -g or --gradient to ignore computation of the atomic coordinates gradient
-         */
-        @Option(shortName='g', defaultValue='false', description='Ignore computation of the atomic coordinates gradient') boolean gradient
-        /**
-         * -q or --quiet to suppress printing of the energy for each iteration
-         */
-        @Option(shortName='q', defaultValue='false', description='Suppress printing of the energy for each iteration') boolean quiet
+        @Option(shortName='h', description='Print this help message.') boolean help
         /**
          * The final argument(s) should be one or more filenames.
          */
@@ -63,10 +47,10 @@ class Timer extends Script {
     def run() {
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc Timer [options] <filename>')
+        def cli = new CliBuilder(usage:' ffxc FracToCart <filename>', header:' Options:');
         def options = new Options()
         cli.parseFromInstance(options, args)
-        if (options.help == true) {
+        if (options.help) {
             return cli.usage()
         }
 
@@ -75,29 +59,13 @@ class Timer extends Script {
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)
-            //open(modelFilename)
         } else if (active == null) {
             return cli.usage()
         } else {
             modelFilename = active.getFile()
         }
 
-        // The number of iterations.
-        int nEvals = options.iterations
-
-        // Compute the atomic coordinate gradient.
-        boolean noGradient = options.gradient
-
-        // Print the energy for each iteraction.
-        boolean quiet = options.quiet
-
-        // Set the number of threads.
-        if (options.threads > 0) {
-            int nThreads = options.threads
-            System.setProperty("pj.nt", nThreads);
-        }
-
-        logger.info("\n Timing energy and gradient for " + modelFilename);
+        logger.info("\n Converting from fractional to Cartesian coordinates for " + modelFilename);
 
         // This is an interface specifying the closure-like methods.
         PotentialsFunctions functions
@@ -112,28 +80,33 @@ class Timer extends Script {
         }
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
         MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy();
 
-        long minTime = Long.MAX_VALUE;
-        double sumTime2 = 0.0;
-        int halfnEvals = (nEvals % 2 == 1) ? (nEvals/2) : (nEvals/2) - 1; // Halfway point
-        for (int i=0; i<nEvals; i++) {
-            long time = -System.nanoTime();
-            energy.energy(!noGradient, !quiet);
-            time += System.nanoTime();
-            minTime = time < minTime ? time : minTime;
-            if (i >= (int) (nEvals/2)) {
-                double time2 = time * 1.0E-9;
-                sumTime2 += (time2*time2);
+        // Loop over each system.
+        for (int i=0; i<assemblies.length; i++) {
+            system = systems[i];
+            Crystal crystal = system.getCrystal().getUnitCell();
+
+            List<Atom> atoms = system.getAtomList();
+            int nAtoms = atoms.size();
+            double[] frac = new double[3];
+            double[] cart = new double[3];
+
+            for (Atom atom in atoms) {
+                atom.getXYZ(frac);
+                crystal.toCartesianCoordinates(frac, cart);
+                atom.moveTo(cart);
             }
         }
-        ++halfnEvals;
-        double rmsTime = Math.sqrt(sumTime2/halfnEvals);
-        logger.info(String.format(" Minimum time: %14.5f (sec)", minTime * 1.0E-9));
-        logger.info(String.format(" RMS time (latter half): %14.5f (sec)", rmsTime));
-    }
 
+        String ext = FilenameUtils.getExtension(filename);
+        filename = FilenameUtils.removeExtension(filename);
+        if (ext.toUpperCase().contains("XYZ")) {
+            functions.saveAsXYZ(assemblies[0], new File(filename + ".xyz"))
+        } else {
+            functions.saveAsPDB(assemblies, new File(filename + ".pdb"))
+        }
+
+    }
 }
 
 /**
