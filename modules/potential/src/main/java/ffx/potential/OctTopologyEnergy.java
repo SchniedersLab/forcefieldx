@@ -436,13 +436,27 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
      * @param fromD Subtract shared from and copy -1 * delta-specific from.
      */
     private void subtractDoublesFrom(double[] to, double[] fromG, double[] fromD) {
+        subtractDoublesFrom(to, fromG, fromD, 1.0);
+    }
+    
+    /**
+     * Assigns common indices of to to be difference of fromG and fromD, assigns 
+     * unique elements to the non-unique indices thereof (multiplied by -1 for
+     * delta).
+     * 
+     * @param to Sum to
+     * @param fromG Add shared from and copy gamma-specific from.
+     * @param fromD Subtract shared from and copy -1 * delta-specific from.
+     * @param scalingFactor Scale values by this factor
+     */
+    private void subtractDoublesFrom(double[] to, double[] fromG, double[] fromD, double scalingFactor) {
         to = (to == null) ? new double[nVarTot] : to;
         Arrays.fill(to, 0.0);
         for (int i = 0; i < nVarG; i++) {
-            to[indexGToGlobal[i]] = fromG[i];
+            to[indexGToGlobal[i]] = fromG[i] * scalingFactor;
         }
         for (int i = 0; i < nVarD; i++) {
-            to[indexDToGlobal[i]] -= fromD[i];
+            to[indexDToGlobal[i]] -= (fromD[i] * scalingFactor);
         }
     }
     
@@ -646,7 +660,7 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
     public void getdEdXdL(double[] g) {
         quadTopGamma.getdEdXdL(tempG);
         quadTopDelta.getdEdXdL(tempD);
-        subtractDoublesFrom(g, tempG, tempD);
+        subtractDoublesFrom(g, tempG, tempD, 0.5);
     }
     
     public void setParallel(boolean parallel) {
