@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -40,10 +40,14 @@ package ffx.ui;
 import java.io.File;
 
 import ffx.algorithms.AlgorithmFunctions;
+import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * The UIUtils class implements all Function interfaces, enabling lower modules
@@ -71,12 +75,17 @@ public class UIUtils implements AlgorithmFunctions {
 
     @Override
     public void md(MolecularAssembly assembly, int nStep, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
         modelingShell.md(nStep, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+        switchBack(origSys);
     }
 
     @Override
     public Potential minimize(MolecularAssembly assembly, double eps) {
-        return modelingShell.minimize(eps);
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        Potential pot = modelingShell.minimize(eps);
+        switchBack(origSys);
+        return pot;
     }
 
     @Override
@@ -114,7 +123,9 @@ public class UIUtils implements AlgorithmFunctions {
 
     @Override
     public void close(MolecularAssembly assembly) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.closeWait();
+        switchBack(origSys);
     }
 
     @Override
@@ -129,22 +140,67 @@ public class UIUtils implements AlgorithmFunctions {
 
     @Override
     public void save(MolecularAssembly assembly, File file) {
-        mainPanel.saveAsXYZ(file);
+        saveAsXYZ(assembly, file);
     }
 
     @Override
     public void saveAsXYZ(MolecularAssembly assembly, File file) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.saveAsXYZ(file);
+        switchBack(origSys);
     }
 
     @Override
     public void saveAsP1(MolecularAssembly assembly, File file) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.saveAsP1(file);
+        switchBack(origSys);
     }
 
     @Override
     public void saveAsPDB(MolecularAssembly assembly, File file) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.saveAsPDB(file);
+        switchBack(origSys);
+    }
+    
+    /**
+     * Switches the hierarchy's active system to assembly if assembly is present
+     * inside the hierarchy; returns an Optional FFXSystem of the prior active
+     * system, or an empty Optional if no switch was made
+     * @param assembly To switch to
+     * @return Original system if switched, else empty Optional
+     */
+    private Optional<FFXSystem> switchTo(MolecularAssembly assembly) {
+        Optional<FFXSystem> origSystem;
+        if (!(assembly instanceof FFXSystem)) {
+            origSystem = Optional.empty();
+            return origSystem;
+        }
+        
+        Hierarchy hierarchy = mainPanel.getHierarchy();
+        FFXSystem activeSys = hierarchy.getActive();
+        FFXSystem assemblySys = (FFXSystem) assembly;
+        
+        for (FFXSystem sys : hierarchy.getSystems()) {
+            if (sys == assemblySys) {
+                origSystem = Optional.of(activeSys);
+                hierarchy.setActive(assemblySys);
+                return origSystem;
+            }
+        }
+        
+        origSystem = Optional.empty();
+        return origSystem;
+    }
+    
+    /**
+     * Switches the hierarchy's active system back to what it was.
+     * @param origSystem 
+     */
+    private void switchBack(Optional<FFXSystem> origSystem) {
+        Hierarchy hierarchy = mainPanel.getHierarchy();
+        origSystem.ifPresent(hierarchy::setActive);
     }
 
     @Override
@@ -154,22 +210,32 @@ public class UIUtils implements AlgorithmFunctions {
     
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.savePDBSymMates(file, "_symMate");
+        switchBack(origSys);
     }
     
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
+        Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.savePDBSymMates(file, suffix);
+        switchBack(origSys);
     }
 
     @Override
     public ForceFieldEnergy energy(MolecularAssembly assembly) {
-        return modelingShell.energy();
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        ForceFieldEnergy ffe = modelingShell.energy();
+        switchBack(origSys);
+        return ffe;
     }
 
     @Override
     public double returnEnergy(MolecularAssembly assembly) {
-        return modelingShell.returnEnergy();
+        Optional<FFXSystem> origSys = switchTo(assembly);
+        double e = modelingShell.returnEnergy();
+        switchBack(origSys);
+        return e;
     }
 
     @Override
@@ -194,5 +260,20 @@ public class UIUtils implements AlgorithmFunctions {
     @Override
     public SystemFilter getFilter() {
         return lastFilter;
+    }
+    
+    @Override
+    public MolecularAssembly getActiveAssembly() {
+        return mainPanel.getHierarchy().getActive();
+    }
+    
+    @Override
+    public AlgorithmListener getDefaultListener() {
+        return modelingShell;
+    }
+    
+    @Override
+    public List<String> getArguments() {
+        return modelingShell.getArgs();
     }
 }

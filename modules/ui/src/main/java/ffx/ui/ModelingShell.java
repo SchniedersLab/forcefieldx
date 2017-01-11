@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -91,6 +91,7 @@ import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.utilities.LoggerSevereError;
+import java.util.ArrayList;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the
@@ -135,6 +136,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     private long time;
     private long subTime;
     private static final double toSeconds = 1.0e-9;
+    private List<String> cliArgs;
 
     /**
      * <p>
@@ -303,6 +305,11 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      */
     public void setArgList(List<String> argList) {
         setVariable("args", argList);
+        cliArgs = new ArrayList(argList);
+    }
+    
+    List<String> getArgs() {
+        return new ArrayList<>(cliArgs);
     }
 
     /**
