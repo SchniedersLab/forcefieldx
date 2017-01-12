@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -35,35 +35,12 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
+package ffx.ui;
 
-// SAVE AS PDB
+/**
+ *
+ * @author mjschnie
+ */
+interface OpenFileHandler {
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
-
-// Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc saveAsPDB [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-def options = cli.parse(args);
-
-List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
-    return cli.usage();
 }
-
-// Read in command line.
-String filename = arguments.get(0);
-
-logger.info("\n Writing out PDB for " + filename);
-
-systems = open(filename);
-
-filename = FilenameUtils.removeExtension(filename) + ".pdb";
-saveAsPDB(systems, new File(filename));
-

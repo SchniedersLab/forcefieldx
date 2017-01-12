@@ -4,7 +4,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -91,21 +91,21 @@ cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.t1(longOpt:'test1', 'Test 1: Lambda derivatives by finite difference.');
 cli.t2(longOpt:'test2', 'Test 2: End state energies verification.');
 cli.t3(longOpt:'test3', 'Test 3: Switching function and path smoothness.');
+cli.i(longOpt:'iterations', args:1, argName:'n', 'Repeat Test1 several times to verify threaded replicability.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
-if (options.s) {
+if (options.h) {
     return cli.usage();
 } else if (arguments == null || arguments.size() != 1) {
+    cli.usage();
     logger.info("Requires exactly one filename argument.");
-    return cli.usage();
+    return;
 } else if (!options.rl) {
+    cli.usage();
     logger.info(" Specify titratable residues with --resList\n"
               + "     e.g. to titrate chainA res4 and chainB res6: -rl A4.B6");
-    return cli.usage();
-} else if (options.lbd && options.fl) {
-    logger.info("Contradictory: --lambda and --fixLambda.");
-    return cli.usage();
+    return;
 }
 
 // Read in command line file.
@@ -156,7 +156,9 @@ if (options.fv) {
     System.setProperty("ffe-printOverride", "true");
 }
 
-if (arguments.size() == 1) {
+if (arguments.size() == 0) {
+    filename = "examples/lys-lys.pdb";
+} else if (arguments.size() == 1) {
     logger.info("\n Testing lambda derivatives for " + filename);
 } else {
     // No dual-topology mode for ESV derivatives.
@@ -261,37 +263,42 @@ Check that the analytic lambda derivatives reported by van der Waals agree with
 the central finite difference.
 *******************************************************************************/
 if (test1) {
-    for (int i = 0; i < numESVs; i++) {
-        esvSystem.setLambda(i, 0.0);
-        double e0 = ffe.energyAndGradient(xyz,gradient);
-        esvSystem.setLambda(i, 1.0);
-        double e1 = ffe.energyAndGradient(xyz,gradient);
-        logger.info(String.format(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f\n", i, e1, e0, e1-e0));
-        ffe.setPrintOverride(true);
+    for (int iter = 0; iter < 10; iter++) {
+        for (int i = 0; i < numESVs; i++) {
+            ffe.setPrintOverride(false);
+            esvSystem.setLambda(i, 0.0);
+            double e0 = ffe.energyAndGradient(xyz,gradient);
+            esvSystem.setLambda(i, 1.0);
+            double e1 = ffe.energyAndGradient(xyz,gradient);
+            logger.info(String.format(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f\n", i, e1, e0, e1-e0));
+            if (iter == 0) {
+                ffe.setPrintOverride(true);
+            }
+            
+            esvSystem.setLambda(i, lambda - step);
+            double eLower = ffe.energyAndGradient(xyz,esvLambdaGradFD[1][i]);
 
-        esvSystem.setLambda(i, lambda - step);
-        double eLower = ffe.energyAndGradient(xyz,esvLambdaGradFD[1][i]);
+            esvSystem.setLambda(i, lambda + step);
+            double eUpper = ffe.energyAndGradient(xyz,esvLambdaGradFD[0][i]);
 
-        esvSystem.setLambda(i, lambda + step);
-        double eUpper = ffe.energyAndGradient(xyz,esvLambdaGradFD[0][i]);
+            esvSystem.setLambda(i, lambda);
+            double center = ffe.energyAndGradient(xyz,esvLambdaGrad[i]);
 
-        esvSystem.setLambda(i, lambda);
-        double center = ffe.energyAndGradient(xyz,esvLambdaGrad[i]);
+            double analytic = esvSystem.getdEdL(i, null, false, true);
+            double numeric = (eUpper - eLower) / (2 * step);
+            double error = Math.abs(numeric - analytic);
 
-        double analytic = esvSystem.getdEdL(i, null, false, true);
-        double numeric = (eUpper - eLower) / (2 * step);
-        double error = Math.abs(numeric - analytic);
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(format("  Finite-Difference Derivative Testing \n"));
-        sb.append(format(" ************************************** \n"));
-        sb.append(String.format(" ESV%d> Numeric FD @ upper,lower,width,dEdL: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", i, eUpper, eLower, width, numeric));
-        sb.append(String.format(" ESV%d> Analytic Derivative @ lambda %4.2f  >  dEdL: %+9.6g\n", i, lambda, analytic));
-        String passFail = (error < tolerance) ? "passed" : "failed";
-        sb.append(String.format(" ESV%d> dE/dL %6s:   %+10.6f\n", i, passFail, error));
-        sb.append(String.format(" ESV%d> Numeric:        %+10.6f\n", i, numeric));
-        sb.append(String.format(" ESV%d> Analytic:       %+10.6f\n", i, analytic));
-        logger.info(sb.toString());
+            StringBuilder sb = new StringBuilder();
+            sb.append(format("\n  ESV_%d Derivative Test \n", i));
+            sb.append(format(  " *********************** \n"));
+            sb.append(String.format(" Numeric FD @ upper,lower,width,dEdL: %+9.6g %+9.6g %4.2g  >  %+9.6g\n", eUpper, eLower, width, numeric));
+            sb.append(String.format(" Analytic Derivative @ lambda %4.2f  >  dEdL: %+9.6g\n", lambda, analytic));
+            String passFail = (error < tolerance) ? "passed" : "failed";
+            sb.append(String.format(" dE/dL %6s:   %+10.6f\n", passFail, error));
+            sb.append(String.format(" Numeric:        %+10.6f\n", numeric));
+            sb.append(String.format(" Analytic:       %+10.6f\n", analytic));
+            logger.info(sb.toString());
+        }
     }
 }
 
@@ -399,7 +406,7 @@ if (test3) {
         for (double lb = 0.0; lb <= 1.0; lb += 0.1) {
             esvSystem.setLambda(0, la);
             esvSystem.setLambda(1, lb);
-            ffe.energy(false, false);
+            ffe.energy(true, false);
             double evdw = ffe.getVanDerWaalsEnergy();
             double dvdwdla = esvSystem.getdVdwdL(0);
             double dvdwdlb = esvSystem.getdVdwdL(1);

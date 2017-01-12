@@ -531,9 +531,44 @@
                         </execution>
                     </executions>-->
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.8</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>groovydoc</id>
+                        <phase>site</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <taskdef name="groovydoc"
+                                         classname="org.codehaus.groovy.ant.Groovydoc"
+                                         classpathref="maven.compile.classpath"
+                                />
+                                <groovydoc destdir="${project.reporting.outputDirectory}/groovydoc"
+                                           sourcepath="${basedir}/modules/potential/src/main/groovy
+                                                       ${path.separator} ${basedir}/modules/algorithms/src/main/groovy"
+                                           use="true"
+                                           windowtitle="${project.name}"
+                                           doctitle="${project.name}"
+                                />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
                 <inherited>true</inherited>
@@ -771,28 +806,6 @@
                 <updatePolicy>daily</updatePolicy>
             </releases>
             <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <!-- repository>
-            <name>Groovy Plugin SNAPSHOTS</name>
-            <id>groovy.snapshots</id>
-            <url>https://oss.jfrog.org/oss-snapshot-local</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository -->
-        <repository>
-            <name>Maven Plugin SNAPSHOTS</name>
-            <id>maven.snapshots</id>
-            <url>http://repository.apache.org/snapshots</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
                 <enabled>true</enabled>
             </snapshots>
         </repository>
@@ -820,6 +833,28 @@
             <name>BioJava's Git based legacy maven repo</name>
             <url>https://github.com/biojava/maven-repo/raw/master/</url>
         </repository>
+        <repository>
+            <name>Maven Plugin SNAPSHOTS</name>
+            <id>maven.snapshots</id>
+            <url>http://repository.apache.org/snapshots</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <!-- repository>
+            <name>Codehaus SNAPSHOTS</name>
+            <id>codehaus.snapshots</id>
+            <url>https://oss.jfrog.org/artifactory/oss-snapshot-local</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository -->
     </repositories>
     <reporting>
         <plugins>
@@ -1016,7 +1051,7 @@
         <commons-lang3.version>3.5</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <commons-cli.version>1.3</commons-cli.version>
-        <groovy-all.version>2.3.11</groovy-all.version>
+        <groovy-all.version>2.5.0.1-SNAPSHOT</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.6.0</java3d.version>
         <jcuda.version>6.5.0</jcuda.version>
@@ -1040,4 +1075,13 @@
         <!-- module>modules/continuum</module -->
         <!-- module>modules/nucleic</module -->
     </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy-all.version}</version>
+            <type>jar</type>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
 </project>

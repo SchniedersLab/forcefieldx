@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -42,6 +42,7 @@ import java.io.File;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
+import java.util.List;
 
 /**
  * The PotentialsFunctions interface specifies utility methods such as opening
@@ -57,69 +58,225 @@ import ffx.potential.parsers.SystemFilter;
  */
 public interface PotentialsFunctions {
 
-    public boolean isLocal(); // Return true if the local implementation from Potentials.
-
-    public MolecularAssembly[] open(String file);
-
-    public MolecularAssembly[] open(String[] files);
+    /**
+     * True if using a local implementation (not in a user interfaces module).
+     *
+     * @return If a local implementation
+     */
+    abstract public boolean isLocal(); // Return true if the local implementation from Potentials.
     
+    /**
+     * Opens a file and returns all created MolecularAssembly objects.
+     *
+     * @param file Filename to open
+     * @return Array of MolecularAssembly.
+     */
+    abstract public MolecularAssembly[] open(String file);
+
+    /**
+     * Opens an array of files and returns the created MolecularAssembly
+     * objects.
+     *
+     * @param files Filenames to open.
+     * @return Array of MolecularAssembly.
+     */
+    abstract public MolecularAssembly[] open(String[] files);
+    
+    /**
+     * Opens a file and returns all created MolecularAssembly objects, setting
+     * any underlying Potential to use a certain number of threads. Default
+     * implementation simply ignores nThreads.
+     *
+     * @param file Filename to open
+     * @param nThreads Use non-default num threads
+     * @return Array of MolecularAssembly.
+     */
     default public MolecularAssembly[] open(String file, int nThreads) {
         return open(file);
     }
     
+    /**
+     * Opens an array of files and returns all created MolecularAssembly 
+     * objects, setting any underlying Potential to use a certain number of 
+     * threads. Default implementation simply ignores nThreads.
+     *
+     * @param file Filenames to open.
+     * @param nThreads Use non-default num threads
+     * @return Array of MolecularAssembly.
+     */
     default public MolecularAssembly[] open(String[] file, int nThreads) {
         return open(file);
     }
     
-    public MolecularAssembly[] convertDataStructure(Object data);
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     *
+     * @param data Structure to convert
+     * @return Array of MolecularAssembly
+     */
+    abstract public MolecularAssembly[] convertDataStructure(Object data);
     
-    public MolecularAssembly[] convertDataStructure(Object data, File file);
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     *
+     * @param data Structure to convert
+     * @param file Source file
+     * @return Array of MolecularAssembly
+     */
+    abstract public MolecularAssembly[] convertDataStructure(Object data, File file);
     
-    public MolecularAssembly[] convertDataStructure(Object data, String filename);
+    /**
+     * Converts a data structure (such as a Biojava Structure) into one or more
+     * MolecularAssembly objects.
+     *
+     * @param data Structure to convert
+     * @param filename Source file
+     * @return Array of MolecularAssembly
+     */
+    abstract public MolecularAssembly[] convertDataStructure(Object data, String filename);
+
+    /**
+     * Performs any necessary shutdown operations on a MolecularAssembly, 
+     * primarily shutting down Parallel Java threads and closing any other
+     * open resources.
+     *
+     * @param assembly Assembly to close.
+     */
+    abstract public void close(MolecularAssembly assembly);
+
+    /**
+     * Performs any necessary shutdown operations on an array of 
+     * MolecularAssembly, primarily shutting down Parallel Java threads and 
+     * closing any other open resources.
+     *
+     * @param assemblies Assemblies to close.
+     */
+    abstract public void closeAll(MolecularAssembly[] assemblies);
     
-    /*public MolecularAssembly[] convertDataStructure(Object[] data);
+    /**
+     * Logs time elapsed since last call.
+     *
+     * @return Time.
+     */
+    abstract public double time();
+
+    /**
+     * Saves the current state of a MolecularAssembly to an XYZ file.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file Destination .xyz
+     */
+    abstract public void save(MolecularAssembly assembly, File file);
+
+    /**
+     * Saves the current state of a MolecularAssembly to an XYZ file.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file Destination .xyz
+     */
+    abstract public void saveAsXYZ(MolecularAssembly assembly, File file);
+
+    /**
+     * Saves the current state of a MolecularAssembly to an XYZ file as a P1
+     * crystal.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file Destination .xyz
+     */
+    abstract public void saveAsP1(MolecularAssembly assembly, File file);
+
+    /**
+     * Saves the current state of a MolecularAssembly to a PDB file.
+     *
+     * @param assembly MolecularAssembly to save
+     * @param file Destination .pdb
+     */
+    abstract public void saveAsPDB(MolecularAssembly assembly, File file);
     
-    public MolecularAssembly[] convertDataStructure(Object[] data, File file);*/
-
-    public void close(MolecularAssembly assembly);
-
-    public void closeAll(MolecularAssembly[] assemblies);
-
-    public double time();
-
-    public void save(MolecularAssembly assembly, File file);
-
-    public void saveAsXYZ(MolecularAssembly assembly, File file);
-
-    public void saveAsP1(MolecularAssembly assembly, File file);
-
-    public void saveAsPDB(MolecularAssembly assembly, File file);
-
-    public void saveAsPDB(MolecularAssembly[] assemblies, File file);
+    /**
+     * Saves the current state of an array of MolecularAssemblys to a PDB file.
+     *
+     * @param assemblies MolecularAssembly array to save
+     * @param file Destination .pdb
+     */
+    abstract public void saveAsPDB(MolecularAssembly[] assemblies, File file);
     
-    // public void saveXYZSymMates(MolecularAssembly assembly, File file);
-    
-    public void savePDBSymMates(MolecularAssembly assembly, File file);
+    /**
+     * Saves the symmetry mates of a MolecularAssembly to PDB files.
+     * 
+     * @param assembly To save
+     * @param file Destination file
+     */
+    abstract public void savePDBSymMates(MolecularAssembly assembly, File file);
     // Will use default suffix of _symMate
     
-    public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
+    /**
+     * Saves the symmetry mates of a MolecularAssembly to PDB files.
+     * 
+     * @param assembly To save
+     * @param file Destination file
+     * @param suffix Custom file suffix
+     */
+    abstract public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
 
-    public ForceFieldEnergy energy(MolecularAssembly assembly);
+    /**
+     * Evaluates the energy of a MolecularAssembly and returns its
+     * ForceFieldEnergy object.
+     *
+     * @param assembly To evaluate
+     * @return assembly's ForceFieldEnergy.
+     */
+    abstract public ForceFieldEnergy energy(MolecularAssembly assembly);
 
-    public double returnEnergy(MolecularAssembly assembly);
+    /**
+     * Returns the energy of a MolecularAssembly in kcal/mol (as a double) and
+     * prints the energy evaluation
+     *
+     * @param assembly To evaluate energy of
+     * @return Potential energy (kcal/mol)
+     */
+    abstract public double returnEnergy(MolecularAssembly assembly);
     
     /**
      * Returns the last SystemFilter created by this (may be null).
-     * @return 
+     * @return Last SystemFilter
      */
-    public SystemFilter getFilter();
+    abstract public SystemFilter getFilter();
+    
+    /**
+     * Returns either the active assembly from the overlying UI, or the "active"
+     * molecular assembly from the last used SystemFilter.
+     * @return A MolecularAssembly or null
+     */
+    default public MolecularAssembly getActiveAssembly() {
+        SystemFilter filt = getFilter();
+        if (filt != null) {
+            return filt.getActiveMolecularSystem();
+        } else {
+            return null;
+        }
+    }
+    
+    /**
+     * If available, returns CLI arguments; default implementation does not have
+     * access to CLI arguments, and throws UnsupportedOperationException.
+     * @return CLI arguments
+     * @throws UnsupportedOperationException If unimplemented
+     */
+    default public List<String> getArguments() throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+    
+    //default public String[] 
 
     // Subsequent methods were when I was duplicating MainPanel's open() methods,
     // instead of its openWait() methods.
-    /*public FileOpener open(String file);
-     public FileOpener open(String[] files);
-     public FileOpener open(File file, String commandDescription);
-     public FileOpener open(File[] files, String commandDescription);*/
+    /*abstract public FileOpener open(String file);
+     abstract public FileOpener open(String[] files);
+     abstract public FileOpener open(File file, String commandDescription);
+     abstract public FileOpener open(File[] files, String commandDescription);*/
     
     /**
      * Versions a file, attempting to find an unused filename in the set filename,

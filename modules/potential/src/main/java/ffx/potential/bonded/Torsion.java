@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -374,7 +374,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 sinprev = sinn;
             }
             if (esvTerm) {
-                addToEsvDeriv(units * energy * dedesvChain * lambda, Torsion.class);
+                esvDerivLocal = units * energy * dedesvChain * lambda;
             }
             energy = units * energy * esvLambda * lambda;
             dEdL = units * energy * esvLambda;

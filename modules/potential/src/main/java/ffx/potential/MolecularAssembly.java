@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -178,7 +178,7 @@ public class MolecularAssembly extends MSGroup {
     public MolecularAssembly(String name, MSNode Polymers) {
         super(name, Polymers);
     }
-    
+
     public MolecularAssembly(String name, MSNode Polymers, CompositeConfiguration properties) {
         this(name, Polymers);
         this.properties = properties;
@@ -193,7 +193,7 @@ public class MolecularAssembly extends MSGroup {
     public void setForceField(ForceField forceField) {
         this.forceField = forceField;
     }
-    
+
     public void setPropertiesFromForceField() {
         this.properties = forceField.getProperties();
     }
@@ -803,6 +803,11 @@ public class MolecularAssembly extends MSGroup {
         ArrayList<Atom> atoms = getAtomList();
         Atom[] atomArray = atoms.toArray(new Atom[atoms.size()]);
         Arrays.sort(atomArray);
+
+        for (int i=0; i<atoms.size(); i++) {
+            atomArray[i].setXYZIndex(i+1);
+        }
+
         return atomArray;
     }
 
@@ -1015,7 +1020,7 @@ public class MolecularAssembly extends MSGroup {
     public TransformGroup getOriginToRot() {
         return originToRot;
     }
-    
+
     public CompositeConfiguration getProperties() {
         return properties == null ? forceField.getProperties() : properties;
     }
@@ -1830,4 +1835,5 @@ public class MolecularAssembly extends MSGroup {
             r.logSideChainCOM();
         }
     }
+
 }

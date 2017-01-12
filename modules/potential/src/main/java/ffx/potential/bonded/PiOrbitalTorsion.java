@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -266,7 +266,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
             double phi2 = 1.0 - cosine2;
             energy = units * piTorsionType.forceConstant * phi2 * esvLambda;
             if (esvTerm) {
-                addToEsvDeriv(units * piTorsionType.forceConstant * phi2 * dedesvChain, PiOrbitalTorsion.class);
+                setEsvDeriv(units * piTorsionType.forceConstant * phi2 * dedesvChain);
             }
             dEdL = energy;
             energy = lambda * energy;

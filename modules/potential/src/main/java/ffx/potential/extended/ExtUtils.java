@@ -1,3 +1,40 @@
+/**
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
+ */
 package ffx.potential.extended;
 
 import java.io.File;
@@ -22,6 +59,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.MSNode;
+import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -247,6 +285,50 @@ public final class ExtUtils {
             }
         }
         logger.info(sb.toString());
+    }
+    
+    /**
+     * Element-wise sum over a list of 1D double arrays. 
+     * This implementation benchmarks faster than the equivalent Java8 stream() API.
+     */
+    private static double[] eleSum1DArrays(List<double[]> terms, int numESVs) {
+        double[] termSum = new double[terms.size()];
+        for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
+            double[] currentTerm = terms.get(iTerm);
+            if (currentTerm.length != numESVs) {
+                logger.warning(format("iTerm %d length: %d, numESVs: %d", iTerm, terms.get(iTerm).length, numESVs));
+                throw new IndexOutOfBoundsException();
+            }
+            for (int iESV = 0; iESV < numESVs; iESV++) {
+                termSum[iESV] += currentTerm[iESV];
+            }
+        }
+        return termSum;
+    }
+    
+    /**
+     * Element-wise sum over a list of 2D double arrays.
+     */
+    private static double[][] eleSum2DArrays(List<double[][]> terms, int numESVs, int nVars) {
+        if (terms == null || terms.isEmpty()) {
+            throw new NullPointerException("Summing an empty or null terms list.");
+        }
+        double[][] termSum = new double[numESVs][nVars];
+        for (int iTerm = 0; iTerm < terms.size(); iTerm++) {
+            double[][] currentTerm = terms.get(iTerm);
+            if (currentTerm.length != numESVs) {
+                throw new IndexOutOfBoundsException();
+            }
+            for (int iESV = 0; iESV < numESVs; iESV++) {
+                if (currentTerm[iESV].length != nVars) {
+                    throw new IndexOutOfBoundsException();
+                }
+                for (int iAtom = 0; iAtom < nVars; iAtom++) {
+                    termSum[iESV][iAtom] += currentTerm[iESV][iAtom];
+                }
+            }
+        }
+        return termSum;
     }
     
     public static class SB {

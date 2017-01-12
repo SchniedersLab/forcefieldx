@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -57,7 +57,7 @@ import static ffx.potential.parameters.UreyBradleyType.units;
  * @since 1.0
  *
  */
-public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
+public class UreyBradley extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(UreyBradley.class.getName());
 
@@ -183,7 +183,7 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
             gradZ.add(threadID, i2, g2[2]);
         }
         if (esvTerm) {
-            addToEsvDeriv(energy * dedesvChain / esvLambda, UreyBradley.class);
+            setEsvDeriv(energy * dedesvChain / esvLambda);
         }
         return energy;
     }
@@ -206,7 +206,10 @@ public class UreyBradley extends BondedTerm implements Comparable<UreyBradley> {
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(UreyBradley ub) {
-        return angle.compareTo(ub.angle);
+    public int compareTo(BondedTerm ub) {
+        if (!ub.getClass().isInstance(this)) {
+            return super.compareTo(ub);
+        }
+        return angle.compareTo(((UreyBradley) ub).angle);
     }
 }

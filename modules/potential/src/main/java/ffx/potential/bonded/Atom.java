@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -889,7 +889,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean applyLambda() {
         return applyState;
     }
-    
+
     /**
      * <p>
      * setApplyLambda</p>
@@ -899,27 +899,27 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public void setApplyLambda(boolean applyState) {
         this.applyState = applyState;
     }
-    
+
     /**
      * The (single) ExtendedVariable of which this atom is a part (or null otherwise).
      */
-    public ExtendedVariable getESV() {
+    public ExtendedVariable getEsv() {
         return esv;
     }
-    
+
     public void setESV(ExtendedVariable set) {
         if (esv != null && esv != set) {
             logger.severe(format("Mutiple ESVs for one atom is not currently supported.\n"
-                               + "    offender: %s %s -> %s", 
+                               + "    offender: %s %s -> %s",
                     this.toString(), esv.toString(), set.toString()));
         }
         esv = set;
     }
-    
+
     public void setEsvState(int state) {
         esvState = state;
     }
-    
+
     public int getEsvState() {
         return esvState;
     }
@@ -956,7 +956,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public String getIdent() {
         return atomType.environment;
     }
-    
+
     /**
      * Gets the atom Key
      *
@@ -1066,7 +1066,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
             return resName;
         }
         Residue r = (Residue) getMSNode(Residue.class);
-        return r.getName();
+        if (r != null) {
+            return r.getName();
+        }
+        return null;
     }
 
     /**
@@ -2362,7 +2365,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             xyzLambdaGradient[2] = z;
         }
     }
-    
+
     public void setLamedhXYZGradient(double x, double y, double z) {
         if (active) {
             xyzLamedhGradient[0] = x;
@@ -2402,7 +2405,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             xyzLambdaGradient[2] += z;
         }
     }
-    
+
     public void addToLamedhXYZGradient(double x, double y, double z) {
         if (active) {
             xyzLamedhGradient[0] += x;
@@ -2440,7 +2443,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         x[1] = xyzLambdaGradient[1];
         x[2] = xyzLambdaGradient[2];
     }
-    
+
     public double[] getLamedhXYZGradient(double x[]) {
         if (x == null) {
             x = new double[3];
@@ -2520,11 +2523,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.multipoleType = multipoleType;
         this.multipoleReferenceSites = multipoleReferenceSites;
     }
-    
+
     public void setMoleculeNumber(int molecule) {
         this.moleculeNumber = molecule;
     }
-    
+
     public int getMoleculeNumber() {
         return moleculeNumber;
     }
@@ -2669,7 +2672,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public void setXYZIndex(int index) {
         xyzIndex = index;
     }
-    
+
     public void applyPersistentIndex() {
         setXYZIndex(persistentIndex);
     }

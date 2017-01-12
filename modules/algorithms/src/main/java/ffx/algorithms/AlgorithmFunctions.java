@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -55,9 +55,17 @@ import ffx.potential.utils.PotentialsFunctions;
  */
 public interface AlgorithmFunctions extends PotentialsFunctions {
 
-    public void md(MolecularAssembly assembly, int nStep, double timeStep,
+    abstract public void md(MolecularAssembly assembly, int nStep, double timeStep,
             double printInterval, double saveInterval, double temperature,
             boolean initVelocities, File dyn);
 
-    public Potential minimize(MolecularAssembly assembly, double eps);
+    abstract public Potential minimize(MolecularAssembly assembly, double eps);
+    
+    /**
+     * Returns a default Listener if relevant.
+     * @return An AlgorithmListener or null.
+     */
+    default public AlgorithmListener getDefaultListener() {
+        return null;
+    }
 }

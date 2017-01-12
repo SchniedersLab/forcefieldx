@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -37,15 +37,19 @@
  */
 package ffx.ui;
 
-import java.lang.reflect.Method;
-import java.util.logging.Level;
+import java.io.File;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 
+import com.apple.eawt.AboutHandler;
+import com.apple.eawt.OpenFilesHandler;
+import com.apple.eawt.QuitHandler;
+import com.apple.eawt.PreferencesHandler;
+import com.apple.eawt.AppEvent;
 import com.apple.eawt.Application;
-import com.apple.eawt.ApplicationAdapter;
-import com.apple.eawt.ApplicationEvent;
+import com.apple.eawt.QuitResponse;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -57,136 +61,28 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @author Michael J. Schnieders
  *
  */
-@SuppressWarnings("deprecation")
-public class OSXAdapter extends ApplicationAdapter {
+public class OSXAdapter implements AboutHandler, OpenFilesHandler,
+        QuitHandler, PreferencesHandler {
 
     private final MainPanel mainPanel;
-    private static OSXAdapter adapter;
-    private static Application application;
+    private final Application application;
     private static final Logger logger = Logger.getLogger(OSXAdapter.class.getName());
 
-    /**
-     * <p>
-     * registerMacOSXApplication</p>
-     *
-     * @param m a {@link ffx.ui.MainPanel} object.
-     */
-    public static void registerMacOSXApplication(MainPanel m) {
-        if (application == null) {
-            application = Application.getApplication();
-        }
-        if (adapter == null) {
-            adapter = new OSXAdapter(m);
-        }
-        application.addApplicationListener(adapter);
+    public OSXAdapter(MainPanel m) {
+        mainPanel = m;
+        application = Application.getApplication();
+        application.setOpenFileHandler(this);
+        application.setQuitHandler(this);
+
+        application.setPreferencesHandler(this);
         application.setEnabledPreferencesMenu(true);
+
+        application.setAboutHandler(this);
         application.setEnabledAboutMenu(true);
+
         ImageIcon icon = new ImageIcon(m.getClass().getClassLoader().getResource("ffx/ui/icons/icon64.png"));
         application.setDockIconImage(icon.getImage());
-    }
-
-    /**
-     * <p>
-     * macOSXRegistration</p>
-     *
-     * @param m a {@link ffx.ui.MainPanel} object.
-     */
-    @SuppressWarnings("unchecked")
-    public static void macOSXRegistration(MainPanel m) {
-        try {
-            String name = OSXAdapter.class.getName();
-            Class adapterClass = Class.forName(name);
-            Class[] defArgs = {MainPanel.class};
-            Method registerMethod = adapterClass.getDeclaredMethod(
-                    "registerMacOSXApplication", defArgs);
-            if (registerMethod != null) {
-                Object[] args = {m};
-                registerMethod.invoke(adapterClass, args);
-            }
-        } catch (NoClassDefFoundError e) {
-            logger.log(Level.WARNING, "\nThis version of Mac OS X does not support "
-                    + "the Apple EAWT.  Application Menu handling "
-                    + "has been disabled\n", e);
-        } catch (ClassNotFoundException e) {
-            logger.log(Level.WARNING, "\nThis version of Mac OS X does not support "
-                    + "the Apple EAWT.  Application Menu handling "
-                    + "has been disabled\n", e);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "\nException while loading the OSXAdapter", e);
-        }
-    }
-
-    /**
-     * Set Mac OS X Systems Properties to promote native integration. How soon
-     * do these need to be set to be recognized?
-     */
-    public static void setOSXProperties() {
-
-        System.setProperty("apple.mrj.application.apple.menu.about.name", "Force Field X");
-        System.setProperty("apple.laf.useScreenMenuBar", "true");
-        System.setProperty("apple.awt.showGrowBox", "true");
-        System.setProperty("apple.mrj.application.growbox.intrudes", "false");
-        System.setProperty("apple.awt.brushMetalLook", "true");
-        System.setProperty("apple.mrj.application.live-resize", "true");
-        System.setProperty("apple.macos.smallTabs", "true");
-
-        // -Xdock:name="Force Field X"
-    }
-
-    private OSXAdapter(MainPanel m) {
-        mainPanel = m;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void handleAbout(ApplicationEvent ae) {
-        if (mainPanel != null) {
-            ae.setHandled(true);
-            mainPanel.about();
-        } else {
-            ae.setHandled(false);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void handleOpenFile(ApplicationEvent ae) {
-        if (mainPanel != null) {
-            mainPanel.open(ae.getFilename());
-            ae.setHandled(true);
-        } else {
-            ae.setHandled(false);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void handlePreferences(ApplicationEvent ae) {
-        if (mainPanel != null) {
-            mainPanel.getGraphics3D().preferences();
-            ae.setHandled(true);
-        } else {
-            ae.setHandled(false);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void handleQuit(ApplicationEvent ae) {
-        if (mainPanel != null) {
-            ae.setHandled(false);
-            mainPanel.exit();
-        } else {
-            System.exit(-1);
-        }
+        application.setDockIconBadge("FFX");
     }
 
     /**
@@ -195,5 +91,67 @@ public class OSXAdapter extends ApplicationAdapter {
     @Override
     public String toString() {
         return new ToStringBuilder(this).append(application).toString();
+    }
+
+    @Override
+    public void handleAbout(AppEvent.AboutEvent ae) {
+        if (mainPanel != null) {
+            mainPanel.about();
+        }
+    }
+
+    @Override
+    public void openFiles(AppEvent.OpenFilesEvent ofe) {
+        List<File> files = ofe.getFiles();
+        if (files == null) {
+            return;
+        }
+
+        String filenames[] = new String[files.size()];
+        int index = 0;
+        for (File file : files) {
+            filenames[index++] = file.getAbsolutePath();
+        }
+
+        if (mainPanel != null) {
+            mainPanel.open(filenames);
+        }
+    }
+
+    @Override
+    public void handleQuitRequestWith(AppEvent.QuitEvent qe, QuitResponse qr) {
+        if (mainPanel != null) {
+            mainPanel.exit();
+        } else {
+            System.exit(-1);
+        }
+    }
+
+    @Override
+    public void handlePreferences(AppEvent.PreferencesEvent pe) {
+        if (mainPanel != null) {
+            mainPanel.getGraphics3D().preferences();
+        }
+    }
+
+    /**
+     * Set Mac OS X Systems Properties to promote native integration. How soon
+     * do these need to be set to be recognized?
+     */
+    public static void setOSXProperties() {
+        System.setProperty("apple.awt.brushMetalLook", "true");
+        System.setProperty("apple.awt.graphics.EnableQ2DX", "true");
+        System.setProperty("apple.awt.showGrowBox", "true");
+        System.setProperty("apple.awt.textantialiasing", "true");
+
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
+
+        System.setProperty("apple.macos.smallTabs", "true");
+
+        System.setProperty("apple.mrj.application.apple.menu.about.name", "Force Field X");
+        System.setProperty("apple.mrj.application.growbox.intrudes", "false");
+        System.setProperty("apple.mrj.application.live-resize", "true");
+
+        // -Xdock:name="Force Field X"
     }
 }

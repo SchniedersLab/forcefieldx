@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -78,7 +78,7 @@ import ffx.ui.OSXAdapter;
  * @since 1.0
  *
  */
-public class Main extends JFrame {
+public final class Main extends JFrame {
 
     private static final Logger logger = Logger.getLogger(Main.class.getName());
     private static Level level;
@@ -261,11 +261,14 @@ public class Main extends JFrame {
         if (SystemUtils.IS_OS_MAC_OSX) {
             OSXAdapter.setOSXProperties();
         }
+
         /**
          * Set some Swing Constants.
          */
+
         UIManager.put("swing.boldMetal", Boolean.FALSE);
         setDefaultLookAndFeelDecorated(false);
+
         /**
          * Initialize the Main frame and Force Field X MainPanel.
          */
@@ -400,7 +403,7 @@ public class Main extends JFrame {
         // Mac OS X specific features that help Force Field X look native
         // on Macs. This needs to be done after the MainPanel is created.
         if (SystemUtils.IS_OS_MAC_OSX) {
-            OSXAdapter.macOSXRegistration(mainPanel);
+            osxAdapter = new OSXAdapter(mainPanel);
         }
 
         // Finally, open the supplied file if necessary.
@@ -470,6 +473,8 @@ public class Main extends JFrame {
      * This is the main application wrapper.
      */
     public static MainPanel mainPanel;
+    public static OSXAdapter osxAdapter;
+
     /**
      * Rank of this process for a multi-process Parallel Java FFX job.
      */

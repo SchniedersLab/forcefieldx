@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -744,7 +744,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      *
      * @param exitStatus How FFX has closed.
      */
-    void exit (ExitStatus exitStatus) {
+    void exit(ExitStatus exitStatus) {
         // Package-private out of conservatism; may be safe to make public.
         savePrefs();
         System.exit(exitStatus.getExitCode());
@@ -861,14 +861,11 @@ public final class MainPanel extends JPanel implements ActionListener,
      * @return a {@link ffx.ui.ModelingShell} object.
      */
     public ModelingShell getModelingShell() {
-        //if (frame != null) {
         if (modelingShell == null) {
             modelingShell = new ModelingShell(this);
+            modelingShell.run();
         }
         return modelingShell;
-        /*
-         * } else { return null; }
-         */
     }
 
     /**
@@ -900,10 +897,11 @@ public final class MainPanel extends JPanel implements ActionListener,
         system.setTrajectory(trajectory);
         return trajectory;
     }
-    
+
     /**
      * Return the active SystemFilter.
-     * @return 
+     *
+     * @return
      */
     public SystemFilter getFilter() {
         return activeFilter;
@@ -939,15 +937,16 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     public static final String version = "1.0.0-BETA";
     /**
-     * Constant <code>date="February 2016"</code>
+     * Constant <code>date="January 2017"</code>
      */
-    public static final String date = "February 2016";
-    
+    public static final String date = "January 2017";
+
     private static final String commitVersion;
     private static final String commitDate;
     private static final String commitSCM; // Presently using Git.
+
     /**
-     * Attempts to initialize version, date, and SCM versioning from 
+     * Attempts to initialize version, date, and SCM versioning from
      * target/ffx-mvn.properties. Fallback is to use defaults from above.
      */
     static {
@@ -956,7 +955,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         Month month = now.getMonth();
         int year = now.getYear();
         String newDate = String.format("%s %d", month.toString(), year);*/
-        
+
         String basedir = System.getProperty("basedir");
         File mvnProps = new File(basedir + "/target/ffx-mvn.properties");
         String cVers = version + "-unknown";
@@ -966,17 +965,16 @@ public final class MainPanel extends JPanel implements ActionListener,
             try (BufferedReader br = new BufferedReader(new FileReader(mvnProps))) {
                 String ffxVers = "1.0.0-BETA";
                 String ffxvProp = "ffx.version=";
-                
+
                 /*String gitTag = "unknown";
                 String gtProp = "git.tag=";*/
-                
                 String commitsCount = "";
                 String ccProp = "git.commitsCount=";
-                
+
                 String timeProp = "timestamp=";
-                
+
                 String scmProp = "git.revision=";
-                
+
                 String line = br.readLine();
                 while (line != null) {
                     line = line.trim();
@@ -984,7 +982,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                         ffxVers = line.replaceFirst(ffxvProp, "");
                     }/* else if (line.startsWith(gtProp)) {
                         gitTag = line.replaceFirst(gtProp, "");
-                    } */else if (line.startsWith(ccProp)) {
+                    } */ else if (line.startsWith(ccProp)) {
                         commitsCount = line.replaceFirst(ccProp, "");
                     } else if (line.startsWith(timeProp)) {
                         String timeStr = line.replaceFirst(timeProp, "");
@@ -1005,14 +1003,14 @@ public final class MainPanel extends JPanel implements ActionListener,
                     }
                     line = br.readLine();
                 }
-                
+
                 StringBuilder sb = new StringBuilder(ffxVers).append("-");
                 /*if (gitTag.isEmpty()) {
                     sb.append("unknown");
                 } else {
                     sb.append(gitTag);
                 }*/
-                
+
                 if (!commitsCount.isEmpty()) {
                     sb.append(commitsCount);
                 } else {
@@ -1042,8 +1040,8 @@ public final class MainPanel extends JPanel implements ActionListener,
     public static final String aboutString
             = "        Version " + commitVersion + "  " + commitDate + " \n"
             + commitSCM // Will contain its own spacing/newline, or be empty.
-            + "\n        Copyright (c)  Michael J. Schnieders    2001-2016 \n"
-            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2016 \n"
+            + "\n        Copyright (c)  Michael J. Schnieders    2001-2017 \n"
+            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2017 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"
@@ -1421,7 +1419,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (extension.equalsIgnoreCase("ffx") || extension.equalsIgnoreCase("groovy")) {
             ModelingShell shell = getModelingShell();
             shell.runFFXScript(file);
-            boolean shutDown = Boolean.parseBoolean(System.getProperty("ffx.shutDown","true"));
+            boolean shutDown = Boolean.parseBoolean(System.getProperty("ffx.shutDown", "true"));
             if (java.awt.GraphicsEnvironment.isHeadless() && shutDown) {
                 exit();
             } else {
@@ -1475,13 +1473,14 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * Attempts to load from the supplied data structure
+     *
      * @param data Data structure to load from
      * @param file Source file
      * @param commandDescription Description of the command that created this
      * file.
      * @return A thread-based UIDataConverter
      */
-    private UIDataConverter convertInit (Object data, File file, String commandDescription) {
+    private UIDataConverter convertInit(Object data, File file, String commandDescription) {
         if (data == null) {
             return null;
         }
@@ -1710,7 +1709,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             return null;
         }
     }
-    
+
     /**
      * <p>
      * openWait</p>
@@ -1728,8 +1727,9 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * Converts a non-Force Field X data structure into an array of FFXSystem[].
-     * Presently does not yet have support for array- or list-based data structures,
-     * only singular objects.
+     * Presently does not yet have support for array- or list-based data
+     * structures, only singular objects.
+     *
      * @param data Outside data structure
      * @param file Source file
      * @return An array of FFXSystem
@@ -1738,7 +1738,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (file == null) {
             try {
                 file = PotentialsDataConverter.getDefaultFile(data);
-            } catch (FileNotFoundException|IllegalArgumentException ex) {
+            } catch (FileNotFoundException | IllegalArgumentException ex) {
                 logger.warning(String.format(" Exception in finding file for data structure: %s", ex.toString()));
                 return null;
             }
@@ -2071,8 +2071,8 @@ public final class MainPanel extends JPanel implements ActionListener,
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             }
             SwingUtilities.updateComponentTreeUI(SwingUtilities.getRoot(this));
-        } catch (ClassNotFoundException | InstantiationException |
-                IllegalAccessException | UnsupportedLookAndFeelException e) {
+        } catch (ClassNotFoundException | InstantiationException
+                | IllegalAccessException | UnsupportedLookAndFeelException e) {
             logger.log(Level.WARNING, "Can''t set look and feel: {0}", e);
         }
     }
@@ -2654,9 +2654,9 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * Enumerates the exit status codes FFX may terminate with; 0 will indicate
-     * normal execution, 1-99 will indicate fatal errors, 100-199 non-fatal errors,
-     * and 200-254 other exit statuses. Presently, only 0, 1, 3, 100, and 200 have
-     * been defined for FFX.
+     * normal execution, 1-99 will indicate fatal errors, 100-199 non-fatal
+     * errors, and 200-254 other exit statuses. Presently, only 0, 1, 3, 100,
+     * and 200 have been defined for FFX.
      *
      * When adding to this enumeration, avoid the ranges 2, 64-78, 126-128, 130,
      * 137, and 255 or greater (see http://tldp.org/LDP/abs/html/exitcodes.html
@@ -2664,18 +2664,18 @@ public final class MainPanel extends JPanel implements ActionListener,
      */
     enum ExitStatus {
         // Normal termination.
-        NORMAL (0),
+        NORMAL(0),
         // Indicates some uncaught Exception, Error, or Throwable. As of now,
         // this enum value is unused, and we rely on the JVM automatically exiting
         // with a system code of 1 under these circumstances.
-        EXCEPTION (1),
+        EXCEPTION(1),
         // A call to logger.severe() resulted in program termination.
-        SEVERE (3),
+        SEVERE(3),
         // Algorithm did not complete properly (a minimization had a bad
         // interpolation, etc).
-        ALGORITHM_FAILURE (100),
+        ALGORITHM_FAILURE(100),
         // Some issue not listed here.
-        OTHER (200);
+        OTHER(200);
 
         // This gets sent to System.exit().
         private final int exitCode;
@@ -2686,6 +2686,7 @@ public final class MainPanel extends JPanel implements ActionListener,
 
         /**
          * Gets the exit code associated with this exit status.
+         *
          * @return JVM exit code.
          */
         int getExitCode() {

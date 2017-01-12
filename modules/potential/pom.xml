@@ -35,17 +35,6 @@
             </roles>
             <timezone>-7</timezone>
         </developer>
-        <developer>
-            <id>pren</id>
-            <name>Pengyu Ren</name>
-            <email>pren@mail.utexas.edu</email>
-            <organization>Associate Professor, U. of Texas, Austin</organization>
-            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
-            <roles>
-                <role>Chief Force Field Architect</role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
     </developers>
     <build>
         <resources>
@@ -145,6 +134,12 @@
             <groupId>org.biojava</groupId>
             <artifactId>biojava3-structure</artifactId>
             <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>${groovy-all.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>

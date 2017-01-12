@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -76,7 +76,7 @@ public class MultiResidue extends Residue {
      * List of residues under consideration.
      */
     ArrayList<Residue> consideredResidues;
-    
+
     private final List<MultiResidue> linkedMultiRes = new ArrayList<>(4);
 
     /**
@@ -262,7 +262,7 @@ public class MultiResidue extends Residue {
     public void setFinalized(boolean t) {
         activeResidue.setFinalized(t);
     }
-    
+
     @Override
     public void setOutOfPlaneBends(MSNode t) {
         activeResidue.setOutOfPlaneBends(t);
@@ -324,10 +324,10 @@ public class MultiResidue extends Residue {
         if (rotamers != null) {
             return rotamers;
         }
-        
+
         List<Rotamer[]> usual = new ArrayList<>();
         int nRots = 0;
-        
+
         for (Residue residue : consideredResidues) {
             Rotamer[] rotamers = library.getRotamers(residue);
             if (rotamers != null && rotamers.length > 0) {
@@ -420,7 +420,7 @@ public class MultiResidue extends Residue {
     public void revertState(ResidueState state) {
         revertState(state, true);
     }
-    
+
     private void revertState(ResidueState state, boolean isFirst) {
         Residue res = state.getStateResidue();
         if (!setActiveResidue(res)) {
@@ -502,7 +502,7 @@ public class MultiResidue extends Residue {
             H2.setResName(resName);
             toResidue.addMSNode(H1);
             toResidue.addMSNode(H2);
-            
+
             if (H3 != null) {
                 H3.removeFromParent();
                 H3.clearGeometry();
@@ -516,7 +516,7 @@ public class MultiResidue extends Residue {
             H.setResName(resName);
             toResidue.addMSNode(H);
         }
-        
+
         if (nextRes == null) {
             Atom OXT = (Atom) fromResidue.getAtomNode("OXT");
             if (OXT != null) {
@@ -538,7 +538,7 @@ public class MultiResidue extends Residue {
             }
         }
     }
-    
+
     /**
      * Update Atom references to local geometry.
      *
@@ -619,7 +619,7 @@ public class MultiResidue extends Residue {
             }
         }
     }
-    
+
     public void addResiduesByName(List<String> resNames) {
         boolean resAdded = false;
         Residue currentRes = activeResidue;
@@ -632,7 +632,7 @@ public class MultiResidue extends Residue {
                 resAdded = true;
             } catch (IllegalArgumentException e) {
                 logger.warning(String.format(" Could not parse %s as an amino "
-                        + "acid; not adding to multi-residue %s", resName, 
+                        + "acid; not adding to multi-residue %s", resName,
                         this.toString()));
             }
         }
@@ -641,11 +641,11 @@ public class MultiResidue extends Residue {
             forceFieldEnergy.reInit();
         }
     }
-    
+
     public void addLinkedMultiRes(MultiResidue mres) {
         linkedMultiRes.add(mres);
     }
-    
+
     public void addResidue(Residue newResidue) {
         addResidue(newResidue, true);
     }
@@ -673,6 +673,7 @@ public class MultiResidue extends Residue {
          * Move atoms from the active Residue to the new Residue.
          */
         moveBackBoneAtoms(activeResidue, newResidue);
+
         /**
          * Pass references of the active Residues' joints to the new Residue.
          */
@@ -680,12 +681,14 @@ public class MultiResidue extends Residue {
         for (Joint joint : joints) {
             newResidue.addJoint(joint);
         }
+
         /**
          * Make the new Residue active.
          */
         activeResidue.removeFromParent();
         activeResidue = newResidue;
         add(activeResidue);
+
         /**
          * Build side-chain atoms and assign atom types for the new Residue.
          */
@@ -705,8 +708,9 @@ public class MultiResidue extends Residue {
             logger.severe(exception.toString());
         }
         newResidue.finalize(true, forceField);
+
         updateGeometry(newResidue, prevResidue, nextResidue, prev2Residue, next2Residue);
-        
+
         // If you are the residue pinged by the API, update linked MultiResidues.
         if (isFirst) {
             for (MultiResidue mres : linkedMultiRes) {
@@ -731,7 +735,7 @@ public class MultiResidue extends Residue {
         }
         return ret;
     }
-    
+
     /**
      * Returns a copy of this MultiResidue's consideredResidues array.
      *
@@ -744,10 +748,10 @@ public class MultiResidue extends Residue {
         }
         return consideredCopy;
     }
-    
+
     /**
      * Returns the AminoAcid3 of the active residue.
-     * @return 
+     * @return
      */
     @Override
     public AminoAcid3 getAminoAcid3() {
@@ -790,7 +794,7 @@ public class MultiResidue extends Residue {
         }
         return setActiveResidue(consideredResidues.get(i));
     }
-    
+
     public boolean setActiveResidue(Residue residue) {
         return setActiveResidue(residue, true);
     }
@@ -842,12 +846,12 @@ public class MultiResidue extends Residue {
         return true;
     }
     /**
-     * Method may be redundant with requestSetActiveResidue. Will not function 
+     * Method may be redundant with requestSetActiveResidue. Will not function
      * correctly if there is more than one residue of type UNK (unknown).
      *
      * @param aa
      * @return True if successful
-     */  
+     */
     public boolean setActiveResidue(AminoAcid3 aa) {
         return setActiveResidue(aa, true);
     }

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -61,8 +61,7 @@ import static ffx.numerics.VectorMath.sum;
  *
  * @since 1.0
  */
-public class ImproperTorsion extends BondedTerm implements
-        Comparable<ImproperTorsion> {
+public class ImproperTorsion extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(ImproperTorsion.class.getName());
     /**
@@ -355,7 +354,7 @@ public class ImproperTorsion extends BondedTerm implements
             energy = prefactor * (v2 * phi2);
             double dedphi = prefactor * (v2 * dphi2);
             if (esvTerm) {
-                addToEsvDeriv(desvPrefactor * (v2 * phi2) * dedesvChain, ImproperTorsion.class);
+                setEsvDeriv(desvPrefactor * (v2 * phi2) * dedesvChain);
             }
 
             if (gradient) {
@@ -434,12 +433,15 @@ public class ImproperTorsion extends BondedTerm implements
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(ImproperTorsion o) {
+    public int compareTo(BondedTerm o) {
         if (o == null) {
             throw new NullPointerException();
         }
         if (o == this) {
             return 0;
+        }
+        if (!o.getClass().isInstance(this)) {
+            return super.compareTo(o);
         }
         int this1 = atoms[1].xyzIndex;
         int a1 = o.atoms[1].xyzIndex;

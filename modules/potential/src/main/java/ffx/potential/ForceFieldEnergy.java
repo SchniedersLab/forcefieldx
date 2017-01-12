@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -247,12 +247,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private ExtendedSystem esvSystem = null;
     private final boolean pmeQI = prop("pme-qi", false);
     private final boolean decomposeEsvEnergy = prop("esv-decompose", false);
-    private double[] esvBondedDerivs;
-    /**
-     * Derivative w.r.t. esvLambda of each extended variable.
-     */
-    private SharedDouble[] sharedEsvDerivs;
-    private int numESVs;
     /**
      * *************************************
      */
@@ -746,19 +740,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
         }
         reInit();
-        updateEsvLambda();
-    }
-    
-    public void updateEsvLambda() {
-        if (!esvTerm) {
-            return;
-        }
-        numESVs = esvSystem.n();
-        sharedEsvDerivs = new SharedDouble[numESVs];
-        for (int i = 0; i < numESVs; i++) {
-            sharedEsvDerivs[i] = new SharedDouble(0.0);
-        }
-        esvBondedDerivs = new double[numESVs];
     }
     
     public void detachExtendedSystem() {
@@ -773,13 +754,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             }
         }
         reInit();
-    }
-    
-    public double getEsvBondedDeriv(int esvID) {
-        if (!esvTerm) {
-            logger.warning("Called ForceFieldEnergy.getEsvBondedDeriv() while !esvTerm.");
-        }
-        return esvBondedDerivs[esvID];
     }
 
     public void setResolution(Resolution resolution) {
@@ -1913,8 +1887,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     a.getXYZGradient(grad);
                     sb.append("   Grad:  " + grad[0] + ", " + grad[1] + ", " + grad[2] + "\n");
                     sb.append("   Mass:  " + a.getMass() + "\n");
-                    if (atoms[i].getESV() != null) {
-                        sb.append(atoms[i].getESV().toString());
+                    if (atoms[i].getEsv() != null) {
+                        sb.append(atoms[i].getEsv().toString());
                     }
                 } catch (Exception e) {}
                 logger.info(sb.toString());
@@ -2641,7 +2615,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          * Z-component of the dU/dX/dL coordinate gradient.
          */
         private final AtomicDoubleArray lambdaGradZ;
-        private int numESVs;
 
         // Shared RMSD variables.
         private final SharedDouble sharedBondRMSD;
@@ -2700,13 +2673,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             // Allocate shared restraint variables.
             sharedRestraintBondEnergy = new SharedDouble();
-            if (esvTerm) {
-                numESVs = esvSystem.n();
-                sharedEsvDerivs = new SharedDouble[numESVs];
-                for (int i = 0; i < numESVs; i++) {
-                    sharedEsvDerivs[i] = new SharedDouble(0.0);
-                }
-            }
 
             nThreads = parallelTeam.getThreadCount();
 
@@ -2811,10 +2777,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             sharedRestraintBondEnergy.set(0.0);
             
             if (esvTerm) {
-                esvSystem.resetBondedDerivs();
-                for (int i = 0; i < numESVs; i++) {
-                    sharedEsvDerivs[i].set(0.0);
-                }
+                esvSystem.updateBondedEsvLambda();
             }
 
             // Assure capacity of the gradient arrays.
@@ -2854,10 +2817,57 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             // Load shared restraint energy values.
             restraintBondEnergy = sharedRestraintBondEnergy.get();
-            // Load the Extended Variable derivatives.
+            
             if (esvTerm) {
-                for (int i = 0; i < numESVs; i++) {
-                    esvBondedDerivs[i] = sharedEsvDerivs[i].get();
+                if (angleTerm) {
+                    for (BondedTerm term : angles) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (bondTerm) {
+                    for (BondedTerm term : bonds) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (improperTorsionTerm) {
+                    for (BondedTerm term : improperTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (outOfPlaneBendTerm) {
+                    for (BondedTerm term : outOfPlaneBends) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (piOrbitalTorsionTerm) {
+                    for (BondedTerm term : piOrbitalTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (stretchBendTerm) {
+                    for (BondedTerm term : stretchBends) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (torsionTerm) {
+                    for (BondedTerm term : torsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (torsionTorsionTerm) {
+                    for (BondedTerm term : torsionTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (ureyBradleyTerm) {
+                    for (BondedTerm term : ureyBradleys) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (restraintBondTerm) {
+                    for (BondedTerm term : restraintBonds) {
+                        term.reduceEsvDeriv();
+                    }
                 }
             }
         }
@@ -3119,19 +3129,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                             localRMSD += value * value;
                         }
                     }
-//                    if (esvTerm && term.getEsvID() >= 0) {
-//                        try {
-//                            logf(" dBonded esvid,crnt,add: %d %.4g %.4g", 
-//                                    term.getEsvID(), sharedEsvDerivs[term.getEsvID()].get(), term.getdEdEsv());
-//                            sharedEsvDerivs[term.getEsvID()].addAndGet(term.getdEdEsv());
-//                        } catch (Exception ex) {
-//                            logf(" thread:  %d", this.getThreadIndex());
-//                            logf(" slength: %d", sharedEsvDerivs.length);
-//                            logf(" current: %g", sharedEsvDerivs[term.getEsvID()].get());
-//                            logf(" adding:  %g", term.getdEdEsv());
-//                            throw ex;
-//                        }
-//                    }
                 }
             }
         }

@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
  *
  * This file is part of Force Field X.
  *
@@ -68,8 +68,7 @@ import static ffx.potential.parameters.OutOfPlaneBendType.units;
  *
  * @since 1.0
  */
-public class OutOfPlaneBend extends BondedTerm implements
-        Comparable<OutOfPlaneBend> {
+public class OutOfPlaneBend extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(OutOfPlaneBend.class.getName());
     /**
@@ -291,7 +290,7 @@ public class OutOfPlaneBend extends BondedTerm implements
             }
         }
         if (esvTerm) {
-            addToEsvDeriv(energy * dedesvChain / esvLambda, OutOfPlaneBend.class);
+            setEsvDeriv(energy * dedesvChain / esvLambda);
         }
         return energy;
     }
@@ -318,12 +317,15 @@ public class OutOfPlaneBend extends BondedTerm implements
      * {@inheritDoc}
      */
     @Override
-    public int compareTo(OutOfPlaneBend o) {
+    public int compareTo(BondedTerm o) {
         if (o == null) {
             throw new NullPointerException();
         }
         if (o == this) {
             return 0;
+        }
+        if (!o.getClass().isInstance(this)) {
+            return super.compareTo(o);
         }
         int this1 = atoms[1].xyzIndex;
         int a1 = o.atoms[1].xyzIndex;
