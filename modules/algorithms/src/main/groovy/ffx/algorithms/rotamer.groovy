@@ -506,7 +506,7 @@ if (algorithm != 5) {
         logger.info("\n Evaluating rotamers for all residues beginning at " + allStartResID);
     }
 } else {
-    if (!options.x) {
+    if (options.x) {
         logger.info("\n Evaluating rotamers for boxes " + (boxStart + 1) + " to " + (boxEnd + 1));
     } else {
         logger.info("\n Evaluating rotamers for all boxes beginning at " + (boxStart + 1));
@@ -584,7 +584,7 @@ if (useOrigCoordsRotamer) {
 }
 
 if (algorithm != 5) {
-    if (!options.x) {
+    if (options.x) {
         ArrayList<Residue> residueList = new ArrayList<Residue>();
         Polymer[] polymers = active.getChains();
         int nPolymers = polymers.length;
