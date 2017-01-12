@@ -146,7 +146,7 @@ public class VanDerWaals implements MaskingInterface,
     private boolean lambdaTerm;
     private boolean esvTerm;
     private boolean isSoft[];
-    
+
     /**
      * There are 2 softCore arrays of length nAtoms.
      *
@@ -191,7 +191,7 @@ public class VanDerWaals implements MaskingInterface,
     private double dsc1dL = 0.0;
     private double dsc2dL = 0.0;
     private double d2sc1dL2 = 0.0;
-    private double d2sc2dL2 = 0.0;    
+    private double d2sc2dL2 = 0.0;
     /**
      * Generalized extended system variables.
      */
@@ -535,7 +535,7 @@ public class VanDerWaals implements MaskingInterface,
         if (esvTerm) {
             updateEsvLambda();
         }
-        
+
         lambdaFactors = new LambdaFactors[threadCount];
         for (int i = 0; i < threadCount; i++) {
             if (esvTerm) {
@@ -931,7 +931,7 @@ public class VanDerWaals implements MaskingInterface,
         } else {
             d2sc2dL2 = 0.0;
         }
-        
+
         /**
          * If LambdaFactors are in OSRW mode, update them now.
          */
@@ -940,7 +940,7 @@ public class VanDerWaals implements MaskingInterface,
                 lf.setFactors();
             }
         }
-        
+
         initSoftCore(false);
 
         // Redo the long range correction.
@@ -955,10 +955,10 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * VdW version should get only the ExtH version of ExtendedSystem lists.
-     * This is equivalent to the mola atom array on loading the fully-protonated system.
-     * Note: we assume that heavy-atom radii do not differ between protonation states;  
-     *      this is violated only by {Cys-SG, Asp-OD[12], and Glu-OD[12]}
-     *      (plus the bugged/missing Am'13_Tyr-OH).
+     * This is equivalent to the mola atom array on loading the fully-protonated
+     * system. Note: we assume that heavy-atom radii do not differ between
+     * protonation states; this is violated only by {Cys-SG, Asp-OD[12], and
+     * Glu-OD[12]} (plus the bugged/missing Am'13_Tyr-OH).
      */
     public void updateEsvLambda() {
         if (!esvTerm) {
@@ -992,33 +992,39 @@ public class VanDerWaals implements MaskingInterface,
         initSoftCore(true);
         // Call to long-range correction here, when it's trustworthy.
     }
-    
+
     /**
-     * The trick:
-     *  The setFactors(i,k) method is called every time through the inner VdW
-     *      loop, avoiding an "if (esv)" branch statement.
-     *  A plain OSRW run will have an object of type LambdaFactorsOSRW instead, 
-     *      which contains an empty version of setFactors(i,k). The OSRW version 
-     *      sets new factors only on lambda updates, in setLambda().
+     * The trick: The setFactors(i,k) method is called every time through the
+     * inner VdW loop, avoiding an "if (esv)" branch statement. A plain OSRW run
+     * will have an object of type LambdaFactorsOSRW instead, which contains an
+     * empty version of setFactors(i,k). The OSRW version sets new factors only
+     * on lambda updates, in setLambda().
      */
     public class LambdaFactors {
+
         protected double sc1 = 0.0;
         protected double dsc1dL = 0.0;
         protected double d2sc1dL2 = 0.0;
         protected double sc2 = 1.0;
         protected double dsc2dL = 0.0;
         protected double d2sc2dL2 = 0.0;
+
         /**
          * Overriden by the OSRW version which updates only during setLambda().
          */
-        public void setFactors() {}
+        public void setFactors() {
+        }
+
         /**
-         * Overriden by the ESV version which updates with every softcore interaction.
+         * Overriden by the ESV version which updates with every softcore
+         * interaction.
          */
-        public void setFactors(int i, int k) {}
+        public void setFactors(int i, int k) {
+        }
     }
-    
+
     public class LambdaFactorsOSRW extends LambdaFactors {
+
         @Override
         public void setFactors() {
             sc1 = VanDerWaals.this.sc1;
@@ -1031,6 +1037,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     public class LambdaFactorsESV extends LambdaFactors {
+
         @Override
         public void setFactors(int i, int k) {
             final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
@@ -1042,20 +1049,6 @@ public class VanDerWaals implements MaskingInterface,
             d2sc2dL2 = 0.0;
         }
     }
-    
-    public final BiFunction<Integer,Integer,Double[]> LambdaFactorsOSRW = (i,k) -> {
-        return new Double[]{sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2};
-    };
-    public final BiFunction<Integer,Integer,Double[]> LambdaFactorsESV = (i,k) -> {
-        final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
-        final double sc1 = vdwLambdaAlpha * (1.0 - esvLambdaProduct) * (1.0 - esvLambdaProduct);
-        final double dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - esvLambdaProduct);
-        final double d2sc1dL2 = 2.0 * vdwLambdaAlpha;
-        final double sc2 = esvLambdaProduct;
-        final double dsc2dL = 1.0;
-        final double d2sc2dL2 = 0.0;
-        return new Double[]{sc1,dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2};
-    };
 
     private void initSoftCore(boolean rebuild) {
         /**
@@ -1090,7 +1083,7 @@ public class VanDerWaals implements MaskingInterface,
         esvTerm = true;
         esvSystem = system;
         numESVs = esvSystem.n();
-        
+
         // Launch shared lambda/esvLambda initializers if missed (ie. !lambdaTerm) in constructor.
         vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
         vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
@@ -1616,7 +1609,7 @@ public class VanDerWaals implements MaskingInterface,
             public VanDerWaalsLoop() {
                 super();
                 dx_local = new double[3];
-                transOp = new double[3][3];                     
+                transOp = new double[3][3];
             }
 
             public int getCount() {
@@ -1740,8 +1733,9 @@ public class VanDerWaals implements MaskingInterface,
                                     || esvi || esvk;
                             /**
                              * The setFactors(i,k) method is empty unless ESVs
-                             * are present. If OSRW lambda present, lambdaFactors 
-                             * will already have been updated during setLambda().
+                             * are present. If OSRW lambda present,
+                             * lambdaFactors will already have been updated
+                             * during setLambda().
                              */
                             if (soft) {
                                 lambdaFactorsLocal.setFactors(i, k);
@@ -1887,18 +1881,18 @@ public class VanDerWaals implements MaskingInterface,
                                         final double dlpdli = esvLambda[k] * lambda;
                                         final double dEsvI = dedlp * dlpdli;
                                         // d[S*E] = S'E + E'S
-                                        final double dSwEsvI =
-                                                esvSwitchDeriv[i]*esvLambdaSwitch[k]*eik_preswitch
-                                                + dEsvI*esvLambdaSwitch[i]*esvLambdaSwitch[k];
+                                        final double dSwEsvI
+                                                = esvSwitchDeriv[i] * esvLambdaSwitch[k] * eik_preswitch
+                                                + dEsvI * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                         localEsvDerivI += dSwEsvI;
                                     }
                                     if (esvk) {
                                         final double dlpdlk = esvLambda[i] * lambda;
                                         final double dEsvK = dedlp * dlpdlk;
                                         // d[S*E] = S'E + E'S
-                                        final double dSwEsvK =
-                                                esvLambdaSwitch[i]*esvSwitchDeriv[k]*eik_preswitch
-                                                + dEsvK*esvLambdaSwitch[i]*esvLambdaSwitch[k];
+                                        final double dSwEsvK
+                                                = esvLambdaSwitch[i] * esvSwitchDeriv[k] * eik_preswitch
+                                                + dEsvK * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                         esvDeriv[idxk].addAndGet(dSwEsvK);
                                     }
                                 }
@@ -2152,18 +2146,18 @@ public class VanDerWaals implements MaskingInterface,
                                             final double dlpdli = esvLambda[k] * lambda;
                                             final double dEsvI = dedlp * dlpdli;
                                             // d[S*E] = S'E + E'S
-                                            final double dSwEsvI =
-                                                    esvSwitchDeriv[i]*esvLambdaSwitch[k]*eik_preswitch
-                                                    + dEsvI*esvLambdaSwitch[i]*esvLambdaSwitch[k];
+                                            final double dSwEsvI
+                                                    = esvSwitchDeriv[i] * esvLambdaSwitch[k] * eik_preswitch
+                                                    + dEsvI * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                             localEsvDerivI += dSwEsvI;
                                         }
                                         if (esvk) {
                                             final double dlpdlk = esvLambda[i] * lambda;
                                             final double dEsvK = dedlp * dlpdlk;
                                             // d[S*E] = S'E + E'S
-                                            final double dSwEsvK =
-                                                    esvLambdaSwitch[i]*esvSwitchDeriv[k]*eik_preswitch
-                                                    + dEsvK*esvLambdaSwitch[i]*esvLambdaSwitch[k];
+                                            final double dSwEsvK
+                                                    = esvLambdaSwitch[i] * esvSwitchDeriv[k] * eik_preswitch
+                                                    + dEsvK * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                             esvDeriv[idxk].addAndGet(dSwEsvK);
                                         }
                                     }
