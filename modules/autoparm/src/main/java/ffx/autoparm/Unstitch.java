@@ -103,7 +103,6 @@ public class Unstitch {
 
     //reads in full molecule CIF
     public void readCIF() throws FileNotFoundException, IOException {
-System.out.println("READ CIF");
 
         try {
             BufferedReader cread = new BufferedReader(new FileReader(ciffile));
@@ -113,19 +112,16 @@ System.out.println("READ CIF");
                 //test to see if the line read in contains unique atom name info.
                 //if there is a space at indice 3 and it's the correct length
                 if (line.startsWith(" ", 3) && (line.length() > 50) && line.length() < 100) {
-System.out.println("...");
                     String str4 = Character.toString(line.charAt(4));
                     String str5 = Character.toString(line.charAt(5));
                     String str6 = Character.toString(line.charAt(6));
-                    String str7 = Character.toString(line.charAt(7));
-System.out.println(str4 + " " + str5 + " " + str6 + " " + str7);                
+                    String str7 = Character.toString(line.charAt(7));                
                     String start = str4.concat(str5);
                     String atomName = start.concat(str6);
 
                     if (line.charAt(7) != ' ') {
                         atomName = atomName.concat(str7);
                     }
-System.out.println("Atom Name: " + atomName);
                     //System.out.println("Atom Name: " + atomName);
                     uniqueAtomNames.add(atomName);
                 }
@@ -140,7 +136,6 @@ System.out.println("Atom Name: " + atomName);
 
     //reads in full molecule SDF
     public void readSDF() throws FileNotFoundException, IOException {
-System.out.println("READ SDF");
         File file = new File(sdffile);
         BufferedReader read = null;
 
@@ -154,14 +149,12 @@ System.out.println("READ SDF");
         IteratingSDFReader reader = null;
 
         try {
-System.out.println("We're in the iterating reader ...");
             reader = new IteratingSDFReader(read, SilentChemObjectBuilder.getInstance());
             while (reader.hasNext()) {
 
                 IAtomContainer molecule = reader.next();
 
-                try {
-System.out.println("We're another level in ...");                    
+                try {                    
                     AtomContainerManipulator.percieveAtomTypesAndConfigureAtoms(molecule);
                     CDKHydrogenAdder.getInstance(SilentChemObjectBuilder.getInstance()).addImplicitHydrogens(molecule);
 
@@ -175,8 +168,6 @@ System.out.println("We're another level in ...");
                     //test to see if setID worked
                     for (int j = 0; j < molecule.getAtomCount(); j++) {
                         IAtom test2 = molecule.getAtom(j);
-System.out.println("atomType: " + test2.getAtomTypeName());
-System.out.println("test2ID: " + test2.getID());
                         // System.out.println("atomType: " + test2.getAtomTypeName());
                         // System.out.println("test2ID: " + test2.getID());
                     }
@@ -211,7 +202,6 @@ System.out.println("test2ID: " + test2.getID());
     //fragments full molecule according to exhaustive fragmentation algorithm
     //exhaustive fragments used in further functions
     protected void fragment(IAtomContainer molecule) throws Exception {
-System.out.println("Fragmenting ...");
         //ExhaustiveFragmenter implimentation
         ExhaustiveFragmenter exh = new ExhaustiveFragmenter();
         exh.setMinimumFragmentSize(MINSIZE);
@@ -226,7 +216,6 @@ System.out.println("Fragmenting ...");
         //checking for "eaten" fragments
         //remove hydrogens for more accurate substructure checking
         for (String removedHydrogensStructureArray1 : removedHydrogensStructureArray) {
-System.out.println("Convert each array entry (SMILES) to IAtomContainer ...");
             //convert each array entry (SMILES) to IAtomContainer
             IAtomContainer molec = null;
             try {
@@ -248,10 +237,8 @@ System.out.println("Convert each array entry (SMILES) to IAtomContainer ...");
         for (int t = 0; t < removedHydrogensStructureList.size(); t++) {
             IAtomContainer query = removedHydrogensStructureList.get(t);
             Pattern pattern = VentoFoggia.findSubstructure(query);
-System.out.println("Query");
             for (int u = 0; u < removedHydrogensStructureList.size(); u++) {
                 IAtomContainer tester = removedHydrogensStructureList.get(u);
-System.out.println("Tester");
                 //is "Query" is a substructure of "Tester"
                 //makes sure query and tester aren't the same molecule and that
                 //     query is smaller than tester (substructures have to be
@@ -292,8 +279,7 @@ System.out.println("Tester");
         String full = smi;
         //System.out.println("fullSmiles: " + full + "\n");
 
-        for (int i = 0; i < finalArray.length; i++) {
-System.out.println("iAtomContainerTo3DModel ...");            
+        for (int i = 0; i < finalArray.length; i++) {            
             String content = finalArray[i];
             IAtomContainer container = finalIAtomContainerArray[i];
             //IAtomContainer container = finalArray
@@ -358,7 +344,6 @@ System.out.println("iAtomContainerTo3DModel ...");
         //30 atoms or less
         //if (mol.getAtomCount() < SIZE) {
         if (fragContainer.getAtomCount() < SIZE) {
-System.out.println("Building 3D model!");
             //Builds 3D model of fragment molecule
             System.out.println("mb3d for fragment" + number);
             ModelBuilder3D mb3d;
@@ -412,7 +397,6 @@ System.out.println("Building 3D model!");
         File sdfFromSMILES = new File(fragName);
 
         //write SDF
-System.out.println("Writing SDF ...");
         try {
             fileWriter = new FileWriter(sdfFromSMILES.getAbsoluteFile());
             bufferedWriter = new BufferedWriter(fileWriter);
@@ -435,7 +419,6 @@ System.out.println("Writing SDF ...");
         }
 
         //write text file
-System.out.println("Writing text file ...");
         PrintWriter printWriter = null;
         File textFile = new File(textName);
         try {
