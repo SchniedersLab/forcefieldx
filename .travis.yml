@@ -1,0 +1,7 @@
+language: java
+before_install:
+  - unset GEM_PATH
+
+jdk:
+  - oraclejdk8
+
