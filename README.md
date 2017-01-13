@@ -27,3 +27,4 @@ On Windows:
 The ffx/bin directory should be appended to your $PATH environment variable. The "energy" command refers to an internal version of the energy.ffx script that can be found in the ffx/scripts directory. To embed your own script within FFX, place it into the scripts directory and rebuild FFX.
 
 
+[![Build Status](https://travis-ci.org/mjschnie/ffx.svg?branch=master)](https://travis-ci.org/mjschnie/ffx/)
