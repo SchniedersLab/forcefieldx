@@ -1,10 +1,16 @@
 language: java
+sudo: false
+
 before_install:
   - unset GEM_PATH
+
+os:
+  - linux
+  - osx
 
 jdk:
   - oraclejdk8
 
-script: mvn test -B -DskipTests=false -Dffx.ci=true
+script: mvn test -B -DskipTests=false -Dpj.nt=2
 
 

@@ -15,12 +15,12 @@
         <maven>3.2.0</maven>
     </prerequisites>
     <issueManagement>
-        <system>Jira</system>
-        <url>http://kenai.com/jira/browse/ffx?pid=11160</url>
+        <system>GitHub Issues</system>
+        <url>https://github.com/mjschnie/ffx/issues</url>
     </issueManagement>
     <ciManagement>
-        <system>Jenkins</system>
-        <url>http://ffx.biochem.uiowa.edu:8080/</url>
+        <system>Travis CI</system>
+        <url>https://travis-ci.org/mjschnie/ffx</url>
         <notifiers>
             <notifier>
                 <type>mail</type>
@@ -28,6 +28,9 @@
                 <sendOnError>true</sendOnError>
                 <sendOnSuccess>false</sendOnSuccess>
                 <sendOnWarning>false</sendOnWarning>
+                <configuration>
+                    <address>michael-schnieders@uiowa.edu</address>
+                </configuration>
             </notifier>
         </notifiers>
     </ciManagement>
@@ -71,8 +74,8 @@
             <id>fenn</id>
             <name>Timothy D. Fenn</name>
             <email>tim.fenn@gmail.com</email>
-            <organization>Scientist at Merck</organization>
-            <organizationUrl>http://www.merck.com</organizationUrl>
+            <organization>Scientist at Boehringer Ingelheim</organization>
+            <organizationUrl>https://www.boehringer-ingelheim.com</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
             </roles>
@@ -306,9 +309,9 @@
         </license>
     </licenses>
     <scm>
-        <url>http://kenai.com/projects/ffx/sources/public-source/show</url>
-        <connection>scm:git://kenai.com/ffx~public-source</connection>
-        <developerConnection>scm:git:ssh://${kenai.user.name}@git.kenai.com/ffx~public-source</developerConnection>
+        <url>http://github.com/mjschnie/ffx</url>
+        <connection>scm:git://github.com/mjschnie/ffx.git</connection>
+        <developerConnection>scm:git:git@github.com:mjschnie/ffx.git</developerConnection>
     </scm>
     <organization>
         <!-- This is used to generate the Copyright on the website.
