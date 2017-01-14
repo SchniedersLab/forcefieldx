@@ -1,16 +1,29 @@
+# Force Field X configuration for Travis-CI
+
 language: java
+
 sudo: false
 
-before_install:
-  - unset GEM_PATH
+matrix:
+  include:
+    - os: linux
+      jdk: oraclejdk8
+      before_install:
+      - ./build-tools/src/main/resources/bash/travis-download-maven.sh
+      - export M2_HOME=$HOME/.binaries/apache-maven-3.3.9
+      - export PATH=$M2_HOME/bin:$PATH
+      - mvn -Xmx32m --version
+    - os: osx
+      osx_image: xcode8
+      before_install:
+      - ./build-tools/src/main/resources/bash/travis-download-maven.sh
+      - export M2_HOME=$HOME/.binaries/apache-maven-3.3.9
+      - export PATH=$M2_HOME/bin:$PATH
+      - mvn -Xmx32m --version
 
-os:
-  - linux
-  - osx
-
-jdk:
-  - oraclejdk8
+cache:
+  directories:
+  - $HOME/.m2
+  - $HOME/.binaries
 
 script: mvn test -B -DskipTests=false -Dpj.nt=2
-
-
