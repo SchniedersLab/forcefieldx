@@ -269,8 +269,7 @@ public class FFXClassLoader extends URLClassLoader {
     public FFXClassLoader(final ClassLoader parent) {
         super(new URL[0], parent);
         protectionDomain
-                = FFXClassLoader.class
-                .getProtectionDomain();
+                = FFXClassLoader.class.getProtectionDomain();
     }
 
     /**
