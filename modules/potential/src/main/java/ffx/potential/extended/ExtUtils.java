@@ -46,6 +46,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -333,36 +334,28 @@ public final class ExtUtils {
     
     public static class SB {
         private static StringBuilder sb = new StringBuilder();
-        private static int queued = 0;
+        public static Level level = Level.INFO;
         public static void clear() {
             sb = new StringBuilder();
-            queued = 0;
         }
         public static void logf(String msg, Object... args) {
             sb.append(format(msg, args));
-            queued++;
         }
         public static void logfn(String msg, Object... args) {
             sb.append(format(msg, args)).append("\n");
-            queued++;
+        }
+        public static void nlogf(String msg, Object... args) {
+            sb.append("\n").append(format(msg, args));
         }
         public static void nl() {
             sb.append("\n");
         }
         public static void print() {
-            cid.getCallingLogger().info(sb.toString());
+            cid.getCallingLogger().log(level, sb.toString());
             clear();
         }
         public static void printIf(boolean print) {
             if (print) {
-                print();
-            } else {
-                clear();
-            }
-        }
-        public static void printIfPresent(String header, Object... args) {
-            if (queued > 0) {
-                cid.getCallingLogger().info(format(header, args));
                 print();
             } else {
                 clear();
