@@ -92,7 +92,8 @@ smiles = wi.readSDF();
 String sdffile = arguments.get(0);
 String ciffile = arguments.get(1);
 String smi = new String();
-
+int max;
+int min;
 logger.info(String.format("\nExhaustively Fragmenting %s\n", sdffile));
 
 //System.out.println("\nFinished Wizard, calling Fragmenter\n");
@@ -100,7 +101,7 @@ logger.info(String.format("\nExhaustively Fragmenting %s\n", sdffile));
 fr.readCIF();
 fr.readSDF();*/
 
-Unstitch us = new Unstitch(sdffile, ciffile, smiles);
+Unstitch us = new Unstitch(sdffile, ciffile, smiles, max, min);
 us.readCIF();
 us.readSDF();
 

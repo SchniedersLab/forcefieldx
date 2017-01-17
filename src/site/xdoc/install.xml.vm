@@ -18,7 +18,7 @@
                     <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank"> Oracle</a>.
                     Detailed Java installation instructions for
                     <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html">
-                        Linux, Mac OS X, and  Microsoft Windows are available.</a>
+                        Linux, Mac OS, and  Microsoft Windows are available.</a>
                 </p>
             </subsection>
             <td></td>
@@ -79,12 +79,12 @@
                     </tr>
                 </table>
             </subsection>
-            <subsection name="Mac OS X">
+            <subsection name="Mac OS">
                 <table>
                     <tr>
                         <td bgcolor="white">
                             <p align="left">
-                                <img src="images/mac.jpg" alt="MAC OS X" />
+                                <img src="images/mac.png" alt="MAC OS" />
                             </p>
                         </td>
                         <td>

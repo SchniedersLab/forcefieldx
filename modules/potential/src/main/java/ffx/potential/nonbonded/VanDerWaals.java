@@ -1003,25 +1003,37 @@ public class VanDerWaals implements MaskingInterface,
      *  A plain OSRW run will have an object of type LambdaFactorsOSRW instead,
      *      which contains an empty version of setFactors(i,k). The OSRW version
      *      sets new factors only on lambda updates, in setLambda().
+     * The trick: The setFactors(i,k) method is called every time through the
+     * inner VdW loop, avoiding an "if (esv)" branch statement. A plain OSRW run
+     * will have an object of type LambdaFactorsOSRW instead, which contains an
+     * empty version of setFactors(i,k). The OSRW version sets new factors only
+     * on lambda updates, in setLambda().
      */
     public class LambdaFactors {
+
         protected double sc1 = 0.0;
         protected double dsc1dL = 0.0;
         protected double d2sc1dL2 = 0.0;
         protected double sc2 = 1.0;
         protected double dsc2dL = 0.0;
         protected double d2sc2dL2 = 0.0;
+
         /**
          * Overriden by the OSRW version which updates only during setLambda().
          */
-        public void setFactors() {}
+        public void setFactors() {
+        }
+
         /**
-         * Overriden by the ESV version which updates with every softcore interaction.
+         * Overriden by the ESV version which updates with every softcore
+         * interaction.
          */
-        public void setFactors(int i, int k) {}
+        public void setFactors(int i, int k) {
+        }
     }
 
     public class LambdaFactorsOSRW extends LambdaFactors {
+
         @Override
         public void setFactors() {
             sc1 = VanDerWaals.this.sc1;
@@ -1034,6 +1046,7 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     public class LambdaFactorsESV extends LambdaFactors {
+
         @Override
         public void setFactors(int i, int k) {
             final double esvLambdaProduct = esvLambda[i] * esvLambda[k] * lambda;
@@ -1876,18 +1889,18 @@ public class VanDerWaals implements MaskingInterface,
                                         final double dlpdli = esvLambda[k] * lambda;
                                         final double dEsvI = dedlp * dlpdli;
                                         // d[S*E] = S'E + E'S
-                                        final double dSwEsvI =
-                                                esvSwitchDeriv[i]*esvLambdaSwitch[k]*eik_preswitch
-                                                + dEsvI*esvLambdaSwitch[i]*esvLambdaSwitch[k];
+                                        final double dSwEsvI
+                                                = esvSwitchDeriv[i] * esvLambdaSwitch[k] * eik_preswitch
+                                                + dEsvI * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                         localEsvDerivI += dSwEsvI;
                                     }
                                     if (esvk) {
                                         final double dlpdlk = esvLambda[i] * lambda;
                                         final double dEsvK = dedlp * dlpdlk;
                                         // d[S*E] = S'E + E'S
-                                        final double dSwEsvK =
-                                                esvLambdaSwitch[i]*esvSwitchDeriv[k]*eik_preswitch
-                                                + dEsvK*esvLambdaSwitch[i]*esvLambdaSwitch[k];
+                                        final double dSwEsvK
+                                                = esvLambdaSwitch[i] * esvSwitchDeriv[k] * eik_preswitch
+                                                + dEsvK * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                         esvDeriv[idxk].addAndGet(dSwEsvK);
                                     }
                                 }
@@ -2141,18 +2154,18 @@ public class VanDerWaals implements MaskingInterface,
                                             final double dlpdli = esvLambda[k] * lambda;
                                             final double dEsvI = dedlp * dlpdli;
                                             // d[S*E] = S'E + E'S
-                                            final double dSwEsvI =
-                                                    esvSwitchDeriv[i]*esvLambdaSwitch[k]*eik_preswitch
-                                                    + dEsvI*esvLambdaSwitch[i]*esvLambdaSwitch[k];
+                                            final double dSwEsvI
+                                                    = esvSwitchDeriv[i] * esvLambdaSwitch[k] * eik_preswitch
+                                                    + dEsvI * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                             localEsvDerivI += dSwEsvI;
                                         }
                                         if (esvk) {
                                             final double dlpdlk = esvLambda[i] * lambda;
                                             final double dEsvK = dedlp * dlpdlk;
                                             // d[S*E] = S'E + E'S
-                                            final double dSwEsvK =
-                                                    esvLambdaSwitch[i]*esvSwitchDeriv[k]*eik_preswitch
-                                                    + dEsvK*esvLambdaSwitch[i]*esvLambdaSwitch[k];
+                                            final double dSwEsvK
+                                                    = esvLambdaSwitch[i] * esvSwitchDeriv[k] * eik_preswitch
+                                                    + dEsvK * esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                             esvDeriv[idxk].addAndGet(dSwEsvK);
                                         }
                                     }
