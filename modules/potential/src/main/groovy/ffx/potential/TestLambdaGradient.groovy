@@ -146,6 +146,10 @@ class TestLambdaGradient extends Script {
     private void openFile(Options options, String toOpen, int topNum) {
         MolecularAssembly[] opened = pFuncts.open(toOpen, threadsPer);
         MolecularAssembly mola = pFuncts.getActiveAssembly();
+        processFile(options, mola, topNum);
+    }
+    
+    private void processFile(Options options, MolecularAssembly mola, int topNum) {
         ForceFieldEnergy energy = mola.getPotentialEnergy();
         
         Atom[] atoms = mola.getAtomArray();
@@ -283,6 +287,13 @@ class TestLambdaGradient extends Script {
         } else {
             threadsPer = threadsAvail / numParallel;
         }
+        
+        if (options.ligAt1) {
+            ranges1 = options.ligAt1.tokenize(".");
+        }
+        if (options.ligAt2) {
+            ranges2 = options.ligAt2.tokenize(".");
+        }
 
         if (options.qi) {
             System.setProperty("pme-qi","true");
@@ -303,9 +314,7 @@ class TestLambdaGradient extends Script {
             arguments = new ArrayList<>();
             arguments.add(mola.getFile().getName());
             
-            topologies.add(mola);
-            properties.add(mola.getProperties());
-            energies.add(mola.getPotentialEnergy());
+            processFile(mola);
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs));
             for (int i = 0; i < nArgs; i++) {

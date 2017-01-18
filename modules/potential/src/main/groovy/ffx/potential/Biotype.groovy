@@ -70,7 +70,7 @@ class Biotype {
         try {
             // Use a method closure to try to get an instance of UIUtils (the User Interfaces
             // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsFunctions()
+            functions = getPotentialsUtils()
         } catch (MissingMethodException ex) {
             // If Groovy can't find the appropriate closure, catch the exception and build
             // an instance of the local implementation.
