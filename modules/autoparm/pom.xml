@@ -182,7 +182,7 @@
         <dependency>
             <artifactId>groovy-all</artifactId>
             <groupId>org.codehaus.groovy</groupId>
-            <version>2.0.5</version>
+            <version>${groovy-all.version}</version>
         </dependency>
     </dependencies>
 </project>

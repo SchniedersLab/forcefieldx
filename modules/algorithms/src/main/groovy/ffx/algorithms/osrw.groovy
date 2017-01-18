@@ -53,7 +53,7 @@ import edu.rit.pj.Comm;
 import java.util.regex.Pattern;
 
 // Force Field X Imports
-//import ffx.algorithms.Barostat;
+import ffx.algorithms.Barostat;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
 import ffx.algorithms.Integrator.Integrators;
@@ -76,7 +76,7 @@ import ffx.numerics.Potential;
 // Asychronous communication between walkers.
 boolean asynchronous = false;
 
-/* 
+/*
  * The @Field annotations are ncessary for variables to be used by the readFile
  * method. Without @Field, variables with explicit declaration are local to the
  * implied main method of the script, whereas @Field transforms them to a private
@@ -225,7 +225,7 @@ cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value (> 1.0 dist
 cli.c(longOpt:'count', args:1, argName:'10', 'Time steps between OSRW counts.');
 cli.g(longOpt:'bias', args:1, argName:'0.002', 'Gaussian bias magnitude (kcal/mol).');
 cli.m(longOpt:'mass', args:1, argName:'1e-18', 'Lambda particle mass.');
-//cli.p(longOpt:'npt', args:0, 'Constant pressure MD (1 atm).');
+cli.p(longOpt:'npt', args:0, 'Constant pressure MD (1 atm).');
 cli.x(longOpt:'friction', args:1, argName:'1e-18', 'Lambda particle friction.');
 cli.W(longOpt:'traversals', args:0, 'Write out lambda-traversal snapshots.');
 //cli.ld(longOpt:'minDensity', args:1, argName:'0.5', 'Minimum density allowed by the barostat.');
@@ -543,88 +543,88 @@ private void openFile(String toOpen, File structFile, int topNum) {
     Atom[] atoms = active.getAtomArray();
     int remainder = (topNum % 2) + 1;
     switch(remainder) {
-        case 1:
-            for (int i = ligandStart; i <= ligandStop; i++) {
-                Atom ai = atoms[i-1];
-                ai.setApplyLambda(true);
-                ai.print();
-            }
-            if (ranges1) {
-                for (range in ranges1) {
-                    def m = rangeregex.matcher(range);
-                    if (m.find()) {
-                        int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
-                        if (rangeStart > rangeEnd) {
-                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                        }
-                        // Don't need to worry about negative numbers; rangeregex just won't match.
-                        for (int i = rangeStart; i <= rangeEnd; i++) {
-                            Atom ai = atoms[i-1];
-                            ai.setApplyLambda(true);
-                            ai.print();
-                        }
-                    } else {
-                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
+    case 1:
+        for (int i = ligandStart; i <= ligandStop; i++) {
+            Atom ai = atoms[i-1];
+            ai.setApplyLambda(true);
+            ai.print();
+        }
+        if (ranges1) {
+            for (range in ranges1) {
+                def m = rangeregex.matcher(range);
+                if (m.find()) {
+                    int rangeStart = Integer.parseInt(m.group(1));
+                    int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                    if (rangeStart > rangeEnd) {
+                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                     }
+                    // Don't need to worry about negative numbers; rangeregex just won't match.
+                    for (int i = rangeStart; i <= rangeEnd; i++) {
+                        Atom ai = atoms[i-1];
+                        ai.setApplyLambda(true);
+                        ai.print();
+                    }
+                } else {
+                    logger.warning(" Could not recognize ${range} as a valid range; skipping");
                 }
             }
+        }
 
-            // Apply the no electrostatics atom selection
-            if (noElecStart < 1) {
-                noElecStart = 1;
-            }
-            if (noElecStop > atoms.length) {
-                noElecStop = atoms.length;
-            }
-            for (int i = noElecStart; i <= noElecStop; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setElectrostatics(false);
-                ai.print();
-            }
-            break;
-        case 2:
-            for (int i = ligandStart2; i <= ligandStop2; i++) {
-                Atom ai = atoms[i-1];
-                ai.setApplyLambda(true);
-                ai.print();
-            }
-            if (ranges2) {
-                for (range in ranges2) {
-                    def m = rangeregex.matcher(range);
-                    if (m.find()) {
-                        int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
-                        if (rangeStart > rangeEnd) {
-                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                        }
-                        // Don't need to worry about negative numbers; rangeregex just won't match.
-                        for (int i = rangeStart; i <= rangeEnd; i++) {
-                            Atom ai = atoms[i-1];
-                            ai.setApplyLambda(true);
-                            ai.print();
-                        }
-                    } else {
-                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
+        // Apply the no electrostatics atom selection
+        if (noElecStart < 1) {
+            noElecStart = 1;
+        }
+        if (noElecStop > atoms.length) {
+            noElecStop = atoms.length;
+        }
+        for (int i = noElecStart; i <= noElecStop; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setElectrostatics(false);
+            ai.print();
+        }
+        break;
+    case 2:
+        for (int i = ligandStart2; i <= ligandStop2; i++) {
+            Atom ai = atoms[i-1];
+            ai.setApplyLambda(true);
+            ai.print();
+        }
+        if (ranges2) {
+            for (range in ranges2) {
+                def m = rangeregex.matcher(range);
+                if (m.find()) {
+                    int rangeStart = Integer.parseInt(m.group(1));
+                    int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                    if (rangeStart > rangeEnd) {
+                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                     }
+                    // Don't need to worry about negative numbers; rangeregex just won't match.
+                    for (int i = rangeStart; i <= rangeEnd; i++) {
+                        Atom ai = atoms[i-1];
+                        ai.setApplyLambda(true);
+                        ai.print();
+                    }
+                } else {
+                    logger.warning(" Could not recognize ${range} as a valid range; skipping");
                 }
             }
+        }
 
-            // Apply the no electrostatics atom selection
-            if (noElecStart2 < 1) {
-                noElecStart2 = 1;
-            }
-            if (noElecStop2 > atoms.length) {
-                noElecStop2 = atoms.length;
-            }
-            for (int i = noElecStart2; i <= noElecStop2; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setElectrostatics(false);
-                ai.print();
-            }
-            break;
+        // Apply the no electrostatics atom selection
+        if (noElecStart2 < 1) {
+            noElecStart2 = 1;
+        }
+        if (noElecStop2 > atoms.length) {
+            noElecStop2 = atoms.length;
+        }
+        for (int i = noElecStart2; i <= noElecStop2; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setElectrostatics(false);
+            ai.print();
+        }
+        break;
     }
-    
+
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
     // Save a reference to the topology.
@@ -640,7 +640,7 @@ openFile(filename, structureFile, 0);
 open(filename);
 // If this is a multi-process job, set the structure file to come from the subdirectory.
 if (size > 1) {
-    active.setFile(structureFile);
+active.setFile(structureFile);
 }
 
 // Get a reference to the first system's ForceFieldEnergy and atom array.
@@ -648,56 +648,56 @@ ForceFieldEnergy energy = active.getPotentialEnergy();
 Atom[] atoms = active.getAtomArray();
 // Apply the ligand atom selection
 for (int i = ligandStart; i <= ligandStop; i++) {
-    Atom ai = atoms[i - 1];
-    ai.setApplyLambda(true);
+Atom ai = atoms[i - 1];
+ai.setApplyLambda(true);
 //    ai.setElectrostatics(!noElec1);
-    ai.print();
+ai.print();
 }
 
 if (ranges1) {
-    for (range in ranges1) {
-        def m = rangeregex.matcher(range);
-        if (m.find()) {
-            if (m.groupCount() > 1) {
-                int rangeStart = Integer.parseInt(m.group(1));
-                int rangeEnd = Integer.parseInt(m.group(2));
-                if (rangeStart > rangeEnd) {
-                    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                }
-                // Don't need to worry about negative numbers; rangeregex just won't match.
-                for (int i = rangeStart; i <= rangeEnd; i++) {
-                    Atom ai = atoms[i-1];
-                    ai.setApplyLambda(true);
-                    ai.print();
-                }
-            } else {
-                int i = Integer.parseInt(m.group(1));
-                Atom ai = atoms[i-1];
-                ai.setApplyLambda(true);
-                ai.print();
-            }
-        } else {
-            logger.warning(" Could not recognize ${range} as a valid range; skipping");
-        }
-    }
+for (range in ranges1) {
+def m = rangeregex.matcher(range);
+if (m.find()) {
+if (m.groupCount() > 1) {
+int rangeStart = Integer.parseInt(m.group(1));
+int rangeEnd = Integer.parseInt(m.group(2));
+if (rangeStart > rangeEnd) {
+logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+}
+// Don't need to worry about negative numbers; rangeregex just won't match.
+for (int i = rangeStart; i <= rangeEnd; i++) {
+Atom ai = atoms[i-1];
+ai.setApplyLambda(true);
+ai.print();
+}
+} else {
+int i = Integer.parseInt(m.group(1));
+Atom ai = atoms[i-1];
+ai.setApplyLambda(true);
+ai.print();
+}
+} else {
+logger.warning(" Could not recognize ${range} as a valid range; skipping");
+}
+}
 }
 
 // Apply the no electrostatics atom selection
 if (noElecStart < 1) {
-    noElecStart = 1;
+noElecStart = 1;
 }
 if (noElecStop > atoms.length) {
-    noElecStop = atoms.length;
+noElecStop = atoms.length;
 }
 for (int i = noElecStart; i <= noElecStop; i++) {
-    Atom ai = atoms[i - 1];
-    ai.setElectrostatics(false);
-    ai.print();
+Atom ai = atoms[i - 1];
+ai.setElectrostatics(false);
+ai.print();
 }
 
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 energy.getCrystal().setSpecialPositionCutoff(0.0);
-*/
+ */
 
 // OSRW will be configured for the appropriate number of topologies.
 OSRW osrw = null;
@@ -713,13 +713,13 @@ void optStructure(MolecularAssembly mola, Potential pot) {
     double initialLambda = linter ? linter.getLambda() : -1.0;
     linter?.setLambda(0.5);
     // Safe navigation operator ?. operates only if LHS is non-null.
-    
+
     def resList = [];
     Polymer[] polymers = mola.getChains();
-    
+
     def nochainMatcher = ~/^\ ?([0-9]+)$/;
     def chainMatcher = ~/^([a-zA-Z])([0-9]+)$/;
-    
+
     for (String ts : distResidues) {
         Character chainID = 'A';
         def m = chainMatcher.matcher(ts);
@@ -736,9 +736,9 @@ void optStructure(MolecularAssembly mola, Potential pot) {
                 continue;
             }
         }
-        
+
         logger.info(String.format(" Looking for chain %c residue %d", chainID, resNum));
-        
+
         for (Polymer p : mola.getChains()) {
             if (p.getChainID() == chainID) {
                 for (Residue r : p.getResidues()) {
@@ -749,13 +749,13 @@ void optStructure(MolecularAssembly mola, Potential pot) {
             }
         }
     }
-    
+
     if (!resList) {
         throw new IllegalArgumentException(" No valid entries for distWalkers!");
     }
-    
+
     RotamerOptimization ropt = new RotamerOptimization(mola, pot, sh);
-    
+
     ropt.setThreeBodyEnergy(false);
     ropt.setVerboseEnergies(true);
     if (System.getProperty("ro-ensembleNumber") == null && System.getProperty("ro-ensembleEnergy") == null) {
@@ -764,26 +764,26 @@ void optStructure(MolecularAssembly mola, Potential pot) {
     }
     ropt.setPrintFiles(false);
     def addedResList = ropt.setResiduesIgnoreNull(resList);
-    
+
     rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
     rLib.setUseOrigCoordsRotamer(false);
     RotamerLibrary.measureRotamers(resList, false);
-    
+
     String oldLazyMat = System.getProperty("ro-lazyMatrix");
     System.setProperty("ro-lazyMatrix", "true");
-    
+
     ropt.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
     ropt.setCoordinatesToEnsemble(world.rank());
-    
+
     // One final energy call to ensure the coordinates are properly set at the
     // end of rotamer optimization.
     double[] xyz = new double[pot.getNumberOfVariables()];
     pot.getCoordinates(xyz);
     logger.info(" Final Optimized Energy:");
     pot.energy(xyz, true);
-    
+
     linter?.setLambda(initialLambda);
-    
+
     if (oldLazyMat) {
         System.setProperty("ro-lazyMatrix", oldLazyMat);
     } else {
@@ -797,19 +797,20 @@ if (arguments.size() == 1) {
     }
     // Check for constant pressure
     if (NPT) {
-        //        // Create a barostat.
-        //        Barostat barostat = new Barostat(active);
-        //        barostat.setMaxdUdL(1000.0);
-        //        barostat.setMaxDensity(maxDensity);
-        //        barostat.setMinDensity(minDensity);
-        //        barostat.setMaxSideMove(maxSideMove);
-        //        barostat.setMaxAngleMove(maxAngleMove);
-        //        barostat.setMeanBarostatInterval(meanInterval);
-        //
-        //        // Create the OSRW instance.
-        //        osrw = new OSRW(energy, barostat, lambdaRestart, histogramRestart, active.getProperties(),
-        //            temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
-        //        osrw.setResetStatistics(resetStatistics);
+        // Create a Barostat.
+        Barostat barostat = new Barostat(active);
+        barostat.setMaxdUdL(1000.0);
+        barostat.setMaxDensity(maxDensity);
+        barostat.setMinDensity(minDensity);
+        barostat.setMaxSideMove(maxSideMove);
+        barostat.setMaxAngleMove(maxAngleMove);
+        barostat.setMeanBarostatInterval(meanInterval);
+
+        // Create the OSRW instance.
+        osrw = new OSRW(energies[0], barostat, lambdaRestart, histogramRestart, active.getProperties(),
+                    temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+        osrw.setResetStatistics(resetStatistics);
+
         if (writeTraversals) {
             osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[0]);
         }
@@ -826,68 +827,68 @@ if (arguments.size() == 1) {
     // Open the 2nd topology.
     filename = arguments.get(1);
     openFile(filename, structureFile, 1);
-    
+
     /*
     // If this is a multi-process job, set the structure file to come from the subdirectory.
     if (size > 1) {
-        active.setFile(structureFile);
+    active.setFile(structureFile);
     }
     energy = active.getPotentialEnergy();
     atoms = active.getAtomArray();
     // Apply the ligand atom selection for the 2nd topology.
     for (int i = ligandStart2; i <= ligandStop2; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setApplyLambda(true);
-        ai.print();
+    Atom ai = atoms[i - 1];
+    ai.setApplyLambda(true);
+    ai.print();
     }
-    
+
     if (ranges2) {
-        for (range in ranges2) {
-            def m = rangeregex.matcher(range);
-            if (m.find()) {
-                if (m.groupCount() > 1) {
-                    int rangeStart = Integer.parseInt(m.group(1));
-                    int rangeEnd = Integer.parseInt(m.group(2));
-                    if (rangeStart > rangeEnd) {
-                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                    }
-                    // Don't need to worry about negative numbers; rangeregex just won't match.
-                    for (int i = rangeStart; i <= rangeEnd; i++) {
-                        Atom ai = atoms[i-1];
-                        ai.setApplyLambda(true);
-                        ai.print();
-                    }
-                } else {
-                    int i = Integer.parseInt(m.group(1));
-                    Atom ai = atoms[i-1];
-                    ai.setApplyLambda(true);
-                    ai.print();
-                }
-            } else {
-                logger.warning(" Could not recognize ${range} as a valid range; skipping");
-            }
-        }
+    for (range in ranges2) {
+    def m = rangeregex.matcher(range);
+    if (m.find()) {
+    if (m.groupCount() > 1) {
+    int rangeStart = Integer.parseInt(m.group(1));
+    int rangeEnd = Integer.parseInt(m.group(2));
+    if (rangeStart > rangeEnd) {
+    logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+    }
+    // Don't need to worry about negative numbers; rangeregex just won't match.
+    for (int i = rangeStart; i <= rangeEnd; i++) {
+    Atom ai = atoms[i-1];
+    ai.setApplyLambda(true);
+    ai.print();
+    }
+    } else {
+    int i = Integer.parseInt(m.group(1));
+    Atom ai = atoms[i-1];
+    ai.setApplyLambda(true);
+    ai.print();
+    }
+    } else {
+    logger.warning(" Could not recognize ${range} as a valid range; skipping");
+    }
+    }
     }
 
     // Apply the no electrostatics atom selection
     if (noElecStart2 < 1) {
-        noElecStart2 = 1;
+    noElecStart2 = 1;
     }
     if (noElecStop2 > atoms.length) {
-        noElecStop2 = atoms.length;
+    noElecStop2 = atoms.length;
     }
     for (int i = noElecStart2; i <= noElecStop2; i++) {
-        Atom ai = atoms[i - 1];
-        ai.setElectrostatics(false);
-        ai.print();
+    Atom ai = atoms[i - 1];
+    ai.setElectrostatics(false);
+    ai.print();
     }
 
     // Save a reference to the second topology.
     topologies[1] = active;
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     energy.getCrystal().setSpecialPositionCutoff(0.0);
-    */
-   
+     */
+
     // Create the DualTopology potential energy.
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
     if (numParallel == 2) {
@@ -916,23 +917,23 @@ if (arguments.size() == 1) {
     logger.info(" The first two define the first dual topology, the second two should define the second dual topology in the same order.");
     logger.info(" For example, for a dual force field correction on decharging sodium, topologies should be in this order:");
     logger.info(" Sodium-AMOEBA, sodium-AMBER, decharged Na-AMOEBA, decharged Na-AMBER");*/
-    
+
     openFile(arguments.get(1), structureFile, 1);
     openFile(arguments.get(2), structureFile, 2);
     openFile(arguments.get(3), structureFile, 3);
     DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
     // Intentionally reversed order.
     DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
-    
+
     if (distResidues) {
         logger.info(" Generating starting structures for each dual-topology of the quad topology:");
         optStructure(topologies[0], dtA);
         optStructure(topologies[3], dtB);
     }
-    
+
     List<Integer> uniqueA = new ArrayList<>();
     List<Integer> uniqueB = new ArrayList<>();
-    
+
     if (options.uaA) {
         rangesA = options.uaA.tokenize(".");
         def ra = [] as Set;
@@ -943,7 +944,7 @@ if (arguments.size() == 1) {
                 int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
                 if (rangeStart > rangeEnd) {
                     logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-}
+                }
                 for (int i = rangeStart; i <= rangeEnd; i++) {
                     ra.add(i-1);
                 }
@@ -1020,8 +1021,8 @@ if (arguments.size() == 1) {
             dtB.setParallel(true);
         }
     }
-    osrw = new OSRW(qte, qte, lambdaRestart, histogramRestart, 
-        active.getProperties(), temperature, timeStep, printInterval, 
+    osrw = new OSRW(qte, qte, lambdaRestart, histogramRestart,
+        active.getProperties(), temperature, timeStep, printInterval,
         saveInterval, asynchronous, resetNumSteps, sh);
 } else {
     logger.severe(" Must have 1, 2, or 4 topologies to test.");
@@ -1065,8 +1066,8 @@ if (eSteps > 0) {
         }
     }
     if (nSteps > 0) {
-    molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
-        fileType, restartInterval, dyn);
+        molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities,
+            fileType, restartInterval, dyn);
     } else {
         logger.info(" No steps remaining for this process!");
     }
