@@ -203,15 +203,30 @@ class TTosrw extends Script {
          * -x or --friction sets the friction on the lambda particle.
          */
         @Option(shortName='x', longName='friction', defaultValue='1.0e-18', description='Lambda particle friction') double lamFric;
-        // NPT is currently not useable for thermodynamic calculations.
-        //@Option(shortName='p', longName='npt', defaultValue='false', description='Use NPT') boolean npt;
-        
-        // Other NPT parameters (to be ported).
-        //cli.ld(longOpt:'minDensity', args:1, argName:'0.5', 'Minimum density allowed by the barostat.');
-        //cli.hd(longOpt:'maxDensity', args:1, argName:'1.5', 'Maximum density allowed by the barostat.');
-        //cli.sm(longOpt:'maxSideMove', args:1, argName:'0.25', 'Maximum side move allowed by the barostat.');
-        //cli.am(longOpt:'maxAngleMove', args:1, argName:'1.0', 'Maximum angle move allowed by the barostat.');
-        //cli.mi(longOpt:'meanInterval', args:1, argName:'10', 'Mean number of MD steps between applications of the barostat.');
+        /**
+         * -p or --npt enables use of a barostat.
+         */
+        @Option(shortName='p', longName='npt', defaultValue='false', description='Use NPT') boolean npt;
+        /**
+         * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
+         */
+        @Option(shortName='ld', longName='minDensity', defaultValue='0.5', description='Minimum density allowed by the barostat') double minDensity;
+        /**
+         * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
+         */
+        @Option(shortName='hd', longName='maxDensity', defaultValue='1.5', description='Maximum density allowed by the barostat') double maxDensity;
+        /**
+         * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
+         */
+        @Option(shortName='sm', longName='maxSideMove', defaultValue='0.25', description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
+        /**
+         * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
+         */
+        @Option(shortName='am', longName='maxAngleMove', defaultValue='1.0', description='Maximum angle move allowed by the barostat in degrees') double maxAngleMove;
+        /**
+         * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
+         */
+        @Option(shortName='mi', longName='meanInterval', defaultValue='10', description='Mean number of MD steps between barostat move proposals.') int meanInterval;
 
         /**
          * -W or --traversals sets writing lambda traversal snapshots.
@@ -261,6 +276,8 @@ class TTosrw extends Script {
     }
     
     private static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
+    private static double maxdUdL = 1000.0;
+    
     private int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
     private int threadsPer = threadsAvail;
     private AlgorithmFunctions aFuncts;
@@ -771,7 +788,6 @@ class TTosrw extends Script {
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ");
         switch (nArgs) {
             case 1:
-                potential = energies[0];
                 if (options.actFinal > 0) {
                     // Apply active atom selection
                     int nAtoms1 = (energies[0].getNumberOfVariables()) / 3;
@@ -787,7 +803,19 @@ class TTosrw extends Script {
                             ai.setActive(true);
                         }
                     } 
-               }
+                }
+                if (options.npt) {
+                    Barostat barostat = new Barostat(topologies[0]);
+                    barostat.setMaxdUdL(maxdUdL);
+                    barostat.setMaxDensity(options.maxDensity);
+                    barostat.setMinDensity(options.minDensity);
+                    barostat.setMaxSideMove(options.maxSideMove);
+                    barostat.setMaxAngleMove(options.maxAngleMove);
+                    barostat.setMeanBarostatInterval(options.meanInterval);
+                    potential = barostat;
+                } else {
+                    potential = energies[0];
+                }
                 break;
             case 2:
                 sb.append("dual topology ");
