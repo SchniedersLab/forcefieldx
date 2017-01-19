@@ -62,7 +62,6 @@ import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.transpose3;
-import java.util.OptionalDouble;
 import org.apache.commons.math3.util.FastMath;
 
 /**
