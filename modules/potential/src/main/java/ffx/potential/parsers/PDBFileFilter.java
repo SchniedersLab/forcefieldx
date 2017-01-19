@@ -99,11 +99,9 @@ public final class PDBFileFilter extends FileFilter {
                 } else {
                     return false;
                 }
-                boolean validAtomLine = false;
-                boolean validTerLine = true; // Too many files lack even this.
                 while (line != null) {
                     line = line.trim();
-                    if (!validAtomLine && line.startsWith("ATOM  ")) {
+                    if (line.startsWith("ATOM  ") || line.startsWith("HETATM")) {
                         try {
                             Integer.parseInt(line.substring(6, 11).trim());
                             Integer.parseInt(line.substring(22, 26).trim());
@@ -111,23 +109,11 @@ public final class PDBFileFilter extends FileFilter {
                             for (String value : coordOccTempVals) {
                                 Double.parseDouble(value);
                             }
-                            validAtomLine = true;
+                            br.close();
+                            return true;
                         } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
                             // Do nothing.
                         }
-                    }/* else if (line.startsWith("TER")) {
-                        try {
-                            /* In a perfect world, every PDB file which claims to be at the 3.3 standard
-                             * will actually be at the 3.3 standard.
-                             Integer.parseInt(line.substring(6, 11).trim());
-                             Integer.parseInt(line.substring(22, 26).trim());*/
-                            /*validTerLine = true;
-                        } catch (NumberFormatException | StringIndexOutOfBoundsException ex) {
-                            // Do nothing.
-                        }
-                    }*/
-                    if (validAtomLine && validTerLine) {
-                        return true;
                     }
                     line = br.readLine();
                 }

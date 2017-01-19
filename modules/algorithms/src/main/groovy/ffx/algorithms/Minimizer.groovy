@@ -1,5 +1,4 @@
 
-
 package ffx.algorithms;
 
 // Groovy Imports
@@ -36,7 +35,7 @@ import org.apache.commons.io.FilenameUtils;
  * <br>
  * Usage:
  * <br>
- * ffxc Minimizer [options] &lt;filename [file2] [file3]...&gt;
+ * ffxc Minimizer [options] &lt;filename [file2...]&gt;
  */
 class Minimizer extends Script {
 
@@ -45,7 +44,7 @@ class Minimizer extends Script {
      * <br>
      * Usage:
      * <br>
-     * ffxc Minimize [options] &lt;filename&gt;
+     * ffxc Minimize [options] &lt;filename [file2...]&gt;
      */
     class Options {
         /**
@@ -97,12 +96,12 @@ class Minimizer extends Script {
          */
         @Option(shortName='np', longName='nParallel', defaultValue='1', description='Number of topologies to evaluate in parallel') int nPar;
         /**
-         * Atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
+         * -uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
          */
         @Option(shortName='uaA', longName='unsharedA', description='Unshared atoms in the A dual topology (period-separated hyphenated ranges)') String unsharedA;
         //@Option(shortName='uaA', longName='unsharedA', numberOfArgumentsString='*', valueSeparator='.', description='Unshared atoms in the A dual topology (period-separated hyphenated ranges)') String[] unsharedA;
         /**
-         * Atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
+         * -uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
          */
         @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
         //@Option(shortName='uaB', longName='unsharedB', numberOfArgumentsString='*', valueSeparator='.', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String[] unsharedB;
@@ -131,6 +130,10 @@ class Minimizer extends Script {
     private void openFile(Options options, String toOpen, int topNum) {
         MolecularAssembly[] opened = aFuncts.open(toOpen, threadsPer);
         MolecularAssembly mola = aFuncts.getActiveAssembly();
+        processFile(options, mola, topNum);
+    }
+    
+    private void processFile(Options options, MolecularAssembly mola, int topNum) {
         ForceFieldEnergy energy = mola.getPotentialEnergy();
         
         Atom[] atoms = mola.getAtomArray();
@@ -279,9 +282,7 @@ class Minimizer extends Script {
             arguments = new ArrayList<>();
             arguments.add(mola.getFile().getName());
             
-            topologies.add(mola);
-            properties.add(mola.getProperties());
-            energies.add(mola.getPotentialEnergy());
+            processFile(options, mola, 0);
         } else {
             for (int i = 0; i < nArgs; i++) {
                 openFile(options, arguments.get(i), i);

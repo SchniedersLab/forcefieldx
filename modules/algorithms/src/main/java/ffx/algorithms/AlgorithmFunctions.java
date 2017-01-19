@@ -55,14 +55,32 @@ import ffx.potential.utils.PotentialsFunctions;
  */
 public interface AlgorithmFunctions extends PotentialsFunctions {
 
+    /**
+     * Runs molecular dynamics on an assembly.
+     * 
+     * @param assembly
+     * @param nStep Timesteps
+     * @param timeStep Time per step
+     * @param printInterval
+     * @param saveInterval
+     * @param temperature
+     * @param initVelocities Initialize velocities from Maxwell-Boltzmann distribution
+     * @param dyn Dynamics file
+     */
     abstract public void md(MolecularAssembly assembly, int nStep, double timeStep,
             double printInterval, double saveInterval, double temperature,
             boolean initVelocities, File dyn);
 
+    /**
+     * Relax the coordinates of a MolecularAssembly and minimize its potential energy
+     * @param assembly
+     * @param eps RMS gradient convergence criteria
+     * @return A <code>Potential</code>
+     */
     abstract public Potential minimize(MolecularAssembly assembly, double eps);
     
     /**
-     * Returns a default Listener if relevant.
+     * Returns a default Listener if available (null by default).
      * @return An AlgorithmListener or null.
      */
     default public AlgorithmListener getDefaultListener() {

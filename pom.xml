@@ -16,11 +16,11 @@
     </prerequisites>
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>https://github.com/mjschnie/ffx/issues</url>
+        <url>http://github.com/mjschnie/ffx/issues</url>
     </issueManagement>
     <ciManagement>
         <system>Travis CI</system>
-        <url>https://travis-ci.org/mjschnie/ffx</url>
+        <url>http://travis-ci.org/mjschnie/ffx</url>
         <notifiers>
             <notifier>
                 <type>mail</type>
@@ -75,7 +75,7 @@
             <name>Timothy D. Fenn</name>
             <email>tim.fenn@gmail.com</email>
             <organization>Scientist at Boehringer Ingelheim</organization>
-            <organizationUrl>https://www.boehringer-ingelheim.com</organizationUrl>
+            <organizationUrl>http://www.boehringer-ingelheim.com</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
             </roles>
@@ -210,7 +210,7 @@
             <name>Ian J. Nessler</name>
             <email>inessler@umich.edu</email>
             <organization>Chemical Engineering Graduate Student, The U. of Michigan</organization>
-            <organizationUrl>https://www.umich.edu</organizationUrl>
+            <organizationUrl>http://www.umich.edu</organizationUrl>
             <roles>
                 <role>
                     Drug Crystal Structure, Thermodynamics and Solubility
@@ -310,7 +310,7 @@
     </licenses>
     <scm>
         <url>http://github.com/mjschnie/ffx</url>
-        <connection>scm:git://github.com/mjschnie/ffx.git</connection>
+        <connection>scm:git:http://github.com/mjschnie/ffx.git</connection>
         <developerConnection>scm:git:git@github.com:mjschnie/ffx.git</developerConnection>
     </scm>
     <organization>
@@ -802,7 +802,7 @@
         <repository>
             <name>FFX Dependency Repository</name>
             <id>ffx.dependencies</id>
-            <url>https://github.com/mjschnie/dependency/raw/master</url>
+            <url>http://github.com/mjschnie/dependency/raw/master</url>
             <releases>
                 <checksumPolicy>ignore</checksumPolicy>
                 <enabled>true</enabled>
@@ -834,7 +834,7 @@
         <repository>
             <id>biojava-legacy-repo</id>
             <name>BioJava's Git based legacy maven repo</name>
-            <url>https://github.com/biojava/maven-repo/raw/master/</url>
+            <url>http://github.com/biojava/maven-repo/raw/master/</url>
         </repository>
         <repository>
             <name>Maven Plugin SNAPSHOTS</name>
