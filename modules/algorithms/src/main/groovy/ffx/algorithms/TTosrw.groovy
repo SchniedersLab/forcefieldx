@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 // FFX Imports
-//import ffx.algorithms.Barostat;
+import ffx.algorithms.Barostat;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.AlgorithmUtils;
@@ -59,8 +59,8 @@ class TTosrw extends Script {
      * ffxc TTosrw [options] &lt;filename [file2...]&gt;
      */
     class Options {
-        
-        /*private final Closure parseThermostat = {str -> 
+
+        /*private final Closure parseThermostat = {str ->
             try {
                 return Thermostats.valueOf(str.toUpperCase());
             } catch (Exception e) {
@@ -68,8 +68,8 @@ class TTosrw extends Script {
                 return Thermostats.BERENDSEN;
             }
         };
-        
-        private final Closure parseIntegrator = {str -> 
+
+        private final Closure parseIntegrator = {str ->
             try {
                 return Integrators.valueOf(str.toUpperCase());
             } catch (Exception e) {
@@ -77,7 +77,7 @@ class TTosrw extends Script {
                 return Integrators.BEEMAN;
             }
         }*/
-        
+
         private static parseThermo(String str) {
             try {
                 return Thermostats.valueOf(str.toUpperCase());
@@ -87,7 +87,7 @@ class TTosrw extends Script {
                 return Thermostats.BERENDSEN;
             }
         }
-        
+
         private static parseIntegrator(String str) {
             try {
                 return Integrators.valueOf(str.toUpperCase());
@@ -97,7 +97,7 @@ class TTosrw extends Script {
                 return Integrators.BEEMAN;
             }
         }
-        
+
         /**
          * -h or --help to print a help message
          */
@@ -116,7 +116,7 @@ class TTosrw extends Script {
          */
         @Option(shortName='q', longName='equilibrate', defaultValue='1000', description='Equilibration steps prior to OSRW counts.') int nEquil;
         /**
-         * -d or --dt sets the timestep; 1 femtosecond by default. 2.0 is 
+         * -d or --dt sets the timestep; 1 femtosecond by default. 2.0 is
          * suggested for the RESPA integrator; otherwise, increase only if you
          * know what you are doing.
          */
@@ -243,7 +243,7 @@ class TTosrw extends Script {
         @Option(shortName='tp', longName='temperingParam', defaultValue='2.0', description='Dama et al tempering rate parameter in multiples of kBT') double temperParam;
         /**
          * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart
-         * files and thus resets the histogram; use -rn false to continue from 
+         * files and thus resets the histogram; use -rn false to continue from
          * the end of any prior simulation.
          */
         @Option(shortName='rn', longName='resetNumSteps', defaultValue='true', description='Ignore prior steps logged in .lam files') String resetStepsString;
@@ -260,24 +260,24 @@ class TTosrw extends Script {
          */
         @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
         /**
-         * -dw or --distributeWalkers allows walkers to start from multiple 
+         * -dw or --distributeWalkers allows walkers to start from multiple
          * conformations; AUTO picks up per-walker conformations as
-         * filename.pdb_(walker number), and specifying a residue starts a 
+         * filename.pdb_(walker number), and specifying a residue starts a
          * rotamer optimization to generate side-chain configurations to start
          * from.
          */
         @Option(shortName='dw', longName='distributeWalkers', description='AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.') String distWalksString;
 
-        
+
         /**
          * The final argument(s) should be one or more filenames.
          */
         @Unparsed List<String> filenames;
     }
-    
+
     private static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
     private static double maxdUdL = 1000.0;
-    
+
     private int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
     private int threadsPer = threadsAvail;
     private AlgorithmFunctions aFuncts;
@@ -288,19 +288,19 @@ class TTosrw extends Script {
     def topologies = []; // MolecularAssembly
     def properties = []; // CompositeConfiguration
     def energies = [];   // ForceFieldEnergy
-    
+
     boolean autoDist = false;
     def distResidues = [];
     RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
     def final static nochainMatcher = ~/^\ ?([0-9]+)$/;
     def final static chainMatcher = ~/^([a-zA-Z])([0-9]+)$/;
-    
+
     int size = 1;
     int rank = 0;
 
     /**
      * Opens a file and processes it for ttOSRW
-     * 
+     *
      * @param options TTosrw Options
      * @param toOpen Filename to open
      * @param structFile Structure file to use for coordinates
@@ -316,16 +316,16 @@ class TTosrw extends Script {
                 logger.warning(String.format(" File %s does not exist; using default %s", openName, toOpen));
             }
         }
-        
+
         MolecularAssembly[] opened = aFuncts.open(toOpen, threadsPer);
         MolecularAssembly mola = aFuncts.getActiveAssembly();
         processFile(options, mola, structFile, topNum);
     }
-    
+
     /**
      * Split off from openFile to ensure molecular assemblies obtained from the
      * UI are properly treated.
-     * 
+     *
      * @param options TTosrw Options
      * @param mola Molecular assembly to process
      * @param structFile Structure file to use for coordinates
@@ -370,14 +370,14 @@ class TTosrw extends Script {
                     }
                 }
             }
-            
+
             // Apply the no electrostatics atom selection
             int noElecStart = options.es1;
             noElecStart = (noElecStart < 1) ? 1 : noElecStart;
-            
+
             int noElecStop = options.ef1;
             noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
-            
+
             for (int i = noElecStart; i <= noElecStop; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setElectrostatics(false);
@@ -415,14 +415,14 @@ class TTosrw extends Script {
                     }
                 }
             }
-            
+
             // Apply the no electrostatics atom selection
             int noElecStart2 = options.es2;
             noElecStart2 = (noElecStart2 < 1) ? 1 : noElecStart2;
-            
+
             int noElecStop2 = options.ef2;
             noElecStop2 = (noElecStop2 > atoms.length) ? atoms.length : noElecStop2;
-            
+
             for (int i = noElecStart2; i <= noElecStop2; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setElectrostatics(false);
@@ -430,7 +430,7 @@ class TTosrw extends Script {
             }
             break;
         }
-        
+
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
         energy.getCrystal().setSpecialPositionCutoff(0.0);
         // Save a reference to the topology.
@@ -438,10 +438,10 @@ class TTosrw extends Script {
         topologies[topNum] = mola;
         energies[topNum] = energy;
     }
-    
+
     /**
      * Distribute side-chain conformations of mola.
-     * 
+     *
      * @param mola To distribute
      * @param pot Potential to use
      */
@@ -449,15 +449,15 @@ class TTosrw extends Script {
         if (!distResidues) {
             throw new IllegalArgumentException(" Programming error: Must have list of residues to split on!");
         }
-        
+
         LambdaInterface linter = (pot instanceof LambdaInterface) ? (LambdaInterface) pot : null;
         double initialLambda = linter ? linter.getLambda() : -1.0;
         linter?.setLambda(0.5);
         // Safe navigation operator ?. operates only if LHS is non-null.
-        
+
         def resList = [];
         Polymer[] polymers = mola.getChains();
-        
+
         for (String ts : distResidues) {
             Character chainID = 'A';
             def m = chainMatcher.matcher(ts);
@@ -474,9 +474,9 @@ class TTosrw extends Script {
                     continue;
                 }
             }
-            
+
             logger.info(String.format(" Looking for chain %c residue %d", chainID, resNum));
-            
+
             for (Polymer p : mola.getChains()) {
                 if (p.getChainID() == chainID) {
                     for (Residue r : p.getResidues()) {
@@ -487,14 +487,14 @@ class TTosrw extends Script {
                 }
             }
         }
-        
+
         if (!resList) {
             throw new IllegalArgumentException(" No valid entries for distWalkers!");
         }
-        
+
         AlgorithmListener alist = aFuncts.getDefaultListener();
         RotamerOptimization ropt = new RotamerOptimization(mola, pot, alist);
-        
+
         ropt.setThreeBodyEnergy(false);
         ropt.setVerboseEnergies(true);
         if (System.getProperty("ro-ensembleNumber") == null && System.getProperty("ro-ensembleEnergy") == null) {
@@ -503,33 +503,33 @@ class TTosrw extends Script {
         }
         ropt.setPrintFiles(false);
         def addedResList = ropt.setResiduesIgnoreNull(resList);
-        
+
         rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
         rLib.setUseOrigCoordsRotamer(false);
         RotamerLibrary.measureRotamers(resList, false);
-        
+
         String oldLazyMat = System.getProperty("ro-lazyMatrix");
         System.setProperty("ro-lazyMatrix", "true");
-        
+
         ropt.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
         ropt.setCoordinatesToEnsemble(rank);
-        
+
         // One final energy call to ensure the coordinates are properly set at the
         // end of rotamer optimization.
         double[] xyz = new double[pot.getNumberOfVariables()];
         pot.getCoordinates(xyz);
         logger.info(" Final Optimized Energy:");
         pot.energy(xyz, true);
-        
+
         linter?.setLambda(initialLambda);
-        
+
         if (oldLazyMat) {
             System.setProperty("ro-lazyMatrix", oldLazyMat);
         } else {
             System.clearProperty("ro-lazyMatrix");
         }
     }
-    
+
     def run() {
         def cli = new CliBuilder(usage:' ffxc TTosrw [options] <filename> [file2...]', header:' Options:');
 
@@ -539,7 +539,7 @@ class TTosrw extends Script {
         if (options.help == true) {
             return cli.usage();
         }
-        
+
         try {
             aFuncts = getAlgorithmUtils();
         } catch (MissingMethodException ex) {
@@ -553,12 +553,12 @@ class TTosrw extends Script {
                 distResidues = options.distWalksString.split("\\.");
             }
         }
-        
+
         List<String> arguments = options.filenames;
         // Check nArgs; should either be number of arguments (min 1), else 1.
         int nArgs = arguments ? arguments.size() : 1;
         nArgs = (nArgs < 1) ? 1 : nArgs;
-        
+
         int numParallel = options.nPar;
         if (threadsAvail % numParallel != 0) {
             logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
@@ -571,7 +571,7 @@ class TTosrw extends Script {
         }
 
         boolean resetNumSteps = true;
-        
+
         if (options.resetStepsString) {
             if (options.nEquil > 0) {
                 logger.warning(" Ignoring resetNumSteps input due to equilibration\n");
@@ -579,14 +579,14 @@ class TTosrw extends Script {
                 resetNumSteps = false;
             }
         }
-        
+
         if (options.ligAt1) {
             ranges1 = options.ligAt1.tokenize(".");
         }
         if (options.ligAt2) {
             ranges2 = options.ligAt2.tokenize(".");
         }
-        
+
         MolecularAssembly fromUI = null;
         if (!arguments || arguments.isEmpty()) {
             fromUI = aFuncts.getActiveAssembly();
@@ -597,9 +597,9 @@ class TTosrw extends Script {
             arguments.add(fromUI.getFile().getName());
             // Do not open the files yet!
         }
-        
+
         Potential potential;
-        
+
         String filename = arguments[0];
         logger.info(filename);
         File structureFile = new File(FilenameUtils.normalize(filename));
@@ -663,7 +663,7 @@ class TTosrw extends Script {
             // Condensed phase polarization, without the ligand present, is unecessary.
             System.setProperty("no-ligand-condensed-scf","false");
         }
-        
+
         double lambda = options.lambda;
 
         // Apply the command line lambda value if a lambda restart file does not exist.
@@ -687,7 +687,7 @@ class TTosrw extends Script {
                 }
             }
         }
-        
+
         if (fromUI != null) {
             processFile(options, fromUI, structureFile, 0);
         } else {
@@ -695,13 +695,13 @@ class TTosrw extends Script {
                 openFile(options, arguments.get(i), structureFile, i);
             }
         }
-        
+
         List<Integer> uniqueA;
         List<Integer> uniqueB;
         if (nArgs >= 4) {
             uniqueA = new ArrayList<>();
             uniqueB = new ArrayList<>();
-            
+
             if (options.unsharedA) {
                 def ra = [] as Set;
                 String[] toksA = options.unsharedA.tokenize(".");
@@ -783,26 +783,27 @@ class TTosrw extends Script {
         }
 
         TransitionTemperedOSRW osrw = null;
-        
+
         def dualTopologies = []; // Used for distResidues on quad/oct topologies
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ");
         switch (nArgs) {
             case 1:
-                if (options.actFinal > 0) {
+                if (options.f1 > 0) {
+                    Atom[] atoms = topologies[0].getAtomArray();
                     // Apply active atom selection
                     int nAtoms1 = (energies[0].getNumberOfVariables()) / 3;
-                    if (options.actFinal > options.actStart && options.actStart > 0 && options.actFinal <= nAtoms1) {
+                    if (options.f1 > options.s1 && options.s1 > 0 && options.f1 <= nAtoms1) {
                         // Make all atoms inactive.
                         for (int i = 0; i <= nAtoms1; i++) {
                             Atom ai = atoms[i - 1];
                             ai.setActive(false);
                         }
                         // Make requested atoms active.
-                        for (int i = options.actStart; i <= options.actFinal; i++) {
+                        for (int i = options.s1; i <= options.f1; i++) {
                             Atom ai = atoms[i - 1];
                             ai.setActive(true);
                         }
-                    } 
+                    }
                 }
                 if (options.npt) {
                     Barostat barostat = new Barostat(topologies[0]);
@@ -827,7 +828,7 @@ class TTosrw extends Script {
                 break;
             case 4:
                 sb.append("quad topology ");
-                
+
                 DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1]);
                 DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2]);
                 QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
@@ -844,15 +845,15 @@ class TTosrw extends Script {
                 break;
             case 8:
                 sb.append("oct-topology ");
-                
+
                 DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1]);
                 DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2]);
                 QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
-                
+
                 DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5]);
                 DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6]);
                 QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
-                
+
                 OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
                 if (numParallel >= 2) {
                     ote.setParallel(true);
@@ -879,9 +880,9 @@ class TTosrw extends Script {
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
         logger.info(sb.toString());
-        
+
         LambdaInterface linter = (LambdaInterface) potential;
-        
+
         if (distResidues) {
             logger.info(" Distributing walker conformations.");
             switch (nArgs) {
@@ -905,7 +906,7 @@ class TTosrw extends Script {
                 case 8:
                     optStructure(topologies[0], dualTopologies[0]);
                     optStructure(topologies[3], dualTopologies[1]);
-                    
+
                     // More elegant would be to copy coordinates from 0-4 and 3-7.
                     // More elegant is currently low priority, and thus will be accomplished as t approaches infinity.
                     optStructure(topologies[4], dualTopologies[2]);
@@ -916,10 +917,10 @@ class TTosrw extends Script {
                     break;
             }
         }
-        osrw = new TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart, 
-            topologies[0].getProperties(), options.temp, options.dt, options.report, 
+        osrw = new TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart,
+            topologies[0].getProperties(), options.temp, options.dt, options.report,
             options.write, options.async, resetNumSteps, aFuncts.getDefaultListener());
-        
+
         osrw.setResetStatistics(options.reset);
         if (options.traversals) {
             if (nArgs == 1) {
