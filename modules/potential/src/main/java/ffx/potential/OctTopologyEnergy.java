@@ -406,23 +406,29 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
             to[index] = fromD[i];
         }
     }
+    
+    private void addDoublesFrom(double[] to, double[] fromG, double[] fromD) {
+        addDoublesFrom(to, fromG, fromD, 1.0);
+    }
 
     /**
      * Assigns common indices of to to be sum of fromG and fromD, assigns unique
-     * elements to the non-unique indices thereof.
+     * elements to the non-unique indices thereof. Additionally scales the results
+     * by some scalar multiplier.
      * 
      * @param to Sum to
      * @param fromG Add shared from and copy gamma-specific from.
      * @param fromD Add shared from and copy delta-specific from.
+     * @param scalingFactor Scale values by this factor.
      */
-    private void addDoublesFrom(double[] to, double[] fromG, double[] fromD) {
+    private void addDoublesFrom(double[] to, double[] fromG, double[] fromD, double scalingFactor) {
         to = (to == null) ? new double[nVarTot] : to;
         Arrays.fill(to, 0.0);
         for (int i = 0; i < nVarG; i++) {
-            to[indexGToGlobal[i]] = fromG[i];
+            to[indexGToGlobal[i]] = fromG[i] * scalingFactor;
         }
         for (int i = 0; i < nVarD; i++) {
-            to[indexDToGlobal[i]] += fromD[i];
+            to[indexDToGlobal[i]] += (fromD[i] * scalingFactor);
         }
     }
     
@@ -660,7 +666,8 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
     public void getdEdXdL(double[] g) {
         quadTopGamma.getdEdXdL(tempG);
         quadTopDelta.getdEdXdL(tempD);
-        subtractDoublesFrom(g, tempG, tempD, 0.5);
+        addDoublesFrom(g, tempG, tempD, 0.5);
+        //subtractDoublesFrom(g, tempG, tempD, 0.5);
     }
     
     public void setParallel(boolean parallel) {
@@ -724,9 +731,7 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
             totalEnergy = energyG - energyD;
             if (gradient) {
                 subtractDoublesFrom(g, gG, gD);
-                //dEdL = dEdL_G - dEdL_D;
                 dEdL = 0.5 * (dEdL_G + dEdL_D);
-                //d2EdL2 = d2EdL2_G - d2EdL2_D;
                 d2EdL2 = 0.25 * (d2EdL2_G - d2EdL2_D);
             }
             gradient = false;

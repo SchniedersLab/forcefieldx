@@ -52,6 +52,7 @@ import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
@@ -68,13 +69,13 @@ import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
 /**
  * The Barostat class maintains constant pressure using random trial
  * moves in lattice parameters, which are consistent with the space group.
- * 
+ *
  * @see D. Frenkel and B. Smit, "Understanding Molecular Simulation,
  *      2nd Edition", Academic Press, San Diego, CA, 2002; Section 5.4
  *
  * @author Michael J. Schnieders
  */
-public class Barostat implements Potential {
+public class Barostat implements Potential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(Barostat.class.getName());
     /**
@@ -1323,6 +1324,31 @@ public class Barostat implements Potential {
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         return potential.getPreviousAcceleration(previousAcceleration);
+    }
+
+    @Override
+    public void setLambda(double lambda) {
+        potential.setLambda(lambda);
+    }
+
+    @Override
+    public double getLambda() {
+        return potential.getLambda();
+    }
+
+    @Override
+    public double getdEdL() {
+        return potential.getdEdL();
+    }
+
+    @Override
+    public double getd2EdL2() {
+        return potential.getd2EdL2();
+    }
+
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        potential.getdEdXdL(gradient);
     }
 
     private enum MoveType {

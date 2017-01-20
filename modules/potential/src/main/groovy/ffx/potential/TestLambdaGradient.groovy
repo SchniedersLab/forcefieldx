@@ -589,8 +589,10 @@ class TestLambdaGradient extends Script {
             logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD));
             logger.info(String.format(" Analytic:  %15.8f", d2EdL2));
 
-            boolean passed = true;
+            //boolean passed = true;
+            int ndEdXdLFails = 0;
 
+            double rmsError = 0;
             for (int i = 0; i < nAtoms; i++) {
                 int ii = i * 3;
                 double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width;
@@ -605,18 +607,24 @@ class TestLambdaGradient extends Script {
                 double dZa = lambdaGrad[ii];
                 double eZ = dZ - dZa;
 
-                double error = Math.sqrt(eX * eX + eY * eY + eZ * eZ);
+                //double error = Math.sqrt(eX * eX + eY * eY + eZ * eZ);
+                double error = eX * eX + eY * eY + eZ * eZ;
+                rmsError += error;
+                error = Math.sqrt(error);
                 if (error < errTol) {
                     logger.fine(String.format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error));
                 } else {
                     logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error));
                     logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa,dYa,dZa));
                     logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ));
-                    passed = false;
+                    ndEdXdLFails++;
                 }
             }
-            if (passed) {
-                logger.info(String.format(" dE/dX/dL passed for all atoms"));
+            rmsError = Math.sqrt(rmsError / nAtoms);
+            if (ndEdXdLFails == 0) {
+                logger.info(String.format(" dE/dX/dL passed for all atoms: RMS error %15.8f", rmsError));
+            } else {
+                logger.info(String.format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", ndEdXdLFails, nAtoms, rmsError));
             }
 
             logger.info("");
