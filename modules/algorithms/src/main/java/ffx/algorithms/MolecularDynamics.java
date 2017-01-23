@@ -932,7 +932,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Notify the algorithmListener.
              */
             if (algorithmListener != null && step % printFrequency == 0) {
-                algorithmListener.algorithmUpdate(molecularAssembly);
+                //algorithmListener.algorithmUpdate(molecularAssembly);
+                for (AssemblyInfo assembly : assemblies) {
+                    // Probably unwise to parallelize this, so that it doesn't
+                    // hit the GUI with parallel updates.
+                    algorithmListener.algorithmUpdate(assembly.getAssembly());
+                }
             }
 
             /**

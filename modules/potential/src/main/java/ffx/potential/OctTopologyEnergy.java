@@ -384,6 +384,21 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
             }
         }
     }
+    
+    private void doublesToNegD(double[] from, double[] toG, double[] toD) {
+        toG = (toG == null) ? new double[nVarG] : toG;
+        toD = (toD == null) ? new double[nVarD] : toD;
+        for (int i = 0; i < nVarTot; i++) {
+            int index = indexGlobalToG[i];
+            if (index >= 0) {
+                toG[index] = from[i];
+            }
+            index = indexGlobalToD[i];
+            if (index >= 0) {
+                toD[index] = -1 * from[i];
+            }
+        }
+    }
 
     /**
      * Copies from double arrays of length nVarG and nVarD to an object array of
@@ -406,6 +421,31 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
             to[index] = fromD[i];
         }
     }
+
+    /**
+     * Copies from double arrays of length nVarG and nVarD to an object array of
+     * length nVarTot; asserts common indices are equal. Should not be used when 
+     * the result of the common indices should be f(G,D)
+     * 
+     * @param to Copy to
+     * @param fromG Copy shared and gamma-specific from
+     * @param fromD Copy delta-specific from
+     */
+    /*private void doublesFromNegD(double[] to, double[] fromG, double[] fromD) {
+        to = (to == null) ? new double[nVarTot] : to;
+        for (int i = 0; i < nVarG; i++) {
+            to[indexGToGlobal[i]] = fromG[i];
+        }
+        for (int i = 0; i < nVarD; i++) {
+            int index = indexDToGlobal[i];
+            // Assert this is either a unique from B or it's equal to what came from A.
+            if (index > nShared) {
+                to[index] = -1 * fromD[i];
+            }
+            assert (index >= nShared || to[index] == fromD[i]);
+            //to[index] = fromD[i];
+        }
+    }*/
     
     private void addDoublesFrom(double[] to, double[] fromG, double[] fromD) {
         addDoublesFrom(to, fromG, fromD, 1.0);
@@ -554,6 +594,7 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
         quadTopGamma.getCoordinates(xG);
         quadTopDelta.getCoordinates(xD);
         doublesFrom(x, xG, xD);
+        //doublesFromNegD(x, xG, xD);
         return x;
     }
 
@@ -666,8 +707,8 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
     public void getdEdXdL(double[] g) {
         quadTopGamma.getdEdXdL(tempG);
         quadTopDelta.getdEdXdL(tempD);
-        addDoublesFrom(g, tempG, tempD, 0.5);
-        //subtractDoublesFrom(g, tempG, tempD, 0.5);
+        //addDoublesFrom(g, tempG, tempD, 0.5);
+        subtractDoublesFrom(g, tempG, tempD, 0.5);
     }
     
     public void setParallel(boolean parallel) {
@@ -718,7 +759,8 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
 
         @Override
         public void start() throws Exception {
-            doublesTo(x, xG, xD);
+            //doublesTo(x, xG, xD);
+            doublesToNegD(x, xG, xD);
         }
         
         @Override
@@ -730,7 +772,8 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
         public void finish() throws Exception {
             totalEnergy = energyG - energyD;
             if (gradient) {
-                subtractDoublesFrom(g, gG, gD);
+                //subtractDoublesFrom(g, gG, gD);
+                addDoublesFrom(g, gG, gD);
                 dEdL = 0.5 * (dEdL_G + dEdL_D);
                 d2EdL2 = 0.25 * (d2EdL2_G - d2EdL2_D);
             }
