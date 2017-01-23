@@ -44,6 +44,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,8 +154,8 @@ public final class PDBFilter extends SystemFilter {
      */
     private final Map<Character, Integer> inscodeCount = new HashMap<>();
     /**
-     * Maps chainIDResNumInsCode to renumbered chainIDResNum. For example, 
-     * residue 52A in chain C might be renumbered to residue 53, and mapped as 
+     * Maps chainIDResNumInsCode to renumbered chainIDResNum. For example,
+     * residue 52A in chain C might be renumbered to residue 53, and mapped as
      * "C52A" to "C53".
      */
     private final Map<String, String> pdbToNewResMap = new HashMap<>();
@@ -174,18 +175,7 @@ public final class PDBFilter extends SystemFilter {
      * Flag to indicate a mutation is requested.
      */
     private boolean mutate = false;
-    /**
-     * Residue ID of the residue to mutate.
-     */
-    private int mutateResID = 0;
-    /**
-     * Residue name after mutation.
-     */
-    private String mutateToResname = null;
-    /**
-     * Character for the chain ID of the residue that will be mutated.
-     */
-    private Character mutateChainID = null;
+    private List<Mutation> mutations = null;
     /**
      * Flag to indicate if missing fields should be printed (i.e. missing
      * B-factors).
@@ -227,7 +217,7 @@ public final class PDBFilter extends SystemFilter {
      */
     private int modelsWritten = -1;
     private boolean noVersioning = false;
-    
+
     /**
      * <p>
      * Constructor for PDBFilter.</p>
@@ -287,13 +277,12 @@ public final class PDBFilter extends SystemFilter {
      * @param name the 3-letter code of the amino acid to mutate to.
      */
     public void mutate(Character chainID, int resID, String name) {
-        if (name != null && name.length() == 3) {
-            logger.info(String.format(" Mutating chain %c residue %d to %s.", chainID, resID, name));
-            mutate = true;
-            mutateResID = resID;
-            mutateChainID = chainID;
-            mutateToResname = name;
+        logger.info(String.format(" Mutating chain %c residue %d to %s.", chainID, resID, name));
+        mutate = true;
+        if (mutations == null) {
+            mutations = new ArrayList<>();
         }
+        mutations.add(new Mutation(resID, chainID, name));
     }
 
     /**
@@ -332,15 +321,15 @@ public final class PDBFilter extends SystemFilter {
         listMode = set;
         listOutput = new ArrayList<>();
     }
-    
+
     public void setModelNumbering(boolean set) {
         modelsWritten = 0;
     }
-    
+
     public void setNoVersioning(boolean set) {
         noVersioning = set;
     }
-    
+
     public ArrayList<String> getListOutput() {
         return listOutput;
     }
@@ -348,7 +337,7 @@ public final class PDBFilter extends SystemFilter {
     public void clearListOutput() {
         listOutput.clear();
     }
-    
+
     /**
      * {@inheritDoc}
      *
@@ -412,16 +401,18 @@ public final class PDBFilter extends SystemFilter {
                             }
                             line = cr.readLine();
                         }
-                        if (!chainIDs.contains(mutateChainID)) {
-                            if (chainIDs.size() == 1) {
-                                logger.warning(String.format(" Chain ID %c for "
-                                        + "mutation not found: only one chain %c "
-                                        + "found.", mutateChainID, chainIDs.get(0)));
-                                mutateChainID = chainIDs.get(0);
-                            } else {
-                                logger.warning(String.format(" Chain ID %c for "
-                                        + "mutation not found: mutation will not "
-                                        + "proceed.", mutateChainID));
+                        for (Mutation mtn : mutations) {
+                            if (!chainIDs.contains(mtn.chainChar)) {
+                                if (chainIDs.size() == 1) {
+                                    logger.warning(String.format(" Chain ID %c for "
+                                            + "mutation not found: only one chain %c "
+                                            + "found.", mtn.chainChar, chainIDs.get(0)));
+                                    mtn = new Mutation(mtn.resID, chainIDs.get(0), mtn.resName);
+                                } else {
+                                    logger.warning(String.format(" Chain ID %c for "
+                                            + "mutation not found: mutation will not "
+                                            + "proceed.", mtn.chainChar));
+                                }
                             }
                         }
                     } catch (IOException ex) {
@@ -683,7 +674,7 @@ public final class PDBFilter extends SystemFilter {
                                 chainID = line.substring(21, 22).charAt(0);
                                 segID = getSegID(chainID);
                                 resSeq = Hybrid36.decode(4, line.substring(22, 26));
-                                
+
                                 char insertionCode = line.charAt(26);
                                 if (insertionCode != ' ' && !containsInsCode) {
                                     containsInsCode = true;
@@ -693,7 +684,7 @@ public final class PDBFilter extends SystemFilter {
                                             + "eliminate insertion codes (52A "
                                             + "becomes 53, 53 becomes 54, etc)");
                                 }
-                                
+
                                 int offset = inscodeCount.getOrDefault(chainID, 0);
                                 String pdbResNum = String.format("%c%d%c", chainID, resSeq, insertionCode);
                                 if (!pdbToNewResMap.containsKey(pdbResNum)) {
@@ -704,8 +695,8 @@ public final class PDBFilter extends SystemFilter {
                                     resSeq += offset;
                                     if (offset != 0) {
                                         logger.info(String.format(" Chain %c "
-                                                + "residue %s-%s renumbered to %c %s-%d", 
-                                                chainID, pdbResNum.substring(1).trim(), 
+                                                + "residue %s-%s renumbered to %c %s-%d",
+                                                chainID, pdbResNum.substring(1).trim(),
                                                 resName, chainID, resName, resSeq));
                                     }
                                     String newNum = String.format("%c%d", chainID, resSeq);
@@ -713,18 +704,23 @@ public final class PDBFilter extends SystemFilter {
                                 } else {
                                     resSeq += offset;
                                 }
-                                
+
                                 printAtom = false;
-                                if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
-                                    String atomName = name.toUpperCase();
-                                    if (atomName.equals("N") || atomName.equals("C")
-                                            || atomName.equals("O") || atomName.equals("CA")) {
-                                        printAtom = true;
-                                        resName = mutateToResname;
-                                    } else {
-                                        logger.info(String.format(" Deleting atom %s of %s %d",
-                                                atomName, resName, resSeq));
-                                        break;
+                                if (mutate) {
+                                    for (Mutation mtn : mutations) {
+                                        if (chainID == mtn.chainChar
+                                                && resSeq == mtn.resID) {
+                                            String atomName = name.toUpperCase();
+                                            if (atomName.equals("N") || atomName.equals("C")
+                                                    || atomName.equals("O") || atomName.equals("CA")) {
+                                                printAtom = true;
+                                                resName = mtn.resName;
+                                            } else {
+                                                logger.info(String.format(" Deleting atom %s of %s %d",
+                                                        atomName, resName, resSeq));
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                                 d = new double[3];
@@ -834,7 +830,7 @@ public final class PDBFilter extends SystemFilter {
                             } else {
                                 resSeq += offset;
                             }
-                            
+
                             d = new double[3];
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());
@@ -1130,10 +1126,10 @@ public final class PDBFilter extends SystemFilter {
     public void setIgnoreInactiveAtoms(boolean ignoreInactiveAtoms) {
         this.ignoreUnusedAtoms = ignoreInactiveAtoms;
     }
-    
+
     /**
      * Sets whether this PDBFilter should log each time it saves to a file.
-     * @param logWrites 
+     * @param logWrites
      */
     public void setLogWrites(boolean logWrites) {
         this.logWrites = logWrites;
@@ -1244,7 +1240,7 @@ public final class PDBFilter extends SystemFilter {
             fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
             /**
-             * Will come before CRYST1 and ATOM records, but after anything 
+             * Will come before CRYST1 and ATOM records, but after anything
              * written by writeFileWithHeader (particularly X-ray refinement
              * statistics).
              */
@@ -1576,7 +1572,7 @@ public final class PDBFilter extends SystemFilter {
                 }
                 resID++;
             }
-            
+
             String end = model != null ? "ENDMDL" : "END";
             if (!listMode) {
                 bw.write(end);
@@ -2017,12 +2013,12 @@ public final class PDBFilter extends SystemFilter {
                 char c2ch = ssbond.charAt(29);
                 Polymer c1 = activeMolecularAssembly.getChain(String.format("%c", c1ch));
                 Polymer c2 = activeMolecularAssembly.getChain(String.format("%c", c2ch));
-                
+
                 String origResNum1 = ssbond.substring(17, 21).trim();
                 char insChar1 = ssbond.charAt(21);
                 String origResNum2 = ssbond.substring(31, 35).trim();
                 char insChar2 = ssbond.charAt(35);
-                
+
                 String pdbResNum1 = String.format("%c%s%c", c1ch, origResNum1, insChar1);
                 String pdbResNum2 = String.format("%c%s%c", c2ch, origResNum2, insChar2);
                 String resnum1 = pdbToNewResMap.get(pdbResNum1);
@@ -2035,7 +2031,7 @@ public final class PDBFilter extends SystemFilter {
                     logger.warning(String.format(" Could not find residue %s for SS-bond %s", pdbResNum2, ssbond));
                     continue;
                 }
-                
+
                 Residue r1 = c1.getResidue(Integer.parseInt(resnum1.substring(1)));
                 Residue r2 = c2.getResidue(Integer.parseInt(resnum2.substring(1)));
                 /*Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
@@ -2850,10 +2846,10 @@ public final class PDBFilter extends SystemFilter {
         } else {
             sb.setCharAt(16, ' ');
         }
-        
+
         /*sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
                 xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));*/
-        
+
         /**
          * On the following code:
          * #1: StringBuilder.replace will allow for longer strings, expanding the
@@ -2866,7 +2862,7 @@ public final class PDBFilter extends SystemFilter {
          * past 999.99, that's the difference between "density extends to Venus"
          * and "density extends to Pluto".
          */
-        
+
         StringBuilder decimals = new StringBuilder();
         for (int i = 0; i < 3; i++) {
             try {
@@ -2875,7 +2871,7 @@ public final class PDBFilter extends SystemFilter {
                 String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
                 logger.info(String.format(" XYZ %d coordinate %8.3f for atom %s "
                         + "overflowed bounds of 8.3f string specified by PDB "
-                        + "format; truncating value to %s", i, xyz[i], atom.toString(), 
+                        + "format; truncating value to %s", i, xyz[i], atom.toString(),
                         newValue));
                 decimals.append(newValue);
             }
@@ -2896,7 +2892,7 @@ public final class PDBFilter extends SystemFilter {
             decimals.append(newValue);
         }
         sb.replace(30, 66, decimals.toString());
-        
+
         name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
         name = name.toUpperCase();
         if (atom.isDeuterium()) {
@@ -3027,19 +3023,19 @@ public final class PDBFilter extends SystemFilter {
             }
         }
     }
-    
+
     @Override
     public boolean readNext() {
         return readNext(false);
     }
-    
+
     @Override
     public boolean readNext(boolean resetPosition) {
         // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture one or more digits.
         Pattern modelPatt = Pattern.compile("^MODEL\\s+(\\d+)");
         modelsRead = resetPosition ? 1 : modelsRead + 1;
         boolean eof = true;
-        
+
         for (MolecularAssembly system : systems) {
             File file = system.getFile();
             currentFile = file;
@@ -3190,7 +3186,7 @@ public final class PDBFilter extends SystemFilter {
                         break;
                     }
                     line = currentReader.readLine();
-                    
+
                 }
                 return true;
             } catch (IOException ex) {
@@ -3200,7 +3196,7 @@ public final class PDBFilter extends SystemFilter {
         }
         return false;
     }
-    
+
     @Override
     public void closeReader() {
         // Java 8 stuff that Netbeans suggested. Faster than for loop?
@@ -3764,7 +3760,7 @@ public final class PDBFilter extends SystemFilter {
         segIDs.add(newSegID);
         currentChainID = c;
         currentSegID = newSegID;
-        
+
         if (segidMap.containsKey(c)) {
             segidMap.get(c).add(newSegID);
         } else {
@@ -3774,6 +3770,34 @@ public final class PDBFilter extends SystemFilter {
         }
 
         return newSegID;
+    }
+
+    private class Mutation {
+        /**
+         * Residue ID of the residue to mutate.
+         */
+        final int resID;
+        /**
+         * Residue name after mutation.
+         */
+        final String resName;
+        /**
+         * Character for the chain ID of the residue that will be mutated.
+         */
+        final char chainChar;
+        Mutation(int resID, char chainChar, String newResName) {
+            if (newResName == null || newResName.length() != 3) {
+                logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
+            }
+            try {
+               AminoAcid3.valueOf(newResName);
+            } catch (IllegalArgumentException ex) {
+                logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
+            }
+            this.resID = resID;
+            this.chainChar = chainChar;
+            this.resName = newResName;
+        }
     }
 
     /**
