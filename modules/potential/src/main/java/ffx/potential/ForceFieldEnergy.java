@@ -1665,6 +1665,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             logger.warning(message);
         }
     }
+    
+    public void setLambdaTerm(boolean set) {
+        lambdaTerm = set;
+        molecularAssembly.getForceField().addForceFieldBoolean(ForceFieldBoolean.LAMBDATERM, set);
+        if (set) {
+            reInit();
+        }
+    }
 
     public void setPrintOverride(boolean set) {
         this.printOverride = set;
