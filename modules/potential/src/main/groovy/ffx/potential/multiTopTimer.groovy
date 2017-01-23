@@ -199,6 +199,7 @@ if (options.ef2) {
 // Starting lambda value.
 if (options.l) {
     lambda = Double.parseDouble(options.l);
+    System.setProperty("lambdaterm", "true");
 }
 
 if (options.np) {
@@ -361,6 +362,7 @@ switch (arguments.size()) {
         energy = energies[0];
         break;
     case 2:
+        System.setProperty("lambdaterm", "true");
         energy = new DualTopologyEnergy(topologies[0], topologies[1]);
         energy.setLambda(lambda);
         if (numParallel == 2) {
@@ -368,6 +370,7 @@ switch (arguments.size()) {
         }
         break;
     case 4:
+        System.setProperty("lambdaterm", "true");
         DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1]);
         DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2]);
         List<Integer> uniqueA = new ArrayList<>();
