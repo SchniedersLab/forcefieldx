@@ -46,10 +46,6 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
-import org.apache.commons.math3.analysis.differentiation.MultivariateDifferentiableFunction;
-import org.apache.commons.math3.exception.MathIllegalArgumentException;
-
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -464,7 +460,7 @@ public class VanDerWaals implements MaskingInterface,
             nAtoms = atoms.length;
         }
         if (atomClass == null || nAtoms > atomClass.length
-                || lambdaTerm || esvTerm) {
+                || lambdaTerm || esvTerm || gradient) {
             atomClass = new int[nAtoms];
             coordinates = new double[nAtoms * 3];
             reduced = new double[nSymm][nAtoms * 3];
@@ -965,8 +961,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     public void updateEsvLambda() {
         if (!esvTerm) {
-            logger.warning("Improper method call: updateEsvLambda().");
-            return;
+            return;     // TODO: figure out when/why this is happening
         }
         numESVs = esvSystem.n();
         if (esvLambdaSwitch == null || esvLambdaSwitch.length < nAtoms) {
@@ -1304,7 +1299,7 @@ public class VanDerWaals implements MaskingInterface,
             }
             if (esvTerm) {
                 for (int i = 0; i < numESVs; i++) {
-                    esvDeriv[i].set(0.0);
+                    esvDeriv[i].getAndSet(0.0);
                 }
                 lambdaFactors = new LambdaFactorsESV[threadCount];
                 for (int i = 0; i < threadCount; i++) {
