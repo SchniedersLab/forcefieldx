@@ -817,15 +817,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 permLambdaAlpha = 2.0;
             }
             /**
-             * A PERMANENT_LAMBDA_EXPONENT of 1 gives linear charging of the
-             * permanent electrostatics, which is most efficient.
-             *
-             * A quadratic schedule also works, but the dU/dL forces near
-             * lambda=1 are may be larger by a factor of 2.
+             * A PERMANENT_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
+             * the beginning of the permanent schedule. Choosing a power of 3
+             * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              */
-            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
-            if (permLambdaExponent < 1.0) {
-                permLambdaExponent = 1.0;
+            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 3.0);
+            if (permLambdaExponent < 3.0) {
+                permLambdaExponent = 3.0;
             }
             /**
              * A POLARIZATION_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
