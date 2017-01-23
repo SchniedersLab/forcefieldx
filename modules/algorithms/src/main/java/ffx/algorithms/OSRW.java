@@ -499,11 +499,11 @@ public class OSRW extends AbstractOSRW {
              */
             if (energyCount % printFrequency == 0) {
                 if (lambdaBins < 1000) {
-                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
-                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+                    logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda, halfThetaVelocity));
                 } else {
-                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f",
-                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda));
+                    logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
+                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda, halfThetaVelocity));
                 }
             }
 
@@ -626,7 +626,7 @@ public class OSRW extends AbstractOSRW {
      */
     private void checkRecursionKernelSize(double dEdLambda) {
         if (dEdLambda > maxFLambda) {
-            logger.info(String.format(" Current F_lambda %8.2f > maximum historgram size %8.2f.",
+            logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));
 
             double origDeltaG = updateFLambda(false);
@@ -646,14 +646,14 @@ public class OSRW extends AbstractOSRW {
             recursionKernel = newRecursionKernel;
             FLambdaBins = newFLambdaBins;
             maxFLambda = minFLambda + dFL * FLambdaBins;
-            logger.info(String.format(" New historgram %8.2f to %8.2f with %d bins.\n",
+            logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
             assert (origDeltaG == updateFLambda(false));
 
         }
         if (dEdLambda < minFLambda) {
-            logger.info(String.format(" Current F_lambda %8.2f < minimum historgram size %8.2f.",
+            logger.info(String.format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
                     dEdLambda, minFLambda));
 
             double origDeltaG = updateFLambda(false);
@@ -674,7 +674,7 @@ public class OSRW extends AbstractOSRW {
             recursionKernel = newRecursionKernel;
             minFLambda = minFLambda - offset * dFL;
             FLambdaBins = newFLambdaBins;
-            logger.info(String.format(" New historgram %8.2f to %8.2f with %d bins.\n",
+            logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
                     minFLambda, maxFLambda, FLambdaBins));
 
             assert (origDeltaG == updateFLambda(false));

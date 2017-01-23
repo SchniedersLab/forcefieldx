@@ -270,8 +270,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private double lambda = 1.0;
     /**
      * The polarization Lambda value goes from 0.0 .. 1.0 as the global lambda
-     * value varies between polarizationLambdaStart .. 1.0.
+     * value varies between polLambdaStart .. polLambadEnd.
      */
+    /**
+     * The polarization Lambda value goes from 0.0 .. 1.0 as the global lambda
+     * value varies between permLambdaStart .. permLambdaEnd.
+     */
+    private double permLambda = 1.0;
     /**
      * Constant α in: r' = sqrt(r^2 + α*(1 - L)^2)
      */
@@ -280,6 +285,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Power on L in front of the pairwise multipole potential.
      */
     private double permLambdaExponent = 1.0;
+    /**
+     * Begin turning on permanent multipoles at Lambda = 0.5;
+     */
+    private double permLambdaStart = 0.5;
+    /**
+     * Finish turning on permanent multipoles at Lambda = 1.0;
+     */
+    private double permLambdaEnd = 1.0;
+
     /**
      * Start turning on polarization later in the Lambda path to prevent SCF
      * convergence problems when atoms nearly overlap.
@@ -722,6 +736,22 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         if (lambdaTerm) {
             /**
+             * Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable
+             * trajectories.
+             */
+            permLambdaStart = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_START, 0.5);
+            if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
+                permLambdaStart = 0.5;
+            }
+            /**
+             * Values of PERMANENT_LAMBDA_END must be greater than
+             * permLambdaStart and <= 1.0.
+             */
+            permLambdaEnd = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_END, 1.0);
+            if (permLambdaStart < permLambdaStart || permLambdaEnd > 1.0) {
+                permLambdaEnd = 1.0;
+            }
+            /**
              * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable
              * trajectories.
              */
@@ -731,9 +761,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
             /**
              * A PERMANENT_LAMBDA_EXPONENT of 1 gives linear charging of the
-             * permanent electrostatics, which is most efficient. A quadratic
-             * schedule (PERMANENT_LAMBDA_EXPONENT) also works, but the dU/dL
-             * forces near lambda=1 are may be larger by a factor of 2.
+             * permanent electrostatics, which is most efficient.
+             *
+             * A quadratic schedule also works, but the dU/dL forces near
+             * lambda=1 are may be larger by a factor of 2.
              */
             permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 1.0);
             if (permLambdaExponent < 1.0) {
@@ -745,17 +776,19 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              */
             polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
-            if (polLambdaExponent < 0.0) {
-                polLambdaExponent = 0.0;
+            if (polLambdaExponent < 3.0) {
+                polLambdaExponent = 3.0;
             }
             /**
              * The POLARIZATION_LAMBDA_START defines the point in the lambda
              * schedule when the condensed phase polarization of the ligand
-             * begins to be turned on. If the condensed phase polarization is
-             * considered near lambda=0, then SCF convergence is slow, even with
-             * Thole damping. In addition, 2 (instead of 1) condensed phase SCF
-             * calculations are necessary from the beginning of the window to
-             * lambda=1.
+             * begins to be turned on.
+             *
+             * If the condensed phase polarization is considered near lambda=0,
+             * then SCF convergence is slow, even with Thole damping.
+             *
+             * In addition, 2 (instead of 1) condensed phase SCF calculations
+             * are necessary from the beginning of the window to lambda=1.
              */
             polLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
             if (polLambdaStart < 0.0 || polLambdaStart > 0.9) {
@@ -828,25 +861,25 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder("\n Electrostatics\n");
-            sb.append(format("  Polarization:                        %8s\n", polarization.toString()));
+            StringBuilder sb = new StringBuilder("\n  Electrostatics\n");
+            sb.append(format("   Polarization:                       %8s\n", polarization.toString()));
             if (polarization == Polarization.MUTUAL) {
                 sb.append(format("   SCF Convergence Criteria:          %8.3e\n", poleps));
                 sb.append(format("   SCF Predictor:                      %8s\n", scfPredictor.toString()));
                 sb.append(format("   SCF Algorithm:                      %8s\n", scfAlgorithm));
                 if (scfAlgorithm == SCFAlgorithm.SOR) {
-                    sb.append(format("   SOR Parameter:                      %8.3f\n", polsor));
+                    sb.append(format("    SOR Parameter:                     %8.3f\n", polsor));
                 } else {
-                    sb.append(format("   CG Preconditioner Cut-Off:          %8.3f\n", preconditionerCutoff));
-                    sb.append(format("   CG Preconditioner Ewald Coefficient:%8.3f\n", preconditionerEwald));
+                    sb.append(format("    CG Preconditioner Cut-Off:         %8.3f\n", preconditionerCutoff));
+                    sb.append(format("    CG Preconditioner Ewald Coeff.:    %8.3f\n", preconditionerEwald));
                 }
             }
             if (aewald > 0.0) {
-                sb.append("  Particle-mesh Ewald\n");
-                sb.append(format("   Ewald Coefficient:                  %8.3f\n", aewald));
-                sb.append(format("   Particle Cut-Off:                   %8.3f (A)", off));
+                sb.append("   Particle-mesh Ewald\n");
+                sb.append(format("    Ewald Coefficient:                 %8.3f\n", aewald));
+                sb.append(format("    Particle Cut-Off:                  %8.3f (A)", off));
             } else {
-                sb.append(format("   Electrostatics Cut-Off:             %8.3f (A)\n", off));
+                sb.append(format("    Electrostatics Cut-Off:            %8.3f (A)\n", off));
             }
             logger.info(sb.toString());
         }
@@ -932,16 +965,18 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         if (lambdaTerm) {
-            StringBuilder sb = new StringBuilder(" Lambda Parameters\n");
-            sb.append(format(" Permanent Multipole Softcore Alpha:      %5.3f\n", permLambdaAlpha));
-            sb.append(format(" Permanent Multipole Lambda Exponent:     %5.3f\n", permLambdaExponent));
+            StringBuilder sb = new StringBuilder("   Alchemical Parameters\n");
+            sb.append(format("    Permanent Multipole Range:      %5.3f-%5.3f\n",
+                    permLambdaStart, permLambdaEnd));
+            sb.append(format("    Permanent Multipole Softcore Alpha:   %5.3f\n", permLambdaAlpha));
+            sb.append(format("    Permanent Multipole Lambda Exponent:  %5.3f\n", permLambdaExponent));
             if (polarization != Polarization.NONE) {
-                sb.append(format(" Polarization Lambda Exponent:            %5.3f\n", polLambdaExponent));
-                sb.append(format(" Polarization Lambda Range:      %5.3f .. %5.3f\n",
+                sb.append(format("    Polarization Lambda Exponent:         %5.3f\n", polLambdaExponent));
+                sb.append(format("    Polarization Range:             %5.3f-%5.3f\n",
                         polLambdaStart, polLambdaEnd));
-                sb.append(format(" Condensed SCF Without Ligand:            %B\n", doNoLigandCondensedSCF));
+                sb.append(format("    Condensed SCF Without Ligand:         %B\n", doNoLigandCondensedSCF));
             }
-            sb.append(format(" Vapor Electrostatics:                    %B\n", doLigandVaporElec));
+            sb.append(format("    Vapor Electrostatics:                 %B\n", doLigandVaporElec));
             logger.info(sb.toString());
         }
     }
@@ -6569,16 +6604,37 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
          * define dlAlpha = alpha * 1.0 - lambda)
          *
          * then df/dL = -dlAlpha / f and dg/dL = dlAlpha * g^3
+         *
+         * Multipoles are turned on from permLambdaStart .. permLambdaEnd.
          */
-        lAlpha = permLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
-        dlAlpha = permLambdaAlpha * (1.0 - lambda);
-        d2lAlpha = -permLambdaAlpha;
-
-        lPowPerm = pow(lambda, permLambdaExponent);
-        dlPowPerm = permLambdaExponent * pow(lambda, permLambdaExponent - 1.0);
+        lPowPerm = 1.0;
+        dlPowPerm = 0.0;
         d2lPowPerm = 0.0;
-        if (permLambdaExponent >= 2.0) {
-            d2lPowPerm = permLambdaExponent * (permLambdaExponent - 1.0) * pow(lambda, permLambdaExponent - 2.0);
+        lAlpha = 0.0;
+        dlAlpha = 0.0;
+        d2lAlpha = 0.0;
+        if (lambda < permLambdaStart) {
+            lPowPerm = 0.0;
+        } else if (lambda <= permLambdaEnd) {
+            double permWindow = permLambdaEnd - permLambdaStart;
+            double permLambdaScale = 1.0 / permWindow;
+            permLambda = permLambdaScale * (lambda - permLambdaStart);
+
+            lAlpha = permLambdaAlpha * (1.0 - permLambda) * (1.0 - permLambda);
+            dlAlpha = permLambdaAlpha * (1.0 - permLambda);
+            d2lAlpha = -permLambdaAlpha;
+
+            lPowPerm = pow(permLambda, permLambdaExponent);
+            dlPowPerm = permLambdaExponent * pow(permLambda, permLambdaExponent - 1.0);
+            d2lPowPerm = 0.0;
+            if (permLambdaExponent >= 2.0) {
+                d2lPowPerm = permLambdaExponent * (permLambdaExponent - 1.0) * pow(permLambda, permLambdaExponent - 2.0);
+            }
+
+            dlAlpha *= permLambdaScale;
+            d2lAlpha *= (permLambdaScale * permLambdaScale);
+            dlPowPerm *= permLambdaScale;
+            d2lPowPerm *= (permLambdaScale * permLambdaScale);
         }
 
         /**
