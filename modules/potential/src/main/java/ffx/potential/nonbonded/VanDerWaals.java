@@ -40,7 +40,6 @@ package ffx.potential.nonbonded;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -350,10 +349,10 @@ public class VanDerWaals implements MaskingInterface,
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
-            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.05);
+            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 1.0);
             vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
             if (vdwLambdaAlpha < 0.0) {
-                vdwLambdaAlpha = 0.05;
+                vdwLambdaAlpha = 1.0;
             }
             if (vdwLambdaExponent < 1.0) {
                 vdwLambdaExponent = 1.0;
@@ -440,15 +439,15 @@ public class VanDerWaals implements MaskingInterface,
          */
         buildNeighborList(atoms);
 
-        logger.info("  Van der Waals");
+        logger.info("\n  Van der Waals");
         logger.info(format("   Switch Start:                         %6.3f (A)", cut));
         logger.info(format("   Cut-Off:                              %6.3f (A)", off));
         //logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));
 
         if (lambdaTerm) {
-            logger.info("  Lambda,ESV Parameters");
-            logger.info(format("   Softcore Alpha:                        %5.3f", vdwLambdaAlpha));
-            logger.info(format("   Lambda Exponent:                       %5.3f\n", vdwLambdaExponent));
+            logger.info("   Alchemical Parameters");
+            logger.info(format("    Softcore Alpha:                       %5.3f", vdwLambdaAlpha));
+            logger.info(format("    Lambda Exponent:                      %5.3f", vdwLambdaExponent));
         }
     }
 

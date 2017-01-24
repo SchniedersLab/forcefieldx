@@ -199,6 +199,7 @@ public abstract class AbstractOSRW implements Potential {
      * Random force conversion to kcal/mol/A;
      */
     private static final double randomConvert = sqrt(4.184) / 10e9;
+    //private static final double invRandomConvert = 1.0 / randomConvert;
     /**
      * randomConvert squared.
      */
@@ -328,7 +329,7 @@ public abstract class AbstractOSRW implements Potential {
     protected double osrwOptimizationLambdaCutoff = 0.5;
     protected double osrwOptimizationEps = 0.1;
     protected double osrwOptimizationTolerance = 1.0e-8;
-    private MolecularAssembly molecularAssembly;
+    protected MolecularAssembly molecularAssembly;
     protected PDBFilter pdbFilter;
     protected File pdbFile;
 
@@ -647,6 +648,7 @@ public abstract class AbstractOSRW implements Potential {
     protected void langevin() {
         double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
+        //double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() * invRandomConvert;
         double dEdL = -dEdLambda * sin(2.0 * theta);
         halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
                 + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
