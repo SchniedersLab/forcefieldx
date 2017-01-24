@@ -59,7 +59,7 @@ import ffx.autoparm.Wizard
 
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc fragment [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc fragment [options] <sdf-filename> <cif-filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.max(longOpt:'max frag. size', args:1, argName:'30', 'Maximum fragment size.');
 cli.min(longOpt:'min frag. size', args:1, argName:'20', 'Minimum fragment size.');
@@ -71,15 +71,20 @@ List<String> arguments = options.arguments();
 if (options.h || arguments == null) {
     return cli.usage();
 }
-
+int max;
+int min;
 // Maximum fragment size.
 if (options.max) {
     max = Integer.parseInt(options.max);
+} else{
+    max = 30;
 }
 
 // Minimum fragment size.
 if (options.min) {
     min = Integer.parseInt(options.min);
+} else{
+    min = 6;
 }
 
 // Read in command line argument.
@@ -92,8 +97,7 @@ smiles = wi.readSDF();
 String sdffile = arguments.get(0);
 String ciffile = arguments.get(1);
 String smi = new String();
-int max;
-int min;
+
 logger.info(String.format("\nExhaustively Fragmenting %s\n", sdffile));
 
 //System.out.println("\nFinished Wizard, calling Fragmenter\n");
