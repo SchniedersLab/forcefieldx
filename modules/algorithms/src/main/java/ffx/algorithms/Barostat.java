@@ -67,11 +67,11 @@ import static ffx.crystal.SpaceGroup.CrystalSystem.TRICLINIC;
 import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
 
 /**
- * The Barostat class maintains constant pressure using random trial
- * moves in lattice parameters, which are consistent with the space group.
+ * The Barostat class maintains constant pressure using random trial moves in
+ * lattice parameters, which are consistent with the space group.
  *
- * @see D. Frenkel and B. Smit, "Understanding Molecular Simulation,
- *      2nd Edition", Academic Press, San Diego, CA, 2002; Section 5.4
+ * @see D. Frenkel and B. Smit, "Understanding Molecular Simulation, 2nd
+ * Edition", Academic Press, San Diego, CA, 2002; Section 5.4
  *
  * @author Michael J. Schnieders
  */
@@ -105,11 +105,15 @@ public class Barostat implements Potential, LambdaInterface {
     /**
      * Default edge length move (A).
      */
-    private double maxSideMove = 0.25;
+    private double maxSideMove = 0.5;
     /**
      * Default angular move (degrees).
      */
-    private double maxAngleMove = 1.0;
+    private double maxAngleMove = 2.0;
+    /**
+     * Minimum axis length (A).
+     */
+    private double minAxisLength = 2.0;
     /**
      * Constant for cube root.
      */
@@ -323,12 +327,27 @@ public class Barostat implements Potential, LambdaInterface {
                 break;
         }
 
+        /**
+         * Enforce minimum & maximum density constraints.
+         */
         double den = density();
-
         if (den < minDensity || den > maxDensity) {
             crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
             return currentE;
         }
+
+        /**
+         * Enforce modest minimum unit cell axis lengths.
+         */
+        if (unitCell.a < minAxisLength || unitCell.b < minAxisLength
+                || unitCell.c < minAxisLength) {
+            crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+            return currentE;
+        }
+
+        /**
+         * To do? Enforce minimum / maximum axis angles?
+         */
 
         // Apply the proposed boundary condition.
         potential.setCrystal(crystal);
