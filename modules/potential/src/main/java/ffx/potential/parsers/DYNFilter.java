@@ -204,7 +204,7 @@ public class DYNFilter {
      * @param ap an array of double.
      * @return a boolean.
      */
-    public boolean writeDYN(File dynFile, Crystal unitCell, double x[], double v[],
+    public boolean writeDYN(File dynFile, Crystal crystal, double x[], double v[],
             double[] a, double ap[]) {
         FileWriter fw = null;
         BufferedWriter bw = null;
@@ -219,6 +219,7 @@ public class DYNFilter {
             bw.write(output);
 
             bw.write(" Periodic Box Dimensions :\n");
+            Crystal unitCell = crystal.getUnitCell();
             bw.write(format("%26.16E%26.16E%26.16E\n", unitCell.a, unitCell.b, unitCell.c));
             bw.write(format("%26.16E%26.16E%26.16E\n", unitCell.alpha, unitCell.beta, unitCell.gamma));
 
