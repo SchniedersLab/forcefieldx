@@ -218,11 +218,11 @@ class TTosrw extends Script {
         /**
          * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
          */
-        @Option(shortName='sm', longName='maxSideMove', defaultValue='0.25', description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
+        @Option(shortName='sm', longName='maxSideMove', defaultValue='1.5', description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
         /**
          * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
          */
-        @Option(shortName='am', longName='maxAngleMove', defaultValue='1.0', description='Maximum angle move allowed by the barostat in degrees') double maxAngleMove;
+        @Option(shortName='am', longName='maxAngleMove', defaultValue='2.0', description='Maximum angle move allowed by the barostat in degrees') double maxAngleMove;
         /**
          * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
          */
