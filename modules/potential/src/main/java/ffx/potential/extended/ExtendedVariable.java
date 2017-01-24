@@ -59,13 +59,14 @@ import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.nonbonded.MultiplicativeSwitch;
+import ffx.potential.parameters.MultipoleType;
 
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.TitrationESV.TitrationUtils.isTitratableHydrogen;
 
 /**
  * A generalized extended system variable.
- * Treatment of ESVs: 
+ * Treatment of ESVs:
  *  a. Bonded terms interpolate linearly between end states.
  *      ESVs based on MultiResidue (e.g. TitrationESV) place a multiplier in the term objects themselves.
  *  b. PME and vdW scaling and derivatives are handled inside these classes' inner loops.
@@ -73,27 +74,27 @@ import static ffx.potential.extended.TitrationESV.TitrationUtils.isTitratableHyd
  * @author slucore
  */
 public abstract class ExtendedVariable {
-    
+
     // System handles
     private static final Logger logger = Logger.getLogger(ExtendedVariable.class.getName());
     private static int esvIndexer = 0;
     public final int index;
     private boolean ready = false;
-    
+
     // Properties
     private static final boolean esvPropagation = prop("esv-propagation", false);
     private static final Double biasOverride = prop("esv-biasOverride", Double.NaN);
     private static final double thetaMass = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
     private static final double thetaFriction = prop("esv-thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
-    
+
     // Enumerations
     public enum ExtInclusionMode {
         ALL_ATOMS, TITRATABLE_H;
-    }    
+    }
     public enum AtomList {
         PMEVDW_ZRO, PMEVDW_ONE, PMEVDW_SHARED, PMEVDW_UNSHARED, BONDED_ZRO, BONDED_ONE, BONDED_ALL;
     }
-    
+
     // Lambda and derivative variables
     private double lambda;                          // ESVs travel on {0,1}
     private double theta;                           // Propagates lambda particle via "lambda=sin(theta)^2"
@@ -115,7 +116,7 @@ public abstract class ExtendedVariable {
      * Sigmoidal switching function. Maps lambda -> S(lambda) which has a flatter deriv near zero/unity.
      */
     private final MultiplicativeSwitch switchingFunction;
-    
+
     // Atom lists and scaled terms
     private MultiResidue multiRes;
     private List<Atom> backbone = new ArrayList<>();
@@ -126,14 +127,14 @@ public abstract class ExtendedVariable {
     private final List<Atom> atomsSharedExtH, atomsUnsharedExtH;
     private final List<Atom> bondedAllAtoms;
     private int moleculeNumber = 0;
-    
+
     // Bonded energy and derivative handling
     private List<BondedTerm> bondedOne, bondedZro;  // valence terms for each side; mola won't see zro by default
     private MSNode termNode;                        // modified to contain all applicable bonded terms
     private final SharedDouble bondedDeriv = new SharedDouble();
     private final HashMap<Class<? extends BondedTerm>,SharedDouble> inplayDerivDecomp;
     private final HashMap<Class<? extends BondedTerm>,SharedDouble> backgroundDerivDecomp;
-    
+
     public ExtendedVariable(MultiResidue multiRes, double biasMag, double initialLambda) {
         index = esvIndexer++;
         discrBiasBeta = Double.isFinite(biasOverride) ? biasOverride : biasMag;
@@ -145,7 +146,7 @@ public abstract class ExtendedVariable {
         termNode = resOne.getTerms();
         resZro = multiRes.getInactive().get(0);
         moleculeNumber = resOne.getAtomList().get(0).getMoleculeNumber();
-        
+
         atomLists = new HashMap<>();
         atomsOneExtH = new ArrayList<>();
         atomsZroExtH = new ArrayList<>();
@@ -161,7 +162,7 @@ public abstract class ExtendedVariable {
         atomLists.put(AtomList.BONDED_ONE, atomsOneExtAll);
         atomLists.put(AtomList.BONDED_ZRO, atomsZroExtAll);
         atomLists.put(AtomList.BONDED_ALL, bondedAllAtoms);
-        
+
         if (ExtendedSystem.esvDecomposeBonded) {
             inplayDerivDecomp = new HashMap<>();
             backgroundDerivDecomp = new HashMap<>();
@@ -170,14 +171,14 @@ public abstract class ExtendedVariable {
             backgroundDerivDecomp = null;
         }
     }
-    
+
     public ExtendedVariable(MultiResidue multiRes, double biasMag) {
         this(multiRes, biasMag, 1.0);
-    }    
+    }
     public ExtendedVariable(MultiResidue multiRes) {
         this(multiRes, 0.0, 1.0);
     }
-    
+
     /**
      * Called by readyUp() to populate atomsOne, atomsZro, atomsShared, atomsUnshared.
      * Use this to move titration-specific initialization to TitrationESV.
@@ -191,11 +192,11 @@ public abstract class ExtendedVariable {
      * Should include at least the discretization bias; add any type-specific biases (eg pH).
      */
     public abstract double getTotalBiasDeriv(double temperature, boolean print);
-        
+
     /**
      * Propagate lambda using Langevin dynamics.
      * Check that temperature goes to the value used below (when set as a constant),
-     * even when sim is decoupled. Be sure it call setLambda() rather than using 
+     * even when sim is decoupled. Be sure it call setLambda() rather than using
      * direct access for array resizing, etc.
      */
     public void propagate(double dEdEsv, double dt, double setTemperature) {
@@ -219,17 +220,41 @@ public abstract class ExtendedVariable {
         double sinTheta = sin(theta);
         setLambda(sinTheta * sinTheta);
     }
-    
-    final void setLambda(double lambda) {
+
+    /**
+     * BEWARE calling this manually; a call to ExtendedSystem.updateListeners() is required 
+     * before this change can properly take effect.
+     */
+    public final void setLambda(double lambda) {
         this.lambda = lambda;
         this.lSwitch = switchingFunction.taper(lambda);
         this.dlSwitch = switchingFunction.dtaper(lambda);
         theta = Math.asin(Math.sqrt(lambda));
         discrBias = discrBiasBeta - 4*discrBiasBeta*(lambda-0.5)*(lambda-0.5);
         dDiscrBiasdL = -8*discrBiasBeta*(lambda-0.5);
-        updateBondedLambdas();
+        updateMultipoleTypes();
     }
     
+    private void updateMultipoleTypes() {
+        for (Atom a1 : atomsOneExtAll) {
+            for (Atom a2 : atomsZroExtAll) {
+                if (a1.getName().equals(a2.getName())) {
+                    MultipoleType t1 = a1.getOriginalMultipoleType();
+                    MultipoleType t2 = a2.getOriginalMultipoleType();
+                    MultipoleType types[] = new MultipoleType[]{t1, t2};
+                    double weights[] = new double[]{lambda, 1.0 - lambda};
+                    int frameTypes[] = t1.frameAtomTypes;
+                    MultipoleType combo = MultipoleType.scale(types, weights, frameTypes);
+                    a1.setEsvScaledMultipole(combo);
+                    SB.logfn(" Reassigning MultipoleType for atom %s", a1.toNameNumberString());
+                    SB.logfn("   %s*(%.2f) + %s*(%.2f) -> %s", 
+                             t1.toString(), lambda, t2.toString(), 1.0 - lambda, combo.toString());
+                    SB.print();
+                }
+            }
+        }
+    }
+
     /**
      * The unswitched lambda value, ie input to S(L).
      * This is probably not what you want.
@@ -241,25 +266,25 @@ public abstract class ExtendedVariable {
     public final double getLambdaSwitch() {
         return lSwitch;     // S(L)
     }
-    
+
     public final double getSwitchDeriv() {
         return dlSwitch;    // dS(L)dL
     }
-    
+
     public final int getIndex() {
         return index;
     }
-    
+
     public String getName() {
         return String.format("ESV_%d", index);
     }
-    
+
     @Override
     public String toString() {
-        return String.format("ESV_%d (%4.2f->%4.2f)", 
+        return String.format("ESV_%d (%4.2f->%4.2f)",
                 index, getLambda(), getLambdaSwitch());
     }
-    
+
     /**
      * From Shen&Huang 2016; drives ESVs to zero/unity.
      * bias = 4B*(L-0.5)^2
@@ -267,14 +292,14 @@ public abstract class ExtendedVariable {
     public double getDiscrBias() {
         return discrBias;
     }
-    
+
     /**
      * dBiasdL = -8B*(L-0.5)
      */
     public double getDiscrBiasDeriv() {
         return dDiscrBiasdL;
     }
-    
+
     /**
      * Fill the atom arrays; apply persistent indexing; set atom esv properties;
      * fill the bonded term arrays; set esv lambda on bonded terms.
@@ -314,7 +339,7 @@ public abstract class ExtendedVariable {
                 }
             }
         }
-        
+
         // Fill bonded term list and set all esvLambda values.
         // TODO PRIO: Map Cartesian gradients assigned to background atoms to
         //      their corresponding foreground atom if available.
@@ -325,12 +350,12 @@ public abstract class ExtendedVariable {
             extendedTermNode.add(node);
         }
         multiRes.getActive().getTerms().add(extendedTermNode);
-        
+
         ready = true;
-        updateBondedLambdas();      
+        updateBondedLambdas();
         describe(false);
     }
-    
+
     /**
      * List all the atoms and bonded terms associated with each end state.
      */
@@ -385,17 +410,17 @@ public abstract class ExtendedVariable {
         }
         SB.print();
     }
-    
+
     public List<Atom> getUnsharedAtoms() {
         List<Atom> ret = new ArrayList<>();
         ret.addAll(atomsUnsharedExtH);
         return ret;
     }
-    
+
     public boolean isReady() {
         return ready;
     }
-    
+
     public void updateBondedLambdas() {
         if (!ExtendedSystem.esvScaleBonded || !ready) {
             return;
@@ -420,25 +445,25 @@ public abstract class ExtendedVariable {
             }
         }
     }
-    
+
     public double getBondedDeriv() {
         return bondedDeriv.get();
     }
-    
+
     public HashMap<Class<? extends BondedTerm>,SharedDouble> getBondedDerivDecomp() {
         return inplayDerivDecomp;
     }
-    
+
     public HashMap<Class<? extends BondedTerm>,SharedDouble> getBackgroundBondedDerivDecomp() {
         return backgroundDerivDecomp;
     }
-    
+
     public List<Atom> getAtomList(AtomList type) {
         return atomLists.get(type);
     }
-    
+
     public int getMoleculeNumber() {
         return moleculeNumber;
     }
-    
+
 }

@@ -988,7 +988,6 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
         initSoftCore(true);
-        // Call to long-range correction here, when it's trustworthy.
     }
 
     /**

@@ -82,6 +82,9 @@ import static ffx.utilities.HashCodeUtil.hash;
  */
 public class Atom extends MSNode implements Comparable<Atom> {
 
+    private MultipoleType originalMultipoleType;
+    private MultipoleType esvScaledMultipole;
+
     public enum Resolution {
         FIXEDCHARGE, AMOEBA;
     }
@@ -267,10 +270,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @since 1.0
      */
     private final double xyzLambdaGradient[] = new double[3];
-    /**
-     * Array of XYZ lamedh gradient.
-     */
-    private final double xyzLamedhGradient[] = new double[3];
+    private final double esvLambdaGradient[] = new double[3];
     /**
      * Array of occupancy values for each altLoc.
      *
@@ -914,6 +914,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
                     this.toString(), esv.toString(), set.toString()));
         }
         esv = set;
+    }
+    
+    public void setEsvScaledMultipole(MultipoleType combo) {
+        esvScaledMultipole = combo;
+    }
+    
+    public MultipoleType getEsvScaledMultipole() {
+        return esvScaledMultipole;
     }
 
     public void setEsvState(int state) {
@@ -2366,11 +2374,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
-    public void setLamedhXYZGradient(double x, double y, double z) {
+    public void setEsvLambdaXYZGradient(double x, double y, double z) {
         if (active) {
-            xyzLamedhGradient[0] = x;
-            xyzLamedhGradient[1] = y;
-            xyzLamedhGradient[2] = z;
+            esvLambdaGradient[0] = x;
+            esvLambdaGradient[1] = y;
+            esvLambdaGradient[2] = z;
         }
     }
 
@@ -2406,11 +2414,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
-    public void addToLamedhXYZGradient(double x, double y, double z) {
+    public void addToEsvLambdaGradient(double x, double y, double z) {
         if (active) {
-            xyzLamedhGradient[0] += x;
-            xyzLamedhGradient[1] += y;
-            xyzLamedhGradient[2] += z;
+            esvLambdaGradient[0] += x;
+            esvLambdaGradient[1] += y;
+            esvLambdaGradient[2] += z;
         }
     }
 
@@ -2444,13 +2452,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
         x[2] = xyzLambdaGradient[2];
     }
 
-    public double[] getLamedhXYZGradient(double x[]) {
+    public double[] getEsvLambdaXYZGradient(double x[]) {
         if (x == null) {
             x = new double[3];
         }
-        x[0] = xyzLamedhGradient[0];
-        x[1] = xyzLamedhGradient[1];
-        x[2] = xyzLamedhGradient[2];
+        x[0] = esvLambdaGradient[0];
+        x[1] = esvLambdaGradient[1];
+        x[2] = esvLambdaGradient[2];
         return x;
     }
 
@@ -2520,8 +2528,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * {@link ffx.potential.bonded.Atom} objects.
      */
     public void setMultipoleType(MultipoleType multipoleType, Atom[] multipoleReferenceSites) {
+        if (multipoleType == null) {
+            this.originalMultipoleType = multipoleType;
+        }
         this.multipoleType = multipoleType;
         this.multipoleReferenceSites = multipoleReferenceSites;
+    }
+    
+    public MultipoleType getOriginalMultipoleType() {
+        return originalMultipoleType;
     }
 
     public void setMoleculeNumber(int molecule) {

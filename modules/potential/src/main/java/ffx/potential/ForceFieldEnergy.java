@@ -130,7 +130,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     private Atom[] atoms;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
-    private final BondedRegion bondedRegion;
+    private BondedRegion bondedRegion;
     private STATE state = STATE.BOTH;
     private Bond bonds[];
     private Angle angles[];
@@ -1122,7 +1122,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         if (comTerm) {
             logger.severe(" COM restrain energy term cannot be used with variable systems sizes.");
         }
-
+        
+        bondedRegion = new BondedRegion();  // TODO: write a reinit() for BondedRegion
     }
 
     public void setFixedCharges(Atom atoms[]) {
@@ -2623,6 +2624,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          * Z-component of the dU/dX/dL coordinate gradient.
          */
         private final AtomicDoubleArray lambdaGradZ;
+        
 
         // Shared RMSD variables.
         private final SharedDouble sharedBondRMSD;

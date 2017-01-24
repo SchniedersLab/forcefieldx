@@ -69,7 +69,7 @@ double step = 0.0001;
 // ESV discretization bias height
 double biasMag = 1.0;
 double pH;
-
+String mpoleterm = "false";
 int testOneIterations = 1;
 
 // Things below this line normally do not need to be changed.
@@ -84,6 +84,7 @@ cli.t2(longOpt:'test2', 'Test 2: End state energies verification.');
 cli.t3(longOpt:'test3', 'Test 3: Switching function and path smoothness.');
 cli.i(longOpt:'iterations', args:1, argName:'1', 'Repeat Test1 to verify threaded replicability.');
 cli.v(longOpt:'verbose', 'Print out all the ForceFieldEnergy decompositions.');
+cli.e(longOpt:'electro', 'Include PME electrostatics in all tests.');
 
 def options = cli.parse(args);
 if (options.h) {
@@ -107,6 +108,10 @@ if (options.t1 || options.t2 || options.t3) {
     if (options.t3) {
         test3 = true;
     }
+}
+
+if (options.e) {
+    mpoleterm = "true";
 }
 
 if (options.l) {
@@ -138,7 +143,7 @@ System.setProperty("pitorsterm", "true");
 System.setProperty("tortorterm", "true");
 System.setProperty("improperterm", "true");
 // ForceField: Inactive
-System.setProperty("mpoleterm", "false");
+System.setProperty("mpoleterm", mpoleterm);
 System.setProperty("polarizeterm", "false");
 System.setProperty("gkterm", "false");
 System.setProperty("restrainterm", "false");
@@ -152,6 +157,7 @@ System.setProperty("polarization-lambda-exponent","0.0");   // polarization not 
 System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
 System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
 System.setProperty("vdw-cutoff", "1000");
+System.setProperty("ewald-cutoff", "1000");
 
 // ESV Settings
 //System.setProperty("ffe-combineBonded", "true");

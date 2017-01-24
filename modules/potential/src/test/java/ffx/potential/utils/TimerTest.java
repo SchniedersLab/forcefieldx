@@ -48,7 +48,7 @@ import ffx.potential.MolecularAssembly;
 /**
  * @author Stephen D. LuCore
  */
-public class TimerTest {
+public final class TimerTest {
 
     private static final Logger logger = Logger.getLogger(TimerTest.class.getName());
     private final File structure;

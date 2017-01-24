@@ -827,13 +827,13 @@ public class ForceField {
      * @param type BaseType
      */
     @SuppressWarnings("unchecked")
-    public void addForceFieldType(BaseType type) {
+    public <T extends BaseType> void addForceFieldType(T type) {
         if (type == null) {
             logger.info(" Null force field type ignored.");
             return;
         }
 
-        Map treeMap = forceFieldTypes.get(type.forceFieldType);
+        Map<String, T> treeMap = (Map<String, T>) forceFieldTypes.get(type.forceFieldType);
         if (treeMap == null) {
             logger.log(Level.INFO, " Unrecognized force field type ignored {0}", type.forceFieldType);
             type.print();
@@ -849,8 +849,8 @@ public class ForceField {
                     new Object[]{type.forceFieldType, type.key,
                         treeMap.get(type.key).toString(), type.toString()});
         }
-        Class baseTypeClass = type.getClass();
-        treeMap.put(type.key, baseTypeClass.cast(type));
+        Class<? extends BaseType> baseTypeClass = type.getClass();
+        treeMap.put(type.key, (T) baseTypeClass.cast(type));
     }
 
     /**
