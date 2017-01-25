@@ -260,6 +260,9 @@ public class DiffractionData implements DataContainer {
         bNonZeroWeight = properties.getDouble("bnonzeroweight", 1.0);
         bMass = properties.getDouble("bmass", 5.0);
         residueBFactor = properties.getBoolean("residuebfactor", false);
+        if (residueBFactor) {
+            logger.severe(" B factors were set... and remove this severe.");
+        }
         nResidueBFactor = properties.getInt("nresiduebfactor", 1);
         addAnisou = properties.getBoolean("addanisou", false);
         refineMolOcc = properties.getBoolean("refinemolocc", false);
