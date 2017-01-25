@@ -115,6 +115,14 @@ public class Barostat implements Potential, LambdaInterface {
      */
     private final double minAxisLength = 2.0;
     /**
+     * Minimum angle 10 degrees.
+     */
+    private final double minAngle = 10.0;
+    /**
+     *
+     */
+    private final double maxAngle = 180.0 - minAngle;
+    /**
      * Constant for cube root.
      */
     private final double third = 1.0 / 3.0;
@@ -349,8 +357,15 @@ public class Barostat implements Potential, LambdaInterface {
         }
 
         /**
-         * To do? Enforce minimum / maximum axis angles?
+         * Enforce minimum & maximum angle constraints.
          */
+        if (unitCell.alpha < minAngle || unitCell.alpha > maxAngle
+                || unitCell.beta < minAngle || unitCell.beta > maxAngle
+                || unitCell.gamma < minAngle || unitCell.gamma > minAngle) {
+            // Fail small axis length trial moves.
+            crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+            return currentE;
+        }
 
         // Apply the proposed boundary condition.
         potential.setCrystal(crystal);
@@ -1064,8 +1079,8 @@ public class Barostat implements Potential, LambdaInterface {
             }
         } else {
             // Check that the unit cell parameters have not changed.
-            if (unitCell.a != a || unitCell.b != b || unitCell.c != c ||
-                    unitCell.alpha != alpha || unitCell.beta != beta || unitCell.gamma != gamma) {
+            if (unitCell.a != a || unitCell.b != b || unitCell.c != c
+                    || unitCell.alpha != alpha || unitCell.beta != beta || unitCell.gamma != gamma) {
                 logger.severe(" Reversion of unit cell parameters did not succeed after failed Barostat MC move.");
             }
         }
