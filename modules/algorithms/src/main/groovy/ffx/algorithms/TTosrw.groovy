@@ -210,7 +210,7 @@ class TTosrw extends Script {
         /**
          * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
          */
-        @Option(shortName='ld', longName='minDensity', defaultValue='0.5', description='Minimum density allowed by the barostat') double minDensity;
+        @Option(shortName='ld', longName='minDensity', defaultValue='0.9', description='Minimum density allowed by the barostat') double minDensity;
         /**
          * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
          */
@@ -218,7 +218,7 @@ class TTosrw extends Script {
         /**
          * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
          */
-        @Option(shortName='sm', longName='maxSideMove', defaultValue='1.5', description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
+        @Option(shortName='sm', longName='maxSideMove', defaultValue='0.5', description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
         /**
          * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
          */

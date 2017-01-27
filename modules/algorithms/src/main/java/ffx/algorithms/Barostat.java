@@ -105,11 +105,11 @@ public class Barostat implements Potential, LambdaInterface {
     /**
      * Default edge length move (A).
      */
-    private double maxSideMove = 1.5;
+    private double maxSideMove = 0.5;
     /**
      * Default angular move (degrees).
      */
-    private double maxAngleMove = 2.0;
+    private double maxAngleMove = 1.0;
     /**
      * Minimum axis length (A).
      */
@@ -256,7 +256,7 @@ public class Barostat implements Potential, LambdaInterface {
     private double gammaSD = 0;
     private final int printFrequency = 1000;
     private double maxdUdL = Double.MAX_VALUE;
-    private double minDensity = 0.5;
+    private double minDensity = 0.9;
     private double maxDensity = 1.5;
     private MoveType moveType = MoveType.SIDE;
 
@@ -339,7 +339,9 @@ public class Barostat implements Potential, LambdaInterface {
          */
         double den = density();
         if (den < minDensity || den > maxDensity) {
-
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" MC Density %10.6f is outside the range %10.6f - %10.6f.", den, minDensity, maxDensity));
+            }
             // Fail moves outside the specified density range.
             crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
             return currentE;
@@ -350,7 +352,10 @@ public class Barostat implements Potential, LambdaInterface {
          */
         if (unitCell.a < minAxisLength || unitCell.b < minAxisLength
                 || unitCell.c < minAxisLength) {
-
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" MC An axis (%10.6f,%10.6f,%10.6f) is below the minimium %10.6f",
+                        unitCell.a, unitCell.b, unitCell.c, minAxisLength));
+            }
             // Fail small axis length trial moves.
             crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
             return currentE;
@@ -361,7 +366,11 @@ public class Barostat implements Potential, LambdaInterface {
          */
         if (unitCell.alpha < minAngle || unitCell.alpha > maxAngle
                 || unitCell.beta < minAngle || unitCell.beta > maxAngle
-                || unitCell.gamma < minAngle || unitCell.gamma > minAngle) {
+                || unitCell.gamma < minAngle || unitCell.gamma > maxAngle) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format(" MC An ange (%10.6f,%10.6f,%10.6f) is outside the range %10.6f - %10.6f",
+                        unitCell.alpha, unitCell.beta, unitCell.gamma, minAngle, maxAngle));
+            }
             // Fail small axis length trial moves.
             crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
             return currentE;
