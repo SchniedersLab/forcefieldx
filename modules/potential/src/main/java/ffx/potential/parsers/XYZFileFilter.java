@@ -40,6 +40,7 @@ package ffx.potential.parsers;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -108,10 +109,9 @@ public final class XYZFileFilter extends FileFilter {
                 return false;
             }
             /**
-             * If the the first Atom line does not begin with an integer and
-             * contain at least six tokens, this is not a TINKER cartesian
-             * coordinate file.
-             *
+             * If the the first line does not begin with an integer (an Atom Line)
+             * or a double (a unit cell parameter line) and contain at least
+             * six tokens, this is not a TINKER cartesian coordinate file.
              */
             String firstAtom = br.readLine();
             if (firstAtom == null) {
@@ -125,11 +125,15 @@ public final class XYZFileFilter extends FileFilter {
             }
             try {
                 Integer.parseInt(data[0]);
-            } catch (Exception e) {
-                return false;
+            } catch (NumberFormatException e) {
+                try {
+                    Double.parseDouble(data[0]);
+                } catch (NumberFormatException e2) {
+                    return false;
+                }
             }
             return true;
-        } catch (Exception e) {
+        } catch (IOException e) {
             return true;
         }
     }

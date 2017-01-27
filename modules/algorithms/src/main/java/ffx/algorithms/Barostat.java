@@ -379,22 +379,6 @@ public class Barostat implements Potential, LambdaInterface {
         // Compute the new energy
         double newE = potential.energy(false, false);
 
-        // Check for an unphysical energy (i.e. a move that's too aggressive).
-        if (Double.isNaN(newE) || Double.isInfinite(newE)) {
-            printStructure(newE);
-
-            // Revert to previous values.
-            crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
-
-            // Update potential PBC.
-            potential.setCrystal(crystal);
-
-            // Revert atomic cooordinates.
-            moveToFractionalCOM();
-
-            return currentE;
-        }
-
         // Compute the change in potential energy
         double dE = newE - currentE;
 
@@ -470,15 +454,6 @@ public class Barostat implements Potential, LambdaInterface {
         }
 
         return newE;
-    }
-
-    private void printStructure(double energy) {
-        logger.info(String.format(" Saving structure with energy: %16.8f.\n"
-                + unitCell.toString(), energy));
-        File file = molecularAssembly.getFile();
-        XYZFilter xyzFilter = new XYZFilter(file, molecularAssembly,
-                molecularAssembly.getForceField(), null);
-        xyzFilter.writeFile(file, false);
     }
 
     public double density() {
