@@ -651,7 +651,7 @@ class TTosrw extends Script {
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
-        if (arguments.size() >= 2) {
+        if (nArgs >= 2) {
             // Condensed phase polarization is evaluated over the entire range.
             System.setProperty("polarization-lambda-start","0.0");
             // Polarization energy is not scaled individually by lambda, but
