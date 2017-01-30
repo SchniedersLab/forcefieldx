@@ -456,7 +456,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private void initAtomArrays() {
         if (esvTerm) {
-            atoms = esvSystem.getAtomsExtH();
+            atoms = esvSystem.getExtendedAtoms();
             nAtoms = atoms.length;
         }
         if (atomClass == null || nAtoms > atomClass.length
@@ -953,11 +953,8 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * VdW version should get only the ExtH version of ExtendedSystem lists.
-     * This is equivalent to the mola atom array on loading the fully-protonated system.
-     * Note: we assume that heavy-atom radii do not differ between protonation states;
-     *      this is violated only by {Cys-SG, Asp-OD[12], and Glu-OD[12]}
-     *      (plus the bugged/missing Am'13_Tyr-OH).
+     * Only unshared atoms are treated as extended by VdW since heavy atom radii are assumed constant.
+     * Under AMOEBA'13, this assumption is violated only by Cys-SG, Asp-OD[12], and Glu-OD[12].
      */
     public void updateEsvLambda() {
         if (!esvTerm) {
@@ -973,12 +970,12 @@ public class VanDerWaals implements MaskingInterface,
             fill(atomEsvID, -1);
         }
         for (int i = 0; i < nAtoms; i++) {
-            if (esvSystem.isExtH(i)) {
+            if (esvSystem.isUnshared(i)) {
                 esvAtoms[i] = true;
-                esvLambda[i] = esvSystem.exthLambda(i);
-                esvLambdaSwitch[i] = esvSystem.exthEsv(i).getLambdaSwitch();
-                esvSwitchDeriv[i] = esvSystem.exthEsv(i).getSwitchDeriv();
-                atomEsvID[i] = esvSystem.exthEsvId(i);
+                esvLambda[i] = esvSystem.getLambda(i);
+                esvLambdaSwitch[i] = esvSystem.getLambdaSwitch(i);
+                esvSwitchDeriv[i] = esvSystem.getSwitchDeriv(i);
+                atomEsvID[i] = esvSystem.getEsvIdForAtom(i);
             }
         }
         if (esvDeriv == null || esvDeriv.length < numESVs) {
@@ -1060,7 +1057,7 @@ public class VanDerWaals implements MaskingInterface,
         if (!softCoreInit || rebuild) {
             for (int i = 0; i < nAtoms; i++) {
                 isSoft[i] = atoms[i].applyLambda();
-                if (esvTerm && esvSystem.isExtH(i)) {
+                if (esvTerm && esvSystem.isUnshared(i)) {
                     isSoft[i] = true;
                 }
                 if (isSoft[i]) {
@@ -1108,8 +1105,8 @@ public class VanDerWaals implements MaskingInterface,
 
         previousAtoms = atoms;
         previousMolecule = molecule;
-        Atom[] atomsExt = esvSystem.getAtomsExtH();
-        int[] moleculeExt = esvSystem.getMoleculeExtH();
+        Atom[] atomsExt = esvSystem.getExtendedAtoms();
+        int[] moleculeExt = esvSystem.getExtendedMolecule();
         setAtoms(atomsExt, moleculeExt);
         updateEsvLambda();
     }
