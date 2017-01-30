@@ -107,6 +107,10 @@ class TTosrw extends Script {
          */
         @Option(shortName='a', defaultValue='false', description='Walker communication is asynchronous.') boolean async;
         /**
+         * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
+         */
+        @Option(shortName='o', defaultValue='false', description='Optimize and save low-energy snapshots.') boolean optimize;
+        /**
          * -n or --steps sets the number of molecular dynamics steps
          */
         @Option(shortName='n', defaultValue='1000000', description='Number of molecular dynamics steps') int steps;
@@ -210,7 +214,7 @@ class TTosrw extends Script {
         /**
          * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
          */
-        @Option(shortName='ld', longName='minDensity', defaultValue='0.5', description='Minimum density allowed by the barostat') double minDensity;
+        @Option(shortName='ld', longName='minDensity', defaultValue='0.9', description='Minimum density allowed by the barostat') double minDensity;
         /**
          * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
          */
@@ -218,7 +222,7 @@ class TTosrw extends Script {
         /**
          * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
          */
-        @Option(shortName='sm', longName='maxSideMove', defaultValue='1.5', description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
+        @Option(shortName='sm', longName='maxSideMove', defaultValue='0.5', description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
         /**
          * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
          */
@@ -807,7 +811,6 @@ class TTosrw extends Script {
                 }
                 if (options.npt) {
                     Barostat barostat = new Barostat(topologies[0]);
-                    barostat.setMaxdUdL(maxdUdL);
                     barostat.setMaxDensity(options.maxDensity);
                     barostat.setMinDensity(options.minDensity);
                     barostat.setMaxSideMove(options.maxSideMove);
@@ -931,6 +934,10 @@ class TTosrw extends Script {
         }
         osrw.setDeltaT(options.temperParam);
 
+        if (nArgs == 1 || options.optimize) {
+            osrw.setOptimization(true, topologies[0]);
+        }
+        
         if (!lambdaRestart.exists()) {
             logger.info(String.format(" Setting lambda to %5.3f", lambda));
             osrw.setLambda(lambda);
