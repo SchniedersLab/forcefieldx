@@ -121,6 +121,9 @@ public abstract class SystemFilter {
 
     /**
      * Use setVersioning() to choose between prefix/postfix.
+     *
+     * @param file
+     * @return
      */
     public static File version(File file) {
         if (vers == Versioning.TINKER) {
@@ -136,6 +139,8 @@ public abstract class SystemFilter {
 
     /**
      * Negative: prefix a version number; Positive: postfix; Zero: TINKER-style.
+     *
+     * @param vers
      */
     public static void setVersioning(Versioning vers) {
         SystemFilter.vers = vers;
@@ -304,7 +309,7 @@ public abstract class SystemFilter {
      * All MolecularAssembly instances defined. More than one MolecularAssembly
      * should be defined for PDB entries with alternate locations.
      */
-    protected Vector<MolecularAssembly> systems = new Vector<MolecularAssembly>();
+    protected Vector<MolecularAssembly> systems = new Vector<>();
     /**
      * File currently being read.
      */

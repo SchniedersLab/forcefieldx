@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Logger;
 
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -58,6 +57,8 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.SystemFilter;
+import ffx.potential.parsers.XYZFilter;
 
 /**
  * An implementation of the Orthogonal Space Random Walk algorithm.
@@ -75,6 +76,11 @@ public abstract class AbstractOSRW implements Potential {
      * The potential energy of the system.
      */
     protected final Potential potential;
+    /**
+     * Reference to the Barostat in use; if present this must be turned off
+     * during optimization.
+     */
+    protected final Barostat barostat;
     /**
      * The AlgorithmListener is called each time a count is added.
      */
@@ -297,7 +303,7 @@ public abstract class AbstractOSRW implements Potential {
     protected double previousFreeEnergy = 0.0;
     protected double lastAverage = 0.0;
     protected double lastStdDev = 0.0;
-    
+
     /**
      * Equilibration counts
      */
@@ -315,7 +321,7 @@ public abstract class AbstractOSRW implements Potential {
      * self-consistent fields to interpolate polarization.
      */
     protected final boolean asynchronous;
-    
+
     /**
      * Running average and standard deviation
      */
@@ -330,8 +336,8 @@ public abstract class AbstractOSRW implements Potential {
     protected double osrwOptimizationEps = 0.1;
     protected double osrwOptimizationTolerance = 1.0e-8;
     protected MolecularAssembly molecularAssembly;
-    protected PDBFilter pdbFilter;
-    protected File pdbFile;
+    protected SystemFilter systemFilter;
+    protected File optFile;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -394,6 +400,12 @@ public abstract class AbstractOSRW implements Potential {
         nVariables = potential.getNumberOfVariables();
         lowEnergyCoordsZero = new double[nVariables];
         lowEnergyCoordsOne = new double[nVariables];
+
+        if (potential instanceof Barostat) {
+            barostat = (Barostat) potential;
+        } else {
+            barostat = null;
+        }
 
         /**
          * Convert the time step to picoseconds.
@@ -544,15 +556,15 @@ public abstract class AbstractOSRW implements Potential {
         }
         return -biasEnergy;
     }
-    
+
     public double lastFreeEnergy() {
         return totalFreeEnergy;
     }
-    
+
     public double movingAverageEnergy() {
         return lastAverage;
     }
-    
+
     public double movingAverageSD() {
         return lastStdDev;
     }
@@ -569,22 +581,25 @@ public abstract class AbstractOSRW implements Potential {
     }
 
     /**
-     * Shuts down resources associated with this OSRW, primarily the receive thread.
+     * Shuts down resources associated with this OSRW, primarily the receive
+     * thread.
+     *
      * @return Success
      */
     public abstract boolean destroy();
-    
+
     protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
-    
+
     /**
      * Evaluates current free energy of the OSRW; intended to be called before
      * any dynamics have been run.
-     * @return 
+     *
+     * @return
      */
     public double evaluateEnergy() {
         return updateFLambda(false);
     }
-    
+
     protected abstract double updateFLambda(boolean print);
 
     public void setLambda(double lambda) {
@@ -704,10 +719,10 @@ public abstract class AbstractOSRW implements Potential {
         osrwOptimum = prevOSRWOptimum;
     }
 
-    public double getOSRWOptimum(){
+    public double getOSRWOptimum() {
         return osrwOptimum;
     }
-    
+
     public double[] getLowEnergyLoop() {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;
@@ -721,12 +736,29 @@ public abstract class AbstractOSRW implements Potential {
         this.osrwOptimization = osrwOptimization;
         this.molecularAssembly = molAss;
         File file = molecularAssembly.getFile();
-        String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
-        if (pdbFilter == null) {
-            pdbFile = new File(fileName + "_opt.pdb");
-            pdbFilter = new PDBFilter(new File(fileName + "_opt.pdb"), molecularAssembly, null, null);
-        }
 
+        String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
+        String ext = FilenameUtils.getExtension(file.getAbsolutePath());
+
+        if (systemFilter == null) {
+            if (ext.toUpperCase().contains("XYZ")) {
+                optFile = new File(fileName + "_opt.xyz");
+                systemFilter = new XYZFilter(optFile, molecularAssembly, null, null);
+            } else {
+                optFile = new File(fileName + "_opt.pdb");
+                systemFilter = new PDBFilter(optFile, molecularAssembly, null, null);
+            }
+        }
+    }
+
+    /**
+     * Returns the number of energy evaluations performed by this ttOSRW,
+     * including those picked up in the lambda file.
+     *
+     * @return Number of energy steps taken by this walker.
+     */
+    public int getEnergyCount() {
+        return energyCount;
     }
 
     @Override
@@ -800,12 +832,4 @@ public abstract class AbstractOSRW implements Potential {
         return potential.getPreviousAcceleration(previousAcceleration);
     }
 
-    /**
-     * Returns the number of energy evaluations performed by this ttOSRW,
-     * including those picked up in the lambda file.
-     * @return Number of energy steps taken by this walker.
-     */
-    public int getEnergyCount() {
-        return energyCount;
-    }
 }

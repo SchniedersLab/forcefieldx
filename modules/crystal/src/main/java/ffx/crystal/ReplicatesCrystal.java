@@ -174,8 +174,8 @@ public class ReplicatesCrystal extends Crystal {
      * successfully.
      */
     @Override
-    public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta,
-            double gamma) {
+    public boolean changeUnitCellParameters(double a, double b, double c,
+            double alpha, double beta, double gamma) {
 
         /**
          * First, update the parameters of the unit cell.

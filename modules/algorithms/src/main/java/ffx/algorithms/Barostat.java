@@ -37,12 +37,14 @@
  */
 package ffx.algorithms;
 
-import java.io.File;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.random;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -56,7 +58,6 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
-import ffx.potential.parsers.XYZFilter;
 
 import static ffx.crystal.SpaceGroup.CrystalSystem.CUBIC;
 import static ffx.crystal.SpaceGroup.CrystalSystem.HEXAGONAL;
@@ -85,15 +86,15 @@ public class Barostat implements Potential, LambdaInterface {
     /**
      * Conversion from kcal/mol/Ang^3 to Atm.
      */
-    private static final double prescon = 6.85684112e4;
+    private static final double PRESCON = 6.85684112e4;
     /**
      * Avogadro's number.
      */
-    private static final double avogadro = 6.02214129e23;
+    private static final double AVOGADRO = 6.02214129e23;
     /**
      * Sampling temperature (K).
      */
-    private double temperature = 298.15;
+    private final double temperature = 298.15;
     /**
      * Sampling pressure (atm)
      */
@@ -101,7 +102,14 @@ public class Barostat implements Potential, LambdaInterface {
     /**
      * Ideal gas constant * temperature (kcal/mol).
      */
-    private double kT = temperature * kB;
+    private final double kT = temperature * kB;
+
+    /**
+     * Flag to turn the Barostat on or off. If false, MC moves will not be
+     * tried.
+     */
+    private boolean active = true;
+
     /**
      * Default edge length move (A).
      */
@@ -115,29 +123,25 @@ public class Barostat implements Potential, LambdaInterface {
      */
     private final double minAxisLength = 2.0;
     /**
-     * Minimum angle 10 degrees.
+     * Minimum angle (degrees).
      */
     private final double minAngle = 10.0;
     /**
-     *
+     * Maximum angle (degrees).
      */
     private final double maxAngle = 180.0 - minAngle;
     /**
-     * Constant for cube root.
-     */
-    private final double third = 1.0 / 3.0;
-    /**
      * MolecularAssembly being simulated.
      */
-    private MolecularAssembly molecularAssembly;
+    private final MolecularAssembly molecularAssembly;
     /**
      * Atoms in the system.
      */
-    private Atom atoms[];
+    private final Atom atoms[];
     /**
      * Number of atoms.
      */
-    private int nAtoms;
+    private final int nAtoms;
     /**
      * Mass of the system.
      */
@@ -145,7 +149,7 @@ public class Barostat implements Potential, LambdaInterface {
     /**
      * ForceFieldEnergy that describes the system.
      */
-    private ForceFieldEnergy potential;
+    private final ForceFieldEnergy potential;
     /**
      * Boundary conditions and symmetry operators (may be a ReplicatedCrystal).
      */
@@ -157,19 +161,19 @@ public class Barostat implements Potential, LambdaInterface {
     /**
      * The number of space group symmetry operators.
      */
-    private int nSymm;
+    private final int nSymm;
     /**
      * Number of independent molecules in the simulation cell.
      */
-    private SpaceGroup spaceGroup;
+    private final SpaceGroup spaceGroup;
     /**
      * Number of molecules in the systems.
      */
-    private int nMolecules;
+    private final int nMolecules;
     /**
      * Center of mass of each molecule in fractional coordinates.
      */
-    private double fractionalCOM[][];
+    private final double fractionalCOM[][];
     /**
      * Number of energy evaluations between application of MC moves.
      */
@@ -255,9 +259,8 @@ public class Barostat implements Potential, LambdaInterface {
     private double betaSD = 0;
     private double gammaSD = 0;
     private final int printFrequency = 1000;
-    private double maxdUdL = Double.MAX_VALUE;
-    private double minDensity = 0.9;
-    private double maxDensity = 1.5;
+    private double minDensity = 0.75;
+    private double maxDensity = 1.50;
     private MoveType moveType = MoveType.SIDE;
 
     /**
@@ -295,10 +298,6 @@ public class Barostat implements Potential, LambdaInterface {
 
     public void setMeanBarostatInterval(int meanBarostatInterval) {
         this.meanBarostatInterval = meanBarostatInterval;
-    }
-
-    public void setMaxdUdL(double maxdUdL) {
-        this.maxdUdL = maxdUdL;
     }
 
     public void setMinDensity(double minDensity) {
@@ -340,7 +339,9 @@ public class Barostat implements Potential, LambdaInterface {
         double den = density();
         if (den < minDensity || den > maxDensity) {
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" MC Density %10.6f is outside the range %10.6f - %10.6f.", den, minDensity, maxDensity));
+                logger.fine(format(
+                        " MC Density %10.6f is outside the range %10.6f - %10.6f.",
+                        den, minDensity, maxDensity));
             }
             // Fail moves outside the specified density range.
             crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
@@ -348,12 +349,13 @@ public class Barostat implements Potential, LambdaInterface {
         }
 
         /**
-         * Enforce modest minimum unit cell axis lengths.
+         * Enforce minimum unit cell axis lengths.
          */
         if (unitCell.a < minAxisLength || unitCell.b < minAxisLength
                 || unitCell.c < minAxisLength) {
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" MC An axis (%10.6f,%10.6f,%10.6f) is below the minimium %10.6f",
+                logger.fine(format(
+                        " MC An axis (%10.6f,%10.6f,%10.6f) is below the minimium %10.6f",
                         unitCell.a, unitCell.b, unitCell.c, minAxisLength));
             }
             // Fail small axis length trial moves.
@@ -368,7 +370,8 @@ public class Barostat implements Potential, LambdaInterface {
                 || unitCell.beta < minAngle || unitCell.beta > maxAngle
                 || unitCell.gamma < minAngle || unitCell.gamma > maxAngle) {
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" MC An ange (%10.6f,%10.6f,%10.6f) is outside the range %10.6f - %10.6f",
+                logger.fine(String.format(
+                        " MC An ange (%10.6f,%10.6f,%10.6f) is outside the range %10.6f - %10.6f",
                         unitCell.alpha, unitCell.beta, unitCell.gamma, minAngle, maxAngle));
             }
             // Fail small axis length trial moves.
@@ -376,7 +379,10 @@ public class Barostat implements Potential, LambdaInterface {
             return currentE;
         }
 
-        // Apply the proposed boundary condition.
+        /**
+         * Apply the boundary condition for the proposed move. If the move is
+         * rejected, then the previous boundary conditions must be restored.
+         */
         potential.setCrystal(crystal);
 
         // Update atomic coordinates to maintain molecular fractional centers of mass.
@@ -392,7 +398,7 @@ public class Barostat implements Potential, LambdaInterface {
         double dE = newE - currentE;
 
         // Compute the pressure-volume work for the asymmetric unit.
-        double dV = pressure * (newV - currentV) / prescon;
+        double dV = pressure * (newV - currentV) / PRESCON;
         // double dV = 0.0;
 
         // Compute the volume entropy
@@ -405,7 +411,9 @@ public class Barostat implements Potential, LambdaInterface {
         if (dT < 0.0) {
             // Energy decreased; accept the move.
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" MC Energy: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)", dE, dV, dS, dT, newV, newE));
+                logger.fine(format(
+                        " MC Energy: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)",
+                        dE, dV, dS, dT, newV, newE));
             }
             moveAccepted = true;
             switch (moveType) {
@@ -428,26 +436,21 @@ public class Barostat implements Potential, LambdaInterface {
         // Energy increase without Metropolis criteria satisified.
         if (metropolis > boltzmann) {
 
-            // Reset the unit cell parameters
-            crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
-
-            // Reset the potential PBC.
-            potential.setCrystal(crystal);
-
-            // Reset the atomic coordinates to maintain molecular fractional centers of mass.
-            moveToFractionalCOM();
+            rejectMove();
 
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" MC Reject: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)",
-                        dE, dV, dS, dT, currentV, currentE));
+                logger.fine(
+                        format(" MC Reject: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)",
+                                dE, dV, dS, dT, currentV, currentE));
             }
             return currentE;
         }
 
         // Energy increase with Metropolis criteria satisified.
         if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format(" MC Accept: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)",
-                    dE, dV, dS, dT, newV, newE));
+            logger.fine(
+                    format(" MC Accept: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)",
+                            dE, dV, dS, dT, newV, newE));
         }
 
         moveAccepted = true;
@@ -465,8 +468,22 @@ public class Barostat implements Potential, LambdaInterface {
         return newE;
     }
 
+    /**
+     * Reset the to state prior to trial move.
+     */
+    private void rejectMove() {
+        // Reset the unit cell parameters
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+
+        // Reset the potential PBC.
+        potential.setCrystal(crystal);
+
+        // Reset the atomic coordinates to maintain molecular fractional centers of mass.
+        moveToFractionalCOM();
+    }
+
     public double density() {
-        return (mass * nSymm / avogadro) * (1.0e24 / unitCell.volume);
+        return (mass * nSymm / AVOGADRO) * (1.0e24 / unitCell.volume);
     }
 
     private double mcA(double currentE) {
@@ -912,7 +929,7 @@ public class Barostat implements Potential, LambdaInterface {
 
         switch (spaceGroup.crystalSystem) {
             case MONOCLINIC: {
-                int move = (int) Math.floor(Math.random() * 4.0);
+                int move = (int) floor(random() * 4.0);
                 switch (move) {
                     case 0:
                         currentE = mcA(currentE);
@@ -929,10 +946,11 @@ public class Barostat implements Potential, LambdaInterface {
                     default:
                         logger.severe(" Barostat programming error.");
                 }
+                break;
             }
             case ORTHORHOMBIC: {
                 // alpha == beta == gamma == 90.0
-                int move = (int) Math.floor(Math.random() * 3.0);
+                int move = (int) floor(random() * 3.0);
                 switch (move) {
                     case 0:
                         currentE = mcA(currentE);
@@ -950,7 +968,7 @@ public class Barostat implements Potential, LambdaInterface {
             }
             case TETRAGONAL: {
                 // (a == b, alpha == beta == gamma == 90.0
-                int move = (int) Math.floor(Math.random() * 2.0);
+                int move = (int) floor(random() * 2.0);
                 switch (move) {
                     case 0:
                         currentE = mcAB(currentE);
@@ -966,7 +984,7 @@ public class Barostat implements Potential, LambdaInterface {
             case TRIGONAL: {
                 if (a == b && b == c && alpha == beta && beta == gamma) {
                     // Rombohedral axes, primitive cell.
-                    int move = (int) Math.floor(Math.random() * 2.0);
+                    int move = (int) floor(random() * 2.0);
                     switch (move) {
                         case 0:
                             currentE = mcABC(currentE);
@@ -979,7 +997,7 @@ public class Barostat implements Potential, LambdaInterface {
                     }
                 } else if (a == b && alpha == 90.0 && beta == 90.0 && gamma == 120.0) {
                     // Hexagonal axes, triple obverse cell.
-                    int move = (int) Math.floor(Math.random() * 2.0);
+                    int move = (int) floor(random() * 2.0);
                     switch (move) {
                         case 0:
                             currentE = mcAB(currentE);
@@ -997,7 +1015,7 @@ public class Barostat implements Potential, LambdaInterface {
             }
             case HEXAGONAL: {
                 // a == b, alpha == beta == 90.0, gamma == 120.0
-                int move = (int) Math.floor(Math.random() * 2.0);
+                int move = (int) floor(random() * 2.0);
                 switch (move) {
                     case 0:
                         currentE = mcAB(currentE);
@@ -1019,7 +1037,7 @@ public class Barostat implements Potential, LambdaInterface {
                 if (a == b && b == c && alpha == 90.0 && beta == 90.0 && gamma == 90.0) {
                     currentE = mcABC(currentE);
                 } else {
-                    int move = (int) Math.floor(Math.random() * 6.0);
+                    int move = (int) floor(random() * 6.0);
                     switch (move) {
                         case 0:
                             currentE = mcA(currentE);
@@ -1047,18 +1065,13 @@ public class Barostat implements Potential, LambdaInterface {
         }
 
         currentDensity = density();
-        if (currentDensity
-                < 0.0) {
-            logger.severe(" Unphysical density:\n" + unitCell.toString());
-        }
-
         if (moveAccepted) {
             if (angleMovesAttempted > 0) {
-                logger.info(String.format(" Density: %5.3f UC: %s MCS: %5.1f MCA: %5.1f", currentDensity, unitCell.toShortString(),
+                logger.info(format(" Density: %5.3f UC: %s MCS: %5.1f MCA: %5.1f", currentDensity, unitCell.toShortString(),
                         (double) sideMovesAccepted / sideMovesAttempted * 100.0,
                         (double) angleMovesAccepted / angleMovesAttempted * 100.0));
             } else {
-                logger.info(String.format(" Density: %5.3f UC: %s MCS: %5.1f", currentDensity, unitCell.toShortString(),
+                logger.info(format(" Density: %5.3f UC: %s MCS: %5.1f", currentDensity, unitCell.toShortString(),
                         (double) sideMovesAccepted / sideMovesAttempted * 100.0));
             }
         } else {
@@ -1067,9 +1080,14 @@ public class Barostat implements Potential, LambdaInterface {
                     || unitCell.alpha != alpha || unitCell.beta != beta || unitCell.gamma != gamma) {
                 logger.severe(" Reversion of unit cell parameters did not succeed after failed Barostat MC move.");
             }
+
         }
 
         return currentE;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     /**
@@ -1088,70 +1106,16 @@ public class Barostat implements Potential, LambdaInterface {
         /**
          * Apply the barostat during computation of slowly varying forces.
          */
-        if (state != STATE.FAST) {
+        if (active && state != STATE.FAST) {
             if (Math.random() < (1.0 / meanBarostatInterval)) {
 
                 // Attempt to change the unit cell parameters.
                 moveAccepted = false;
                 applyBarostat(energy);
 
-                // Collect statistics.
-                barostatCount++;
-                densityMean += currentDensity;
-                densityMean2 += currentDensity * currentDensity;
-                aMean += a;
-                bMean += b;
-                cMean += c;
-                alphaMean += alpha;
-                betaMean += beta;
-                gammaMean += gamma;
-                aMean2 += a * a;
-                bMean2 += b * b;
-                cMean2 += c * c;
-                alphaMean2 += alpha * alpha;
-                betaMean2 += beta * beta;
-                gammaMean2 += gamma * gamma;
-                if (barostatCount % printFrequency == 0) {
-                    densityMean = densityMean / printFrequency;
-                    densityMean2 = densityMean2 / printFrequency;
-                    densitySD = sqrt(densityMean2 - densityMean * densityMean);
-                    logger.info(String.format(" Density: %5.3f +/- %5.3f", densityMean, densitySD));
-                    aMean = aMean / printFrequency;
-                    bMean = bMean / printFrequency;
-                    cMean = cMean / printFrequency;
-                    alphaMean = alphaMean / printFrequency;
-                    betaMean = betaMean / printFrequency;
-                    gammaMean = gammaMean / printFrequency;
-                    aMean2 = aMean2 / printFrequency;
-                    bMean2 = bMean2 / printFrequency;
-                    cMean2 = cMean2 / printFrequency;
-                    alphaMean2 = alphaMean2 / printFrequency;
-                    betaMean2 = betaMean2 / printFrequency;
-                    gammaMean2 = gammaMean2 / printFrequency;
-                    aSD = sqrt(aMean2 - aMean * aMean);
-                    bSD = sqrt(bMean2 - bMean * bMean);
-                    cSD = sqrt(cMean2 - cMean * cMean);
-                    alphaSD = sqrt(alphaMean2 - alphaMean * alphaMean);
-                    betaSD = sqrt(betaMean2 - betaMean * betaMean);
-                    gammaSD = sqrt(gammaMean2 - gammaMean * gammaMean);
-                    logger.info(String.format(
-                            " Lattice a: %4.2f +/-%4.2f b: %4.2f +/-%4.2f c: %4.2f +/-%4.2f alpha: %5.2f +/-%3.2f beta: %5.2f +/-%3.2f gamma: %5.2f +/-%3.2f",
-                            aMean, aSD, bMean, bSD, cMean, cSD, alphaMean, alphaSD, betaMean, betaSD, gammaMean, gammaSD));
-                    densityMean = 0;
-                    densityMean2 = 0;
-                    aMean = 0;
-                    bMean = 0;
-                    cMean = 0;
-                    alphaMean = 0;
-                    betaMean = 0;
-                    gammaMean = 0;
-                    aMean2 = 0;
-                    bMean2 = 0;
-                    cMean2 = 0;
-                    alphaMean2 = 0;
-                    betaMean2 = 0;
-                    gammaMean2 = 0;
-                }
+                // Collect Statistics.
+                collectStats();
+
                 /**
                  * If a move was accepted, then re-calculate the gradient so
                  * that it's consistent with the current unit cell parameters.
@@ -1162,6 +1126,66 @@ public class Barostat implements Potential, LambdaInterface {
             }
         }
         return energy;
+    }
+
+    private void collectStats() {
+        // Collect statistics.
+        barostatCount++;
+        densityMean += currentDensity;
+        densityMean2 += currentDensity * currentDensity;
+        aMean += a;
+        bMean += b;
+        cMean += c;
+        alphaMean += alpha;
+        betaMean += beta;
+        gammaMean += gamma;
+        aMean2 += a * a;
+        bMean2 += b * b;
+        cMean2 += c * c;
+        alphaMean2 += alpha * alpha;
+        betaMean2 += beta * beta;
+        gammaMean2 += gamma * gamma;
+        if (barostatCount % printFrequency == 0) {
+            densityMean = densityMean / printFrequency;
+            densityMean2 = densityMean2 / printFrequency;
+            densitySD = sqrt(densityMean2 - densityMean * densityMean);
+            logger.info(String.format(" Density: %5.3f +/- %5.3f", densityMean, densitySD));
+            aMean = aMean / printFrequency;
+            bMean = bMean / printFrequency;
+            cMean = cMean / printFrequency;
+            alphaMean = alphaMean / printFrequency;
+            betaMean = betaMean / printFrequency;
+            gammaMean = gammaMean / printFrequency;
+            aMean2 = aMean2 / printFrequency;
+            bMean2 = bMean2 / printFrequency;
+            cMean2 = cMean2 / printFrequency;
+            alphaMean2 = alphaMean2 / printFrequency;
+            betaMean2 = betaMean2 / printFrequency;
+            gammaMean2 = gammaMean2 / printFrequency;
+            aSD = sqrt(aMean2 - aMean * aMean);
+            bSD = sqrt(bMean2 - bMean * bMean);
+            cSD = sqrt(cMean2 - cMean * cMean);
+            alphaSD = sqrt(alphaMean2 - alphaMean * alphaMean);
+            betaSD = sqrt(betaMean2 - betaMean * betaMean);
+            gammaSD = sqrt(gammaMean2 - gammaMean * gammaMean);
+            logger.info(String.format(
+                    " Lattice a: %4.2f +/-%4.2f b: %4.2f +/-%4.2f c: %4.2f +/-%4.2f alpha: %5.2f +/-%3.2f beta: %5.2f +/-%3.2f gamma: %5.2f +/-%3.2f",
+                    aMean, aSD, bMean, bSD, cMean, cSD, alphaMean, alphaSD, betaMean, betaSD, gammaMean, gammaSD));
+            densityMean = 0;
+            densityMean2 = 0;
+            aMean = 0;
+            bMean = 0;
+            cMean = 0;
+            alphaMean = 0;
+            betaMean = 0;
+            gammaMean = 0;
+            aMean2 = 0;
+            bMean2 = 0;
+            cMean2 = 0;
+            alphaMean2 = 0;
+            betaMean2 = 0;
+            gammaMean2 = 0;
+        }
     }
 
     /**
