@@ -191,6 +191,7 @@ public class SpaceGroup {
      * A List of SymOp instances.
      */
     public final List<SymOp> symOps;
+
     /**
      * Names of the 230 three dimensional space groups.
      *
@@ -310,7 +311,7 @@ public class SpaceGroup {
         this.limit = limit;
         this.asulim = asulim;
         this.pdbName = pdbName;
-        this.symOps = new ArrayList<SymOp>(Arrays.asList(symOps));
+        this.symOps = new ArrayList<>(Arrays.asList(symOps));
     }
 
     /**

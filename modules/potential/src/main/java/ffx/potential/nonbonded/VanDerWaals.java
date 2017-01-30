@@ -109,6 +109,7 @@ public class VanDerWaals implements MaskingInterface,
      * Boundary conditions and crystal symmetry.
      */
     private Crystal crystal;
+
     /**
      * An array of all atoms in the system.
      */
@@ -1222,6 +1223,10 @@ public class VanDerWaals implements MaskingInterface,
         this.crystal = crystal;
         int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
         if (nSymm != newNSymm) {
+
+            logger.info(String.format(" VDW: updated symops %d -> %d: %s",
+                    nSymm, newNSymm, crystal.getUnitCell().toShortString()));
+
             nSymm = newNSymm;
             /**
              * Allocate memory if necessary.
@@ -1544,9 +1549,10 @@ public class VanDerWaals implements MaskingInterface,
                 List<SymOp> symOps = crystal.spaceGroup.symOps;
 
                 if (symOps.size() != nSymm) {
-                    logger.info(String.format(" Programming Error: nSymm %d != symOps.size %d", nSymm, symOps.size()));
-                    logger.log(Level.INFO, " Replicates\n{0}", crystal.toString());
-                    logger.log(Level.INFO, " Unit Cell\n{0}", crystal.getUnitCell().toString());
+                    String message = format(" Programming Error: nSymm %d != symOps.size %d", nSymm, symOps.size());
+                    logger.log(Level.WARNING, message);
+                    logger.log(Level.WARNING, " Replicates\n{0}", crystal.toString());
+                    logger.log(Level.WARNING, " Unit Cell\n{0}", crystal.getUnitCell().toString());
                 }
 
                 double sp2 = crystal.getSpecialPositionCutoff();

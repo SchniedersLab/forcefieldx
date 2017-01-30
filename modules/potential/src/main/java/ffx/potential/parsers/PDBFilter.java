@@ -450,7 +450,8 @@ public final class PDBFilter extends SystemFilter {
                  */
                 String line = br.readLine();
                 /**
-                 * Parse until END or ENDMDL is found, or to the end of the file.
+                 * Parse until END or ENDMDL is found, or to the end of the
+                 * file.
                  */
                 while (line != null) {
                     // Replace all tabs w/ 4x spaces
@@ -1129,6 +1130,7 @@ public final class PDBFilter extends SystemFilter {
 
     /**
      * Sets whether this PDBFilter should log each time it saves to a file.
+     *
      * @param logWrites
      */
     public void setLogWrites(boolean logWrites) {
@@ -2849,20 +2851,16 @@ public final class PDBFilter extends SystemFilter {
 
         /*sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
                 xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));*/
-
         /**
-         * On the following code:
-         * #1: StringBuilder.replace will allow for longer strings, expanding the
-         * StringBuilder's length if necessary.
+         * On the following code: #1: StringBuilder.replace will allow for
+         * longer strings, expanding the StringBuilder's length if necessary.
          * #2: sb was never re-initialized, so if there was overflow, sb would
          * continue to be > 80 characters long, resulting in broken PDB files
          * #3: It may be wiser to have XYZ coordinates result in shutdown, not
-         * truncation of coordinates.
-         * #4: Excessive B-factors aren't much of an issue; if the B-factor is
-         * past 999.99, that's the difference between "density extends to Venus"
-         * and "density extends to Pluto".
+         * truncation of coordinates. #4: Excessive B-factors aren't much of an
+         * issue; if the B-factor is past 999.99, that's the difference between
+         * "density extends to Venus" and "density extends to Pluto".
          */
-
         StringBuilder decimals = new StringBuilder();
         for (int i = 0; i < 3; i++) {
             try {

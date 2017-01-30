@@ -43,14 +43,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.InterruptedIOException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -91,7 +92,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      */
     private final DoubleBuf recursionWeightsBuf[];
     private final DoubleBuf myRecursionWeightBuf;
-
 
     /**
      * Total histogram weight.
@@ -275,6 +275,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
 
                 potential.setEnergyTermState(Potential.STATE.BOTH);
 
+                if (barostat != null) {
+                    barostat.setActive(false);
+                }
+
                 // Optimize the system.
                 Minimize minimize = new Minimize(null, potential, null);
                 minimize.minimize(osrwOptimizationEps);
@@ -288,8 +292,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     int n = potential.getNumberOfVariables();
                     osrwOptimumCoords = new double[n];
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
-                    if (pdbFilter.writeFile(pdbFile, false)) {
-                        logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
+                    if (systemFilter.writeFile(optFile, false)) {
+                        logger.info(format(" Wrote minimum energy snapshot to %s.", optFile.getName()));
                     }
                 }
 
@@ -301,6 +305,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
 
                 // Reset the Potential State
                 potential.setEnergyTermState(state);
+
+                // Reset the Barostat
+                if (barostat != null) {
+                    barostat.setActive(true);
+                }
 
                 // Revert to the coordinates and gradient prior to optimization.
                 double eCheck = potential.energyAndGradient(x, gradient);
@@ -583,6 +592,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         return totalEnergy;
     }
 
+    /**
+     * Tempering will begin after a transition is detected.
+     *
+     * The transition is defined as lambda 1) crossing the range 0.45 to 0.55
+     * and then encountering reaching both less than 0.05 and greater than 0.95.
+     */
     private void detectTransition() {
         if (tempering) {
             return;
@@ -612,6 +627,252 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             }
         }
 
+    }
+
+    /**
+     * Evaluate the bias at [cLambda, cF_lambda]
+     *
+     * @param cLambda the current value of lambda
+     * @param cF_Lambda the current value of dU/dL
+     *
+     * @return the magnitude of the bias.
+     */
+    @Override
+    protected double evaluateKernel(int cLambda, int cF_Lambda) {
+        /**
+         * Compute the value of L and FL for the center of the current bin.
+         */
+        double vL = cLambda * dL;
+        double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
+        /**
+         * Set the variances for the Gaussian bias.
+         */
+        double Ls2 = 2.0 * dL * 2.0 * dL;
+        double FLs2 = 2.0 * dFL * 2.0 * dFL;
+        double sum = 0.0;
+        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
+            int Lcenter = cLambda + iL;
+            double deltaL = vL - Lcenter * dL;
+            double deltaL2 = deltaL * deltaL;
+
+            // Mirror condition for Lambda counts.
+            int lcount = Lcenter;
+            double mirrorFactor = 1.0;
+            if (lcount == 0 || lcount == lambdaBins - 1) {
+                /**
+                 * The width of the first and last bins is dLambda_2, so the
+                 * mirror condition is to double their counts.
+                 */
+                mirrorFactor = 2.0;
+            } else if (lcount < 0) {
+                lcount = -lcount;
+            } else if (lcount > lambdaBins - 1) {
+                // number of bins past the last bin.
+                lcount -= (lambdaBins - 1);
+                // mirror bin
+                lcount = lambdaBins - 1 - lcount;
+            }
+
+            for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
+                int FLcenter = cF_Lambda + jFL;
+                /**
+                 * For FLambda outside the count matrix the weight is 0 so we
+                 * continue.
+                 */
+                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
+                    continue;
+                }
+                double deltaFL = vFL - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL2 = deltaFL * deltaFL;
+                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
+                if (weight > 0) {
+                    double e = weight * biasMag * exp(-deltaL2 / (2.0 * Ls2))
+                            * exp(-deltaFL2 / (2.0 * FLs2));
+                    sum += e;
+                }
+            }
+        }
+        return sum;
+    }
+
+    /**
+     * If necessary, allocate more space.
+     */
+    private void checkRecursionKernelSize(double dEdLambda) {
+        if (dEdLambda > maxFLambda) {
+            logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
+                    dEdLambda, maxFLambda));
+
+            double origDeltaG = updateFLambda(false);
+
+            int newFLambdaBins = FLambdaBins;
+            while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
+                newFLambdaBins += 100;
+            }
+            double newRecursionKernel[][] = new double[lambdaBins][newFLambdaBins];
+            /**
+             * We have added bins above the indeces of the current counts just
+             * copy them into the new array.
+             */
+            for (int i = 0; i < lambdaBins; i++) {
+                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
+            }
+            recursionKernel = newRecursionKernel;
+            FLambdaBins = newFLambdaBins;
+            maxFLambda = minFLambda + dFL * FLambdaBins;
+            logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
+                    minFLambda, maxFLambda, FLambdaBins));
+
+            assert (origDeltaG == updateFLambda(false));
+
+        }
+        if (dEdLambda < minFLambda) {
+            logger.info(String.format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
+                    dEdLambda, minFLambda));
+
+            double origDeltaG = updateFLambda(false);
+
+            int offset = 100;
+            while (dEdLambda < minFLambda - offset * dFL) {
+                offset += 100;
+            }
+            int newFLambdaBins = FLambdaBins + offset;
+            double newRecursionKernel[][] = new double[lambdaBins][newFLambdaBins];
+            /**
+             * We have added bins below the current counts, so their indeces
+             * must be increased by: offset = newFLBins - FLBins
+             */
+            for (int i = 0; i < lambdaBins; i++) {
+                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
+            }
+            recursionKernel = newRecursionKernel;
+            minFLambda = minFLambda - offset * dFL;
+            FLambdaBins = newFLambdaBins;
+            logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
+                    minFLambda, maxFLambda, FLambdaBins));
+
+            assert (origDeltaG == updateFLambda(false));
+        }
+    }
+
+    /**
+     * Eqs. 7 & 8 from the 2012 Crystal Thermodynamics paper.
+     *
+     * @param print
+     * @return the current free energy.
+     */
+    @Override
+    protected double updateFLambda(boolean print) {
+        double freeEnergy = 0.0;
+        double minFL = Double.MAX_VALUE;
+        totalWeight = 0;
+        StringBuilder stringBuilder = new StringBuilder();
+        if (print) {
+            stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
+        }
+        for (int iL = 0; iL < lambdaBins; iL++) {
+            int ulFL = -1;
+            int llFL = -1;
+
+            // Find the smallest FL bin.
+            for (int jFL = 0; jFL < FLambdaBins; jFL++) {
+                double count = recursionKernel[iL][jFL];
+                if (count > 0) {
+                    llFL = jFL;
+                    break;
+                }
+            }
+
+            // Find the largest FL bin.
+            for (int jFL = FLambdaBins - 1; jFL >= 0; jFL--) {
+                double count = recursionKernel[iL][jFL];
+                if (count > 0) {
+                    ulFL = jFL;
+                    break;
+                }
+            }
+
+            double lambdaCount = 0;
+            // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
+            double lla = 0.0;
+            double ula = 0.0;
+            double maxBias = 0;
+            if (ulFL == -1) {
+                FLambda[iL] = 0.0;
+                minFL = 0.0;
+            } else {
+                double ensembleAverageFLambda = 0.0;
+                double partitionFunction = 0.0;
+                for (int jFL = llFL; jFL <= ulFL; jFL++) {
+                    double currentFLambda = minFLambda + jFL * dFL + dFL_2;
+                    double kernel = evaluateKernel(iL, jFL);
+                    if (kernel > maxBias) {
+                        maxBias = kernel;
+                    }
+                    double weight = exp(kernel / (R * temperature));
+                    ensembleAverageFLambda += currentFLambda * weight;
+                    partitionFunction += weight;
+                    lambdaCount += recursionKernel[iL][jFL];
+                }
+                if (minFL > maxBias) {
+                    minFL = maxBias;
+                }
+                FLambda[iL] = ensembleAverageFLambda / partitionFunction;
+                lla = minFLambda + llFL * dFL;
+                ula = minFLambda + (ulFL + 1) * dFL;
+            }
+
+            // The first and last lambda bins are half size.
+            double delta = dL;
+            if (iL == 0 || iL == lambdaBins - 1) {
+                delta = dL_2;
+            }
+            double deltaFreeEnergy = FLambda[iL] * delta;
+            freeEnergy += deltaFreeEnergy;
+            totalWeight += lambdaCount;
+
+            if (print) {
+                double llL = iL * dL - dL_2;
+                double ulL = llL + dL;
+                if (llL < 0.0) {
+                    llL = 0.0;
+                }
+                if (ulL > 1.0) {
+                    ulL = 1.0;
+                }
+                stringBuilder.append(String.format(" %6.2e  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f  %8.3f %8.3f\n",
+                        lambdaCount, llL, ulL, lla, ula,
+                        FLambda[iL], maxBias, deltaFreeEnergy, freeEnergy));
+            }
+        }
+
+        if (tempering) {
+            temperingWeight = exp(-minFL / deltaT);
+        }
+
+        if (abs(freeEnergy - previousFreeEnergy) > 0.001) {
+            if (print) {
+                stringBuilder.append(String.format(" Minimum Bias %8.3f", minFL));
+                logger.info(stringBuilder.toString());
+                previousFreeEnergy = freeEnergy;
+            }
+
+        }
+
+        logger.info(String.format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
+                freeEnergy, totalWeight, temperingWeight));
+
+        return freeEnergy;
+    }
+
+    /**
+     * Sets the Dama et al tempering parameter, as a multiple of kbT. T is
+     * presently assumed to be 298.0K.
+     *
+     * @param kbtMult
+     */
+    public void setDeltaT(double kbtMult) {
+        deltaT = R * 298.0 * kbtMult;
     }
 
     /**
@@ -700,177 +961,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         }
     }
 
-    /**
-     * If necessary, allocate more space.
-     */
-    private void checkRecursionKernelSize(double dEdLambda) {
-        if (dEdLambda > maxFLambda) {
-            logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
-                    dEdLambda, maxFLambda));
-
-            double origDeltaG = updateFLambda(false);
-
-            int newFLambdaBins = FLambdaBins;
-            while (minFLambda + newFLambdaBins * dFL < dEdLambda) {
-                newFLambdaBins += 100;
-            }
-            double newRecursionKernel[][] = new double[lambdaBins][newFLambdaBins];
-            /**
-             * We have added bins above the indeces of the current counts just
-             * copy them into the new array.
-             */
-            for (int i = 0; i < lambdaBins; i++) {
-                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, FLambdaBins);
-            }
-            recursionKernel = newRecursionKernel;
-            FLambdaBins = newFLambdaBins;
-            maxFLambda = minFLambda + dFL * FLambdaBins;
-            logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
-                    minFLambda, maxFLambda, FLambdaBins));
-
-            assert (origDeltaG == updateFLambda(false));
-
-        }
-        if (dEdLambda < minFLambda) {
-            logger.info(String.format(" Current F_lambda %8.2f < minimum histogram size %8.2f.",
-                    dEdLambda, minFLambda));
-
-            double origDeltaG = updateFLambda(false);
-
-            int offset = 100;
-            while (dEdLambda < minFLambda - offset * dFL) {
-                offset += 100;
-            }
-            int newFLambdaBins = FLambdaBins + offset;
-            double newRecursionKernel[][] = new double[lambdaBins][newFLambdaBins];
-            /**
-             * We have added bins below the current counts, so their indeces
-             * must be increased by: offset = newFLBins - FLBins
-             */
-            for (int i = 0; i < lambdaBins; i++) {
-                System.arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, FLambdaBins);
-            }
-            recursionKernel = newRecursionKernel;
-            minFLambda = minFLambda - offset * dFL;
-            FLambdaBins = newFLambdaBins;
-            logger.info(String.format(" New histogram %8.2f to %8.2f with %d bins.\n",
-                    minFLambda, maxFLambda, FLambdaBins));
-
-            assert (origDeltaG == updateFLambda(false));
-        }
-    }
-
-    /**
-     * Eq. 7 from the Xtal Thermodynamics paper.
-     *
-     * @param print
-     * @return the current free energy.
-     */
-    @Override
-    protected double updateFLambda(boolean print) {
-        double freeEnergy = 0.0;
-        double minFL = Double.MAX_VALUE;
-        totalWeight = 0;
-        StringBuilder stringBuilder = new StringBuilder();
-        if (print) {
-            stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
-        }
-        for (int iL = 0; iL < lambdaBins; iL++) {
-            int ulFL = -1;
-            int llFL = -1;
-
-            // Find the smallest FL bin.
-            for (int jFL = 0; jFL < FLambdaBins; jFL++) {
-                double count = recursionKernel[iL][jFL];
-                if (count > 0) {
-                    llFL = jFL;
-                    break;
-                }
-            }
-
-            // Find the largest FL bin.
-            for (int jFL = FLambdaBins - 1; jFL >= 0; jFL--) {
-                double count = recursionKernel[iL][jFL];
-                if (count > 0) {
-                    ulFL = jFL;
-                    break;
-                }
-            }
-            
-            double lambdaCount = 0;
-            // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
-            double lla = 0.0;
-            double ula = 0.0;
-            double maxBias = 0;
-            if (ulFL == -1) {
-                FLambda[iL] = 0.0;
-                minFL = 0.0;
-            } else {
-                double ensembleAverageFLambda = 0.0;
-                double partitionFunction = 0.0;
-                for (int jFL = llFL; jFL <= ulFL; jFL++) {
-                    double currentFLambda = minFLambda + jFL * dFL + dFL_2;
-                    double kernel = evaluateKernel(iL, jFL);
-                    if (kernel > maxBias) {
-                        maxBias = kernel;
-                    }
-                    double weight = exp(kernel / (R * temperature));
-                    ensembleAverageFLambda += currentFLambda * weight;
-                    partitionFunction += weight;
-                    lambdaCount += recursionKernel[iL][jFL];
-                }
-                if (minFL > maxBias) {
-                    minFL = maxBias;
-                }
-                FLambda[iL] = ensembleAverageFLambda / partitionFunction;
-                lla = minFLambda + llFL * dFL;
-                ula = minFLambda + (ulFL + 1) * dFL;
-            }
-
-            // The first and last lambda bins are half size.
-            double delta = dL;
-            if (iL == 0 || iL == lambdaBins - 1) {
-                delta = dL_2;
-            }
-            double deltaFreeEnergy = FLambda[iL] * delta;
-            freeEnergy += deltaFreeEnergy;
-            totalWeight += lambdaCount;
-
-            if (print) {
-                double llL = iL * dL - dL_2;
-                double ulL = llL + dL;
-                if (llL < 0.0) {
-                    llL = 0.0;
-                }
-                if (ulL > 1.0) {
-                    ulL = 1.0;
-                }
-                stringBuilder.append(String.format(" %6.2e  %5.3f %5.3f   %7.1f %7.1f   %8.3f  %8.3f  %8.3f %8.3f\n",
-                        lambdaCount, llL, ulL, lla, ula,
-                        FLambda[iL], maxBias, deltaFreeEnergy, freeEnergy));
-            }
-        }
-
-        if (tempering) {
-            temperingWeight = exp(-minFL / deltaT);
-        }
-
-        if (abs(freeEnergy - previousFreeEnergy) > 0.001) {
-            if (print) {
-                stringBuilder.append(String.format(" Minimum Bias %8.3f", minFL));
-                logger.info(stringBuilder.toString());
-                previousFreeEnergy = freeEnergy;
-            }
-
-        }
-
-        logger.info(String.format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
-                freeEnergy, totalWeight, temperingWeight));
-
-        return freeEnergy;
-    }
-
-
     @Override
     public boolean destroy() {
         if (receiveThread != null) {
@@ -879,187 +969,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         return true;
     }
 
-    @Override
-    protected double evaluateKernel(int cLambda, int cF_Lambda) {
-        /**
-         * Compute the value of L and FL for the center of the current bin.
-         */
-        double vL = cLambda * dL;
-        double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
-        /**
-         * Set the variances for the Gaussian bias.
-         */
-        double Ls2 = 2.0 * dL * 2.0 * dL;
-        double FLs2 = 2.0 * dFL * 2.0 * dFL;
-        double sum = 0.0;
-        for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
-            int Lcenter = cLambda + iL;
-            double deltaL = vL - Lcenter * dL;
-            double deltaL2 = deltaL * deltaL;
-
-            // Mirror condition for Lambda counts.
-            int lcount = Lcenter;
-            double mirrorFactor = 1.0;
-            if (lcount == 0 || lcount == lambdaBins - 1) {
-                /**
-                 * The width of the first and last bins is dLambda_2, so the
-                 * mirror condition is to double their counts.
-                 */
-                mirrorFactor = 2.0;
-            } else if (lcount < 0) {
-                lcount = -lcount;
-            } else if (lcount > lambdaBins - 1) {
-                // number of bins past the last bin.
-                lcount -= (lambdaBins - 1);
-                // mirror bin
-                lcount = lambdaBins - 1 - lcount;
-            }
-
-            for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
-                int FLcenter = cF_Lambda + jFL;
-                /**
-                 * For FLambda outside the count matrix the weight is 0 so we
-                 * continue.
-                 */
-                if (FLcenter < 0 || FLcenter >= FLambdaBins) {
-                    continue;
-                }
-                double deltaFL = vFL - (minFLambda + FLcenter * dFL + dFL_2);
-                double deltaFL2 = deltaFL * deltaFL;
-                double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
-                if (weight > 0) {
-                    double e = weight * biasMag * exp(-deltaL2 / (2.0 * Ls2))
-                            * exp(-deltaFL2 / (2.0 * FLs2));
-                    sum += e;
-                }
-            }
-        }
-        return sum;
-    }
-
-    /**
-     * Sets the Dama et al tempering parameter, as a multiple of kbT. T is
-     * presently assumed to be 298.0K.
-     * @param kbtMult
-     */
-    public void setDeltaT(double kbtMult) {
-        deltaT = R * 298.0 * kbtMult;
-    }
-    private class TTOSRWHistogramWriter extends PrintWriter {
-
-        public TTOSRWHistogramWriter(Writer writer) {
-            super(writer);
-        }
-
-        public void writeHistogramFile() {
-            printf("Temperature     %15.3f\n", temperature);
-            printf("Lambda-Mass     %15.8e\n", thetaMass);
-            printf("Lambda-Friction %15.8e\n", thetaFriction);
-            printf("Bias-Mag        %15.8e\n", biasMag);
-            printf("Bias-Cutoff     %15d\n", biasCutoff);
-            printf("Count-Interval  %15d\n", countInterval);
-            printf("Lambda-Bins     %15d\n", lambdaBins);
-            printf("FLambda-Bins    %15d\n", FLambdaBins);
-            printf("Flambda-Min     %15.8e\n", minFLambda);
-            printf("Flambda-Width   %15.8e\n", dFL);
-            int flag = 0;
-            if (tempering) {
-                flag = 1;
-            }
-            printf("Tempering       %15d\n", flag);
-            for (int i = 0; i < lambdaBins; i++) {
-                printf("%g", recursionKernel[i][0]);
-                for (int j = 1; j < FLambdaBins; j++) {
-                    printf(" %g", recursionKernel[i][j]);
-                }
-                println();
-            }
-        }
-    }
-
-    private class TTOSRWLambdaWriter extends PrintWriter {
-
-        public TTOSRWLambdaWriter(Writer writer) {
-            super(writer);
-        }
-
-        public void writeLambdaFile() {
-            printf("Lambda          %15.8f\n", lambda);
-            printf("Lambda-Velocity %15.8e\n", halfThetaVelocity);
-            printf("Steps-Taken     %15d\n", energyCount);
-        }
-    }
-
-    private class TTOSRWHistogramReader extends BufferedReader {
-
-        public TTOSRWHistogramReader(Reader reader) {
-            super(reader);
-        }
-
-        public void readHistogramFile() {
-            try {
-                temperature = Double.parseDouble(readLine().split(" +")[1]);
-                thetaMass = Double.parseDouble(readLine().split(" +")[1]);
-                thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
-                biasMag = Double.parseDouble(readLine().split(" +")[1]);
-                biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
-                countInterval = Integer.parseInt(readLine().split(" +")[1]);
-                lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-                FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
-                minFLambda = Double.parseDouble(readLine().split(" +")[1]);
-                dFL = Double.parseDouble(readLine().split(" +")[1]);
-                int flag = Integer.parseInt(readLine().split(" +")[1]);
-                if (flag != 0) {
-                    tempering = true;
-                } else {
-                    tempering = false;
-                }
-
-                // Allocate memory for the recursion kernel.
-                recursionKernel = new double[lambdaBins][FLambdaBins];
-                for (int i = 0; i < lambdaBins; i++) {
-                    String counts[] = readLine().split(" +");
-                    for (int j = 0; j < FLambdaBins; j++) {
-                        recursionKernel[i][j] = Double.parseDouble(counts[j]);
-                    }
-                }
-            } catch (Exception e) {
-                String message = " Invalid OSRW Histogram file.";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-    }
-
-    private class TTOSRWLambdaReader extends BufferedReader {
-
-        public TTOSRWLambdaReader(Reader reader) {
-            super(reader);
-        }
-
-        public void readLambdaFile() {
-            readLambdaFile(true);
-        }
-
-        public void readLambdaFile(boolean resetEnergyCount) {
-            try {
-                lambda = Double.parseDouble(readLine().split(" +")[1]);
-                halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
-                setLambda(lambda);
-            } catch (Exception e) {
-                String message = " Invalid OSRW Lambda file.";
-                logger.log(Level.SEVERE, message, e);
-            }
-            if (!resetEnergyCount) {
-                try {
-                    energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, String.format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString()));
-                }
-            }
-        }
-    }
-
-    class ReceiveThread extends Thread {
+    private class ReceiveThread extends Thread {
 
         final double recursionCount[];
         final DoubleBuf recursionCountBuf;
@@ -1077,7 +987,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 } catch (InterruptedIOException ioe) {
                     logger.log(Level.FINE, " ReceiveThread was interrupted at world.receive", ioe);
                     break;
-                } catch (Exception e) {
+                } catch (IOException e) {
                     String message = e.getMessage();
                     logger.log(Level.WARNING, message, e);
                 }
@@ -1122,4 +1032,133 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             }
         }
     }
+
+    /**
+     * Write out the TT-OSRW Histogram.
+     */
+    private class TTOSRWHistogramWriter extends PrintWriter {
+
+        public TTOSRWHistogramWriter(Writer writer) {
+            super(writer);
+        }
+
+        public void writeHistogramFile() {
+            printf("Temperature     %15.3f\n", temperature);
+            printf("Lambda-Mass     %15.8e\n", thetaMass);
+            printf("Lambda-Friction %15.8e\n", thetaFriction);
+            printf("Bias-Mag        %15.8e\n", biasMag);
+            printf("Bias-Cutoff     %15d\n", biasCutoff);
+            printf("Count-Interval  %15d\n", countInterval);
+            printf("Lambda-Bins     %15d\n", lambdaBins);
+            printf("FLambda-Bins    %15d\n", FLambdaBins);
+            printf("Flambda-Min     %15.8e\n", minFLambda);
+            printf("Flambda-Width   %15.8e\n", dFL);
+            int flag = 0;
+            if (tempering) {
+                flag = 1;
+            }
+            printf("Tempering       %15d\n", flag);
+            for (int i = 0; i < lambdaBins; i++) {
+                printf("%g", recursionKernel[i][0]);
+                for (int j = 1; j < FLambdaBins; j++) {
+                    printf(" %g", recursionKernel[i][j]);
+                }
+                println();
+            }
+        }
+    }
+
+    /**
+     * Write out the current value of Lambda, its velocity and the number of
+     * counts.
+     */
+    private class TTOSRWLambdaWriter extends PrintWriter {
+
+        public TTOSRWLambdaWriter(Writer writer) {
+            super(writer);
+        }
+
+        public void writeLambdaFile() {
+            printf("Lambda          %15.8f\n", lambda);
+            printf("Lambda-Velocity %15.8e\n", halfThetaVelocity);
+            printf("Steps-Taken     %15d\n", energyCount);
+        }
+    }
+
+    /**
+     * Read in the TT-OSRW Histogram.
+     */
+    private class TTOSRWHistogramReader extends BufferedReader {
+
+        public TTOSRWHistogramReader(Reader reader) {
+            super(reader);
+        }
+
+        public void readHistogramFile() {
+            try {
+                temperature = Double.parseDouble(readLine().split(" +")[1]);
+                thetaMass = Double.parseDouble(readLine().split(" +")[1]);
+                thetaFriction = Double.parseDouble(readLine().split(" +")[1]);
+                biasMag = Double.parseDouble(readLine().split(" +")[1]);
+                biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
+                countInterval = Integer.parseInt(readLine().split(" +")[1]);
+                lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
+                FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
+                minFLambda = Double.parseDouble(readLine().split(" +")[1]);
+                dFL = Double.parseDouble(readLine().split(" +")[1]);
+                int flag = Integer.parseInt(readLine().split(" +")[1]);
+                if (flag != 0) {
+                    tempering = true;
+                } else {
+                    tempering = false;
+                }
+
+                // Allocate memory for the recursion kernel.
+                recursionKernel = new double[lambdaBins][FLambdaBins];
+                for (int i = 0; i < lambdaBins; i++) {
+                    String counts[] = readLine().split(" +");
+                    for (int j = 0; j < FLambdaBins; j++) {
+                        recursionKernel[i][j] = Double.parseDouble(counts[j]);
+                    }
+                }
+            } catch (Exception e) {
+                String message = " Invalid OSRW Histogram file.";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+    }
+
+    /**
+     * Read in the current value of Lambda, its velocity and the number of
+     * counts.
+     */
+    private class TTOSRWLambdaReader extends BufferedReader {
+
+        public TTOSRWLambdaReader(Reader reader) {
+            super(reader);
+        }
+
+        public void readLambdaFile() {
+            readLambdaFile(true);
+        }
+
+        public void readLambdaFile(boolean resetEnergyCount) {
+            try {
+                lambda = Double.parseDouble(readLine().split(" +")[1]);
+                halfThetaVelocity = Double.parseDouble(readLine().split(" +")[1]);
+                setLambda(lambda);
+            } catch (Exception e) {
+                String message = " Invalid OSRW Lambda file.";
+                logger.log(Level.SEVERE, message, e);
+            }
+            if (!resetEnergyCount) {
+                try {
+                    energyCount = Integer.parseUnsignedInt(readLine().split(" +")[1]);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, String.format(" Could not find number of steps taken in OSRW Lambda file: %s", e.toString()));
+                }
+            }
+        }
+    }
+
 }
