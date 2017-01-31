@@ -892,3 +892,4 @@ if (master) {
         saveAsPDB(new File(filename + ".pdb"));
     }
 }
+}

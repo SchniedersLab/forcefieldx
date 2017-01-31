@@ -617,7 +617,7 @@ double[] x = new double[refinementEnergy.getNumberOfVariables()];
 x = refinementEnergy.getCoordinates(x);
 refinementEnergy.energy(x);
 
-RotamerOptimization rotamerOptimization = new RotamerOptimization(active, refinementEnergy, sh);
+RotamerOptimization rotamerOptimization = new RotamerOptimization(systems[0], refinementEnergy, sh);
 rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
 rotamerOptimization.setPruning(pruningType);
 rotamerOptimization.setWindowSize(windowSize);
