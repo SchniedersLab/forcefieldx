@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import ffx.algorithms.AlgorithmListener;
@@ -263,6 +264,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                             }
                             if (a.getAnisou(null) == null) {
                                 if (diffractionData.isAddAnisou()) {
+                                    logger.info(format(" Adding ANISOU to %s.", a.toShortString()));
                                     double anisou[] = new double[6];
                                     double u = b2u(a.getTempFactor());
                                     anisou[0] = anisou[1] = anisou[2] = u;

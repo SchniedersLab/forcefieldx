@@ -299,9 +299,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private double permLambdaExponent = 1.0;
     /**
-     * Begin turning on permanent multipoles at Lambda = 0.5;
+     * Begin turning on permanent multipoles at Lambda = 0.4;
      */
-    private double permLambdaStart = 0.5;
+    private double permLambdaStart = 0.4;
     /**
      * Finish turning on permanent multipoles at Lambda = 1.0;
      */
@@ -796,9 +796,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable
              * trajectories.
              */
-            permLambdaStart = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_START, 0.5);
+            permLambdaStart = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_START, 0.4);
             if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
-                permLambdaStart = 0.5;
+                permLambdaStart = 0.4;
             }
             /**
              * Values of PERMANENT_LAMBDA_END must be greater than

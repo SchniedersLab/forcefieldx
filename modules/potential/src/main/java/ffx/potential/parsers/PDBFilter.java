@@ -153,8 +153,8 @@ public final class PDBFilter extends SystemFilter {
      */
     private final Map<Character, Integer> inscodeCount = new HashMap<>();
     /**
-     * Maps chainIDResNumInsCode to renumbered chainIDResNum. For example, 
-     * residue 52A in chain C might be renumbered to residue 53, and mapped as 
+     * Maps chainIDResNumInsCode to renumbered chainIDResNum. For example,
+     * residue 52A in chain C might be renumbered to residue 53, and mapped as
      * "C52A" to "C53".
      */
     private final Map<String, String> pdbToNewResMap = new HashMap<>();
@@ -227,7 +227,7 @@ public final class PDBFilter extends SystemFilter {
      */
     private int modelsWritten = -1;
     private boolean noVersioning = false;
-    
+
     /**
      * <p>
      * Constructor for PDBFilter.</p>
@@ -332,15 +332,15 @@ public final class PDBFilter extends SystemFilter {
         listMode = set;
         listOutput = new ArrayList<>();
     }
-    
+
     public void setModelNumbering(boolean set) {
         modelsWritten = 0;
     }
-    
+
     public void setNoVersioning(boolean set) {
         noVersioning = set;
     }
-    
+
     public ArrayList<String> getListOutput() {
         return listOutput;
     }
@@ -348,7 +348,7 @@ public final class PDBFilter extends SystemFilter {
     public void clearListOutput() {
         listOutput.clear();
     }
-    
+
     /**
      * {@inheritDoc}
      *
@@ -459,7 +459,8 @@ public final class PDBFilter extends SystemFilter {
                  */
                 String line = br.readLine();
                 /**
-                 * Parse until END or ENDMDL is found, or to the end of the file.
+                 * Parse until END or ENDMDL is found, or to the end of the
+                 * file.
                  */
                 while (line != null) {
                     // Replace all tabs w/ 4x spaces
@@ -683,7 +684,7 @@ public final class PDBFilter extends SystemFilter {
                                 chainID = line.substring(21, 22).charAt(0);
                                 segID = getSegID(chainID);
                                 resSeq = Hybrid36.decode(4, line.substring(22, 26));
-                                
+
                                 char insertionCode = line.charAt(26);
                                 if (insertionCode != ' ' && !containsInsCode) {
                                     containsInsCode = true;
@@ -693,7 +694,7 @@ public final class PDBFilter extends SystemFilter {
                                             + "eliminate insertion codes (52A "
                                             + "becomes 53, 53 becomes 54, etc)");
                                 }
-                                
+
                                 int offset = inscodeCount.getOrDefault(chainID, 0);
                                 String pdbResNum = String.format("%c%d%c", chainID, resSeq, insertionCode);
                                 if (!pdbToNewResMap.containsKey(pdbResNum)) {
@@ -704,8 +705,8 @@ public final class PDBFilter extends SystemFilter {
                                     resSeq += offset;
                                     if (offset != 0) {
                                         logger.info(String.format(" Chain %c "
-                                                + "residue %s-%s renumbered to %c %s-%d", 
-                                                chainID, pdbResNum.substring(1).trim(), 
+                                                + "residue %s-%s renumbered to %c %s-%d",
+                                                chainID, pdbResNum.substring(1).trim(),
                                                 resName, chainID, resName, resSeq));
                                     }
                                     String newNum = String.format("%c%d", chainID, resSeq);
@@ -713,7 +714,7 @@ public final class PDBFilter extends SystemFilter {
                                 } else {
                                     resSeq += offset;
                                 }
-                                
+
                                 printAtom = false;
                                 if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
                                     String atomName = name.toUpperCase();
@@ -834,7 +835,7 @@ public final class PDBFilter extends SystemFilter {
                             } else {
                                 resSeq += offset;
                             }
-                            
+
                             d = new double[3];
                             d[0] = new Double(line.substring(30, 38).trim());
                             d[1] = new Double(line.substring(38, 46).trim());
@@ -1130,10 +1131,11 @@ public final class PDBFilter extends SystemFilter {
     public void setIgnoreInactiveAtoms(boolean ignoreInactiveAtoms) {
         this.ignoreUnusedAtoms = ignoreInactiveAtoms;
     }
-    
+
     /**
      * Sets whether this PDBFilter should log each time it saves to a file.
-     * @param logWrites 
+     *
+     * @param logWrites
      */
     public void setLogWrites(boolean logWrites) {
         this.logWrites = logWrites;
@@ -1244,7 +1246,7 @@ public final class PDBFilter extends SystemFilter {
             fw = new FileWriter(newFile, append);
             bw = new BufferedWriter(fw);
             /**
-             * Will come before CRYST1 and ATOM records, but after anything 
+             * Will come before CRYST1 and ATOM records, but after anything
              * written by writeFileWithHeader (particularly X-ray refinement
              * statistics).
              */
@@ -1576,7 +1578,7 @@ public final class PDBFilter extends SystemFilter {
                 }
                 resID++;
             }
-            
+
             String end = model != null ? "ENDMDL" : "END";
             if (!listMode) {
                 bw.write(end);
@@ -2017,12 +2019,12 @@ public final class PDBFilter extends SystemFilter {
                 char c2ch = ssbond.charAt(29);
                 Polymer c1 = activeMolecularAssembly.getChain(String.format("%c", c1ch));
                 Polymer c2 = activeMolecularAssembly.getChain(String.format("%c", c2ch));
-                
+
                 String origResNum1 = ssbond.substring(17, 21).trim();
                 char insChar1 = ssbond.charAt(21);
                 String origResNum2 = ssbond.substring(31, 35).trim();
                 char insChar2 = ssbond.charAt(35);
-                
+
                 String pdbResNum1 = String.format("%c%s%c", c1ch, origResNum1, insChar1);
                 String pdbResNum2 = String.format("%c%s%c", c2ch, origResNum2, insChar2);
                 String resnum1 = pdbToNewResMap.get(pdbResNum1);
@@ -2035,7 +2037,7 @@ public final class PDBFilter extends SystemFilter {
                     logger.warning(String.format(" Could not find residue %s for SS-bond %s", pdbResNum2, ssbond));
                     continue;
                 }
-                
+
                 Residue r1 = c1.getResidue(Integer.parseInt(resnum1.substring(1)));
                 Residue r2 = c2.getResidue(Integer.parseInt(resnum2.substring(1)));
                 /*Residue r1 = c1.getResidue(Hybrid36.decode(4, ssbond.substring(17, 21)));
@@ -2850,23 +2852,19 @@ public final class PDBFilter extends SystemFilter {
         } else {
             sb.setCharAt(16, ' ');
         }
-        
+
         /*sb.replace(30, 66, String.format("%8.3f%8.3f%8.3f%6.2f%6.2f",
                 xyz[0], xyz[1], xyz[2], atom.getOccupancy(), atom.getTempFactor()));*/
-        
         /**
-         * On the following code:
-         * #1: StringBuilder.replace will allow for longer strings, expanding the
-         * StringBuilder's length if necessary.
+         * On the following code: #1: StringBuilder.replace will allow for
+         * longer strings, expanding the StringBuilder's length if necessary.
          * #2: sb was never re-initialized, so if there was overflow, sb would
          * continue to be > 80 characters long, resulting in broken PDB files
          * #3: It may be wiser to have XYZ coordinates result in shutdown, not
-         * truncation of coordinates.
-         * #4: Excessive B-factors aren't much of an issue; if the B-factor is
-         * past 999.99, that's the difference between "density extends to Venus"
-         * and "density extends to Pluto".
+         * truncation of coordinates. #4: Excessive B-factors aren't much of an
+         * issue; if the B-factor is past 999.99, that's the difference between
+         * "density extends to Venus" and "density extends to Pluto".
          */
-        
         StringBuilder decimals = new StringBuilder();
         for (int i = 0; i < 3; i++) {
             try {
@@ -2875,7 +2873,7 @@ public final class PDBFilter extends SystemFilter {
                 String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
                 logger.info(String.format(" XYZ %d coordinate %8.3f for atom %s "
                         + "overflowed bounds of 8.3f string specified by PDB "
-                        + "format; truncating value to %s", i, xyz[i], atom.toString(), 
+                        + "format; truncating value to %s", i, xyz[i], atom.toString(),
                         newValue));
                 decimals.append(newValue);
             }
@@ -2896,7 +2894,7 @@ public final class PDBFilter extends SystemFilter {
             decimals.append(newValue);
         }
         sb.replace(30, 66, decimals.toString());
-        
+
         name = Atom.ElementSymbol.values()[atom.getAtomicNumber() - 1].toString();
         name = name.toUpperCase();
         if (atom.isDeuterium()) {
@@ -3027,19 +3025,19 @@ public final class PDBFilter extends SystemFilter {
             }
         }
     }
-    
+
     @Override
     public boolean readNext() {
         return readNext(false);
     }
-    
+
     @Override
     public boolean readNext(boolean resetPosition) {
         // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture one or more digits.
         Pattern modelPatt = Pattern.compile("^MODEL\\s+(\\d+)");
         modelsRead = resetPosition ? 1 : modelsRead + 1;
         boolean eof = true;
-        
+
         for (MolecularAssembly system : systems) {
             File file = system.getFile();
             currentFile = file;
@@ -3190,7 +3188,7 @@ public final class PDBFilter extends SystemFilter {
                         break;
                     }
                     line = currentReader.readLine();
-                    
+
                 }
                 return true;
             } catch (IOException ex) {
@@ -3200,7 +3198,7 @@ public final class PDBFilter extends SystemFilter {
         }
         return false;
     }
-    
+
     @Override
     public void closeReader() {
         // Java 8 stuff that Netbeans suggested. Faster than for loop?
@@ -3764,7 +3762,7 @@ public final class PDBFilter extends SystemFilter {
         segIDs.add(newSegID);
         currentChainID = c;
         currentSegID = newSegID;
-        
+
         if (segidMap.containsKey(c)) {
             segidMap.get(c).add(newSegID);
         } else {

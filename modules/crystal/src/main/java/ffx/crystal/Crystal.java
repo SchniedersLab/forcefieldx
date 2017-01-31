@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
@@ -62,6 +64,7 @@ import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.transpose3;
+
 import org.apache.commons.math3.util.FastMath;
 
 /**
@@ -238,7 +241,7 @@ public class Crystal {
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
             String message = " The lattice parameters do not satisfy the " + crystalSystem
-                    + " crystal system restrictions:/n" + toString();
+                    + " crystal system restrictions:\n" + toString();
             logger.severe(message);
         }
 
@@ -449,7 +452,7 @@ public class Crystal {
         bStar = 1.0 / sqrt(A01 * A01 + A11 * A11 + A21 * A21);
         cStar = 1.0 / sqrt(A02 * A02 + A12 * A12 + A22 * A22);
         if (logger.isLoggable(Level.FINEST)) {
-            logger.finest(String.format(" Reciprocal Lattice Lengths: (%8.3f, %8.3f, %8.3f)",
+            logger.finest(format(" Reciprocal Lattice Lengths: (%8.3f, %8.3f, %8.3f)",
                     aStar, bStar, cStar));
         }
 
@@ -464,7 +467,7 @@ public class Crystal {
         interfacialRadiusC /= 2.0;
 
         if (logger.isLoggable(Level.FINEST)) {
-            logger.finest(String.format(" Interfacial radii: (%8.3f, %8.3f, %8.3f)",
+            logger.finest(format(" Interfacial radii: (%8.3f, %8.3f, %8.3f)",
                     interfacialRadiusA, interfacialRadiusB, interfacialRadiusC));
         }
 
@@ -1352,7 +1355,7 @@ public class Crystal {
         xf[1] = ((x[1] - xf[2] * c * beta_term) / sin_gamma) / b;
         xf[0] = (x[0] - xf[1] * b * cos_gamma - xf[2] * c * cos_beta) / a;
     }
-    
+
     /**
      * Minimum distance between two coordinates over all symmetry operators.
      * @param xyzA Coordinate A

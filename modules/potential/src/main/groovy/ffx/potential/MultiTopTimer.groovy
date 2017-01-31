@@ -21,24 +21,24 @@ import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils
+import ffx.potential.utils.PotentialsUtils;
 
 /**
- * The TestLambdaGradient script tests numeric gradients w.r.t. lambda against
- * numeric, finite-difference gradients
+ * The MultiTopTimer extends the functionality of the Timer script to handle
+ * multi-topology energy functions.
  * <br>
  * Usage:
  * <br>
- * ffxc TestLambdaGradient [options] &lt;filename [file2...]&gt;
+ * ffxc MultiTopTimer [options] &lt;filename [file2...]&gt;
  */
-class TestLambdaGradient extends Script {
+class MultiTopTimer extends Script {
 
     /**
-     * Options for the TestLambdaGradient Script.
+     * Options for the MultiTopTimer Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc TestLambdaGradient [options] &lt;filename&gt;
+     * ffxc MultiTopTImer [options] &lt;filename&gt;
      */
     class Options {
         /**
@@ -110,25 +110,28 @@ class TestLambdaGradient extends Script {
          */
         @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
         /**
-         * -v or --verbose is a flag to print out energy at each step.
-         */
-        @Option(shortName='v', longName='verbose', defaultValue='false', description='Print out the energy for each step') boolean print;
-        /**
          * -qi or --quasi-internal sets use of the quasi-internal multipole tensor formulation; not presently recommended for production use.
          */
         @Option(shortName='qi', longName='quasi-internal', defaultValue='false', description='Use quasi-internal multipole tensors.') boolean qi;
         /**
-         * -d or --dx sets the finite-difference step size (in Angstroms).
+         * -n or --iterations sets the number of iterations to run; more iterations reduces the effect of variance on mean time, and is particularly recommended for small systems to allow for "warm-up" (JIT compiling).
          */
-        @Option(shortName='d', longName='dx', defaultValue='1.0e-5', description='Finite-difference step size (in Angstroms)') double step;
-        
-        
+        @Option(shortName='n', longName='iterations', defaultValue='5', description='Number of iterations of the energy function') int nEvals;
+        /**
+         * -g or --gradient, if set false, disables the additional computation of gradients.
+         */
+        @Option(shortName='g', longName='gradient', defaultValue='true', description='Compute the gradients as well as energies.') String gradString;
+        /**
+         * -v or --verbose, if set false, disables the fully detailed printing of energy components at each step.
+         */
+        @Option(shortName='v', longName='verbose', defaultValue='true', description='Compute the gradients as well as energies.') String verboseString;
+        //@Option(shortName='v', longName='verbose', defaultValue='true', description='Print out the complete energy for each step.') String verboseString;
+
         /**
          * The final argument(s) should be one or more filenames.
          */
         @Unparsed List<String> filenames;
     }
-    
     
     // Following variables are largely intended to be shared by helper methods such as openFile.
     private static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
@@ -257,7 +260,7 @@ class TestLambdaGradient extends Script {
     
     def run() {
 
-        def cli = new CliBuilder(usage:' ffxc TestLambdaGradient [options] <filename> [file2...]', header:' Options:');
+        def cli = new CliBuilder(usage:' ffxc MultiTopTimer [options] <filename> [file2...]', header:' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);
@@ -294,6 +297,11 @@ class TestLambdaGradient extends Script {
         if (options.ligAt2) {
             ranges2 = options.ligAt2.tokenize(".");
         }
+        
+        boolean gradient = true;
+        if (options.gradString) {
+            gradient = Boolean.parseBoolean(options.gradString);
+        }
 
         if (options.qi) {
             System.setProperty("pme-qi","true");
@@ -301,10 +309,11 @@ class TestLambdaGradient extends Script {
             System.setProperty("ligand-vapor-elec","false");
             System.setProperty("polarization","NONE");
         }
-        boolean debug = (System.getProperty("debug") != null);
 
-        // Turn on computation of lambda derivatives
-        System.setProperty("lambdaterm","true");
+        // Turn on computation of lambda derivatives if l >= 0 or > 1 argument
+        if (options.initialLambda >= 0.0 || nArgs > 1) {
+            System.setProperty("lambdaterm","true");
+        }
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
@@ -346,9 +355,8 @@ class TestLambdaGradient extends Script {
             uniqueB = new ArrayList<>();
             
             if (options.unsharedA) {
-                //rangesA = options.uaA.tokenize(".");
                 def ra = [] as Set;
-                String[] toksA = options.unsharedA.split(".");
+                String[] toksA = options.unsharedA.tokenize(".");
                 for (range in toksA) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
@@ -372,7 +380,7 @@ class TestLambdaGradient extends Script {
                         if (ai.applyLambda()) {
                             logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                         } else {
-                            logger.info(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
+                            logger.fine(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
                             for (int j = 0; j < 3; j++) {
                                 raAdj.add(new Integer(counter + j));
                             }
@@ -388,7 +396,7 @@ class TestLambdaGradient extends Script {
             }
             if (options.unsharedB) {
                 def rb = [] as Set;
-                String[] toksB = options.unsharedB.split(".");
+                String[] toksB = options.unsharedB.tokenize(".");
                 for (range in toksB) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
@@ -411,7 +419,7 @@ class TestLambdaGradient extends Script {
                         if (bi.applyLambda()) {
                             logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                         } else {
-                            logger.info(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
+                            logger.fine(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
                             for (int j = 0; j < 3; j++) {
                                 rbAdj.add(counter + j);
                             }
@@ -427,7 +435,11 @@ class TestLambdaGradient extends Script {
             }
         }
         
-        StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ");
+        StringBuilder sb = new StringBuilder("\n Timing energies ");
+        if (gradient) {
+            sb.append("and gradients ");
+        }
+        sb.append("for ");
         switch (nArgs) {
             case 1:
                 potential = energies[0];
@@ -507,233 +519,41 @@ class TestLambdaGradient extends Script {
         
         LambdaInterface linter = (LambdaInterface) potential;
         
-        // End boilerplate open-topologies code.
-
-        // Reset the number of variables for the case of dual topology.
-        int n = potential.getNumberOfVariables();
-        double[] x = new double[n];
-        double[] gradient = new double[n];
-        double[] lambdaGrad = new double[n];
-        double[][] lambdaGradFD = new double[2][n];
-
-        // Number of independent atoms.
-        assert(n % 3 == 0);
-        int nAtoms = n / 3;
-
-        // Compute the Lambda = 0.0 energy.
-        double lambda = 0.0;
-        linter.setLambda(lambda);
+        boolean print = true;
+        if (options.verboseString) {
+            print = Boolean.parseBoolean(options.verboseString);
+        }
+        
+        long minTime = Long.MAX_VALUE;
+        double sumTime2 = 0.0;
+        int halfnEvals = (options.nEvals % 2 == 1) ? (options.nEvals/2) : (options.nEvals/2) - 1; // Halfway point
+        int nVars = potential.getNumberOfVariables();
+        double[] x = new double[nVars];
         potential.getCoordinates(x);
-        double e0 = potential.energyAndGradient(x,gradient);
-
-        // Compute the Lambda = 1.0 energy.
-        lambda = 1.0;
-        linter.setLambda(lambda);
-        double e1 = potential.energyAndGradient(x,gradient);
-
-        logger.info(String.format(" E(0):      %20.8f.", e0));
-        logger.info(String.format(" E(1):      %20.8f.", e1));
-        logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1-e0));
-
-        // Finite-difference step size.
-        double width = 2.0 * options.step;
-
-        // Error tolerence
-        double errTol = 1.0e-3;
-        // Upper bound for typical gradient sizes (expected gradient)
-        double expGrad = 1000.0;
-
-        // Test Lambda gradient in the neighborhood of the lambda variable.
-        for (int j=0; j<3; j++) {
-            lambda = options.initialLambda - 0.01 + 0.01 * j;
-
-            if (lambda - options.step < 0.0) {
-                continue;
+        double[] g = gradient ? new double[nVars] : null;
+        def eCall = gradient ? { potential.energyAndGradient(x, g, print) } : { potential.energy(x, print) };
+        
+        for (int i=0; i<options.nEvals; i++) {
+            long time = -System.nanoTime();
+            //energy.energy(gradient, print);
+            eCall();
+            time += System.nanoTime();
+            minTime = time < minTime ? time : minTime;
+            if (i >= (int) (options.nEvals/2)) {
+                double time2 = time * 1.0E-9;
+                sumTime2 += (time2*time2);
             }
-            if (lambda + options.step > 1.0) {
-                continue;
-            }
-
-            logger.info(String.format(" Current lambda value %6.4f", lambda));
-            linter.setLambda(lambda);
-
-            // Calculate the energy, dE/dX, dE/dL, d2E/dL2 and dE/dL/dX
-            double e = potential.energyAndGradient(x,gradient);
-
-            // Analytic dEdL, d2E/dL2 and dE/dL/dX
-            double dEdL = linter.getdEdL();
-            double d2EdL2 = linter.getd2EdL2();
-            for (int i = 0; i < n; i++) {
-                lambdaGrad[i] = 0.0;
-            }
-            potential.getdEdXdL(lambdaGrad);
-
-            // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
-            linter.setLambda(lambda + options.step);
-            double lp = potential.energyAndGradient(x,lambdaGradFD[0]);
-            double dedlp = linter.getdEdL();
-            linter.setLambda(lambda - options.step);
-            double lm = potential.energyAndGradient(x,lambdaGradFD[1]);
-            double dedlm = linter.getdEdL();
-
-            double dEdLFD = (lp - lm) / width;
-            double d2EdL2FD = (dedlp - dedlm) / width;
-
-            if (debug) {
-                logger.info(String.format(" db> Lambda FD Test  lower,center,upper: %g %g %g", lambda - options.step , lambda, lambda + options.step));
-                logger.info(String.format(" db> dE/dL   Numeric lp,lm,width,val: %+9.6g %+9.6g %4.2g (%+9.6g)", lp, lm, width, dEdLFD));
-                logger.info(String.format(" db> d2E/dL2 Numeric lp,lm,width,val: %+9.6g %+9.6g %4.2g [%+9.6g]", dedlp, dedlm, width, d2EdL2FD));
-                logger.info(String.format(" db> Analytic vers   l,dEdL,d2EdL2: %4.2f (%+9.6g) [%+9.6g]", lambda, dEdL, d2EdL2));
-            }
-
-            double err = Math.abs(dEdLFD - dEdL);
-            if (err < errTol) {
-                logger.info(String.format(" dE/dL passed:   %10.6f", err));
-            } else {
-                logger.info(String.format(" dE/dL failed: %10.6f", err));
-            }
-            logger.info(String.format(" Numeric:   %15.8f", dEdLFD));
-            logger.info(String.format(" Analytic:  %15.8f", dEdL));
-
-            err = Math.abs(d2EdL2FD - d2EdL2);
-            if (err < errTol) {
-                logger.info(String.format(" d2E/dL2 passed: %10.6f", err));
-            } else {
-                logger.info(String.format(" d2E/dL2 failed: %10.6f", err));
-            }
-            logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD));
-            logger.info(String.format(" Analytic:  %15.8f", d2EdL2));
-
-            //boolean passed = true;
-            int ndEdXdLFails = 0;
-
-            double rmsError = 0;
-            for (int i = 0; i < nAtoms; i++) {
-                int ii = i * 3;
-                double dX = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width;
-                double dXa = lambdaGrad[ii];
-                double eX = dX - dXa;
-                ii++;
-                double dY = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width;
-                double dYa = lambdaGrad[ii];
-                double eY = dY - dYa;
-                ii++;
-                double dZ = (lambdaGradFD[0][ii] - lambdaGradFD[1][ii]) / width;
-                double dZa = lambdaGrad[ii];
-                double eZ = dZ - dZa;
-
-                //double error = Math.sqrt(eX * eX + eY * eY + eZ * eZ);
-                double error = eX * eX + eY * eY + eZ * eZ;
-                rmsError += error;
-                error = Math.sqrt(error);
-                if (error < errTol) {
-                    logger.fine(String.format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error));
-                } else {
-                    logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error));
-                    logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa,dYa,dZa));
-                    logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ));
-                    ndEdXdLFails++;
-                }
-            }
-            rmsError = Math.sqrt(rmsError / nAtoms);
-            if (ndEdXdLFails == 0) {
-                logger.info(String.format(" dE/dX/dL passed for all atoms: RMS error %15.8f", rmsError));
-            } else {
-                logger.info(String.format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", ndEdXdLFails, nAtoms, rmsError));
-            }
-
-            logger.info("");
         }
-
-        linter.setLambda(options.initialLambda);
-        potential.getCoordinates(x);
-        potential.energyAndGradient(x,gradient, options.print);
-
-        logger.info(String.format(" Checking Cartesian coordinate gradient"));
-
-        double[] numeric = new double[3];
-        double avLen = 0.0;
-        int nFailures = 0;
-        double avGrad = 0.0;
-        for (int i=0; i<nAtoms; i++) {
-            int i3 = i*3;
-            int i0 = i3 + 0;
-            int i1 = i3 + 1;
-            int i2 = i3 + 2;
-
-            // Find numeric dX
-            double orig = x[i0];
-            x[i0] = x[i0] + options.step;
-            double e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
-            x[i0] = orig - options.step;
-            e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
-            x[i0] = orig;
-            numeric[0] = e / width;
-
-            // Find numeric dY
-            orig = x[i1];
-            x[i1] = x[i1] + options.step;
-            e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
-            x[i1] = orig - options.step;
-            e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
-            x[i1] = orig;
-            numeric[1] = e / width;
-
-            // Find numeric dZ
-            orig = x[i2];
-            x[i2] = x[i2] + options.step;
-            e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
-            x[i2] = orig - options.step;
-            e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
-            x[i2] = orig;
-            numeric[2] = e / width;
-
-            double dx = gradient[i0] - numeric[0];
-            double dy = gradient[i1] - numeric[1];
-            double dz = gradient[i2] - numeric[2];
-            double len = dx * dx + dy * dy + dz * dz;
-            avLen += len;
-            len = Math.sqrt(len);
-
-            double grad2 = gradient[i0] * gradient[i0] + gradient[i1] * gradient[i1] + gradient[i2] * gradient[i2];
-            avGrad += grad2;
-
-            if (len > errTol) {
-                logger.info(String.format(" Atom %d failed: %10.6f.",i+1,len)
-                    + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-                    + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
-                ++nFailures;
-                //return;
-            } else {
-                logger.info(String.format(" Atom %d passed: %10.6f.",i+1,len)
-                    + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-                    + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
-            }
-
-            if (grad2 > expGrad) {
-                logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i+1, grad2));
-            }
-            logger.info("\n");
-        }
-
-        avLen = avLen / nAtoms;
-        avLen = Math.sqrt(avLen);
-        if (avLen > errTol) {
-            logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol));
-        } else {
-            logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol));
-        }
-        logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures));
-
-        avGrad = avGrad / nAtoms;
-        avGrad = Math.sqrt(avGrad);
-        if (avGrad > expGrad) {
-            logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad));
-        } else {
-            logger.info(String.format(" RMS gradient: %10.6f", avGrad));
+        
+        ++halfnEvals;
+        double rmsTime = Math.sqrt(sumTime2/halfnEvals);
+        logger.info(String.format(" Minimum time: %14.5f (sec)", minTime * 1.0E-9));
+        logger.info(String.format(" RMS time (latter half): %14.5f (sec)", rmsTime));
+        for (int i = 0; i < energies.size(); i++) {
+            int numt = ((ForceFieldEnergy) energies[i]).parallelTeam.getThreadCount();
+            logger.info(String.format(" Number of threads for topology %d: %d", i, numt));
         }
     }
-    
 }
 
 /**
@@ -773,3 +593,4 @@ class TestLambdaGradient extends Script {
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
+
