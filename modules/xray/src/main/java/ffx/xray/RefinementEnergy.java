@@ -40,6 +40,9 @@ package ffx.xray;
 import ffx.realspace.RealSpaceData;
 import ffx.realspace.RealSpaceEnergy;
 
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -60,6 +63,9 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
+import ffx.potential.utils.EnergyException;
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import static ffx.numerics.VectorMath.b2u;
@@ -70,6 +76,8 @@ import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_BFACTOR
 import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES;
 import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_OCCUPANCIES;
 import static ffx.xray.RefinementMinimize.RefinementMode.OCCUPANCIES;
+
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * Combine the X-ray target and chemical potential energy using the
@@ -175,6 +183,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * If true, collect lambda derivatives.
      */
     protected boolean lambdaTerm;
+    /**
+     * Print a file if there is an error in the energy.
+     */
+    private boolean printOnFailure;
 
     /**
      * RefinementEnergy Constructor.
@@ -209,6 +221,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         // Determine if lambda derivatives are needed.
         ForceField forceField = molecularAssemblies[0].getForceField();
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
+        printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, true);
 
         // Fill an active atom array.
         int count = 0;
@@ -366,6 +379,39 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         return activeAtomArray;
     }
 
+    /**
+     * Sets the printOnFailure flag; if override is true, over-rides any
+     * existing property. Essentially sets the default value of printOnFailure
+     * for an algorithm. For example, rotamer optimization will generally run
+     * into force field issues in the normal course of execution as it tries
+     * unphysical self and pair configurations, so the algorithm should not
+     * print out a large number of error PDBs.
+     *
+     * @param onFail To set
+     * @param override Override properties
+     */
+    public void setPrintOnFailure(boolean onFail, boolean override) {
+        if (override) {
+            // Ignore any pre-existing value
+            printOnFailure = onFail;
+        } else {
+            try {
+                molecularAssemblies[0].getForceField().getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE);
+                /*
+                 * If the call was successful, the property was explicitly set
+                 * somewhere and should be kept. If an exception was thrown, the
+                 * property was never set explicitly, so over-write.
+                 */
+            } catch (Exception ex) {
+                printOnFailure = onFail;
+            }
+        }
+    }
+
+    public boolean getPrintOnFailure() {
+        return printOnFailure;
+    }
+
     @Override
     public double energy(double[] x) {
         double weight = data.getWeight();
@@ -387,10 +433,36 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             case COORDINATES:
                 // Compute the chemical energy.
                 for (int i = 0; i < assemblysize; i++) {
-                    ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
-                    getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energy(xChemical[i]);
-                    e += (curE - e) / (i + 1);
+                    try {
+                        ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
+                        getAssemblyi(i, x, xChemical[i]);
+                        double curE = fe.energy(xChemical[i]);
+                        e += (curE - e) / (i + 1);
+                    } catch (EnergyException ex) {
+                        ex.printStackTrace();
+                        if (printOnFailure) {
+                            String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                                    ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                            String filename = String.format("%s-ERROR-%s.pdb",
+                                    FilenameUtils.removeExtension(molecularAssemblies[i].getFile().getName()),
+                                    timeString);
+
+                            PotentialsFunctions ef = new PotentialsUtils();
+                            filename = ef.versionFile(filename);
+                            logger.info(String.format(" Writing on-error snapshot to file %s", filename));
+                            ef.saveAsPDB(molecularAssemblies[i], new File(filename));
+                        }
+                        if (ex.doCauseSevere()) {
+                            ex.printStackTrace();
+                            logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+                        } else {
+                            ex.printStackTrace();
+                            throw ex; // Rethrow exception
+                        }
+
+                        return 0; // Should ordinarily be unreachable.
+                    }
                 }
                 double chemE = e;
 
@@ -411,10 +483,36 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
                 // Compute the chemical energy and gradient.
                 for (int i = 0; i < assemblysize; i++) {
-                    ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
-                    getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energy(xChemical[i]);
-                    e += (curE - e) / (i + 1);
+                    try {
+                        ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
+                        getAssemblyi(i, x, xChemical[i]);
+                        double curE = fe.energy(xChemical[i]);
+                        e += (curE - e) / (i + 1);
+                    } catch (EnergyException ex) {
+                        ex.printStackTrace();
+                        if (printOnFailure) {
+                            String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                                    ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                            String filename = String.format("%s-ERROR-%s.pdb",
+                                    FilenameUtils.removeExtension(molecularAssemblies[i].getFile().getName()),
+                                    timeString);
+
+                            PotentialsFunctions ef = new PotentialsUtils();
+                            filename = ef.versionFile(filename);
+                            logger.info(String.format(" Writing on-error snapshot to file %s", filename));
+                            ef.saveAsPDB(molecularAssemblies[i], new File(filename));
+                        }
+                        if (ex.doCauseSevere()) {
+                            ex.printStackTrace();
+                            logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+                        } else {
+                            ex.printStackTrace();
+                            throw ex; // Rethrow exception
+                        }
+
+                        return 0; // Should ordinarily be unreachable.
+                    }
                 }
                 e += weight * dataEnergy.energy(x);
                 break;
@@ -461,11 +559,37 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             case COORDINATES:
                 // Compute the chemical energy and gradient.
                 for (int i = 0; i < assemblysize; i++) {
-                    ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
-                    getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
-                    e += (curE - e) / (i + 1);
-                    setAssemblyi(i, g, gChemical[i]);
+                    try {
+                        ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
+                        getAssemblyi(i, x, xChemical[i]);
+                        double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
+                        e += (curE - e) / (i + 1);
+                        setAssemblyi(i, g, gChemical[i]);
+                    } catch (EnergyException ex) {
+                        ex.printStackTrace();
+                        if (printOnFailure) {
+                            String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                                    ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                            String filename = String.format("%s-ERROR-%s.pdb",
+                                    FilenameUtils.removeExtension(molecularAssemblies[i].getFile().getName()),
+                                    timeString);
+
+                            PotentialsFunctions ef = new PotentialsUtils();
+                            filename = ef.versionFile(filename);
+                            logger.info(String.format(" Writing on-error snapshot to file %s", filename));
+                            ef.saveAsPDB(molecularAssemblies[i], new File(filename));
+                        }
+                        if (ex.doCauseSevere()) {
+                            ex.printStackTrace();
+                            logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+                        } else {
+                            ex.printStackTrace();
+                            throw ex; // Rethrow exception
+                        }
+
+                        return 0; // Should ordinarily be unreachable.
+                    }
                 }
                 double chemE = e;
 
@@ -504,11 +628,37 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             case COORDINATES_AND_BFACTORS_AND_OCCUPANCIES:
                 // Compute the chemical energy and gradient.
                 for (int i = 0; i < assemblysize; i++) {
-                    ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
-                    getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
-                    e += (curE - e) / (i + 1);
-                    setAssemblyi(i, g, gChemical[i]);
+                    try {
+                        ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
+                        getAssemblyi(i, x, xChemical[i]);
+                        double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
+                        e += (curE - e) / (i + 1);
+                        setAssemblyi(i, g, gChemical[i]);
+                    } catch (EnergyException ex) {
+                        ex.printStackTrace();
+                        if (printOnFailure) {
+                            String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                                    ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                            String filename = String.format("%s-ERROR-%s.pdb",
+                                    FilenameUtils.removeExtension(molecularAssemblies[i].getFile().getName()),
+                                    timeString);
+
+                            PotentialsFunctions ef = new PotentialsUtils();
+                            filename = ef.versionFile(filename);
+                            logger.info(String.format(" Writing on-error snapshot to file %s", filename));
+                            ef.saveAsPDB(molecularAssemblies[i], new File(filename));
+                        }
+                        if (ex.doCauseSevere()) {
+                            ex.printStackTrace();
+                            logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
+                        } else {
+                            ex.printStackTrace();
+                            throw ex; // Rethrow exception
+                        }
+
+                        return 0; // Should ordinarily be unreachable.
+                    }
                 }
                 // normalize gradients for multiple-counted atoms
                 if (assemblysize > 1) {

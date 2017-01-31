@@ -361,11 +361,11 @@ class MultiTopTimer extends Script {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        logger.info(String.format("Range %s A rangeStart %d groupCount %d", range, rangeStart, m.groupCount()));
                         int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
+                        logger.info(String.format("Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
                         for (int i = rangeStart; i <= rangeEnd; i++) {
                             ra.add(i-1);
                         }
@@ -405,6 +405,7 @@ class MultiTopTimer extends Script {
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
+                        logger.info(String.format("Range %s for B, start %d end %d", range, rangeStart, rangeEnd));
                         for (int i = rangeStart; i <= rangeEnd; i++) {
                             rb.add(i-1);
                         }

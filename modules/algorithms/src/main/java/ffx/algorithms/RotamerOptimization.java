@@ -4498,9 +4498,9 @@ public class RotamerOptimization implements Terminatable {
     private double currentPE(File dir) {
         if (x == null) {
             int nVar = potential.getNumberOfVariables();
-            x = new double[nVar * 3];
+            x = new double[nVar];
         }
-        potential.getCoordinates(x);
+        x = potential.getCoordinates(x);
         return potential.energy(x);
     }
 
