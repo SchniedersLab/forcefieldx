@@ -1222,10 +1222,6 @@ public class VanDerWaals implements MaskingInterface,
         this.crystal = crystal;
         int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
         if (nSymm != newNSymm) {
-
-            logger.info(String.format(" VDW: updated symops %d -> %d: %s",
-                    nSymm, newNSymm, crystal.getUnitCell().toShortString()));
-
             nSymm = newNSymm;
             /**
              * Allocate memory if necessary.
