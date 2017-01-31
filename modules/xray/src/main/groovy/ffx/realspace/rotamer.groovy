@@ -613,8 +613,8 @@ RealSpaceData realSpaceData = new RealSpaceData(systems,
     mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
 
-double [] x = new double[atoms.length*3];
-refinementEnergy.getCoordinates(x);
+double[] x = new double[refinementEnergy.getNumberOfVariables()];
+x = refinementEnergy.getCoordinates(x);
 refinementEnergy.energy(x);
 
 RotamerOptimization rotamerOptimization = new RotamerOptimization(active, refinementEnergy, sh);

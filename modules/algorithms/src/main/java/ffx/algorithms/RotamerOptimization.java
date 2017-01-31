@@ -4500,7 +4500,7 @@ public class RotamerOptimization implements Terminatable {
             int nVar = potential.getNumberOfVariables();
             x = new double[nVar * 3];
         }
-        potential.getCoordinates(x);
+        x = potential.getCoordinates(x);
         return potential.energy(x);
     }
 
