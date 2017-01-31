@@ -945,6 +945,7 @@ if (arguments.size() == 1) {
                 if (rangeStart > rangeEnd) {
                     logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                 }
+                logger.info(String.format("Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
                 for (int i = rangeStart; i <= rangeEnd; i++) {
                     ra.add(i-1);
                 }
@@ -959,7 +960,7 @@ if (arguments.size() == 1) {
                 if (ai.applyLambda()) {
                     logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                 } else {
-                    logger.info(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
+                    logger.fine(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
                     for (int j = 0; j < 3; j++) {
                         raAdj.add(new Integer(counter + j));
                     }
@@ -984,6 +985,7 @@ if (arguments.size() == 1) {
                 if (rangeStart > rangeEnd) {
                     logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                 }
+                logger.info(String.format("Range %s for B, start %d end %d", range, rangeStart, rangeEnd));
                 for (int i = rangeStart; i <= rangeEnd; i++) {
                     rb.add(i-1);
                 }
@@ -998,7 +1000,7 @@ if (arguments.size() == 1) {
                 if (bi.applyLambda()) {
                     logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                 } else {
-                    logger.info(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
+                    logger.fine(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
                     for (int j = 0; j < 3; j++) {
                         rbAdj.add(counter + j);
                     }
