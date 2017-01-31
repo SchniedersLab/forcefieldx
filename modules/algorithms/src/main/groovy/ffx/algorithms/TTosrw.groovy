@@ -813,6 +813,10 @@ class TTosrw extends Script {
                     Barostat barostat = new Barostat(topologies[0]);
                     barostat.setMaxDensity(options.maxDensity);
                     barostat.setMinDensity(options.minDensity);
+                    double dens = barostat.density();
+                    if (dens < options.minDensity || dens > options.maxDensity) {
+                        barostat.setDensity(1.0);
+                    }
                     barostat.setMaxSideMove(options.maxSideMove);
                     barostat.setMaxAngleMove(options.maxAngleMove);
                     barostat.setMeanBarostatInterval(options.meanInterval);
@@ -937,7 +941,7 @@ class TTosrw extends Script {
         if (nArgs == 1 || options.optimize) {
             osrw.setOptimization(true, topologies[0]);
         }
-        
+
         if (!lambdaRestart.exists()) {
             logger.info(String.format(" Setting lambda to %5.3f", lambda));
             osrw.setLambda(lambda);

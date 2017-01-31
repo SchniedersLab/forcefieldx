@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 /**
  * The ReplicatesCrystal class extends Crystal to generate additional symmetry
  * operators needed to describe a "replicated" super cell. The replicated
@@ -149,7 +151,7 @@ public class ReplicatesCrystal extends Crystal {
                         SymOp repSymOp = new SymOp(symOp.rot, repTrans);
                         symOps.add(repSymOp);
                         if (logger.isLoggable(Level.FINEST)) {
-                            logger.finest(String.format("\n SymOp (%2d,%2d,%2d): %d", i, j, k, ii));
+                            logger.finest(format("\n SymOp (%2d,%2d,%2d): %d", i, j, k, ii));
                             logger.finest(repSymOp.toString());
                         }
                         ii++;

@@ -797,7 +797,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             double lla = 0.0;
             double ula = 0.0;
             double maxBias = 0;
-            if (ulFL == -1 || llFL == -1) {
+            if (llFL == -1 || ulFL == -1) {
                 FLambda[iL] = 0.0;
                 minFL = 0.0;
             } else {

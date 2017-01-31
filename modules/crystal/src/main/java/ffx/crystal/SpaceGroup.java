@@ -490,7 +490,7 @@ public class SpaceGroup {
         }
 
     }
-
+    
     /**
      * Return the ith symmetry operator.
      *

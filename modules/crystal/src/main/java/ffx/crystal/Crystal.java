@@ -213,6 +213,10 @@ public class Crystal {
      */
     public double specialPositionCutoff = 0.3;
     public double specialPositionCutoff2 = specialPositionCutoff * specialPositionCutoff;
+    /**
+     * Avogadro's number.
+     */
+    private static final double AVOGADRO = 6.02214129e23;
 
     /**
      * The Crystal class encapsulates the lattice parameters and space group.
@@ -508,6 +512,9 @@ public class Crystal {
 
     }
 
+    
+
+
     /**
      * This method should be called to update the unit cell parameters of a
      * crystal. The proposed parameters will only be accepted if symmetry
@@ -543,6 +550,35 @@ public class Crystal {
         updateCrystal();
 
         return true;
+    }
+
+    public double getDensity(double mass) {
+        int nSymm = spaceGroup.symOps.size();
+        double dens = (mass * nSymm / AVOGADRO) * (1.0e24 / volume);
+        return dens;
+    }
+
+    public void setDensity(double dens, double mass) {
+        double currentDensity = getDensity(mass);
+
+        Crystal uc = getUnitCell();
+        logger.info(format(" Current density %6.3f (g/cc) with unit cell %s.",
+                currentDensity, uc.toShortString()));
+
+        if (currentDensity < dens) {
+            while (currentDensity < dens) {
+                changeUnitCellParameters(uc.a * 0.99, uc.b * 0.99, uc.c * 0.99, alpha, beta, gamma);
+                currentDensity = getDensity(mass);
+            }
+        } else {
+            while (currentDensity > dens) {
+                changeUnitCellParameters(uc.a * 1.01, uc.b * 1.01, uc.c * 1.01, alpha, beta, gamma);
+                currentDensity = getDensity(mass);
+            }
+        }
+
+        logger.info(format(" Updated density %6.3f (g/cc) with unit cell %s.",
+                currentDensity, uc.toShortString()));
     }
 
     /**
@@ -1358,6 +1394,7 @@ public class Crystal {
 
     /**
      * Minimum distance between two coordinates over all symmetry operators.
+     *
      * @param xyzA Coordinate A
      * @param xyzB Coordinate B
      * @return Minimum distance in crystal

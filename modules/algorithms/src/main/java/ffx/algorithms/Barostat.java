@@ -662,6 +662,16 @@ public class Barostat implements Potential, LambdaInterface {
         return count;
     }
 
+    public void setDensity(double density) {
+        computeFractionalCOM();
+
+        crystal.setDensity(density, mass);
+
+        potential.setCrystal(crystal);
+        
+        moveToFractionalCOM();
+    }
+
     private void computeFractionalCOM() {
 
         int iMolecule = 0;
