@@ -268,64 +268,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         }
 
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
-            if (energyCount % osrwOptimizationFrequency == 0) {
-                logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
-
-                // Set Lambda value to 1.0.
-                lambdaInterface.setLambda(1.0);
-
-                potential.setEnergyTermState(Potential.STATE.BOTH);
-
-                if (barostat != null) {
-                    barostat.setActive(false);
-                }
-
-                try {
-                    // Optimize the system.
-                    Minimize minimize = new Minimize(null, potential, null);
-                    minimize.minimize(osrwOptimizationEps);
-
-                    // Collect the minimum energy.
-                    double minEnergy = potential.getTotalEnergy();
-                    // If a new minimum has been found, save its coordinates.
-                    if (minEnergy < osrwOptimum) {
-                        osrwOptimum = minEnergy;
-                        logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
-                        int n = potential.getNumberOfVariables();
-                        osrwOptimumCoords = new double[n];
-                        osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
-                        if (systemFilter.writeFile(optFile, false)) {
-                            logger.info(format(" Wrote minimum energy snapshot to %s.", optFile.getName()));
-                        }
-                    }
-                } catch (EnergyException ex) {
-                    String message = ex.getMessage();
-                    logger.info(format(" Energy exception minimizing coordinates at lambda=%d\n %s.", lambda, message));
-                    logger.info(format(" TT-OSRW sampling will continue."));
-                }
-
-                // Reset lambda value.
-                lambdaInterface.setLambda(lambda);
-
-                // Remove the scaling of coordinates & gradient set by the minimizer.
-                potential.setScaling(null);
-
-                // Reset the Potential State
-                potential.setEnergyTermState(state);
-
-                // Reset the Barostat
-                if (barostat != null) {
-                    barostat.setActive(true);
-                }
-
-                // Revert to the coordinates and gradient prior to optimization.
-                double eCheck = potential.energyAndGradient(x, gradient);
-
-                if (abs(eCheck - e) > osrwOptimizationTolerance) {
-                    logger.warning(String.format(
-                            " OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
-                }
-            }
+            optimization(e, x, gradient);
         }
 
         double biasEnergy = 0.0;
@@ -463,71 +406,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
              * Write out snapshot upon each full lambda traversal.
              */
             if (writeTraversalSnapshots) {
-                double heldTraversalLambda = 0.5;
-                if (!traversalInHand.isEmpty()) {
-                    heldTraversalLambda = Double.parseDouble(traversalInHand.get(0).split(",")[0]);
-                    if ((lambda > 0.2 && traversalSnapshotTarget == 0)
-                            || (lambda < 0.8 && traversalSnapshotTarget == 1)) {
-                        int snapshotCounts = Integer.parseInt(traversalInHand.get(0).split(",")[1]);
-                        traversalInHand.remove(0);
-                        File fileToWrite;
-                        int numStructures;
-                        if (traversalSnapshotTarget == 0) {
-                            fileToWrite = lambdaZeroFile;
-                            numStructures = ++lambdaZeroStructures;
-                        } else {
-                            fileToWrite = lambdaOneFile;
-                            numStructures = ++lambdaOneStructures;
-                        }
-                        try {
-                            FileWriter fw = new FileWriter(fileToWrite, true);
-                            BufferedWriter bw = new BufferedWriter(fw);
-                            bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", numStructures, heldTraversalLambda, snapshotCounts));
-                            for (int i = 0; i < 50; i++) {
-                                bw.write(" ");
-                            }
-                            bw.newLine();
-                            for (int i = 0; i < traversalInHand.size(); i++) {
-                                bw.write(traversalInHand.get(i));
-                                bw.newLine();
-                            }
-                            bw.write(String.format("ENDMDL"));
-                            for (int i = 0; i < 75; i++) {
-                                bw.write(" ");
-                            }
-                            bw.newLine();
-                            bw.close();
-                            logger.info(String.format(" Wrote traversal structure L=%.4f", heldTraversalLambda));
-                        } catch (Exception exception) {
-                            logger.warning(String.format("Exception writing to file: %s", fileToWrite.getName()));
-                        }
-                        heldTraversalLambda = 0.5;
-                        traversalInHand.clear();
-                        traversalSnapshotTarget = 1 - traversalSnapshotTarget;
-                    }
-                }
-                if (((lambda < 0.1 && traversalInHand.isEmpty())
-                        || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
-                        && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
-                    if (lambdaZeroFilter == null) {
-                        lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
-                        lambdaZeroFilter.setListMode(true);
-                    }
-                    lambdaZeroFilter.clearListOutput();
-                    lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalWeight)));
-                    traversalInHand = lambdaZeroFilter.getListOutput();
-                    traversalSnapshotTarget = 0;
-                } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
-                        && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
-                    if (lambdaOneFilter == null) {
-                        lambdaOneFilter = new PDBFilter(lambdaOneFile, lambdaOneAssembly, null, null);
-                        lambdaOneFilter.setListMode(true);
-                    }
-                    lambdaOneFilter.clearListOutput();
-                    lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalWeight)));
-                    traversalInHand = lambdaOneFilter.getListOutput();
-                    traversalSnapshotTarget = 1;
-                }
+                writeTraversal();
             }
         }
 
@@ -597,6 +476,135 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         totalEnergy = e + biasEnergy;
 
         return totalEnergy;
+    }
+
+    private void writeTraversal() {
+        double heldTraversalLambda = 0.5;
+        if (!traversalInHand.isEmpty()) {
+            heldTraversalLambda = Double.parseDouble(traversalInHand.get(0).split(",")[0]);
+            if ((lambda > 0.2 && traversalSnapshotTarget == 0)
+                    || (lambda < 0.8 && traversalSnapshotTarget == 1)) {
+                int snapshotCounts = Integer.parseInt(traversalInHand.get(0).split(",")[1]);
+                traversalInHand.remove(0);
+                File fileToWrite;
+                int numStructures;
+                if (traversalSnapshotTarget == 0) {
+                    fileToWrite = lambdaZeroFile;
+                    numStructures = ++lambdaZeroStructures;
+                } else {
+                    fileToWrite = lambdaOneFile;
+                    numStructures = ++lambdaOneStructures;
+                }
+                try {
+                    FileWriter fw = new FileWriter(fileToWrite, true);
+                    BufferedWriter bw = new BufferedWriter(fw);
+                    bw.write(String.format("MODEL        %d          L=%.4f  counts=%d", numStructures, heldTraversalLambda, snapshotCounts));
+                    for (int i = 0; i < 50; i++) {
+                        bw.write(" ");
+                    }
+                    bw.newLine();
+                    for (int i = 0; i < traversalInHand.size(); i++) {
+                        bw.write(traversalInHand.get(i));
+                        bw.newLine();
+                    }
+                    bw.write(String.format("ENDMDL"));
+                    for (int i = 0; i < 75; i++) {
+                        bw.write(" ");
+                    }
+                    bw.newLine();
+                    bw.close();
+                    logger.info(String.format(" Wrote traversal structure L=%.4f", heldTraversalLambda));
+                } catch (Exception exception) {
+                    logger.warning(String.format("Exception writing to file: %s", fileToWrite.getName()));
+                }
+                heldTraversalLambda = 0.5;
+                traversalInHand.clear();
+                traversalSnapshotTarget = 1 - traversalSnapshotTarget;
+            }
+        }
+        if (((lambda < 0.1 && traversalInHand.isEmpty())
+                || (lambda < heldTraversalLambda - 0.025 && !traversalInHand.isEmpty()))
+                && (traversalSnapshotTarget == 0 || traversalSnapshotTarget == -1)) {
+            if (lambdaZeroFilter == null) {
+                lambdaZeroFilter = new PDBFilter(lambdaZeroFile, lambdaZeroAssembly, null, null);
+                lambdaZeroFilter.setListMode(true);
+            }
+            lambdaZeroFilter.clearListOutput();
+            lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalWeight)));
+            traversalInHand = lambdaZeroFilter.getListOutput();
+            traversalSnapshotTarget = 0;
+        } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
+                && (traversalSnapshotTarget == 1 || traversalSnapshotTarget == -1)) {
+            if (lambdaOneFilter == null) {
+                lambdaOneFilter = new PDBFilter(lambdaOneFile, lambdaOneAssembly, null, null);
+                lambdaOneFilter.setListMode(true);
+            }
+            lambdaOneFilter.clearListOutput();
+            lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalWeight)));
+            traversalInHand = lambdaOneFilter.getListOutput();
+            traversalSnapshotTarget = 1;
+        }
+    }
+
+    private void optimization(double e, double x[], double gradient[]) {
+        if (energyCount % osrwOptimizationFrequency == 0) {
+            logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
+
+            // Set Lambda value to 1.0.
+            lambdaInterface.setLambda(1.0);
+
+            potential.setEnergyTermState(Potential.STATE.BOTH);
+
+            if (barostat != null) {
+                barostat.setActive(false);
+            }
+
+            try {
+                // Optimize the system.
+                Minimize minimize = new Minimize(null, potential, null);
+                minimize.minimize(osrwOptimizationEps);
+
+                // Collect the minimum energy.
+                double minEnergy = potential.getTotalEnergy();
+                // If a new minimum has been found, save its coordinates.
+                if (minEnergy < osrwOptimum) {
+                    osrwOptimum = minEnergy;
+                    logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
+                    int n = potential.getNumberOfVariables();
+                    osrwOptimumCoords = new double[n];
+                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
+                    if (systemFilter.writeFile(optFile, false)) {
+                        logger.info(format(" Wrote minimum energy snapshot to %s.", optFile.getName()));
+                    }
+                }
+            } catch (EnergyException ex) {
+                String message = ex.getMessage();
+                logger.info(format(" Energy exception minimizing coordinates at lambda=%d\n %s.", lambda, message));
+                logger.info(format(" TT-OSRW sampling will continue."));
+            }
+
+            // Reset lambda value.
+            lambdaInterface.setLambda(lambda);
+
+            // Remove the scaling of coordinates & gradient set by the minimizer.
+            potential.setScaling(null);
+
+            // Reset the Potential State
+            potential.setEnergyTermState(state);
+
+            // Reset the Barostat
+            if (barostat != null) {
+                barostat.setActive(true);
+            }
+
+            // Revert to the coordinates and gradient prior to optimization.
+            double eCheck = potential.energyAndGradient(x, gradient);
+
+            if (abs(eCheck - e) > osrwOptimizationTolerance) {
+                logger.warning(String.format(
+                        " TT-OSRW optimization could not revert coordinates %16.8f vs. %16.8f.", e, eCheck));
+            }
+        }
     }
 
     /**

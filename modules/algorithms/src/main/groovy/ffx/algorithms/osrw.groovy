@@ -146,10 +146,10 @@ int eSteps = 1000;
 double timeStep = 1.0;
 
 // Frequency to log thermodynamics information in picoseconds.
-double printInterval = 1.0;
+double printInterval = 0.1;
 
 // Frequency to write out coordinates in picoseconds.
-double saveInterval = 100.0;
+double saveInterval = 1.0;
 
 // File type of coordinate snapshots to write out.
 String fileType = "XYZ";
@@ -206,8 +206,8 @@ cli.a(longOpt:'async', args:0, 'Walker communication is asynchronous.');
 cli.n(longOpt:'steps', args:1, argName:'10000000', 'Number of molecular dynamics steps.');
 cli.q(longOpt:'equilibrate', args:1, argName:'1000', 'Equilibration steps prior to OSRW counts.');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization step (fsec).');
-cli.r(longOpt:'report', args:1, argName:'1.0', 'Interval to report thermodyanamics (psec).');
-cli.w(longOpt:'write', args:1, argName:'100.0', 'Interval to write out coordinates (psec).');
+cli.r(longOpt:'report', args:1, argName:'0.1', 'Interval to report thermodyanamics (psec).');
+cli.w(longOpt:'write', args:1, argName:'1.0', 'Interval to write out coordinates (psec).');
 cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.i(longOpt:'integrator', args:1, argName:'Beeman', 'Integrator: [Beeman / Respa / Stochastic]');

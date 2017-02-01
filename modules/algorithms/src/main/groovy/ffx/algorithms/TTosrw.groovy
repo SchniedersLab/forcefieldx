@@ -111,7 +111,7 @@ class TTosrw extends Script {
          */
         @Option(shortName='o', defaultValue='false', description='Optimize and save low-energy snapshots.') boolean optimize;
         /**
-         * -n or --steps sets the number of molecular dynamics steps
+         * -n or --steps sets the number of molecular dynamics steps (default is 1 nsec).
          */
         @Option(shortName='n', defaultValue='1000000', description='Number of molecular dynamics steps') int steps;
         /**
@@ -126,13 +126,13 @@ class TTosrw extends Script {
          */
         @Option(shortName='d', defaultValue='1.0', description='Time discretization step (fsec)') double dt;
         /**
-         * -r or --report sets the thermodynamics reporting frequency in picoseconds.
+         * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
          */
-        @Option(shortName='r', longName='report', defaultValue='1.0', description='Interfal to report thermodynamics (psec).') double report;
+        @Option(shortName='r', longName='report', defaultValue='0.1', description='Interfal to report thermodynamics (psec).') double report;
         /**
-         * -w or --write sets snapshot save frequency in picoseconds.
+         * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
          */
-        @Option(shortName='w', longName='write', defaultValue='100.0', description='Interval to write out coordinates (psec).') double write;
+        @Option(shortName='w', longName='write', defaultValue='1.0', description='Interval to write out coordinates (psec).') double write;
         /**
          * -t or --temperature sets the simulation temperatures in Kelvins.
          */

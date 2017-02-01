@@ -483,9 +483,11 @@ public abstract class AbstractOSRW implements Potential {
         /**
          * Log OSRW parameters.
          */
-        logger.info(" Orthogonal Space Random Walk Parameters");
-        logger.info(String.format(" Gaussian Bias Magnitude:        %6.5f (kcal/mole)", biasMag));
-        logger.info(String.format(" Gaussian Bias Cutoff:           %6d bins", biasCutoff));
+        logger.info("\n Orthogonal Space Random Walk Parameters");
+        logger.info(String.format("  Gaussian Bias Magnitude:       %6.4f (kcal/mole)", biasMag));
+        logger.info(String.format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
+        logger.info(String.format("  Print Interval:                 %6.3f psec", printInterval));
+        logger.info(String.format("  Save Interval:                  %6.3f psec", saveInterval));
     }
 
     public void setPropagateLambda(boolean propagateLambda) {
