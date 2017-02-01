@@ -512,9 +512,6 @@ public class Crystal {
 
     }
 
-    
-
-
     /**
      * This method should be called to update the unit cell parameters of a
      * crystal. The proposed parameters will only be accepted if symmetry
@@ -561,25 +558,23 @@ public class Crystal {
     public void setDensity(double dens, double mass) {
         double currentDensity = getDensity(mass);
 
+        double scale = Math.cbrt(currentDensity / dens);
+
         Crystal uc = getUnitCell();
         logger.info(format(" Current density %6.3f (g/cc) with unit cell %s.",
                 currentDensity, uc.toShortString()));
 
-        if (currentDensity < dens) {
-            while (currentDensity < dens) {
-                changeUnitCellParameters(uc.a * 0.99, uc.b * 0.99, uc.c * 0.99, alpha, beta, gamma);
-                currentDensity = getDensity(mass);
-            }
-        } else {
-            while (currentDensity > dens) {
-                changeUnitCellParameters(uc.a * 1.01, uc.b * 1.01, uc.c * 1.01, alpha, beta, gamma);
-                currentDensity = getDensity(mass);
-            }
-        }
+        changeUnitCellParameters(uc.a * scale, uc.b * scale, uc.c * scale, alpha, beta, gamma);
+        currentDensity = getDensity(mass);
 
         logger.info(format(" Updated density %6.3f (g/cc) with unit cell %s.",
                 currentDensity, uc.toShortString()));
     }
+
+    public void randomSymOp() {
+
+    }
+
 
     /**
      * <p>

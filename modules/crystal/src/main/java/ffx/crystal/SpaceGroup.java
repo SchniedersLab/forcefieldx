@@ -191,6 +191,10 @@ public class SpaceGroup {
      * A List of SymOp instances.
      */
     public final List<SymOp> symOps;
+    /**
+     * True for a Sohncke group (non-enantiogenic).
+     */
+    public final boolean chiral;
 
     /**
      * Names of the 230 three dimensional space groups.
@@ -311,7 +315,49 @@ public class SpaceGroup {
         this.limit = limit;
         this.asulim = asulim;
         this.pdbName = pdbName;
+        this.chiral = sohnckeGroup(number);
         this.symOps = new ArrayList<>(Arrays.asList(symOps));
+
+    }
+
+    /**
+     * Sohncke groups respect chiral molecules (i.e. non-enantiogenic) and
+     * include space group numbers: 1, 3-5, 16-24, 75-80, 89-98, 143-146,
+     * 149-155, 168-173, 177-182, 195-199 and 207-214.
+     *
+     * @param number Space group number.
+     * @return true if the space group is a Sohncke Group.
+     */
+    public boolean sohnckeGroup(int number) {
+        if (number == 1) {
+            return true;
+        } else if (isBetween(number, 3, 5)) {
+            return true;
+        } else if (isBetween(number, 16, 24)) {
+            return true;
+        } else if (isBetween(number, 75, 80)) {
+            return true;
+        } else if (isBetween(number, 89, 98)) {
+            return true;
+        } else if (isBetween(number, 143, 146)) {
+            return true;
+        } else if (isBetween(number, 149, 155)) {
+            return true;
+        } else if (isBetween(number, 168, 173)) {
+            return true;
+        } else if (isBetween(number, 177, 182)) {
+            return true;
+        } else if (isBetween(number, 195, 199)) {
+            return true;
+        } else if (isBetween(number, 207, 214)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static boolean isBetween(int x, int lower, int upper) {
+        return lower <= x && x <= upper;
     }
 
     /**
@@ -490,7 +536,7 @@ public class SpaceGroup {
         }
 
     }
-    
+
     /**
      * Return the ith symmetry operator.
      *
@@ -553,7 +599,7 @@ public class SpaceGroup {
      * There are 3 private "getSpaceGroupX" routines because if they are not
      * split up, a Java specification limit on method size is exceeded.
      *
-     * @param num input parameter (between 1 and 100)
+     * @param num input parameter (between 1 and 50)
      * @return the selected SpaceGroup
      */
     private static SpaceGroup getSpaceGroup1(int num) {
@@ -1167,6 +1213,13 @@ public class SpaceGroup {
         return spaceGroup;
     }
 
+    /**
+     * There are 3 private "getSpaceGroupX" routines because if they are not
+     * split up, a Java specification limit on method size is exceeded.
+     *
+     * @param num input parameter (between 51 and 100)
+     * @return the selected SpaceGroup
+     */
     private static SpaceGroup getSpaceGroup2(int num) {
         SpaceGroup spaceGroup = null;
         switch (num) {
@@ -2015,6 +2068,13 @@ public class SpaceGroup {
         return spaceGroup;
     }
 
+    /**
+     * There are 3 private "getSpaceGroupX" routines because if they are not
+     * split up, a Java specification limit on method size is exceeded.
+     *
+     * @param num input parameter (between 101 and 150)
+     * @return the selected SpaceGroup
+     */
     private static SpaceGroup getSpaceGroup3(int num) {
         SpaceGroup spaceGroup = null;
         switch (num) {
@@ -3001,6 +3061,13 @@ public class SpaceGroup {
         return spaceGroup;
     }
 
+    /**
+     * There are 3 private "getSpaceGroupX" routines because if they are not
+     * split up, a Java specification limit on method size is exceeded.
+     *
+     * @param num input parameter (between 151 and 200)
+     * @return the selected SpaceGroup
+     */
     private static SpaceGroup getSpaceGroup4(int num) {
         SpaceGroup spaceGroup = null;
         switch (num) {
@@ -4005,6 +4072,13 @@ public class SpaceGroup {
         return spaceGroup;
     }
 
+    /**
+     * There are 3 private "getSpaceGroupX" routines because if they are not
+     * split up, a Java specification limit on method size is exceeded.
+     *
+     * @param num input parameter (between 201 and 215)
+     * @return the selected SpaceGroup
+     */
     private static SpaceGroup getSpaceGroup5(int num) {
         SpaceGroup spaceGroup = null;
         switch (num) {
@@ -4847,6 +4921,13 @@ public class SpaceGroup {
         return spaceGroup;
     }
 
+    /**
+     * There are 3 private "getSpaceGroupX" routines because if they are not
+     * split up, a Java specification limit on method size is exceeded.
+     *
+     * @param num input parameter (between 216 and 230)
+     * @return the selected SpaceGroup
+     */
     private static SpaceGroup getSpaceGroup6(int num) {
         SpaceGroup spaceGroup = null;
         switch (num) {
