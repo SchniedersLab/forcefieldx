@@ -64,6 +64,7 @@ import edu.rit.mp.DoubleBuf;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.utils.EnergyException;
 
 /**
  * An implementation of Transition-Tempered Orthogonal Space Random Walk
@@ -279,22 +280,28 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     barostat.setActive(false);
                 }
 
-                // Optimize the system.
-                Minimize minimize = new Minimize(null, potential, null);
-                minimize.minimize(osrwOptimizationEps);
+                try {
+                    // Optimize the system.
+                    Minimize minimize = new Minimize(null, potential, null);
+                    minimize.minimize(osrwOptimizationEps);
 
-                // Collect the minimum energy.
-                double minEnergy = potential.getTotalEnergy();
-                // If a new minimum has been found, save its coordinates.
-                if (minEnergy < osrwOptimum) {
-                    osrwOptimum = minEnergy;
-                    logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
-                    int n = potential.getNumberOfVariables();
-                    osrwOptimumCoords = new double[n];
-                    osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
-                    if (systemFilter.writeFile(optFile, false)) {
-                        logger.info(format(" Wrote minimum energy snapshot to %s.", optFile.getName()));
+                    // Collect the minimum energy.
+                    double minEnergy = potential.getTotalEnergy();
+                    // If a new minimum has been found, save its coordinates.
+                    if (minEnergy < osrwOptimum) {
+                        osrwOptimum = minEnergy;
+                        logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
+                        int n = potential.getNumberOfVariables();
+                        osrwOptimumCoords = new double[n];
+                        osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
+                        if (systemFilter.writeFile(optFile, false)) {
+                            logger.info(format(" Wrote minimum energy snapshot to %s.", optFile.getName()));
+                        }
                     }
+                } catch (EnergyException ex) {
+                    String message = ex.getMessage();
+                    logger.info(format(" Energy exception minimizing coordinates at lambda=%d\n %s.", lambda, message));
+                    logger.info(format(" TT-OSRW sampling will continue."));
                 }
 
                 // Reset lambda value.

@@ -180,7 +180,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * Offset in Angstroms.
      */
-    private double vdwLambdaAlpha = 0.05;
+    private double vdwLambdaAlpha = 1.0;
     /**
      * Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary.
      * [nThreads]

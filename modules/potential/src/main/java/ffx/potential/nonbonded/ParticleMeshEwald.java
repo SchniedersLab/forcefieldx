@@ -37,11 +37,8 @@
  */
 package ffx.potential.nonbonded;
 
-import java.util.List;
-
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-import ffx.potential.extended.ExtendedVariable;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -135,12 +132,12 @@ public abstract class ParticleMeshEwald {
 
     public abstract void setLambda(double lambda);
 
-     public abstract double getdEdL();
+    public abstract double getdEdL();
 
     public abstract void getdEdXdL(double[] gradients);
 
     public abstract double getd2EdL2();
-    
+
     public abstract double[] getdEdEsv();
 
     public abstract void destroy() throws Exception;
