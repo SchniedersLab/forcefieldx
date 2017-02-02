@@ -41,6 +41,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.apache.commons.math3.util.FastMath.random;
+
 import static ffx.crystal.SpaceGroup.CrystalSystem.CUBIC;
 import static ffx.crystal.SpaceGroup.CrystalSystem.HEXAGONAL;
 import static ffx.crystal.SpaceGroup.CrystalSystem.MONOCLINIC;
@@ -535,6 +537,39 @@ public class SpaceGroup {
                 return false;
         }
 
+    }
+
+    /**
+     * Check that the lattice parameters satisfy the restrictions of the crystal
+     * systems.
+     *
+     * @param crystalSystem a {@link ffx.crystal.SpaceGroup.CrystalSystem}
+     * object.
+     *
+     * @return True if the restrictions are satisfied, false otherwise.
+     */
+    public static double[] resetUnitCellParams(CrystalSystem crystalSystem) {
+        double params[] = {1.0 + random(), 1.0 + random(), 1.0 + random(), 90.0, 90.0, 90.0};
+        switch (crystalSystem) {
+            case TRICLINIC:
+            case MONOCLINIC:
+            case ORTHORHOMBIC:
+                break;
+            case TETRAGONAL:
+                params[1] = params[0];
+                break;
+            case TRIGONAL:
+            case HEXAGONAL:
+                params[1] = params[0];
+                params[5] = 120.0;
+                break;
+            case CUBIC:
+            default:
+                params[1] = params[0];
+                params[2] = params[0];
+                break;
+        }
+        return params;
     }
 
     /**

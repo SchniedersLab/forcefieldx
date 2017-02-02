@@ -180,7 +180,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * Offset in Angstroms.
      */
-    private double vdwLambdaAlpha = 1.0;
+    private double vdwLambdaAlpha = 0.5;
     /**
      * Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary.
      * [nThreads]
@@ -350,10 +350,10 @@ public class VanDerWaals implements MaskingInterface,
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
-            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 1.0);
+            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.5);
             vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
             if (vdwLambdaAlpha < 0.0) {
-                vdwLambdaAlpha = 1.0;
+                vdwLambdaAlpha = 0.5;
             }
             if (vdwLambdaExponent < 1.0) {
                 vdwLambdaExponent = 1.0;

@@ -1,4 +1,5 @@
 package ffx.potential
+
 // SAVE AS XYZ
 
 // Apache Imports
@@ -10,7 +11,10 @@ import groovy.util.CliBuilder;
 import groovy.cli.Unparsed
 
 // FFX Imports
+import ffx.crystal.Crystal
+import ffx.crystal.SymOp
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils;
@@ -29,7 +33,7 @@ class SaveAsXYZ extends Script {
      * Usage:
      * <br>
      * ffxc SaveAsXYZ [options] &lt;filename&gt;
-     */ 
+     */
     public class Options{
         /**
          * -h or --help to print a help message
@@ -43,14 +47,17 @@ class SaveAsXYZ extends Script {
          * -n or --neg-offset to set the negative atom type offset
          */
         @Option(longName='neg-offset', shortName='n', defaultValue='0', description='Negative offset of atom types in the new file.') int negOffset
-        
+        /**
+         * -r or --random to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
+         */
+        @Option(longName='random', shortName='r', defaultValue='-1.0', description='Apply a random Cartesian SymOp with translation range -X .. X.') double scalar
         /**
          * The final argument(s) should be one or more filenames.
          */
         @Unparsed List<String> filenames
     }
-    
-    
+
+
     /**
      * Execute the script.
      */
@@ -61,11 +68,11 @@ class SaveAsXYZ extends Script {
         def cli = new CliBuilder(usage:' ffxc SaveAsXYZ [options] <filename>');
         def options = new Options()
         cli.parseFromInstance(options, args)
-    
+
         if (options.help == true) {
             return cli.usage()
         }
-        
+
         // Positive offset atom types.
         if (options.posOffset > 0) {
             offset = options.posOffset;
@@ -79,7 +86,7 @@ class SaveAsXYZ extends Script {
 
         List<String> arguments = options.filenames;
 
-       String modelFilename = null
+        String modelFilename = null
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)
@@ -102,8 +109,6 @@ class SaveAsXYZ extends Script {
             // an instance of the local implementation.
             functions = new PotentialsUtils()
         }
-        
-        
 
         MolecularAssembly[] assemblies = functions.open(modelFilename)
         MolecularAssembly activeAssembly = assemblies[0]
@@ -116,9 +121,24 @@ class SaveAsXYZ extends Script {
             ForceField forceField = activeAssembly.getForceField();
             forceField.renumberForceField(0,offset,0);
         }
-        
+
+        if (options.scalar > 0.0) {
+            SymOp symOp = SymOp.randomSymOpFactory(options.scalar);
+
+            logger.info(String.format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()));
+
+            Crystal crystal = activeAssembly.getCrystal();
+            Atom[] atoms = activeAssembly.getAtomArray();
+            double[] xyz = new double[3];
+            for (int i=0; i<atoms.length; i++) {
+                atoms[i].getXYZ(xyz);
+                crystal.applyCartesianSymOp(xyz, xyz, symOp);
+                atoms[i].setXYZ(xyz);
+            }
+        }
+
         functions.save(activeAssembly, new File(modelFilename));
-        
+
     }
 }
 

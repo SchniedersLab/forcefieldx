@@ -1142,6 +1142,16 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    public double getMass() {
+        Atom atoms[] = this.getAtomArray();
+        int nAtoms = atoms.length;
+        double mass = 0;
+        for (int i=0; i < nAtoms; i++) {
+            mass += atoms[i].getMass();
+        }
+        return mass;
+    }
+
     private Atom getMolecule(Atom atom, boolean create) {
         String resName = atom.getResidueName();
         int resNum = atom.getResidueNumber();

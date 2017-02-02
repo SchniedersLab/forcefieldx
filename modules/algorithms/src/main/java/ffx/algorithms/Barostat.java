@@ -119,17 +119,10 @@ public class Barostat implements Potential, LambdaInterface {
      */
     private double maxAngleMove = 1.0;
     /**
-     * Minimum axis length (A).
+     * A carbon atom cannot fit into a unit cell without
+     * interfacial radii greater than ~1.2 Angstroms.
      */
-    private final double minAxisLength = 2.0;
-    /**
-     * Minimum angle (degrees).
-     */
-    private final double minAngle = 10.0;
-    /**
-     * Maximum angle (degrees).
-     */
-    private final double maxAngle = 180.0 - minAngle;
+    private double minInterfacialRadius = 1.2;
     /**
      * MolecularAssembly being simulated.
      */
@@ -349,30 +342,18 @@ public class Barostat implements Potential, LambdaInterface {
         }
 
         /**
-         * Enforce minimum unit cell axis lengths.
+         * Enforce minimum interfacial radii of 1.2 Angstroms.
          */
-        if (unitCell.a < minAxisLength || unitCell.b < minAxisLength
-                || unitCell.c < minAxisLength) {
+        if (unitCell.interfacialRadiusA < minInterfacialRadius ||
+                unitCell.interfacialRadiusB < minInterfacialRadius ||
+                unitCell.interfacialRadiusC < minInterfacialRadius) {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(format(
-                        " MC An axis (%10.6f,%10.6f,%10.6f) is below the minimium %10.6f",
-                        unitCell.a, unitCell.b, unitCell.c, minAxisLength));
-            }
-            // Fail small axis length trial moves.
-            crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
-            return currentE;
-        }
-
-        /**
-         * Enforce minimum & maximum angle constraints.
-         */
-        if (unitCell.alpha < minAngle || unitCell.alpha > maxAngle
-                || unitCell.beta < minAngle || unitCell.beta > maxAngle
-                || unitCell.gamma < minAngle || unitCell.gamma > maxAngle) {
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(
-                        " MC An ange (%10.6f,%10.6f,%10.6f) is outside the range %10.6f - %10.6f",
-                        unitCell.alpha, unitCell.beta, unitCell.gamma, minAngle, maxAngle));
+                        " MC An interfacial radius (%10.6f,%10.6f,%10.6f) is below the minimium %10.6f",
+                        unitCell.interfacialRadiusA,
+                        unitCell.interfacialRadiusB,
+                        unitCell.interfacialRadiusC,
+                        minInterfacialRadius));
             }
             // Fail small axis length trial moves.
             crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
@@ -668,7 +649,7 @@ public class Barostat implements Potential, LambdaInterface {
         crystal.setDensity(density, mass);
 
         potential.setCrystal(crystal);
-        
+
         moveToFractionalCOM();
     }
 

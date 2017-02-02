@@ -48,9 +48,11 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
 
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.rint;
@@ -64,8 +66,6 @@ import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.transpose3;
-
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -558,12 +558,8 @@ public class Crystal {
     public void setDensity(double dens, double mass) {
         double currentDensity = getDensity(mass);
 
-        double scale = Math.cbrt(currentDensity / dens);
-
+        double scale = cbrt(currentDensity / dens);
         Crystal uc = getUnitCell();
-        logger.info(format(" Current density %6.3f (g/cc) with unit cell %s.",
-                currentDensity, uc.toShortString()));
-
         changeUnitCellParameters(uc.a * scale, uc.b * scale, uc.c * scale, alpha, beta, gamma);
         currentDensity = getDensity(mass);
 
@@ -571,10 +567,11 @@ public class Crystal {
                 currentDensity, uc.toShortString()));
     }
 
-    public void randomSymOp() {
-
+    public void randomParameters(double dens, double mass) {
+        double params[] = SpaceGroup.resetUnitCellParams(crystalSystem);
+        changeUnitCellParameters(params[0], params[1], params[2], params[3], params[4], params[5]);
+        setDensity(dens, mass);
     }
-
 
     /**
      * <p>
@@ -842,10 +839,69 @@ public class Crystal {
     }
 
     /**
-     * Apply a symmetry operator to an array of Cartesian coordinates. If the
-     * arrays x, y or z are null or not of length n, the method returns
+     * Apply a Cartesian symmetry operator to an array of Cartesian coordinates.
+     * If the arrays x, y or z are null or not of length n, the method returns
      * immediately. If mateX, mateY or mateZ are null or not of length n, new
      * arrays are allocated.
+     *
+     * @param n Number of atoms.
+     * @param x Input x coordinates.
+     * @param y Input y coordinates.
+     * @param z Input z coordinates.
+     * @param mateX Output x coordinates.
+     * @param mateY Output y coordinates.
+     * @param mateZ Output z coordinates.
+     * @param symOp The symmetry operator.
+     */
+    public void applyCartSymOp(int n, double x[], double y[], double z[],
+            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+        if (x == null || y == null || z == null) {
+            return;
+        }
+        if (x.length < n || y.length < n || z.length < n) {
+            return;
+        }
+        if (mateX == null || mateX.length < n) {
+            mateX = new double[n];
+        }
+        if (mateY == null || mateY.length < n) {
+            mateY = new double[n];
+        }
+        if (mateZ == null || mateZ.length < n) {
+            mateZ = new double[n];
+        }
+
+        final double rot[][] = symOp.rot;
+        final double trans[] = symOp.tr;
+
+        final double rot00 = rot[0][0];
+        final double rot10 = rot[1][0];
+        final double rot20 = rot[2][0];
+        final double rot01 = rot[0][1];
+        final double rot11 = rot[1][1];
+        final double rot21 = rot[2][1];
+        final double rot02 = rot[0][2];
+        final double rot12 = rot[1][2];
+        final double rot22 = rot[2][2];
+        final double t0 = trans[0];
+        final double t1 = trans[1];
+        final double t2 = trans[2];
+        for (int i = 0; i < n; i++) {
+            double xc = x[i];
+            double yc = y[i];
+            double zc = z[i];
+            // Apply Symmetry Operator.
+            mateX[i] = rot00 * xc + rot01 * yc + rot02 * zc + t0;
+            mateY[i] = rot10 * xc + rot11 * yc + rot12 * zc + t1;
+            mateZ[i] = rot20 * xc + rot21 * yc + rot22 * zc + t2;
+        }
+    }
+
+    /**
+     * Apply a fractional symmetry operator to an array of Cartesian
+     * coordinates. If the arrays x, y or z are null or not of length n, the
+     * method returns immediately. If mateX, mateY or mateZ are null or not of
+     * length n, new arrays are allocated.
      *
      * @param n Number of atoms.
      * @param x Input x coordinates.

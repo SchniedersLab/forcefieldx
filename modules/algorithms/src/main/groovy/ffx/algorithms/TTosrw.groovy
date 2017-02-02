@@ -24,6 +24,9 @@ import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.RotamerOptimization;
 
+import ffx.crystal.Crystal;
+import ffx.crystal.SymOp;
+
 import ffx.numerics.Potential;
 
 import ffx.potential.DualTopologyEnergy;
@@ -61,21 +64,21 @@ class TTosrw extends Script {
     class Options {
 
         /*private final Closure parseThermostat = {str ->
-            try {
-                return Thermostats.valueOf(str.toUpperCase());
-            } catch (Exception e) {
-                logger.warning(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
-                return Thermostats.BERENDSEN;
-            }
+        try {
+        return Thermostats.valueOf(str.toUpperCase());
+        } catch (Exception e) {
+        logger.warning(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
+        return Thermostats.BERENDSEN;
+        }
         };
 
         private final Closure parseIntegrator = {str ->
-            try {
-                return Integrators.valueOf(str.toUpperCase());
-            } catch (Exception e) {
-                logger.warning(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
-                return Integrators.BEEMAN;
-            }
+        try {
+        return Integrators.valueOf(str.toUpperCase());
+        } catch (Exception e) {
+        logger.warning(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
+        return Integrators.BEEMAN;
+        }
         }*/
 
         private static parseThermo(String str) {
@@ -211,6 +214,16 @@ class TTosrw extends Script {
          * -p or --npt enables use of a barostat.
          */
         @Option(shortName='p', longName='npt', defaultValue='false', description='Use NPT') boolean npt;
+        /**
+         * -sym or --symOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
+         */
+        @Option(longName='randomSymOp', shortName='rsym', defaultValue='-1.0',
+            description='Apply a random Cartesian symmetry operator with a random translation in the range -X .. X.') double symScalar
+        /**
+         * -ruc or --unitCell random unit cell axes will be used achieve the specified density (g/cc) (no default density).
+         */
+        @Option(longName='randomUnitCell', shortName='ruc', defaultValue='-1.0',
+            description='Apply random unit cell axes to achieve the specified density (g/cc).') double ucDensity
         /**
          * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
          */
@@ -635,11 +648,11 @@ class TTosrw extends Script {
             lambdaZeroFile = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam0");*/
             structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName());
         }/* else {
-            // For a single process job, try to get the restart files from the current directory.
-            lambdaRestart = new File(baseFilename + ".lam");
-            dyn = new File(baseFilename + ".dyn");
-            lambdaOneFile = new File(baseFilename + ".lam1");
-            lambdaZeroFile = new File(baseFilename + ".lam0");
+        // For a single process job, try to get the restart files from the current directory.
+        lambdaRestart = new File(baseFilename + ".lam");
+        dyn = new File(baseFilename + ".dyn");
+        lambdaOneFile = new File(baseFilename + ".lam1");
+        lambdaZeroFile = new File(baseFilename + ".lam0");
         }*/
         lambdaRestart = new File(withRankName + ".lam");
         dyn = new File(withRankName + ".dyn");
@@ -789,103 +802,126 @@ class TTosrw extends Script {
         }
 
         TransitionTemperedOSRW osrw = null;
-
         def dualTopologies = []; // Used for distResidues on quad/oct topologies
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ");
         switch (nArgs) {
-            case 1:
-                if (options.f1 > 0) {
-                    Atom[] atoms = topologies[0].getAtomArray();
-                    // Apply active atom selection
-                    int nAtoms1 = (energies[0].getNumberOfVariables()) / 3;
-                    if (options.f1 > options.s1 && options.s1 > 0 && options.f1 <= nAtoms1) {
-                        // Make all atoms inactive.
-                        for (int i = 0; i <= nAtoms1; i++) {
-                            Atom ai = atoms[i - 1];
-                            ai.setActive(false);
-                        }
-                        // Make requested atoms active.
-                        for (int i = options.s1; i <= options.f1; i++) {
-                            Atom ai = atoms[i - 1];
-                            ai.setActive(true);
-                        }
+        case 1:
+            if (options.f1 > 0) {
+                Atom[] atoms = topologies[0].getAtomArray();
+                // Apply active atom selection
+                int nAtoms1 = (energies[0].getNumberOfVariables()) / 3;
+                if (options.f1 > options.s1 && options.s1 > 0 && options.f1 <= nAtoms1) {
+                    // Make all atoms inactive.
+                    for (int i = 0; i <= nAtoms1; i++) {
+                        Atom ai = atoms[i - 1];
+                        ai.setActive(false);
+                    }
+                    // Make requested atoms active.
+                    for (int i = options.s1; i <= options.f1; i++) {
+                        Atom ai = atoms[i - 1];
+                        ai.setActive(true);
                     }
                 }
-                if (options.npt) {
-                    Barostat barostat = new Barostat(topologies[0]);
-                    barostat.setMaxDensity(options.maxDensity);
-                    barostat.setMinDensity(options.minDensity);
-                    double dens = barostat.density();
-                    if (dens < options.minDensity || dens > options.maxDensity) {
-                        barostat.setDensity(1.0);
+            }
+
+            if (options.symScalar > 0.0) {
+                SymOp symOp = SymOp.randomSymOpFactory(options.symScalar);
+                logger.info(String.format("\n Applying random Cartesian SymOp:\n%s", symOp.toString()));
+                Crystal crystal = topologies[0].getCrystal();
+                Atom[] atoms = topologies[0].getAtomArray();
+                double[] xyz = new double[3];
+                for (int i=0; i<atoms.length; i++) {
+                    atoms[i].getXYZ(xyz);
+                    crystal.applyCartesianSymOp(xyz, xyz, symOp);
+                    atoms[i].setXYZ(xyz);
+                }
+            }
+
+            if (options.ucDensity > 0.0) {
+                logger.info(String.format("\n Applying random unit cell axes with target density of %6.3f\n", options.ucDensity));
+                Crystal crystal = topologies[0].getCrystal();
+                if (!crystal.aperiodic()) {
+                    double mass = topologies[0].getMass();
+                    crystal.randomParameters(options.ucDensity, mass);
+                    energies[0].setCrystal(crystal);
+                }
+            }
+
+            if (options.npt) {
+                Barostat barostat = new Barostat(topologies[0]);
+                barostat.setMaxDensity(options.maxDensity);
+                barostat.setMinDensity(options.minDensity);
+                double dens = barostat.density();
+                if (dens < options.minDensity || dens > options.maxDensity) {
+                    barostat.setDensity(1.0);
+                }
+                barostat.setMaxSideMove(options.maxSideMove);
+                barostat.setMaxAngleMove(options.maxAngleMove);
+                barostat.setMeanBarostatInterval(options.meanInterval);
+                potential = barostat;
+            } else {
+                potential = energies[0];
+            }
+            break;
+        case 2:
+            sb.append("dual topology ");
+            DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1]);
+            if (numParallel == 2) {
+                dte.setParallel(true);
+            }
+            potential = dte;
+            break;
+        case 4:
+            sb.append("quad topology ");
+
+            DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1]);
+            DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2]);
+            QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
+            if (numParallel >= 2) {
+                qte.setParallel(true);
+                if (numParallel == 4) {
+                    dta.setParallel(true);
+                    dtb.setParallel(true);
+                }
+            }
+            potential = qte;
+            dualTopologies[0] = dta;
+            dualTopologies[1] = dtb;
+            break;
+        case 8:
+            sb.append("oct-topology ");
+
+            DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1]);
+            DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2]);
+            QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
+
+            DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5]);
+            DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6]);
+            QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
+
+            OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
+            if (numParallel >= 2) {
+                ote.setParallel(true);
+                if (numParallel >= 4) {
+                    qtg.setParallel(true);
+                    qtd.setParallel(true);
+                    if (numParallel == 8) {
+                        dtga.setParallel(true);
+                        dtgb.setParallel(true);
+                        dtda.setParallel(true);
+                        dtdb.setParallel(true);
                     }
-                    barostat.setMaxSideMove(options.maxSideMove);
-                    barostat.setMaxAngleMove(options.maxAngleMove);
-                    barostat.setMeanBarostatInterval(options.meanInterval);
-                    potential = barostat;
-                } else {
-                    potential = energies[0];
                 }
-                break;
-            case 2:
-                sb.append("dual topology ");
-                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1]);
-                if (numParallel == 2) {
-                    dte.setParallel(true);
-                }
-                potential = dte;
-                break;
-            case 4:
-                sb.append("quad topology ");
-
-                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1]);
-                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2]);
-                QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
-                if (numParallel >= 2) {
-                    qte.setParallel(true);
-                    if (numParallel == 4) {
-                        dta.setParallel(true);
-                        dtb.setParallel(true);
-                    }
-                }
-                potential = qte;
-                dualTopologies[0] = dta;
-                dualTopologies[1] = dtb;
-                break;
-            case 8:
-                sb.append("oct-topology ");
-
-                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1]);
-                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2]);
-                QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
-
-                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5]);
-                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6]);
-                QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
-
-                OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
-                if (numParallel >= 2) {
-                    ote.setParallel(true);
-                    if (numParallel >= 4) {
-                        qtg.setParallel(true);
-                        qtd.setParallel(true);
-                        if (numParallel == 8) {
-                            dtga.setParallel(true);
-                            dtgb.setParallel(true);
-                            dtda.setParallel(true);
-                            dtdb.setParallel(true);
-                        }
-                    }
-                }
-                potential = ote;
-                dualTopologies[0] = dtga;
-                dualTopologies[1] = dtgb;
-                dualTopologies[2] = dtda;
-                dualTopologies[3] = dtdb;
-                break;
-            default:
-                logger.severe(" Must have 1, 2, 4, or 8 topologies!");
-                break;
+            }
+            potential = ote;
+            dualTopologies[0] = dtga;
+            dualTopologies[1] = dtgb;
+            dualTopologies[2] = dtda;
+            dualTopologies[3] = dtdb;
+            break;
+        default:
+            logger.severe(" Must have 1, 2, 4, or 8 topologies!");
+            break;
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
         logger.info(sb.toString());
@@ -895,35 +931,35 @@ class TTosrw extends Script {
         if (distResidues) {
             logger.info(" Distributing walker conformations.");
             switch (nArgs) {
-                case 1:
+            case 1:
+                optStructure(topologies[0], energies[0]);
+                break;
+            case 2:
+                if (dualTopologyEnergy.getNumSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
+                    logger.info(" Generating starting structures based on dual-topology:");
+                    optStructure(topologies[0], potential);
+                } else {
+                    logger.info(" Generating separate starting structures for each topology of the dual toplogy:");
                     optStructure(topologies[0], energies[0]);
-                    break;
-                case 2:
-                    if (dualTopologyEnergy.getNumSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
-                        logger.info(" Generating starting structures based on dual-topology:");
-                        optStructure(topologies[0], potential);
-                    } else {
-                        logger.info(" Generating separate starting structures for each topology of the dual toplogy:");
-                        optStructure(topologies[0], energies[0]);
-                        optStructure(topologies[1], energies[1]);
-                    }
-                    break;
-                case 4:
-                    optStructure(topologies[0], dualTopologies[0]);
-                    optStructure(topologies[3], dualTopologies[1]);
-                    break;
-                case 8:
-                    optStructure(topologies[0], dualTopologies[0]);
-                    optStructure(topologies[3], dualTopologies[1]);
+                    optStructure(topologies[1], energies[1]);
+                }
+                break;
+            case 4:
+                optStructure(topologies[0], dualTopologies[0]);
+                optStructure(topologies[3], dualTopologies[1]);
+                break;
+            case 8:
+                optStructure(topologies[0], dualTopologies[0]);
+                optStructure(topologies[3], dualTopologies[1]);
 
-                    // More elegant would be to copy coordinates from 0-4 and 3-7.
-                    // More elegant is currently low priority, and thus will be accomplished as t approaches infinity.
-                    optStructure(topologies[4], dualTopologies[2]);
-                    optStructure(topologies[7], dualTopologies[3]);
-                    break;
-                default:
-                    logger.severe(" First: must have 1, 2, 4, or 8 topologies. Second, how did this script not fail earlier?");
-                    break;
+                // More elegant would be to copy coordinates from 0-4 and 3-7.
+                // More elegant is currently low priority, and thus will be accomplished as t approaches infinity.
+                optStructure(topologies[4], dualTopologies[2]);
+                optStructure(topologies[7], dualTopologies[3]);
+                break;
+            default:
+                logger.severe(" First: must have 1, 2, 4, or 8 topologies. Second, how did this script not fail earlier?");
+                break;
             }
         }
         osrw = new TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart,
