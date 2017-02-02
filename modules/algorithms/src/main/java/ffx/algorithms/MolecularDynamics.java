@@ -434,9 +434,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Set snapshot file type.
          */
         saveSnapshotAsPDB = true;
-        if (fileType.equals("XYZ")) {
+        if (fileType.equalsIgnoreCase("XYZ")) {
             saveSnapshotAsPDB = false;
-        } else if (!fileType.equals("PDB")) {
+        } else if (!fileType.equalsIgnoreCase("PDB")) {
             logger.warning("Snapshot file type unrecognized; saving snaphshots as PDB.\n");
         }
 
