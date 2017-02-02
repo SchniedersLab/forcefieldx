@@ -276,7 +276,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints) {
         this(molecularAssembly, restraints, ParallelTeam.getDefaultThreadCount());
     }
-    
+
     public ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
@@ -338,7 +338,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
         lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
-        printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, true);
+        printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, false);
 
         // For RESPA
         bondTermOrig = bondTerm;
@@ -714,9 +714,10 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     /**
-     * Overwrites current esvSystem if present.
-     * Multiple ExtendedSystems is possible but unnecessary; add all ESVs to one system (per FFE, at least).
-     * @param system 
+     * Overwrites current esvSystem if present. Multiple ExtendedSystems is
+     * possible but unnecessary; add all ESVs to one system (per FFE, at least).
+     *
+     * @param system
      */
     public void attachExtendedSystem(ExtendedSystem system) {
         if (system == null) {
@@ -741,7 +742,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         reInit();
     }
-    
+
     public void detachExtendedSystem() {
         esvTerm = false;
         esvSystem = null;
@@ -804,7 +805,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             assert (i == index);
             atom.setXYZIndex(i + 1);
         }
-        
+
         // Collect, count, pack and sort bonds.
         if (bondTerm) {
             ArrayList<ROLS> bond = molecularAssembly.getBondList();
@@ -1098,7 +1099,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             nImproperTorsions = 0;
             improperTorsions = null;
         }
-        
+
         if (vanderWaalsTerm) {
             if (esvTerm) {
                 vanderWaals.setAtoms(esvSystem.getAtomsExtH(), esvSystem.getMoleculeExtH());
@@ -1309,6 +1310,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 logger.info(String.format(" Writing on-error snapshot to file %s", filename));
                 ef.saveAsPDB(molecularAssembly, new File(filename));
             }
+
             if (ex.doCauseSevere()) {
                 logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
                 return 0.0;
@@ -1581,7 +1583,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             sb.append(String.format("  %s %16.8f %12d\n",
                     "Relative Solvation", relativeSolvationEnergy, nRelativeSolvations));
         }
-        
+
         if (esvTerm) {
             sb.append(String.format("  %s %16.8f  %s\n",
                     "ExtendedSystemBias", esvBias, esvSystem.getLambdaList()));
@@ -1669,7 +1671,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     public void setPrintOverride(boolean set) {
         this.printOverride = set;
     }
-    
+
     public void setBondedCombined(boolean set) {
         this.printCompact = set;
     }
@@ -1709,7 +1711,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return type;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -1742,7 +1744,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         }
         return e;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -1805,7 +1807,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 ex.printStackTrace();
                 throw ex; // Rethrow exception
             }
-            
+
             return 0; // Should ordinarily be unreachable.
         }
     }
@@ -1890,7 +1892,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                     if (atoms[i].getEsv() != null) {
                         sb.append(atoms[i].getEsv().toString());
                     }
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
                 logger.info(sb.toString());
             }
         }
@@ -2775,7 +2778,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             // Zero out shared restraint energy values.
             sharedRestraintBondEnergy.set(0.0);
-            
+
             if (esvTerm) {
                 esvSystem.updateBondedEsvLambda();
             }
@@ -2817,7 +2820,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             // Load shared restraint energy values.
             restraintBondEnergy = sharedRestraintBondEnergy.get();
-            
+
             if (esvTerm) {
                 if (angleTerm) {
                     for (BondedTerm term : angles) {
@@ -2887,8 +2890,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             // Evaluate force field bonded energy terms in parallel.
             if (angleTerm) {
                 if (angleLoops[threadID] == null) {
-                    angleLoops[threadID] = 
-                            new BondedTermLoop(angles, sharedAngleEnergy, sharedAngleRMSD);
+                    angleLoops[threadID]
+                            = new BondedTermLoop(angles, sharedAngleEnergy, sharedAngleRMSD);
                 }
                 if (threadID == 0) {
                     angleTime = -System.nanoTime();
@@ -2901,8 +2904,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (bondTerm) {
                 if (bondLoops[threadID] == null) {
-                    bondLoops[threadID] = 
-                            new BondedTermLoop(bonds, sharedBondEnergy, sharedBondRMSD);
+                    bondLoops[threadID]
+                            = new BondedTermLoop(bonds, sharedBondEnergy, sharedBondRMSD);
                 }
                 if (threadID == 0) {
                     bondTime = -System.nanoTime();
@@ -2915,8 +2918,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (improperTorsionTerm) {
                 if (improperTorsionLoops[threadID] == null) {
-                    improperTorsionLoops[threadID] = 
-                            new BondedTermLoop(improperTorsions, sharedImproperTorsionEnergy);
+                    improperTorsionLoops[threadID]
+                            = new BondedTermLoop(improperTorsions, sharedImproperTorsionEnergy);
                 }
                 if (threadID == 0) {
                     improperTorsionTime = -System.nanoTime();
@@ -2929,8 +2932,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (outOfPlaneBendTerm) {
                 if (outOfPlaneBendLoops[threadID] == null) {
-                    outOfPlaneBendLoops[threadID] = 
-                            new BondedTermLoop(outOfPlaneBends, sharedOutOfPlaneBendEnergy);
+                    outOfPlaneBendLoops[threadID]
+                            = new BondedTermLoop(outOfPlaneBends, sharedOutOfPlaneBendEnergy);
                 }
                 if (threadID == 0) {
                     outOfPlaneBendTime = -System.nanoTime();
@@ -2943,8 +2946,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (piOrbitalTorsionTerm) {
                 if (piOrbitalTorsionLoops[threadID] == null) {
-                    piOrbitalTorsionLoops[threadID] = 
-                            new BondedTermLoop(piOrbitalTorsions, sharedPiOrbitalTorsionEnergy);
+                    piOrbitalTorsionLoops[threadID]
+                            = new BondedTermLoop(piOrbitalTorsions, sharedPiOrbitalTorsionEnergy);
                 }
                 if (threadID == 0) {
                     piOrbitalTorsionTime = -System.nanoTime();
@@ -2957,8 +2960,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (stretchBendTerm) {
                 if (stretchBendLoops[threadID] == null) {
-                    stretchBendLoops[threadID] = 
-                            new BondedTermLoop(stretchBends, sharedStretchBendEnergy);
+                    stretchBendLoops[threadID]
+                            = new BondedTermLoop(stretchBends, sharedStretchBendEnergy);
                 }
                 if (threadID == 0) {
                     stretchBendTime = -System.nanoTime();
@@ -2971,8 +2974,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (torsionTerm) {
                 if (torsionLoops[threadID] == null) {
-                    torsionLoops[threadID] = 
-                            new BondedTermLoop(torsions, sharedTorsionEnergy);
+                    torsionLoops[threadID]
+                            = new BondedTermLoop(torsions, sharedTorsionEnergy);
                 }
                 if (threadID == 0) {
                     torsionTime = -System.nanoTime();
@@ -2985,8 +2988,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (torsionTorsionTerm) {
                 if (torsionTorsionLoops[threadID] == null) {
-                    torsionTorsionLoops[threadID] = 
-                            new BondedTermLoop(torsionTorsions, sharedTorsionTorsionEnergy);
+                    torsionTorsionLoops[threadID]
+                            = new BondedTermLoop(torsionTorsions, sharedTorsionTorsionEnergy);
                 }
                 if (threadID == 0) {
                     torsionTorsionTime = -System.nanoTime();
@@ -2999,8 +3002,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
             if (ureyBradleyTerm) {
                 if (ureyBradleyLoops[threadID] == null) {
-                    ureyBradleyLoops[threadID] = 
-                            new BondedTermLoop(ureyBradleys, sharedUreyBradleyEnergy);
+                    ureyBradleyLoops[threadID]
+                            = new BondedTermLoop(ureyBradleys, sharedUreyBradleyEnergy);
                 }
                 if (threadID == 0) {
                     ureyBradleyTime = -System.nanoTime();
@@ -3014,8 +3017,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             // Evaluate restraint terms in parallel.
             if (restraintBondTerm) {
                 if (restraintBondLoops[threadID] == null) {
-                    restraintBondLoops[threadID] = 
-                            new BondedTermLoop(restraintBonds, sharedRestraintBondEnergy);
+                    restraintBondLoops[threadID]
+                            = new BondedTermLoop(restraintBonds, sharedRestraintBondEnergy);
                 }
                 if (threadID == 0) {
                     restraintBondTime = -System.nanoTime();
@@ -3078,7 +3081,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
                 }
             }
         }
-        
+
         private class BondedTermLoop extends IntegerForLoop {
 
             private final BondedTerm[] terms;
@@ -3088,19 +3091,19 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             private double localEnergy;
             private double localRMSD;
             private int threadID;
-            
+
             public BondedTermLoop(BondedTerm[] terms, SharedDouble sharedEnergy) {
                 this(terms, sharedEnergy, null);
             }
-            
-            public BondedTermLoop(BondedTerm[] terms, 
+
+            public BondedTermLoop(BondedTerm[] terms,
                     SharedDouble sharedEnergy, SharedDouble sharedRMSD) {
                 this.terms = terms;
                 this.sharedEnergy = sharedEnergy;
                 this.sharedRMSD = sharedRMSD;
                 computeRMSD = (sharedRMSD != null);
             }
-            
+
             @Override
             public void start() {
                 localEnergy = 0.0;
