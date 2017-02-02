@@ -107,7 +107,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private double currentTotalEnergy;
     private boolean saveSnapshotAsPDB = true;
     private int saveRestartFileFrequency = 1000;
-    private String fileType = "PDB";
+    private String fileType = "XYZ";
     private double restartFrequency = 0.1;
     private boolean notifyMonteCarlo = true;
     private ExtendedSystem extendedSystem;
@@ -501,7 +501,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void init(final int nSteps, final double timeStep, final double printInterval,
             final double saveInterval, final double temperature, final boolean initVelocities,
             final File dyn) {
-        init(nSteps, timeStep, printInterval, saveInterval, "PDB", 0.1, temperature, initVelocities, dyn);
+        init(nSteps, timeStep, printInterval, saveInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
     }
 
     private boolean skipIntro = false;
