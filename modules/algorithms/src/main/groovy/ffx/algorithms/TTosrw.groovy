@@ -217,12 +217,12 @@ class TTosrw extends Script {
         /**
          * -sym or --symOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
          */
-        @Option(longName='randomSymOp', shortName='rsym', defaultValue='-1.0',
+        @Option(shortName='rsym', longName='randomSymOp', defaultValue='-1.0',
             description='Apply a random Cartesian symmetry operator with a random translation in the range -X .. X.') double symScalar
         /**
          * -ruc or --unitCell random unit cell axes will be used achieve the specified density (g/cc) (no default density).
          */
-        @Option(longName='randomUnitCell', shortName='ruc', defaultValue='-1.0',
+        @Option(shortName='ruc', longName='randomUnitCell', defaultValue='-1.0',
             description='Apply random unit cell axes to achieve the specified density (g/cc).') double ucDensity
         /**
          * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.

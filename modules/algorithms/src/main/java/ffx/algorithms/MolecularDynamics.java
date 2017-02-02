@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -61,7 +62,7 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
-import java.util.stream.Collectors;
+
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -80,12 +81,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private MonteCarloListener monteCarloListener;
     private Thermostat thermostat;
     private Integrator integrator;
-    //private File archiveFile = null;
     private File restartFile = null;
-    //private File pdbFile = null;
-    //private XYZFilter xyzFilter = null;
     private DYNFilter dynFilter = null;
-    //private PDBFilter pdbFilter = null;
     private int printFrequency = 100;
     private int saveSnapshotFrequency = 1000;
     private int removeCOMMotionFrequency = 100;
@@ -230,7 +227,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         done = true;
     }
-    
+
     public MolecularDynamics(MolecularAssembly assembly,
             Potential potentialEnergy,
             CompositeConfiguration properties,
@@ -312,7 +309,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         //this.archiveFile = archive;
         assemblies.get(0).archiveFile = archive;
     }
-    
+
     public void setArchiveFile(File archive, int pos) {
         assemblies.get(pos).archiveFile = archive;
     }
@@ -327,7 +324,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         //return archiveFile;
         return assemblies.get(0).archiveFile;
     }
-    
+
     public List<File> getArchiveFiles() {
         ArrayList<File> aFiles = new ArrayList<>();
         assemblies.forEach((ai) -> { aFiles.add(ai.archiveFile); });
@@ -336,19 +333,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
         // Would definitely be safer than stream().forEach(add to external list).
         //return assemblies.stream().map((AssemblyInfo ai) -> {return ai.archiveFile;}).collect(Collectors.toList());
     }
-    
+
     public void addAssembly(MolecularAssembly mola) {
         addAssembly(mola, null);
     }
-    
+
     public void addAssembly(MolecularAssembly mola, CompositeConfiguration props) {
         AssemblyInfo mi = new AssemblyInfo(mola);
         mi.props = props;
         assemblies.add(mi);
     }
-    
+
     /**
-     * Finds and removes an assembly, searching by reference equality. 
+     * Finds and removes an assembly, searching by reference equality.
      * Removes all instances of the assembly.
      * @param mola Assembly to remove.
      * @return Number of times found and removed.
@@ -363,7 +360,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         assemblies.removeAll(toRemove);
         return toRemove.size();
     }
-    
+
     public void setNotifyMonteCarlo(boolean set) {
         notifyMonteCarlo = set;
     }
@@ -371,14 +368,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void setMonteCarloListener(MonteCarloListener listener) {
         monteCarloListener = listener;
     }
-    
+
     public void attachExtendedSystem(ExtendedSystem system) {
         if (system != null && extendedSystem != null) {
 //            logger.warning("ExtendedSystem already attached to MD.");
         }
         extendedSystem = system;
     }
-    
+
     public void detachExtendedSystem() {
         extendedSystem = null;
     }
@@ -450,7 +447,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (restartFrequency >= this.dt) {
             saveRestartFileFrequency = (int) (restartFrequency / this.dt);
         }
-        
+
         assemblies.stream().parallel().forEach((ainfo) -> {
             MolecularAssembly mola = ainfo.getAssembly();
             CompositeConfiguration aprops = ainfo.props;
@@ -465,20 +462,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 ainfo.xyzFilter = new XYZFilter(file, mola, mola.getForceField(), aprops);
             }
             if (ainfo.pdbFilter == null) {
-                if (!filename.contains("_dyn")) {
-                    ainfo.pdbFile = new File(filename + "_dyn.pdb");
-                }
                 ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
             }
         });
 
-        /*File file = molecularAssembly.getFile();
-        String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
-        if (archiveFile == null) {
-            archiveFile = new File(filename + ".arc");
-            archiveFile = XYZFilter.version(archiveFile);
-        }*/
-        
         String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
 
         if (dyn == null) {
@@ -489,21 +476,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
             loadRestart = true;
         }
 
-        /*if (xyzFilter == null) {
-            xyzFilter = new XYZFilter(file, molecularAssembly,
-                    molecularAssembly.getForceField(), properties);
-        }*/
-
         if (dynFilter == null) {
             dynFilter = new DYNFilter(molecularAssembly.getName());
         }
-
-        /*if (pdbFilter == null) {
-            if (!filename.contains("_dyn")) {
-                pdbFile = new File(filename + "_dyn.pdb");
-            }
-            pdbFilter = new PDBFilter(pdbFile, molecularAssembly, null, null);
-        }*/
 
         this.targetTemperature = temperature;
         this.initVelocities = initVelocities;
@@ -532,7 +507,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private boolean skipIntro = false;
     public void redynamic(final int nSteps, final double temperature) {
         skipIntro = true;
-        
+
         this.nSteps = nSteps;
         totalSimTime = 0.0;
 //        this.dt = timeStep * 1.0e-3;
@@ -549,11 +524,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         this.targetTemperature = temperature;
         thermostat.setTargetTemperature(temperature);
         this.initVelocities = false;
-        
+
         done = false;
         terminate = false;
         initialized = true;
-        
+
         Thread dynamicThread = new Thread(this);
         dynamicThread.start();
         synchronized (this) {
@@ -567,7 +542,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
         }
     }
-    
+
     /**
      * Blocking molecular dynamics. When this method returns, the MD run is
      * done.
@@ -780,13 +755,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
             initialized = true;
         }
-        
+
         if (!skipIntro) {
             logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
             logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
             logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
         }
-        
+
         /**
          * Integrate Newton's equations of motion for the requested number of
          * steps, unless early termination is requested.
@@ -800,7 +775,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 long took = (long) ((System.nanoTime() - startTime) * 1e-6);
                 // logger.info(String.format(" mcUpdate() took: %d ms", took));
             }
-            
+
             /**
              * Do the half-step thermostat operation.
              */
@@ -865,7 +840,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             potential.setVelocity(v);
             potential.setAcceleration(a);
             potential.setPreviousAcceleration(aPrevious);
-            
+
             /**
              * Update extended system variables if present.
              */
@@ -955,13 +930,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (!terminate) {
             logger.info(String.format(" Completed %8d time steps\n", nSteps));
         }
-        
+
         /**
          * Reset the done and terminate flags.
          */
         done = true;
         terminate = false;
-        
+
         if (monteCarloListener != null) {
             long startTime = System.nanoTime();
             monteCarloListener.mcUpdate(molecularAssembly);
@@ -979,7 +954,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public double getTotalEnergy() {
         return currentTotalEnergy;
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -996,11 +971,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
         }
     }
-    
+
     /**
      * A simple container class to hold all the infrastructure associated with
      * a MolecularAssembly for MolecularDynamics; assembly, properties, archive
-     * and PDB files, PDB and XYZ filters. Direct access to package-private 
+     * and PDB files, PDB and XYZ filters. Direct access to package-private
      * members breaks encapsulation a bit, but the private inner class shouldn't
      * be used externally anyways.
      */
@@ -1011,16 +986,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
         File pdbFile = null;
         PDBFilter pdbFilter = null;
         XYZFilter xyzFilter = null;
-        
+
         public AssemblyInfo(MolecularAssembly assembly) {
             this.mola = assembly;
         }
-        
+
         public MolecularAssembly getAssembly() {
             return mola;
         }
     }
-    
+
     public void storeState() {
         dynamicsState = new DynamicsState();
     }
@@ -1031,7 +1006,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
         dynamicsState.restore();
     }
-    
+
     private final boolean verboseDynamicsState = System.getProperty("md-verbose") != null;
     public class DynamicsState {
         double[] xBak, vBak, aBak;
@@ -1068,7 +1043,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 Arrays.stream(mass).forEach(val -> sb.append(format("%.2g, ", val)));
                 sb.append(format("\ng: "));
                 Arrays.stream(grad).forEach(val -> sb.append(format("%.2g, ", val)));
-                sb.append(format("\nK,U,E,T: %g %g %g %g\n", 
+                sb.append(format("\nK,U,E,T: %g %g %g %g\n",
                         currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature));
                 logger.info(sb.toString());
