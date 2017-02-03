@@ -103,21 +103,19 @@ public class Barostat implements Potential, LambdaInterface {
      * Ideal gas constant * temperature (kcal/mol).
      */
     private final double kT = temperature * kB;
-
     /**
      * Flag to turn the Barostat on or off. If false, MC moves will not be
      * tried.
      */
     private boolean active = true;
-
     /**
      * Default edge length move (A).
      */
-    private double maxSideMove = 0.5;
+    private double maxSideMove = 0.25;
     /**
-     * Default angular move (degrees).
+     * Default angle move (degrees).
      */
-    private double maxAngleMove = 1.0;
+    private double maxAngleMove = 0.5;
     /**
      * A carbon atom cannot fit into a unit cell without
      * interfacial radii greater than ~1.2 Angstroms.
