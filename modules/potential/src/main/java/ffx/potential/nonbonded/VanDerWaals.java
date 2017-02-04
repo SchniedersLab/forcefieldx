@@ -350,8 +350,8 @@ public class VanDerWaals implements MaskingInterface,
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
-            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.5);
-            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
+            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.25);
+            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 3.0);
             if (vdwLambdaAlpha < 0.0) {
                 vdwLambdaAlpha = 0.5;
             }

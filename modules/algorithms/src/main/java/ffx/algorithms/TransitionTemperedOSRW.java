@@ -561,20 +561,27 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
 
             try {
                 // Optimize the system.
+                double startingEnergy = potential.energy(x);
+
                 Minimize minimize = new Minimize(null, potential, null);
                 minimize.minimize(osrwOptimizationEps);
 
                 // Collect the minimum energy.
                 double minEnergy = potential.getTotalEnergy();
-                // If a new minimum has been found, save its coordinates.
-                if (minEnergy < osrwOptimum) {
-                    osrwOptimum = minEnergy;
-                    logger.info(String.format(" New minimum energy found: %16.8f (Step %d).", osrwOptimum, energyCount));
+                // Check for a new minimum within an energy window of the lowest energy structure found.
+                if (minEnergy < osrwOptimum + osrwOptimizationEnergyWindow) {
+                    if (minEnergy < osrwOptimum) {
+                        osrwOptimum = minEnergy;
+                    }
                     int n = potential.getNumberOfVariables();
                     osrwOptimumCoords = new double[n];
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     if (systemFilter.writeFile(optFile, false)) {
-                        logger.info(format(" Wrote minimum energy snapshot to %s.", optFile.getName()));
+                        logger.info(String.format(" Minimum: %16.8f optimized from %16.8f at step %d (%s).",
+                                minEnergy, startingEnergy, energyCount, optFile.getName()));
+                    } else {
+                        logger.info(String.format(" Minimum: %16.8f optimized from %16.8f at step %d.",
+                                minEnergy, startingEnergy, energyCount));
                     }
                 }
             } catch (EnergyException ex) {

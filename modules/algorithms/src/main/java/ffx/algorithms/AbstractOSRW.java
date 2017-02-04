@@ -335,6 +335,8 @@ public abstract class AbstractOSRW implements Potential {
     protected double osrwOptimizationLambdaCutoff = 0.5;
     protected double osrwOptimizationEps = 0.1;
     protected double osrwOptimizationTolerance = 1.0e-8;
+    protected double osrwOptimizationEnergyWindow = 2.0;
+
     protected MolecularAssembly molecularAssembly;
     protected SystemFilter systemFilter;
     protected File optFile;

@@ -55,6 +55,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -696,11 +697,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Initialize from a restart file.
              */
             if (loadRestart) {
-                if (!dynFilter.readDYN(restartFile, x, v, a, aPrevious)) {
+                Crystal crystal = molecularAssembly.getCrystal();
+                if (!dynFilter.readDYN(restartFile, crystal, x, v, a, aPrevious)) {
                     String message = " Could not load the restart file - dynamics terminated.";
                     logger.log(Level.WARNING, message);
                     done = true;
                     return;
+                } else {
+                    molecularAssembly.getPotentialEnergy().setCrystal(crystal);
                 }
             } else {
                 /**

@@ -77,13 +77,15 @@ public class DYNFilter {
      * readDYN</p>
      *
      * @param dynFile a {@link java.io.File} object.
+     * @param crystal
      * @param x an array of double.
      * @param v an array of double.
      * @param a an array of double.
      * @param ap an array of double.
      * @return a boolean.
      */
-    public boolean readDYN(File dynFile, double x[], double v[], double a[], double ap[]) {
+    public boolean readDYN(File dynFile, Crystal crystal,
+            double x[], double v[], double a[], double ap[]) {
         if (!dynFile.exists() || !dynFile.canRead()) {
             return false;
         }
@@ -107,20 +109,21 @@ public class DYNFilter {
             if (tokens.length != 3) {
                 return false;
             }
-            double d[] = new double[3];
-            d[0] = Double.parseDouble(tokens[0]);
-            d[1] = Double.parseDouble(tokens[1]);
-            d[2] = Double.parseDouble(tokens[2]);
+            double aaxis = Double.parseDouble(tokens[0]);
+            double baxis = Double.parseDouble(tokens[1]);
+            double caxis = Double.parseDouble(tokens[2]);
 
             data = br.readLine().trim();
             tokens = data.split(" +");
             if (tokens.length != 3) {
                 return false;
             }
-            d[0] = Double.parseDouble(tokens[0]);
-            d[1] = Double.parseDouble(tokens[1]);
-            d[2] = Double.parseDouble(tokens[2]);
+            double alpha = Double.parseDouble(tokens[0]);
+            double beta = Double.parseDouble(tokens[1]);
+            double gamma = Double.parseDouble(tokens[2]);
 
+            crystal.changeUnitCellParameters(aaxis, baxis, caxis, alpha, beta, gamma);
+            
             // Atomic coordinates
             br.readLine();
             for (int i = 0; i < numatoms; i++) {
