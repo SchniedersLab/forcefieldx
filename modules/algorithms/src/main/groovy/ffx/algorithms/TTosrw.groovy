@@ -612,7 +612,7 @@ class TTosrw extends Script {
         if (options.resetStepsString) {
             if (options.nEquil > 0) {
                 logger.warning(" Ignoring resetNumSteps input due to equilibration\n");
-            } else if (options.rn.equalsIgnoreCase("false")) {
+            } else if (options.resetStepsString.equalsIgnoreCase("false")) {
                 resetNumSteps = false;
             }
         }
