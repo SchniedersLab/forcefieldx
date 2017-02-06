@@ -2709,7 +2709,7 @@ public class ReciprocalSpace {
         double bsModX[] = new double[fftX];
         double bsModY[] = new double[fftY];
         double bsModZ[] = new double[fftZ];
-        int maxfft = max(max(fftX, fftY), fftZ);
+        int maxfft = max(max(max(fftX, fftY), fftZ), bSplineOrder + 1);
         double bsArray[] = new double[maxfft];
         double c[] = new double[bSplineOrder];
 

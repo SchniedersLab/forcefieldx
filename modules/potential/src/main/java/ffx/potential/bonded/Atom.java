@@ -317,13 +317,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double tempFactorPreviousAcceleration;
 
     /**
-     * List of anisou tensors for each altLoc.
+     * Anisou tensor.
      *
      * @since 1.0
      */
     private double anisou[];
     /**
-     * List of anisou tensors for each altLoc.
+     * Anisou gradient, velocity, accel and prev accel.
      *
      * @since 1.0
      */

@@ -583,7 +583,8 @@ public class CIFFilter implements DiffractionFileFilter {
             logger.info(sb.toString());
         }
 
-        if (rFree < 0) {
+        String doRFree = System.getProperty("generate-rfree", "false");
+        if (doRFree.equalsIgnoreCase("true")) {
             refinementData.generateRFree();
         }
         return true;

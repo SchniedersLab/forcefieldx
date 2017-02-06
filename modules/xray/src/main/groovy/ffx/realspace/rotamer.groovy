@@ -613,11 +613,11 @@ RealSpaceData realSpaceData = new RealSpaceData(systems,
     mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
 RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
 
-double [] x = new double[atoms.length*3];
-refinementEnergy.getCoordinates(x);
+double[] x = new double[refinementEnergy.getNumberOfVariables()];
+x = refinementEnergy.getCoordinates(x);
 refinementEnergy.energy(x);
 
-RotamerOptimization rotamerOptimization = new RotamerOptimization(active, refinementEnergy, sh);
+RotamerOptimization rotamerOptimization = new RotamerOptimization(systems[0], refinementEnergy, sh);
 rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
 rotamerOptimization.setPruning(pruningType);
 rotamerOptimization.setWindowSize(windowSize);

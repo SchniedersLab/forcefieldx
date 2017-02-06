@@ -68,11 +68,10 @@ import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 import org.openscience.cdk.tools.manipulator.AtomTypeManipulator;
 
 /**
- * Splits large molecules into fragments for PolType 
- * Maps fragments to full molecule
+ * Splits large molecules into fragments for PolType Maps fragments to full
+ * molecule
  *
- * Input: full molecule SDF and CIF
- * Output: individual fragment SDFs
+ * Input: full molecule SDF and CIF Output: individual fragment SDFs
  *
  * @author Rae Ann Corrigan
  */
@@ -236,46 +235,47 @@ public class Unstitch {
         // The removedHydrogensStructureList is a list of all exhaustive fragments with H's removed
         // H's were removed to aid in pattern matching - they will be replaced later
         for (int t = 0; t < removedHydrogensStructureList.size(); t++) {
-            
+
             // Assigns "query" as the t-th element of removedHydrogensStructureList
             // Each exhaustive fragment in removedHydrogensStructureList will be used a "query" at some point
             IAtomContainer query = removedHydrogensStructureList.get(t);
-            
+
             // Creates a pattern variable, "pattern" according to the VentoFoggia pattern matcher from CDK
             // The fragment "query" is converted to a Pattern using VentoFoggia's "findSubstructure"
             // Conversion from an IAtomContainer to a Pattern makes it possible to test if "query" is 
             //    contained in another IAtomContainer, in this case "tester", to be defined later.
             Pattern pattern = VentoFoggia.findSubstructure(query);
-            
-            
+
             for (int u = 0; u < removedHydrogensStructureList.size(); u++) {
-                
+
+                if (removedHydrogensStructureList.get(u).getAtomCount() < mx) {
                 // Assigns "tester" as the u-th element of removedHydrogensStrictureList
-                // Each exhaustive fragment in removedHydrogensStructureList will be used as a "tester" at some point
-                IAtomContainer tester = removedHydrogensStructureList.get(u);
-                
-                /* The next test is to see if "query" is a substructure of "tester"
-                 *   i.e. : is the "query" fragment completely contained within the "tester" fragment.
-                 * This is important because we don't want a lot of redundant information, which we 
-                 *   would get from keeping fragments that are completely contained in other fragments.
-                 * The test makes sure that "query" is completely contained within "tester" (pattern.matches(tester)),
-                 *    "query" and "tester" aren't the same molecule, that "tester" is
-                 *    larger than "query" ("query" can't be completely contained in the "tester" molecule 
-                 *    unless "tester" is larger), and that "tester" is smaller than the maximum allowed
-                 *    fragment size.
-                 * If all these conditions are met, then we can conclude that "query" is a substructure of "tester"
-                 *    and can be removed from the list of necessary fragments.  It's indice, therefore, is added to 
-                 *    the list of fragments to be removed from the final list.
-                 * This is easier than adding the indice of "tester" to a kept-fragments list, because we are not 
-                 *    yet sure that "tester" is a fragment we want to keep - it may be a substructure of a 
-                 *    fragment we haven't tested yet.
-                 */
-                if (pattern.matches(tester) && (tester != query) && (tester.getAtomCount() > query.getAtomCount())
-                        && (tester.getAtomCount() < mx)) {
-                    
+                    // Each exhaustive fragment in removedHydrogensStructureList will be used as a "tester" at some point
+                    IAtomContainer tester = removedHydrogensStructureList.get(u);
+
+                    /* The next test is to see if "query" is a substructure of "tester"
+                     *   i.e. : is the "query" fragment completely contained within the "tester" fragment.
+                     * This is important because we don't want a lot of redundant information, which we 
+                     *   would get from keeping fragments that are completely contained in other fragments.
+                     * The test makes sure that "query" is completely contained within "tester" (pattern.matches(tester)),
+                     *    "query" and "tester" aren't the same molecule, that "tester" is
+                     *    larger than "query" ("query" can't be completely contained in the "tester" molecule 
+                     *    unless "tester" is larger), and that "tester" is smaller than the maximum allowed
+                     *    fragment size.
+                     * If all these conditions are met, then we can conclude that "query" is a substructure of "tester"
+                     *    and can be removed from the list of necessary fragments.  It's indice, therefore, is added to 
+                     *    the list of fragments to be removed from the final list.
+                     * This is easier than adding the indice of "tester" to a kept-fragments list, because we are not 
+                     *    yet sure that "tester" is a fragment we want to keep - it may be a substructure of a 
+                     *    fragment we haven't tested yet.
+                     */
+                    if (pattern.matches(tester) && (tester != query) && (tester.getAtomCount() > query.getAtomCount())
+                            && (tester.getAtomCount() < mx)) {
+
                     // Indices in removedHydrogensStructureList of substructures to be removed
-                    // Represents fragment structures that are completely contained within other fragments
-                    indicesToBeRemovedList.add(t); 
+                        // Represents fragment structures that are completely contained within other fragments
+                        indicesToBeRemovedList.add(t);
+                    }
                 }
             }
         }
@@ -288,7 +288,7 @@ public class Unstitch {
         //    later.  
         for (int v = 0; v < removedHydrogensStructureList.size(); v++) {
             if (!indicesToBeRemovedList.contains(v)) {
-                
+
                 /* If indice, v, is not on the indicesToBeRemovedList, keep the fragment at indice v
                  *    by adding it to the finalFragmentStructuresList and adding it's corresponding 
                  *    IAtomContainer in iAtomContainerArray to iAtomContainerList.
@@ -301,7 +301,7 @@ public class Unstitch {
                 finalFragmentStructuresList.add(originalFragmentStructureArray[v]);
                 iAtomContainerList.add(iAtomContainerArray[v]);
             } else {
-                
+
                 // Number of substructures removed from the full fragment list
                 // This number if for reference and to let us know that the 
                 //    substructure removal logic is working.
@@ -393,8 +393,8 @@ public class Unstitch {
         //Fragmenting checks
         //30 atoms or less
         //if (mol.getAtomCount() < mx) {
-        if(fragContainer.getAtomCount() < mx){
-        
+        if (fragContainer.getAtomCount() < mx) {
+
             //Builds 3D model of fragment molecule
             //System.out.println("\nEntering mb3d for fragment" + number+"\n");
             ModelBuilder3D mb3d;

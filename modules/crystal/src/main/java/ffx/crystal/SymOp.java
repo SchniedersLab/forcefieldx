@@ -37,6 +37,12 @@
  */
 package ffx.crystal;
 
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.random;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
 /**
  * The SymOp class defines the rotation and translation of a single symmetry
  * operator.
@@ -67,6 +73,73 @@ public class SymOp {
     public SymOp(double[][] rot, double[] tr) {
         this.rot = rot;
         this.tr = tr;
+    }
+
+    /**
+     * Generate a random Cartesian Symmetry Operator.
+     *
+     * The random rotation matrix is derived from: Arvo, James (1992), "Fast
+     * random rotation matrices", in David Kirk, Graphics Gems III, San Diego:
+     * Academic Press Professional, pp. 117–120, ISBN 978-0-12-409671-4
+     *
+     * @param scalar The range of translations will be from -scalar/2 ..
+     * scalar/2.
+     *
+     * @return A Cartesian SymOp with a random rotation and translation.
+     */
+    public static SymOp randomSymOpFactory(double scalar) {
+        double rot[][] = new double[3][3];
+        double tr[] = {scalar * (random() - 0.5),
+            scalar * (random() - 0.5),
+            scalar * (random() - 0.5)};
+
+        double PI2 = 2.0 * PI;
+        double x[] = new double[3];
+        x[0] = random();
+        x[1] = random();
+        x[2] = random();
+        /* Rotation about the pole (Z).      */
+        double theta = x[0] * PI2;
+        /* For direction of pole deflection. */
+        double phi = x[1] * PI2;
+        /* For magnitude of pole deflection. */
+        double z = x[2] * 2.0;
+        /**
+         * Compute a vector V used for distributing points over the sphere via
+         * the reflection I - V Transpose(V). This formulation of V will
+         * guarantee that if x[1] and x[2] are uniformly distributed, the
+         * reflected points will be uniform on the sphere. Note that V has
+         * length sqrt(2) to eliminate the 2 in the Householder matrix.
+         */
+        double r = sqrt(z);
+        double Vx = sin(phi) * r;
+        double Vy = cos(phi) * r;
+        double Vz = sqrt(2.0 - z);
+        /**
+         * Compute the row vector S = Transpose(V) * R, where R is a simple
+         * rotation by theta about the z-axis. No need to compute Sz since it's
+         * just Vz.
+         */
+        double st = sin(theta);
+        double ct = cos(theta);
+        double Sx = Vx * ct - Vy * st;
+        double Sy = Vx * st + Vy * ct;
+        /**
+         * Construct the rotation matrix ( V Transpose(V) - I ) R, which is
+         * equivalent to V S - R.
+         */
+        rot[0][0] = Vx * Sx - ct;
+        rot[0][1] = Vx * Sy - st;
+        rot[0][2] = Vx * Vz;
+        rot[1][0] = Vy * Sx + st;
+        rot[1][1] = Vy * Sy - ct;
+        rot[1][2] = Vy * Vz;
+        rot[2][0] = Vz * Sx;
+        rot[2][1] = Vz * Sy;
+        // This equals Vz * Vz - 1.0
+        rot[2][2] = 1.0 - z;
+
+        return new SymOp(rot, tr);
     }
 
     /**

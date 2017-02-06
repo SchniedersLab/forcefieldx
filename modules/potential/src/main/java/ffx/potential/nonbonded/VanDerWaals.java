@@ -180,7 +180,7 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * Offset in Angstroms.
      */
-    private double vdwLambdaAlpha = 0.05;
+    private double vdwLambdaAlpha = 0.5;
     /**
      * Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary.
      * [nThreads]
@@ -350,10 +350,10 @@ public class VanDerWaals implements MaskingInterface,
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
-            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 1.0);
-            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 1.0);
+            vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.25);
+            vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 3.0);
             if (vdwLambdaAlpha < 0.0) {
-                vdwLambdaAlpha = 1.0;
+                vdwLambdaAlpha = 0.5;
             }
             if (vdwLambdaExponent < 1.0) {
                 vdwLambdaExponent = 1.0;
@@ -1222,10 +1222,6 @@ public class VanDerWaals implements MaskingInterface,
         this.crystal = crystal;
         int newNSymm = crystal.spaceGroup.getNumberOfSymOps();
         if (nSymm != newNSymm) {
-
-            logger.info(String.format(" VDW: updated symops %d -> %d: %s",
-                    nSymm, newNSymm, crystal.getUnitCell().toShortString()));
-
             nSymm = newNSymm;
             /**
              * Allocate memory if necessary.

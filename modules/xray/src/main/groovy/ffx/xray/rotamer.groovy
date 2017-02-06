@@ -589,7 +589,7 @@ RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, Refine
 
 int nVar = refinementEnergy.getNumberOfVariables();
 double [] x = new double[nVar];
-refinementEnergy.getCoordinates(x);
+x = refinementEnergy.getCoordinates(x);
 refinementEnergy.energy(x);
 
 RotamerOptimization rotamerOptimization = new RotamerOptimization(systems[0], refinementEnergy, sh);
@@ -891,4 +891,5 @@ if (master) {
     } else {
         saveAsPDB(new File(filename + ".pdb"));
     }
+}
 }

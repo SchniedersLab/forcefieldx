@@ -37,8 +37,6 @@
  */
 package ffx.potential.nonbonded;
 
-import java.util.logging.Logger;
-
 import ffx.crystal.Crystal;
 import ffx.numerics.MultipoleTensor;
 import ffx.potential.bonded.Atom;
@@ -173,7 +171,7 @@ public abstract class ParticleMeshEwald {
 
     public abstract void setLambda(double lambda);
 
-     public abstract double getdEdL();
+    public abstract double getdEdL();
 
     public abstract void getdEdXdL(double[] gradients);
 

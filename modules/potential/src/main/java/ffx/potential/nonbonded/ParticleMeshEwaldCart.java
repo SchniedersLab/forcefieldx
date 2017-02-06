@@ -2004,7 +2004,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 if (sb != null) {
                     logger.warning(sb.toString());
                 }
-                String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
+                String message = format(" SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
                 throw new EnergyException(message, false);
             }
             /**
@@ -2015,7 +2015,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 if (sb != null) {
                     logger.warning(sb.toString());
                 }
-                String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
+                String message = format(" Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
                 throw new EnergyException(message, false);
             }
             /**
@@ -3528,13 +3528,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 double e = realSpaceEnergyLoop[i].permanentEnergy;
                 if (Double.isNaN(e)) {
                     //logger.severe(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e));
-                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e), true);
+                    throw new EnergyException(format(" The permanent multipole energy of thread %d is %16.8f", i, e), false);
                 }
                 permanentEnergy += e;
                 double ei = realSpaceEnergyLoop[i].inducedEnergy;
                 if (Double.isNaN(ei)) {
                     //logger.severe(String.format(" The polarization energy of thread %d is %16.8f", i, ei));
-                    throw new EnergyException(String.format(" The permanent multipole energy of thread %d is %16.8f", i, e), true);
+                    throw new EnergyException(format(" The permanent multipole energy of thread %d is %16.8f", i, e), false);
                 }
                 polarizationEnergy += ei;
             }
