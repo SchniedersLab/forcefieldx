@@ -353,10 +353,10 @@ public class VanDerWaals implements MaskingInterface,
             vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.25);
             vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 3.0);
             if (vdwLambdaAlpha < 0.0) {
-                vdwLambdaAlpha = 0.5;
+                vdwLambdaAlpha = 0.25;
             }
             if (vdwLambdaExponent < 1.0) {
-                vdwLambdaExponent = 1.0;
+                vdwLambdaExponent = 3.0;
             }
             intermolecularSoftcore = forceField.getBoolean(
                     ForceField.ForceFieldBoolean.INTERMOLECULAR_SOFTCORE, false);
