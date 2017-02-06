@@ -532,6 +532,9 @@ public class NeighborList extends ParallelRegion {
      */
     public void buildList(final double coordinates[][], final int lists[][][],
             boolean use[], boolean forceRebuild, boolean print) {
+        if (disableUpdates) {
+            return;
+        }
         this.coordinates = coordinates;
         this.lists = lists;
         this.use = use;
@@ -881,9 +884,6 @@ public class NeighborList extends ParallelRegion {
      * @since 1.0
      */
     private boolean motion() {
-        if (disableUpdates) {
-            return false;
-        }
         double current[] = coordinates[0];
         for (int i = 0; i < nAtoms; i++) {
             int i3 = i * 3;
