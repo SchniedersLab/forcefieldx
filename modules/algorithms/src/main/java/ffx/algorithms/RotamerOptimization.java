@@ -5429,6 +5429,7 @@ public class RotamerOptimization implements Terminatable {
             boolean printLists = false;
             long neighborTime = -System.nanoTime();
             neighborList.buildList(xyz, lists, use, forceRebuild, printLists);
+            //neighborList.setDisableUpdates(false); // Should work, but be unnecessary.
             neighborTime += System.nanoTime();
             logger.info(String.format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
 

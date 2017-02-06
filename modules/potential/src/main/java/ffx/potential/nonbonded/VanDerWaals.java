@@ -353,9 +353,11 @@ public class VanDerWaals implements MaskingInterface,
             vdwLambdaAlpha = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_ALPHA, 0.25);
             vdwLambdaExponent = forceField.getDouble(ForceFieldDouble.VDW_LAMBDA_EXPONENT, 3.0);
             if (vdwLambdaAlpha < 0.0) {
+                logger.warning(String.format(" Invalid value %8.3g for vdw-lambda-alpha; must be greater than or equal to 0. Resetting to 0.25.", vdwLambdaAlpha));
                 vdwLambdaAlpha = 0.25;
             }
             if (vdwLambdaExponent < 1.0) {
+                logger.warning(String.format(" Invalid value %8.3g for vdw-lambda-exponent; must be greater than or equal to 1. Resetting to 3.", vdwLambdaExponent));
                 vdwLambdaExponent = 3.0;
             }
             intermolecularSoftcore = forceField.getBoolean(
@@ -439,6 +441,8 @@ public class VanDerWaals implements MaskingInterface,
          * the first neighborlist.
          */
         buildNeighborList(atoms);
+        // Then, optionally, prevent that neighbor list from ever updating.
+        neighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
 
         logger.info("\n  Van der Waals");
         logger.info(format("   Switch Start:                         %6.3f (A)", cut));

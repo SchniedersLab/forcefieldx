@@ -304,6 +304,10 @@ public class NeighborList extends ParallelRegion {
      * Inactive interactions.
      */
     boolean inactiveInteractions = false;
+    /**
+     * Disable updates to the NeighborList; use with caution.
+     */
+    private boolean disableUpdates = false;
 
     /**
      * Constructor for the NeighborList class.
@@ -355,6 +359,24 @@ public class NeighborList extends ParallelRegion {
     public void setIntermolecular(boolean intermolecular, int molecules[]) {
         this.intermolecular = intermolecular;
         this.molecules = molecules;
+    }
+    
+    /**
+     * If disableUpdates true, disable updating the neighbor list upon motion.
+     * Use with caution; best recommendation is to only use if all atoms have
+     * a coordinate restraint.
+     * @param disableUpdate Disable updating the neighbor list
+     */
+    public void setDisableUpdates(boolean disableUpdate) {
+        this.disableUpdates = disableUpdate;
+    }
+    
+    /**
+     * Getter for the disableUpdates field.
+     * @return If neighbor list updates disabled
+     */
+    public boolean getDisableUpdates() {
+        return disableUpdates;
     }
 
     private void initNeighborList(boolean print) {
@@ -859,6 +881,9 @@ public class NeighborList extends ParallelRegion {
      * @since 1.0
      */
     private boolean motion() {
+        if (disableUpdates) {
+            return false;
+        }
         double current[] = coordinates[0];
         for (int i = 0; i < nAtoms; i++) {
             int i3 = i * 3;

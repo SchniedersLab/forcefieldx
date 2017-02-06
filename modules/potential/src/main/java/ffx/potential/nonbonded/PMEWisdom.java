@@ -187,6 +187,7 @@ public class PMEWisdom {
         NeighborList neighborList = new NeighborList(null, crystal, atoms, cutoff, buffer,
                 parallelTeam);
         neighborList.buildList(coordinates, neighborLists, null, true, true);
+        neighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
 
         ParticleMeshEwaldCart particleMeshEwald = null;
         //ParticleMeshEwald particleMeshEwald = new ParticleMeshEwald(molecularAssembly,
@@ -242,6 +243,7 @@ public class PMEWisdom {
         NeighborList neighborList = new NeighborList(null, crystal, atoms, cutoff, buffer,
                 parallelTeam);
         neighborList.buildList(coordinates, neighborLists, null, true, false);
+        neighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
 
         logger.setLevel(Level.INFO);
         logger.info(String.format("RMS Gradient Tolerance: %5.3f\n",
