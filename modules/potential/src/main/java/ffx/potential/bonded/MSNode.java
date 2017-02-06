@@ -163,8 +163,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     /**
      * {@inheritDoc}
      *
-     * Overidden equals method that returns true if object is not equal to this
-     * object, is of the same class as this, and has the same name.
+     * MSNode equality := same class and same name.
+     * Consider replacing with a Comparator<MSNode> for cases where
+     * non-reference equality is desired.
      */
     @Override
     public boolean equals(Object object) {
@@ -196,7 +197,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
                 arrayList.add((Atom) node);
             }
         }
-        Collections.sort(arrayList);
+        Collections.sort(arrayList, Atom.indexComparator);
         return arrayList;
     }
     
@@ -204,11 +205,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         // As of now, for generic MSNode objects, atoms remain in their original
         // order. It is presently only a concern for MultiResidue.
         return getAtomList();
-    }
-    
-    public void reInitOriginalAtomList() {
-        // There is no list to re-init; it just helps keep rotamer optimization
-        // blind as to whether it's working on a Residue or MultiResidue.
     }
 
     /**

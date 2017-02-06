@@ -110,7 +110,7 @@ public class Loop {
                 //      specific atom from the pdb file
                 double[] initArray;
                 if(useAltCoords){
-                    initArray = altCoords[atom.getXYZIndex() - 1];
+                    initArray = altCoords[atom.getIndex() - 1];
                 } else {
                     initArray = atom.getXYZ(null);
                 }
@@ -230,7 +230,7 @@ public class Loop {
 
             for (Atom backBoneAtom : backBoneAtoms) {
             //    backBoneAtom.setBuilt(true);
-                int backBoneIndex = backBoneAtom.getXYZIndex() - 1;
+                int backBoneIndex = backBoneAtom.getIndex() - 1;
 
                 switch (backBoneAtom.getAtomType().name) {
                     case "C":
@@ -273,15 +273,15 @@ public class Loop {
             
             //Obtaining coordinates for sidechains
             Atom C = (Atom) newResidue.getAtomNode("C");
-            System.arraycopy(coordsArray[C.getXYZIndex() - 1],0,c,0,3);
+            System.arraycopy(coordsArray[C.getIndex() - 1],0,c,0,3);
             Atom CA = (Atom) newResidue.getAtomNode("CA");
-            System.arraycopy(coordsArray[CA.getXYZIndex() - 1],0,ca,0,3);
+            System.arraycopy(coordsArray[CA.getIndex() - 1],0,ca,0,3);
             Atom N = (Atom) newResidue.getAtomNode("N");
-            System.arraycopy(coordsArray[N.getXYZIndex() - 1],0,n,0,3);
+            System.arraycopy(coordsArray[N.getIndex() - 1],0,n,0,3);
             Atom BC = (Atom) backResidue.getAtomNode("C");
-            System.arraycopy(coordsArray[BC.getXYZIndex() - 1],0,bc,0,3);
+            System.arraycopy(coordsArray[BC.getIndex() - 1],0,bc,0,3);
             Atom FN = (Atom) forwardResidue.getAtomNode("N");
-            System.arraycopy(coordsArray[FN.getXYZIndex() - 1], 0, fn, 0, 3);
+            System.arraycopy(coordsArray[FN.getIndex() - 1], 0, fn, 0, 3);
             /*
             for (Atom backBoneAtom : backBoneAtoms) {
             //    backBoneAtom.setBuilt(true);
@@ -308,12 +308,12 @@ public class Loop {
             }
                     */
             Atom H = (Atom) newResidue.getAtomNode("H");
-            double [] h = coordsArray[H.getXYZIndex() - 1];
+            double [] h = coordsArray[H.getIndex() - 1];
             System.arraycopy(BondedUtils.determineIntxyz(n, 1.0, bc, 119.0, ca, 119.0, 1), 0, h, 0, 3);          //H
             coordsArray = fillCoordsArray(H,coordsArray, h);               
 
             Atom O = (Atom) newResidue.getAtomNode("O");
-            double [] o = coordsArray[O.getXYZIndex() - 1];
+            double [] o = coordsArray[O.getIndex() - 1];
             System.arraycopy(BondedUtils.determineIntxyz(c, 1.2255, ca, 122.4, fn, 180, 0), 0, o, 0, 3);          //O
             coordsArray = fillCoordsArray(O,coordsArray, o);               
 
@@ -321,7 +321,7 @@ public class Loop {
             
             if (name != AminoAcid3.GLY){
                 Atom HA = (Atom) newResidue.getAtomNode("HA");
-                double [] ha = coordsArray[HA.getXYZIndex() - 1];
+                double [] ha = coordsArray[HA.getIndex() - 1];
                 System.arraycopy(BondedUtils.determineIntxyz(ca, 1.0, n, 109.5, c, 109.5, -1), 0, ha, 0, 3);     //HA
                 coordsArray = fillCoordsArray(HA,coordsArray, ha);  
             }
@@ -330,10 +330,10 @@ public class Loop {
             switch (name) {
                 case GLY: {
                     Atom HA2 = (Atom) newResidue.getAtomNode("HA2");
-                    double [] ha2 = coordsArray[HA2.getXYZIndex() - 1];
+                    double [] ha2 = coordsArray[HA2.getIndex() - 1];
                     
                     Atom HA3 = (Atom) newResidue.getAtomNode("HA3");
-                    double [] ha3 = coordsArray[HA3.getXYZIndex() - 1];
+                    double [] ha3 = coordsArray[HA3.getIndex() - 1];
                     
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.00, n, 109.5, c, 109.5, 0), 0, ha2, 0, 3);      //HA2
                     coordsArray = fillCoordsArray(HA2,coordsArray, ha2);                      
@@ -345,13 +345,13 @@ public class Loop {
                 }
                 case ALA: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom HB1 = (Atom) newResidue.getAtomNode("HB1");
-                    double [] hb1 = coordsArray[HB1.getXYZIndex() - 1];
+                    double [] hb1 = coordsArray[HB1.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     
                     System.arraycopy(BondedUtils.determineIntxyz(ca, 1.54, n, 109.5, c, 107.8, 1), 0, cb, 0, 3);          //CB
                     coordsArray = fillCoordsArray(CB,coordsArray, cb);     
@@ -369,25 +369,25 @@ public class Loop {
                 }
                 case VAL: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG1 = (Atom) newResidue.getAtomNode("CG1");
-                    double [] cg1 = coordsArray[CG1.getXYZIndex() - 1];
+                    double [] cg1 = coordsArray[CG1.getIndex() - 1];
                     Atom CG2 = (Atom) newResidue.getAtomNode("CG2");
-                    double [] cg2 = coordsArray[CG2.getXYZIndex() - 1];
+                    double [] cg2 = coordsArray[CG2.getIndex() - 1];
                     Atom HB = (Atom) newResidue.getAtomNode("HB");
-                    double [] hb = coordsArray[HB.getXYZIndex() - 1];
+                    double [] hb = coordsArray[HB.getIndex() - 1];
                     Atom HG11 = (Atom) newResidue.getAtomNode("HG11");
-                    double [] hg11 = coordsArray[HG11.getXYZIndex() - 1];
+                    double [] hg11 = coordsArray[HG11.getIndex() - 1];
                     Atom HG12 = (Atom) newResidue.getAtomNode("HG12");
-                    double [] hg12 = coordsArray[HG12.getXYZIndex() - 1];
+                    double [] hg12 = coordsArray[HG12.getIndex() - 1];
                     Atom HG13 = (Atom) newResidue.getAtomNode("HG13");
-                    double [] hg13 = coordsArray[HG13.getXYZIndex() - 1];
+                    double [] hg13 = coordsArray[HG13.getIndex() - 1];
                     Atom HG21 = (Atom) newResidue.getAtomNode("HG21");
-                    double [] hg21 = coordsArray[HG21.getXYZIndex() - 1];
+                    double [] hg21 = coordsArray[HG21.getIndex() - 1];
                     Atom HG22 = (Atom) newResidue.getAtomNode("HG22");
-                    double [] hg22 = coordsArray[HG22.getXYZIndex() - 1];
+                    double [] hg22 = coordsArray[HG22.getIndex() - 1];
                     Atom HG23 = (Atom) newResidue.getAtomNode("HG23");
-                    double [] hg23 = coordsArray[HG23.getXYZIndex() - 1];
+                    double [] hg23 = coordsArray[HG23.getIndex() - 1];
                     Bond CG_CB = CB.getBond(CG1);
                     Bond HB_CB = CB.getBond(HB);
                     Bond HG_CG = HG11.getBond(CG1);
@@ -435,31 +435,31 @@ public class Loop {
                 }
                 case LEU: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD1 = (Atom) newResidue.getAtomNode("CD1");
-                    double [] cd1 = coordsArray[CD1.getXYZIndex() - 1];
+                    double [] cd1 = coordsArray[CD1.getIndex() - 1];
                     Atom CD2 = (Atom) newResidue.getAtomNode("CD2");
-                    double [] cd2 = coordsArray[CD2.getXYZIndex() - 1];
+                    double [] cd2 = coordsArray[CD2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG = (Atom) newResidue.getAtomNode("HG");
-                    double [] hg = coordsArray[HG.getXYZIndex() - 1];
+                    double [] hg = coordsArray[HG.getIndex() - 1];
                     Atom HD11 = (Atom) newResidue.getAtomNode("HD11");
-                    double [] hd11 = coordsArray[HD11.getXYZIndex() - 1];
+                    double [] hd11 = coordsArray[HD11.getIndex() - 1];
                     Atom HD12 = (Atom) newResidue.getAtomNode("HD12");
-                    double [] hd12 = coordsArray[HD12.getXYZIndex() - 1];
+                    double [] hd12 = coordsArray[HD12.getIndex() - 1];
                     Atom HD13 = (Atom) newResidue.getAtomNode("HD13");
-                    double [] hd13 = coordsArray[HD13.getXYZIndex() - 1];
+                    double [] hd13 = coordsArray[HD13.getIndex() - 1];
                     Atom HD21 = (Atom) newResidue.getAtomNode("HD21");
-                    double [] hd21 = coordsArray[HD21.getXYZIndex() - 1];
+                    double [] hd21 = coordsArray[HD21.getIndex() - 1];
                     Atom HD22 = (Atom) newResidue.getAtomNode("HD22");
-                    double [] hd22 = coordsArray[HD22.getXYZIndex() - 1];
+                    double [] hd22 = coordsArray[HD22.getIndex() - 1];
                     Atom HD23 = (Atom) newResidue.getAtomNode("HD23");
-                    double [] hd23 = coordsArray[HD23.getXYZIndex() - 1];
+                    double [] hd23 = coordsArray[HD23.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD1.getBond(CG);
                     Bond HB_CB = HB2.getBond(CB);
@@ -522,31 +522,31 @@ public class Loop {
                 }
                 case ILE: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG1 = (Atom) newResidue.getAtomNode("CG1");
-                    double [] cg1 = coordsArray[CG1.getXYZIndex() - 1];
+                    double [] cg1 = coordsArray[CG1.getIndex() - 1];
                     Atom CG2 = (Atom) newResidue.getAtomNode("CG2");
-                    double [] cg2 = coordsArray[CG2.getXYZIndex() - 1];
+                    double [] cg2 = coordsArray[CG2.getIndex() - 1];
                     Atom CD1 = (Atom) newResidue.getAtomNode("CD1");
-                    double [] cd1 = coordsArray[CD1.getXYZIndex() - 1];
+                    double [] cd1 = coordsArray[CD1.getIndex() - 1];
                     Atom HB = (Atom) newResidue.getAtomNode("HB");
-                    double [] hb = coordsArray[HB.getXYZIndex() - 1];
+                    double [] hb = coordsArray[HB.getIndex() - 1];
                     Atom HG12 = (Atom) newResidue.getAtomNode("HG12");
-                    double [] hg12 = coordsArray[HG12.getXYZIndex() - 1];
+                    double [] hg12 = coordsArray[HG12.getIndex() - 1];
                     Atom HG13 = (Atom) newResidue.getAtomNode("HG13");
-                    double [] hg13 = coordsArray[HG13.getXYZIndex() - 1];
+                    double [] hg13 = coordsArray[HG13.getIndex() - 1];
                     Atom HG21 = (Atom) newResidue.getAtomNode("HG21");
-                    double [] hg21 = coordsArray[HG21.getXYZIndex() - 1];
+                    double [] hg21 = coordsArray[HG21.getIndex() - 1];
                     Atom HG22 = (Atom) newResidue.getAtomNode("HG22");
-                    double [] hg22 = coordsArray[HG22.getXYZIndex() - 1];
+                    double [] hg22 = coordsArray[HG22.getIndex() - 1];
                     Atom HG23 = (Atom) newResidue.getAtomNode("HG23");
-                    double [] hg23 = coordsArray[HG23.getXYZIndex() - 1];
+                    double [] hg23 = coordsArray[HG23.getIndex() - 1];
                     Atom HD11 = (Atom) newResidue.getAtomNode("HD11");
-                    double [] hd11 = coordsArray[HD11.getXYZIndex() - 1];
+                    double [] hd11 = coordsArray[HD11.getIndex() - 1];
                     Atom HD12 = (Atom) newResidue.getAtomNode("HD12");
-                    double [] hd12 = coordsArray[HD12.getXYZIndex() - 1];
+                    double [] hd12 = coordsArray[HD12.getIndex() - 1];
                     Atom HD13 = (Atom) newResidue.getAtomNode("HD13");
-                    double [] hd13 = coordsArray[HD13.getXYZIndex() - 1];
+                    double [] hd13 = coordsArray[HD13.getIndex() - 1];
                     Bond CG1_CB = CG1.getBond(CB);
                     Bond CG2_CB = CG2.getBond(CB);
                     Bond CD1_CG1 = CD1.getBond(CG1);
@@ -617,15 +617,15 @@ public class Loop {
                 }
                 case SER: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom OG = (Atom) newResidue.getAtomNode("OG");
-                    double [] og = coordsArray[OG.getXYZIndex() - 1];
+                    double [] og = coordsArray[OG.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG = (Atom) newResidue.getAtomNode("HG");
-                    double [] hg = coordsArray[HG.getXYZIndex() - 1];
+                    double [] hg = coordsArray[HG.getIndex() - 1];
                     Bond OG_CB = OG.getBond(CB);
                     Bond HB_CB = HB2.getBond(CB);
                     Bond HG_OG = HG.getBond(OG);
@@ -656,21 +656,21 @@ public class Loop {
                 }
                 case THR: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom OG1 = (Atom) newResidue.getAtomNode("OG1");
-                    double [] og1 = coordsArray[OG1.getXYZIndex() - 1];
+                    double [] og1 = coordsArray[OG1.getIndex() - 1];
                     Atom CG2 = (Atom) newResidue.getAtomNode("CG2");
-                    double [] cg2 = coordsArray[CG2.getXYZIndex() - 1];
+                    double [] cg2 = coordsArray[CG2.getIndex() - 1];
                     Atom HB = (Atom) newResidue.getAtomNode("HB");
-                    double [] hb = coordsArray[HB.getXYZIndex() - 1];
+                    double [] hb = coordsArray[HB.getIndex() - 1];
                     Atom HG1 = (Atom) newResidue.getAtomNode("HG1");
-                    double [] hg1 = coordsArray[HG1.getXYZIndex() - 1];
+                    double [] hg1 = coordsArray[HG1.getIndex() - 1];
                     Atom HG21 = (Atom) newResidue.getAtomNode("HG21");
-                    double [] hg21 = coordsArray[HG21.getXYZIndex() - 1];
+                    double [] hg21 = coordsArray[HG21.getIndex() - 1];
                     Atom HG22 = (Atom) newResidue.getAtomNode("HG22");
-                    double [] hg22 = coordsArray[HG22.getXYZIndex() - 1];
+                    double [] hg22 = coordsArray[HG22.getIndex() - 1];
                     Atom HG23 = (Atom) newResidue.getAtomNode("HG23");
-                    double [] hg23 = coordsArray[HG23.getXYZIndex() - 1];
+                    double [] hg23 = coordsArray[HG23.getIndex() - 1];
                     Bond OG1_CB = OG1.getBond(CB);
                     Bond CG2_CB = CG2.getBond(CB);
                     Bond HB_CB = HB.getBond(CB);
@@ -719,15 +719,15 @@ public class Loop {
                 case CYS:
                 case CYX: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom SG = (Atom) newResidue.getAtomNode("SG");
-                    double [] sg = coordsArray[SG.getXYZIndex() - 1];
+                    double [] sg = coordsArray[SG.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG = (Atom) newResidue.getAtomNode("HG");
-                    double [] hg = coordsArray[HG.getXYZIndex() - 1];
+                    double [] hg = coordsArray[HG.getIndex() - 1];
                     Bond SG_CB = SG.getBond(CB);
                     Bond HB_CB = HB2.getBond(CB);
                     Bond HG_SG = HG.getBond(SG);
@@ -758,13 +758,13 @@ public class Loop {
                 }
                 case CYD: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom SG = (Atom) newResidue.getAtomNode("SG");
-                    double [] sg = coordsArray[SG.getXYZIndex() - 1];
+                    double [] sg = coordsArray[SG.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Bond SG_CB = SG.getBond(CB);
                     Bond HB_CB = HB2.getBond(CB);
                     double dSG_CB = SG_CB.bondType.distance;
@@ -788,33 +788,33 @@ public class Loop {
                 }
                 case PHE: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD1 = (Atom) newResidue.getAtomNode("CD1");
-                    double [] cd1 = coordsArray[CD1.getXYZIndex() - 1];
+                    double [] cd1 = coordsArray[CD1.getIndex() - 1];
                     Atom CD2 = (Atom) newResidue.getAtomNode("CD2");
-                    double [] cd2 = coordsArray[CD2.getXYZIndex() - 1];
+                    double [] cd2 = coordsArray[CD2.getIndex() - 1];
                     Atom CE1 = (Atom) newResidue.getAtomNode("CE1");
-                    double [] ce1 = coordsArray[CE1.getXYZIndex() - 1];
+                    double [] ce1 = coordsArray[CE1.getIndex() - 1];
                     Atom CE2 = (Atom) newResidue.getAtomNode("CE2");
-                    double [] ce2 = coordsArray[CE2.getXYZIndex() - 1];
+                    double [] ce2 = coordsArray[CE2.getIndex() - 1];
                     Atom CZ = (Atom) newResidue.getAtomNode("CZ");
-                    double [] cz = coordsArray[CZ.getXYZIndex() - 1];
+                    double [] cz = coordsArray[CZ.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD1 = (Atom) newResidue.getAtomNode("HD1");
-                    double [] hd1 = coordsArray[HD1.getXYZIndex() - 1];
+                    double [] hd1 = coordsArray[HD1.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HE1 = (Atom) newResidue.getAtomNode("HE1");
-                    double [] he1 = coordsArray[HE1.getXYZIndex() - 1];
+                    double [] he1 = coordsArray[HE1.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Atom HZ = (Atom) newResidue.getAtomNode("HZ");
-                    double [] hz = coordsArray[HZ.getXYZIndex() - 1];
+                    double [] hz = coordsArray[HZ.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD1.getBond(CG);
                     Bond CE_CD = CE1.getBond(CD1);
@@ -892,23 +892,23 @@ public class Loop {
                 }
                 case PRO: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD = (Atom) newResidue.getAtomNode("CD");
-                    double [] cd = coordsArray[CD.getXYZIndex() - 1];
+                    double [] cd = coordsArray[CD.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG2 = (Atom) newResidue.getAtomNode("HG2");
-                    double [] hg2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hg2 = coordsArray[HG2.getIndex() - 1];
                     Atom HG3 = (Atom) newResidue.getAtomNode("HG3");
-                    double [] hg3 = coordsArray[HG3.getXYZIndex() - 1];
+                    double [] hg3 = coordsArray[HG3.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HD3 = (Atom) newResidue.getAtomNode("HD3");
-                    double [] hd3 = coordsArray[HD3.getXYZIndex() - 1];
+                    double [] hd3 = coordsArray[HD3.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD.getBond(CG);
                     Bond HB_CB = HB2.getBond(CB);
@@ -959,35 +959,35 @@ public class Loop {
                 }
                 case TYR: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD1 = (Atom) newResidue.getAtomNode("CD1");
-                    double [] cd1 = coordsArray[CD1.getXYZIndex() - 1];
+                    double [] cd1 = coordsArray[CD1.getIndex() - 1];
                     Atom CD2 = (Atom) newResidue.getAtomNode("CD2");
-                    double [] cd2 = coordsArray[CD2.getXYZIndex() - 1];
+                    double [] cd2 = coordsArray[CD2.getIndex() - 1];
                     Atom CE1 = (Atom) newResidue.getAtomNode("CE1");
-                    double [] ce1 = coordsArray[CE1.getXYZIndex() - 1];
+                    double [] ce1 = coordsArray[CE1.getIndex() - 1];
                     Atom CE2 = (Atom) newResidue.getAtomNode("CE2");
-                    double [] ce2 = coordsArray[CE2.getXYZIndex() - 1];
+                    double [] ce2 = coordsArray[CE2.getIndex() - 1];
                     Atom CZ = (Atom) newResidue.getAtomNode("CZ");
-                    double [] cz = coordsArray[CZ.getXYZIndex() - 1];
+                    double [] cz = coordsArray[CZ.getIndex() - 1];
                     Atom OH = (Atom) newResidue.getAtomNode("OH");
-                    double [] oh = coordsArray[OH.getXYZIndex() - 1];
+                    double [] oh = coordsArray[OH.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD1 = (Atom) newResidue.getAtomNode("HD1");
-                    double [] hd1 = coordsArray[HD1.getXYZIndex() - 1];
+                    double [] hd1 = coordsArray[HD1.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HE1 = (Atom) newResidue.getAtomNode("HE1");
-                    double [] he1 = coordsArray[HE1.getXYZIndex() - 1];
+                    double [] he1 = coordsArray[HE1.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Atom HH = (Atom) newResidue.getAtomNode("HH");
-                    double [] hh = coordsArray[HH.getXYZIndex() - 1];
+                    double [] hh = coordsArray[HH.getIndex() - 1];
                     Bond CB_CA = CB.getBond(CA);
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD1.getBond(CG);
@@ -1074,33 +1074,33 @@ public class Loop {
                 }
                 case TYD: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD1 = (Atom) newResidue.getAtomNode("CD1");
-                    double [] cd1 = coordsArray[CD1.getXYZIndex() - 1];
+                    double [] cd1 = coordsArray[CD1.getIndex() - 1];
                     Atom CD2 = (Atom) newResidue.getAtomNode("CD2");
-                    double [] cd2 = coordsArray[CD2.getXYZIndex() - 1];
+                    double [] cd2 = coordsArray[CD2.getIndex() - 1];
                     Atom CE1 = (Atom) newResidue.getAtomNode("CE1");
-                    double [] ce1 = coordsArray[CE1.getXYZIndex() - 1];
+                    double [] ce1 = coordsArray[CE1.getIndex() - 1];
                     Atom CE2 = (Atom) newResidue.getAtomNode("CE2");
-                    double [] ce2 = coordsArray[CE2.getXYZIndex() - 1];
+                    double [] ce2 = coordsArray[CE2.getIndex() - 1];
                     Atom CZ = (Atom) newResidue.getAtomNode("CZ");
-                    double [] cz = coordsArray[CZ.getXYZIndex() - 1];
+                    double [] cz = coordsArray[CZ.getIndex() - 1];
                     Atom OH = (Atom) newResidue.getAtomNode("OH");
-                    double [] oh = coordsArray[OH.getXYZIndex() - 1];
+                    double [] oh = coordsArray[OH.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD1 = (Atom) newResidue.getAtomNode("HD1");
-                    double [] hd1 = coordsArray[HD1.getXYZIndex() - 1];
+                    double [] hd1 = coordsArray[HD1.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HE1 = (Atom) newResidue.getAtomNode("HE1");
-                    double [] he1 = coordsArray[HE1.getXYZIndex() - 1];
+                    double [] he1 = coordsArray[HE1.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD1.getBond(CG);
                     Bond CE_CD = CE1.getBond(CD1);
@@ -1178,41 +1178,41 @@ public class Loop {
                 }
                 case TRP: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD1 = (Atom) newResidue.getAtomNode("CD1");
-                    double [] cd1 = coordsArray[CD1.getXYZIndex() - 1];
+                    double [] cd1 = coordsArray[CD1.getIndex() - 1];
                     Atom CD2 = (Atom) newResidue.getAtomNode("CD2");
-                    double [] cd2 = coordsArray[CD2.getXYZIndex() - 1];
+                    double [] cd2 = coordsArray[CD2.getIndex() - 1];
                     Atom NE1 = (Atom) newResidue.getAtomNode("NE1");
-                    double [] ne1 = coordsArray[NE1.getXYZIndex() - 1];
+                    double [] ne1 = coordsArray[NE1.getIndex() - 1];
                     Atom CE2 = (Atom) newResidue.getAtomNode("CE2");
-                    double [] ce2 = coordsArray[CE2.getXYZIndex() - 1];
+                    double [] ce2 = coordsArray[CE2.getIndex() - 1];
                     Atom CE3 = (Atom) newResidue.getAtomNode("CE3");
-                    double [] ce3 = coordsArray[CE3.getXYZIndex() - 1];
+                    double [] ce3 = coordsArray[CE3.getIndex() - 1];
                     Atom CZ2 = (Atom) newResidue.getAtomNode("CZ2");
-                    double [] cz2 = coordsArray[CZ2.getXYZIndex() - 1];
+                    double [] cz2 = coordsArray[CZ2.getIndex() - 1];
                     Atom CZ3 = (Atom) newResidue.getAtomNode("CZ3");
-                    double [] cz3 = coordsArray[CZ3.getXYZIndex() - 1];
+                    double [] cz3 = coordsArray[CZ3.getIndex() - 1];
                     Atom CH2 = (Atom) newResidue.getAtomNode("CH2");
-                    double [] ch2 = coordsArray[CH2.getXYZIndex() - 1];
+                    double [] ch2 = coordsArray[CH2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD1 = (Atom) newResidue.getAtomNode("HD1");
-                    double [] hd1 = coordsArray[HD1.getXYZIndex() - 1];
+                    double [] hd1 = coordsArray[HD1.getIndex() - 1];
                     Atom HE1 = (Atom) newResidue.getAtomNode("HE1");
-                    double [] he1 = coordsArray[HE1.getXYZIndex() - 1];
+                    double [] he1 = coordsArray[HE1.getIndex() - 1];
                     Atom HE3 = (Atom) newResidue.getAtomNode("HE3");
-                    double [] he3 = coordsArray[HE3.getXYZIndex() - 1];
+                    double [] he3 = coordsArray[HE3.getIndex() - 1];
                     Atom HZ2 = (Atom) newResidue.getAtomNode("HZ2");
-                    double [] hz2 = coordsArray[HZ2.getXYZIndex() - 1];
+                    double [] hz2 = coordsArray[HZ2.getIndex() - 1];
                     Atom HZ3 = (Atom) newResidue.getAtomNode("HZ3");
-                    double [] hz3 = coordsArray[HZ3.getXYZIndex() - 1];
+                    double [] hz3 = coordsArray[HZ3.getIndex() - 1];
                     Atom HH2 = (Atom) newResidue.getAtomNode("HH2");
-                    double [] hh2 = coordsArray[HH2.getXYZIndex() - 1];
+                    double [] hh2 = coordsArray[HH2.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD1_CG = CD1.getBond(CG);
                     Bond CD2_CG = CD2.getBond(CG);
@@ -1334,29 +1334,29 @@ public class Loop {
                 }
                 case HIS: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom ND1 = (Atom) newResidue.getAtomNode("ND1");
-                    double [] nd1 = coordsArray[ND1.getXYZIndex() - 1];
+                    double [] nd1 = coordsArray[ND1.getIndex() - 1];
                     Atom CD2 = (Atom) newResidue.getAtomNode("CD2");
-                    double [] cd2 = coordsArray[CD2.getXYZIndex() - 1];
+                    double [] cd2 = coordsArray[CD2.getIndex() - 1];
                     Atom CE1 = (Atom) newResidue.getAtomNode("CE1");
-                    double [] ce1 = coordsArray[CE1.getXYZIndex() - 1];
+                    double [] ce1 = coordsArray[CE1.getIndex() - 1];
                     Atom NE2 = (Atom) newResidue.getAtomNode("NE2");
-                    double [] ne2 = coordsArray[NE2.getXYZIndex() - 1];
+                    double [] ne2 = coordsArray[NE2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD1 = (Atom) newResidue.getAtomNode("HD1");
-                    double [] hd1 = coordsArray[HD1.getXYZIndex() - 1];
+                    double [] hd1 = coordsArray[HD1.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HE1 = (Atom) newResidue.getAtomNode("HE1");
-                    double [] he1 = coordsArray[HE1.getXYZIndex() - 1];
+                    double [] he1 = coordsArray[HE1.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond ND1_CG = ND1.getBond(CG);
                     Bond CD2_CG = CD2.getBond(CG);
@@ -1436,27 +1436,27 @@ public class Loop {
                 }
                 case HID: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom ND1 = (Atom) newResidue.getAtomNode("ND1");
-                    double [] nd1 = coordsArray[ND1.getXYZIndex() - 1];
+                    double [] nd1 = coordsArray[ND1.getIndex() - 1];
                     Atom CD2 = (Atom) newResidue.getAtomNode("CD2");
-                    double [] cd2 = coordsArray[CD2.getXYZIndex() - 1];
+                    double [] cd2 = coordsArray[CD2.getIndex() - 1];
                     Atom CE1 = (Atom) newResidue.getAtomNode("CE1");
-                    double [] ce1 = coordsArray[CE1.getXYZIndex() - 1];
+                    double [] ce1 = coordsArray[CE1.getIndex() - 1];
                     Atom NE2 = (Atom) newResidue.getAtomNode("NE2");
-                    double [] ne2 = coordsArray[NE2.getXYZIndex() - 1];
+                    double [] ne2 = coordsArray[NE2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD1 = (Atom) newResidue.getAtomNode("HD1");
-                    double [] hd1 = coordsArray[HD1.getXYZIndex() - 1];
+                    double [] hd1 = coordsArray[HD1.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HE1 = (Atom) newResidue.getAtomNode("HE1");
-                    double [] he1 = coordsArray[HE1.getXYZIndex() - 1];
+                    double [] he1 = coordsArray[HE1.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond ND1_CG = ND1.getBond(CG);
                     Bond CD2_CG = CD2.getBond(CG);
@@ -1529,27 +1529,27 @@ public class Loop {
                 }
                 case HIE: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom ND1 = (Atom) newResidue.getAtomNode("ND1");
-                    double [] nd1 = coordsArray[ND1.getXYZIndex() - 1];
+                    double [] nd1 = coordsArray[ND1.getIndex() - 1];
                     Atom CD2 = (Atom) newResidue.getAtomNode("CD2");
-                    double [] cd2 = coordsArray[CD2.getXYZIndex() - 1];
+                    double [] cd2 = coordsArray[CD2.getIndex() - 1];
                     Atom CE1 = (Atom) newResidue.getAtomNode("CE1");
-                    double [] ce1 = coordsArray[CE1.getXYZIndex() - 1];
+                    double [] ce1 = coordsArray[CE1.getIndex() - 1];
                     Atom NE2 = (Atom) newResidue.getAtomNode("NE2");
-                    double [] ne2 = coordsArray[NE2.getXYZIndex() - 1];
+                    double [] ne2 = coordsArray[NE2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HE1 = (Atom) newResidue.getAtomNode("HE1");
-                    double [] he1 = coordsArray[HE1.getXYZIndex() - 1];
+                    double [] he1 = coordsArray[HE1.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond ND1_CG = ND1.getBond(CG);
                     Bond CD2_CG = CD2.getBond(CG);
@@ -1622,17 +1622,17 @@ public class Loop {
                 }
                 case ASP: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom OD1 = (Atom) newResidue.getAtomNode("OD1");
-                    double [] od1 = coordsArray[OD1.getXYZIndex() - 1];
+                    double [] od1 = coordsArray[OD1.getIndex() - 1];
                     Atom OD2 = (Atom) newResidue.getAtomNode("OD2");
-                    double [] od2 = coordsArray[OD2.getXYZIndex() - 1];
+                    double [] od2 = coordsArray[OD2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond OD1_CG = OD1.getBond(CG);
                     Bond OD2_CG = OD2.getBond(CG);
@@ -1670,19 +1670,19 @@ public class Loop {
                 }
                 case ASH: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom OD1 = (Atom) newResidue.getAtomNode("OD1");
-                    double [] od1 = coordsArray[OD1.getXYZIndex() - 1];
+                    double [] od1 = coordsArray[OD1.getIndex() - 1];
                     Atom OD2 = (Atom) newResidue.getAtomNode("OD2");
-                    double [] od2 = coordsArray[OD2.getXYZIndex() - 1];
+                    double [] od2 = coordsArray[OD2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond OD1_CG = OD1.getBond(CG);
                     Bond OD2_CG = OD2.getBond(CG);
@@ -1727,21 +1727,21 @@ public class Loop {
                 }
                 case ASN: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom OD1 = (Atom) newResidue.getAtomNode("OD1");
-                    double [] od1 = coordsArray[OD1.getXYZIndex() - 1];
+                    double [] od1 = coordsArray[OD1.getIndex() - 1];
                     Atom ND2 = (Atom) newResidue.getAtomNode("ND2");
-                    double [] nd2 = coordsArray[ND2.getXYZIndex() - 1];
+                    double [] nd2 = coordsArray[ND2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HD21 = (Atom) newResidue.getAtomNode("HD21");
-                    double [] hd21 = coordsArray[HD21.getXYZIndex() - 1];
+                    double [] hd21 = coordsArray[HD21.getIndex() - 1];
                     Atom HD22 = (Atom) newResidue.getAtomNode("HD22");
-                    double [] hd22 = coordsArray[HD22.getXYZIndex() - 1];
+                    double [] hd22 = coordsArray[HD22.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond OD1_CG = OD1.getBond(CG);
                     Bond ND2_CG = ND2.getBond(CG);
@@ -1789,23 +1789,23 @@ public class Loop {
                 }
                 case GLU: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD = (Atom) newResidue.getAtomNode("CD");
-                    double [] cd = coordsArray[CD.getXYZIndex() - 1];
+                    double [] cd = coordsArray[CD.getIndex() - 1];
                     Atom OE1 = (Atom) newResidue.getAtomNode("OE1");
-                    double [] oe1 = coordsArray[OE1.getXYZIndex() - 1];
+                    double [] oe1 = coordsArray[OE1.getIndex() - 1];
                     Atom OE2 = (Atom) newResidue.getAtomNode("OE2");
-                    double [] oe2 = coordsArray[OE2.getXYZIndex() - 1];
+                    double [] oe2 = coordsArray[OE2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG2 = (Atom) newResidue.getAtomNode("HG2");
-                    double [] hg2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hg2 = coordsArray[HG2.getIndex() - 1];
                     Atom HG3 = (Atom) newResidue.getAtomNode("HG3");
-                    double [] hg3 = coordsArray[HG3.getXYZIndex() - 1];
+                    double [] hg3 = coordsArray[HG3.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD.getBond(CG);
                     Bond OE1_CD = OE1.getBond(CD);
@@ -1860,25 +1860,25 @@ public class Loop {
                 }
                 case GLH: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD = (Atom) newResidue.getAtomNode("CD");
-                    double [] cd = coordsArray[CD.getXYZIndex() - 1];
+                    double [] cd = coordsArray[CD.getIndex() - 1];
                     Atom OE1 = (Atom) newResidue.getAtomNode("OE1");
-                    double [] oe1 = coordsArray[OE1.getXYZIndex() - 1];
+                    double [] oe1 = coordsArray[OE1.getIndex() - 1];
                     Atom OE2 = (Atom) newResidue.getAtomNode("OE2");
-                    double [] oe2 = coordsArray[OE2.getXYZIndex() - 1];
+                    double [] oe2 = coordsArray[OE2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG2 = (Atom) newResidue.getAtomNode("HG2");
-                    double [] hg2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hg2 = coordsArray[HG2.getIndex() - 1];
                     Atom HG3 = (Atom) newResidue.getAtomNode("HG3");
-                    double [] hg3 = coordsArray[HG3.getXYZIndex() - 1];
+                    double [] hg3 = coordsArray[HG3.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD.getBond(CG);
                     Bond OE1_CD = OE1.getBond(CD);
@@ -1940,27 +1940,27 @@ public class Loop {
                 }
                 case GLN: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD = (Atom) newResidue.getAtomNode("CD");
-                    double [] cd = coordsArray[CD.getXYZIndex() - 1];
+                    double [] cd = coordsArray[CD.getIndex() - 1];
                     Atom OE1 = (Atom) newResidue.getAtomNode("OE1");
-                    double [] oe1 = coordsArray[OE1.getXYZIndex() - 1];
+                    double [] oe1 = coordsArray[OE1.getIndex() - 1];
                     Atom NE2 = (Atom) newResidue.getAtomNode("NE2");
-                    double [] ne2 = coordsArray[NE2.getXYZIndex() - 1];
+                    double [] ne2 = coordsArray[NE2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG2 = (Atom) newResidue.getAtomNode("HG2");
-                    double [] hg2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hg2 = coordsArray[HG2.getIndex() - 1];
                     Atom HG3 = (Atom) newResidue.getAtomNode("HG3");
-                    double [] hg3 = coordsArray[HG3.getXYZIndex() - 1];
+                    double [] hg3 = coordsArray[HG3.getIndex() - 1];
                     Atom HE21 = (Atom) newResidue.getAtomNode("HE21");
-                    double [] he21 = coordsArray[HE21.getXYZIndex() - 1];
+                    double [] he21 = coordsArray[HE21.getIndex() - 1];
                     Atom HE22 = (Atom) newResidue.getAtomNode("HE22");
-                    double [] he22 = coordsArray[HE22.getXYZIndex() - 1];
+                    double [] he22 = coordsArray[HE22.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD.getBond(CG);
                     Bond OE1_CD = OE1.getBond(CD);
@@ -2025,27 +2025,27 @@ public class Loop {
                 }
                 case MET: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom SD = (Atom) newResidue.getAtomNode("SD");
-                    double [] sd = coordsArray[SD.getXYZIndex() - 1];
+                    double [] sd = coordsArray[SD.getIndex() - 1];
                     Atom CE = (Atom) newResidue.getAtomNode("CE");
-                    double [] ce = coordsArray[CE.getXYZIndex() - 1];
+                    double [] ce = coordsArray[CE.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG2 = (Atom) newResidue.getAtomNode("HG2");
-                    double [] hg2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hg2 = coordsArray[HG2.getIndex() - 1];
                     Atom HG3 = (Atom) newResidue.getAtomNode("HG3");
-                    double [] hg3 = coordsArray[HG3.getXYZIndex() - 1];
+                    double [] hg3 = coordsArray[HG3.getIndex() - 1];
                     Atom HE1 = (Atom) newResidue.getAtomNode("HE1");
-                    double [] he1 = coordsArray[HE1.getXYZIndex() - 1];
+                    double [] he1 = coordsArray[HE1.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Atom HE3 = (Atom) newResidue.getAtomNode("HE3");
-                    double [] he3 = coordsArray[HE3.getXYZIndex() - 1];
+                    double [] he3 = coordsArray[HE3.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond SD_CG = SD.getBond(CG);
                     Bond CE_SD = CE.getBond(SD);
@@ -2106,37 +2106,37 @@ public class Loop {
                 }
                 case LYS: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD = (Atom) newResidue.getAtomNode("CD");
-                    double [] cd = coordsArray[CD.getXYZIndex() - 1];
+                    double [] cd = coordsArray[CD.getIndex() - 1];
                     Atom CE = (Atom) newResidue.getAtomNode("CE");
-                    double [] ce = coordsArray[CE.getXYZIndex() - 1];
+                    double [] ce = coordsArray[CE.getIndex() - 1];
                     Atom NZ = (Atom) newResidue.getAtomNode("NZ");
-                    double [] nz = coordsArray[NZ.getXYZIndex() - 1];
+                    double [] nz = coordsArray[NZ.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG2 = (Atom) newResidue.getAtomNode("HG2");
-                    double [] hg2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hg2 = coordsArray[HG2.getIndex() - 1];
                     Atom HG3 = (Atom) newResidue.getAtomNode("HG3");
-                    double [] hg3 = coordsArray[HG3.getXYZIndex() - 1];
+                    double [] hg3 = coordsArray[HG3.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HD3 = (Atom) newResidue.getAtomNode("HD3");
-                    double [] hd3 = coordsArray[HD3.getXYZIndex() - 1];
+                    double [] hd3 = coordsArray[HD3.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Atom HE3 = (Atom) newResidue.getAtomNode("HE3");
-                    double [] he3 = coordsArray[HE3.getXYZIndex() - 1];
+                    double [] he3 = coordsArray[HE3.getIndex() - 1];
                     Atom HZ1 = (Atom) newResidue.getAtomNode("HZ1");
-                    double [] hz1 = coordsArray[HZ1.getXYZIndex() - 1];
+                    double [] hz1 = coordsArray[HZ1.getIndex() - 1];
                     Atom HZ2 = (Atom) newResidue.getAtomNode("HZ2");
-                    double [] hz2 = coordsArray[HZ2.getXYZIndex() - 1];
+                    double [] hz2 = coordsArray[HZ2.getIndex() - 1];
                     Atom HZ3 = (Atom) newResidue.getAtomNode("HZ3");
-                    double [] hz3 = coordsArray[HZ3.getXYZIndex() - 1];
+                    double [] hz3 = coordsArray[HZ3.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD.getBond(CG);
                     Bond CE_CD = CE.getBond(CD);
@@ -2224,35 +2224,35 @@ public class Loop {
                 }
                 case LYD: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD = (Atom) newResidue.getAtomNode("CD");
-                    double [] cd = coordsArray[CD.getXYZIndex() - 1];
+                    double [] cd = coordsArray[CD.getIndex() - 1];
                     Atom CE = (Atom) newResidue.getAtomNode("CE");
-                    double [] ce = coordsArray[CE.getXYZIndex() - 1];
+                    double [] ce = coordsArray[CE.getIndex() - 1];
                     Atom NZ = (Atom) newResidue.getAtomNode("NZ");
-                    double [] nz = coordsArray[NZ.getXYZIndex() - 1];
+                    double [] nz = coordsArray[NZ.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG2 = (Atom) newResidue.getAtomNode("HG2");
-                    double [] hg2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hg2 = coordsArray[HG2.getIndex() - 1];
                     Atom HG3 = (Atom) newResidue.getAtomNode("HG3");
-                    double [] hg3 = coordsArray[HG3.getXYZIndex() - 1];
+                    double [] hg3 = coordsArray[HG3.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HD2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HD2.getIndex() - 1];
                     Atom HD3 = (Atom) newResidue.getAtomNode("HD3");
-                    double [] hd3 = coordsArray[HD3.getXYZIndex() - 1];
+                    double [] hd3 = coordsArray[HD3.getIndex() - 1];
                     Atom HE2 = (Atom) newResidue.getAtomNode("HE2");
-                    double [] he2 = coordsArray[HE2.getXYZIndex() - 1];
+                    double [] he2 = coordsArray[HE2.getIndex() - 1];
                     Atom HE3 = (Atom) newResidue.getAtomNode("HE3");
-                    double [] he3 = coordsArray[HE3.getXYZIndex() - 1];
+                    double [] he3 = coordsArray[HE3.getIndex() - 1];
                     Atom HZ1 = (Atom) newResidue.getAtomNode("HZ1");
-                    double [] hz1 = coordsArray[HZ1.getXYZIndex() - 1];
+                    double [] hz1 = coordsArray[HZ1.getIndex() - 1];
                     Atom HZ2 = (Atom) newResidue.getAtomNode("HZ2");
-                    double [] hz2 = coordsArray[HZ2.getXYZIndex() - 1];
+                    double [] hz2 = coordsArray[HZ2.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD.getBond(CG);
                     Bond CE_CD = CE.getBond(CD);
@@ -2337,41 +2337,41 @@ public class Loop {
                 }
                 case ARG: {
                     Atom CB = (Atom) newResidue.getAtomNode("CB");
-                    double [] cb = coordsArray[CB.getXYZIndex() - 1];
+                    double [] cb = coordsArray[CB.getIndex() - 1];
                     Atom CG = (Atom) newResidue.getAtomNode("CG");
-                    double [] cg = coordsArray[CG.getXYZIndex() - 1];
+                    double [] cg = coordsArray[CG.getIndex() - 1];
                     Atom CD = (Atom) newResidue.getAtomNode("CD");
-                    double [] cd = coordsArray[CD.getXYZIndex() - 1];
+                    double [] cd = coordsArray[CD.getIndex() - 1];
                     Atom NE = (Atom) newResidue.getAtomNode("NE");
-                    double [] ne = coordsArray[NE.getXYZIndex() - 1];
+                    double [] ne = coordsArray[NE.getIndex() - 1];
                     Atom CZ = (Atom) newResidue.getAtomNode("CZ");
-                    double [] cz = coordsArray[CZ.getXYZIndex() - 1];
+                    double [] cz = coordsArray[CZ.getIndex() - 1];
                     Atom NH1 = (Atom) newResidue.getAtomNode("NH1");
-                    double [] nh1 = coordsArray[NH1.getXYZIndex() - 1];
+                    double [] nh1 = coordsArray[NH1.getIndex() - 1];
                     Atom NH2 = (Atom) newResidue.getAtomNode("NH2");
-                    double [] nh2 = coordsArray[NH2.getXYZIndex() - 1];
+                    double [] nh2 = coordsArray[NH2.getIndex() - 1];
                     Atom HB2 = (Atom) newResidue.getAtomNode("HB2");
-                    double [] hb2 = coordsArray[HB2.getXYZIndex() - 1];
+                    double [] hb2 = coordsArray[HB2.getIndex() - 1];
                     Atom HB3 = (Atom) newResidue.getAtomNode("HB3");
-                    double [] hb3 = coordsArray[HB3.getXYZIndex() - 1];
+                    double [] hb3 = coordsArray[HB3.getIndex() - 1];
                     Atom HG2 = (Atom) newResidue.getAtomNode("HG2");
-                    double [] hg2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hg2 = coordsArray[HG2.getIndex() - 1];
                     Atom HG3 = (Atom) newResidue.getAtomNode("HG3");
-                    double [] hg3 = coordsArray[HG3.getXYZIndex() - 1];
+                    double [] hg3 = coordsArray[HG3.getIndex() - 1];
                     Atom HD2 = (Atom) newResidue.getAtomNode("HD2");
-                    double [] hd2 = coordsArray[HG2.getXYZIndex() - 1];
+                    double [] hd2 = coordsArray[HG2.getIndex() - 1];
                     Atom HD3 = (Atom) newResidue.getAtomNode("HD3");
-                    double [] hd3 = coordsArray[HD3.getXYZIndex() - 1];
+                    double [] hd3 = coordsArray[HD3.getIndex() - 1];
                     Atom HE = (Atom) newResidue.getAtomNode("HE");
-                    double [] he = coordsArray[HE.getXYZIndex() - 1];
+                    double [] he = coordsArray[HE.getIndex() - 1];
                     Atom HH11 = (Atom) newResidue.getAtomNode("HH11");
-                    double [] hh11 = coordsArray[HH11.getXYZIndex() - 1];
+                    double [] hh11 = coordsArray[HH11.getIndex() - 1];
                     Atom HH12 = (Atom) newResidue.getAtomNode("HH12");
-                    double [] hh12 = coordsArray[HH12.getXYZIndex() - 1];
+                    double [] hh12 = coordsArray[HH12.getIndex() - 1];
                     Atom HH21 = (Atom) newResidue.getAtomNode("HH21");
-                    double [] hh21 = coordsArray[HH21.getXYZIndex() - 1];
+                    double [] hh21 = coordsArray[HH21.getIndex() - 1];
                     Atom HH22 = (Atom) newResidue.getAtomNode("HH22");
-                    double [] hh22 = coordsArray[HH22.getXYZIndex() - 1];
+                    double [] hh22 = coordsArray[HH22.getIndex() - 1];
                     Bond CG_CB = CG.getBond(CB);
                     Bond CD_CG = CD.getBond(CG);
                     Bond NE_CD = NE.getBond(CD);
@@ -2493,7 +2493,7 @@ public class Loop {
         useAltCoordinates(true);
     }
     private double[][] fillCoordsArray(Atom atom, double[][] coordsArray, double[] determinedXYZ) {
-        int XYZIndex = atom.getXYZIndex() - 1;
+        int XYZIndex = atom.getIndex() - 1;
         coordsArray[XYZIndex][0] = determinedXYZ[0];
         coordsArray[XYZIndex][1] = determinedXYZ[1];
         coordsArray[XYZIndex][2] = determinedXYZ[2];

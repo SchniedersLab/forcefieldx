@@ -232,7 +232,7 @@ public class FiniteDifferenceTest {
         double gxyz[] = new double[3];
         for (int i = 0; i < atoms.length; i++) {
             Atom atom = atomArray[atoms[i]];
-            int index = atom.getXYZIndex() - 1;
+            int index = atom.getXyzIndex() - 1;
             if (atom.getOccupancy() == 0.0) {
                 continue;
             }

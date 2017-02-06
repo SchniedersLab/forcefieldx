@@ -44,7 +44,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -760,8 +759,8 @@ public final class PDBFilter extends SystemFilter {
                                     // The new atom has been added.
                                     atoms.put(serial, newAtom);
                                     // Check if the newAtom took the xyzIndex of a previous alternate conformer.
-                                    if (newAtom.xyzIndex == 0) {
-                                        newAtom.setXYZIndex(xyzIndex++);
+                                    if (newAtom.getXyzIndex() == 0) {
+                                        newAtom.setXyzIndex(xyzIndex++);
                                     }
                                     if (printAtom) {
                                         logger.info(newAtom.toString());
@@ -867,7 +866,7 @@ public final class PDBFilter extends SystemFilter {
                             } else {
                                 // The new atom has been added.
                                 atoms.put(serial, newAtom);
-                                newAtom.setXYZIndex(xyzIndex++);
+                                newAtom.setXyzIndex(xyzIndex++);
                             }
                             break;
                         case CRYST1:
@@ -1326,7 +1325,7 @@ public final class PDBFilter extends SystemFilter {
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
-                                    if (SG1.xyzIndex < SG2.xyzIndex) {
+                                    if (SG1.getXyzIndex() < SG2.getXyzIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
                                             bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
@@ -1699,7 +1698,7 @@ public final class PDBFilter extends SystemFilter {
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
-                                    if (SG1.xyzIndex < SG2.xyzIndex) {
+                                    if (SG1.getXyzIndex() < SG2.getXyzIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
                                             bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
@@ -2262,7 +2261,7 @@ public final class PDBFilter extends SystemFilter {
     private void numberAtoms() {
         int index = 1;
         for (Atom a : activeMolecularAssembly.getAtomArray()) {
-            a.setXYZIndex(index++);
+            a.setXyzIndex(index++);
         }
         index--;
         if (logger.isLoggable(Level.INFO)) {

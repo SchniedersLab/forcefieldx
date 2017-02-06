@@ -323,17 +323,20 @@ public class Polymer extends MSGroup {
     }
 
     /**
-     * Get the Phi Psi List for the Polymer
+     * TODO: Was the sole hook on BondedTerm equality definition via getID();
+     * will rewrite with a simple Comparator soon.
      *
      * @return An ArrayList of Dihedral objects representing the Phi/Psi angles
      * of the Polymer, useful for creating Ramachandran plots
      */
     public List<ArrayList<Torsion>> getPhiPsiList() {
+        throw new UnsupportedOperationException();
+        /*
         MSNode dihedrals;
-        ListIterator li, lj;
-        List<ArrayList<Torsion>> phipsi = new ArrayList<ArrayList<Torsion>>();
-        ArrayList<Torsion> phi = new ArrayList<Torsion>();
-        ArrayList<Torsion> psi = new ArrayList<Torsion>();
+        ListIterator<MSNode> li, lj;
+        List<ArrayList<Torsion>> phipsi = new ArrayList<>();
+        ArrayList<Torsion> phi = new ArrayList<>();
+        ArrayList<Torsion> psi = new ArrayList<>();
         phipsi.add(phi);
         phipsi.add(psi);
         MSNode joints = getTerms();
@@ -352,6 +355,7 @@ public class Polymer extends MSGroup {
             }
         }
         return phipsi;
+        */
     }
 
     /**

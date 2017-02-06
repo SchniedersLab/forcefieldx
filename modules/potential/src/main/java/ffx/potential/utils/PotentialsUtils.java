@@ -114,6 +114,12 @@ public class PotentialsUtils implements PotentialsFunctions {
         lastFilter = opener.getFilter();
         return opener.getAllAssemblies();
     }
+    
+    public MolecularAssembly open(File file) {
+        PotentialsFileOpener opener = new PotentialsFileOpener(file);
+        opener.run();
+        return opener.getAssembly();
+    }
 
     /**
      * Opens an array of files and returns the created MolecularAssembly
@@ -504,7 +510,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             AtomType atomType = atoms[i].getAtomType();
             int typeNum = atomType.type;
             int classNum = atomType.atomClass;
-            int xyzIndex = atoms[i].xyzIndex;
+            int xyzIndex = atoms[i].getIndex();
             sb.append(String.format("   %d: %d %s %s %d %d\n", i, xyzIndex, resName, atomName, typeNum, classNum));
         }
         logger.info(sb.toString());

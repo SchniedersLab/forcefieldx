@@ -54,7 +54,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.extended.ExtUtils.SB;
-import ffx.potential.extended.ExtendedVariable.AtomList;
+import ffx.potential.nonbonded.Multipole;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -71,6 +71,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
     public static boolean esvSystemActive = false;
+    private static boolean printedConfig = false;
 
     // Properties: Static Final
     public static final boolean esvTempOverride = prop("esv-tempOverride", true);
@@ -88,20 +89,19 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      * "Titratable Hydrogens Only" inclusion criterion.
      * Heavy atoms of deprotonated forms are not present. Used by VdW.
      */
-    private List<Atom> foregroundExtH, backgroundExtH;
-    private Atom[] atomsExtH;
-    private int[] moleculeExtH;
-    private int nAtomsExtH;
-    private ExtendedVariable[] esvByAtomExtH;
+    private List<Atom> atomList;
+    private Atom[] atomsExt;
+    private int[] moleculeExt;
+    private int nAtomsExt;
+    private ExtendedVariable[] esvForShared;
+    private ExtendedVariable[] esvForUnshared;
+    private int[] fg2bgIdx;
     /**
      * Foreground/background atoms lists and arrays based on the
      * "All Atoms" inclusion criterion. Used by bonded terms.
      */
-    private List<Atom> foregroundExtAll, backgroundExtAll;
-    private Atom[] atomsExtAll;
-    private int[] moleculeExtAll;
-    private int nAtomsExtAll;
-    private ExtendedVariable[] esvByAtomExtAll;
+//    private Atom[] atomsExtPlusBackground;
+//    private int[] moleculeExtPlusBackground;
 
     // ESV variables
     private int numESVs;
@@ -149,69 +149,49 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         esvList = new ArrayList<>();
         propagationTemperature = ExtConstants.roomTemperature;
 
-        // Hydrogens-only inclusion criterion.
-        foregroundExtH = new ArrayList<>();
-        backgroundExtH = new ArrayList<>();
-        foregroundExtH.addAll(Arrays.asList(mola.getAtomArray()));
-        atomsExtH = mola.getAtomArray();
-        moleculeExtH = mola.getMoleculeNumbers();
-        // All-atom inclusion criterion.
-        foregroundExtAll = new ArrayList<>();
-        backgroundExtAll = new ArrayList<>();
-        foregroundExtAll.addAll(Arrays.asList(mola.getAtomArray()));
-        atomsExtAll = mola.getAtomArray();
-        moleculeExtAll = mola.getMoleculeNumbers();
+        // Initialize atom arrays with the existing assembly.
+        atomsExt = mola.getAtomArray();
+        nAtomsExt = atomsExt.length;
+        moleculeExt = mola.getMoleculeNumbers();
+        atomList = Arrays.asList(mola.getAtomArray());        
+        esvForUnshared = new ExtendedVariable[nAtomsExt];
+        esvForShared = new ExtendedVariable[nAtomsExt];
     }
 
-    public boolean isExtH(int i) {
-        return esvByAtomExtH[i] != null
-                && esvByAtomExtH[i].getUnsharedAtoms().contains(atomsExtH[i]);
+    /**
+     * Getters for all extended atom properties needed  by other cl
+     */
+    public Atom[] getExtendedAtoms() {
+        return atomsExt;
     }
-    public boolean isExtAll(int i) {
-        return esvByAtomExtAll[i] != null
-                && esvByAtomExtAll[i].getUnsharedAtoms().contains(atomsExtAll[i]);
+    public int[] getExtendedMolecule() {
+        return moleculeExt;
     }
-
-    public ExtendedVariable exthEsv(int i) {
-        return esvByAtomExtH[i];
+    public boolean isExtended(int i) {
+        return isShared(i) || isUnshared(i);
     }
-    public ExtendedVariable extallEsv(int i) {
-        return esvByAtomExtAll[i];
+    public boolean isShared(int i) {
+        return esvForShared[i] != null;
     }
-
-    public int exthEsvId(int i) {
-        return (esvByAtomExtH[i] != null) ? esvByAtomExtH[i].index : -1;
+    public boolean isUnshared(int i) {
+        return esvForUnshared[i] != null;
     }
-    public int extallEsvId(int i) {
-        return (esvByAtomExtAll[i] != null) ? esvByAtomExtAll[i].index : -1;
+    public ExtendedVariable getEsvForAtom(int i) {
+        return (isShared(i)) ? esvForShared[i]
+                : (isUnshared(i)) ? esvForUnshared[i]
+                : Defaults.esv;
+    }    
+    public int getEsvIdForAtom(int i) {
+        return (isExtended(i)) ? getEsvForAtom(i).index : Defaults.esvId;
     }
-
-    public double exthLambda(int i) {
-        return (isExtH(i)) ? esvByAtomExtH[i].getLambda() : 1.0;
+    public double getLambda(int i) {
+        return (isExtended(i)) ? getEsvForAtom(i).getLambda() : Defaults.lambda;
     }
-    public double extallLambda(int i) {
-        return (isExtAll(i)) ? esvByAtomExtAll[i].getLambda() : 1.0;
-    }
-
-    public double exthLambdaSwitch(int i) {
-        return (isExtH(i)) ? esvByAtomExtH[i].getLambdaSwitch() : 1.0;
-    }
-    public double extallLambdaSwitch(int i) {
-        return (isExtAll(i)) ? esvByAtomExtAll[i].getLambdaSwitch() : 1.0;
-    }
-
-    public Atom[] getAtomsExtH() {
-        return atomsExtH;
-    }
-    public int[] getMoleculeExtH() {
-        return moleculeExtH;
-    }
-
-    public Atom[] getAtomsExtAll() {
-        return atomsExtAll;
-    }
-    public int[] getMoleculeExtAll() {
-        return moleculeExtAll;
+    public double getLambdaSwitch(int i) {
+        return (isExtended(i)) ? getEsvForAtom(i).getLambdaSwitch() : Defaults.lambdaSwitch;
+    }    
+    public double getSwitchDeriv(int i) {
+        return (isExtended(i)) ? getEsvForAtom(i).getSwitchDeriv() : Defaults.switchDeriv;
     }
 
     public void setLambda(int esvID, double lambda) {
@@ -228,6 +208,17 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
         if (esvUsePme) {
             pme.updateEsvLambda();
+        }
+    }
+    
+    public void initializeBackgroundMultipoles(List<Atom> atomsBackground) {
+        for (int i = 0; i < atomsBackground.size(); i++) {
+            Atom bg = atomsBackground.get(i);
+            Multipole multipole = Multipole.buildMultipole(bg, mola.getForceField());
+            if (multipole == null) {
+                logger.severe(format("No multipole could be assigned to atom %s of type %s.",
+                        bg.toString(), bg.getAtomType()));
+            }
         }
     }
 
@@ -308,6 +299,10 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      * @param esv
      */
     public void addVariable(ExtendedVariable esv) {
+        if (!printedConfig) {
+            ExtUtils.printExtConfig();
+            printedConfig = true;
+        }
         logf(" ExtendedSystem acquired ESV: %s", esv);
         esvSystemActive = true;
         if (esvList == null) {
@@ -321,70 +316,70 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         esvTerm = true;
         if (esv instanceof TitrationESV) {
             phTerm = true;
-        } else {
-            logger.warning("Debug?");
         }
-
-//        foregroundExtH.addAll(esv.getAtomList(AtomList.PMEVDW_ONE));
-        backgroundExtH.addAll(esv.getAtomList(AtomList.PMEVDW_ZRO));
-        nAtomsExtH = foregroundExtH.size() + backgroundExtH.size();
-        atomsExtH = new Atom[nAtomsExtH];
-        moleculeExtH = new int[nAtomsExtH];
-
-//        foregroundExtAll.addAll(esv.getAtomList(AtomList.BONDED_ONE));
-        backgroundExtAll.addAll(esv.getAtomList(AtomList.BONDED_ZRO));
-        nAtomsExtAll = foregroundExtAll.size() + backgroundExtAll.size();
-        atomsExtAll = new Atom[nAtomsExtAll];
-        moleculeExtAll = new int[nAtomsExtAll];
-
-        SB.logfn(" ** ExtH **");
-        SB.logfn(" atoms,extAtoms,total: %d %d %d", foregroundExtH.size(), backgroundExtH.size(), nAtomsExtH);
-        int numForegroundExtH = foregroundExtH.size();
-        for (int i = 0; i < nAtomsExtH; i++) {
-            if (i < numForegroundExtH) {
-                atomsExtH[i] = foregroundExtH.get(i);
-            } else {
-                if (i == numForegroundExtH) {
-                    SB.logfn(" -- AtomsZro -- ");
-                }
-                atomsExtH[i] = backgroundExtH.get(i - numForegroundExtH);
-            }
-            moleculeExtH[i] = atomsExtH[i].getMoleculeNumber();
-            SB.logfn(" %s", atomsExtH[i]);
-        }
-        SB.printIf(false);
         
-        SB.logfn(" ** ExtAll **");
-        SB.logfn(" atoms,extAtoms,total: %d %d %d", foregroundExtAll.size(), backgroundExtAll.size(), nAtomsExtAll);
-        int numForegroundExtAll = foregroundExtAll.size();
-        for (int i = 0; i < nAtomsExtAll; i++) {
-            if (i < numForegroundExtAll) {
-                atomsExtAll[i] = foregroundExtAll.get(i);
+        for (int i = 0; i < nAtomsExt; i++) {
+            if (esv.viewUnsharedAtoms().contains(atomsExt[i])) {
+                esvForUnshared[i] = esv;
             } else {
-                if (i == numForegroundExtAll) {
-                    SB.logfn(" -- AtomsZro -- ");
-                }
-                atomsExtAll[i] = backgroundExtAll.get(i - numForegroundExtAll);
+                esvForShared[i] = esv;
             }
-            moleculeExtAll[i] = atomsExtAll[i].getMoleculeNumber();
-            SB.logfn(" %s", atomsExtAll[i]);
         }
-        SB.printIf(false);
         
-        if (esvByAtomExtH == null || esvByAtomExtH.length < nAtomsExtH) {
-            esvByAtomExtH = new ExtendedVariable[nAtomsExtH];
-        }
-        for (int i = 0; i < nAtomsExtH; i++) {
-            esvByAtomExtH[i] = atomsExtH[i].getEsv();
-        }
-        if (esvByAtomExtAll == null || esvByAtomExtAll.length < nAtomsExtAll) {
-            esvByAtomExtAll = new ExtendedVariable[nAtomsExtAll];
-        }
-        for (int i = 0; i < nAtomsExtAll; i++) {
-            esvByAtomExtAll[i] = atomsExtAll[i].getEsv();
+        /* Background atoms don't get automatically typed by PME since they're
+         * disconnected from the molecular assembly; must be done manually. */
+        initializeBackgroundMultipoles(esv.viewBackgroundAtoms());
+        
+        fg2bgIdx = new int[nAtomsExt];
+        for (int i = 0; i < nAtomsExt; i++) {
+            Atom atom = atomsExt[i];
+            if (atom.getEsv() != null) {
+                Atom back = atom.getEsv().getBackground(atom);
+                if (atom == null) {
+    //                fg2bgIdx[i] = null;
+                } else if (back != null) {
+                    fg2bgIdx[i] = (back != null) ? back.getIndex() : -1;
+                }
+            }
         }
         
         updateListeners();
+    }
+    
+    public Atom[] getExtendedAndBackgroundAtoms() {
+        Atom[] extended = getExtendedAtoms();
+        List<Atom> background = new ArrayList<>();
+        for (ExtendedVariable esv : this) {
+            background.addAll(esv.viewBackgroundAtoms());
+        }
+        List<Atom> mega = new ArrayList<>();
+        mega.addAll(Arrays.asList(extended));
+        mega.addAll(background);
+        return mega.toArray(new Atom[0]);
+    }
+    
+    public int[] getExtendedAndBackgroundMolecule() {
+        Atom[] mega = getExtendedAndBackgroundAtoms();
+        int[] molecule = new int[mega.length];
+        for (int i = 0; i < molecule.length; i++) {
+            molecule[i] = mega[i].getMoleculeNumber();
+        }
+        return molecule;
+    }
+    
+    public final void crashDump() {
+        SB.nlogfn("*************");
+        SB.nlogfn(" Crash Dump:");
+        SB.logfn("   All Atoms:");
+        for (Atom atom : mola.getAtomArray()) {
+            SB.logfn("     %s", atom.toString());
+        }
+        SB.print();
+        for (ExtendedVariable esv : esvList) {
+            esv.describe();
+        }
+        SB.nlogfn("*************");
+        SB.print();
     }
 
     /**
@@ -506,13 +501,21 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      * that parallelization of ESVs can be done in the same constructs.
      */
     public int parallelRangeConversion(int index) {
-        return (int) Math.floor((index / (double) nAtomsExtH) * numESVs);
+        return (int) Math.floor((index / (double) nAtomsExt) * numESVs);
     }
 
     public void updateBondedEsvLambda() {
         for (ExtendedVariable esv : this) {
             esv.updateBondedLambdas();
         }
+    }
+    
+    public void describe() {
+        SB.nlogf(" AtomsExtH: ");
+        for (int i = 0; i < atomsExt.length; i++) {
+            SB.nlogf(" %3d  %s", i, atomsExt[i].toString());
+        }
+        SB.print();
     }
 
     /**
@@ -529,5 +532,18 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             ret = (esv.getLambda() > ret) ? esv.getLambda() : ret;
         }
         return ret;
+    }
+    
+    /**
+     * These populate the order-n preloaded lambda parameter arrays in VdW and
+     * PME in the absence of an attached ESV.
+     */
+    public static final class Defaults {
+        private Defaults() {}   // value singleton
+        public static final ExtendedVariable esv = null;
+        public static final int esvId = -1;
+        public static final double lambda = 1.0;
+        public static final double lambdaSwitch = 1.0;
+        public static final double switchDeriv = 0.0;
     }
 }

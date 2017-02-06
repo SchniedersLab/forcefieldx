@@ -52,8 +52,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.ToDoubleFunction;
 import java.util.function.BiFunction;
+import java.util.function.ToDoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -75,7 +75,8 @@ import edu.rit.pj.WorkerIteration;
 import edu.rit.pj.WorkerRegion;
 import edu.rit.pj.WorkerTeam;
 
-import ffx.utilities.ObjectPair;
+import ffx.algorithms.mc.BoltzmannMC;
+import ffx.algorithms.mc.MCMove;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
@@ -93,8 +94,7 @@ import ffx.potential.nonbonded.NeighborList;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.IndexIndexPair;
-import ffx.algorithms.mc.BoltzmannMC;
-import ffx.algorithms.mc.MCMove;
+import ffx.utilities.ObjectPair;
 
 import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
@@ -1958,7 +1958,7 @@ public class RotamerOptimization implements Terminatable {
             // Count the number of molecules.
             Residue r = residues[i];
             Atom a0 = (Atom) r.getAtomNode(0);
-            int atomIndex = a0.getXYZIndex();
+            int atomIndex = a0.getIndex();
             Integer moleculeIndex = molecule[atomIndex];
             if (!nMolecules.containsKey(moleculeIndex)) {
                 nMolecules.put(moleculeIndex, molPointer);

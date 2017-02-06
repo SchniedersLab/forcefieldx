@@ -269,7 +269,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         for (Atom ai : atoms) {
             group.clear();
             polarizationGroup.clear();
-            Integer index = ai.getXYZIndex() - 1;
+            Integer index = ai.getIndex() - 1;
             group.add(index);
             polarizationGroup.add(ai.getType());
             PolarizeType polarizeType = ai.getPolarizeType();
@@ -324,7 +324,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
                 ArrayList<Bond> bonds = aj.getBonds();
                 for (Bond b : bonds) {
                     Atom ak = b.get1_2(aj);
-                    int k = ak.getXYZIndex() - 1;
+                    int k = ak.getIndex() - 1;
                     if (mask[k] != i) {
                         keep.add(k);
                     }
@@ -394,7 +394,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
             boolean added = false;
             for (int g : polarizationGroup) {
                 if (g == tj) {
-                    Integer index = aj.getXYZIndex() - 1;
+                    Integer index = aj.getIndex() - 1;
                     if (!group.contains(index)) {
                         group.add(index);
                         added = true;

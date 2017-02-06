@@ -305,27 +305,27 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
                     // atoms[3].addToLambdaXYZGradient(g3[0], g3[1], g3[2]);
                     // atoms[4].addToLambdaXYZGradient(g4[0], g4[1], g4[2]);
                     // atoms[5].addToLambdaXYZGradient(g5[0], g5[1], g5[2]);
-                    int i0 = atoms[0].getXYZIndex() - 1;
+                    int i0 = atoms[0].getIndex() - 1;
                     lambdaGradX.add(threadID, i0, g0[0]);
                     lambdaGradY.add(threadID, i0, g0[1]);
                     lambdaGradZ.add(threadID, i0, g0[2]);
-                    int i1 = atoms[1].getXYZIndex() - 1;
+                    int i1 = atoms[1].getIndex() - 1;
                     lambdaGradX.add(threadID, i1, g1[0]);
                     lambdaGradY.add(threadID, i1, g1[1]);
                     lambdaGradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getXYZIndex() - 1;
+                    int i2 = atoms[2].getIndex() - 1;
                     lambdaGradX.add(threadID, i2, g2[0]);
                     lambdaGradY.add(threadID, i2, g2[1]);
                     lambdaGradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getXYZIndex() - 1;
+                    int i3 = atoms[3].getIndex() - 1;
                     lambdaGradX.add(threadID, i3, g3[0]);
                     lambdaGradY.add(threadID, i3, g3[1]);
                     lambdaGradZ.add(threadID, i3, g3[2]);
-                    int i4 = atoms[4].getXYZIndex() - 1;
+                    int i4 = atoms[4].getIndex() - 1;
                     lambdaGradX.add(threadID, i4, g4[0]);
                     lambdaGradY.add(threadID, i4, g4[1]);
                     lambdaGradZ.add(threadID, i4, g4[2]);
-                    int i5 = atoms[5].getXYZIndex() - 1;
+                    int i5 = atoms[5].getIndex() - 1;
                     lambdaGradX.add(threadID, i5, g5[0]);
                     lambdaGradY.add(threadID, i5, g5[1]);
                     lambdaGradZ.add(threadID, i5, g5[2]);
@@ -343,27 +343,27 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
                     scalar(g3, lambda, g3);
                     scalar(g4, lambda, g4);
                     scalar(g5, lambda, g5);
-                    int i0 = atoms[0].getXYZIndex() - 1;
+                    int i0 = atoms[0].getIndex() - 1;
                     gradX.add(threadID, i0, g0[0]);
                     gradY.add(threadID, i0, g0[1]);
                     gradZ.add(threadID, i0, g0[2]);
-                    int i1 = atoms[1].getXYZIndex() - 1;
+                    int i1 = atoms[1].getIndex() - 1;
                     gradX.add(threadID, i1, g1[0]);
                     gradY.add(threadID, i1, g1[1]);
                     gradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getXYZIndex() - 1;
+                    int i2 = atoms[2].getIndex() - 1;
                     gradX.add(threadID, i2, g2[0]);
                     gradY.add(threadID, i2, g2[1]);
                     gradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getXYZIndex() - 1;
+                    int i3 = atoms[3].getIndex() - 1;
                     gradX.add(threadID, i3, g3[0]);
                     gradY.add(threadID, i3, g3[1]);
                     gradZ.add(threadID, i3, g3[2]);
-                    int i4 = atoms[4].getXYZIndex() - 1;
+                    int i4 = atoms[4].getIndex() - 1;
                     gradX.add(threadID, i4, g4[0]);
                     gradY.add(threadID, i4, g4[1]);
                     gradZ.add(threadID, i4, g4[2]);
-                    int i5 = atoms[5].getXYZIndex() - 1;
+                    int i5 = atoms[5].getIndex() - 1;
                     gradX.add(threadID, i5, g5[0]);
                     gradY.add(threadID, i5, g5[1]);
                     gradZ.add(threadID, i5, g5[2]);
@@ -378,8 +378,8 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %10.4f %10.4f",
-                "Pi-Orbital Torsion", atoms[2].getXYZIndex(), atoms[2].getAtomType().name,
-                atoms[3].getXYZIndex(), atoms[3].getAtomType().name, value, energy));
+                "Pi-Orbital Torsion", atoms[2].getIndex(), atoms[2].getAtomType().name,
+                atoms[3].getIndex(), atoms[3].getAtomType().name, value, energy));
     }
 
     /**

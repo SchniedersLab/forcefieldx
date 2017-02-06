@@ -110,6 +110,7 @@ public abstract class ParticleMeshEwald {
      * Dimensions of [nsymm][nAtoms][10]
      */
     protected double globalMultipole[][][];
+    protected double globalMultipoleDot[][][];
 
     /**
      * Dimensions of [nsymm][nAtoms][3]
@@ -122,6 +123,15 @@ public abstract class ParticleMeshEwald {
      */
     protected static final int tensorCount = MultipoleTensor.tensorCount(3);
     protected static final double oneThird = 1.0 / 3.0;
+    
+    public class EnergyForceTorque {
+        public double energy;
+        public double[] permFi = new double[3];
+        public double[] permTi = new double[3];
+        public double[] permFk = new double[3];
+        public double[] permTk = new double[3];
+        public double dPermdZ;
+    }
 
     public abstract double getEwaldCutoff();
 
@@ -192,8 +202,7 @@ public abstract class ParticleMeshEwald {
      */
     private void log(String type, int i, int k, double r, double eij) {
         logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f",
-                type, atoms[i].xyzIndex, atoms[i].getAtomType().name,
-                atoms[k].xyzIndex, atoms[k].getAtomType().name, r, eij));
+                type, atoms[i].getIndex(), atoms[i].getAtomType().name, atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
     }
 
 }

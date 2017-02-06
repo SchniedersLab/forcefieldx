@@ -108,7 +108,7 @@ public class InducedFilter {
             List<Atom> atoms = fsystem.getAtomList();
             double max = 0.0d;
             for (Atom a : atoms) {
-                int j = a.getXYZIndex() - 1;
+                int j = a.getIndex() - 1;
                 // a.setInducedDipole(-x[j][0], -x[j][1], -x[j][2]);
             }
             logger.warning("Max Induced: " + max);

@@ -69,8 +69,9 @@ double step = 0.0001;
 // ESV discretization bias height
 double biasMag = 1.0;
 double pH;
-String mpoleterm = "false";
+boolean mpoleterm = false;
 int testOneIterations = 1;
+boolean usePersistentIndex = true;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -85,6 +86,7 @@ cli.t3(longOpt:'test3', 'Test 3: Switching function and path smoothness.');
 cli.i(longOpt:'iterations', args:1, argName:'1', 'Repeat Test1 to verify threaded replicability.');
 cli.v(longOpt:'verbose', 'Print out all the ForceFieldEnergy decompositions.');
 cli.e(longOpt:'electro', 'Include PME electrostatics in all tests.');
+cli.xyz(longOpt:'xyzIndex', 'Forego use of atom-indexing=PERSIST.');
 
 def options = cli.parse(args);
 if (options.h) {
@@ -110,8 +112,14 @@ if (options.t1 || options.t2 || options.t3) {
     }
 }
 
+if (!options.xyz) {
+    usePersistentIndex = true;
+    System.setProperty("atom-indexing", "PERSIST");
+}
+
 if (options.e) {
-    mpoleterm = "true";
+    mpoleterm = true;
+    verbose = true;
 }
 
 if (options.l) {
@@ -127,9 +135,8 @@ if (options.v) {
     verbose = true;
 }
 
-// ForceField
-System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
 // ForceField: Active
+System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
 System.setProperty("esvterm", "true");
 System.setProperty("lambdaterm", "true");
 System.setProperty("vdwterm", "true");
@@ -142,16 +149,24 @@ System.setProperty("torsionterm", "true");
 System.setProperty("pitorsterm", "true");
 System.setProperty("tortorterm", "true");
 System.setProperty("improperterm", "true");
+if (mpoleterm) {
+    System.setProperty("mpoleterm", "true");
+    System.setProperty("pme-qi", "true");
+} else {
+    System.setProperty("mpoleterm", "false");
+    System.clearProperty("pme-qi");
+}
+
 // ForceField: Inactive
-System.setProperty("mpoleterm", mpoleterm);
+System.setProperty("recipterm", "false");
 System.setProperty("polarizeterm", "false");
+System.setProperty("polarization", "NONE");
 System.setProperty("gkterm", "false");
 System.setProperty("restrainterm", "false");
 System.setProperty("comrestrainterm", "false");
 System.setProperty("lambda_torsions", "false");
 
 // Potential Settings
-System.setProperty("polarization", "NONE");
 System.setProperty("polarization-lambda-start","0.0");      // polarize on the whole range [0,1]
 System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
 System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
@@ -218,6 +233,7 @@ ffe.getCoordinates(xyz);
 double width = 2.0 * step;      // default step = 0.0001
 double tolerance = 1.0e-3;      // pass-fail margin
 
+try {
 /*******************************************************************************
  * Finite Difference Tests of the VdW Lambda Derivative
 Check that the analytic lambda derivatives reported by van der Waals agree with
@@ -226,7 +242,7 @@ the central finite difference.
 if (test1) {
     for (int iter = 0; iter < testOneIterations; iter++) {
         for (int i = 0; i < numESVs; i++) {
-            ffe.setPrintOverride(false);
+            ffe.setPrintOverride(verbose);
             esvSystem.setLambda(i, 0.0);
             double e0 = ffe.energyAndGradient(xyz,gradient);
             esvSystem.setLambda(i, 1.0);
@@ -235,7 +251,7 @@ if (test1) {
             if (iter == 0) {
                 ffe.setPrintOverride(true && verbose);
             }
-            
+
             esvSystem.setLambda(i, lambda - step);
             double eLower = ffe.energyAndGradient(xyz,esvLambdaGradFD[1][i]);
 
@@ -271,6 +287,7 @@ energy yielded by vanilla energy() calls on mutated PDB files.
 if (test2) {
     esvSystem.setEsvBiasTerm(false);
     ffe.setPrintOverride(true && verbose);
+    Atom.setIndexing(Atom.Indexing.XYZ);
     StringBuilder sb = new StringBuilder();
     sb.append(format("\n  Two-site ESV Analysis: \n"));
     sb.append(format(" ************************ \n"));
@@ -289,13 +306,11 @@ if (test2) {
     sb.append(format("   vdw %-7s %10.6f\n", "1-0", esvVdw10));
     esvSystem.setLambda(0, 0.0);
     esvSystem.setLambda(1, 1.0);
-    //    System.setProperty("vdw-printInteractions", "inter-dsesv");
     ffe.energy(false, false);
     double esvVdw01 = ffe.getVanDerWaalsEnergy();
     sb.append(format("   vdw %-7s %10.6f\n", "0-1", esvVdw01));
     esvSystem.setLambda(0, 1.0);
     esvSystem.setLambda(1, 1.0);
-    //    System.setProperty("vdw-printInteractions", "inter-ssesv");
     ffe.energy(false, false);
     double esvVdw11 = ffe.getVanDerWaalsEnergy();
     sb.append(format("   vdw %-7s %10.6f\n", "1-1", esvVdw11));
@@ -305,25 +320,21 @@ if (test2) {
     sb = new StringBuilder();
     sb.append(format(" Vanilla End-States: \n"));
     ffxlog.setLevel(Level.OFF);
-    //    System.setProperty("vdw-printInteractions", "inter-dd");
     open("lyd-lyd.pdb");
-//    double lydlyd = energy().getVanDerWaalsEnergy();
-    double lydlyd = 38.257199;
+    double lydlyd = energy().getVanDerWaalsEnergy();
+//    double lydlyd = 38.257199;
     sb.append(format("   vdw %-7s %10.6f\n", "lyd-lyd", lydlyd));
-    //    System.setProperty("vdw-printInteractions", "inter-sd");
-    open("lys-lyd.pdb");
-//    double lyslyd = energy().getVanDerWaalsEnergy();
-    double lyslyd = 38.519816;
-    sb.append(format("   vdw %-7s %10.6f\n", "lys-lyd", lyslyd));
-    //    System.setProperty("vdw-printInteractions", "inter-ds");
     open("lyd-lys.pdb");
-//    double lydlys = energy().getVanDerWaalsEnergy();
-    double lydlys = 38.519879;
+    double lydlys = energy().getVanDerWaalsEnergy();
+//    double lydlys = 38.519879;
     sb.append(format("   vdw %-7s %10.6f\n", "lyd-lys", lydlys));
-    //    System.setProperty("vdw-printInteractions", "inter-ss");
+    open("lys-lyd.pdb");
+    double lyslyd = energy().getVanDerWaalsEnergy();
+//    double lyslyd = 38.519816;
+    sb.append(format("   vdw %-7s %10.6f\n", "lys-lyd", lyslyd));
     open("lys-lys.pdb");
-//    double lyslys = energy().getVanDerWaalsEnergy();
-    double lyslys = 38.782469;
+    double lyslys = energy().getVanDerWaalsEnergy();
+//    double lyslys = 38.782469;
     sb.append(format("   vdw %-7s %10.6f\n", "lys-lys", lyslys));
     ffxlog.setLevel(Level.INFO);
     logger.info(sb.toString());
@@ -335,6 +346,8 @@ Numerically ensure that the VdW energy and lambda derivatives are smooth all
 along both ESV coordinates in the dilysine system.
 *******************************************************************************/
 if (test3) {
+    Atom.setIndexing(Atom.Indexing.PERSIST);
+    Atom.resetIndexing();
     logger.info(format("  Smoothness Verification: "));
     logger.info(format(" ************************** "));
     ffxlog.setLevel(Level.OFF);
@@ -385,4 +398,8 @@ if (test3) {
     logger.info(energyTable.toString());
     logger.info(dedlaTable.toString());
     logger.info(dedlbTable.toString());
+}
+} catch (Exception ex) {
+    esvSystem.crashDump();
+    throw ex;
 }

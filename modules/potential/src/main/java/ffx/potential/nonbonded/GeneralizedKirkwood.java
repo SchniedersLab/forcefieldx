@@ -617,7 +617,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             double bondiFactor = bondiScale;
 
-            int atomNumber = atoms[i].xyzIndex + 1;
+            int atomNumber = atoms[i].getIndex() + 1;
             if (useFittedRadii) {
                 // First check to see if this atom is in the hardcoded maps.
                 switch (radiiMapType) {
@@ -1630,7 +1630,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     List<Bond> bonds = atom.getBonds();
                     for (Bond bond : bonds) {
                         Atom atom2 = bond.get1_2(atom);
-                        int k = atom2.xyzIndex - 1;
+                        int k = atom2.getIndex() - 1;
                         if (!use[k]) {
                             continue;
                         }
@@ -1643,7 +1643,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     for (Angle angle : angles) {
                         Atom atom2 = angle.get1_3(atom);
                         if (atom2 != null) {
-                            int k = atom2.xyzIndex - 1;
+                            int k = atom2.getIndex() - 1;
                             if (!use[k]) {
                                 continue;
                             }
@@ -1654,7 +1654,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     for (Torsion torsion : torsions) {
                         Atom atom2 = torsion.get1_4(atom);
                         if (atom2 != null) {
-                            int k = atom2.xyzIndex - 1;
+                            int k = atom2.getIndex() - 1;
                             if (!use[k]) {
                                 continue;
                             }

@@ -38,6 +38,8 @@
 package ffx.potential.extended;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -222,7 +224,9 @@ public final class ExtUtils {
                     key, value, defaultVal.toString()));
             throw ex;
         }
-        extConfig.addProperty(key, parsed);
+        extConfig.setProperty(key, parsed);
+        System.setProperty(key, parsed.toString());
+//        logf(" ESV Property: %s = %s", key, parsed.toString());
         return parsed;
     }
     
@@ -232,8 +236,9 @@ public final class ExtUtils {
     public static final <T extends Enum<T>> T prop(Class<T> type, String key, T def)
             throws IllegalArgumentException {
         T parsed = (System.getProperty(key) != null) ? T.valueOf(type, System.getProperty(key)) : def;
-        extConfig.addProperty(key, parsed);
-//        logf(" ESV Properties Manager: %s = %s", key, parsed.toString());
+        extConfig.setProperty(key, parsed);
+        System.setProperty(key, parsed.toString());
+//        logf(" ESV Property: %s = %s", key, parsed.toString());
         return parsed;
     }
 
@@ -340,29 +345,45 @@ public final class ExtUtils {
     }
     
     public static class SB {
-        private SB() { /* singleton */ }
+        private SB() { /* utility singleton */ }
         private static StringBuilder sb = new StringBuilder();
-        public static Level level = Level.INFO;
-        public static void clear() {
-            sb = new StringBuilder();
-        }
+        public static void clear() { sb = new StringBuilder(); }
+        /**
+         * append formatted message; use print() to send to console
+         */
         public static void logf(String msg, Object... args) {
             sb.append(format(msg, args));
         }
+        /**
+         * append formatted message plus newline; use print() to send to console
+         */
         public static void logfn(String msg, Object... args) {
             sb.append(format(msg, args)).append("\n");
         }
+        /**
+         * append newline, then formatted message; use print() to send to console
+         */
         public static void nlogf(String msg, Object... args) {
             sb.append("\n").append(format(msg, args));
         }
         public static void nlogfn(String msg, Object... args) {
             sb.append("\n").append(format(msg, args)).append("\n");
         }
+        public static void logfp(String msg, Object... args) {
+            synchronized (SB.class) {
+                sb.append(format(msg, args));
+                print();
+            }
+        }
         public static void nl() {
             sb.append("\n");
         }
         public static void print() {
-            cid.getCallingLogger().log(level, sb.toString());
+            cid.getCallingLogger().log(Level.INFO, sb.toString());
+            clear();
+        }
+        public static void warning() {
+            cid.getCallingLogger().log(Level.WARNING, sb.toString());
             clear();
         }
         public static void printIf(boolean print) {
@@ -380,6 +401,7 @@ public final class ExtUtils {
      *  is set or explicit class/hierarchy/method sources are requested.
      */
     public static class DebugHandler {
+        private DebugHandler() {}   // utility class
         public static boolean DEBUG() { return DEBUG; }
         public static boolean VERBOSE() { return VERBOSE; }
         public static String debugFormat() { return debugFormat; }
@@ -406,6 +428,20 @@ public final class ExtUtils {
         public Logger getCallingLogger() {
             return Logger.getLogger(getCallingClass().getName());
         }
+    }
+    
+    /**
+     * Use this to iterate easily over a collection of lists.
+     * Returns the inferred parent list type. Duplicate elements allowed.
+     * "View" intentional to avoid vain attempts at modifying the component lists.
+     */
+    @SafeVarargs
+    public static final <T> List<T> joinedListView(List<? extends T>... lists) {
+        List<T> joined = new ArrayList<>();
+        for (List<? extends T> list : lists) {
+            joined.addAll(list);
+        }
+        return Collections.unmodifiableList(joined);
     }
 
     @SuppressWarnings("serial")

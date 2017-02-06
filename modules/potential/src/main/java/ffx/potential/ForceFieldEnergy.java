@@ -90,6 +90,7 @@ import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
+import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
@@ -128,6 +129,11 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
     private final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
+    /**
+     * Contains ALL atoms, both foreground and background. Background atoms need to be
+     * present to be included in bonded terms
+     */
+    private Atom[] atomsExtended;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
     private BondedRegion bondedRegion;
@@ -281,12 +287,12 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
-        xyz = new double[nAtoms * 3];
         nAtoms = atoms.length;
+        xyz = new double[nAtoms * 3];
 
         // Check that atom ordering is correct and count the number of active atoms.
         for (int i = 0; i < nAtoms; i++) {
-            int index = atoms[i].xyzIndex - 1;
+            int index = atoms[i].getIndex() - 1;
             assert (i == index);
         }
 
@@ -518,7 +524,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         // Collect, count, pack and sort stretch-bends.
         if (stretchBendTerm) {
-            ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
+//          ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
+            List<StretchBend> stretchBend = molecularAssembly.getDescendants(StretchBend.class);
             nStretchBends = stretchBend.size();
             stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
             Arrays.sort(stretchBends);
@@ -532,7 +539,8 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         // Collect, count, pack and sort Urey-Bradleys.
         if (ureyBradleyTerm) {
-            ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
+//            ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
+            List<UreyBradley> ureyBradley = molecularAssembly.getDescendants(UreyBradley.class);
             nUreyBradleys = ureyBradley.size();
             ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
             Arrays.sort(ureyBradleys);
@@ -783,15 +791,14 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
     }
 
     public void reInit() {
-
-        atoms = (esvTerm) ? esvSystem.getAtomsExtAll() : molecularAssembly.getAtomArray();
-        int[] molecule = (esvTerm) ? esvSystem.getMoleculeExtAll() : molecularAssembly.getMoleculeNumbers();
+        atoms = (esvTerm) ? esvSystem.getExtendedAndBackgroundAtoms() : molecularAssembly.getAtomArray();
+        int[] molecule = (esvTerm) ? esvSystem.getExtendedAndBackgroundMolecule() : molecularAssembly.getMoleculeNumbers();
         nAtoms = atoms.length;
-//        SB.logfn(" FFE Atoms (%d)", nAtoms);
-//        for (int i = 0; i < atoms.length; i++) {
-//            SB.logfn(" %d: %s", i, atoms[i].toString());
-//        }
-//        SB.printIf(false);
+        SB.logfn(" FFE Atoms (%d)", nAtoms);
+        for (int i = 0; i < atoms.length; i++) {
+            SB.logfn(" %d: %s", i, atoms[i].toString());
+        }
+        SB.printIf(true);
 
         if (xyz.length < 3 * nAtoms) {
             xyz = new double[nAtoms * 3];
@@ -800,9 +807,9 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         // Check that atom ordering is correct and count number of Active atoms.
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            int index = atom.xyzIndex - 1;
+            int index = atom.getIndex() - 1;
             assert (i == index);
-            atom.setXYZIndex(i + 1);
+            atom.setXyzIndex(i + 1);
         }
         
         // Collect, count, pack and sort bonds.
@@ -1101,14 +1108,18 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         
         if (vanderWaalsTerm) {
             if (esvTerm) {
-                vanderWaals.setAtoms(esvSystem.getAtomsExtH(), esvSystem.getMoleculeExtH());
+                vanderWaals.setAtoms(esvSystem.getExtendedAtoms(), esvSystem.getExtendedMolecule());
             } else {
                 vanderWaals.setAtoms(atoms, molecule);
             }
         }
 
         if (multipoleTerm) {
-            particleMeshEwald.setAtoms(atoms, molecule);
+            if (esvTerm) {
+                particleMeshEwald.setAtoms(esvSystem.getExtendedAtoms(), esvSystem.getExtendedMolecule());
+            } else {
+                particleMeshEwald.setAtoms(atoms, molecule);
+            }
         }
 
         if (ncsTerm) {

@@ -163,6 +163,8 @@ public final class TitrationESV extends ExtendedVariable {
      * Helper methods to define titration-specific phenomena.
      */
     public static class TitrationUtils {
+        
+        public static String[] backboneNames = new String[]{"C", "O", "CA", "N"};
 
         public static MultiResidue titrationFactory(MolecularAssembly mola, Residue res) {
             // Get reference to FFE.
@@ -194,8 +196,8 @@ public final class TitrationESV extends ExtendedVariable {
         private static void setMultiResXYZIndices(MolecularAssembly mola, MultiResidue multi) {
             for (Residue res : multi.getConsideredResidues()) {
                 for (Atom atom : res.getAtomList()) {
-                    if (atom.xyzIndex < 1) {
-                        atom.setXYZIndex(Atom.indexer++);
+                    if (atom.getIndex() < 1) {
+                        atom.setXyzIndex(Atom.indexer++);
                     }
                 }
             }

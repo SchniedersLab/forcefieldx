@@ -64,7 +64,7 @@ import static ffx.potential.parameters.StretchBendType.units;
  *
  * @since 1.0
  */
-public class StretchBend extends BondedTerm {
+public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
 
     private static final Logger logger = Logger.getLogger(StretchBend.class.getName());
     private static final long serialVersionUID = 1L;
@@ -232,15 +232,15 @@ public class StretchBend extends BondedTerm {
                 // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
                 // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
                 // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-                int i0 = atoms[0].getXYZIndex() - 1;
+                int i0 = atoms[0].getIndex() - 1;
                 gradX.add(threadID, i0, g0[0]);
                 gradY.add(threadID, i0, g0[1]);
                 gradZ.add(threadID, i0, g0[2]);
-                int i1 = atoms[1].getXYZIndex() - 1;
+                int i1 = atoms[1].getIndex() - 1;
                 gradX.add(threadID, i1, g1[0]);
                 gradY.add(threadID, i1, g1[1]);
                 gradZ.add(threadID, i1, g1[2]);
-                int i2 = atoms[2].getXYZIndex() - 1;
+                int i2 = atoms[2].getIndex() - 1;
                 gradX.add(threadID, i2, g2[0]);
                 gradY.add(threadID, i2, g2[1]);
                 gradZ.add(threadID, i2, g2[2]);
@@ -259,9 +259,9 @@ public class StretchBend extends BondedTerm {
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s"
                 + "%7.4f %10.4f",
-                "Stretch-Bend", atoms[0].getXYZIndex(),
-                atoms[0].getAtomType().name, atoms[1].getXYZIndex(),
-                atoms[1].getAtomType().name, atoms[2].getXYZIndex(),
+                "Stretch-Bend", atoms[0].getIndex(),
+                atoms[0].getAtomType().name, atoms[1].getIndex(),
+                atoms[1].getAtomType().name, atoms[2].getIndex(),
                 atoms[2].getAtomType().name, value, energy));
     }
 

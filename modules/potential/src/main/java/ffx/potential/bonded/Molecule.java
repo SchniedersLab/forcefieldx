@@ -204,7 +204,7 @@ public class Molecule extends MSGroup {
                 Character currentAlt = currentAtom.getAltLoc();
                 if (currentAlt.equals(' ') || currentAlt.equals('A')) {
                     if (!newAlt.equals(' ') && !newAlt.equals('A')) {
-                        newAtom.setXYZIndex(currentAtom.xyzIndex);
+                        newAtom.setXyzIndex(currentAtom.getXyzIndex());
                         atoms.remove(currentAtom);
                         currentAtom = newAtom;
                         atoms.add(currentAtom);

@@ -387,19 +387,19 @@ public class ImproperTorsion extends BondedTerm {
                 // atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
                 // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
                 // atoms[3].addToXYZGradient(g3[0], g3[1], g3[2]);
-                int i0 = atoms[0].getXYZIndex() - 1;
+                int i0 = atoms[0].getIndex() - 1;
                 gradX.add(threadID, i0, g0[0]);
                 gradY.add(threadID, i0, g0[1]);
                 gradZ.add(threadID, i0, g0[2]);
-                int i1 = atoms[1].getXYZIndex() - 1;
+                int i1 = atoms[1].getIndex() - 1;
                 gradX.add(threadID, i1, g1[0]);
                 gradY.add(threadID, i1, g1[1]);
                 gradZ.add(threadID, i1, g1[2]);
-                int i2 = atoms[2].getXYZIndex() - 1;
+                int i2 = atoms[2].getIndex() - 1;
                 gradX.add(threadID, i2, g2[0]);
                 gradY.add(threadID, i2, g2[1]);
                 gradZ.add(threadID, i2, g2[2]);
-                int i3 = atoms[3].getXYZIndex() - 1;
+                int i3 = atoms[3].getIndex() - 1;
                 gradX.add(threadID, i3, g3[0]);
                 gradY.add(threadID, i3, g3[1]);
                 gradZ.add(threadID, i3, g3[2]);
@@ -415,7 +415,7 @@ public class ImproperTorsion extends BondedTerm {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %6.4f %10.4f",
-                "Improper Torsion", atoms[0].getXYZIndex(), atoms[0].getAtomType().name, atoms[1].getXYZIndex(), atoms[1].getAtomType().name, atoms[2].getXYZIndex(), atoms[2].getAtomType().name, atoms[3].getXYZIndex(), atoms[3].getAtomType().name,
+                "Improper Torsion", atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(), atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name,
                 value, energy));
     }
 
@@ -443,16 +443,16 @@ public class ImproperTorsion extends BondedTerm {
         if (!o.getClass().isInstance(this)) {
             return super.compareTo(o);
         }
-        int this1 = atoms[1].xyzIndex;
-        int a1 = o.atoms[1].xyzIndex;
+        int this1 = atoms[1].getIndex();
+        int a1 = o.atoms[1].getIndex();
         if (this1 < a1) {
             return -1;
         }
         if (this1 > a1) {
             return 1;
         }
-        int this3 = atoms[3].xyzIndex;
-        int a3 = o.atoms[3].xyzIndex;
+        int this3 = atoms[3].getIndex();
+        int a3 = o.atoms[3].getIndex();
         if (this3 < a3) {
             return -1;
         }

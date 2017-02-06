@@ -549,7 +549,7 @@ public class VanDerWaals implements MaskingInterface,
 
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
-            assert (i == ai.xyzIndex - 1);
+            assert (i == ai.getIndex() - 1);
             double xyz[] = ai.getXYZ(null);
             int i3 = i * 3;
             coordinates[i3 + XX] = xyz[XX];
@@ -579,7 +579,7 @@ public class VanDerWaals implements MaskingInterface,
                 Bond bond = bonds.get(0);
                 Atom heavyAtom = bond.get1_2(ai);
                 // Atom indexes start at 1
-                reductionIndex[i] = heavyAtom.xyzIndex - 1;
+                reductionIndex[i] = heavyAtom.getIndex() - 1;
                 reductionValue[i] = type.reductionFactor;
             } else {
                 reductionIndex[i] = i;
@@ -588,7 +588,7 @@ public class VanDerWaals implements MaskingInterface,
             bondMask[i] = new int[numBonds];
             for (int j = 0; j < numBonds; j++) {
                 Bond bond = bonds.get(j);
-                bondMask[i][j] = bond.get1_2(ai).xyzIndex - 1;
+                bondMask[i][j] = bond.get1_2(ai).getIndex() - 1;
             }
             ArrayList<Angle> angles = ai.getAngles();
             int numAngles = 0;
@@ -603,7 +603,7 @@ public class VanDerWaals implements MaskingInterface,
             for (Angle angle : angles) {
                 Atom ak = angle.get1_3(ai);
                 if (ak != null) {
-                    angleMask[i][j++] = ak.xyzIndex - 1;
+                    angleMask[i][j++] = ak.getIndex() - 1;
                 }
             }
             if (vdwForm.scale14 != 1.0) {
@@ -620,7 +620,7 @@ public class VanDerWaals implements MaskingInterface,
                 for (Torsion torsion : torsions) {
                     Atom ak = torsion.get1_4(ai);
                     if (ak != null) {
-                        torsionMask[i][j++] = ak.xyzIndex - 1;
+                        torsionMask[i][j++] = ak.getIndex() - 1;
                     }
                 }
             }
@@ -909,8 +909,7 @@ public class VanDerWaals implements MaskingInterface,
         int classk = ak.getAtomType().atomClass;
         double combined = 1.0 / vdwForm.radEps[classi][classk * 2 + VanDerWaalsForm.RADMIN];
         logger.info(format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
-                atoms[k].xyzIndex, atoms[k].getAtomType().name,
+                "VDW", atoms[i].getIndex(), atoms[i].getAtomType().name, atoms[k].getIndex(), atoms[k].getAtomType().name,
                 combined, r, eij));
     }
 

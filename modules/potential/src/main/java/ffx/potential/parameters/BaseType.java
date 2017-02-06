@@ -65,16 +65,7 @@ public abstract class BaseType {
      */
     public BaseType(ForceFieldType forceFieldType, int keys[]) {
         this.forceFieldType = forceFieldType;
-        if (keys == null) {
-            key = null;
-        } else {
-            StringBuilder keyBuffer = new StringBuilder(Integer.toString(keys[0]));
-            for (int i = 1; i < keys.length; i++) {
-                keyBuffer.append(" ");
-                keyBuffer.append(keys[i]);
-            }
-            key = keyBuffer.toString();
-        }
+        setKey(keys);
     }
 
     /**
@@ -97,6 +88,10 @@ public abstract class BaseType {
      * @param keys an array of int.
      */
     public void setKey(int[] keys) {
+        if (keys == null) {
+            key = null;
+            return;
+        }
         StringBuilder keyBuffer = new StringBuilder(Integer.toString(keys[0]));
         for (int i = 1; i < keys.length; i++) {
             keyBuffer.append(" ");

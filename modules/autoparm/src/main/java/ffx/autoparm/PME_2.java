@@ -565,7 +565,7 @@ public class PME_2 implements Potential {
         polarizability = new double[nAtoms];
         for (Atom ai : atoms) {
             PolarizeType polarizeType = ai.getPolarizeType();
-            int index = ai.xyzIndex - 1;
+            int index = ai.getIndex() - 1;
             thole[index] = polarizeType.thole;
             pdamp[index] = polarizeType.pdamp;
             polarizability[index] = polarizeType.polarizability;
@@ -1262,7 +1262,7 @@ public class PME_2 implements Potential {
         for (Atom ai : atoms) {
             ArrayList<Integer> group = new ArrayList<Integer>();
             polarizationGroup.clear();
-            index = ai.getXYZIndex() - 1;
+            index = ai.getXyzIndex() - 1;
             group.add(index);
             //polarizationGroup.add(ai.getType());
             PolarizeType polarizeType = ai.getPolarizeType();
@@ -1280,7 +1280,7 @@ public class PME_2 implements Potential {
                 int tj = aj.getType();
                 for (int g : polarizationGroup) {
                     if (g == tj) {
-                        Integer index2 = aj.getXYZIndex() - 1;
+                        Integer index2 = aj.getXyzIndex() - 1;
                         group.add(index2);
                     }
                 }
@@ -1370,7 +1370,7 @@ public class PME_2 implements Potential {
                 jj = list.get(j);
                 Atom ajj = atoms[jj];
                 for (int k = 0; k < ajj.getBonds().size(); k++) {
-                    kk = ajj.getBonds().get(k).get1_2(ajj).getXYZIndex() - 1;
+                    kk = ajj.getBonds().get(k).get1_2(ajj).getXyzIndex() - 1;
                     //System.out.println(mask.get(kk)+" "+i);
                     if (mask.get(kk) != i) {
                         keep.add(kk);
@@ -1584,7 +1584,7 @@ public class PME_2 implements Potential {
             for (Torsion torsion : ai.getTorsions()) {
                 Atom ak = torsion.get1_4(ai);
                 if (ak != null) {
-                    int index = ak.xyzIndex - 1;
+                    int index = ak.getIndex() - 1;
                     for (int k : ip11[i]) {
                         if (k == index) {
                             maskp_local[index] = 0.5;
@@ -1595,12 +1595,12 @@ public class PME_2 implements Potential {
             for (Angle angle : ai.getAngles()) {
                 Atom ak = angle.get1_3(ai);
                 if (ak != null) {
-                    int index = ak.xyzIndex - 1;
+                    int index = ak.getIndex() - 1;
                     maskp_local[index] = p13scale;
                 }
             }
             for (Bond bond : ai.getBonds()) {
-                int index = bond.get1_2(ai).xyzIndex - 1;
+                int index = bond.get1_2(ai).getIndex() - 1;
                 maskp_local[index] = p12scale;
             }
             /**
@@ -1787,7 +1787,7 @@ public class PME_2 implements Potential {
             for (Torsion torsion : ai.getTorsions()) {
                 Atom ak = torsion.get1_4(ai);
                 if (ak != null) {
-                    int index = ak.xyzIndex - 1;
+                    int index = ak.getIndex() - 1;
                     for (int k : ip11[i]) {
                         if (k == index) {
                             maskp_local[index] = 0.5;
@@ -1798,12 +1798,12 @@ public class PME_2 implements Potential {
             for (Angle angle : ai.getAngles()) {
                 Atom ak = angle.get1_3(ai);
                 if (ak != null) {
-                    int index = ak.xyzIndex - 1;
+                    int index = ak.getIndex() - 1;
                     maskp_local[index] = p13scale;
                 }
             }
             for (Bond bond : ai.getBonds()) {
-                int index = bond.get1_2(ai).xyzIndex - 1;
+                int index = bond.get1_2(ai).getIndex() - 1;
                 maskp_local[index] = p12scale;
             }
             /**
@@ -1942,7 +1942,7 @@ public class PME_2 implements Potential {
 //                for (Torsion torsion : ai.getTorsions()) {
 //                    Atom ak = torsion.get1_4(ai);
 //                    if (ak != null) {
-//                        int index = ak.xyzIndex - 1;
+//                        int index = ak.getIndex() - 1;
 //                        for (int k : ip11[i]) {
 //                            if (k == index) {
 //                                maskp_local[index] = 0.5;
@@ -1953,12 +1953,12 @@ public class PME_2 implements Potential {
 //                for (Angle angle : ai.getAngles()) {
 //                    Atom ak = angle.get1_3(ai);
 //                    if (ak != null) {
-//                        int index = ak.xyzIndex - 1;
+//                        int index = ak.getIndex() - 1;
 //                        maskp_local[index] = p13scale;
 //                    }
 //                }
 //                for (Bond bond : ai.getBonds()) {
-//                    int index = bond.get1_2(ai).xyzIndex - 1;
+//                    int index = bond.get1_2(ai).getIndex() - 1;
 //                    maskp_local[index] = p12scale;
 //                }
 //                /**
@@ -3821,7 +3821,7 @@ public class PME_2 implements Potential {
                     for (Torsion torsion : ai.getTorsions()) {
                         Atom ak = torsion.get1_4(ai);
                         if (ak != null) {
-                            int index = ak.xyzIndex - 1;
+                            int index = ak.getIndex() - 1;
                             for (int k : ip11[i]) {
                                 if (k == index) {
                                     maskp_local[index] = 0.5;
@@ -3832,12 +3832,12 @@ public class PME_2 implements Potential {
                     for (Angle angle : ai.getAngles()) {
                         Atom ak = angle.get1_3(ai);
                         if (ak != null) {
-                            int index = ak.xyzIndex - 1;
+                            int index = ak.getIndex() - 1;
                             maskp_local[index] = p13scale;
                         }
                     }
                     for (Bond bond : ai.getBonds()) {
-                        int index = bond.get1_2(ai).xyzIndex - 1;
+                        int index = bond.get1_2(ai).getIndex() - 1;
                         maskp_local[index] = p12scale;
                     }
                     /**
@@ -3976,19 +3976,19 @@ public class PME_2 implements Potential {
                     for (Torsion torsion : ai.getTorsions()) {
                         Atom ak = torsion.get1_4(ai);
                         if (ak != null) {
-                            int index = ak.xyzIndex - 1;
+                            int index = ak.getIndex() - 1;
                             maskp_local[index] = 1.0;
                         }
                     }
                     for (Angle angle : ai.getAngles()) {
                         Atom ak = angle.get1_3(ai);
                         if (ak != null) {
-                            int index = ak.xyzIndex - 1;
+                            int index = ak.getIndex() - 1;
                             maskp_local[index] = 1.0;
                         }
                     }
                     for (Bond bond : ai.getBonds()) {
-                        int index = bond.get1_2(ai).xyzIndex - 1;
+                        int index = bond.get1_2(ai).getIndex() - 1;
                         maskp_local[index] = 1.0;
                     }
                     for (int index : ip11[i]) {
@@ -4816,12 +4816,12 @@ public class PME_2 implements Potential {
                              if (r2 > off2) {
                              logger.warning("Needed Ewald interaction is outside the cutoff: " + ai + ak);
                              } */
-                            masking_local[ak.xyzIndex - 1] = m15scale;
+                            masking_local[ak.getIndex() - 1] = m15scale;
                         }
                         for (Torsion torsion : ai.getTorsions()) {
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
-                                int index = ak.xyzIndex - 1;
+                                int index = ak.getIndex() - 1;
                                 masking_local[index] = m14scale;
                                 for (int j : ip11[i]) {
                                     if (j == index) {
@@ -4833,13 +4833,13 @@ public class PME_2 implements Potential {
                         for (Angle angle : ai.getAngles()) {
                             Atom ak = angle.get1_3(ai);
                             if (ak != null) {
-                                int index = ak.xyzIndex - 1;
+                                int index = ak.getIndex() - 1;
                                 masking_local[index] = m13scale;
                                 maskingp_local[index] = p13scale;
                             }
                         }
                         for (Bond bond : ai.getBonds()) {
-                            int index = bond.get1_2(ai).xyzIndex - 1;
+                            int index = bond.get1_2(ai).getIndex() - 1;
                             masking_local[index] = m12scale;
                             maskingp_local[index] = p12scale;
                         }
@@ -4983,13 +4983,13 @@ public class PME_2 implements Potential {
                     }
                     if (iSymm == 0) {
                         for (Atom ak : ai.get1_5s()) {
-                            int index = ak.xyzIndex - 1;
+                            int index = ak.getIndex() - 1;
                             masking_local[index] = 1.0;
                         }
                         for (Torsion torsion : ai.getTorsions()) {
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
-                                int index = ak.xyzIndex - 1;
+                                int index = ak.getIndex() - 1;
                                 masking_local[index] = 1.0;
                                 maskingp_local[index] = 1.0;
                             }
@@ -4997,13 +4997,13 @@ public class PME_2 implements Potential {
                         for (Angle angle : ai.getAngles()) {
                             Atom ak = angle.get1_3(ai);
                             if (ak != null) {
-                                int index = ak.xyzIndex - 1;
+                                int index = ak.getIndex() - 1;
                                 masking_local[index] = 1.0;
                                 maskingp_local[index] = 1.0;
                             }
                         }
                         for (Bond bond : ai.getBonds()) {
-                            int index = bond.get1_2(ai).xyzIndex - 1;
+                            int index = bond.get1_2(ai).getIndex() - 1;
                             masking_local[index] = 1.0;
                             maskingp_local[index] = 1.0;
                         }
@@ -6284,7 +6284,7 @@ public class PME_2 implements Potential {
         key = atomType.getKey() + " 0 0";
         multipoleType = forceField.getMultipoleType(key);
         if (multipoleType != null) {
-            atom.setMultipoleType(multipoleType, null);
+            atom.setMultipoleType(multipoleType);
             localMultipole[i][t000] = multipoleType.charge;
             localMultipole[i][t100] = multipoleType.dipole[0];
             localMultipole[i][t010] = multipoleType.dipole[1];
@@ -6312,8 +6312,8 @@ public class PME_2 implements Potential {
             multipoleType = forceField.getMultipoleType(key);
             if (multipoleType != null) {
                 int multipoleReferenceAtoms[] = new int[1];
-                multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
-                atom.setMultipoleType(multipoleType, null);
+                multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
+                atom.setMultipoleType(multipoleType);
                 localMultipole[i][0] = multipoleType.charge;
                 localMultipole[i][1] = multipoleType.dipole[0];
                 localMultipole[i][2] = multipoleType.dipole[1];
@@ -6343,9 +6343,9 @@ public class PME_2 implements Potential {
                 multipoleType = forceField.getMultipoleType(key);
                 if (multipoleType != null) {
                     int multipoleReferenceAtoms[] = new int[2];
-                    multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
-                    multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
-                    atom.setMultipoleType(multipoleType, null);
+                    multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
+                    multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
+                    atom.setMultipoleType(multipoleType);
                     localMultipole[i][0] = multipoleType.charge;
                     localMultipole[i][1] = multipoleType.dipole[0];
                     localMultipole[i][2] = multipoleType.dipole[1];
@@ -6382,10 +6382,10 @@ public class PME_2 implements Potential {
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
                         int multipoleReferenceAtoms[] = new int[3];
-                        multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
-                        multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
-                        multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
-                        atom.setMultipoleType(multipoleType, null);
+                        multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
+                        multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
+                        multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
+                        atom.setMultipoleType(multipoleType);
                         localMultipole[i][0] = multipoleType.charge;
                         localMultipole[i][1] = multipoleType.dipole[0];
                         localMultipole[i][2] = multipoleType.dipole[1];
@@ -6410,10 +6410,10 @@ public class PME_2 implements Potential {
                         multipoleType = forceField.getMultipoleType(key);
                         if (multipoleType != null) {
                             int multipoleReferenceAtoms[] = new int[3];
-                            multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
-                            multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
-                            multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
-                            atom.setMultipoleType(multipoleType, null);
+                            multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
+                            multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
+                            multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
+                            atom.setMultipoleType(multipoleType);
                             localMultipole[i][0] = multipoleType.charge;
                             localMultipole[i][1] = multipoleType.dipole[0];
                             localMultipole[i][2] = multipoleType.dipole[1];
@@ -6446,9 +6446,9 @@ public class PME_2 implements Potential {
                     multipoleType = forceField.getMultipoleType(key);
                     if (multipoleType != null) {
                         int multipoleReferenceAtoms[] = new int[2];
-                        multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
-                        multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
-                        atom.setMultipoleType(multipoleType, null);
+                        multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
+                        multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
+                        atom.setMultipoleType(multipoleType);
                         localMultipole[i][0] = multipoleType.charge;
                         localMultipole[i][1] = multipoleType.dipole[0];
                         localMultipole[i][2] = multipoleType.dipole[1];
@@ -6471,10 +6471,10 @@ public class PME_2 implements Potential {
                             multipoleType = forceField.getMultipoleType(key);
                             if (multipoleType != null) {
                                 int multipoleReferenceAtoms[] = new int[3];
-                                multipoleReferenceAtoms[0] = atom2.xyzIndex - 1;
-                                multipoleReferenceAtoms[1] = atom3.xyzIndex - 1;
-                                multipoleReferenceAtoms[2] = atom4.xyzIndex - 1;
-                                atom.setMultipoleType(multipoleType, null);
+                                multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
+                                multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
+                                multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
+                                atom.setMultipoleType(multipoleType);
                                 localMultipole[i][0] = multipoleType.charge;
                                 localMultipole[i][1] = multipoleType.dipole[0];
                                 localMultipole[i][2] = multipoleType.dipole[1];
@@ -6507,7 +6507,7 @@ public class PME_2 implements Potential {
         for (Atom ai : atoms) {
             group.clear();
             polarizationGroup.clear();
-            Integer index = ai.getXYZIndex() - 1;
+            Integer index = ai.getXyzIndex() - 1;
             group.add(index);
             polarizationGroup.add(ai.getType());
             PolarizeType polarizeType = ai.getPolarizeType();
@@ -6561,7 +6561,7 @@ public class PME_2 implements Potential {
                 ArrayList<Bond> bonds = aj.getBonds();
                 for (Bond b : bonds) {
                     Atom ak = b.get1_2(aj);
-                    int k = ak.getXYZIndex() - 1;
+                    int k = ak.getXyzIndex() - 1;
                     if (mask[k] != i) {
                         keep.add(k);
                     }
@@ -6631,7 +6631,7 @@ public class PME_2 implements Potential {
             boolean added = false;
             for (int g : polarizationGroup) {
                 if (g == tj) {
-                    Integer index = aj.getXYZIndex() - 1;
+                    Integer index = aj.getXyzIndex() - 1;
                     if (!group.contains(index)) {
                         group.add(index);
                         added = true;
