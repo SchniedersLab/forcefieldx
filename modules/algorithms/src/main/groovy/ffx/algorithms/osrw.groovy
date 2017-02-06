@@ -178,7 +178,7 @@ boolean resetNumSteps = true;
 // Constant pressure
 boolean NPT = false;
 int meanInterval = 10;
-double minDensity = 0.5;
+double minDensity = 0.75;
 double maxDensity = 1.5;
 double maxSideMove = 0.25;
 double maxAngleMove = 1.0;

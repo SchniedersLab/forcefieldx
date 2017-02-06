@@ -1,6 +1,10 @@
 
 package ffx.algorithms;
 
+// Java Imports
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 // Groovy Imports
 import groovy.cli.Option;
 import groovy.cli.Unparsed;
@@ -9,9 +13,8 @@ import groovy.util.CliBuilder;
 // Parallel Java Imports
 import edu.rit.pj.Comm;
 
-// Java Imports
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+// Apache Commons Imports
+import org.apache.commons.io.FilenameUtils;
 
 // FFX Imports
 import ffx.algorithms.Barostat;
@@ -41,8 +44,6 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * The TTosrw script uses the Transition-Tempered Orthogonal Space Random Walk
@@ -193,27 +194,33 @@ class TTosrw extends Script {
         /**
          * -l or --lambda sets the lambda value to minimize at.
          */
-        @Option(shortName='l', longName='lambda', defaultValue='-1', description='Initial lambda value (> 1.0 distributes lambda across walkers)') double lambda;
+        @Option(shortName='l', longName='lambda', defaultValue='-1',
+            description='Initial lambda value (> 1.0 distributes lambda across walkers)') double lambda;
         /**
          * -c or --count sets the number of time steps between OSRW counts.
          */
-        @Option(shortName='c', longName='count', defaultValue='10', description='Time steps between OSRW counts.') int countFreq;
+        @Option(shortName='c', longName='count', defaultValue='10',
+            description='Time steps between OSRW counts.') int countFreq;
         /**
          * -b or --bias sets the initial Gaussian bias magnitude in kcal/mol.
          */
-        @Option(shortName='g', longName='bias', defaultValue='0.002', description='Gaussian bias magnitude (kcal/mol)') double biasMag;
+        @Option(shortName='g', longName='bias', defaultValue='0.002',
+            description='Gaussian bias magnitude (kcal/mol)') double biasMag;
         /**
          * -m or --mass sets the lambda particle mass.
          */
-        @Option(shortName='m', longName='mass', defaultValue='1.0e-18', description='Lambda particle mass') double lamMass;
+        @Option(shortName='m', longName='mass', defaultValue='1.0e-18',
+            description='Lambda particle mass') double lamMass;
         /**
          * -x or --friction sets the friction on the lambda particle.
          */
-        @Option(shortName='x', longName='friction', defaultValue='1.0e-18', description='Lambda particle friction') double lamFric;
+        @Option(shortName='x', longName='friction', defaultValue='1.0e-18',
+            description='Lambda particle friction') double lamFric;
         /**
          * -p or --npt enables use of a barostat.
          */
-        @Option(shortName='p', longName='npt', defaultValue='false', description='Use NPT') boolean npt;
+        @Option(shortName='p', longName='npt', defaultValue='false',
+            description='Use NPT') boolean npt;
         /**
          * -sym or --symOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
          */
@@ -227,55 +234,67 @@ class TTosrw extends Script {
         /**
          * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
          */
-        @Option(shortName='ld', longName='minDensity', defaultValue='0.9', description='Minimum density allowed by the barostat') double minDensity;
+        @Option(shortName='ld', longName='minDensity', defaultValue='0.75',
+            description='Minimum density allowed by the barostat') double minDensity;
         /**
          * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
          */
-        @Option(shortName='hd', longName='maxDensity', defaultValue='1.5', description='Maximum density allowed by the barostat') double maxDensity;
+        @Option(shortName='hd', longName='maxDensity', defaultValue='1.5',
+            description='Maximum density allowed by the barostat') double maxDensity;
         /**
          * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
          */
-        @Option(shortName='sm', longName='maxSideMove', defaultValue='0.5', description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
+        @Option(shortName='sm', longName='maxSideMove', defaultValue='0.25',
+            description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
         /**
          * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
          */
-        @Option(shortName='am', longName='maxAngleMove', defaultValue='2.0', description='Maximum angle move allowed by the barostat in degrees') double maxAngleMove;
+        @Option(shortName='am', longName='maxAngleMove', defaultValue='1.0',
+            description='Maximum angle move allowed by the barostat in degrees') double maxAngleMove;
         /**
          * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
          */
-        @Option(shortName='mi', longName='meanInterval', defaultValue='10', description='Mean number of MD steps between barostat move proposals.') int meanInterval;
+        @Option(shortName='mi', longName='meanInterval', defaultValue='10',
+            description='Mean number of MD steps between barostat move proposals.') int meanInterval;
 
         /**
          * -W or --traversals sets writing lambda traversal snapshots.
          */
-        @Option(shortName='W', longName='traversals', defaultValue='false', description='Write out lambda-traversal snapshots.') boolean traversals;
+        @Option(shortName='W', longName='traversals', defaultValue='false',
+            description='Write out lambda-traversal snapshots.') boolean traversals;
         /**
          * -rt or --reset resets the OSRW histogram once, at lambda 0.99.
          */
-        @Option(shortName='rt', longName='reset', defaultValue='false', description='Reset OSRW histogram once, when lambda reaches 0.99.') boolean reset;
+        @Option(shortName='rt', longName='reset', defaultValue='false',
+            description='Reset OSRW histogram once, when lambda reaches 0.99.') boolean reset;
         /**
          * -tp or --temperingParam sets the Dama et al tempering rate parameter,
          * in multiples of kBT.
          */
-        @Option(shortName='tp', longName='temperingParam', defaultValue='2.0', description='Dama et al tempering rate parameter in multiples of kBT') double temperParam;
+        @Option(shortName='tp', longName='temperingParam', defaultValue='2.0',
+            description='Dama et al tempering rate parameter in multiples of kBT') double temperParam;
         /**
          * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart
          * files and thus resets the histogram; use -rn false to continue from
          * the end of any prior simulation.
          */
-        @Option(shortName='rn', longName='resetNumSteps', defaultValue='true', description='Ignore prior steps logged in .lam files') String resetStepsString;
+        @Option(shortName='rn', longName='resetNumSteps', defaultValue='true',
+            description='Ignore prior steps logged in .lam files') String resetStepsString;
         /**
          * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, 4, or 8.
          */
-        @Option(shortName='np', longName='nParallel', defaultValue='1', description='Number of topologies to evaluate in parallel') int nPar;
+        @Option(shortName='np', longName='nParallel', defaultValue='1',
+            description='Number of topologies to evaluate in parallel') int nPar;
         /**
          * -uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
          */
-        @Option(shortName='uaA', longName='unsharedA', description='Unshared atoms in the A dual topology (period-separated hyphenated ranges)') String unsharedA;
+        @Option(shortName='uaA', longName='unsharedA',
+            description='Unshared atoms in the A dual topology (period-separated hyphenated ranges)') String unsharedA;
         /**
          * -uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
          */
-        @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
+        @Option(shortName='uaB', longName='unsharedB',
+            description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
         /**
          * -dw or --distributeWalkers allows walkers to start from multiple
          * conformations; AUTO picks up per-walker conformations as
@@ -283,7 +302,8 @@ class TTosrw extends Script {
          * rotamer optimization to generate side-chain configurations to start
          * from.
          */
-        @Option(shortName='dw', longName='distributeWalkers', description='AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.') String distWalksString;
+        @Option(shortName='dw', longName='distributeWalkers',
+            description='AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.') String distWalksString;
 
 
         /**
