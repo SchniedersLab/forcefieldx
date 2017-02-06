@@ -62,7 +62,7 @@ import ffx.potential.parameters.ForceField;
  * @since 1.0
  */
 @RunWith(Parameterized.class)
-public final class CrystalEnergyTest {
+public class CrystalEnergyTest {
 
     private static final Logger logger = Logger.getLogger(CrystalEnergyTest.class.getName());
 
@@ -268,7 +268,7 @@ public final class CrystalEnergyTest {
             return;
         }
 
-        boolean gradient = true;
+        boolean gradient = false;
         boolean print = true;
         double total = forceFieldEnergy.energy(gradient, print);
         // Bond Energy
@@ -383,7 +383,7 @@ public final class CrystalEnergyTest {
     }
 
     public void testSoftCore() {
-        boolean gradient = true;
+        boolean gradient = false;
         boolean print = true;
         double e = forceFieldEnergy.energy(gradient, print);
         Atom atoms[] = molecularAssembly.getAtomArray();
@@ -396,7 +396,6 @@ public final class CrystalEnergyTest {
         // Compute the energy with Lambda = 1.0;
         double lambda = 1.0;
         forceFieldEnergy.setLambda(lambda);
-        forceFieldEnergy.setLambdaTerm(true);
         double e2 = forceFieldEnergy.energy(gradient, print);
         assertEquals(e, e2, tolerance);
     }

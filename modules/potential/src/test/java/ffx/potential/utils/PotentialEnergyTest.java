@@ -330,7 +330,7 @@ public final class PotentialEnergyTest {
             return;
         }
 
-        boolean gradient = true;
+        boolean gradient = false;
         boolean print = true;
         double total = forceFieldEnergy.energy(gradient, print);
         // Bond Energy
@@ -450,7 +450,7 @@ public final class PotentialEnergyTest {
     }
 
     public void testSoftCore() {
-        boolean gradient = true;
+        boolean gradient = false;
         boolean print = true;
         double e = forceFieldEnergy.energy(gradient, print);
         Atom atoms[] = molecularAssembly.getAtomArray();
@@ -463,7 +463,6 @@ public final class PotentialEnergyTest {
         // Compute the energy with Lambda = 1.0;
         double lambda = 1.0;
         forceFieldEnergy.setLambda(lambda);
-        forceFieldEnergy.setLambdaTerm(true);
         double e2 = forceFieldEnergy.energy(gradient, print);
         assertEquals(e, e2, tolerance);
     }

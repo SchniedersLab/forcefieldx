@@ -106,14 +106,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         XYZ, PERSIST
     }
     
-    private boolean isBackground = false;
-    public void sendToBackground() {
-        isBackground = true;
-    }
-    public boolean isBackground() {
-        return isBackground;
-    }
-    
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
     /**
@@ -423,7 +415,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         colorModel = ColorModel.CPK;
         redXYZ = null;
         persistentIndex = indexer++;
-        xyzIndex = persistentIndex;     // is overwritten by all other constructors
         //this.atomSerial = atomSerialCount.getAndIncrement();
     }
 
@@ -2518,8 +2509,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param multipoleReferenceSites an array of
      * {@link ffx.potential.bonded.Atom} objects.
      */
-    public void setMultipoleType(MultipoleType multipoleType) {
+    public void setMultipoleType(MultipoleType multipoleType, Atom[] multipoleReferenceSites) {
         this.multipoleType = multipoleType;
+        this.multipoleReferenceSites = multipoleReferenceSites;
+    }
+    
+    public void setMultipoleType(MultipoleType multipoleType) {
+        setMultipoleType(multipoleType, null);
     }
 
     public void setMoleculeNumber(int molecule) {

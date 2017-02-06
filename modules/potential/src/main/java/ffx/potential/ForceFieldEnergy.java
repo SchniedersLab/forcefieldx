@@ -90,7 +90,6 @@ import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
-import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
@@ -524,8 +523,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         // Collect, count, pack and sort stretch-bends.
         if (stretchBendTerm) {
-//          ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
-            List<StretchBend> stretchBend = molecularAssembly.getDescendants(StretchBend.class);
+          ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
             nStretchBends = stretchBend.size();
             stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
             Arrays.sort(stretchBends);
@@ -539,8 +537,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
 
         // Collect, count, pack and sort Urey-Bradleys.
         if (ureyBradleyTerm) {
-//            ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
-            List<UreyBradley> ureyBradley = molecularAssembly.getDescendants(UreyBradley.class);
+            ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
             nUreyBradleys = ureyBradley.size();
             ureyBradleys = ureyBradley.toArray(new UreyBradley[nUreyBradleys]);
             Arrays.sort(ureyBradleys);
@@ -795,11 +792,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         atoms = (esvTerm) ? esvSystem.getExtendedAndBackgroundAtoms() : molecularAssembly.getAtomArray();
         int[] molecule = (esvTerm) ? esvSystem.getExtendedAndBackgroundMolecule() : molecularAssembly.getMoleculeNumbers();
         nAtoms = atoms.length;
-        SB.logfn(" FFE Atoms (%d)", nAtoms);
-        for (int i = 0; i < atoms.length; i++) {
-            SB.logfn(" %d: %s", i, atoms[i].toString());
-        }
-        SB.printIf(true);
 
         if (xyz.length < 3 * nAtoms) {
             xyz = new double[nAtoms * 3];
@@ -1135,7 +1127,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
             logger.severe(" COM restrain energy term cannot be used with variable systems sizes.");
         }
         
-        bondedRegion = new BondedRegion();  // TODO: write a reinit() for BondedRegion
+        bondedRegion = new BondedRegion();
     }
 
     public void setFixedCharges(Atom atoms[]) {
@@ -1677,14 +1669,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
-        }
-    }
-    
-    public void setLambdaTerm(boolean set) {
-        lambdaTerm = set;
-        molecularAssembly.getForceField().addForceFieldBoolean(ForceFieldBoolean.LAMBDATERM, set);
-        if (set) {
-            reInit();
         }
     }
 
@@ -2639,7 +2623,6 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
          */
         private final AtomicDoubleArray lambdaGradZ;
         
-
         // Shared RMSD variables.
         private final SharedDouble sharedBondRMSD;
         private final SharedDouble sharedAngleRMSD;

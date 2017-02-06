@@ -321,7 +321,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         for (int i = 0; i < nAtomsExt; i++) {
             if (esv.viewUnsharedAtoms().contains(atomsExt[i])) {
                 esvForUnshared[i] = esv;
-            } else {
+            } else if (esv.viewSharedAtoms().contains(atomsExt[i])) {
                 esvForShared[i] = esv;
             }
         }

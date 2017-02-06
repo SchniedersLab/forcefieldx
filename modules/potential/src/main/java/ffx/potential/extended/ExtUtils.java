@@ -247,7 +247,7 @@ public final class ExtUtils {
         SB.logfn("\n Extended Configuration: ");
         while (it.hasNext()) {
             String key = it.next();
-            SB.logfn("   %16s = %6s", it, extConfig.getProperty(key));
+            SB.logfn("   %16s = %6s", key, extConfig.getProperty(key));
         }
         SB.nl();
         SB.print();

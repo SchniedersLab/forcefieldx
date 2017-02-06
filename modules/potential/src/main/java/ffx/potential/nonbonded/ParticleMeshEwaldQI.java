@@ -1170,18 +1170,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             logger.info(sb.toString());
         }
 
-        if (esvTerm) {
-            SB.nlogf(" ESV-PME Softcore: ");
-            for (int i = 0; i < nAtoms; i++) {
-                // Only add softcores due to ESVs; don't interfere with existing.
-                if (esvSystem.isShared(i)) {
-                    isSoft[i] = true;
-                    SB.nlogf(atoms[i].toString());
-                }
-            }
-            SB.printIf(print);
-        }
-
         /**
          * Initialize boundary conditions, an n^2 neighbor list and parallel
          * scheduling for ligand vapor electrostatics.
@@ -3637,8 +3625,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 }
                 polarizationEnergy += ei;
             }
-            permanentEnergy *= ELECTRIC;
-            polarizationEnergy *= ELECTRIC;
+            if (!esvTerm) {
+                permanentEnergy *= ELECTRIC;
+                polarizationEnergy *= ELECTRIC;
+            }
         }
 
         /**
@@ -3651,7 +3641,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             private double scale, scalep, scaled;
             private double sc1, sc2;
             private boolean soft;
-            private boolean esvi, esvk;
             private double selfScale;
             private double permanentEnergy;
             private double inducedEnergy;
@@ -3855,14 +3844,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             public void finish() {
                 sharedInteractions.addAndGet(count);
                 if (lambdaTerm) {
-                    shareddEdLambda.addAndGet(dUdL * ELECTRIC);
-                    sharedd2EdLambda2.addAndGet(d2UdL2 * ELECTRIC);
+                    if (esvTerm) {
+                        shareddEdLambda.addAndGet(dUdL);
+                        sharedd2EdLambda2.addAndGet(d2UdL2);
+                    } else {
+                        shareddEdLambda.addAndGet(dUdL * ELECTRIC);
+                        sharedd2EdLambda2.addAndGet(d2UdL2 * ELECTRIC);
+                    }
                 }
                 if (esvTerm) {
                     // Every-time, parallel reduction to shared esv deriv.
-                    for (int i = 0; i < numESVs; i++) {
-                        esvRealDerivShared[i].addAndGet(dEdEsvLocal[i] * ELECTRIC);
-                    }
+                    /* TODO fill esvDerivLocal and reduce here instead      */
                 }
                 realSpaceEnergyTime[getThreadIndex()] += System.nanoTime();
             }
@@ -3905,7 +3897,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
-                    final double globalMultipolei[] = mpole[i];
+                    double globalMultipoleI[] = mpole[i];
                     final double inducedDipolei[] = ind[i];
                     final double inducedDipolepi[] = indCR[i];
                     final boolean softi = isSoft[i];        // includes ESV softs
@@ -3941,7 +3933,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             sc1 = 0.0;
                             sc2 = 1.0;
                         }
-                        if (esvi || esvk) {
+                        if (esviSoft || esvkSoft) {
                             /** Use the original lambda here;
                              * switch is applied only to the "lambda out front." */
                             final double li = esvLambda[i];
@@ -3953,7 +3945,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             double permLambdaProduct = lambda * esvLambda[i] * esvLambda[k];                            
                             /* TODO: add windowing support
                              *       requires the following line and alt treatment of dsc1,dsc2 below */
-                            permLambdaProduct = permL * permLi * permLk;
+//                            permLambdaProduct = permL * permLi * permLk;
                             sc1 = permLambdaAlpha * (1.0 - permLambdaProduct) * (1.0 - permLambdaProduct);
                             dsc1dL = -2.0 * permLambdaAlpha * (1.0 - permLambdaProduct);
                             d2sc1dL2 = 2.0 * permLambdaAlpha;
@@ -4000,7 +3992,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         dx_local[2] = zk - zi;
                         crystal.image(dx_local);
 
-                        final double globalMultipolek[] = neighborMultipole[k];
+                        double globalMultipoleK[] = neighborMultipole[k];
                         final double inducedDipolek[] = neighborInducedDipole[k];
                         final double inducedDipolepk[] = neighborInducedDipolep[k];
                         final double pdk = ipdamp[k];   // == 1/polarizability^6
@@ -4010,104 +4002,125 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         scaled = maskingd_local[k];
                         double damp = min(pti, ptk);
                         double aiak = pdi * pdk;
-                        if (!doPermanentRealSpace && !esvTerm) {
-                            inducedEnergy += pairPol(dx_local, globalMultipolei, globalMultipolek,
+                        if (!doPermanentRealSpace) {
+                            inducedEnergy += pairPol(dx_local, globalMultipoleI, globalMultipoleK,
                                     inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
                                     damp, aiak);
                             count++;
                             continue;
                         }
-                        if (doPolarization && !esvTerm) {
-                            
-                            double eTotal = pairPermPol(dx_local, globalMultipolei, globalMultipolek,
+                        if (doPolarization) {
+                            double eTotal = pairPermPol(dx_local, globalMultipoleI, globalMultipoleK,
                                     inducedDipolei, inducedDipolek, inducedDipolepi, inducedDipolepk,
                                     damp, aiak, energy);
                             permanentEnergy += energy[0];
                             inducedEnergy += energy[1];
                             count++;
                             continue;
-                        }
-                        /* Ureal = interact Mi with Mk.
-                         * dUreal/dLi = interact MdotI with Mk.
-                         * dUreal/dLk = interact MdotK with Mi.
-                         */
-                        EnergyForceTorque eft = pairPerm(dx_local, globalMultipolei, globalMultipolek);
-                        permanentEnergy += eft.energy;
-                        SB.logfp(" pairPerm %d-%s %d-%s = %g \t\t(%g)", 
-                                i, atoms[i].toNameNumberString(),
-                                k, atoms[k].toNameNumberString(),
-                                eft.energy, permanentEnergy);
-                        if (gradient) {
-                            double scalar = ELECTRIC * selfScale * sc2;
-                            gX[i] += scalar * eft.permFi[0];
-                            gY[i] += scalar * eft.permFi[1];
-                            gZ[i] += scalar * eft.permFi[2];
-                            tX[i] += scalar * eft.permTi[0];
-                            tY[i] += scalar * eft.permTi[1];
-                            tZ[i] += scalar * eft.permTi[2];
-                            gxk_local[k] -= scalar * eft.permFi[0];
-                            gyk_local[k] -= scalar * eft.permFi[1];
-                            gzk_local[k] -= scalar * eft.permFi[2];
-                            txk_local[k] += scalar * eft.permTk[0];
-                            tyk_local[k] += scalar * eft.permTk[1];
-                            tzk_local[k] += scalar * eft.permTk[2];
-                        }
-                        if (soft) {
-                            final double F = sc1;
-                            final double dFdL = dsc1dL;
-                            final double P = eft.energy;
-                            final double dPdF = eft.dPermdZ;
-                            final double S = sc2;
-                            final double dSdL = dsc2dL;
-
-                            final double termA = dSdL * P;
-                            final double termB = S * dPdF * dFdL;
-                            final double thisInteraction = selfScale * (termA + termB);
-                            dUdL += thisInteraction;
-                            
-                            /* dU/dL/dX, of first term: d[dlPow * ereal]/dx             */
-                            double scalar = ELECTRIC * selfScale * dEdLSign * dsc2dL;
-                            lgX[i] += scalar * eft.permFi[0];
-                            lgY[i] += scalar * eft.permFi[1];
-                            lgZ[i] += scalar * eft.permFi[2];
-                            ltX[i] += scalar * eft.permTi[0];
-                            ltY[i] += scalar * eft.permTi[1];
-                            ltZ[i] += scalar * eft.permTi[2];
-                            lxk_local[k] -= scalar * eft.permFi[0];
-                            lyk_local[k] -= scalar * eft.permFi[1];
-                            lzk_local[k] -= scalar * eft.permFi[2];
-                            ltxk_local[k] += scalar * eft.permTk[0];
-                            ltyk_local[k] += scalar * eft.permTk[1];
-                            ltzk_local[k] += scalar * eft.permTk[2];
-
-                            /* dU/dL/dX, of second term: d[lPow*dlAlpha*dRealdL]/dX     */
-                            // No additional call to MT; use 6th order tensor instead.
-                            scalar = ELECTRIC * selfScale * sc2 * dsc1dL;
-                            lgX[i] += scalar * eft.permFi[0];
-                            lgY[i] += scalar * eft.permFi[1];
-                            lgZ[i] += scalar * eft.permFi[2];
-                            ltX[i] += scalar * eft.permTi[0];
-                            ltY[i] += scalar * eft.permTi[1];
-                            ltZ[i] += scalar * eft.permTi[2];
-                            lxk_local[k] -= scalar * eft.permFi[0];
-                            lyk_local[k] -= scalar * eft.permFi[1];
-                            lzk_local[k] -= scalar * eft.permFi[2];
-                            ltxk_local[k] += scalar * eft.permTk[0];
-                            ltyk_local[k] += scalar * eft.permTk[1];
-                            ltzk_local[k] += scalar * eft.permTk[2];
-
-                            if (esvi || esvk) {
-                                // TODO: Get ESV derivative for unshared (hydrogen) atoms.
-                            }
-                        }   // soft
-                        if (esvi || esvk) {
+                        } else {
                             /* Ureal = interact Mi with Mk.
                              * dUreal/dLi = interact MdotI with Mk.
-                             * dUreal/dLk = interact MdotK with Mi.
+                             * dUreal/dLk = interact Mi with MdotK.
                              */
-                            // TODO: Get ESV derivative for shared atoms.
+                            if (esviScaled) {
+                                globalMultipoleI = atoms[i].getEsvMultipoleM().packedMultipole;
+                            }
+                            if (esvkScaled) {
+                                globalMultipoleK = atoms[k].getEsvMultipoleM().packedMultipole;
+                            }
+                            EnergyForceTorque eft = pairPermEnergy(dx_local, globalMultipoleI, globalMultipoleK);
+                            permanentEnergy += eft.energy;
+                            SB.logf(" pairPerm %d-%s %d-%s = %g \t\t(%g)", 
+                                    i, atoms[i].toNameNumberString(),
+                                    k, atoms[k].toNameNumberString(),
+                                    eft.energy, permanentEnergy);
+                            SB.printIf(VERBOSE());
+                            if (gradient) {
+                                double scalar = selfScale * sc2;
+                                gX[i] += scalar * eft.permFi[0];
+                                gY[i] += scalar * eft.permFi[1];
+                                gZ[i] += scalar * eft.permFi[2];
+                                tX[i] += scalar * eft.permTi[0];
+                                tY[i] += scalar * eft.permTi[1];
+                                tZ[i] += scalar * eft.permTi[2];
+                                gxk_local[k] -= scalar * eft.permFi[0];
+                                gyk_local[k] -= scalar * eft.permFi[1];
+                                gzk_local[k] -= scalar * eft.permFi[2];
+                                txk_local[k] += scalar * eft.permTk[0];
+                                tyk_local[k] += scalar * eft.permTk[1];
+                                tzk_local[k] += scalar * eft.permTk[2];
+                            }
+                            if (esviScaled) {
+                                double[] multipoleDotI = atoms[i].getEsvMultipoleMdot().packedMultipole;
+                                EnergyForceTorque eftDotI = pairPermEnergy(dx_local, multipoleDotI, globalMultipoleK);
+                                double dEdLi = eftDotI.energy * esvLambda[k] * lambda;
+                                int idxi = esvIdByAtom[i];
+                                esvRealDerivShared[idxi].getAndAdd(dEdLi);
+                            }
+                            if (esvkScaled) {
+                                double[] multipoleDotK = atoms[k].getEsvMultipoleMdot().packedMultipole;
+                                EnergyForceTorque eftDotK = pairPermEnergy(dx_local, globalMultipoleI, multipoleDotK);
+                                double dEdLk = eftDotK.energy * esvLambda[i] * lambda;
+                                int idxk = esvIdByAtom[k];
+                                esvRealDerivShared[idxk].getAndAdd(dEdLk);
+                            }
+                            if (soft) {
+                                final double F = sc1;
+                                final double dFdL = dsc1dL;
+                                final double P = eft.energy;
+                                final double dPdF = eft.dPermdZ;
+                                final double S = sc2;
+                                final double dSdL = dsc2dL;
+
+                                final double termA = dSdL * P;
+                                final double termB = S * dPdF * dFdL;
+                                final double thisInteraction = selfScale * (termA + termB);
+                                dUdL += thisInteraction;
+
+                                /* dU/dL/dX, of first term: d[dlPow * ereal]/dx             */
+                                double scalar = selfScale * dEdLSign * dsc2dL;
+                                lgX[i] += scalar * eft.permFi[0];
+                                lgY[i] += scalar * eft.permFi[1];
+                                lgZ[i] += scalar * eft.permFi[2];
+                                ltX[i] += scalar * eft.permTi[0];
+                                ltY[i] += scalar * eft.permTi[1];
+                                ltZ[i] += scalar * eft.permTi[2];
+                                lxk_local[k] -= scalar * eft.permFi[0];
+                                lyk_local[k] -= scalar * eft.permFi[1];
+                                lzk_local[k] -= scalar * eft.permFi[2];
+                                ltxk_local[k] += scalar * eft.permTk[0];
+                                ltyk_local[k] += scalar * eft.permTk[1];
+                                ltzk_local[k] += scalar * eft.permTk[2];
+
+                                /* dU/dL/dX, of second term: d[lPow*dlAlpha*dRealdL]/dX     */
+                                // No additional call to MT; use 6th order tensor instead.
+                                scalar = selfScale * sc2 * dsc1dL;
+                                lgX[i] += scalar * eft.permFi[0];
+                                lgY[i] += scalar * eft.permFi[1];
+                                lgZ[i] += scalar * eft.permFi[2];
+                                ltX[i] += scalar * eft.permTi[0];
+                                ltY[i] += scalar * eft.permTi[1];
+                                ltZ[i] += scalar * eft.permTi[2];
+                                lxk_local[k] -= scalar * eft.permFi[0];
+                                lyk_local[k] -= scalar * eft.permFi[1];
+                                lzk_local[k] -= scalar * eft.permFi[2];
+                                ltxk_local[k] += scalar * eft.permTk[0];
+                                ltyk_local[k] += scalar * eft.permTk[1];
+                                ltzk_local[k] += scalar * eft.permTk[2];
+                                if (esviSoft) {
+                                    double dUdLi = dUdL * esvLambda[k] * lambda;
+                                    int idxi = esvIdByAtom[i];
+                                    esvRealDerivShared[idxi].getAndAdd(dUdLi);
+                                }
+                                if (esvkSoft) {
+                                    double dUdLk = dUdL * esvLambda[i] * lambda;
+                                    int idxk = esvIdByAtom[k];
+                                    esvRealDerivShared[idxk].getAndAdd(dUdLk);
+                                }
+                            }   // soft
+                            count++;
+                            continue;
                         }
-                        count++;
                     }
                     /**
                      * Reset masking scale factors.
@@ -4277,19 +4290,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
              * Scale the multipoles INSTEAD OF softcoring for for non-titrating hydrogens.
              * Use traditional alpha*(1-L)^2 softcoring, analagously to VdW, for titrating H.
              */
-            private EnergyForceTorque pairPerm(double[] r, double[] Qi, double[] Qk) {
+            private EnergyForceTorque pairPermEnergy(double[] r, double[] Qi, double[] Qk) {
                 EnergyForceTorque eft = new EnergyForceTorque();
-                /* Manually zero out multipole components for charge/dipole/quadrupole use flags.
-                 * Oughtta be handled by initialization loop now.
-                for (int i = 0; i < 10; i++) {
-                    if ((i == 0 && useCharges)
-                            || (i >= 1 && i < 4 && useDipoles)
-                            || (i >= 4 && useQuadrupoles)) {
-                        Qi[i] = Qio[i];
-                        Qk[i] = Qko[i];
-                    }
-                }   */
-
                 /* Set MultipoleTensor distance; handle lambda buffering. */
                 crystal.image(dx_local);
                 if (soft) {
@@ -4297,14 +4299,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 } else {
                     tensor.setR(dx_local);
                 }
-                /* Only need these values if adding buffer in the global frame.
-                final double rbuff2 = dx_local[0]*dx_local[0] + dx_local[1]*dx_local[1]
-                        + (dx_local[2] + sc1)*(dx_local[2] + sc1);
-                final double rbuff = sqrt(rbuff2);              */
 
                 /* Compute screened real space interactions.    */
-                double dPermdL = 0.0;
-                double scale1 = 1.0 - scale;
+                double scaleElec = ELECTRIC * scale;
+                double scaleElec1 = ELECTRIC * (1.0 - scale);
                 boolean screened = true;
                 tensor.setOperator(OPERATOR.SCREENED_COULOMB);
                 if (aewald == 0.0 || scale == 1.0) {
@@ -4314,40 +4312,40 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 tensor.setR(dx_local, sc1);
                 tensor.setMultipolesQI(Qi, Qk);
                 tensor.order6QI();
-                eft.energy = tensor.multipoleEnergyQI(Fi, Ti, Tk);
-                eft.permFi[0] = scale1 * Fi[0];
-                eft.permFi[1] = scale1 * Fi[1];
-                eft.permFi[2] = scale1 * Fi[2];
-                eft.permTi[0] = scale1 * Ti[0];
-                eft.permTi[1] = scale1 * Ti[1];
-                eft.permTi[2] = scale1 * Ti[2];
-                eft.permTk[0] = scale1 * Tk[0];
-                eft.permTk[1] = scale1 * Tk[1];
-                eft.permTk[2] = scale1 * Tk[2];
+                eft.energy = scaleElec * tensor.multipoleEnergyQI(Fi, Ti, Tk);
+                eft.permFi[0] = scaleElec * Fi[0];
+                eft.permFi[1] = scaleElec * Fi[1];
+                eft.permFi[2] = scaleElec * Fi[2];
+                eft.permTi[0] = scaleElec * Ti[0];
+                eft.permTi[1] = scaleElec * Ti[1];
+                eft.permTi[2] = scaleElec * Ti[2];
+                eft.permTk[0] = scaleElec * Tk[0];
+                eft.permTk[1] = scaleElec * Tk[1];
+                eft.permTk[2] = scaleElec * Tk[2];
                 if (soft) {
-                    eft.dPermdZ = tensor.getdEdZbuff() * dsc1dL;
+                    eft.dPermdZ = scaleElec * tensor.getdEdZbuff() * dsc1dL;
                 }
                 
                 if (screened) {
                     tensor.setOperator(OPERATOR.COULOMB);
                     tensor.setR(dx_local, sc1);
                     tensor.order6QI();
-                    eft.energy -= scale1 * tensor.multipoleEnergyQI(FiC, TiC, TkC);                 
-                    eft.permFi[0] -= scale1 * FiC[0];
-                    eft.permFi[1] -= scale1 * FiC[1];
-                    eft.permFi[2] -= scale1 * FiC[2];
-                    eft.permTi[0] -= scale1 * TiC[0];
-                    eft.permTi[1] -= scale1 * TiC[1];
-                    eft.permTi[2] -= scale1 * TiC[2];
-                    eft.permTk[0] -= scale1 * TkC[0];
-                    eft.permTk[1] -= scale1 * TkC[1];
-                    eft.permTk[2] -= scale1 * TkC[2];
+                    eft.energy -= scaleElec1 * tensor.multipoleEnergyQI(FiC, TiC, TkC);                 
+                    eft.permFi[0] -= scaleElec1 * FiC[0];
+                    eft.permFi[1] -= scaleElec1 * FiC[1];
+                    eft.permFi[2] -= scaleElec1 * FiC[2];
+                    eft.permTi[0] -= scaleElec1 * TiC[0];
+                    eft.permTi[1] -= scaleElec1 * TiC[1];
+                    eft.permTi[2] -= scaleElec1 * TiC[2];
+                    eft.permTk[0] -= scaleElec1 * TkC[0];
+                    eft.permTk[1] -= scaleElec1 * TkC[1];
+                    eft.permTk[2] -= scaleElec1 * TkC[2];
                     if (soft) {
-                        eft.dPermdZ -= scale1 * tensor.getdEdZbuff() * dsc1dL;
+                        eft.dPermdZ -= scaleElec1 * tensor.getdEdZbuff() * dsc1dL;
                     }
                 }
 
-                eft.energy *= ELECTRIC * selfScale * sc2;
+                eft.energy *= selfScale * sc2;
                 return eft;
             }
 
@@ -6176,7 +6174,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         initSoftCore(true, false);
         // Allocate shared derivative storage.
         esvRealDerivShared = new SharedDouble[numESVs];
-        SB.logfp("Attached extended system (%d variables) to PME.", numESVs);
+        SB.logfp(" Attached extended system (%d variables) to PME.", numESVs);
         for (int i = 0; i < numESVs; i++) {
             esvRealDerivShared[i] = new SharedDouble(0.0);
         }
@@ -6185,13 +6183,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         /**
          * Enforce ESV-handling requirements slash best practices.
          */
-        if (doLigandVaporElec || doNoLigandCondensedSCF
+        if (permLambdaAlpha != 2.0 || permLambdaExponent != 3.0
+                || doLigandVaporElec || doNoLigandCondensedSCF
                 || !intermolecularSoftcore || !intramolecularSoftcore) {
-            logf(" (EsvSys) Nonstandard PME-ESV configuration: %b %b %b %b\n"
-               + "          Enforcing inter/intra defaults:    %b %b %b %b",
+            logf(" (EsvSys) Nonstandard PME-ESV configuration: %.2f %.2f %b %b %b %b\n"
+               + "          Enforcing alpha,exp,vap,nol,in/in: %.2f %.2f %b %b %b %b",
                     permLambdaAlpha, permLambdaExponent,
                     doLigandVaporElec, doNoLigandCondensedSCF, intermolecularSoftcore, intramolecularSoftcore,
-                    2.0, 1.0,
+                    2.0, 3.0,
                     false, false, true, true);
         }
         doLigandVaporElec = false;
@@ -6267,79 +6266,20 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 esvRecipDerivShared[i] = new SharedDouble(0.0);
             }
         }
-
-        /* For atoms that are disappearing altogether (ie. the titrating H),
-            apply traditional softcoring form.                              */
-        for (int i = 0; i < nAtoms; i++) {
-            if (!esvAtomsUnshared[i]) {
-                continue;
-            }
-            for (int k = i + 1; k < nAtoms; k++) {
-                if (!esvAtomsUnshared[k]) {
-                    continue;
-                }
-                final Atom ai = atoms[i];
-                final Atom ak = atoms[k];
-                final double li = esvLambda[i];
-                final double lk = esvLambda[k];
-                double window = permLambdaEnd - permLambdaStart;
-                double windowScale = 1.0 / window;
-                double permL = (lambda - permLambdaStart) * windowScale;
-                double permLi = (li - permLambdaStart) * windowScale;
-                double permLk = (lk - permLambdaStart) * windowScale;
-                double permLambdaProduct = permL * permLi * permLk;
-                sc1 = permLambdaAlpha * (1.0 - permLambdaProduct) * (1.0 - permLambdaProduct);
-                dsc1dL = -2.0 * permLambdaAlpha * (1.0 - permLambdaProduct);
-                d2sc1dL2 = 2.0 * permLambdaAlpha;
-                sc2 = pow(permLambdaProduct, permLambdaExponent);
-                dsc2dL = permLambdaExponent * pow(permLambdaProduct, permLambdaExponent - 1);
-                d2sc2dL2 = 0.0;
-                if (permLambdaExponent >= 2.0) {
-                    d2sc2dL2 = permLambdaExponent * (permLambdaExponent - 1)
-                            * pow(permLambdaProduct, permLambdaExponent - 2);
-                }
-                /* Treat chain rule due to windowing.
-                 *  if (esvi) { (esvk-start)*(osrw-start)*scale3 }
-                 *  if (esvk) { (esvi-start)*(osrw-start)*scale3 }
-                 */
-                double scale3 = windowScale * windowScale * windowScale;
-                // w.r.t esvi
-                final double dsc1dL_i = dsc1dL * scale3
-                        *(lk - permLambdaStart)*(lambda - permLambdaStart);
-                final double d2sc1dL2_i = d2sc1dL2 * scale3 * scale3
-                        *(lk - permLambdaStart)*(lambda - permLambdaStart)
-                        *(lk - permLambdaStart)*(lambda - permLambdaStart);
-                final double dsc2dL_i = dsc2dL * scale3
-                        *(lk - permLambdaStart)*(lambda - permLambdaStart);
-                final double d2sc2dL2_i = d2sc2dL2 * scale3 * scale3
-                        *(lk - permLambdaStart)*(lambda - permLambdaStart)
-                        *(lk - permLambdaStart)*(lambda - permLambdaStart);
-                // w.r.t esvk
-                final double dsc1dL_k = dsc1dL * scale3
-                        *(li - permLambdaStart)*(lambda - permLambdaStart);
-                final double d2sc1dL2_k = d2sc1dL2 * scale3 * scale3
-                        *(li - permLambdaStart)*(lambda - permLambdaStart)
-                        *(li - permLambdaStart)*(lambda - permLambdaStart);
-                final double dsc2dL_k = dsc2dL * scale3
-                        *(li - permLambdaStart)*(lambda - permLambdaStart);
-                final double d2sc2dL2_k = d2sc2dL2 * scale3 * scale3
-                        *(li - permLambdaStart)*(lambda - permLambdaStart)
-                        *(li - permLambdaStart)*(lambda - permLambdaStart);
-            }
-        }
                 
         /* For atoms with both a foreground and background version, smoothly
             switch between these multipole types with the sigmoid switch.       */
         /* Preload switched MultipoleTypes that composite foreground + backgrouind
             atoms (for all ESV'd atoms except the titrating H).                 */
         for (int i = 0; i < nAtoms; i++) {
-            if (!esvAtomsShared[i]) {
-                continue;
+            if (esvAtomsShared[i]) {
+                if (atoms[i].getEsvMultipoleM() == null) {
+//                    throw new IllegalStateException();
+                }
+                if (atoms[i].getEsvMultipoleMdot() == null) {
+//                    throw new IllegalStateException();
+                }
             }
-            final Atom ai = atoms[i];
-            final MultipoleType mti_orig = ai.getMultipoleType();
-            final MultipoleType mti_M = ai.getEsvMultipoleM();
-            final MultipoleType mti_Mdot = ai.getEsvMultipoleMdot();
         }
 
         /* Set polarization scaling.

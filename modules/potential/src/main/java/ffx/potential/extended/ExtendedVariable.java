@@ -364,7 +364,6 @@ public abstract class ExtendedVariable {
                 assert(!atomsForeground.contains(a0));
                 assert(!isTitratableHydrogen(a0));
                 atomsBackground.add(a0);
-                a0.sendToBackground();
             }
         }
         

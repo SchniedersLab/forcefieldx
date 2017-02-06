@@ -37,6 +37,8 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.logging.Logger;
+
 import ffx.crystal.Crystal;
 import ffx.numerics.MultipoleTensor;
 import ffx.potential.bonded.Atom;
