@@ -60,6 +60,7 @@ import static org.apache.commons.math3.util.FastMath.exp;
 
 import edu.rit.mp.DoubleBuf;
 
+import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
@@ -119,7 +120,7 @@ public class OSRW extends AbstractOSRW {
      * @param algorithmListener the AlgorithmListener to be notified of
      * progress.
      */
-    public OSRW(LambdaInterface lambdaInterface, Potential potential,
+    public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous,
@@ -147,7 +148,7 @@ public class OSRW extends AbstractOSRW {
      * @param algorithmListener the AlgorithmListener to be notified of
      * progress.
      */
-    public OSRW(LambdaInterface lambdaInterface, Potential potential,
+    public OSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous, boolean resetNumSteps,

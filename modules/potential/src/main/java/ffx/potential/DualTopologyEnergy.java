@@ -38,21 +38,21 @@
 package ffx.potential;
 
 // PJ Imports
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static java.util.Arrays.fill;
+
+import org.apache.commons.math3.util.FastMath;
+
+import static org.apache.commons.math3.util.FastMath.pow;
+
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
 
-// Java Imports
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import static java.util.Arrays.fill;
-
-// Apache Imports
-import org.apache.commons.math3.util.FastMath;
-import static org.apache.commons.math3.util.FastMath.pow;
-
-// FFX Imports
-import ffx.numerics.Potential;
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.ForceField;
@@ -65,7 +65,7 @@ import ffx.potential.utils.EnergyException;
  *
  * @since 1.0
  */
-public class DualTopologyEnergy implements Potential, LambdaInterface {
+public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     /**
      * Logger for the DualTopologyEnergy class.
@@ -280,18 +280,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
      */
     private final double maxDisc2 = 0.09;
     /**
-     * Square of the minimum distance between shared atoms which will cause a 
+     * Square of the minimum distance between shared atoms which will cause a
      * warning. Intended to cover anything larger than a rounding error.
      */
     private final double minDiscWarn2 = 0.00001;
     /**
      * Topology 1 Potential.
      */
-    private final Potential potential1;
+    private final CrystalPotential potential1;
     /**
      * Topology 2 Potential.
      */
-    private final Potential potential2;
+    private final CrystalPotential potential2;
     /**
      * Topology 1 LambdaInterface.
      */
@@ -316,8 +316,8 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     private final Atom activeAtoms1[];
     private final Atom activeAtoms2[];
 
-    public DualTopologyEnergy(Potential topology1, Atom atoms1[],
-            Potential topology2, Atom atoms2[]) {
+    public DualTopologyEnergy(CrystalPotential topology1, Atom atoms1[],
+            CrystalPotential topology2, Atom atoms2[]) {
         potential1 = topology1;
         potential2 = topology2;
         lambdaInterface1 = (LambdaInterface) potential1;
@@ -607,16 +607,17 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         region = new EnergyRegion();
         team = new ParallelTeam(1);
     }
-    
+
     /**
      * Moves two shared atoms together if there is a small discrepancy (such as
      * that caused by the mutator script).
+     *
      * @param a1 Atom from topology 1
      * @param a2 Atom from topology 2
      * @param warnlev Logging level to use when warning about small movements
      */
     private void reconcileAtoms(Atom a1, Atom a2, Level warnlev) {
-        double dist =0;
+        double dist = 0;
         double[] xyz1 = a1.getXYZ(null);
         double[] xyz2 = a2.getXYZ(null);
         double[] xyzAv = new double[3];
@@ -627,11 +628,11 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         }
         if (dist > maxDisc2) {
             logger.log(Level.SEVERE, String.format(" Distance between atoms %s "
-                    + "and %s is %7.4f >> maximum allowed %7.4f", a1, a2, 
+                    + "and %s is %7.4f >> maximum allowed %7.4f", a1, a2,
                     FastMath.sqrt(dist), FastMath.sqrt(maxDisc2)));
         } else if (dist > minDiscWarn2) {
             logger.log(warnlev, String.format(" Distance between atoms %s "
-                    + "and %s is %7.4f; moving atoms together.", a1, a2, 
+                    + "and %s is %7.4f; moving atoms together.", a1, a2,
                     FastMath.sqrt(dist)));
             a1.setXYZ(xyzAv);
             a2.setXYZ(xyzAv);
@@ -641,7 +642,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             a2.setXYZ(xyzAv);
         }
     }
-    
+
     @Override
     public double energy(double[] x) {
         return energy(x, false);
@@ -726,9 +727,9 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             }
         }
         return totalEnergy;
-            */
+         */
     }
-   
+
     /**
      * The coordinate and gradient arrays are unpacked/packed based on the dual
      * topology.
@@ -967,6 +968,17 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     }
 
     @Override
+    public Crystal getCrystal() {
+        return potential1.getCrystal();
+    }
+
+    @Override
+    public void setCrystal(Crystal crystal) {
+        potential1.setCrystal(crystal);
+        potential2.setCrystal(crystal);
+    }
+
+    @Override
     public double[] getCoordinates(double[] x) {
         if (x == null) {
             x = new double[nVariables];
@@ -1002,12 +1014,12 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     public double[] getMass() {
         return mass;
     }
-    
+
     /**
-     * Reload the common atomic masses. Intended for quad-topology dual force 
+     * Reload the common atomic masses. Intended for quad-topology dual force
      * field corrections, where common atoms may have slightly different masses;
      * this was found to be the case between AMOEBA 2013 and AMBER99SB carbons.
-     * 
+     *
      * @param secondTopology Load from second topology
      */
     public void reloadCommonMasses(boolean secondTopology) {
@@ -1036,7 +1048,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             }
         }
     }
-    
+
     public void setParallel(boolean parallel) {
         this.inParallel = parallel;
         if (team != null) {
@@ -1058,13 +1070,14 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
     public int getNumberOfVariables() {
         return nVariables;
     }
-    
+
     /**
      * Returns the number of shared variables (3* number of shared atoms).
+     *
      * @return An int
      */
     public int getNumSharedVariables() {
-        return 3*nShared;
+        return 3 * nShared;
     }
 
     @Override
@@ -1403,43 +1416,43 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
 
         return previousAcceleration;
     }
-    
+
     private class EnergyRegion extends ParallelRegion {
-        
+
         private double[] x;
         private double[] g;
         private boolean gradient = false;
         private boolean verbose = false;
-        
+
         private final Energy1Section e1sect;
         private final Energy2Section e2sect;
-        
+
         public EnergyRegion() {
             e1sect = new Energy1Section();
             e2sect = new Energy2Section();
         }
-        
+
         public void setX(double[] x) {
             this.x = x;
         }
-        
+
         public void setG(double[] g) {
             this.g = g;
             setGradient(true);
         }
-        
+
         public void setGradient(boolean grad) {
             this.gradient = grad;
             e1sect.setGradient(grad);
             e2sect.setGradient(grad);
         }
-        
+
         public void setVerbose(boolean verb) {
             this.verbose = verb;
             e1sect.setVerbose(verb);
             e2sect.setVerbose(verb);
         }
-        
+
         @Override
         public void start() throws Exception {
             unpackCoordinates(x);
@@ -1449,7 +1462,7 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
         public void run() throws Exception {
             execute(e1sect, e2sect);
         }
-        
+
         @Override
         public void finish() throws Exception {
             /**
@@ -1470,18 +1483,18 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
             setVerbose(false);
             setGradient(false);
         }
-        
+
     }
-    
+
     private class Energy1Section extends ParallelSection {
-        
+
         private boolean gradient = false;
         private boolean verbose = false;
-        
+
         public void setGradient(boolean grad) {
             this.gradient = grad;
         }
-        
+
         public void setVerbose(boolean verb) {
             this.verbose = verb;
         }
@@ -1539,21 +1552,21 @@ public class DualTopologyEnergy implements Potential, LambdaInterface {
                 }
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine(String.format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n",
-                           lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
+                            lambdaPow * energy1, oneMinusLambdaPow * restraintEnergy1));
                 }
             }
         }
     }
-    
+
     private class Energy2Section extends ParallelSection {
-        
+
         private boolean gradient = false;
         private boolean verbose = false;
-        
+
         public void setGradient(boolean grad) {
             this.gradient = grad;
         }
-        
+
         public void setVerbose(boolean verb) {
             this.verbose = verb;
         }

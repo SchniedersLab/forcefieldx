@@ -53,7 +53,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.JobBackend;
 
-import ffx.numerics.Potential;
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
@@ -65,7 +66,7 @@ import ffx.potential.parsers.XYZFilter;
  *
  * @author Michael J. Schnieders, Wei Yang and Pengyu Ren
  */
-public abstract class AbstractOSRW implements Potential {
+public abstract class AbstractOSRW implements CrystalPotential {
 
     private static final Logger logger = Logger.getLogger(AbstractOSRW.class.getName());
     /**
@@ -75,7 +76,7 @@ public abstract class AbstractOSRW implements Potential {
     /**
      * The potential energy of the system.
      */
-    protected final Potential potential;
+    protected final CrystalPotential potential;
     /**
      * Reference to the Barostat in use; if present this must be turned off
      * during optimization.
@@ -175,6 +176,10 @@ public abstract class AbstractOSRW implements Potential {
      * The maximum value of the last F_lambda bin.
      */
     protected double maxFLambda = minFLambda + FLambdaBins * dFL;
+    /**
+     * Atom gradient for use if "energy" is called.
+     */
+    private double grad[] = null;
     /**
      * Total partial derivative of the potential being sampled w.r.t. lambda.
      */
@@ -358,7 +363,7 @@ public abstract class AbstractOSRW implements Potential {
      * @param algorithmListener the AlgorithmListener to be notified of
      * progress.
      */
-    public AbstractOSRW(LambdaInterface lambdaInterface, Potential potential,
+    public AbstractOSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous,
@@ -386,7 +391,7 @@ public abstract class AbstractOSRW implements Potential {
      * @param algorithmListener the AlgorithmListener to be notified of
      * progress.
      */
-    public AbstractOSRW(LambdaInterface lambdaInterface, Potential potential,
+    public AbstractOSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous, boolean resetNumSteps,
@@ -803,7 +808,20 @@ public abstract class AbstractOSRW implements Potential {
 
     @Override
     public double energy(double[] x) {
-        throw new UnsupportedOperationException("Not supported yet.");
+
+        boolean origPropagateLambda = propagateLambda;
+
+        propagateLambda = false;
+
+        if (grad == null || grad.length != x.length) {
+            grad = new double[x.length];
+        }
+
+        double energy = energyAndGradient(x, grad);
+
+        propagateLambda = origPropagateLambda;
+
+        return energy;
     }
 
     @Override
@@ -836,4 +854,13 @@ public abstract class AbstractOSRW implements Potential {
         return potential.getPreviousAcceleration(previousAcceleration);
     }
 
+    @Override
+    public void setCrystal(Crystal crystal) {
+        potential.setCrystal(crystal);
+    }
+
+    @Override
+    public Crystal getCrystal() {
+        return potential.getCrystal();
+    }
 }

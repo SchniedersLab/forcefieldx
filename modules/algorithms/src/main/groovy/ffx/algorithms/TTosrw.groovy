@@ -858,7 +858,8 @@ class TTosrw extends Script {
             }
 
             if (options.ucDensity > 0.0) {
-                logger.info(String.format("\n Applying random unit cell axes with target density of %6.3f\n", options.ucDensity));
+                logger.info(String.format("\n Applying random unit cell axes with target density of %6.3f\n",
+                        options.ucDensity));
                 Crystal crystal = topologies[0].getCrystal();
                 if (!crystal.aperiodic()) {
                     double mass = topologies[0].getMass();
@@ -866,22 +867,7 @@ class TTosrw extends Script {
                     energies[0].setCrystal(crystal);
                 }
             }
-
-            if (options.npt) {
-                Barostat barostat = new Barostat(topologies[0]);
-                barostat.setMaxDensity(options.maxDensity);
-                barostat.setMinDensity(options.minDensity);
-                double dens = barostat.density();
-                if (dens < options.minDensity || dens > options.maxDensity) {
-                    barostat.setDensity(1.0);
-                }
-                barostat.setMaxSideMove(options.maxSideMove);
-                barostat.setMaxAngleMove(options.maxAngleMove);
-                barostat.setMeanBarostatInterval(options.meanInterval);
-                potential = barostat;
-            } else {
-                potential = energies[0];
-            }
+            potential = topologies[0].getPotentialEnergy();
             break;
         case 2:
             sb.append("dual topology ");
@@ -1014,7 +1000,25 @@ class TTosrw extends Script {
         }
 
         // Create the MolecularDynamics instance.
-        MolecularDynamics molDyn = new MolecularDynamics(topologies[0], osrw, topologies[0].getProperties(), null, options.tstat, options.integrator);
+
+        if (options.npt) {
+            Barostat barostat = new Barostat(topologies[0], osrw);
+            barostat.setMaxDensity(options.maxDensity);
+            barostat.setMinDensity(options.minDensity);
+            double dens = barostat.density();
+            if (dens < options.minDensity || dens > options.maxDensity) {
+                barostat.setDensity(1.0);
+            }
+            barostat.setMaxSideMove(options.maxSideMove);
+            barostat.setMaxAngleMove(options.maxAngleMove);
+            barostat.setMeanBarostatInterval(options.meanInterval);
+            potential = barostat;
+        } else {
+            potential = osrw;
+        }
+
+        MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
+            topologies[0].getProperties(), null, options.tstat, options.integrator);
         for (int i = 1; i < topologies.size(); i++) {
             molDyn.addAssembly(topologies.get(i), properties.get(i));
         }
