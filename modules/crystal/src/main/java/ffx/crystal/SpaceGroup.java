@@ -330,7 +330,7 @@ public class SpaceGroup {
      * @param number Space group number.
      * @return true if the space group is a Sohncke Group.
      */
-    public boolean sohnckeGroup(int number) {
+    public static boolean sohnckeGroup(int number) {
         if (number == 1) {
             return true;
         } else if (isBetween(number, 3, 5)) {
@@ -360,6 +360,10 @@ public class SpaceGroup {
 
     private static boolean isBetween(int x, int lower, int upper) {
         return lower <= x && x <= upper;
+    }
+
+    public boolean isChiral() {
+        return chiral;
     }
 
     /**
@@ -570,6 +574,10 @@ public class SpaceGroup {
                 break;
         }
         return params;
+    }
+
+    public double[] randomUnitCellParams() {
+        return resetUnitCellParams(crystalSystem);
     }
 
     /**

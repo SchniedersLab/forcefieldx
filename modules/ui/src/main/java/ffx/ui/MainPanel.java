@@ -2182,6 +2182,10 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
     }
 
+    public void saveKeywordFile(File file) {
+        keywordPanel.keySave(file);
+    }
+    
     /**
      * Save the currently selected FFXSystem to disk.
      *

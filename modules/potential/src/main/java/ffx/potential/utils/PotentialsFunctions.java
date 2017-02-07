@@ -64,7 +64,7 @@ public interface PotentialsFunctions {
      * @return If a local implementation
      */
     abstract public boolean isLocal(); // Return true if the local implementation from Potentials.
-    
+
     /**
      * Opens a file and returns all created MolecularAssembly objects.
      *
@@ -81,7 +81,7 @@ public interface PotentialsFunctions {
      * @return Array of MolecularAssembly.
      */
     abstract public MolecularAssembly[] open(String[] files);
-    
+
     /**
      * Opens a file and returns all created MolecularAssembly objects, setting
      * any underlying Potential to use a certain number of threads. Default
@@ -94,10 +94,10 @@ public interface PotentialsFunctions {
     default public MolecularAssembly[] open(String file, int nThreads) {
         return open(file);
     }
-    
+
     /**
-     * Opens an array of files and returns all created MolecularAssembly 
-     * objects, setting any underlying Potential to use a certain number of 
+     * Opens an array of files and returns all created MolecularAssembly
+     * objects, setting any underlying Potential to use a certain number of
      * threads. Default implementation simply ignores nThreads.
      *
      * @param file Filenames to open.
@@ -107,7 +107,7 @@ public interface PotentialsFunctions {
     default public MolecularAssembly[] open(String[] file, int nThreads) {
         return open(file);
     }
-    
+
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
@@ -116,7 +116,7 @@ public interface PotentialsFunctions {
      * @return Array of MolecularAssembly
      */
     abstract public MolecularAssembly[] convertDataStructure(Object data);
-    
+
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
@@ -126,7 +126,7 @@ public interface PotentialsFunctions {
      * @return Array of MolecularAssembly
      */
     abstract public MolecularAssembly[] convertDataStructure(Object data, File file);
-    
+
     /**
      * Converts a data structure (such as a Biojava Structure) into one or more
      * MolecularAssembly objects.
@@ -138,23 +138,23 @@ public interface PotentialsFunctions {
     abstract public MolecularAssembly[] convertDataStructure(Object data, String filename);
 
     /**
-     * Performs any necessary shutdown operations on a MolecularAssembly, 
-     * primarily shutting down Parallel Java threads and closing any other
-     * open resources.
+     * Performs any necessary shutdown operations on a MolecularAssembly,
+     * primarily shutting down Parallel Java threads and closing any other open
+     * resources.
      *
      * @param assembly Assembly to close.
      */
     abstract public void close(MolecularAssembly assembly);
 
     /**
-     * Performs any necessary shutdown operations on an array of 
-     * MolecularAssembly, primarily shutting down Parallel Java threads and 
+     * Performs any necessary shutdown operations on an array of
+     * MolecularAssembly, primarily shutting down Parallel Java threads and
      * closing any other open resources.
      *
      * @param assemblies Assemblies to close.
      */
     abstract public void closeAll(MolecularAssembly[] assemblies);
-    
+
     /**
      * Logs time elapsed since last call.
      *
@@ -194,7 +194,7 @@ public interface PotentialsFunctions {
      * @param file Destination .pdb
      */
     abstract public void saveAsPDB(MolecularAssembly assembly, File file);
-    
+
     /**
      * Saves the current state of an array of MolecularAssemblys to a PDB file.
      *
@@ -202,19 +202,19 @@ public interface PotentialsFunctions {
      * @param file Destination .pdb
      */
     abstract public void saveAsPDB(MolecularAssembly[] assemblies, File file);
-    
+
     /**
      * Saves the symmetry mates of a MolecularAssembly to PDB files.
-     * 
+     *
      * @param assembly To save
      * @param file Destination file
      */
     abstract public void savePDBSymMates(MolecularAssembly assembly, File file);
     // Will use default suffix of _symMate
-    
+
     /**
      * Saves the symmetry mates of a MolecularAssembly to PDB files.
-     * 
+     *
      * @param assembly To save
      * @param file Destination file
      * @param suffix Custom file suffix
@@ -238,16 +238,18 @@ public interface PotentialsFunctions {
      * @return Potential energy (kcal/mol)
      */
     abstract public double returnEnergy(MolecularAssembly assembly);
-    
+
     /**
      * Returns the last SystemFilter created by this (may be null).
+     *
      * @return Last SystemFilter
      */
     abstract public SystemFilter getFilter();
-    
+
     /**
      * Returns either the active assembly from the overlying UI, or the "active"
      * molecular assembly from the last used SystemFilter.
+     *
      * @return A MolecularAssembly or null
      */
     default public MolecularAssembly getActiveAssembly() {
@@ -258,30 +260,29 @@ public interface PotentialsFunctions {
             return null;
         }
     }
-    
+
     /**
      * If available, returns CLI arguments; default implementation does not have
      * access to CLI arguments, and throws UnsupportedOperationException.
+     *
      * @return CLI arguments
      * @throws UnsupportedOperationException If unimplemented
      */
     default public List<String> getArguments() throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
-    
-    //default public String[] 
 
+    //default public String[]
     // Subsequent methods were when I was duplicating MainPanel's open() methods,
     // instead of its openWait() methods.
     /*abstract public FileOpener open(String file);
      abstract public FileOpener open(String[] files);
      abstract public FileOpener open(File file, String commandDescription);
      abstract public FileOpener open(File[] files, String commandDescription);*/
-    
     /**
-     * Versions a file, attempting to find an unused filename in the set filename,
-     * and filename_1 to filename_999.
-     * 
+     * Versions a file, attempting to find an unused filename in the set
+     * filename, and filename_1 to filename_999.
+     *
      * @param filename To version
      * @return Versioned filename.
      */
@@ -291,11 +292,11 @@ public interface PotentialsFunctions {
         }
         return versionFile(new File(filename)).getName();
     }
-    
+
     /**
-     * Versions a file, attempting to find an unused filename in the set filename,
-     * and filename_1 to filename_999.
-     * 
+     * Versions a file, attempting to find an unused filename in the set
+     * filename, and filename_1 to filename_999.
+     *
      * @param file To version
      * @return Versioned file
      */

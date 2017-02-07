@@ -249,7 +249,7 @@ class TTosrw extends Script {
         /**
          * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
          */
-        @Option(shortName='am', longName='maxAngleMove', defaultValue='1.0',
+        @Option(shortName='am', longName='maxAngleMove', defaultValue='0.5',
             description='Maximum angle move allowed by the barostat in degrees') double maxAngleMove;
         /**
          * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
