@@ -62,13 +62,14 @@ import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.numerics.AdderDoubleArray;
 import ffx.numerics.AtomicDoubleArray;
 import ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.MultiDoubleArray;
 import ffx.numerics.PJDoubleArray;
-import ffx.numerics.Potential;
+import ffx.numerics.Potential.STATE;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -120,7 +121,7 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
  *
  * @since 1.0
  */
-public class ForceFieldEnergy implements Potential, LambdaInterface {
+public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergy.class.getName());
 
@@ -1621,6 +1622,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      *
      * @return a {@link ffx.crystal.Crystal} object.
      */
+    @Override
     public Crystal getCrystal() {
         return crystal;
     }
@@ -2239,6 +2241,7 @@ public class ForceFieldEnergy implements Potential, LambdaInterface {
      *
      * @param crystal the Crystal contains symmetry and PBC conditions.
      */
+    @Override
     public void setCrystal(Crystal crystal) {
         this.crystal = crystal;
         /**

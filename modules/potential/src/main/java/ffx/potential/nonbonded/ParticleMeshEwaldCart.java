@@ -1233,6 +1233,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;
             vacuumRanges = new Range[maxThreads];
+            vacuumNeighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
         } else {
             vaporCrystal = null;
             vaporLists = null;

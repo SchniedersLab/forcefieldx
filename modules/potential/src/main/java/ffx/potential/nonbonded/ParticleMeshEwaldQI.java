@@ -1213,6 +1213,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             vaporPermanentSchedule = vacuumNeighborList.getPairwiseSchedule();
             vaporEwaldSchedule = vaporPermanentSchedule;
             vacuumRanges = new Range[maxThreads];
+            vacuumNeighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
         } else {
             vaporCrystal = null;
             vaporLists = null;

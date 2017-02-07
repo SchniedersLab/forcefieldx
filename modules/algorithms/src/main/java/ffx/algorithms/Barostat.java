@@ -49,9 +49,9 @@ import static org.apache.commons.math3.util.FastMath.random;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
 import ffx.numerics.Potential;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
@@ -76,7 +76,7 @@ import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
  *
  * @author Michael J. Schnieders
  */
-public class Barostat implements Potential, LambdaInterface {
+public class Barostat implements CrystalPotential {
 
     private static final Logger logger = Logger.getLogger(Barostat.class.getName());
     /**
@@ -117,10 +117,10 @@ public class Barostat implements Potential, LambdaInterface {
      */
     private double maxAngleMove = 0.5;
     /**
-     * A carbon atom cannot fit into a unit cell without
-     * interfacial radii greater than ~1.2 Angstroms.
+     * A carbon atom cannot fit into a unit cell without interfacial radii
+     * greater than ~1.2 Angstroms.
      */
-    private double minInterfacialRadius = 1.2;
+    private final double minInterfacialRadius = 1.2;
     /**
      * MolecularAssembly being simulated.
      */
@@ -136,11 +136,15 @@ public class Barostat implements Potential, LambdaInterface {
     /**
      * Mass of the system.
      */
-    private double mass;
+    private final double mass;
     /**
      * ForceFieldEnergy that describes the system.
      */
-    private final ForceFieldEnergy potential;
+    private final CrystalPotential potential;
+    /**
+     * Atomic coordinates.
+     */
+    private final double x[];
     /**
      * Boundary conditions and symmetry operators (may be a ReplicatedCrystal).
      */
@@ -259,25 +263,27 @@ public class Barostat implements Potential, LambdaInterface {
      *
      * @param molecularAssembly The molecular assembly to apply the MC barostat
      * to.
+     * @param potential
      */
-    public Barostat(MolecularAssembly molecularAssembly) {
+    public Barostat(MolecularAssembly molecularAssembly, CrystalPotential potential) {
 
         this.molecularAssembly = molecularAssembly;
-        potential = molecularAssembly.getPotentialEnergy();
+        this.potential = potential;
         crystal = potential.getCrystal();
         unitCell = crystal.getUnitCell();
         spaceGroup = unitCell.spaceGroup;
         atoms = molecularAssembly.getAtomArray();
         nAtoms = atoms.length;
         nSymm = spaceGroup.getNumberOfSymOps();
-
-        mass = 0.0;
-        for (int i = 0; i < nAtoms; i++) {
-            mass += atoms[i].getMass();
+        mass = molecularAssembly.getMass();
+        x = new double[3 * nAtoms];
+        nMolecules = countMolecules();
+        if (nMolecules > 1) {
+            logger.info(String.format(" There are %d molecules.", nMolecules));
+        } else {
+            logger.info(String.format(" There is %d molecule.", nMolecules));
         }
 
-        nMolecules = countMolecules();
-        logger.info(String.format(" There are %d molecules.", nMolecules));
         fractionalCOM = new double[nMolecules][3];
     }
 
@@ -342,9 +348,9 @@ public class Barostat implements Potential, LambdaInterface {
         /**
          * Enforce minimum interfacial radii of 1.2 Angstroms.
          */
-        if (unitCell.interfacialRadiusA < minInterfacialRadius ||
-                unitCell.interfacialRadiusB < minInterfacialRadius ||
-                unitCell.interfacialRadiusC < minInterfacialRadius) {
+        if (unitCell.interfacialRadiusA < minInterfacialRadius
+                || unitCell.interfacialRadiusB < minInterfacialRadius
+                || unitCell.interfacialRadiusC < minInterfacialRadius) {
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine(format(
                         " MC An interfacial radius (%10.6f,%10.6f,%10.6f) is below the minimium %10.6f",
@@ -370,8 +376,10 @@ public class Barostat implements Potential, LambdaInterface {
         // Save the new volume
         double newV = unitCell.volume / nSymm;
 
+        potential.getCoordinates(x);
+
         // Compute the new energy
-        double newE = potential.energy(false, false);
+        double newE = potential.energy(x);
 
         // Compute the change in potential energy
         double dE = newE - currentE;
@@ -1100,6 +1108,7 @@ public class Barostat implements Potential, LambdaInterface {
 
                 // Attempt to change the unit cell parameters.
                 moveAccepted = false;
+
                 applyBarostat(energy);
 
                 // Collect Statistics.
@@ -1296,28 +1305,13 @@ public class Barostat implements Potential, LambdaInterface {
     }
 
     @Override
-    public void setLambda(double lambda) {
-        potential.setLambda(lambda);
+    public Crystal getCrystal() {
+        return potential.getCrystal();
     }
 
     @Override
-    public double getLambda() {
-        return potential.getLambda();
-    }
-
-    @Override
-    public double getdEdL() {
-        return potential.getdEdL();
-    }
-
-    @Override
-    public double getd2EdL2() {
-        return potential.getd2EdL2();
-    }
-
-    @Override
-    public void getdEdXdL(double[] gradient) {
-        potential.getdEdXdL(gradient);
+    public void setCrystal(Crystal crystal) {
+        potential.setCrystal(crystal);
     }
 
     private enum MoveType {

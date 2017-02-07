@@ -40,6 +40,8 @@ package ffx.potential;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.utils.EnergyException;
@@ -56,7 +58,7 @@ import java.util.stream.IntStream;
  *
  * @author jmlitman
  */
-public class OctTopologyEnergy implements Potential, LambdaInterface {
+public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
     private final static Logger logger = Logger.getLogger(OctTopologyEnergy.class.getName());
     private final QuadTopologyEnergy quadTopGamma;
     private final QuadTopologyEnergy quadTopDelta;
@@ -721,6 +723,17 @@ public class OctTopologyEnergy implements Potential, LambdaInterface {
             }
         }
         team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
+    }
+
+    @Override
+    public Crystal getCrystal() {
+        return quadTopGamma.getCrystal();
+    }
+
+    @Override
+    public void setCrystal(Crystal crystal) {
+        quadTopGamma.setCrystal(crystal);
+        quadTopDelta.setCrystal(crystal);
     }
     
     private class EnergyRegion extends ParallelRegion {

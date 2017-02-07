@@ -540,6 +540,7 @@ public class XtalEnergy implements Potential {
                 gamma = 90.0;
                 break;
         }
+
         crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
         forceFieldEnergy.setCrystal(crystal);
 
