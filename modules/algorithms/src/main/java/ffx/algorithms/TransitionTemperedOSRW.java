@@ -268,10 +268,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             return e;
         }
 
-        if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
-            optimization(e, x, gradient);
-        }
-
         double biasEnergy = 0.0;
         dEdLambda = lambdaInterface.getdEdL();
         d2EdLambda2 = lambdaInterface.getd2EdL2();
@@ -281,7 +277,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
 
         if (propagateLambda) {
             energyCount++;
+
             detectTransition();
+
+            if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
+                optimization(e, x, gradient);
+            }
         }
 
         /**
@@ -578,6 +579,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     osrwOptimumCoords = new double[n];
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     if (systemFilter.writeFile(optFile, false)) {
+                        optFile = systemFilter.getFile();
                         logger.info(String.format(" Minimum: %16.8f optimized from %16.8f at step %d (%s).",
                                 minEnergy, startingEnergy, energyCount, optFile.getName()));
                     } else {

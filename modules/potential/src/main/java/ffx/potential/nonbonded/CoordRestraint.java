@@ -63,7 +63,8 @@ public class CoordRestraint implements LambdaInterface {
     private final double initialCoordinates[][];
     private int nAtoms = 0;
     /**
-     * Force constant in Kcal/mole/Angstrom.
+     * Force constant variable stores K/2 in Kcal/mol/A.
+     * E = K/2 * dx^2.
      */
     private final double forceConstant;
     private final double a1[] = new double[3];
@@ -85,9 +86,6 @@ public class CoordRestraint implements LambdaInterface {
     private AtomType atom2Type;
     private AtomType atom3Type;
 
-//    private AtomType definePlane1 = null;
-//    private AtomType definePlane2 = null;
-//    private AtomType definePlane3 = null;
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
      * operators of the supplied crystal.
@@ -143,7 +141,7 @@ public class CoordRestraint implements LambdaInterface {
 
         forceConstant = forceConst;
 
-        logger.info("\n Coordinate Restraint:");
+        logger.info(String.format("\n Coordinate Restraint (k = %8.4f, lambdaTerm=%s):", forceConstant * 2.0, lambdaTerm));
 
         initialCoordinates = new double[3][nAtoms];
         for (int i = 0; i < nAtoms; i++) {
@@ -153,9 +151,6 @@ public class CoordRestraint implements LambdaInterface {
             initialCoordinates[2][i] = a.getZ();
             a.print();
         }
-//        if (System.getProperty("atomrestraint1") != null) {
-//            setPlaneAtoms();
-//        }
     }
 
     public int getNumAtoms() {
@@ -163,33 +158,48 @@ public class CoordRestraint implements LambdaInterface {
     }
 
     public double residual(boolean gradient, boolean print) {
-        //pdbAtomRestraints uses atom indexes to restrain specific atoms
+
+        /**
+         * pdbAtomRestraints uses atom indexes to restrain specific atoms
+         */
         String atomIndexRestraints = System.getProperty("pdbAtomRestraints");
         if (atomIndexRestraints != null) {
             String tokens[] = atomIndexRestraints.split(",");
-        //Pick up atom index for reference when looking at muliple molecules
+
+            /**
+             * Pick up atom index for reference when
+             * looking at multiple molecules.
+             */
             atom1Index = Integer.parseInt(tokens[0]);
             atom2Index = Integer.parseInt(tokens[1]);
             atom3Index = Integer.parseInt(tokens[2]);
         }
 
-        //xyzAtomRestraints uses atom types to restrain specific atoms. This can result in more
-        //atoms being restrained than desired since atom types are not unique to each atom.
+        /**
+         * xyzAtomRestraints uses atom types to restrain specific atoms. This can result in more
+         * atoms being restrained than desired since atom types are not unique to each atom.
+         */
         String atomTypeRestraints = System.getProperty("xyzAtomRestraints");
         if (atomTypeRestraints != null) {
             String tokens[] = atomTypeRestraints.split(",");
-        //Pick up atom type for reference when looking at muliple molecules
+            /**
+             * Pick up atom type for reference when looking at multiple molecules
+             */
             atom1Type = atoms[Integer.parseInt(tokens[0])].getAtomType();
             atom2Type = atoms[Integer.parseInt(tokens[1])].getAtomType();
             atom3Type = atoms[Integer.parseInt(tokens[2])].getAtomType();
         }
+
         if (lambdaTerm) {
             dEdL = 0.0;
             d2EdL2 = 0.0;
             fill(lambdaGradient, 0.0);
         }
+
         int atomIndex = 0;
-        //Assuming that the first molecule in pdb is labeled as 1.
+        /**
+         * Assuming that the first molecule in pdb is labeled as 1.
+         */
         int moleculeNumber = 1;
         double residual = 0.0;
         double fx2 = forceConstant * 2.0;
@@ -208,9 +218,6 @@ public class CoordRestraint implements LambdaInterface {
                     continue;
                 }
                 double r2 = rsq(dx);
-                // Apply the minimum image convention.
-                // double r2 = crystal.image(dx);
-                //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
                 residual += r2;
                 if (gradient || lambdaTerm) {
                     final double dedx = dx[0] * fx2;
@@ -244,9 +251,6 @@ public class CoordRestraint implements LambdaInterface {
                     continue;
                 }
                 double r2 = rsq(dx);
-                // Apply the minimum image convention.
-                // double r2 = crystal.image(dx);
-                //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
                 residual += r2;
                 if (gradient || lambdaTerm) {
                     final double dedx = dx[0] * fx2;
@@ -274,9 +278,6 @@ public class CoordRestraint implements LambdaInterface {
                 dx[1] = a1[1] - initialCoordinates[1][i];
                 dx[2] = a1[2] - initialCoordinates[2][i];
                 double r2 = rsq(dx);
-                // Apply the minimum image convention.
-                // double r2 = crystal.image(dx);
-                //logger.info(String.format(" %d %16.8f", j, Math.sqrt(r2)));
                 residual += r2;
                 if (gradient || lambdaTerm) {
                     final double dedx = dx[0] * fx2;
@@ -299,29 +300,9 @@ public class CoordRestraint implements LambdaInterface {
             d2EdL2 = d2LambdaPow * forceConstant * residual;
         }
 
-        //logger.info(String.format(" Restraint Energy %16.8f", forceConstant * residual * lambdaPow));
         return forceConstant * residual * lambdaPow;
     }
 
-//    public final void setPlaneAtoms() {
-//        int planeAtom1 = Integer.parseInt(System.getProperty("atomrestraint1"));
-//        int planeAtom2 = Integer.parseInt(System.getProperty("atomrestraint2"));
-//        int planeAtom3 = Integer.parseInt(System.getProperty("atomrestraint3"));
-//        for (int i = 0; i < nAtoms; i++) {
-//            // Current atomic coordinates.
-//            Atom atom = atoms[i];
-//            if (atom.getXYZIndex() == planeAtom1) {
-//                definePlane1 = atom.getAtomType();
-//            } else if (atom.getXYZIndex() == planeAtom2) {
-//                definePlane2 = atom.getAtomType();
-//
-//                //Should the following else if statetment be == planeAtom3??
-//
-//            } else if (atom.getXYZIndex() == planeAtom3) {
-//                definePlane3 = atom.getAtomType();
-//            }
-//        }
-//    }
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
@@ -362,7 +343,7 @@ public class CoordRestraint implements LambdaInterface {
         this.lambdaTerm = lambdaTerm;
         setLambda(lambda);
     }
-    
+
     public void setCoordinatePin(double[][] newInitialCoordinates) {
         if (newInitialCoordinates.length != initialCoordinates.length) {
             throw new IllegalArgumentException(" Incorrect number of atoms!");
@@ -371,7 +352,7 @@ public class CoordRestraint implements LambdaInterface {
             System.arraycopy(newInitialCoordinates[i], 0, initialCoordinates[i], 0, 3);
         }
     }
-    
+
     public void resetCoordinatePin() {
         double aixyz[] = new double[3];
         for (int i = 0; i < nAtoms; i++) {
@@ -379,7 +360,7 @@ public class CoordRestraint implements LambdaInterface {
             System.arraycopy(aixyz, 0, initialCoordinates[i], 0, 3);
         }
     }
-    
+
     public double[][] getCoordinatePin(double[][] xyz) {
         if (xyz == null) {
             xyz = new double[nAtoms][3];
