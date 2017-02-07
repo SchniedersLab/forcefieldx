@@ -20,8 +20,12 @@ import ffx.potential.OctTopologyEnergy;
 import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Residue;
+import ffx.potential.nonbonded.NeighborList;
 import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils
+import ffx.potential.utils.PotentialsUtils;
 
 /**
  * The TestLambdaGradient script tests numeric gradients w.r.t. lambda against
@@ -110,6 +114,11 @@ class TestLambdaGradient extends Script {
          */
         @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
         /**
+         * -uaR or -unsharedRadius sets a radius around unshared atoms where, if any residues/molecules match across dual-topologies, they are additionally set unshared.
+         */
+        /*@Option(shortName='uaR', longName='unsharedRadius', defaultValue='0.0', 
+            description='Additionally select residues/molecules within this many Angstroms of unshared atoms to unshare; residue names and numbers must match across dual-topologies.') double unsharedRadius;*/
+        /**
          * -v or --verbose is a flag to print out energy at each step.
          */
         @Option(shortName='v', longName='verbose', defaultValue='false', description='Print out the energy for each step') boolean print;
@@ -121,7 +130,12 @@ class TestLambdaGradient extends Script {
          * -d or --dx sets the finite-difference step size (in Angstroms).
          */
         @Option(shortName='d', longName='dx', defaultValue='1.0e-5', description='Finite-difference step size (in Angstroms)') double step;
-        
+        /**
+         * -le or --lambdaExponent sets the power of lambda used by dual 
+         * topologies.
+         */
+        @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0', 
+            description='Exponent to apply to dual topology lambda.') double lamExp;
         
         /**
          * The final argument(s) should be one or more filenames.
@@ -255,6 +269,56 @@ class TestLambdaGradient extends Script {
         energies[topNum] = energy;
     }
     
+    /**
+     * Compares MSNodes based on:
+     * Residue vs. Molecule (must match)
+     * Residue name
+     * Residue number
+     * Chain ID
+     */
+    /*boolean fuzzyCompareNodes(MSNode nodeA, MSNode nodeB) {
+        if (nodeA instanceof Residue) {
+            if (nodeB instanceof Residue) {
+                Residue resA = (Residue) nodeA;
+                Residue resB = (Residue) nodeB;
+                if (!(resA.getName().equals(resB.getName()))) {
+                    return false;
+                }
+                if (resA.getResidueNumber() != resB.getResidueNumber()) {
+                    return false;
+                }
+                if (!(resA.getChainID().equals(resB.getChainID()))) {
+                    return false;
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } else if (nodeA instanceof Molecule) {
+            if (nodeB instanceof Molecule) {
+                Molecule molecA = (Molecule) nodeA;
+                Molecule molecB = (Molecule) nodeB;
+                if (!(molecA.getName().equals(molecB.getName()))) {
+                    return false;
+                }
+                if (molecA.getResidueNumber() != resB.getResidueNumber()) {
+                    return false;
+                }
+                if (!(molecA.getChainID().equals(molecB.getChainID()))) {
+                    return false;
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }*/
+    
+    /**
+     * Script run method.
+     */
     def run() {
 
         def cli = new CliBuilder(usage:' ffxc TestLambdaGradient [options] <filename> [file2...]', header:' Options:');
@@ -348,16 +412,16 @@ class TestLambdaGradient extends Script {
             if (options.unsharedA) {
                 //rangesA = options.uaA.tokenize(".");
                 def ra = [] as Set;
-                String[] toksA = options.unsharedA.split(".");
+                String[] toksA = options.unsharedA.tokenize(".");
                 for (range in toksA) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        logger.info(String.format("Range %s A rangeStart %d groupCount %d", range, rangeStart, m.groupCount()));
                         int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
+                        logger.info(String.format("Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
                         for (int i = rangeStart; i <= rangeEnd; i++) {
                             ra.add(i-1);
                         }
@@ -372,7 +436,6 @@ class TestLambdaGradient extends Script {
                         if (ai.applyLambda()) {
                             logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                         } else {
-                            logger.info(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
                             for (int j = 0; j < 3; j++) {
                                 raAdj.add(new Integer(counter + j));
                             }
@@ -388,7 +451,7 @@ class TestLambdaGradient extends Script {
             }
             if (options.unsharedB) {
                 def rb = [] as Set;
-                String[] toksB = options.unsharedB.split(".");
+                String[] toksB = options.unsharedB.tokenize(".");
                 for (range in toksB) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
@@ -397,6 +460,7 @@ class TestLambdaGradient extends Script {
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
+                        logger.info(String.format("Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
                         for (int i = rangeStart; i <= rangeEnd; i++) {
                             rb.add(i-1);
                         }
@@ -411,7 +475,6 @@ class TestLambdaGradient extends Script {
                         if (bi.applyLambda()) {
                             logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                         } else {
-                            logger.info(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
                             for (int j = 0; j < 3; j++) {
                                 rbAdj.add(counter + j);
                             }
@@ -425,6 +488,25 @@ class TestLambdaGradient extends Script {
                     uniqueB.addAll(rbAdj);
                 }
             }
+            
+            /*if (options.unsharedRadius > 0.0) {
+                Atom[] atomsA = topologies[0].getAtomArray();
+                Atom[] atomsB = topologies[2].getAtomArray();
+                NeighborList nlistA = energies[0].getVdwNode().getNeighborList();
+                NeighborList nlistB = energies[2].getVdwNode().getNeighborList();
+                Set<Integer> nearbyA = nlistA.getNeighborIndices(uniqueA, options.unsharedRadius);
+                Set<Integer> nearbyB = nlistB.getNeighborIndices(uniqueB, options.unsharedRadius);
+                
+                Set<MSNode> nodesA = nearbyA.stream().map({i -> return atomsA[i];}).
+                    map({at -> return at.getMoleculeOrResidue();}).
+                    filter({node -> return node != null;}).
+                    collect(Collectors.toSet());
+                
+                Set<MSNode> nodesB = nearbyB.stream().map({i -> return atomsB[i];}).
+                    map({at -> return at.getMoleculeOrResidue();}).
+                    filter({node -> return node != null;}).
+                    collect(Collectors.toSet());
+            }*/
         }
         
         StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ");
@@ -450,7 +532,7 @@ class TestLambdaGradient extends Script {
                 break;
             case 2:
                 sb.append("dual topology ");
-                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1]);
+                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
                 if (numParallel == 2) {
                     dte.setParallel(true);
                 }
@@ -459,8 +541,8 @@ class TestLambdaGradient extends Script {
             case 4:
                 sb.append("quad topology ");
                 
-                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1]);
-                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2]);
+                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
+                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], options.lamExp);
                 QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
                 if (numParallel >= 2) {
                     qte.setParallel(true);
@@ -474,12 +556,12 @@ class TestLambdaGradient extends Script {
             case 8:
                 sb.append("oct-topology ");
                 
-                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1]);
-                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2]);
+                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
+                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], options.lamExp);
                 QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
                 
-                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5]);
-                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6]);
+                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], options.lamExp);
+                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], options.lamExp);
                 QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
                 
                 OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);

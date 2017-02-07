@@ -255,7 +255,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
             });*/
         }
         
-        if (uniquesB.length > 0) {
+        if (uniqueB > 0) {
             int commonIndex = 0;
             int uniqueIndex = 0;
             for (int i = 0; i < nVarB; i++) {

@@ -194,6 +194,8 @@ int numParallel = 1;
 @Field int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
 @Field int threadsPer = threadsAvail;
 
+double lamExp = 1.0;
+
 RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Things below this line normally do not need to be changed.
@@ -239,6 +241,7 @@ cli.uaA(longOpt:'unsharedAtomsA', args:1, argName:'None', 'Quad-Topology: Period
 cli.uaB(longOpt:'unsharedAtomsB', args:1, argName:'None', 'Quad-Topology: Period-separated ranges of B dual-topology atoms not shared by A');
 cli.np(longOpt:'numParallel', args:1, argName:'1', 'Number of topology energies to calculate in parallel');
 cli.dw(longOpt:'distributeWalkers', args:1, argName:'false', 'AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.');
+cli.le(longOpt:'lambdaExponent', args:1, argName:'1.0', 'Set lambda exponent to be used by dual topologies.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -437,6 +440,10 @@ if (options.la1) {
 }
 if (options.la2) {
     ranges2 = options.la2.tokenize(".");
+}
+
+if (options.le) {
+    lamExp = Double.parseDouble(options.le);
 }
 
 println("\n Running Orthogonal Space Random Walk on " + filename);
@@ -890,7 +897,7 @@ if (arguments.size() == 1) {
      */
 
     // Create the DualTopology potential energy.
-    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1]);
+    DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topologies[0], topologies[1], lamExp);
     if (numParallel == 2) {
         dualTopologyEnergy.setParallel(true);
     }
@@ -921,9 +928,9 @@ if (arguments.size() == 1) {
     openFile(arguments.get(1), structureFile, 1);
     openFile(arguments.get(2), structureFile, 2);
     openFile(arguments.get(3), structureFile, 3);
-    DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1]);
+    DualTopologyEnergy dtA = new DualTopologyEnergy(topologies[0], topologies[1], lamExp);
     // Intentionally reversed order.
-    DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2]);
+    DualTopologyEnergy dtB = new DualTopologyEnergy(topologies[3], topologies[2], lamExp);
 
     if (distResidues) {
         logger.info(" Generating starting structures for each dual-topology of the quad topology:");

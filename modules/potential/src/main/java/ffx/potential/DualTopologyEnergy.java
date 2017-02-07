@@ -212,7 +212,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Lambda exponent that controls the thermodynamic path between topologies.
      */
-    private final double lambdaExponent = 1.0;
+    private final double lambdaExponent;
     /**
      * Atom array for topology 1.
      */
@@ -318,6 +318,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     public DualTopologyEnergy(CrystalPotential topology1, Atom atoms1[],
             CrystalPotential topology2, Atom atoms2[]) {
+        this(topology1, atoms1, topology2, atoms2, 1.0);
+    }
+
+    public DualTopologyEnergy(CrystalPotential topology1, Atom atoms1[],
+            CrystalPotential topology2, Atom atoms2[], double lamExp) {
         potential1 = topology1;
         potential2 = topology2;
         lambdaInterface1 = (LambdaInterface) potential1;
@@ -330,6 +335,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         forceFieldEnergy2 = null;
         doValenceRestraint1 = false;
         doValenceRestraint2 = false;
+        
+        lambdaExponent = lamExp;
 
         /**
          * Check that all atoms that are not undergoing alchemy are common to
@@ -458,8 +465,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         region = new EnergyRegion();
         team = new ParallelTeam(1);
     }
-
+    
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
+        this(topology1, topology2, 1.0);
+    }
+
+    public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2, double lamExp) {
         forceFieldEnergy1 = topology1.getPotentialEnergy();
         forceFieldEnergy2 = topology2.getPotentialEnergy();
         potential1 = forceFieldEnergy1;
@@ -470,6 +481,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         atoms2 = topology2.getAtomArray();
         nAtoms1 = atoms1.length;
         nAtoms2 = atoms2.length;
+        lambdaExponent = lamExp;
 
         ForceField forceField1 = topology1.getForceField();
         this.doValenceRestraint1 = forceField1.getBoolean(
@@ -1129,6 +1141,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     @Override
     public double getLambda() {
         return lambda;
+    }
+    
+    public double getLambdaExponent() {
+        return lambdaExponent;
     }
 
     @Override
