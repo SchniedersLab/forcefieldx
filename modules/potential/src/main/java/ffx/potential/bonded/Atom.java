@@ -674,23 +674,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
                 && other.getName() != null && other.getName().equals(getName())
                 && other.segID != null && other.segID.equals(segID));
     }
-    /* Alternate library implementation.
-    @Override
-    public final boolean equals(Object object) {
-        if (this == object) return true;
-        if (!(object instanceof Atom)) {
-            // This catches nulls too.
-            return false;
-        }
-        Atom other = (Atom) object;
-        return new EqualsBuilder()
-                .appendSuper(super.equals(other))
-                .append(resName, other.resName)
-                .append(resSeq, other.resSeq)
-                .append(getName(), other.getName())
-                .append(segID, other.segID)
-                .isEquals();
-    }   */
 
     /**
      * <p>
@@ -2320,9 +2303,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @param torsion a {@link ffx.potential.bonded.Torsion} object.
      */
     public void setTorsion(Torsion torsion) {
-        if (torsion == null || !torsion.containsAtom(this)
-                || torsions.contains(torsion)) {
+        if (torsion == null || !torsion.containsAtom(this)) {
             return;
+        }
+        for (Torsion t : torsions) {
+            if (torsion == t) {
+                return;
+            }
         }
         torsions.add(torsion);
         Atom a14 = torsion.get1_4(this);

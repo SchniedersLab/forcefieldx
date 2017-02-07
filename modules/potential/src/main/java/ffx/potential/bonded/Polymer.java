@@ -330,8 +330,6 @@ public class Polymer extends MSGroup {
      * of the Polymer, useful for creating Ramachandran plots
      */
     public List<ArrayList<Torsion>> getPhiPsiList() {
-        throw new UnsupportedOperationException();
-        /*
         MSNode dihedrals;
         ListIterator<MSNode> li, lj;
         List<ArrayList<Torsion>> phipsi = new ArrayList<>();
@@ -355,7 +353,6 @@ public class Polymer extends MSGroup {
             }
         }
         return phipsi;
-        */
     }
 
     /**

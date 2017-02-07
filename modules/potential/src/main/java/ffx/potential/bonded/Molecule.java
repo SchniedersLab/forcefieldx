@@ -221,6 +221,7 @@ public class Molecule extends MSGroup {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void finalize(boolean finalizeGeometry, ForceField forceField) {
         setFinalized(false);
         getAtomNode().setName("Atoms (" + getAtomList().size() + ")");

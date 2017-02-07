@@ -116,7 +116,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         this();
         id = i;
     }
-
+    
     /**
      * Checks if all atoms in this BondedTerm are of the given resolution.
      *
@@ -360,6 +360,39 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Overridden method that returns true if object is equals to this, is of
+     * the same Class and has the same id.
+     */
+    @Override
+    public final boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        BondedTerm other = (BondedTerm) object;
+        return getID().equals(other.getID());
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 89 * hash + Objects.hashCode(this.id);
+        return hash;
+    }
+
+    /**
+     * Get the Term's id.
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getID() {
+        return id;
+    }
+    
     /**
      * Sets the Term's id.
      *

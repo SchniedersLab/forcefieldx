@@ -759,7 +759,7 @@ public final class PDBFilter extends SystemFilter {
                                     // The new atom has been added.
                                     atoms.put(serial, newAtom);
                                     // Check if the newAtom took the xyzIndex of a previous alternate conformer.
-                                    if (newAtom.getXyzIndex() == 0) {
+                                    if (newAtom.getIndex() == 0) {
                                         newAtom.setXyzIndex(xyzIndex++);
                                     }
                                     if (printAtom) {
@@ -1325,7 +1325,7 @@ public final class PDBFilter extends SystemFilter {
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
-                                    if (SG1.getXyzIndex() < SG2.getXyzIndex()) {
+                                    if (SG1.getIndex() < SG2.getIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
                                             bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
@@ -1698,7 +1698,7 @@ public final class PDBFilter extends SystemFilter {
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
-                                    if (SG1.getXyzIndex() < SG2.getXyzIndex()) {
+                                    if (SG1.getIndex() < SG2.getIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
                                             bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",

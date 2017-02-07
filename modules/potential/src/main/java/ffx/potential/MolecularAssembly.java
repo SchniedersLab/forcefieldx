@@ -582,7 +582,7 @@ public class MolecularAssembly extends MSGroup {
             }
         }
     }
-
+    
     /**
      * {@inheritDoc}
      */
