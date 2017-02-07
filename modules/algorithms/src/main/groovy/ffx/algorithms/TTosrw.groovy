@@ -28,6 +28,7 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.RotamerOptimization;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
 
 import ffx.numerics.Potential;
@@ -635,7 +636,7 @@ class TTosrw extends Script {
             // Do not open the files yet!
         }
 
-        Potential potential;
+        CrystalPotential potential;
 
         String filename = arguments[0];
         logger.info(filename);

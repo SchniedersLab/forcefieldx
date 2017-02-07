@@ -40,7 +40,8 @@ package ffx.potential;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
-import ffx.numerics.Potential;
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.utils.EnergyException;
 import java.util.ArrayList;
@@ -62,7 +63,7 @@ import java.util.logging.Logger;
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
-public class QuadTopologyEnergy implements Potential, LambdaInterface {
+public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     private final static Logger logger = Logger.getLogger(QuadTopologyEnergy.class.getName());
     private final DualTopologyEnergy dualTopA;
     private final DualTopologyEnergy dualTopB;
@@ -637,6 +638,17 @@ public class QuadTopologyEnergy implements Potential, LambdaInterface {
             }
         }
         team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
+    }
+
+    @Override
+    public Crystal getCrystal() {
+        return dualTopA.getCrystal();
+    }
+
+    @Override
+    public void setCrystal(Crystal crystal) {
+        dualTopA.setCrystal(crystal);
+        dualTopB.setCrystal(crystal);
     }
     
     private class EnergyRegion extends ParallelRegion {
