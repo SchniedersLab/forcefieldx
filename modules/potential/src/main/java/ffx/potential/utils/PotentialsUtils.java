@@ -37,11 +37,18 @@
  */
 package ffx.potential.utils;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.crystal.Crystal;
@@ -148,8 +155,8 @@ public class PotentialsUtils implements PotentialsFunctions {
     }
 
     /**
-     * Opens an array of files and returns all created MolecularAssembly 
-     * objects, setting any underlying Potential to use a certain number of 
+     * Opens an array of files and returns all created MolecularAssembly
+     * objects, setting any underlying Potential to use a certain number of
      * threads.
      *
      * @param files Filenames to open.
@@ -221,7 +228,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         }
         return convertDataStructure(data, file);
     }
-    
+
     /**
      * Shuts down parallel teams in the force field of the provided
      * MolecularAssembly. Kaminsky's ParallelTeamThreads' run() methods are
@@ -482,18 +489,18 @@ public class PotentialsUtils implements PotentialsFunctions {
             return energy.energy(false, true);
         }
     }
-    
+
     @Override
     public SystemFilter getFilter() {
         return lastFilter;
     }
-    
+
     public static void analysis(MolecularAssembly molas[]) {
         for (MolecularAssembly mola : molas) {
             analysis(mola);
         }
     }
-    
+
     public static void analysis(MolecularAssembly mola) {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(" Atom Array: (array_pos, xyz_index, resName, atomName, typeNum, classNum) \n"));
@@ -509,6 +516,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         }
         logger.info(sb.toString());
     }
+
 }
 
 /**
