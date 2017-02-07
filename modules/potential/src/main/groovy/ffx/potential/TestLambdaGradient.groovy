@@ -136,6 +136,13 @@ class TestLambdaGradient extends Script {
          */
         @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0', 
             description='Exponent to apply to dual topology lambda.') double lamExp;
+        /**
+         * -sdX or --skipdX disables the very long atomic gradient tests and 
+         * only performs dU/dL, dU2/dL2, and dU2/dLdX tests. Useful if the 
+         * script is being used to generate a dU/dL profile.
+         */
+        @Option(shortName='sdX', longName='skipdX', defaultValue='false', 
+            description='Skip calculating per-atom dUdX values and only test lambda gradients') boolean skipAtomGradients;
         
         /**
          * The final argument(s) should be one or more filenames.
@@ -731,91 +738,93 @@ class TestLambdaGradient extends Script {
         potential.getCoordinates(x);
         potential.energyAndGradient(x,gradient, options.print);
 
-        logger.info(String.format(" Checking Cartesian coordinate gradient"));
+        if (!options.skipAtomGradients) {
+            logger.info(String.format(" Checking Cartesian coordinate gradient"));
+            double[] numeric = new double[3];
+            double avLen = 0.0;
+            int nFailures = 0;
+            double avGrad = 0.0;
+            for (int i=0; i<nAtoms; i++) {
+                int i3 = i*3;
+                int i0 = i3 + 0;
+                int i1 = i3 + 1;
+                int i2 = i3 + 2;
 
-        double[] numeric = new double[3];
-        double avLen = 0.0;
-        int nFailures = 0;
-        double avGrad = 0.0;
-        for (int i=0; i<nAtoms; i++) {
-            int i3 = i*3;
-            int i0 = i3 + 0;
-            int i1 = i3 + 1;
-            int i2 = i3 + 2;
+                // Find numeric dX
+                double orig = x[i0];
+                x[i0] = x[i0] + options.step;
+                double e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
+                x[i0] = orig - options.step;
+                e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
+                x[i0] = orig;
+                numeric[0] = e / width;
 
-            // Find numeric dX
-            double orig = x[i0];
-            x[i0] = x[i0] + options.step;
-            double e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
-            x[i0] = orig - options.step;
-            e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
-            x[i0] = orig;
-            numeric[0] = e / width;
+                // Find numeric dY
+                orig = x[i1];
+                x[i1] = x[i1] + options.step;
+                e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
+                x[i1] = orig - options.step;
+                e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
+                x[i1] = orig;
+                numeric[1] = e / width;
 
-            // Find numeric dY
-            orig = x[i1];
-            x[i1] = x[i1] + options.step;
-            e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
-            x[i1] = orig - options.step;
-            e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
-            x[i1] = orig;
-            numeric[1] = e / width;
+                // Find numeric dZ
+                orig = x[i2];
+                x[i2] = x[i2] + options.step;
+                e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
+                x[i2] = orig - options.step;
+                e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
+                x[i2] = orig;
+                numeric[2] = e / width;
 
-            // Find numeric dZ
-            orig = x[i2];
-            x[i2] = x[i2] + options.step;
-            e = potential.energyAndGradient(x,lambdaGradFD[0], options.print);
-            x[i2] = orig - options.step;
-            e -= potential.energyAndGradient(x,lambdaGradFD[1], options.print);
-            x[i2] = orig;
-            numeric[2] = e / width;
+                double dx = gradient[i0] - numeric[0];
+                double dy = gradient[i1] - numeric[1];
+                double dz = gradient[i2] - numeric[2];
+                double len = dx * dx + dy * dy + dz * dz;
+                avLen += len;
+                len = Math.sqrt(len);
 
-            double dx = gradient[i0] - numeric[0];
-            double dy = gradient[i1] - numeric[1];
-            double dz = gradient[i2] - numeric[2];
-            double len = dx * dx + dy * dy + dz * dz;
-            avLen += len;
-            len = Math.sqrt(len);
+                double grad2 = gradient[i0] * gradient[i0] + gradient[i1] * gradient[i1] + gradient[i2] * gradient[i2];
+                avGrad += grad2;
 
-            double grad2 = gradient[i0] * gradient[i0] + gradient[i1] * gradient[i1] + gradient[i2] * gradient[i2];
-            avGrad += grad2;
+                if (len > errTol) {
+                    logger.info(String.format(" Atom %d failed: %10.6f.",i+1,len)
+                        + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
+                        + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
+                    ++nFailures;
+                    //return;
+                } else {
+                    logger.info(String.format(" Atom %d passed: %10.6f.",i+1,len)
+                        + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
+                        + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
+                }
 
-            if (len > errTol) {
-                logger.info(String.format(" Atom %d failed: %10.6f.",i+1,len)
-                    + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-                    + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
-                ++nFailures;
-                //return;
+                if (grad2 > expGrad) {
+                    logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i+1, grad2));
+                }
+                logger.info("\n");
+            }
+
+            avLen = avLen / nAtoms;
+            avLen = Math.sqrt(avLen);
+            if (avLen > errTol) {
+                logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol));
             } else {
-                logger.info(String.format(" Atom %d passed: %10.6f.",i+1,len)
-                    + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
-                    + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
+                logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol));
             }
+            logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures));
 
-            if (grad2 > expGrad) {
-                logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i+1, grad2));
+            avGrad = avGrad / nAtoms;
+            avGrad = Math.sqrt(avGrad);
+            if (avGrad > expGrad) {
+                logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad));
+            } else {
+                logger.info(String.format(" RMS gradient: %10.6f", avGrad));
             }
-            logger.info("\n");
-        }
-
-        avLen = avLen / nAtoms;
-        avLen = Math.sqrt(avLen);
-        if (avLen > errTol) {
-            logger.info(String.format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol));
         } else {
-            logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol));
-        }
-        logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures));
-
-        avGrad = avGrad / nAtoms;
-        avGrad = Math.sqrt(avGrad);
-        if (avGrad > expGrad) {
-            logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad));
-        } else {
-            logger.info(String.format(" RMS gradient: %10.6f", avGrad));
+            logger.info(" Skipping atomic dU/dX gradients.");
         }
     }
-    
 }
 
 /**
