@@ -173,11 +173,11 @@ public class UreyBradley extends BondedTerm {
             scalar(v20, -de, g2);
             // atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
             // atoms[2].addToXYZGradient(g2[0], g2[1], g2[2]);
-            int i0 = atoms[0].getXYZIndex() - 1;
+            int i0 = atoms[0].getIndex() - 1;
             gradX.add(threadID, i0, g0[0]);
             gradY.add(threadID, i0, g0[1]);
             gradZ.add(threadID, i0, g0[2]);
-            int i2 = atoms[2].getXYZIndex() - 1;
+            int i2 = atoms[2].getIndex() - 1;
             gradX.add(threadID, i2, g2[0]);
             gradY.add(threadID, i2, g2[1]);
             gradZ.add(threadID, i2, g2[2]);
@@ -197,11 +197,11 @@ public class UreyBradley extends BondedTerm {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Urey-Bradley", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
-                atoms[2].getXYZIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
+                "Urey-Bradley", atoms[0].getIndex(), atoms[0].getAtomType().name,
+                atoms[2].getIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
                 energy));
     }
-
+    
     /**
      * {@inheritDoc}
      */

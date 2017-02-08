@@ -37,21 +37,21 @@
  */
 package ffx.potential.bonded;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.bonded.Residue.ResidueType;
 
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static ffx.potential.bonded.BondedUtils.intxyz;
@@ -3961,7 +3961,11 @@ public class RotamerLibrary {
     }
     
     public static boolean addRotPatch(String rotFileName) {
-        return addRotPatch(new File(rotFileName));
+        File rotPatchFile = new File(rotFileName);
+        if (rotPatchFile.exists() && rotPatchFile.canRead()) {
+            return addRotPatch(new File(rotFileName));
+        }
+        return false;
     }
     
     private static boolean addRotPatch(File rpatchFile) {

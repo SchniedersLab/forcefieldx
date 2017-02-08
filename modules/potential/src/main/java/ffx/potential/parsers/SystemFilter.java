@@ -91,7 +91,7 @@ public abstract class SystemFilter {
         int i = 1;
         while (newFile.exists()) {
             i = i + 1;
-            newFile = oldFile;
+            /* Lest we forget the bad old days:
             int thousand = i / 1000;
             int hundred = (i - 1000 * thousand) / 100;
             int tens = (i - 1000 * thousand - 100 * hundred) / 10;
@@ -107,7 +107,10 @@ public abstract class SystemFilter {
             } else {
                 newFileString.append('_').append(ones);
             }
-            newFile = new File(newFileString.toString());
+            newFile = new File(newFileString.toString());   */
+            /* The new way: */
+            String newFileString = String.format("%s_%d", oldFile.getAbsolutePath(), i);
+            newFile = new File(newFileString);
         }
         return newFile;
     }

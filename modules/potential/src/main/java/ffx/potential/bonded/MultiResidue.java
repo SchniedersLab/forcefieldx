@@ -208,8 +208,8 @@ public class MultiResidue extends Residue {
     }
 
     @Override
-    public MSNode getTerms() {
-        return activeResidue.getTerms();
+    public MSNode getTermNode() {
+        return activeResidue.getTermNode();
     }
 
     @Override

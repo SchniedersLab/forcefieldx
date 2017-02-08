@@ -37,7 +37,10 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.logging.Logger;
+
 import ffx.crystal.Crystal;
+import ffx.numerics.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 
 /**
@@ -51,6 +54,23 @@ import ffx.potential.bonded.Atom;
  */
 public abstract class ParticleMeshEwald {
 
+    protected final Logger logger = Logger.getLogger(this.getClass().getName());
+    /**
+     * Unit cell and spacegroup information.
+     */
+    protected Crystal crystal;
+    /**
+     * Number of symmetry operators.
+     */
+    protected int nSymm;
+    /**
+     * An ordered array of atoms in the system.
+     */
+    protected Atom atoms[];
+    /**
+     * The number of atoms in the system.
+     */
+    protected int nAtoms;
     /**
      * Polarization modes include "direct", in which induced dipoles do not
      * interact, and "mutual" that converges the self-consistent field to a
@@ -60,17 +80,22 @@ public abstract class ParticleMeshEwald {
 
         MUTUAL, DIRECT, NONE
     }
+    protected Polarization polarization;
 
     public enum ELEC_FORM {
 
         PAM, FIXED_CHARGE
     }
 
-    /**
-     * Polarization mode.
-     */
-    protected Polarization polarization;
+    protected enum LambdaMode {
+        OFF, CONDENSED, CONDENSED_NO_LIGAND, VAPOR
+    }
+    protected LambdaMode lambdaMode = LambdaMode.OFF;
 
+    /**
+     * Optionally predict induced dipoles prior to the SCF calculation.
+     */
+    protected ScfPredictor scfPredictor = null;
     /**
      * Dimensions of [nsymm][3][nAtoms].
      */
@@ -85,12 +110,28 @@ public abstract class ParticleMeshEwald {
      * Dimensions of [nsymm][nAtoms][10]
      */
     protected double globalMultipole[][][];
+    protected double globalMultipoleDot[][][];
 
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
     protected double inducedDipole[][][];
     protected double inducedDipoleCR[][][];
+
+    /**
+     * Number of unique tensors for given order.
+     */
+    protected static final int tensorCount = MultipoleTensor.tensorCount(3);
+    protected static final double oneThird = 1.0 / 3.0;
+    
+    public class EnergyForceTorque {
+        public double energy;
+        public double[] permFi = new double[3];
+        public double[] permTi = new double[3];
+        public double[] permFk = new double[3];
+        public double[] permTk = new double[3];
+        public double dPermdZ;
+    }
 
     public abstract double getEwaldCutoff();
 
@@ -147,4 +188,21 @@ public abstract class ParticleMeshEwald {
     public abstract double getCavitationEnergy(boolean throwError);
 
     public abstract double getDispersionEnergy(boolean throwError);
+
+    private void log(int i, int k, double r, double eij) {
+        log("ELEC", i, k, r, eij);
+    }
+
+    /**
+     * Log the real space electrostatics interaction.
+     * @param i Atom i.
+     * @param k Atom j.
+     * @param r The distance rij.
+     * @param eij The interaction energy.
+     */
+    private void log(String type, int i, int k, double r, double eij) {
+        logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f",
+                type, atoms[i].getIndex(), atoms[i].getAtomType().name, atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
+    }
+
 }

@@ -439,27 +439,27 @@ HELIX    1   1 SER A   28  TRP A   89  1                                  62
 HELIX    2   2 ALA B  191  VAL B  255  1                                  65    
 HELIX    3   3 SER C    6  LYS C   83  1                                  78    
 HELIX    4   4 ALA D  141  MET D  202  1                                  62    
-LINK        CA    CA A 501                 O   LYS B 256     1555   1555  2.41  
-LINK        CA    CA A 501                 O   HOH A 527     1555   1555  2.36  
-LINK        CA    CA A 501                 O   HOH B 285     1555   1555  2.34  
-LINK        CA    CA A 501                 O   TYR A  88     1555   1555  2.19  
-LINK        CA    CA A 501                 O   HOH A 554     1555   1555  2.32  
-LINK        CA    CA C 502                 O   HOH C 553     1555   1555  2.39  
-LINK        CA    CA C 502                 O   HOH C 554     1555   1555  2.49  
-LINK        CA    CA C 502                 OE2 GLU C  27     1555   1555  2.31  
-LINK        CA    CA C 502                 O   HOH C 504     1555   1555  2.38  
-LINK        CA    CA C 503                 O   HOH C 567     1555   1555  2.46  
-LINK        CA    CA C 503                 OE1 GLU C  27     1555   1555  2.50  
-LINK        CA    CA C 503                 OE2 GLU C  27     1555   1555  2.47  
-LINK        CA    CA C 503                 O   HOH C 517     1555   1555  2.63  
-LINK        CA    CA C 503                 O   HOH C 544     1555   1555  3.18  
-LINK        CA    CA C 503                 O   HOH C 531     1555   1555  2.35  
-LINK        CA    CA A 501                 OE1 GLN C  20     1555   2674  2.28  
-LINK        CA    CA C 502                 O   ASP C  80     1555   2675  2.29  
-LINK        CA    CA C 502                 OD1 ASP C  80     1555   2675  2.30  
-LINK        CA    CA C 502                 O   LYS C  83     1555   2675  2.30  
-LINK        CA    CA C 503                 OD1 ASP C  80     1555   2675  2.54  
-LINK        CA    CA C 503                 OD2 ASP C  80     1555   2675  2.44  
+LINK         CA  CA  A 501                 O   LYS B 256     1555   1555  2.41  
+LINK         CA  CA  A 501                 O   HOH A 527     1555   1555  2.36  
+LINK         CA  CA  A 501                 O   HOH B 285     1555   1555  2.34  
+LINK         CA  CA  A 501                 O   TYR A  88     1555   1555  2.19  
+LINK         CA  CA  A 501                 O   HOH A 554     1555   1555  2.32  
+LINK         CA  CA  C 502                 O   HOH C 553     1555   1555  2.39  
+LINK         CA  CA  C 502                 O   HOH C 554     1555   1555  2.49  
+LINK         CA  CA  C 502                 OE2 GLU C  27     1555   1555  2.31  
+LINK         CA  CA  C 502                 O   HOH C 504     1555   1555  2.38  
+LINK         CA  CA  C 503                 O   HOH C 567     1555   1555  2.46  
+LINK         CA  CA  C 503                 OE1 GLU C  27     1555   1555  2.50  
+LINK         CA  CA  C 503                 OE2 GLU C  27     1555   1555  2.47  
+LINK         CA  CA  C 503                 O   HOH C 517     1555   1555  2.63  
+LINK         CA  CA  C 503                 O   HOH C 544     1555   1555  3.18  
+LINK         CA  CA  C 503                 O   HOH C 531     1555   1555  2.35  
+LINK         CA  CA  A 501                 OE1 GLN C  20     1555   2674  2.28  
+LINK         CA  CA  C 502                 O   ASP C  80     1555   2675  2.29  
+LINK         CA  CA  C 502                 OD1 ASP C  80     1555   2675  2.30  
+LINK         CA  CA  C 502                 O   LYS C  83     1555   2675  2.30  
+LINK         CA  CA  C 503                 OD1 ASP C  80     1555   2675  2.54  
+LINK         CA  CA  C 503                 OD2 ASP C  80     1555   2675  2.44  
 SITE     1 AC1  6 TYR A  88  HOH A 527  HOH A 554  LYS B 256                    
 SITE     2 AC1  6 HOH B 285  GLN C  20                                          
 SITE     1 AC2  6 GLU C  27  ASP C  80  LYS C  83  HOH C 504                    
@@ -2686,7 +2686,7 @@ ATOM   2207  C   GLY D 204      68.396  51.791  -6.760  1.00 60.15           C
 ATOM   2208  O   GLY D 204      69.389  52.550  -6.766  1.00 63.12           O  
 ATOM   2209  OXT GLY D 204      68.123  51.019  -7.704  1.00 63.41           O  
 TER    2210      GLY D 204                                                      
-HETATM 2211 CA    CA A 501      61.799  62.450 -15.910  1.00 19.96          CA  
+HETATM 2211  CA  CA  A 501      61.799  62.450 -15.910  1.00 19.96          CA  
 HETATM 2212  C1  MPD A 402      57.256  71.134 -16.109  1.00 39.14           C  
 HETATM 2213  C2  MPD A 402      58.589  71.646 -15.606  1.00 44.92           C  
 HETATM 2214  O2  MPD A 402      59.300  72.129 -16.767  1.00 41.61           O  
@@ -2695,8 +2695,8 @@ HETATM 2216  C3  MPD A 402      59.446  70.547 -14.923  1.00 44.30           C
 HETATM 2217  C4  MPD A 402      60.004  69.422 -15.804  1.00 48.54           C  
 HETATM 2218  O4  MPD A 402      60.873  69.936 -16.790  1.00 54.62           O  
 HETATM 2219  C5  MPD A 402      60.801  68.426 -14.981  1.00 49.03           C  
-HETATM 2220 CA    CA C 502       2.259  48.515  45.402  1.00 18.96          CA  
-HETATM 2221 CA    CA C 503       4.023  45.015  45.476  1.00 26.39          CA  
+HETATM 2220  CA  CA  C 502       2.259  48.515  45.402  1.00 18.96          CA  
+HETATM 2221  CA  CA  C 503       4.023  45.015  45.476  1.00 26.39          CA  
 HETATM 2222  C1  MPD C 401      63.601  57.334 -16.800  1.00 33.72           C  
 HETATM 2223  C2  MPD C 401      62.816  57.749 -18.026  1.00 25.01           C  
 HETATM 2224  O2  MPD C 401      61.497  58.103 -17.560  1.00 28.02           O  

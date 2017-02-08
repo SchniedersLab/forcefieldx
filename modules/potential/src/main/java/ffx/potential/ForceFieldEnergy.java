@@ -129,9 +129,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     private final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
+    /**
+     * Contains ALL atoms, both foreground and background. Background atoms need to be
+     * present to be included in bonded terms
+     */
+    private Atom[] atomsExtended;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
-    private final BondedRegion bondedRegion;
+    private BondedRegion bondedRegion;
     private STATE state = STATE.BOTH;
     private Bond bonds[];
     private Angle angles[];
@@ -282,12 +287,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
-        xyz = new double[nAtoms * 3];
         nAtoms = atoms.length;
+        xyz = new double[nAtoms * 3];
 
         // Check that atom ordering is correct and count the number of active atoms.
         for (int i = 0; i < nAtoms; i++) {
-            int index = atoms[i].xyzIndex - 1;
+            int index = atoms[i].getIndex() - 1;
             assert (i == index);
         }
 
@@ -519,7 +524,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         // Collect, count, pack and sort stretch-bends.
         if (stretchBendTerm) {
-            ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
+          ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
             nStretchBends = stretchBend.size();
             stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
             Arrays.sort(stretchBends);
@@ -785,15 +790,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     public void reInit() {
-
-        atoms = (esvTerm) ? esvSystem.getAtomsExtAll() : molecularAssembly.getAtomArray();
-        int[] molecule = (esvTerm) ? esvSystem.getMoleculeExtAll() : molecularAssembly.getMoleculeNumbers();
+        atoms = (esvTerm) ? esvSystem.getExtendedAndBackgroundAtoms() : molecularAssembly.getAtomArray();
+        int[] molecule = (esvTerm) ? esvSystem.getExtendedAndBackgroundMolecule() : molecularAssembly.getMoleculeNumbers();
         nAtoms = atoms.length;
-//        SB.logfn(" FFE Atoms (%d)", nAtoms);
-//        for (int i = 0; i < atoms.length; i++) {
-//            SB.logfn(" %d: %s", i, atoms[i].toString());
-//        }
-//        SB.printIf(false);
 
         if (xyz.length < 3 * nAtoms) {
             xyz = new double[nAtoms * 3];
@@ -802,9 +801,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Check that atom ordering is correct and count number of Active atoms.
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            int index = atom.xyzIndex - 1;
+            int index = atom.getIndex() - 1;
             assert (i == index);
-            atom.setXYZIndex(i + 1);
+            atom.setXyzIndex(i + 1);
         }
 
         // Collect, count, pack and sort bonds.
@@ -1103,14 +1102,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         if (vanderWaalsTerm) {
             if (esvTerm) {
-                vanderWaals.setAtoms(esvSystem.getAtomsExtH(), esvSystem.getMoleculeExtH());
+                vanderWaals.setAtoms(esvSystem.getExtendedAtoms(), esvSystem.getExtendedMolecule());
             } else {
                 vanderWaals.setAtoms(atoms, molecule);
             }
         }
 
         if (multipoleTerm) {
-            particleMeshEwald.setAtoms(atoms, molecule);
+            if (esvTerm) {
+                particleMeshEwald.setAtoms(esvSystem.getExtendedAtoms(), esvSystem.getExtendedMolecule());
+            } else {
+                particleMeshEwald.setAtoms(atoms, molecule);
+            }
         }
 
         if (ncsTerm) {
@@ -1124,7 +1127,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (comTerm) {
             logger.severe(" COM restrain energy term cannot be used with variable systems sizes.");
         }
-
+        
+        bondedRegion = new BondedRegion();
     }
 
     public void setFixedCharges(Atom atoms[]) {
@@ -2621,7 +2625,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
          * Z-component of the dU/dX/dL coordinate gradient.
          */
         private final AtomicDoubleArray lambdaGradZ;
-
+        
         // Shared RMSD variables.
         private final SharedDouble sharedBondRMSD;
         private final SharedDouble sharedAngleRMSD;

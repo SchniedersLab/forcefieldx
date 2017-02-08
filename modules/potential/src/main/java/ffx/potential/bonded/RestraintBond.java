@@ -123,12 +123,12 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
 
     @Override
     public void getdEdXdL(double[] gradient) {
-        int i1 = atoms[0].getXYZIndex() - 1;
+        int i1 = atoms[0].getIndex() - 1;
         int index = i1 * 3;
         gradient[index++] += dEdXdL[0][0];
         gradient[index++] += dEdXdL[0][1];
         gradient[index] += dEdXdL[0][2];
-        int i2 = atoms[1].getXYZIndex() - 1;
+        int i2 = atoms[1].getIndex() - 1;
         index = i2 * 3;
         gradient[index++] += dEdXdL[1][0];
         gradient[index++] += dEdXdL[1][1];
@@ -202,8 +202,8 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
 
         this.crystal = crystal;
 
-        int i1 = a1.getXYZIndex();
-        int i2 = a2.getXYZIndex();
+        int i1 = a1.getIndex();
+        int i2 = a2.getIndex();
         if (i1 < i2) {
             atoms[0] = a1;
             atoms[1] = a2;
@@ -676,11 +676,11 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         if (gradient) {
             //atoms[0].addToXYZGradient(g0[0], g0[1], g0[2]);
             //atoms[1].addToXYZGradient(g1[0], g1[1], g1[2]);
-            int i0 = atoms[0].getXYZIndex() - 1;
+            int i0 = atoms[0].getIndex() - 1;
             gradX.add(threadID, i0, g0[0]);
             gradY.add(threadID, i0, g0[1]);
             gradZ.add(threadID, i0, g0[2]);
-            int i1 = atoms[1].getXYZIndex() - 1;
+            int i1 = atoms[1].getIndex() - 1;
             gradX.add(threadID, i1, g1[0]);
             gradY.add(threadID, i1, g1[1]);
             gradZ.add(threadID, i1, g1[2]);
@@ -710,8 +710,8 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Restraint-Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
-                atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
+                "Restraint-Bond", atoms[0].getIndex(), atoms[0].getAtomType().name,
+                atoms[1].getIndex(), atoms[1].getAtomType().name,
                 bondType.distance, value, energy));
     }
 }

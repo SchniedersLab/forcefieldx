@@ -149,5 +149,10 @@
             <type>jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>4.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

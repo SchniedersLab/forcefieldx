@@ -100,6 +100,8 @@ import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
+import static ffx.potential.parsers.SystemFilter.dieOnMissingAtom;
+import static ffx.potential.parsers.SystemFilter.version;
 import static ffx.utilities.StringUtils.padLeft;
 import static ffx.utilities.StringUtils.padRight;
 
@@ -174,18 +176,7 @@ public final class PDBFilter extends SystemFilter {
      * Flag to indicate a mutation is requested.
      */
     private boolean mutate = false;
-    /**
-     * Residue ID of the residue to mutate.
-     */
-    private int mutateResID = 0;
-    /**
-     * Residue name after mutation.
-     */
-    private String mutateToResname = null;
-    /**
-     * Character for the chain ID of the residue that will be mutated.
-     */
-    private Character mutateChainID = null;
+    private List<Mutation> mutations = null;
     /**
      * Flag to indicate if missing fields should be printed (i.e. missing
      * B-factors).
@@ -287,13 +278,12 @@ public final class PDBFilter extends SystemFilter {
      * @param name the 3-letter code of the amino acid to mutate to.
      */
     public void mutate(Character chainID, int resID, String name) {
-        if (name != null && name.length() == 3) {
-            logger.info(String.format(" Mutating chain %c residue %d to %s.", chainID, resID, name));
-            mutate = true;
-            mutateResID = resID;
-            mutateChainID = chainID;
-            mutateToResname = name;
+        logger.info(String.format(" Mutating chain %c residue %d to %s.", chainID, resID, name));
+        mutate = true;
+        if (mutations == null) {
+            mutations = new ArrayList<>();
         }
+        mutations.add(new Mutation(resID, chainID, name));
     }
 
     /**
@@ -412,16 +402,18 @@ public final class PDBFilter extends SystemFilter {
                             }
                             line = cr.readLine();
                         }
-                        if (!chainIDs.contains(mutateChainID)) {
-                            if (chainIDs.size() == 1) {
-                                logger.warning(String.format(" Chain ID %c for "
-                                        + "mutation not found: only one chain %c "
-                                        + "found.", mutateChainID, chainIDs.get(0)));
-                                mutateChainID = chainIDs.get(0);
-                            } else {
-                                logger.warning(String.format(" Chain ID %c for "
-                                        + "mutation not found: mutation will not "
-                                        + "proceed.", mutateChainID));
+                        for (Mutation mtn : mutations) {
+                            if (!chainIDs.contains(mtn.chainChar)) {
+                                if (chainIDs.size() == 1) {
+                                    logger.warning(String.format(" Chain ID %c for "
+                                            + "mutation not found: only one chain %c "
+                                            + "found.", mtn.chainChar, chainIDs.get(0)));
+                                    mtn = new Mutation(mtn.resID, chainIDs.get(0), mtn.resName);
+                                } else {
+                                    logger.warning(String.format(" Chain ID %c for "
+                                            + "mutation not found: mutation will not "
+                                            + "proceed.", mtn.chainChar));
+                                }
                             }
                         }
                     } catch (IOException ex) {
@@ -716,16 +708,21 @@ public final class PDBFilter extends SystemFilter {
                                 }
 
                                 printAtom = false;
-                                if (mutate && chainID.equals(mutateChainID) && mutateResID == resSeq) {
-                                    String atomName = name.toUpperCase();
-                                    if (atomName.equals("N") || atomName.equals("C")
-                                            || atomName.equals("O") || atomName.equals("CA")) {
-                                        printAtom = true;
-                                        resName = mutateToResname;
-                                    } else {
-                                        logger.info(String.format(" Deleting atom %s of %s %d",
-                                                atomName, resName, resSeq));
-                                        break;
+                                if (mutate) {
+                                    for (Mutation mtn : mutations) {
+                                        if (chainID == mtn.chainChar
+                                                && resSeq == mtn.resID) {
+                                            String atomName = name.toUpperCase();
+                                            if (atomName.equals("N") || atomName.equals("C")
+                                                    || atomName.equals("O") || atomName.equals("CA")) {
+                                                printAtom = true;
+                                                resName = mtn.resName;
+                                            } else {
+                                                logger.info(String.format(" Deleting atom %s of %s %d",
+                                                        atomName, resName, resSeq));
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                                 d = new double[3];
@@ -764,8 +761,8 @@ public final class PDBFilter extends SystemFilter {
                                     // The new atom has been added.
                                     atoms.put(serial, newAtom);
                                     // Check if the newAtom took the xyzIndex of a previous alternate conformer.
-                                    if (newAtom.xyzIndex == 0) {
-                                        newAtom.setXYZIndex(xyzIndex++);
+                                    if (newAtom.getIndex() == 0) {
+                                        newAtom.setXyzIndex(xyzIndex++);
                                     }
                                     if (printAtom) {
                                         logger.info(newAtom.toString());
@@ -871,7 +868,7 @@ public final class PDBFilter extends SystemFilter {
                             } else {
                                 // The new atom has been added.
                                 atoms.put(serial, newAtom);
-                                newAtom.setXYZIndex(xyzIndex++);
+                                newAtom.setXyzIndex(xyzIndex++);
                             }
                             break;
                         case CRYST1:
@@ -1330,7 +1327,7 @@ public final class PDBFilter extends SystemFilter {
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
-                                    if (SG1.xyzIndex < SG2.xyzIndex) {
+                                    if (SG1.getIndex() < SG2.getIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
                                             bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
@@ -1703,7 +1700,7 @@ public final class PDBFilter extends SystemFilter {
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
-                                    if (SG1.xyzIndex < SG2.xyzIndex) {
+                                    if (SG1.getIndex() < SG2.getIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
                                             bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
@@ -2266,7 +2263,7 @@ public final class PDBFilter extends SystemFilter {
     private void numberAtoms() {
         int index = 1;
         for (Atom a : activeMolecularAssembly.getAtomArray()) {
-            a.setXYZIndex(index++);
+            a.setXyzIndex(index++);
         }
         index--;
         if (logger.isLoggable(Level.INFO)) {
@@ -3772,6 +3769,34 @@ public final class PDBFilter extends SystemFilter {
         }
 
         return newSegID;
+    }
+
+    private class Mutation {
+        /**
+         * Residue ID of the residue to mutate.
+         */
+        final int resID;
+        /**
+         * Residue name after mutation.
+         */
+        final String resName;
+        /**
+         * Character for the chain ID of the residue that will be mutated.
+         */
+        final char chainChar;
+        Mutation(int resID, char chainChar, String newResName) {
+            if (newResName == null || newResName.length() != 3) {
+                logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
+            }
+            try {
+               AminoAcid3.valueOf(newResName);
+            } catch (IllegalArgumentException ex) {
+                logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
+            }
+            this.resID = resID;
+            this.chainChar = chainChar;
+            this.resName = newResName;
+        }
     }
 
     /**

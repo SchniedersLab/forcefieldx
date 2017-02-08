@@ -61,7 +61,6 @@ public class LoopClosureTest {
 
     private static final Logger logger = Logger.getLogger(LoopClosureTest.class.getName());
     private final MolecularAssembly molecularAssembly;
-    private final File structure;
     private final Loop loop;
 
     double[][] xyz_n_test = new double[3][3];
@@ -126,10 +125,10 @@ public class LoopClosureTest {
         int stt_res = 2;
         int end_res = 4;
         boolean writeFile = false;
-        ClassLoader cl = this.getClass().getClassLoader();
-        structure = new File(cl.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
-        PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
+        ClassLoader cl = getClass().getClassLoader();
+        File structure = new File(cl.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
+        PotentialsUtils potUtil = new PotentialsUtils();
+        molecularAssembly = potUtil.open(structure);
         loop = new Loop(molecularAssembly, stt_res, end_res, writeFile);
 
         this.xyz_n_test = xyz_n_test;

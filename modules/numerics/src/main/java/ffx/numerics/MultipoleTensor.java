@@ -155,7 +155,7 @@ public class MultipoleTensor {
      * approximately 50% slower than the linear work array.
      */
     private final double work[];
-    private double dEdF, d2EdF2;
+    private double dEdZ, d2EdZ2;
 
     /**
      * <p>
@@ -2371,7 +2371,7 @@ public class MultipoleTensor {
         multipoleIdZ();
         Fi[2] = -dotMultipoleK();
 
-        dEdF = -Fi[2];
+        dEdZ = -Fi[2];
 
         /**
          * if (order > 5) { // multipoleIdZ2(); // d2EdF2 = dotMultipoleK(); }
@@ -2412,10 +2412,10 @@ public class MultipoleTensor {
         Fi[2] = -dotMultipoleK();
         
         if (bufferCoordinates == COORDINATES.QI) {
-            dEdF = -Fi[2];
+            dEdZ = -Fi[2];
             if (order > 5) {
                 multipoleIdZ2QI();
-                d2EdF2 = dotMultipoleK();
+                d2EdZ2 = dotMultipoleK();
             }
         }
         
@@ -2424,30 +2424,33 @@ public class MultipoleTensor {
 
         if (bufferCoordinates == COORDINATES.GLOBAL) {
             // dEdL = dEdF = -Fi[2]
-            dEdF = -Fi[2];
+            dEdZ = -Fi[2];
             if (order > 5) {
                 multipoleIdZ2QI();
-                d2EdF2 = dotMultipoleK();
+                d2EdZ2 = dotMultipoleK();
             }
         }
 
         return energy;
     }
     
+    /**
+     * It is possible to construct the buffer in the QI frame, but one must first
+     * implement the appropriate chain term associated therewith. (It's like -2*alpha.)
+     */
     public void setBufferCoordinates(COORDINATES coord) {
+        if (coord == COORDINATES.QI) {
+            throw new UnsupportedOperationException();
+        }
         this.bufferCoordinates = coord;
     }
-
-    public double[] getR() {
-        return new double[]{x, y, z, R, R*R};
-    }
     
-    public double getdEdF() {
-        return dEdF;
+    public double getdEdZbuff() {
+        return dEdZ;
     }
 
-    public double getd2EdF2() {
-        return d2EdF2;
+    public double getd2EdZbuff2() {
+        return d2EdZ2;
     }
 
     private double polarizationEnergyGlobal(double scaleField, double scaleEnergy, double scaleMutual,

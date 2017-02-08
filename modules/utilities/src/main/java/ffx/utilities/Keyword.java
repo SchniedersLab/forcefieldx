@@ -49,6 +49,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * The Keyword class holds a single Force Field X keyword entry.
@@ -208,26 +209,20 @@ public class Keyword {
          * Structure specific options are first.
          */
         if (file != null) {
-            String filename = file.getAbsolutePath();
-            filename = org.apache.commons.io.FilenameUtils.removeExtension(filename);
-            String propertyFilename = filename + ".properties";
-            File structurePropFile = new File(propertyFilename);
-            if (structurePropFile.exists() && structurePropFile.canRead()) {
-                try {
-                    properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
-                    properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
-                } catch (ConfigurationException | IOException e) {
-                    logger.log(Level.INFO, " Error loading {0}.", filename);
-                }
-            } else {
-                propertyFilename = filename + ".key";
-                structurePropFile = new File(propertyFilename);
-                if (structurePropFile.exists() && structurePropFile.canRead()) {
+            String structureBasename = FilenameUtils.removeExtension(file.getAbsolutePath());
+            String propertyFilename
+                    = (new File(structureBasename + ".properties").exists()) ? structureBasename + ".properties"
+                    : (new File(structureBasename + ".prop").exists()) ? structureBasename + ".prop"
+                    : (new File(structureBasename + ".key").exists()) ? structureBasename + ".key"
+                    : null;
+            if (propertyFilename != null) {
+                File structurePropFile = new File(propertyFilename);
+                if (structurePropFile.canRead()) {
                     try {
                         properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
                         properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
                     } catch (ConfigurationException | IOException e) {
-                        logger.log(Level.INFO, " Error loading {0}.", filename);
+                        logger.log(Level.INFO, " Error loading {0}.", structureBasename);
                     }
                 }
             }

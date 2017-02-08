@@ -461,7 +461,7 @@ public class VanDerWaals implements MaskingInterface,
      */
     private void initAtomArrays() {
         if (esvTerm) {
-            atoms = esvSystem.getAtomsExtH();
+            atoms = esvSystem.getExtendedAtoms();
             nAtoms = atoms.length;
         }
         if (atomClass == null || nAtoms > atomClass.length
@@ -553,7 +553,7 @@ public class VanDerWaals implements MaskingInterface,
 
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
-            assert (i == ai.xyzIndex - 1);
+            assert (i == ai.getIndex() - 1);
             double xyz[] = ai.getXYZ(null);
             int i3 = i * 3;
             coordinates[i3 + XX] = xyz[XX];
@@ -583,7 +583,7 @@ public class VanDerWaals implements MaskingInterface,
                 Bond bond = bonds.get(0);
                 Atom heavyAtom = bond.get1_2(ai);
                 // Atom indexes start at 1
-                reductionIndex[i] = heavyAtom.xyzIndex - 1;
+                reductionIndex[i] = heavyAtom.getIndex() - 1;
                 reductionValue[i] = type.reductionFactor;
             } else {
                 reductionIndex[i] = i;
@@ -592,7 +592,7 @@ public class VanDerWaals implements MaskingInterface,
             bondMask[i] = new int[numBonds];
             for (int j = 0; j < numBonds; j++) {
                 Bond bond = bonds.get(j);
-                bondMask[i][j] = bond.get1_2(ai).xyzIndex - 1;
+                bondMask[i][j] = bond.get1_2(ai).getIndex() - 1;
             }
             ArrayList<Angle> angles = ai.getAngles();
             int numAngles = 0;
@@ -607,7 +607,7 @@ public class VanDerWaals implements MaskingInterface,
             for (Angle angle : angles) {
                 Atom ak = angle.get1_3(ai);
                 if (ak != null) {
-                    angleMask[i][j++] = ak.xyzIndex - 1;
+                    angleMask[i][j++] = ak.getIndex() - 1;
                 }
             }
             if (vdwForm.scale14 != 1.0) {
@@ -624,7 +624,7 @@ public class VanDerWaals implements MaskingInterface,
                 for (Torsion torsion : torsions) {
                     Atom ak = torsion.get1_4(ai);
                     if (ak != null) {
-                        torsionMask[i][j++] = ak.xyzIndex - 1;
+                        torsionMask[i][j++] = ak.getIndex() - 1;
                     }
                 }
             }
@@ -913,8 +913,7 @@ public class VanDerWaals implements MaskingInterface,
         int classk = ak.getAtomType().atomClass;
         double combined = 1.0 / vdwForm.radEps[classi][classk * 2 + VanDerWaalsForm.RADMIN];
         logger.info(format("%s %6d-%s %6d-%s %10.4f  %10.4f  %10.4f",
-                "VDW", atoms[i].xyzIndex, atoms[i].getAtomType().name,
-                atoms[k].xyzIndex, atoms[k].getAtomType().name,
+                "VDW", atoms[i].getIndex(), atoms[i].getAtomType().name, atoms[k].getIndex(), atoms[k].getAtomType().name,
                 combined, r, eij));
     }
 
@@ -958,16 +957,12 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * VdW version should get only the ExtH version of ExtendedSystem lists.
-     * This is equivalent to the mola atom array on loading the fully-protonated
-     * system. Note: we assume that heavy-atom radii do not differ between
-     * protonation states; this is violated only by {Cys-SG, Asp-OD[12], and
-     * Glu-OD[12]} (plus the bugged/missing Am'13_Tyr-OH).
+     * Only unshared atoms are treated as extended by VdW since heavy atom radii are assumed constant.
+     * Under AMOEBA'13, this assumption is violated only by Cys-SG, Asp-OD[12], and Glu-OD[12].
      */
     public void updateEsvLambda() {
         if (!esvTerm) {
-            logger.warning("Improper method call: updateEsvLambda().");
-            return;
+            return;     // TODO: figure out when/why this is happening
         }
         numESVs = esvSystem.n();
         if (esvLambdaSwitch == null || esvLambdaSwitch.length < nAtoms) {
@@ -979,12 +974,12 @@ public class VanDerWaals implements MaskingInterface,
             fill(atomEsvID, -1);
         }
         for (int i = 0; i < nAtoms; i++) {
-            if (esvSystem.isExtH(i)) {
+            if (esvSystem.isUnshared(i)) {
                 esvAtoms[i] = true;
-                esvLambda[i] = esvSystem.exthLambda(i);
-                esvLambdaSwitch[i] = esvSystem.exthEsv(i).getLambdaSwitch();
-                esvSwitchDeriv[i] = esvSystem.exthEsv(i).getSwitchDeriv();
-                atomEsvID[i] = esvSystem.exthEsvId(i);
+                esvLambda[i] = esvSystem.getLambda(i);
+                esvLambdaSwitch[i] = esvSystem.getLambdaSwitch(i);
+                esvSwitchDeriv[i] = esvSystem.getSwitchDeriv(i);
+                atomEsvID[i] = esvSystem.getEsvIdForAtom(i);
             }
         }
         if (esvDeriv == null || esvDeriv.length < numESVs) {
@@ -994,10 +989,15 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
         initSoftCore(true);
-        // Call to long-range correction here, when it's trustworthy.
     }
 
     /**
+     * The trick:
+     *  The setFactors(i,k) method is called every time through the inner VdW
+     *      loop, avoiding an "if (esv)" branch statement.
+     *  A plain OSRW run will have an object of type LambdaFactorsOSRW instead,
+     *      which contains an empty version of setFactors(i,k). The OSRW version
+     *      sets new factors only on lambda updates, in setLambda().
      * The trick: The setFactors(i,k) method is called every time through the
      * inner VdW loop, avoiding an "if (esv)" branch statement. A plain OSRW run
      * will have an object of type LambdaFactorsOSRW instead, which contains an
@@ -1061,7 +1061,7 @@ public class VanDerWaals implements MaskingInterface,
         if (!softCoreInit || rebuild) {
             for (int i = 0; i < nAtoms; i++) {
                 isSoft[i] = atoms[i].applyLambda();
-                if (esvTerm && esvSystem.isExtH(i)) {
+                if (esvTerm && esvSystem.isUnshared(i)) {
                     isSoft[i] = true;
                 }
                 if (isSoft[i]) {
@@ -1109,8 +1109,8 @@ public class VanDerWaals implements MaskingInterface,
 
         previousAtoms = atoms;
         previousMolecule = molecule;
-        Atom[] atomsExt = esvSystem.getAtomsExtH();
-        int[] moleculeExt = esvSystem.getMoleculeExtH();
+        Atom[] atomsExt = esvSystem.getExtendedAtoms();
+        int[] moleculeExt = esvSystem.getExtendedMolecule();
         setAtoms(atomsExt, moleculeExt);
         updateEsvLambda();
     }
@@ -1162,8 +1162,8 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     public double[] getdEdEsv() {
-        if (!esvTerm || esvSystem == null) {
-            logger.warning("Suspicious call to non-existent ESV derivative.");
+        if (!esvTerm) {
+            throw new IllegalStateException();
         }
         double[] dEdEsv = new double[numESVs];
         for (int i = 0; i < numESVs; i++) {
@@ -1299,7 +1299,7 @@ public class VanDerWaals implements MaskingInterface,
             }
             if (esvTerm) {
                 for (int i = 0; i < numESVs; i++) {
-                    esvDeriv[i].set(0.0);
+                    esvDeriv[i].getAndSet(0.0);
                 }
                 lambdaFactors = new LambdaFactorsESV[threadCount];
                 for (int i = 0; i < threadCount; i++) {
@@ -1738,9 +1738,8 @@ public class VanDerWaals implements MaskingInterface,
                                     || esvi || esvk;
                             /**
                              * The setFactors(i,k) method is empty unless ESVs
-                             * are present. If OSRW lambda present,
-                             * lambdaFactors will already have been updated
-                             * during setLambda().
+                             * are present. If OSRW lambda present, lambdaFactors
+                             * will already have been updated during setLambda().
                              */
                             if (soft) {
                                 lambdaFactorsLocal.setFactors(i, k);

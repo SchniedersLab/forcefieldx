@@ -38,8 +38,10 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import javax.media.j3d.BranchGroup;
@@ -61,6 +63,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  * @since 1.0
  *
  */
+@SuppressWarnings({"serial", "CloneableImplementsClone"})
 public abstract class BondedTerm extends MSNode implements BondedEnergy, Comparable<BondedTerm> {
 
     private static final Logger logger = Logger.getLogger(BondedTerm.class.getName());
@@ -116,7 +119,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         this();
         id = i;
     }
-
+    
     /**
      * Checks if all atoms in this BondedTerm are of the given resolution.
      *
@@ -133,37 +136,36 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         return true;
     }
     
-    /**
-     * To implement Comparable<BondedTerm>.
-     */
-    private static final List<Class<? extends BondedTerm>> naturalOrder = new ArrayList<>();
-    static {    // TODO flesh out with OPLS bonded term types
-        naturalOrder.add(0, Bond.class);
-        naturalOrder.add(1, Angle.class);
-        naturalOrder.add(2, StretchBend.class);
-        naturalOrder.add(3, OutOfPlaneBend.class);
-        naturalOrder.add(4, Torsion.class);
-        naturalOrder.add(5, PiOrbitalTorsion.class);
-    }
-    
     @Override
-    public int compareTo(BondedTerm other) {
-        if (other == null) {
-            throw new NullPointerException();
-        }
-        if (other.equals(this)) {
-            return 0;
-        }
-        final Class<? extends BondedTerm> oc = other.getClass();
-        final Class<? extends BondedTerm> myc = this.getClass();
-        final int oidx = naturalOrder.indexOf(oc);
-        final int myidx = naturalOrder.indexOf(myc);
-        if (oidx < myidx) {
-            return -1;
-        } else if (oidx > myidx) {
-            return 1;
-        } else {
-            return 0;
+    public int compareTo(BondedTerm t) {
+        return Objects.compare(this, t, bondedComparator);
+    }
+    public static BondedComparator bondedComparator = new BondedComparator();
+    public static class BondedComparator implements Comparator<BondedTerm> {
+        private BondedComparator() {}   // singleton
+        private static final List<Class<? extends BondedTerm>> naturalOrder =
+                new ArrayList<Class<? extends BondedTerm>>() {{
+                        add(Bond.class);
+                        add(Angle.class);
+                        add(StretchBend.class);
+                        add(OutOfPlaneBend.class);
+                        add(Torsion.class);
+                        add(PiOrbitalTorsion.class);
+                }};
+        /**
+         * Sort using position in the naturalOrder list; fallback to alphabetical.
+         */
+        @Override
+        public int compare(BondedTerm me, BondedTerm other) {
+            final Class<? extends BondedTerm> oc = other.getClass();
+            final Class<? extends BondedTerm> myc = me.getClass();
+            int myidx = naturalOrder.indexOf(me.getClass());
+            int uridx = naturalOrder.indexOf(other.getClass());
+            if (myidx >= 0 && uridx >= 0) {
+                return Integer.compare(myidx, uridx);
+            } else {
+                return String.CASE_INSENSITIVE_ORDER.compare(myc.toString(), oc.toString());
+            }
         }
     }
 
@@ -240,23 +242,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * Overridden method that returns true if object is equals to this, is of
-     * the same Class and has the same id.
-     */
-    @Override
-    public final boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        } else if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        BondedTerm other = (BondedTerm) object;
-        return getID().equals(other.getID());
-    }
-
-    /**
      * Get the constituent Atom specified by index.
      *
      * @param index a int.
@@ -328,29 +313,12 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
-     * Get the Term's id.
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getID() {
-        return id;
-    }
-
-    /**
      * Get the Term's value.
      *
      * @return a double.
      */
     public double getValue() {
         return value;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public final int hashCode() {
-        return hash(SEED, getID().hashCode());
     }
 
     /**
@@ -396,6 +364,40 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * Overridden method that returns true if object is equals to this, is of
+     * the same Class and has the same id.
+     */
+    @Override
+    public final boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        } else if (object == null || getClass() != object.getClass()) {
+            return false;
+        }
+        BondedTerm other = (BondedTerm) object;
+        return getID().equals(other.getID());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final int hashCode() {
+        return hash(SEED, getID().hashCode());
+    }
+
+    /**
+     * Get the Term's id.
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getID() {
+        return id;
+    }
+    
+    /**
      * Sets the Term's id.
      *
      * @param i a {@link java.lang.String} object.
@@ -411,33 +413,19 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * @param reverse a boolean.
      */
     public final void setID_Key(boolean reverse) {
-        Atom a;
+        if (atoms == null) {
+            return;
+        }
         // Reuse the string buffers
-        if (idtemp.length() > 0) {
-            idtemp.delete(0, idtemp.length());
-        }
-        if (atoms != null) {
-            if (!reverse) {
-                for (int i = 0; i < atoms.length; i++) {
-                    a = atoms[i];
-                    if (i != 0) {
-                        idtemp.append("  ").append(a.toShortString());
-                    } else {
-                        idtemp.append(a.toShortString());
-                    }
-                }
-            } else { // Reverse Order
-                for (int i = 0; i < atoms.length; i++) {
-                    a = atoms[i];
-                    if (i != 0) {
-                        idtemp.append("  ").append(a.toShortString());
-                    } else {
-                        idtemp.append(a.toShortString());
-                    }
-                }
+        idtemp.delete(0, idtemp.length());
+        for (int i = 0; i < atoms.length; i++) {
+            Atom a = (reverse) ? atoms[atoms.length - i] : atoms[i];
+            if (i != 0) {
+                idtemp.append("  ");
             }
-            id = idtemp.substring(0).toString().intern();
+            idtemp.append(a.toShortString());
         }
+        id = idtemp.toString().intern();
     }
 
     /**

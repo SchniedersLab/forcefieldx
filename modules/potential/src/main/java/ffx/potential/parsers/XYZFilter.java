@@ -381,7 +381,7 @@ public class XYZFilter extends SystemFilter {
                 double x = Double.parseDouble(tokens[2]);
                 double y = Double.parseDouble(tokens[3]);
                 double z = Double.parseDouble(tokens[4]);
-                int xyzIndex = atoms[i].getXYZIndex();
+                int xyzIndex = atoms[i].getIndex();
                 if (xyzIndex != i + 1) {
                     String message = String.format("Archive atom index %d being read onto system atom index %d.", i + 1, xyzIndex);
                     logger.warning(message);
@@ -445,20 +445,20 @@ public class XYZFilter extends SystemFilter {
             for (Atom a : atoms) {
                 if (vdwH) {
                     line = new StringBuilder(String.format(
-                            "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(),
+                            "%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(),
                             a.getAtomType().name, a.getRedX() - offset.x,
                             a.getRedY() - offset.y, a.getRedZ() - offset.z, a.getType()));
                 } else {
                     line = new StringBuilder(String.format(
-                            "%7d %3s%14.8f%14.8f%14.8f%6d", a.getXYZIndex(),
+                            "%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(),
                             a.getAtomType().name, a.getX() - offset.x,
                             a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
                 }
                 for (Bond b : a.getBonds()) {
                     a2 = b.get1_2(a);
-                    line.append(format("%8d", a2.xyzIndex));
+                    line.append(format("%8d", a2.getIndex()));
                 }
-                lines[a.getXYZIndex() - 1] = line.append("\n");
+                lines[a.getIndex() - 1] = line.append("\n");
             }
             try {
                 for (int i = 0; i < numberOfAtoms; i++) {
@@ -524,7 +524,7 @@ public class XYZFilter extends SystemFilter {
                 SymOp symOp = crystal.spaceGroup.getSymOp(iSym);
                 int indexOffset = iSym * atoms.length;
                 for (Atom a : atoms) {
-                    int index = a.getXYZIndex() + indexOffset;
+                    int index = a.getIndex() + indexOffset;
                     String id = a.getAtomType().name;
                     if (vdwH) {
                         a.getRedXYZ(xyz);
@@ -540,7 +540,7 @@ public class XYZFilter extends SystemFilter {
                             xyz[1], xyz[2], type));
                     for (Bond b : a.getBonds()) {
                         a2 = b.get1_2(a);
-                        line.append(format("%8d", a2.xyzIndex + indexOffset));
+                        line.append(format("%8d", a2.getIndex() + indexOffset));
                     }
                     lines[index - 1] = line.append("\n");
                 }
@@ -616,7 +616,7 @@ public class XYZFilter extends SystemFilter {
             }
             ArrayList<Atom> atoms = oldSystem.getAtomList();
             for (Atom a : atoms) {
-                int index = a.getXYZIndex() - 1;
+                int index = a.getIndex() - 1;
                 a.setXYZ(d[index]);
             }
             oldSystem.center();

@@ -90,16 +90,16 @@ public class Bond extends BondedTerm {
         if (!b.getClass().isInstance(this)) {
             return super.compareTo(b);
         }
-        int this0 = atoms[0].xyzIndex;
-        int a0 = b.atoms[0].xyzIndex;
+        int this0 = atoms[0].getIndex();
+        int a0 = b.atoms[0].getIndex();
         if (this0 < a0) {
             return -1;
         }
         if (this0 > a0) {
             return 1;
         }
-        int this1 = atoms[1].xyzIndex;
-        int a1 = b.atoms[1].xyzIndex;
+        int this1 = atoms[1].getIndex();
+        int a1 = b.atoms[1].getIndex();
         if (this1 < a1) {
             return -1;
         }
@@ -174,8 +174,8 @@ public class Bond extends BondedTerm {
      */
     public Bond(Atom a1, Atom a2) {
         atoms = new Atom[2];
-        int i1 = a1.getXYZIndex();
-        int i2 = a2.getXYZIndex();
+        int i1 = a1.getIndex();
+        int i2 = a2.getIndex();
         if (i1 < i2) {
             atoms[0] = a1;
             atoms[1] = a2;
@@ -673,11 +673,11 @@ public class Bond extends BondedTerm {
                     scalar(v10, de, g0);
                     // atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
                     // atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
-                    int i0 = atom0.getXYZIndex() - 1;
+                    int i0 = atom0.getIndex() - 1;
                     gradX.add(threadID, i0, g0[0]);
                     gradY.add(threadID, i0, g0[1]);
                     gradZ.add(threadID, i0, g0[2]);
-                    int i1 = atom1.getXYZIndex() - 1;
+                    int i1 = atom1.getIndex() - 1;
                     gradX.sub(threadID, i1, g0[0]);
                     gradY.sub(threadID, i1, g0[1]);
                     gradZ.sub(threadID, i1, g0[2]);
@@ -696,11 +696,11 @@ public class Bond extends BondedTerm {
                     scalar(v10, de, g0);
                     // atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
                     // atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
-                    int i0 = atom0.getXYZIndex() - 1;
+                    int i0 = atom0.getIndex() - 1;
                     gradX.add(threadID, i0, g0[0]);
                     gradY.add(threadID, i0, g0[1]);
                     gradZ.add(threadID, i0, g0[2]);
-                    int i1 = atom1.getXYZIndex() - 1;
+                    int i1 = atom1.getIndex() - 1;
                     gradX.sub(threadID, i1, g0[0]);
                     gradY.sub(threadID, i1, g0[1]);
                     gradZ.sub(threadID, i1, g0[2]);
@@ -720,8 +720,8 @@ public class Bond extends BondedTerm {
      */
     public void log() {
         logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
-                "Bond", atoms[0].getXYZIndex(), atoms[0].getAtomType().name,
-                atoms[1].getXYZIndex(), atoms[1].getAtomType().name,
+                "Bond", atoms[0].getIndex(), atoms[0].getAtomType().name,
+                atoms[1].getIndex(), atoms[1].getAtomType().name,
                 bondType.distance, value, energy));
     }
 }

@@ -194,7 +194,7 @@ public final class Simulation {
         List<Atom> multipoleAtoms = new ArrayList<Atom>();
         for (int i = 0; i < numberOfAtoms; i++) {
             Atom atom = atoms.get(i);
-            int atomIndex = atom.getXYZIndex() - 1;
+            int atomIndex = atom.getIndex() - 1;
             atom.getXYZ(x[atomIndex]);
             MultipoleType multipoleType = atom.getMultipoleType();
             if (multipoleType != null) {
@@ -216,12 +216,12 @@ public final class Simulation {
         for (int i = 0; i < numberOfMultipoles; i++) {
             Atom atom = multipoleAtoms.get(i);
             MultipoleType multipoleType = atom.getMultipoleType();
-            int atomIndex = atom.getXYZIndex() - 1;
+            int atomIndex = atom.getIndex() - 1;
             atom.getXYZ(x[atomIndex]);
             int referenceIndex = 0;
             for (Atom referenceAtom : atom.getMultipoleReferenceSites()) {
                 multipoleReference[i][referenceIndex++] = referenceAtom
-                        .getXYZIndex() - 1;
+                        .getIndex() - 1;
             }
             if (!localMultipoleMap.containsKey(multipoleType)) {
                 localMultipoleIndex[i] = multipoleIndex;

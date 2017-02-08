@@ -48,6 +48,8 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.BranchGroup;
@@ -299,7 +301,7 @@ public class MolecularAssembly extends MSGroup {
      */
     public void addAltLocation(String s) {
         if (altLoc == null) {
-            altLoc = new Vector<String>();
+            altLoc = new Vector<>();
         }
         if (!altLoc.contains(s)) {
             altLoc.add(s);
@@ -311,7 +313,7 @@ public class MolecularAssembly extends MSGroup {
      */
     @Override
     public MSNode addMSNode(MSNode o) {
-        ArrayList Polymers = getAtomNodeList();
+        ArrayList<MSNode> Polymers = getAtomNodeList();
         if (o instanceof Atom) {
             Atom atom = (Atom) o;
             if (atom.isModRes()) {
@@ -399,10 +401,10 @@ public class MolecularAssembly extends MSGroup {
     public void centerAt(double[] d) {
         double[] Rc = {0, 0, 0};
         double[] c = new double[3];
-        ListIterator li;
+        ListIterator<Atom> li;
         int i, num = getAtomList().size();
         for (li = getAtomList().listIterator(); li.hasNext();) {
-            ((Atom) li.next()).getXYZ(a);
+            (li.next()).getXYZ(a);
             Rc[0] += a[0];
             Rc[1] += a[1];
             Rc[2] += a[2];
@@ -412,7 +414,7 @@ public class MolecularAssembly extends MSGroup {
         }
         VectorMath.diff(d, Rc, c);
         for (li = getAtomList().listIterator(); li.hasNext();) {
-            ((Atom) li.next()).move(c);
+            (li.next()).move(c);
         }
     }
 
@@ -453,7 +455,7 @@ public class MolecularAssembly extends MSGroup {
         la.setCapability(LineArray.ALLOW_INTERSECT);
         la.setCapability(LineArray.ALLOW_FORMAT_READ);
         // Create a normal
-        // for (ListIterator li = bondlist.listIterator(); li.hasNext(); ){
+        // for (ListIterator<MSNode> li = bondlist.listIterator(); li.hasNext(); ){
         // la.setCoordinate(i, a1);
         // la.setColor(i, col);
         // la.setNormal(i++, a1);
@@ -580,7 +582,7 @@ public class MolecularAssembly extends MSGroup {
             }
         }
     }
-
+    
     /**
      * {@inheritDoc}
      */
@@ -596,8 +598,8 @@ public class MolecularAssembly extends MSGroup {
             torsionTime = 0;
             piOrbitalTorsionTime = 0;
             torsionTorsionTime = 0;
-            ArrayList Polymers = getAtomNodeList();
-            for (ListIterator li = Polymers.listIterator(); li.hasNext();) {
+            ArrayList<MSNode> Polymers = getAtomNodeList();
+            for (ListIterator<MSNode> li = Polymers.listIterator(); li.hasNext();) {
                 MSGroup group = (MSGroup) li.next();
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine(" Finalizing bonded terms for polymer " + group.toString());
@@ -721,7 +723,7 @@ public class MolecularAssembly extends MSGroup {
             for (Polymer polymer : polymers) {
                 List<Atom> atomList = polymer.getAtomList();
                 for (Atom atom : atomList) {
-                    moleculeNumber[atom.xyzIndex - 1] = current;
+                    moleculeNumber[atom.getIndex() - 1] = current;
                 }
                 current++;
             }
@@ -731,7 +733,7 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode molecule : molecules.getChildList()) {
             List<Atom> atomList = molecule.getAtomList();
             for (Atom atom : atomList) {
-                moleculeNumber[atom.xyzIndex - 1] = current;
+                moleculeNumber[atom.getIndex() - 1] = current;
                 atom.setMoleculeNumber(current);
             }
             current++;
@@ -741,7 +743,7 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode wat : water.getChildList()) {
             List<Atom> atomList = wat.getAtomList();
             for (Atom atom : atomList) {
-                moleculeNumber[atom.xyzIndex - 1] = current;
+                moleculeNumber[atom.getIndex() - 1] = current;
             }
             current++;
         }
@@ -750,7 +752,7 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode ion : ions.getChildList()) {
             List<Atom> atomList = ion.getAtomList();
             for (Atom atom : atomList) {
-                moleculeNumber[atom.xyzIndex - 1] = current;
+                moleculeNumber[atom.getIndex() - 1] = current;
             }
             current++;
         }
@@ -765,7 +767,7 @@ public class MolecularAssembly extends MSGroup {
      * @return an array of {@link java.lang.String} objects.
      */
     public String[] getAltLocations() {
-        if (altLoc == null || altLoc.size() == 0) {
+        if (altLoc == null || altLoc.isEmpty()) {
             return null;
         }
 
@@ -805,7 +807,7 @@ public class MolecularAssembly extends MSGroup {
         Arrays.sort(atomArray);
 
         for (int i=0; i<atoms.size(); i++) {
-            atomArray[i].setXYZIndex(i+1);
+            atomArray[i].setXyzIndex(i+1);
         }
 
         return atomArray;
@@ -837,7 +839,7 @@ public class MolecularAssembly extends MSGroup {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<Atom> getBackBoneAtoms() {
-        ArrayList<Atom> backbone = new ArrayList<Atom>();
+        ArrayList<Atom> backbone = new ArrayList<>();
         List<Residue> residues = getResidueList();
         for (Residue residue : residues) {
             backbone.addAll(residue.getBackboneAtoms());
@@ -874,8 +876,8 @@ public class MolecularAssembly extends MSGroup {
      * @return a {@link ffx.potential.bonded.Polymer} object.
      */
     public Polymer getChain(String name) {
-        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
-            MSNode node = (MSNode) li.next();
+        for (ListIterator<MSNode> li = getAtomNodeList().listIterator(); li.hasNext();) {
+            MSNode node = li.next();
             if (node instanceof Polymer) {
                 String chainName = node.getName();
                 if (chainName.equalsIgnoreCase(name)) {
@@ -893,15 +895,15 @@ public class MolecularAssembly extends MSGroup {
      * @return an array of {@link java.lang.String} objects.
      */
     public String[] getChainNames() {
-        ArrayList<String> temp = new ArrayList<String>();
-        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
-            MSNode node = (MSNode) li.next();
+        ArrayList<String> temp = new ArrayList<>();
+        for (ListIterator<MSNode> li = getAtomNodeList().listIterator(); li.hasNext();) {
+            MSNode node = li.next();
             if (node instanceof Polymer) {
                 temp.add(((Polymer) node).getName());
             }
 
         }
-        if (temp.size() == 0) {
+        if (temp.isEmpty()) {
             return null;
         }
 
@@ -920,14 +922,14 @@ public class MolecularAssembly extends MSGroup {
      * @return an array of {@link ffx.potential.bonded.Polymer} objects.
      */
     public Polymer[] getChains() {
-        ArrayList<Polymer> polymers = new ArrayList<Polymer>();
-        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
-            MSNode node = (MSNode) li.next();
+        ArrayList<Polymer> polymers = new ArrayList<>();
+        for (ListIterator<MSNode> li = getAtomNodeList().listIterator(); li.hasNext();) {
+            MSNode node = li.next();
             if (node instanceof Polymer) {
                 polymers.add((Polymer) node);
             }
         }
-        if (polymers.size() == 0) {
+        if (polymers.isEmpty()) {
             return null;
         }
         return polymers.toArray(new Polymer[polymers.size()]);
@@ -960,8 +962,8 @@ public class MolecularAssembly extends MSGroup {
     public double getExtent() {
         double[] Rc = {0, 0, 0};
         int num = getAtomList().size();
-        for (ListIterator li = getAtomList().listIterator(); li.hasNext();) {
-            ((Atom) li.next()).getXYZ(a);
+        for (ListIterator<Atom> li = getAtomList().listIterator(); li.hasNext();) {
+            li.next().getXYZ(a);
             Rc[0] += a[0];
             Rc[1] += a[1];
             Rc[2] += a[2];
@@ -974,11 +976,10 @@ public class MolecularAssembly extends MSGroup {
 
         double r, d = 0;
         double[] xyz = new double[3];
-        for (ListIterator li = getAtomList().listIterator(); li.hasNext();) {
-            ((Atom) li.next()).getXYZ(xyz);
+        for (ListIterator<Atom> li = getAtomList().listIterator(); li.hasNext();) {
+            li.next().getXYZ(xyz);
             VectorMath.diff(xyz, Rc, xyz);
-            r
-                    = VectorMath.r(xyz);
+            r = VectorMath.r(xyz);
             if (d < r) {
                 d = r;
             }
@@ -1035,8 +1036,8 @@ public class MolecularAssembly extends MSGroup {
      * @return a {@link ffx.potential.bonded.Polymer} object.
      */
     public Polymer getPolymer(Character chainID, String segID, boolean create) {
-        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
-            MSNode node = (MSNode) li.next();
+        for (ListIterator<MSNode> li = getAtomNodeList().listIterator(); li.hasNext();) {
+            MSNode node = li.next();
             if (node instanceof Polymer) {
                 Polymer polymer = (Polymer) node;
                 if (polymer.getName().equals(segID)
@@ -1092,7 +1093,7 @@ public class MolecularAssembly extends MSGroup {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<Molecule> getMolecules() {
-        ArrayList<Molecule> ret = new ArrayList<Molecule>();
+        ArrayList<Molecule> ret = new ArrayList<>();
         for (MSNode node : molecules.getChildList()) {
             ret.add((Molecule) node);
         }
@@ -1213,17 +1214,17 @@ public class MolecularAssembly extends MSGroup {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<Residue> getResidueList() {
-        ArrayList<Residue> residues = new ArrayList<Residue>();
-        ListIterator li,
+        ArrayList<Residue> residues = new ArrayList<>();
+        ListIterator<MSNode> li,
                 lj;
         MSNode o;
         Polymer c;
         for (li = getAtomNodeList().listIterator(); li.hasNext();) {
-            o = (MSNode) li.next();
+            o = li.next();
             if (o instanceof Polymer) {
                 c = (Polymer) o;
                 for (lj = c.getAtomNodeList().listIterator(); lj.hasNext();) {
-                    o = (MSNode) lj.next();
+                    o = lj.next();
                     if (o instanceof Residue) {
                         residues.add((Residue) o);
                     }
@@ -1241,17 +1242,17 @@ public class MolecularAssembly extends MSGroup {
      * @return a {@link java.util.ArrayList} object.
      */
     public ArrayList<MSNode> getNodeList() {
-        ArrayList<MSNode> residues = new ArrayList<MSNode>();
-        ListIterator li,
+        ArrayList<MSNode> residues = new ArrayList<>();
+        ListIterator<MSNode> li,
                 lj;
         MSNode o;
         Polymer c;
         for (li = getAtomNodeList().listIterator(); li.hasNext();) {
-            o = (MSNode) li.next();
+            o = li.next();
             if (o instanceof Polymer) {
                 c = (Polymer) o;
                 for (lj = c.getAtomNodeList().listIterator(); lj.hasNext();) {
-                    o = (MSNode) lj.next();
+                    o = lj.next();
                     if (o instanceof Residue) {
                         residues.add(o);
                     }
@@ -1372,8 +1373,8 @@ public class MolecularAssembly extends MSGroup {
      * @param d an array of double.
      */
     public void moveCenter(double[] d) {
-        for (ListIterator li = getAtomList().listIterator(); li.hasNext();) {
-            ((Atom) li.next()).move(d);
+        for (ListIterator<Atom> li = getAtomList().listIterator(); li.hasNext();) {
+            (li.next()).move(d);
         }
 
     }
@@ -1413,8 +1414,8 @@ public class MolecularAssembly extends MSGroup {
 
         } else if (node instanceof Group) {
             Group group = (Group) node;
-            for (Enumeration e = group.getAllChildren(); e.hasMoreElements();) {
-                Node n = (Node) e.nextElement();
+            for (Enumeration<Node> e = group.getAllChildren(); e.hasMoreElements();) {
+                Node n = e.nextElement();
                 recurseVRML(n);
             }
 
@@ -1436,24 +1437,24 @@ public class MolecularAssembly extends MSGroup {
                 getAtomNode().setName(
                         "Macromolecules " + "(" + macroNode.getChildCount() + ")");
             } else if (macroNode.getParent() == this) {
-                remove(macroNode);
+                removeChild(macroNode);
             }
         }
 
         if (molecules.getChildCount() == 0) {
-            remove(molecules);
+            removeChild(molecules);
         } else {
             molecules.setName("Hetero Molecules " + "(" + molecules.getChildCount() + ")");
         }
 
         if (ions.getChildCount() == 0) {
-            remove(ions);
+            removeChild(ions);
         } else {
             ions.setName("Ions " + "(" + ions.getChildCount() + ")");
         }
 
         if (water.getChildCount() == 0) {
-            remove(water);
+            removeChild(water);
         } else {
             water.setName("Water " + "(" + water.getChildCount() + ")");
         }
@@ -1489,13 +1490,11 @@ public class MolecularAssembly extends MSGroup {
                 = new Atom[4 * numbonds];
         int i = 0;
         col[3] = 0.9f;
-        for (ListIterator li = bonds.listIterator(); li.hasNext();) {
+        for (ListIterator<ROLS> li = bonds.listIterator(); li.hasNext();) {
             bond = (Bond) li.next();
             bond.setWire(la, i);
-            atom1
-                    = bond.getAtom(0);
-            atom2
-                    = bond.getAtom(1);
+            atom1 = bond.getAtom(0);
+            atom2 = bond.getAtom(1);
             atom1.getV3D(v1);
             atom2.getV3D(v2);
             a1[0] = (float) v1.x;
@@ -1508,6 +1507,7 @@ public class MolecularAssembly extends MSGroup {
             bondmidpoint.add(v1, v2);
             bondmidpoint.scale(0.5d);
             bondmidpoint.get(mid);
+
             // Atom #1
             Atom.AtomColor.get(atom1.getAtomicNumber()).get(col);
             atomLookUp[i] = atom1;
@@ -1521,8 +1521,8 @@ public class MolecularAssembly extends MSGroup {
             la.setColor(i, col);
             la.setNormal(i, a2);
             i++;
-// Atom #2
 
+            // Atom #2
             Atom.AtomColor.get(atom2.getAtomicNumber()).get(col);
             atomLookUp[i] = atom2;
             la.setCoordinate(i, a2);
@@ -1618,7 +1618,7 @@ public class MolecularAssembly extends MSGroup {
             li.remove();
             // This is code for cycling between two MolecularAssemblies
             if (group.getUserData() != null) {
-                logger.info(group.toString() + " " + group.getUserData());
+                logger.info(format("%s %s", group.toString(), group.getUserData().toString()));
                 /*
                  * Object userData = group.getUserData(); if (userData!=this) {
                  * // The appearance has already been set during a recursive
@@ -1660,7 +1660,7 @@ public class MolecularAssembly extends MSGroup {
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
             Material mat) {
-        for (ListIterator li = getAtomNodeList().listIterator(); li.hasNext();) {
+        for (ListIterator<MSNode> li = getAtomNodeList().listIterator(); li.hasNext();) {
             MSGroup group = (MSGroup) li.next();
             group.setColor(newColorModel, color, mat);
         }
@@ -1688,8 +1688,8 @@ public class MolecularAssembly extends MSGroup {
     public void setCurrentCycle(int c) {
         if (c <= cycles && c > 0) {
             currentCycle = c;
-            for (ListIterator li = getAtomList().listIterator(); li.hasNext();) {
-                ((Atom) li.next()).setCurrentCycle(currentCycle);
+            for (ListIterator<Atom> li = getAtomList().listIterator(); li.hasNext();) {
+                (li.next()).setCurrentCycle(currentCycle);
             }
 
         }
@@ -1734,16 +1734,16 @@ public class MolecularAssembly extends MSGroup {
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
             List<BranchGroup> newShapes) {
-        // Just Detach the whole system branch group
+                // Just Detach the whole system branch group
         if (newViewModel == RendererCache.ViewModel.DESTROY) {
-            if (switchGroup != null) {
-                switchGroup.setWhichChild(Switch.CHILD_NONE);
-            }
-            visible = false;
+                if (switchGroup != null) {
+                    switchGroup.setWhichChild(Switch.CHILD_NONE);
+                }
+                visible = false;
         } else if (newViewModel == RendererCache.ViewModel.SHOWVRML) {
-            switchGroup.setWhichChild(Switch.CHILD_ALL);
+                switchGroup.setWhichChild(Switch.CHILD_ALL);
         } else if (newViewModel == RendererCache.ViewModel.HIDEVRML) {
-            switchGroup.setWhichChild(0);
+                switchGroup.setWhichChild(0);
         } else {
             setWireWidth(RendererCache.bondwidth);
             if (newViewModel == RendererCache.ViewModel.DETAIL && childNodes.isLive()) {
@@ -1756,26 +1756,25 @@ public class MolecularAssembly extends MSGroup {
              * the same ArrayList.
              */
             super.setView(newViewModel, myNewShapes);
-            ArrayList<ROLS> moleculeList = getList(Molecule.class,
-                    new ArrayList<ROLS>());
+            ArrayList<ROLS> moleculeList = getList(Molecule.class, new ArrayList<>());
             for (ROLS m : moleculeList) {
-                m.setView(newViewModel, myNewShapes);
+                    m.setView(newViewModel, myNewShapes);
             }
             for (MSNode m : molecules.getChildList()) {
-                m.setView(newViewModel, myNewShapes);
+                    m.setView(newViewModel, myNewShapes);
             }
             for (MSNode m : water.getChildList()) {
-                m.setView(newViewModel, myNewShapes);
+                    m.setView(newViewModel, myNewShapes);
             }
             for (MSNode m : ions.getChildList()) {
-                m.setView(newViewModel, myNewShapes);
+                    m.setView(newViewModel, myNewShapes);
             }
             if (newViewModel == RendererCache.ViewModel.INVISIBLE) {
-                switchGroup.setWhichChild(0);
+                    switchGroup.setWhichChild(0);
             }
             if (newViewModel == RendererCache.ViewModel.DETAIL) {
-                childNodes.compile();
-                base.addChild(childNodes);
+                    childNodes.compile();
+                    base.addChild(childNodes);
             }
         }
     }
@@ -1835,13 +1834,13 @@ public class MolecularAssembly extends MSGroup {
      * sidePolymerCOM</p>
      */
     public void sidePolymerCOM() {
-        ArrayList residues = getResidueList();
+        ArrayList<Residue> residues = getResidueList();
         Residue r;
 
-        ListIterator li;
+        ListIterator<Residue> li;
 
         for (li = residues.listIterator(); li.hasNext();) {
-            r = (Residue) li.next();
+            r = li.next();
             r.logSideChainCOM();
         }
     }

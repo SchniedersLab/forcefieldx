@@ -234,7 +234,7 @@ public class CrystalEnergyTest {
             forceFieldEnergy = null;
             return;
         }
-        
+
         System.setProperty("vdw-cutoff","8.0");
         System.setProperty("ewald-cutoff","8.0");
 

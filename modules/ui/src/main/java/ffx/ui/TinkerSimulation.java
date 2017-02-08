@@ -277,7 +277,7 @@ public class TinkerSimulation implements ActionListener {
         // with this frame of the simulation after the update.
         double d[] = new double[3];
         for (Atom a : atoms) {
-            int index = a.getXYZIndex() - 1;
+            int index = a.getIndex() - 1;
             d[0] = tinkerUpdate.coordinates[0][index];
             d[1] = tinkerUpdate.coordinates[1][index];
             d[2] = tinkerUpdate.coordinates[2][index];

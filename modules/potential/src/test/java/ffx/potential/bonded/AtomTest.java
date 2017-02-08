@@ -83,7 +83,7 @@ public class AtomTest {
         String i = "N";
         AtomType mmdata = null;
         Atom actualReturn = new Atom(index, i, mmdata, d);
-        assertEquals("return value", 0, actualReturn.getXYZIndex());
+        assertEquals("return value", 0, actualReturn.getIndex());
     }
 
     @Test(timeout = 500)

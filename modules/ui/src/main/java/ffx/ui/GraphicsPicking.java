@@ -210,7 +210,7 @@ public class GraphicsPicking extends PickMouseBehavior {
                 distance(a1, a);
                 distance(a2, b);
                 value = ffx.numerics.VectorMath.dist(a, b);
-                measurement = "\nDistance\t" + a1.xyzIndex + ", " + a2.xyzIndex
+                measurement = "\nDistance\t" + a1.getIndex() + ", " + a2.getIndex()
                         + ":   \t" + String.format("%10.5f", value);
                 break;
             case MEASUREANGLE:
@@ -225,8 +225,8 @@ public class GraphicsPicking extends PickMouseBehavior {
                 distance(a3, c);
                 value = ffx.numerics.VectorMath.bondAngle(a, b, c);
                 value = Math.toDegrees(value);
-                measurement = "\nAngle\t" + a1.xyzIndex + ", " + a2.xyzIndex + ", "
-                        + a3.xyzIndex + ":   \t" + String.format("%10.5f", value);
+                measurement = "\nAngle\t" + a1.getIndex() + ", " + a2.getIndex() + ", "
+                        + a3.getIndex() + ":   \t" + String.format("%10.5f", value);
                 break;
             case MEASUREDIHEDRAL:
                 if (atomCache.size() < 4) {
@@ -242,8 +242,8 @@ public class GraphicsPicking extends PickMouseBehavior {
                 distance(a4, d);
                 value = ffx.numerics.VectorMath.dihedralAngle(a, b, c, d);
                 value = Math.toDegrees(value);
-                measurement = "\nDihedral\t" + a1.xyzIndex + ", " + a2.xyzIndex
-                        + ", " + a3.xyzIndex + ", " + a4.xyzIndex + ":\t"
+                measurement = "\nDihedral\t" + a1.getIndex() + ", " + a2.getIndex()
+                        + ", " + a3.getIndex() + ", " + a4.getIndex() + ":\t"
                         + String.format("%10.5f", value);
                 break;
             default:

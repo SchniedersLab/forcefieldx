@@ -358,7 +358,7 @@ public class Poledit {
                         a.setXYZ(xyz);
                         a.setAtomType(at);
                         a.setBornRadius(radius[0]);
-                        a.xyzIndex = i;
+                        a.setXyzIndex(i);
 
                         //What is this? CHECK
                         polaritylist.add(polart[0]);
@@ -648,7 +648,7 @@ public class Poledit {
                     int m = 0;
                     for (int k = 0; k < ia.getBonds().size(); k++) {
                         Atom kb = ia.getBonds().get(k).get1_2(ia);
-                        if (kb.getAtomicNumber() > m && kb.xyzIndex != a.xyzIndex) {
+                        if (kb.getAtomicNumber() > m && kb.getIndex() != a.getIndex()) {
                             multipoleFrameTypes[0] = kb.getType();
                             m = kb.getAtomicNumber();
                         }
@@ -659,10 +659,10 @@ public class Poledit {
                 Atom ia = a.getBonds().get(0).get1_2(a);
                 Atom ib = a.getBonds().get(1).get1_2(a);
                 Atom kab = priority(a, ia, ib);
-                if (kab.xyzIndex == ia.xyzIndex) {
+                if (kab.getIndex() == ia.getIndex()) {
                     multipoleFrameTypes[2] = ia.getType();
                     multipoleFrameTypes[0] = ib.getType();
-                } else if (kab.xyzIndex == ib.xyzIndex) {
+                } else if (kab.getIndex() == ib.getIndex()) {
                     multipoleFrameTypes[2] = ib.getType();
                     multipoleFrameTypes[0] = ia.getType();
                 } else {
@@ -693,15 +693,15 @@ public class Poledit {
                     multipoleFrameTypes[2] = ib.getType();
                     multipoleFrameTypes[0] = ic.getType();
                     frameDefinition = MultipoleFrameDefinition.BISECTOR;
-                } else if (kab.xyzIndex == ia.xyzIndex && kac.xyzIndex == ia.xyzIndex) {
+                } else if (kab.getIndex() == ia.getIndex() && kac.getIndex() == ia.getIndex()) {
                     multipoleFrameTypes[2] = ia.getType();
-                    multipoleFrameTypes[0] = ((kbc.xyzIndex == ic.xyzIndex) ? ic.getType() : ib.getType());
-                } else if (kab.xyzIndex == ib.xyzIndex && kbc.xyzIndex == ib.xyzIndex) {
+                    multipoleFrameTypes[0] = ((kbc.getIndex() == ic.getIndex()) ? ic.getType() : ib.getType());
+                } else if (kab.getIndex() == ib.getIndex() && kbc.getIndex() == ib.getIndex()) {
                     multipoleFrameTypes[2] = ib.getType();
-                    multipoleFrameTypes[0] = ((kac.xyzIndex == ic.xyzIndex) ? ic.getType() : ia.getType());
-                } else if (kac.xyzIndex == ic.xyzIndex && kbc.xyzIndex == ic.xyzIndex) {
+                    multipoleFrameTypes[0] = ((kac.getIndex() == ic.getIndex()) ? ic.getType() : ia.getType());
+                } else if (kac.getIndex() == ic.getIndex() && kbc.getIndex() == ic.getIndex()) {
                     multipoleFrameTypes[2] = ic.getType();
-                    multipoleFrameTypes[0] = ((kab.xyzIndex == ib.xyzIndex) ? ib.getType() : ia.getType());
+                    multipoleFrameTypes[0] = ((kab.getIndex() == ib.getIndex()) ? ib.getType() : ia.getType());
                 }
 
             } else if (j == 4) {
@@ -718,60 +718,60 @@ public class Poledit {
                 if (kab == null && kac == null && kad == null) {
                     multipoleFrameTypes[2] = ia.getType();
                     multipoleFrameTypes[0] = ib.getType();
-                } else if (kab.xyzIndex == ia.xyzIndex && kac.xyzIndex == ia.xyzIndex && kad.xyzIndex == ia.xyzIndex) {
+                } else if (kab.getIndex() == ia.getIndex() && kac.getIndex() == ia.getIndex() && kad.getIndex() == ia.getIndex()) {
                     multipoleFrameTypes[2] = ia.getType();
                     multipoleFrameTypes[0] = ib.getType();
-                    if (kbc.xyzIndex == ic.xyzIndex && (kcd == null || kcd.xyzIndex == ic.xyzIndex)) {
+                    if (kbc.getIndex() == ic.getIndex() && (kcd == null || kcd.getIndex() == ic.getIndex())) {
                         multipoleFrameTypes[0] = ic.getType();
-                    } else if (kbd.xyzIndex == id.xyzIndex && kcd.xyzIndex == id.xyzIndex) {
+                    } else if (kbd.getIndex() == id.getIndex() && kcd.getIndex() == id.getIndex()) {
                         multipoleFrameTypes[0] = id.getType();
                     }
-                } else if (kab.xyzIndex == ib.xyzIndex && kbc.xyzIndex == ib.xyzIndex && kbd.xyzIndex == ib.xyzIndex) {
+                } else if (kab.getIndex() == ib.getIndex() && kbc.getIndex() == ib.getIndex() && kbd.getIndex() == ib.getIndex()) {
                     multipoleFrameTypes[2] = ib.getType();
                     multipoleFrameTypes[0] = ia.getType();
-                    if (kac.xyzIndex == ic.xyzIndex && (kcd == null || kcd.xyzIndex == ic.xyzIndex)) {
+                    if (kac.getIndex() == ic.getIndex() && (kcd == null || kcd.getIndex() == ic.getIndex())) {
                         multipoleFrameTypes[0] = ic.getType();
-                    } else if (kad.xyzIndex == id.xyzIndex && kcd.xyzIndex == id.xyzIndex) {
+                    } else if (kad.getIndex() == id.getIndex() && kcd.getIndex() == id.getIndex()) {
                         multipoleFrameTypes[0] = id.getType();
                     }
-                } else if (kac.xyzIndex == ic.xyzIndex && kbc.xyzIndex == ic.xyzIndex && kcd.xyzIndex == ic.xyzIndex) {
+                } else if (kac.getIndex() == ic.getIndex() && kbc.getIndex() == ic.getIndex() && kcd.getIndex() == ic.getIndex()) {
                     multipoleFrameTypes[2] = ic.getType();
                     multipoleFrameTypes[0] = ia.getType();
-                    if (kab.xyzIndex == ib.xyzIndex && (kbd == null || kbd.xyzIndex == ib.xyzIndex)) {
+                    if (kab.getIndex() == ib.getIndex() && (kbd == null || kbd.getIndex() == ib.getIndex())) {
                         multipoleFrameTypes[0] = ib.getType();
                     }
-                    if (kad.xyzIndex == id.xyzIndex && kbd.xyzIndex == id.xyzIndex) {
+                    if (kad.getIndex() == id.getIndex() && kbd.getIndex() == id.getIndex()) {
                         multipoleFrameTypes[0] = id.getType();
                     }
-                } else if (kad.xyzIndex == id.xyzIndex && kbd.xyzIndex == id.xyzIndex) {
+                } else if (kad.getIndex() == id.getIndex() && kbd.getIndex() == id.getIndex()) {
                     multipoleFrameTypes[2] = id.getType();
                     multipoleFrameTypes[0] = ia.getType();
-                    if (kab.xyzIndex == ib.xyzIndex && (kbc == null || kbc.xyzIndex == ib.xyzIndex)) {
+                    if (kab.getIndex() == ib.getIndex() && (kbc == null || kbc.getIndex() == ib.getIndex())) {
                         multipoleFrameTypes[0] = ib.getType();
-                    } else if (kac.xyzIndex == ic.xyzIndex && kbc.xyzIndex == ic.xyzIndex) {
+                    } else if (kac.getIndex() == ic.getIndex() && kbc.getIndex() == ic.getIndex()) {
                         multipoleFrameTypes[0] = ic.getType();
                     }
-                } else if (kab == null && kac.xyzIndex == ia.xyzIndex && kad.xyzIndex == ia.xyzIndex) {
+                } else if (kab == null && kac.getIndex() == ia.getIndex() && kad.getIndex() == ia.getIndex()) {
                     multipoleFrameTypes[2] = ia.getType();
                     multipoleFrameTypes[0] = ib.getType();
                     frameDefinition = MultipoleFrameDefinition.BISECTOR;
-                } else if (kac == null && kab.xyzIndex == ia.xyzIndex && kad.xyzIndex == ia.xyzIndex) {
+                } else if (kac == null && kab.getIndex() == ia.getIndex() && kad.getIndex() == ia.getIndex()) {
                     multipoleFrameTypes[2] = ia.getType();
                     multipoleFrameTypes[0] = ic.getType();
                     frameDefinition = MultipoleFrameDefinition.BISECTOR;
-                } else if (kad == null && kab.xyzIndex == ia.xyzIndex && kac.xyzIndex == ia.xyzIndex) {
+                } else if (kad == null && kab.getIndex() == ia.getIndex() && kac.getIndex() == ia.getIndex()) {
                     multipoleFrameTypes[2] = ia.getType();
                     multipoleFrameTypes[0] = id.getType();
                     frameDefinition = MultipoleFrameDefinition.BISECTOR;
-                } else if (kbc == null && kab.xyzIndex == ib.xyzIndex && kbd.xyzIndex == ib.xyzIndex) {
+                } else if (kbc == null && kab.getIndex() == ib.getIndex() && kbd.getIndex() == ib.getIndex()) {
                     multipoleFrameTypes[2] = ib.getType();
                     multipoleFrameTypes[0] = ic.getType();
                     frameDefinition = MultipoleFrameDefinition.BISECTOR;
-                } else if (kbd == null && kab.xyzIndex == ib.xyzIndex && kbc.xyzIndex == ib.xyzIndex) {
+                } else if (kbd == null && kab.getIndex() == ib.getIndex() && kbc.getIndex() == ib.getIndex()) {
                     multipoleFrameTypes[2] = ib.getType();
                     multipoleFrameTypes[0] = id.getType();
                     frameDefinition = MultipoleFrameDefinition.BISECTOR;
-                } else if (kcd == null && kac.xyzIndex == ic.xyzIndex && kbc.xyzIndex == ic.xyzIndex) {
+                } else if (kcd == null && kac.getIndex() == ic.getIndex() && kbc.getIndex() == ic.getIndex()) {
                     multipoleFrameTypes[2] = ic.getType();
                     multipoleFrameTypes[0] = id.getType();
                     frameDefinition = MultipoleFrameDefinition.BISECTOR;
@@ -779,7 +779,7 @@ public class Poledit {
             }
             //Set up stuff. Charge, Dipole, Quadrupole, FrameTypes, FrameDef
             MultipoleType m = new MultipoleType(charge, dipole.clone(), quadrupole.clone(), multipoleFrameTypes.clone(), frameDefinition);
-            a.setMultipoleType(m, null);
+            a.setMultipoleType(m);
         }
     }
 
@@ -815,8 +815,8 @@ public class Poledit {
 //                    if(ia > 0 && ib == 0){
 //                    	for(int r = 0; r < atoms[index].getNumBonds(); r++){
 //                        	Atom b = atoms[index].getBonds().get(r).get1_2(atoms[index]);
-//                        	if(b.xyzIndex != Math.abs(ia)){
-//                        		ib = b.xyzIndex;
+//                        	if(b.getIndex() != Math.abs(ia)){
+//                        		ib = b.getIndex();
 //                        		axisAtom[index][1] = ib - 1;
 //                        		break;
 //                        	}
@@ -844,7 +844,7 @@ public class Poledit {
                     Atom a = atoms[i];
                     int[] polgrp = new int[a.getNumBonds()];
                     for (int j = 0; j < a.getNumBonds(); j++) {
-                        polgrp[j] = a.getBonds().get(j).get1_2(a).xyzIndex;
+                        polgrp[j] = a.getBonds().get(j).get1_2(a).getIndex();
                     }
                     PolarizeType p = new PolarizeType(a.getType(), polarizability[i], thole[i], polgrp.clone());
                     a.setPolarizeType(p);
@@ -926,7 +926,7 @@ public class Poledit {
             ka = 0;
             for (int i = 0; i < a.getBonds().size(); i++) {
                 Atom m = a.getBonds().get(i).get1_2(a);
-                if (o.xyzIndex != m.xyzIndex) {
+                if (o.getIndex() != m.getIndex()) {
                     if (m.getAtomicNumber() > ka) {
                         ka = m.getAtomicNumber();
                     }
@@ -935,7 +935,7 @@ public class Poledit {
             kb = 0;
             for (int i = 0; i < b.getBonds().size(); i++) {
                 Atom m = b.getBonds().get(i).get1_2(b);
-                if (o.xyzIndex != m.xyzIndex) {
+                if (o.getIndex() != m.getIndex()) {
                     if (m.getAtomicNumber() > kb) {
                         kb = m.getAtomicNumber();
                     }
@@ -1088,8 +1088,8 @@ public class Poledit {
             int index = name.lastIndexOf("/");
             String molname = name.substring(index + 1, name.length());
             for (int i = 0; i < atoms.length; i++) {
-                output = String.format("atom%5d%5d%3s \"%-20s\" %5d%6s%5d", atoms[i].xyzIndex, atoms[i].getType(), atoms[i].getAtomType().name, molname, atoms[i].getAtomicNumber(), myFormatter.format(atoms[i].getMass()), atoms[i].getNumBonds());
-                //output = "atom\t"+atoms[i].xyzIndex+" "+atoms[i].getType()+" "+atoms[i].getName()+" "+molname+" "+atoms[i].getAtomicNumber()+" "+atoms[i].getMass()+" "+atoms[i].getNumBonds();
+                output = String.format("atom%5d%5d%3s \"%-20s\" %5d%6s%5d", atoms[i].getIndex(), atoms[i].getType(), atoms[i].getAtomType().name, molname, atoms[i].getAtomicNumber(), myFormatter.format(atoms[i].getMass()), atoms[i].getNumBonds());
+                //output = "atom\t"+atoms[i].getIndex()+" "+atoms[i].getType()+" "+atoms[i].getName()+" "+molname+" "+atoms[i].getAtomicNumber()+" "+atoms[i].getMass()+" "+atoms[i].getNumBonds();
                 bw.write(output + "\n");
             }
             bw.write("\n");
@@ -1135,7 +1135,7 @@ public class Poledit {
             }
             bw.write("\n");
             for (int i = 0; i < nAtoms; i++) {
-                output = String.format("polarize %5d %29s %7s", atoms[i].xyzIndex, myFormatter.format(polarizability[i]), myFormatter.format(thole[i]));
+                output = String.format("polarize %5d %29s %7s", atoms[i].getIndex(), myFormatter.format(polarizability[i]), myFormatter.format(thole[i]));
                 for (int k = 0; k < atoms[i].getPolarizeType().polarizationGroup.length; k++) {
                     if (atoms[i].getPolarizeType().polarizationGroup[k] != 0) {
                         output = output + "   " + atoms[i].getPolarizeType().polarizationGroup[k];

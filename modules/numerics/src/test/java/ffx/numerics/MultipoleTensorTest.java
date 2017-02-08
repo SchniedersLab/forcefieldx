@@ -322,7 +322,7 @@ public class MultipoleTensorTest {
         double aY = -Fi[1];
         double aZ = -Fi[2];
 
-        double analyticdEdF = multipoleTensor.getdEdF();
+        double analyticdEdF = multipoleTensor.getdEdZbuff();
 
         r[0] += delta;
         multipoleTensor.setR(r, lambdaFunction);
@@ -402,7 +402,7 @@ public class MultipoleTensorTest {
         double aY = -Fi[1];
         double aZ = -Fi[2];
 
-        double analyticdEdF = multipoleTensor.getdEdF();
+        double analyticdEdF = multipoleTensor.getdEdZbuff();
 
         r[0] += delta;
         multipoleTensor.setR_QI(r, lambdaFunction);

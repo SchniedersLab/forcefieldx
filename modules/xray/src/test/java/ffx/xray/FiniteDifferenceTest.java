@@ -59,10 +59,7 @@ import ffx.crystal.Resolution;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.PDBFilter;
-import ffx.utilities.Keyword;
+import ffx.potential.utils.PotentialsUtils;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.MTZFilter;
@@ -116,10 +113,12 @@ public class FiniteDifferenceTest {
         ClassLoader cl = this.getClass().getClassLoader();
         File structure = new File(cl.getResource(pdbName).getPath());
         File mtzFile = new File(cl.getResource(mtzName).getPath());
+        PotentialsUtils potutil = new PotentialsUtils();
+        MolecularAssembly mola = potutil.open(structure);
 
         // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
-
+        CompositeConfiguration properties = mola.getProperties();
+        
         // read in Fo/sigFo/FreeR
         MTZFilter mtzFilter = new MTZFilter();
         ReflectionList reflectionList;
@@ -137,20 +136,11 @@ public class FiniteDifferenceTest {
                 mtzFilter.readFile(mtzFile, reflectionList, refinementData,
                         properties));
 
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
-
         // associate molecular assembly with the structure, set up forcefield
-        MolecularAssembly molecularAssembly = new MolecularAssembly(name);
-        molecularAssembly.setFile(structure);
-        molecularAssembly.setForceField(forceField);
-        PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
-        pdbFile.readFile();
-        pdbFile.applyAtomProperties();
-        molecularAssembly.finalize(true, forceField);
-        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly, pdbFile.getCoordRestraints());
+        mola.finalize(true, mola.getForceField());
+        ForceFieldEnergy energy = mola.getPotentialEnergy();
 
-        List<Atom> atomList = molecularAssembly.getAtomList();
+        List<Atom> atomList = mola.getAtomList();
         atomArray = atomList.toArray(new Atom[0]);
         boolean use_3g = properties.getBoolean("use_3g", true);
 
@@ -232,7 +222,7 @@ public class FiniteDifferenceTest {
         double gxyz[] = new double[3];
         for (int i = 0; i < atoms.length; i++) {
             Atom atom = atomArray[atoms[i]];
-            int index = atom.getXYZIndex() - 1;
+            int index = atom.getXyzIndex() - 1;
             if (atom.getOccupancy() == 0.0) {
                 continue;
             }

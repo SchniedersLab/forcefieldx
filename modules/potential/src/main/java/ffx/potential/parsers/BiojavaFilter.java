@@ -463,8 +463,8 @@ public class BiojavaFilter extends ConversionFilter {
                 }
             } else {
                 atoms.put(atom.getPDBserial(), newAtom);
-                if (newAtom.xyzIndex == 0) {
-                    newAtom.setXYZIndex(xyzIndex++);
+                if (newAtom.getIndex() == 0) {
+                    newAtom.setXyzIndex(xyzIndex++);
                 }
                 if (printAtom) {
                     logger.info(newAtom.toString());
@@ -578,7 +578,7 @@ public class BiojavaFilter extends ConversionFilter {
     public void numberAtoms() {
         int index = 1;
         for (Atom a : activeMolecularAssembly.getAtomArray()) {
-            a.setXYZIndex(index++);
+            a.setXyzIndex(index++);
         }
         index--;
         if (logger.isLoggable(Level.INFO)) {
@@ -2367,7 +2367,7 @@ public class BiojavaFilter extends ConversionFilter {
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
-                                    if (SG1.xyzIndex < SG2.xyzIndex) {
+                                    if (SG1.getIndex() < SG2.getIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
                                             bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
@@ -2768,7 +2768,7 @@ public class BiojavaFilter extends ConversionFilter {
                             for (Bond bond : bonds) {
                                 Atom SG2 = bond.get1_2(SG1);
                                 if (SG2.getName().equalsIgnoreCase("SG")) {
-                                    if (SG1.xyzIndex < SG2.xyzIndex) {
+                                    if (SG1.getIndex() < SG2.getIndex()) {
                                         bond.energy(false);
                                         if (!listMode) {
                                             bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",

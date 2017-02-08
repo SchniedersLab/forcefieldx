@@ -894,7 +894,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     if (a2.getAtomicNumber() == 1) {
                         continue;
                     }
-                    if (a2.xyzIndex < a1.xyzIndex) {
+                    if (a2.getIndex() < a1.getIndex()) {
                         continue;
                     }
                     if (!a1.getAltLoc().equals(' ')
@@ -940,7 +940,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     if (a2.getAtomicNumber() == 1) {
                         continue;
                     }
-                    if (a2.xyzIndex < a1.xyzIndex) {
+                    if (a2.getIndex() < a1.getIndex()) {
                         continue;
                     }
                     if (a2.getAnisou(null) == null) {

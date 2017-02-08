@@ -57,6 +57,7 @@ import ffx.potential.parameters.ForceField;
  * @since 1.0
  *
  */
+@SuppressWarnings({"serial", "CloneableImplementsClone"})
 public abstract class MSGroup extends MSNode {
 
     private static final Logger logger = Logger.getLogger(MSGroup.class.getName());
@@ -186,24 +187,24 @@ public abstract class MSGroup extends MSNode {
         int nAtoms = atomList.size();
         Atom atoms[] = new Atom[nAtoms];
         atoms = atomList.toArray(atoms);
-
-        boolean sorted = false;
-        while (!sorted) {
+        
+        boolean sorted;
+        do {
             sorted = true;
             for (int i = 1; i < nAtoms; i++) {
                 Atom a1 = atoms[i - 1];
                 Atom a2 = atoms[i];
                 if (a1.getName().compareToIgnoreCase(a2.getName()) > 0) {
-                    int i1 = a1.xyzIndex;
-                    int i2 = a2.xyzIndex;
+                    int i1 = a1.getIndex();
+                    int i2 = a2.getIndex();
                     atoms[i - 1] = a2;
                     atoms[i] = a1;
-                    a1.xyzIndex = i2;
-                    a2.xyzIndex = i1;
+                    a1.setXyzIndex(i2);
+                    a2.setXyzIndex(i1);
                     sorted = false;
                 }
-            }
-        }
+            }            
+        } while (!sorted);
     }
 
     /**
@@ -827,7 +828,7 @@ public abstract class MSGroup extends MSNode {
      *
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
-    public MSNode getTerms() {
+    public MSNode getTermNode() {
         return termNode;
     }
 
@@ -866,37 +867,37 @@ public abstract class MSGroup extends MSNode {
             return;
         }
         if (bondNode.getChildCount() == 0 && !(bondNode.getParent() == null)) {
-            termNode.remove(bondNode);
+            termNode.removeChild(bondNode);
         }
         if (angleNode.getChildCount() == 0 && !(angleNode.getParent() == null)) {
-            termNode.remove(angleNode);
+            termNode.removeChild(angleNode);
         }
         if (stretchBendNode.getChildCount() == 0 && !(stretchBendNode.getParent() == null)) {
-            termNode.remove(stretchBendNode);
+            termNode.removeChild(stretchBendNode);
         }
         if (ureyBradleyNode.getChildCount() == 0 && !(ureyBradleyNode.getParent() == null)) {
-            termNode.remove(ureyBradleyNode);
+            termNode.removeChild(ureyBradleyNode);
         }
         if (outOfPlaneBendNode.getChildCount() == 0 && (outOfPlaneBendNode.getParent() != null)) {
-            termNode.remove(outOfPlaneBendNode);
+            termNode.removeChild(outOfPlaneBendNode);
         }
         if (torsionNode.getChildCount() == 0 && !(torsionNode.getParent() == null)) {
-            termNode.remove(torsionNode);
+            termNode.removeChild(torsionNode);
         }
         if (piOrbitalTorsionNode.getChildCount() == 0 && !(piOrbitalTorsionNode.getParent() == null)) {
-            termNode.remove(piOrbitalTorsionNode);
+            termNode.removeChild(piOrbitalTorsionNode);
         }
         if (torsionTorsionNode.getChildCount() == 0 && !(torsionTorsionNode.getParent() == null)) {
-            termNode.remove(torsionTorsionNode);
+            termNode.removeChild(torsionTorsionNode);
         }
         if (improperTorsionNode.getChildCount() == 0 && !(improperTorsionNode.getParent() == null)) {
-            termNode.remove(improperTorsionNode);
+            termNode.removeChild(improperTorsionNode);
         }
         if (termNode.getChildCount() == 0) {
-            remove(termNode);
+            removeChild(termNode);
         }
         if (atomNode.getChildCount() == 0) {
-            remove(atomNode);
+            removeChild(atomNode);
         }
     }
 
@@ -906,7 +907,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setAngles(MSNode t) {
-        termNode.remove(angleNode);
+        termNode.removeChild(angleNode);
         angleNode = t;
         termNode.add(angleNode);
     }
@@ -917,7 +918,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setImproperTorsions(MSNode t) {
-        termNode.remove(improperTorsionNode);
+        termNode.removeChild(improperTorsionNode);
         improperTorsionNode = t;
         termNode.add(improperTorsionNode);
     }
@@ -939,7 +940,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setBonds(MSNode t) {
-        termNode.remove(bondNode);
+        termNode.removeChild(bondNode);
         bondNode.removeAllChildren();
         bondNode = t;
         termNode.add(bondNode);
@@ -951,7 +952,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setStretchBends(MSNode t) {
-        termNode.remove(stretchBendNode);
+        termNode.removeChild(stretchBendNode);
         stretchBendNode.removeAllChildren();
         stretchBendNode = t;
         termNode.add(stretchBendNode);
@@ -963,7 +964,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setUreyBradleys(MSNode t) {
-        termNode.remove(ureyBradleyNode);
+        termNode.removeChild(ureyBradleyNode);
         ureyBradleyNode.removeAllChildren();
         ureyBradleyNode = t;
         termNode.add(ureyBradleyNode);
@@ -975,7 +976,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setOutOfPlaneBends(MSNode t) {
-        termNode.remove(outOfPlaneBendNode);
+        termNode.removeChild(outOfPlaneBendNode);
         outOfPlaneBendNode.removeAllChildren();
         outOfPlaneBendNode = t;
         termNode.add(outOfPlaneBendNode);
@@ -1022,7 +1023,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setTorsions(MSNode t) {
-        termNode.remove(torsionNode);
+        termNode.removeChild(torsionNode);
         torsionNode = t;
         termNode.add(torsionNode);
     }
@@ -1033,7 +1034,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setPiOrbitalTorsions(MSNode t) {
-        termNode.remove(piOrbitalTorsionNode);
+        termNode.removeChild(piOrbitalTorsionNode);
         piOrbitalTorsionNode = t;
         termNode.add(piOrbitalTorsionNode);
     }
@@ -1044,7 +1045,7 @@ public abstract class MSGroup extends MSNode {
      * @param t a {@link ffx.potential.bonded.MSNode} object.
      */
     public void setTorsionTorsions(MSNode t) {
-        termNode.remove(torsionTorsionNode);
+        termNode.removeChild(torsionTorsionNode);
         torsionTorsionNode = t;
         termNode.add(torsionTorsionNode);
     }

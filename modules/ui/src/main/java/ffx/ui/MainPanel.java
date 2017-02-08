@@ -1288,7 +1288,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             ArrayList<ROLS> bonds = m.getBondList();
             for (Atom atom : atoms) {
                 atom.removeFromParent();
-                atom.setXYZIndex(atomNum++);
+                atom.setXyzIndex(atomNum++);
                 mergedAtoms.add(atom);
                 atom.getV3D(atomPosition);
                 parentTransform3D.transform(atomPosition);
