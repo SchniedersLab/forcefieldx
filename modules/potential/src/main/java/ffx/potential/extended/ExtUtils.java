@@ -39,8 +39,10 @@ package ffx.potential.extended;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.IllegalFormatException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -247,7 +249,7 @@ public final class ExtUtils {
         SB.logfn("\n Extended Configuration: ");
         while (it.hasNext()) {
             String key = it.next();
-            SB.logfn("   %16s = %6s", key, extConfig.getProperty(key));
+            SB.logfn("   %16s = %6s", key, extConfig.getProperty(key).toString());
         }
         SB.nl();
         SB.print();
@@ -344,6 +346,12 @@ public final class ExtUtils {
         return termSum;
     }
     
+    /**
+     * SB help group messages for togetherness-printing, relieves arthritis from
+     * typing ".append(.format(" ad nauseum, handles newlines succinctly, and
+     * does away with laborious ".toString()" formatting. And it even logs through
+     * the logger of the *calling* class despite living in ExtUtils. Switch today!
+     */
     public static class SB {
         private SB() { /* utility singleton */ }
         private static StringBuilder sb = new StringBuilder();
@@ -382,6 +390,10 @@ public final class ExtUtils {
             cid.getCallingLogger().log(Level.INFO, sb.toString());
             clear();
         }
+        public static void warning(String msg, Object... args) {
+            sb.append(format(msg, args));
+            warning();
+        }
         public static void warning() {
             cid.getCallingLogger().log(Level.WARNING, sb.toString());
             clear();
@@ -391,6 +403,18 @@ public final class ExtUtils {
                 print();
             } else {
                 clear();
+            }
+        }
+        public static String coerceFormat(String msg, Object... args) {
+            try {
+                return format(msg, args);
+            } catch (IllegalFormatException ex) {
+                try {
+                    // NR: search for indexes of %s rather than replace all
+                    return format(msg, Arrays.toString(args));
+                } catch (IllegalFormatException ex2) {
+                    throw ex2;
+                }
             }
         }
     }

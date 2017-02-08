@@ -201,5 +201,15 @@ public class UreyBradley extends BondedTerm {
                 atoms[2].getIndex(), atoms[2].getAtomType().name, ureyBradleyType.distance, value,
                 energy));
     }
-
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(BondedTerm ub) {
+        if (!ub.getClass().isInstance(this)) {
+            return super.compareTo(ub);
+        }
+        return angle.compareTo(((UreyBradley) ub).angle);
+    }
 }

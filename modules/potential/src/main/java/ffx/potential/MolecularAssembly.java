@@ -1437,24 +1437,24 @@ public class MolecularAssembly extends MSGroup {
                 getAtomNode().setName(
                         "Macromolecules " + "(" + macroNode.getChildCount() + ")");
             } else if (macroNode.getParent() == this) {
-                remove(macroNode);
+                removeChild(macroNode);
             }
         }
 
         if (molecules.getChildCount() == 0) {
-            remove(molecules);
+            removeChild(molecules);
         } else {
             molecules.setName("Hetero Molecules " + "(" + molecules.getChildCount() + ")");
         }
 
         if (ions.getChildCount() == 0) {
-            remove(ions);
+            removeChild(ions);
         } else {
             ions.setName("Ions " + "(" + ions.getChildCount() + ")");
         }
 
         if (water.getChildCount() == 0) {
-            remove(water);
+            removeChild(water);
         } else {
             water.setName("Water " + "(" + water.getChildCount() + ")");
         }

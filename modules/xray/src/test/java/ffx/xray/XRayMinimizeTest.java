@@ -204,7 +204,6 @@ public class XRayMinimizeTest {
         molecularAssembly.setForceField(forceField);
         PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
         pdbFile.readFile();
-        logger.info(" Made it past 1N7S read.");
         pdbFile.applyAtomProperties();
         molecularAssembly.finalize(true, forceField);
         ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly, pdbFile.getCoordRestraints());

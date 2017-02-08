@@ -52,6 +52,9 @@ import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.potential.bonded.Atom.Resolution;
 
+import static ffx.utilities.HashCodeUtil.SEED;
+import static ffx.utilities.HashCodeUtil.hash;
+
 /**
  * The BondedTerm class is extended by all Valence Geometry classes (bond,
  * angle, dihedral, torsion, etc.).
@@ -377,11 +380,12 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         return getID().equals(other.getID());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + Objects.hashCode(this.id);
-        return hash;
+    public final int hashCode() {
+        return hash(SEED, getID().hashCode());
     }
 
     /**

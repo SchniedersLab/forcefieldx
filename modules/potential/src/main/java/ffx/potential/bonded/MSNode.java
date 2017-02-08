@@ -61,6 +61,7 @@ import static ffx.utilities.HashCodeUtil.hash;
  * @author Michael J. Schnieders
  *
  */
+@SuppressWarnings("CloneableImplementsClone")
 public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
     private static final long serialVersionUID = 1L;
@@ -197,7 +198,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
                 arrayList.add((Atom) node);
             }
         }
-        Collections.sort(arrayList, Atom.indexComparator);
+        Collections.sort(arrayList);
         return arrayList;
     }
     
@@ -585,6 +586,12 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
         System.out.println(name);
     }
 
+    public void removeChild(MSNode child) {
+        if (child != null && child.getParent() == this) {
+            remove(child);
+        }
+    }
+    
     /**
      * {@inheritDoc}
      */

@@ -139,7 +139,7 @@ public abstract class ExtendedVariable {
 
         this.multiRes = multiRes;
         residueForeground = multiRes.getActive();
-        termNode = residueForeground.getTerms();
+        termNode = residueForeground.getTermNode();
         residueBackground = multiRes.getInactive().get(0);
         moleculeNumber = residueForeground.getAtomList().get(0).getMoleculeNumber();
 
@@ -364,6 +364,7 @@ public abstract class ExtendedVariable {
                 assert(!atomsForeground.contains(a0));
                 assert(!isTitratableHydrogen(a0));
                 atomsBackground.add(a0);
+                a0.setBackground();
             }
         }
         
@@ -382,13 +383,14 @@ public abstract class ExtendedVariable {
         bondedFg = residueForeground.getDescendants(BondedTerm.class);
         bondedBg = residueBackground.getDescendants(BondedTerm.class);
         MSNode extendedTermNode = new MSNode(format("Extended (%d)", bondedBg.size()));
-        for (MSNode node : residueBackground.getTerms().getChildList()) {
+        for (MSNode node : residueBackground.getTermNode().getChildList()) {
             extendedTermNode.add(node);
         }
-        multiRes.getActive().getTerms().add(extendedTermNode);
+        // TODO REACTIVATE
+//        multiRes.getActive().getTermNode().add(extendedTermNode);
 
-        ready = true;
         updateBondedLambdas();
+        ready = true;
         describe();
     }
     
@@ -420,7 +422,7 @@ public abstract class ExtendedVariable {
             SB.logfn("%s", atom);
         }
         SB.logfn("   Bonded Terms");
-        for (MSNode term : residueForeground.getTerms().getChildList()) {
+        for (MSNode term : residueForeground.getTermNode().getChildList()) {
             SB.logfn("     %s", term);
             if (term.toString().trim().contains("Extended")) {
                 for (MSNode ext : term.getChildList()) {

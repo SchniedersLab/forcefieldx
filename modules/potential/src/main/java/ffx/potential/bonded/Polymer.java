@@ -237,7 +237,7 @@ public class Polymer extends MSGroup {
                 getAtomNode().setName("Residues " + "(" + residues.size() + ")");
             }
             Joint j;
-            MSNode joints = getTerms();
+            MSNode joints = getTermNode();
             joints.removeAllChildren();
             List<Atom> atoms = getAtomList();
 
@@ -257,20 +257,20 @@ public class Polymer extends MSGroup {
 
             if (residue != null) {
                 if (residue.residueType == ResidueType.AA) {
-                    getTerms().setName(
+                    getTermNode().setName(
                             "Peptide Bonds " + "(" + joints.getChildCount() + ")");
                 } else {
-                    getTerms().setName(
+                    getTermNode().setName(
                             "Linkages " + "(" + joints.getChildCount() + ")");
                 }
             } else {
-                getTerms().setName(
+                getTermNode().setName(
                         "Linkages " + "(" + joints.getChildCount() + ")");
             }
         } else {
             getAtomNode().setName("Sub-Groups " + "(" + residues.size() + ")");
-            if (getTerms().getParent() != null) {
-                remove(getTerms());
+            if (getTermNode().getParent() != null) {
+                removeChild(getTermNode());
             }
         }
         removeLeaves();
@@ -337,7 +337,7 @@ public class Polymer extends MSGroup {
         ArrayList<Torsion> psi = new ArrayList<>();
         phipsi.add(phi);
         phipsi.add(psi);
-        MSNode joints = getTerms();
+        MSNode joints = getTermNode();
         for (li = joints.getChildListIterator(); li.hasNext();) {
             dihedrals = ((Joint) li.next()).getTorsions();
             for (lj = dihedrals.getChildListIterator(); lj.hasNext();) {
@@ -502,7 +502,7 @@ public class Polymer extends MSGroup {
             MSGroup atomGroup = (MSGroup) li.next();
             atomGroup.setColor(newColorModel, color, mat);
         }
-        for (Enumeration e = getTerms().children(); e.hasMoreElements();) {
+        for (Enumeration e = getTermNode().children(); e.hasMoreElements();) {
             Joint joint = (Joint) e.nextElement();
             joint.setColor(newColorModel);
         }
@@ -528,7 +528,7 @@ public class Polymer extends MSGroup {
             MSGroup atomGroup = (MSGroup) li.next();
             atomGroup.setView(newViewModel, newShapes);
         }
-        for (Enumeration e = getTerms().children(); e.hasMoreElements();) {
+        for (Enumeration e = getTermNode().children(); e.hasMoreElements();) {
             Joint joint = (Joint) e.nextElement();
             joint.setView(newViewModel, newShapes);
         }

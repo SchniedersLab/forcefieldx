@@ -39,11 +39,9 @@ package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -87,7 +85,7 @@ import static ffx.utilities.HashCodeUtil.hash;
 public class Atom extends MSNode implements Comparable<Atom> {
     
     private static final Logger logger = Logger.getLogger(Atom.class.getName());
-    
+
     public enum Resolution {
         FIXEDCHARGE, AMOEBA;
     }
@@ -104,6 +102,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
     
     public enum Indexing {
         XYZ, PERSIST
+    }
+    
+    private boolean isBackground = false;
+    public void setBackground() {
+        isBackground = true;
+    }
+    public boolean isBackground() {
+        return isBackground;
     }
     
     private static Point3d point3d = new Point3d();
@@ -396,6 +402,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     // "stale" is True if this Atom's J3D transforms need to be updated before
     // making it visible
     private boolean stale = false;
+    private String shortString = null;
     private final Vector3d vector3d = new Vector3d();
     /* Extended System handling */
     private MultipoleType esvMultipoleM;
@@ -476,6 +483,32 @@ public class Atom extends MSNode implements Comparable<Atom> {
         this.built = built;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Implementation of the Comparable interface.
+     */
+    @Override
+    public int compareTo(Atom a) {
+        if (a == null) {
+            throw new NullPointerException();
+        }
+        if (a == this) {
+            return 0;
+        }
+        int a0 = a.xyzIndex;
+        if (xyzIndex < a0) {
+            return -1;
+        }
+        if (xyzIndex > a0) {
+            return 1;
+        }
+        // There should not be duplicate, identical atom objects.
+        // assert (xyzIndex != a0);
+        return 0;
+    }
+    
+    /*
     @Override
     public int compareTo(Atom other) {
         return Objects.compare(this, other, indexComparator);
@@ -491,7 +524,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             assert(mi != ui);
             return Integer.compare(mi, ui);
         }
-    }
+    }   */
 
     /**
      * <p>
@@ -687,8 +720,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public Angle getAngle(Atom centralAtom, Atom endAtom) {
         for (Angle angle : angles) {
-            if (angle.get1_3(this) == endAtom
-                    && angle.getCentralAtom() == centralAtom) {
+            Atom atom13 = angle.get1_3(this);
+            if (atom13 != null && atom13.equals(endAtom)
+                    && angle.getCentralAtom().equals(centralAtom)) {
                 return angle;
             }
         }
@@ -919,6 +953,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     
     public MultipoleType getEsvMultipoleM() {
+        if (getEsv() == null) {
+            return getMultipoleType();
+        }
+        if (!getEsv().isReady()) {
+//            SB.warning(" Atom.getEsvMultipoleM() fallback to getMultipoleType: %s", this.toString());
+            return getMultipoleType();
+        }
         return esvMultipoleM;
     }
     
@@ -927,6 +968,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     
     public MultipoleType getEsvMultipoleMdot() {
+        if (getEsv() == null) {
+            return getMultipoleType();
+        }
+        if (!getEsv().isReady()) {
+//            SB.warning(" Atom.getEsvMultipoleM() fallback to getMultipoleType: %s", this.toString());
+            return getMultipoleType();
+        }
         return esvMultipoleMdot;
     }
 
@@ -2306,11 +2354,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (torsion == null || !torsion.containsAtom(this)) {
             return;
         }
+        
         for (Torsion t : torsions) {
             if (torsion == t) {
                 return;
             }
         }
+        
         torsions.add(torsion);
         Atom a14 = torsion.get1_4(this);
         if (a14 != null) {
@@ -2703,7 +2753,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return a {@link java.lang.String} object.
      */
     public String toShortString() {
-        return format("%d-%s", getIndex(), getName());
+        if (shortString == null) {
+            shortString = format("%d-%s", getIndex(), getName());
+        }
+        return shortString;
     }
 
     /**

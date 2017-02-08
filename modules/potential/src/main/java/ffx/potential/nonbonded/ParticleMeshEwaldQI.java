@@ -2577,7 +2577,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
-                                if (index < 0) {
+                                if (index < 0 || index >= nAtoms) {
                                     ak.print();
                                 }
                                 maskp_local[index] = 1.0;
@@ -4027,15 +4027,21 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 globalMultipoleI = atoms[i].getEsvMultipoleM().packedMultipole;
                             }
                             if (esvkScaled) {
-                                globalMultipoleK = atoms[k].getEsvMultipoleM().packedMultipole;
+                                try {
+                                    globalMultipoleK = atoms[k].getEsvMultipoleM().packedMultipole;
+                                } catch (NullPointerException ex) {
+                                    SB.logfp("i,k,atoms[i],atoms[k]: %d %d %s %s",
+                                            i, k, atoms[i], atoms[k]);
+                                }
                             }
                             EnergyForceTorque eft = pairPermEnergy(dx_local, globalMultipoleI, globalMultipoleK);
                             permanentEnergy += eft.energy;
-                            SB.logf(" pairPerm %d-%s %d-%s = %g \t\t(%g)", 
-                                    i, atoms[i].toNameNumberString(),
-                                    k, atoms[k].toNameNumberString(),
-                                    eft.energy, permanentEnergy);
-                            SB.printIf(VERBOSE());
+                            if (VERBOSE()) {
+                                SB.logfp(format(" pairPerm i,iname,k,kname,e,(etot): %d %s %d %s %g (%g)", 
+                                        i, atoms[i].toNameNumberString(),
+                                        k, atoms[k].toNameNumberString(),
+                                        eft.energy, permanentEnergy));
+                            }
                             if (gradient) {
                                 double scalar = selfScale * sc2;
                                 gX[i] += scalar * eft.permFi[0];

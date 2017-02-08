@@ -51,9 +51,9 @@ import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.Residue.AA3;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.MultipoleType;
 
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
@@ -192,6 +192,7 @@ public class AminoAcidUtils {
                 checkForMissingHeavyAtoms(aminoAcidNumber, aminoAcid, position, residue);
             } catch (BondedUtils.MissingHeavyAtomException e) {
                 logger.log(Level.INFO, " {0} could not be parsed.", residue.toString());
+                SB.warning("MissingHeavyAtomException incoming from 194.");
                 throw e;
             }
         }
@@ -233,6 +234,7 @@ public class AminoAcidUtils {
                 if (O == null) {
                     MissingHeavyAtomException missingHeavyAtom
                             = new MissingHeavyAtomException("O", atomType, C);
+                    SB.warning(" MissingHeavyAtomException incoming from 234.");
                     throw missingHeavyAtom;
                 }
                 O.setAtomType(atomType);
@@ -390,6 +392,7 @@ public class AminoAcidUtils {
                 if (correspH == null || correspH.getAtomType() == null) {
                     MissingAtomTypeException missingAtomTypeException
                             = new MissingAtomTypeException(residue, atom);
+                    SB.warning("MissingAtomTypeException incoming from 393.");
                     throw missingAtomTypeException;
                 } else {
                     correspH.setName(atom.getName());
@@ -1698,16 +1701,19 @@ public class AminoAcidUtils {
                 Atom N = (Atom) residue.getAtomNode("N");
                 if (N == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("N", null, null);
+                    SB.warning("MissingHeavyAtomException incoming from 1702.");
                     throw e;
                 }
                 Atom CA = (Atom) residue.getAtomNode("CA");
                 if (CA == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("CA", null, null);
+                    SB.warning("MissingHeavyAtomException incoming from 1708.");
                     throw e;
                 }
                 Atom C = (Atom) residue.getAtomNode("C");
                 if (C == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("C", null, null);
+                    SB.warning("MissingHeavyAtomException incoming from 1714.");
                     throw e;
                 }
                 Atom O = (Atom) residue.getAtomNode("O");
@@ -1716,6 +1722,7 @@ public class AminoAcidUtils {
                 }
                 if (O == null) {
                     MissingHeavyAtomException e = new MissingHeavyAtomException("O", null, null);
+                    SB.warning("MissingHeavyAtomException incoming from 1723.");
                     throw e;
                 }
             }
