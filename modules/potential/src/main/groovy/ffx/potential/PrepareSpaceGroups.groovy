@@ -42,10 +42,15 @@ class PrepareSpaceGroups extends Script {
          */
         @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
+         * -p or --percent only consider space groups populated above the specified percentage in the CSD.
+         */
+        @Option(longName='percent', shortName='p', defaultValue='0.0',
+            description='Only consider space groups populated above the specified percentage in the CSD.') double percent;
+        /**
          * -c or --chiral to create directories only for chiral space groups.
          */
         @Option(longName='chiral', shortName='c', defaultValue='false',
-            description='Create directories only for chiral space groups.') boolean chiral;
+            description='Only consider chiral space groups.') boolean chiral;
         /**
          * -sym or --symOp random Cartesian symmetry operator will use the specified translation range -X .. X (no default).
          */
@@ -128,7 +133,12 @@ class PrepareSpaceGroups extends Script {
                 continue
             }
 
-            logger.info("\n Preparing " + spacegroup.shortName)
+            if (spacegroup.csdPercent[num - 1] < options.percent) {
+                continue
+            }
+
+            logger.info(String.format("\n Preparing %s (%7.4f percent of the CSD)",
+                    spacegroup.shortName, spacegroup.csdPercent[num - 1]));
 
             // Create the directory.
             String sgDirName = spacegroup.shortName.replace('/', '_')
