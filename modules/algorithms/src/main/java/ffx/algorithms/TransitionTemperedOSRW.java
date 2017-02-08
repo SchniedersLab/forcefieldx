@@ -58,6 +58,8 @@ import org.apache.commons.configuration.CompositeConfiguration;
 
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 
 import edu.rit.mp.DoubleBuf;
 
@@ -108,7 +110,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      * The Dama et al. transition-tempering rate parameter. A reasonable value
      * is about 2 to 4 kT.
      */
-    private double deltaT = 4.0 * R * 298.0;
+    private double temperingFactor = 4.0;
+    private double deltaT = temperingFactor * R * 298.0;
     /**
      * The Dama et al. transition-tempering weight: temperingWeight =
      * exp(-max(G(L,F_L))/deltaT)
@@ -186,7 +189,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             double temperature, double dt, double printInterval,
             double saveInterval, boolean asynchronous, boolean resetNumSteps,
             AlgorithmListener algorithmListener) {
-        super(lambdaInterface, potential, lambdaFile, histogramFile, properties, temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
+        super(lambdaInterface, potential, lambdaFile, histogramFile, properties,
+                temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
+
+        deltaT = temperingFactor * R * this.temperature;
 
         /**
          * Allocate space for the recursion kernel that stores weights.
@@ -268,10 +274,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             return e;
         }
 
-        if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
-            optimization(e, x, gradient);
-        }
-
         double biasEnergy = 0.0;
         dEdLambda = lambdaInterface.getdEdL();
         d2EdLambda2 = lambdaInterface.getd2EdL2();
@@ -281,7 +283,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
 
         if (propagateLambda) {
             energyCount++;
+
             detectTransition();
+
+            if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
+                optimization(e, x, gradient);
+            }
         }
 
         /**
@@ -577,12 +584,15 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     int n = potential.getNumberOfVariables();
                     osrwOptimumCoords = new double[n];
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
+                    double mass = molecularAssembly.getMass();
+                    double density = potential.getCrystal().getDensity(mass);
                     if (systemFilter.writeFile(optFile, false)) {
-                        logger.info(String.format(" Minimum: %16.8f optimized from %16.8f at step %d (%s).",
-                                minEnergy, startingEnergy, energyCount, optFile.getName()));
+                        optFile = systemFilter.getFile();
+                        logger.info(String.format(" Minimum: %12.6f (%12.6f g/cc) optimized from %12.6f at step %d (%s).",
+                                minEnergy, density, startingEnergy, energyCount, optFile.getName()));
                     } else {
-                        logger.info(String.format(" Minimum: %16.8f optimized from %16.8f at step %d.",
-                                minEnergy, startingEnergy, energyCount));
+                        logger.info(String.format(" Minimum: %12.6f (%12.6f g/cc) optimized from %12.6f at step %d.",
+                                minEnergy, density, startingEnergy, energyCount));
                     }
                 }
             } catch (EnergyException ex) {
@@ -892,10 +902,11 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      * Sets the Dama et al tempering parameter, as a multiple of kbT. T is
      * presently assumed to be 298.0K.
      *
-     * @param kbtMult
+     * @param temper
      */
-    public void setDeltaT(double kbtMult) {
-        deltaT = R * 298.0 * kbtMult;
+    public void setDeltaT(double temper) {
+        temperingFactor = temper;
+        deltaT = temperingFactor * R * temperature;
     }
 
     /**
@@ -925,8 +936,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         double minRequired = Double.MAX_VALUE;
         double maxRequired = Double.MIN_VALUE;
         for (int i = 0; i < numProc; i++) {
-            minRequired = Math.min(minRequired, recursionWeights[i][1]);
-            maxRequired = Math.max(maxRequired, recursionWeights[i][1]);
+            minRequired = min(minRequired, recursionWeights[i][1]);
+            maxRequired = max(maxRequired, recursionWeights[i][1]);
         }
 
         /**

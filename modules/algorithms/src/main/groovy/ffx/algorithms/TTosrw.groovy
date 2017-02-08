@@ -250,7 +250,7 @@ class TTosrw extends Script {
         /**
          * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
          */
-        @Option(shortName='am', longName='maxAngleMove', defaultValue='1.0',
+        @Option(shortName='am', longName='maxAngleMove', defaultValue='0.5',
             description='Maximum angle move allowed by the barostat in degrees') double maxAngleMove;
         /**
          * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
@@ -305,6 +305,12 @@ class TTosrw extends Script {
          */
         @Option(shortName='dw', longName='distributeWalkers',
             description='AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.') String distWalksString;
+        /**
+         * -le or --lambdaExponent sets the power of lambda used by dual 
+         * topologies.
+         */
+        @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0', 
+            description='Exponent to apply to dual topology lambda.') double lamExp;
 
 
         /**
@@ -872,7 +878,7 @@ class TTosrw extends Script {
             break;
         case 2:
             sb.append("dual topology ");
-            DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1]);
+            DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
             if (numParallel == 2) {
                 dte.setParallel(true);
             }
@@ -881,8 +887,8 @@ class TTosrw extends Script {
         case 4:
             sb.append("quad topology ");
 
-            DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1]);
-            DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2]);
+            DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
+            DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], options.lamExp);
             QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
             if (numParallel >= 2) {
                 qte.setParallel(true);
@@ -898,12 +904,12 @@ class TTosrw extends Script {
         case 8:
             sb.append("oct-topology ");
 
-            DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1]);
-            DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2]);
+            DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
+            DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], options.lamExp);
             QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
 
-            DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5]);
-            DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6]);
+            DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], options.lamExp);
+            DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], options.lamExp);
             QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
 
             OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);

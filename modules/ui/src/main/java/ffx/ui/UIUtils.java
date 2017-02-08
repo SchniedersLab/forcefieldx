@@ -38,6 +38,8 @@
 package ffx.ui;
 
 import java.io.File;
+import java.util.List;
+import java.util.Optional;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
@@ -45,9 +47,6 @@ import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * The UIUtils class implements all Function interfaces, enabling lower modules
@@ -163,12 +162,14 @@ public class UIUtils implements AlgorithmFunctions {
         mainPanel.saveAsPDB(file);
         switchBack(origSys);
     }
-    
+
     /**
      * Switches the hierarchy's active system to assembly if assembly is present
      * inside the hierarchy; returns an Optional FFXSystem of the prior active
      * system, or an empty Optional if no switch was made
+     *
      * @param assembly To switch to
+     *
      * @return Original system if switched, else empty Optional
      */
     private Optional<FFXSystem> switchTo(MolecularAssembly assembly) {
@@ -177,11 +178,11 @@ public class UIUtils implements AlgorithmFunctions {
             origSystem = Optional.empty();
             return origSystem;
         }
-        
+
         Hierarchy hierarchy = mainPanel.getHierarchy();
         FFXSystem activeSys = hierarchy.getActive();
         FFXSystem assemblySys = (FFXSystem) assembly;
-        
+
         for (FFXSystem sys : hierarchy.getSystems()) {
             if (sys == assemblySys) {
                 origSystem = Optional.of(activeSys);
@@ -189,14 +190,15 @@ public class UIUtils implements AlgorithmFunctions {
                 return origSystem;
             }
         }
-        
+
         origSystem = Optional.empty();
         return origSystem;
     }
-    
+
     /**
      * Switches the hierarchy's active system back to what it was.
-     * @param origSystem 
+     *
+     * @param origSystem
      */
     private void switchBack(Optional<FFXSystem> origSystem) {
         Hierarchy hierarchy = mainPanel.getHierarchy();
@@ -207,14 +209,14 @@ public class UIUtils implements AlgorithmFunctions {
     public void saveAsPDB(MolecularAssembly[] assemblies, File file) {
         mainPanel.saveAsPDB(assemblies, file);
     }
-    
+
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file) {
         Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.savePDBSymMates(file, "_symMate");
         switchBack(origSys);
     }
-    
+
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
         Optional<FFXSystem> origSys = switchTo(assembly);
@@ -247,7 +249,7 @@ public class UIUtils implements AlgorithmFunctions {
     public MolecularAssembly[] convertDataStructure(Object data, File file) {
         return mainPanel.convertWait(data, file);
     }
-    
+
     @Override
     public MolecularAssembly[] convertDataStructure(Object data, String filename) {
         File file = new File(filename);
@@ -261,17 +263,17 @@ public class UIUtils implements AlgorithmFunctions {
     public SystemFilter getFilter() {
         return lastFilter;
     }
-    
+
     @Override
     public MolecularAssembly getActiveAssembly() {
         return mainPanel.getHierarchy().getActive();
     }
-    
+
     @Override
     public AlgorithmListener getDefaultListener() {
         return modelingShell;
     }
-    
+
     @Override
     public List<String> getArguments() {
         return modelingShell.getArgs();
