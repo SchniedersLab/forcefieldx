@@ -60,10 +60,7 @@ import ffx.crystal.Resolution;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.PDBFilter;
-import ffx.utilities.Keyword;
+import ffx.potential.utils.PotentialsUtils;
 import ffx.xray.parsers.CIFFilter;
 import ffx.xray.parsers.MTZFilter;
 
@@ -165,9 +162,9 @@ public class XRayMinimizeTest {
         } else {
             cifFile = new File(cl.getResource(cifname).getPath());
         }
-
-        // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
+        PotentialsUtils potutil = new PotentialsUtils();
+        MolecularAssembly mola = potutil.open(structure);
+        CompositeConfiguration properties = mola.getProperties();
 
         // read in Fo/sigFo/FreeR
         MTZFilter mtzFilter = new MTZFilter();
@@ -194,21 +191,11 @@ public class XRayMinimizeTest {
                     cifFilter.readFile(cifFile, reflectionList, refinementData,
                             properties));
         }
+        
+        mola.finalize(true, mola.getForceField());
+        ForceFieldEnergy energy = mola.getPotentialEnergy();
 
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
-
-        // associate molecular assembly with the structure, set up forcefield
-        MolecularAssembly molecularAssembly = new MolecularAssembly(name);
-        molecularAssembly.setFile(structure);
-        molecularAssembly.setForceField(forceField);
-        PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
-        pdbFile.readFile();
-        pdbFile.applyAtomProperties();
-        molecularAssembly.finalize(true, forceField);
-        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly, pdbFile.getCoordRestraints());
-
-        List<Atom> atomList = molecularAssembly.getAtomList();
+        List<Atom> atomList = mola.getAtomList();
         Atom atomArray[] = atomList.toArray(new Atom[atomList.size()]);
 
         // set up FFT and run it

@@ -60,7 +60,6 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.MTZFilter;
@@ -118,7 +117,7 @@ public class FiniteDifferenceTest {
         MolecularAssembly mola = potutil.open(structure);
 
         // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
+        CompositeConfiguration properties = mola.getProperties();
         
         // read in Fo/sigFo/FreeR
         MTZFilter mtzFilter = new MTZFilter();

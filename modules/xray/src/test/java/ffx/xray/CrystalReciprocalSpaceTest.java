@@ -58,6 +58,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Keyword;
 
 /**
@@ -77,9 +78,9 @@ public class CrystalReciprocalSpaceTest {
         // load the structure
         ClassLoader cl = this.getClass().getClassLoader();
         File structure = new File(cl.getResource(filename).getPath());
-
-        // load any properties associated with it
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
+        PotentialsUtils potutil = new PotentialsUtils();
+        MolecularAssembly mola = potutil.open(structure);
+        CompositeConfiguration properties = mola.getProperties();
 
         Crystal crystal = new Crystal(39.767, 51.750, 132.938,
                 90.00, 90.00, 90.00, "P212121");
@@ -89,20 +90,10 @@ public class CrystalReciprocalSpaceTest {
         DiffractionRefinementData refinementData = new DiffractionRefinementData(properties,
                 reflectionList);
 
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
+        mola.finalize(true, mola.getForceField());
+        ForceFieldEnergy energy = mola.getPotentialEnergy();
 
-        // associate molecular assembly with the structure, set up forcefield
-        MolecularAssembly molecularAssembly = new MolecularAssembly(name);
-        molecularAssembly.setFile(structure);
-        molecularAssembly.setForceField(forceField);
-        PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);
-        pdbFile.readFile();
-        pdbFile.applyAtomProperties();
-        molecularAssembly.finalize(true, forceField);
-        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly, pdbFile.getCoordRestraints());
-
-        List<Atom> atomList = molecularAssembly.getAtomList();
+        List<Atom> atomList = mola.getAtomList();
         Atom atomArray[] = atomList.toArray(new Atom[atomList.size()]);
 
         // set up FFT and run it
