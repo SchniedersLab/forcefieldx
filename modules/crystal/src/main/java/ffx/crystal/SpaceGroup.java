@@ -39,6 +39,7 @@ package ffx.crystal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.apache.commons.math3.util.FastMath.random;
@@ -247,6 +248,111 @@ public class SpaceGroup {
         0.0076, 0.0031, 0.0659, 0.0059, 0.0157, 0.0144,
         0.0161, 0.0102
     };
+
+    private static final HashMap<String, String> rank = new HashMap<>();
+    static {
+        rank.put("P 21 21 21", "1");
+        rank.put("P 1 21 1", "2");
+        rank.put("C 1 2 1", "3");
+        rank.put("P 21 21 2", "4");
+        rank.put("P 1", "5");
+        rank.put("C 2 2 21", "6");
+        rank.put("P 43 21 2", "7");
+        rank.put("P 41 21 2", "8");
+        rank.put("P 32 2 1", "9");
+        rank.put("P 31 2 1", "10");
+        rank.put("I 2 2 2", "11");
+        rank.put("P 61 2 2", "12");
+        rank.put("H 3", "13");
+        rank.put("H 3 2", "14");
+        rank.put("P 65 2 2", "15");
+        rank.put("P 61", "16");
+        rank.put("P 65", "17");
+        rank.put("P 63", "18");
+        rank.put("P 41", "19");
+        rank.put("P 31", "20");
+        rank.put("P 32", "21");
+        rank.put("I 4 2 2", "22");
+        rank.put("P 43", "23");
+        rank.put("I 41 2 2", "24");
+        rank.put("P 42 21 2", "25");
+        rank.put("P 63 2 2", "26");
+        rank.put("I 4", "27");
+        rank.put("P 21 3", "28");
+        rank.put("I 2 3", "29");
+        rank.put("P 2 21 21", "30");
+        rank.put("P 4 21 2", "31");
+        rank.put("P 3 2 1", "32");
+        rank.put("P 62 2 2", "33");
+        rank.put("P 64 2 2", "34");
+        rank.put("I 41", "35");
+        rank.put("P 43 2 2", "36");
+        rank.put("I 21 3", "37");
+        rank.put("P 6", "38");
+        rank.put("I 21 21 21", "39");
+        rank.put("P 41 2 2", "40");
+        rank.put("C 2 2 2", "41");
+        rank.put("P 64", "42");
+        rank.put("F 4 3 2", "43");
+        rank.put("P 62", "44");
+        rank.put("P 1 2 1", "45");
+        rank.put("P 3", "46");
+        rank.put("I 1 2 1", "47");
+        rank.put("P 41 3 2", "48");
+        rank.put("P 21 2 21", "49");
+        rank.put("F 2 2 2", "50");
+        rank.put("P 2 2 21", "51");
+        rank.put("P 32 1 2", "52");
+        rank.put("I 4 3 2", "53");
+        rank.put("F 2 3", "54");
+        rank.put("P 4", "55");
+        rank.put("P 31 1 2", "56");
+        rank.put("P 43 3 2", "57");
+        rank.put("P 6 2 2", "58");
+        rank.put("P 42", "59");
+        rank.put("I 41 3 2", "60");
+        rank.put("F 41 3 2", "61");
+        rank.put("P 2 3", "62");
+        rank.put("P 42 2 2", "63");
+        rank.put("P 4 3 2", "64");
+        rank.put("P 4 2 2", "65");
+        rank.put("B 2", "66");
+        rank.put("P 42 3 2", "67");
+        rank.put("P -1", "68");
+        rank.put("P 3 1 2", "69");
+        rank.put("P 2 2 2", "70");
+        rank.put("P 1 1 21", "71");
+        rank.put("I 21", "72");
+        rank.put("R 3 2", "73");
+        rank.put("R 3", "74");
+        rank.put("C 1 21 1", "75");
+        rank.put("P 1 21/c 1", "76");
+        rank.put("I 1 21 1", "77");
+        rank.put("P 1 21/n 1", "78");
+        rank.put("C 1 2/c 1", "79");
+        rank.put("P 21 21 2 A", "80");
+        rank.put("I 41/a", "81");
+        rank.put("F 4 2 2", "82");
+        rank.put("A 2", "83");
+        rank.put("P 1 1 2", "84");
+        rank.put("P b c a", "85");
+        rank.put("C 4 21 2", "86");
+        rank.put("H -3", "87");
+        rank.put("P n n a", "88");
+        rank.put("P 2 21 2", "89");
+        rank.put("P -3", "90");
+        rank.put("I -4 2 d", "91");
+        rank.put("I -4 c 2", "92");
+        rank.put("B 2 21 2", "93");
+        rank.put("B 1 1 2", "94");
+        rank.put("A 1", "95");
+        rank.put("P 21 2 2", "96");
+    }
+
+    public static int getPDBRank(SpaceGroup sg) {
+        String r = rank.getOrDefault(sg.pdbName, "97");
+        return Integer.parseInt(r);
+    }
 
     /**
      * Names of the 230 three dimensional space groups.

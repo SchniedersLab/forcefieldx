@@ -42,9 +42,14 @@ class PrepareSpaceGroups extends Script {
          */
         @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
-         * -p or --percent only consider space groups populated above the specified percentage in the CSD.
+         * -r or --PDB only consider space groups ranked above the supplied cut-off in the Protein Databank.
          */
-        @Option(longName='percent', shortName='p', defaultValue='0.0',
+        @Option(longName='PDB', shortName='r', defaultValue='231',
+            description='Only consider space groups populated above the specified percentage in the CSD.') int rank;
+        /**
+         * -p or --CSD only consider space groups populated above the specified percentage in the CSD.
+         */
+        @Option(longName='CSD', shortName='p', defaultValue='0.0',
             description='Only consider space groups populated above the specified percentage in the CSD.') double percent;
         /**
          * -c or --chiral to create directories only for chiral space groups.
@@ -137,8 +142,12 @@ class PrepareSpaceGroups extends Script {
                 continue
             }
 
-            logger.info(String.format("\n Preparing %s (%7.4f percent of the CSD)",
-                    spacegroup.shortName, spacegroup.csdPercent[num - 1]));
+            if (SpaceGroup.getPDBRank(spacegroup) > options.rank) {
+                continue
+            }
+
+            logger.info(String.format("\n Preparing %s (%7.4f percent of the CSD, %d PDB Rank)",
+                    spacegroup.shortName, spacegroup.csdPercent[num - 1], SpaceGroup.getPDBRank(spacegroup)));
 
             // Create the directory.
             String sgDirName = spacegroup.shortName.replace('/', '_')
