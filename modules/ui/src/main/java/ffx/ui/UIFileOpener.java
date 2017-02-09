@@ -53,6 +53,7 @@ import ffx.potential.Utilities;
 import ffx.potential.parsers.FileOpener;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
+import ffx.utilities.Resources;
 
 /**
  * The UIFileOpener class opens a file into Force Field X using a filter from
@@ -68,8 +69,8 @@ public class UIFileOpener implements FileOpener {
     private static final long MB = KB * KB;
     SystemFilter systemFilter = null;
     MainPanel mainPanel = null;
-    private boolean timer = false;
-    private boolean gc = false;
+    private boolean timer = true;
+    private boolean gc = true;
     private long occupiedMemory;
     private long time;
     private int nThreads = -1;
@@ -262,18 +263,7 @@ public class UIFileOpener implements FileOpener {
 
     private void stopTimer(FFXSystem ffxSystem) {
         time += System.nanoTime();
-        logger.log(Level.INFO, " Opened {0} with {1} atoms.\n File Op Time  (msec): {2}",
-                new Object[]{ffxSystem.toString(), ffxSystem.getAtomList().size(), time * 1.0e-9});
-        Runtime runtime = Runtime.getRuntime();
-        if (gc) {
-            runtime.runFinalization();
-            runtime.gc();
-            long moleculeMemory = (runtime.totalMemory() - runtime.freeMemory()) - occupiedMemory;
-            logger.log(Level.INFO, " System Memory  (Kb): {0}", moleculeMemory / KB);
-        }
-        occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
-        if (gc) {
-            logger.log(Level.INFO, " Memory In Use  (Kb): {0}", occupiedMemory / KB);
-        }
+        logger.log(Level.INFO, "\n Opened {0} in {1} sec.", new Object[]{ffxSystem.toString(), time * 1.0e-9});
+        Resources.logResources();
     }
 }

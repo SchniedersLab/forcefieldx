@@ -69,7 +69,7 @@ public class LogHandler extends Handler {
             tryCatchSevere = false;
         }
     }
-    
+
     /**
      * A reference to the Force Field X MainPanel container to shut down if we
      * encounter a fatal (SEVERE) exception. If we are not in Headless mode,
@@ -129,12 +129,12 @@ public class LogHandler extends Handler {
             if (record.getLevel() == Level.SEVERE) {
                 fatal = true;
                 System.err.println(msg);
-                
+
                 Throwable throwable = record.getThrown();
                 if (throwable != null) {
                     System.err.println(String.format(" Exception %s logged.", throwable));
                 }
-                
+
                 // If tryCatchSevere, and the throwable (if it exists) is not an Error, then...
                 if (tryCatchSevere && (throwable == null || !(throwable instanceof Error))) {
                     System.err.println(" Force Field X may not continue.");
@@ -146,7 +146,7 @@ public class LogHandler extends Handler {
                         throw new LoggerSevereError(" Unknown exception");
                     }
                 }
-                
+
                 System.err.println(" Force Field X will not continue.");
                 System.err.println(" Shutting down...");
                 flush();

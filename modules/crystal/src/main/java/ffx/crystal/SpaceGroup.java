@@ -249,7 +249,15 @@ public class SpaceGroup {
         0.0161, 0.0102
     };
 
+    /**
+     * PDB space group ranking (as of Feb. 2017).
+     *
+     * @param sg
+     *
+     * @return
+     */
     private static final HashMap<String, String> rank = new HashMap<>();
+
     static {
         rank.put("P 21 21 21", "1");
         rank.put("P 1 21 1", "2");
@@ -349,6 +357,16 @@ public class SpaceGroup {
         rank.put("P 21 2 2", "96");
     }
 
+    /**
+     * PDB space group ranking (as of Feb. 2017).
+     *
+     * Note that a ranking of 97 or higher indicates the space group has not
+     * been observed.
+     *
+     * @param sg
+     *
+     * @return
+     */
     public static int getPDBRank(SpaceGroup sg) {
         String r = rank.getOrDefault(sg.pdbName, "97");
         return Integer.parseInt(r);

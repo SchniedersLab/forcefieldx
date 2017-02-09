@@ -141,6 +141,7 @@ import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.PotentialsDataConverter;
 import ffx.ui.properties.FFXLocale;
 import ffx.utilities.Keyword;
+import ffx.utilities.Resources;
 import ffx.utilities.StringUtils;
 
 import static ffx.utilities.StringUtils.pdbForID;
@@ -747,6 +748,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     void exit(ExitStatus exitStatus) {
         // Package-private out of conservatism; may be safe to make public.
         savePrefs();
+
+        Resources.logResources();
+
         System.exit(exitStatus.getExitCode());
     }
 
@@ -2185,7 +2189,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     public void saveKeywordFile(File file) {
         keywordPanel.keySave(file);
     }
-    
+
     /**
      * Save the currently selected FFXSystem to disk.
      *

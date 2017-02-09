@@ -307,7 +307,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         setVariable("args", argList);
         cliArgs = new ArrayList(argList);
     }
-    
+
     List<String> getArgs() {
         return new ArrayList<>(cliArgs);
     }
@@ -718,9 +718,9 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     public void after() {
         time = System.nanoTime() - time;
         if (!interrupted) {
-            appendOutput(String.format("\n Total script time: %8.3f (sec)", time * toSeconds), getPromptStyle());
+            appendOutput(String.format("\n Script wall clock time: %6.3f (sec)", time * toSeconds), getPromptStyle());
         } else {
-            appendOutput(String.format("\n Script interrupted after: %8.3f (sec)", time * toSeconds), getPromptStyle());
+            appendOutput(String.format("\n Script interrupted after: %6.3f (sec)", time * toSeconds), getPromptStyle());
         }
         mainPanel.getModelingPanel().enableLaunch(true);
     }

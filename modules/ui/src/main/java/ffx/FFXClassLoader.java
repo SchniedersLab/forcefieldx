@@ -94,6 +94,7 @@ public class FFXClassLoader extends URLClassLoader {
     private static String jogl = null;
     private static String jocl = null;
     private static String nativeExtension = null;
+    private boolean extensionsLoaded = false;
 
     static {
         FFX_FILES = new ArrayList<>(Arrays.asList(new String[]{
@@ -342,7 +343,7 @@ public class FFXClassLoader extends URLClassLoader {
             try {
                 name = "ffx." + name + ".";
                 tmpFile = File.createTempFile(name, suffix);
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.out.println(" Could not extract a Force Field X library.");
                 System.err.println(e.toString());
                 System.exit(-1);
@@ -350,6 +351,7 @@ public class FFXClassLoader extends URLClassLoader {
         }
 
         tmpFile.deleteOnExit();
+
         OutputStream output = null;
         try {
             output = new BufferedOutputStream(new FileOutputStream(tmpFile));
@@ -441,6 +443,9 @@ public class FFXClassLoader extends URLClassLoader {
                 if (out != null) {
                     out.close();
                 }
+                if (classInputStream != null) {
+                    classInputStream.close();
+                }
             } catch (IOException e) {
                 throw new ClassNotFoundException("Class " + name, e);
             }
@@ -501,32 +506,6 @@ public class FFXClassLoader extends URLClassLoader {
         return super.findResource(name);
     }
 
-    protected void listScripts() {
-        if (extensionJars != null) {
-            List<String> scripts = new ArrayList<>();
-            for (JarFile extensionJar : extensionJars) {
-                Enumeration<JarEntry> entries = extensionJar.entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry entry = entries.nextElement();
-                    String name = entry.getName();
-                    // System.out.println(name);
-                    if (name.startsWith("ffx") && name.endsWith(".groovy")) {
-                        name = name.replace('/', '.');
-                        name = name.replace("ffx.scripts.", "");
-                        name = name.replace(".groovy", "");
-                        scripts.add(name);
-                    }
-                }
-            }
-
-            String[] scriptArray = scripts.toArray(new String[scripts.size()]);
-            Arrays.sort(scriptArray);
-            for (String script : scriptArray) {
-                System.out.println(" " + script);
-            }
-        }
-    }
-
     /**
      * {@inheritDoc}
      *
@@ -571,8 +550,6 @@ public class FFXClassLoader extends URLClassLoader {
         }
         return loadedClass;
     }
-
-    private boolean extensionsLoaded = false;
 
     private void loadExtensions() {
         if (extensionsLoaded) {
@@ -654,4 +631,31 @@ public class FFXClassLoader extends URLClassLoader {
             extensionJars = (JarFile[]) extensionJarList.toArray(new JarFile[extensionJarList.size()]);
         }
     }
+
+    protected void listScripts() {
+        if (extensionJars != null) {
+            List<String> scripts = new ArrayList<>();
+            for (JarFile extensionJar : extensionJars) {
+                Enumeration<JarEntry> entries = extensionJar.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    String name = entry.getName();
+                    // System.out.println(name);
+                    if (name.startsWith("ffx") && name.endsWith(".groovy")) {
+                        name = name.replace('/', '.');
+                        name = name.replace("ffx.scripts.", "");
+                        name = name.replace(".groovy", "");
+                        scripts.add(name);
+                    }
+                }
+            }
+
+            String[] scriptArray = scripts.toArray(new String[scripts.size()]);
+            Arrays.sort(scriptArray);
+            for (String script : scriptArray) {
+                System.out.println(" " + script);
+            }
+        }
+    }
+
 }

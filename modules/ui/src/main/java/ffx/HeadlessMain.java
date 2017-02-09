@@ -40,16 +40,15 @@ package ffx;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.time.StopWatch;
 
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
+import ffx.utilities.Resources;
 
 /**
  * The HeadlessMain class is the entry point to the command line version of
@@ -71,13 +70,13 @@ public class HeadlessMain {
      * @param logHandler a {@link ffx.ui.LogHandler} object.
      */
     public HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
-        // Start a timer.
-        stopWatch.start();
 
         // Construct the MainPanel, set it's LogHandler, and initialize then it.
         mainPanel = new MainPanel();
         logHandler.setMainPanel(mainPanel);
         mainPanel.initialize();
+
+        Resources.logResources();
 
         // Open the supplied script file.
         if (commandLineFile != null) {
@@ -111,23 +110,6 @@ public class HeadlessMain {
                 logger.warning(format("%s was not found.", commandLineFile.toString()));
             }
         }
-
-        /**
-         * Print start-up information.
-         */
-        if (logger.isLoggable(Level.FINE)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
-            Runtime runtime = Runtime.getRuntime();
-            runtime.runFinalization();
-            runtime.gc();
-            long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
-            long KB = 1024;
-            sb.append(format("\n In-Use Memory   (Kb): %d", occupiedMemory / KB));
-            sb.append(format("\n Free Memory     (Kb): %d", runtime.freeMemory() / KB));
-            sb.append(format("\n Total Memory    (Kb): %d", runtime.totalMemory() / KB));
-            logger.fine(sb.toString());
-        }
     }
 
     /**
@@ -137,8 +119,7 @@ public class HeadlessMain {
      */
     @Override
     public String toString() {
-        ToStringBuilder toStringBuilder = new ToStringBuilder(this).append(
-                "Up Time: " + stopWatch).append("Logger: " + logger.getName());
+        ToStringBuilder toStringBuilder = new ToStringBuilder(this).append("Logger: " + logger.getName());
         return toStringBuilder.toString();
     }
     /**
@@ -146,8 +127,4 @@ public class HeadlessMain {
      */
     public MainPanel mainPanel;
 
-    /**
-     * Constant <code>stopWatch</code>
-     */
-    public static StopWatch stopWatch = new StopWatch();
 }

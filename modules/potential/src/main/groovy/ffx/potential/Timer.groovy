@@ -130,8 +130,8 @@ class Timer extends Script {
         }
         ++halfnEvals;
         double rmsTime = Math.sqrt(sumTime2/halfnEvals);
-        logger.info(String.format(" Minimum time: %14.5f (sec)", minTime * 1.0E-9));
-        logger.info(String.format(" RMS time (latter half): %14.5f (sec)", rmsTime));
+        logger.info(String.format(" Minimum time:           %6.3f (sec)", minTime * 1.0E-9));
+        logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime));
     }
 
 }
