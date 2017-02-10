@@ -37,6 +37,7 @@
  */
 package ffx.potential.nonbonded;
 
+import ffx.numerics.UnivariateSwitchingFunction;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -54,8 +55,10 @@ import static org.apache.commons.math3.util.FastMath.pow;
  *
  * @author Michael J. Schnieders
  */
-public class MultiplicativeSwitch {
+public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
 
+    private final double off;
+    private final double cut;
     private final double c0;
     private final double c1;
     private final double c2;
@@ -69,7 +72,27 @@ public class MultiplicativeSwitch {
 
     private final static Logger logger = Logger.getLogger(MultiplicativeSwitch.class.getName());
     
+    /**
+     * Constructs a MultiplicativeSwitch that starts at 0 at 0, ends at 1.0 at 1,
+     * and smoothly interpolates between them via a sinusoid with zero first and
+     * second derivatives at 0 and 1.
+     */
+    public MultiplicativeSwitch() {
+        this(0.0, 1.0);
+    }
+    
+    /**
+     * Constructs a multiplicative switch which starts at 0 at off and ends at 
+     * 1.0 at cut, which can smoothly interpolate 0-1 across that range, with 
+     * zero first and second derivatives at off and cut.
+     * 
+     * @param off Zero point of the switch
+     * @param cut End point of the switch
+     */
     public MultiplicativeSwitch(double off, double cut) {
+        
+        this.off = off;
+        this.cut = cut;
 
         double off2 = off * off;
         double cut2 = cut * cut;
@@ -87,20 +110,122 @@ public class MultiplicativeSwitch {
         fiveC5 = 5.0 * c5;
     }
     
+    /**
+     * Value of the switching function at r.
+     * @param r r
+     * @return Value of switch at r
+     */ 
     public double taper(double r) {
         return taper(r, r*r, r*r*r, r*r*r*r, r*r*r*r*r);
     }
     
+    /**
+     * First derivative of the switching function at r.
+     * @param r r
+     * @return First derivative of switch at r
+     */
     public double dtaper(double r) {
         return dtaper(r, r*r, r*r*r, r*r*r*r);
     }
 
+    /**
+     * Value of the switching function at r.
+     * @param r r
+     * @param r2 r^2
+     * @param r3 r^3
+     * @param r4 r^4
+     * @param r5 r^5
+     * @return Value of switch at r
+     */
     public double taper(double r, double r2, double r3, double r4, double r5) {
         return c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
     }
-
+    
+    /**
+     * First derivative of the switching function at r.
+     * @param r r
+     * @param r2 r^2
+     * @param r3 r^3
+     * @param r4 r^4
+     * @return First derivative of switch at r
+     */
     public double dtaper(double r, double r2, double r3, double r4) {
         return fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
+    }
+
+    @Override
+    public double getLowerBound() {
+        return off;
+    }
+
+    @Override
+    public double getUpperBound() {
+        return cut;
+    }
+    
+    @Override
+    public boolean constantOutsideBounds() {
+        return false;
+    }
+    
+    @Override
+    public boolean validOutsideBounds() {
+        return false;
+    }
+
+    @Override
+    public int getHighestOrderZeroDerivative() {
+        return 2;
+    }
+    
+    @Override
+    public boolean symmetricToUnity() {
+        return true;
+    }
+
+    @Override
+    public double valueAt(double x) throws IllegalArgumentException {
+        return taper(x);
+    }
+
+    @Override
+    public double firstDerivative(double x) {
+        return dtaper(x);
+    }
+
+    @Override
+    public double secondDerivative(double x) {
+        double val = 20.0 * c5 * x*x*x;
+        val += c4 * 12.0 * x*x;
+        val += c3 * 6.0 *x;
+        val += c2 * 2.0;
+        return val;
+    }
+
+    @Override
+    public double nthDerivative(double x, int order) throws IllegalArgumentException {
+        if (order < 1) {
+            throw new IllegalArgumentException("Order must be >= 1");
+        }
+        switch(order) {
+            case 1:
+                return dtaper(x);
+            case 2:
+                return secondDerivative(x);
+            case 3:
+                double val = 60 * c5 * x*x;
+                val += 24 * c4 * x;
+                val += 6 * c3;
+                return val;
+            case 4:
+                val = 120 * c5 * x;
+                val += 24 * c4;
+                return val;
+            case 5:
+                return 120 * c5;
+            default:
+                return 0;
+        }
     }
 
 }
