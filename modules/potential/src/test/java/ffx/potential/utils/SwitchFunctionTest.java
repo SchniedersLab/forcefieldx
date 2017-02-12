@@ -69,8 +69,7 @@ public class SwitchFunctionTest {
     private final static double ULP_ZERO_100 = 50.0 * ULP_ZERO_2;
     
     private final static double LOOSE_TOLERANCE = 0.000001;
-    private final static double MIN_SWITCH_VAL = 0.0 - LOOSE_TOLERANCE;
-    private final static double MAX_SWITCH_VAL = 1.0 + LOOSE_TOLERANCE;
+    private final static double MID_TOLERANCE = 1.0E-10;
     
     /**
      * Tests interpolation via the PowerSwitch class.
@@ -80,8 +79,8 @@ public class SwitchFunctionTest {
         logger.info(" Testing default power switch");
         PowerSwitch funct = new PowerSwitch();
         standardTest(funct);
-        assertEquals("Default power-switch lower bound != 0.0", 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals("Default power-switch upper bound != 1.0", 1.0, funct.getUpperBound(), ULP_ONE_2);
+        assertEquals("Default power-switch zero bound != 0.0", 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals("Default power-switch one bound != 1.0", 1.0, funct.getOneBound(), ULP_ONE_2);
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals("Default power-switch max-zero-derivative should return 0", 0, funct.getHighestOrderZeroDerivative());
@@ -100,8 +99,8 @@ public class SwitchFunctionTest {
         logger.info(" Testing manually-constructed default power switch");
         funct = new PowerSwitch(1.0, 1.0);
         standardTest(funct);
-        assertEquals("Default power-switch lower bound != 0.0", 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals("Default power-switch upper bound != 1.0", 1.0, funct.getUpperBound(), ULP_ONE_2);
+        assertEquals("Default power-switch zero bound != 0.0", 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals("Default power-switch one bound != 1.0", 1.0, funct.getOneBound(), ULP_ONE_2);
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals("Default power-switch max-zero-derivative should return 0", 0, funct.getHighestOrderZeroDerivative());
@@ -120,8 +119,8 @@ public class SwitchFunctionTest {
         logger.info(" Testing linear power switch with doubled bounds");
         funct = new PowerSwitch(0.5, 1.0);
         standardTest(funct);
-        assertEquals(String.format("Power-switch %s lower bound != 0.0", funct.toString()), 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals(String.format("Power-switch %s upper bound != 2.0", funct.toString()), 2.0, funct.getUpperBound(), 2.0*ulp(2.0));
+        assertEquals(String.format("Power-switch %s zero bound != 0.0", funct.toString()), 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Power-switch %s one bound != 2.0", funct.toString()), 2.0, funct.getOneBound(), 2.0*ulp(2.0));
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals(String.format("Power-switch %s max-zero-derivative should return 0", funct.toString()), 0, funct.getHighestOrderZeroDerivative());
@@ -140,8 +139,8 @@ public class SwitchFunctionTest {
         logger.info(" Testing power-2 switching function");
         funct = new PowerSwitch(1.0, 2.0);
         standardTest(funct);
-        assertEquals(String.format("Power-switch %s lower bound != 0.0", funct.toString()), 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals(String.format("Power-switch %s upper bound != 1.0", funct.toString()), 1.0, funct.getUpperBound(), ULP_ONE_2);
+        assertEquals(String.format("Power-switch %s zero bound != 0.0", funct.toString()), 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Power-switch %s one bound != 1.0", funct.toString()), 1.0, funct.getOneBound(), ULP_ONE_2);
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals(String.format("Power-switch %s max-zero-derivative should return 0", funct.toString()), 0, funct.getHighestOrderZeroDerivative());
@@ -165,10 +164,10 @@ public class SwitchFunctionTest {
         
         logger.info(" Testing power-2 switching function with double-wide bounds");
         funct = new PowerSwitch(0.5, 2.0);
-        double ub = funct.getUpperBound();
+        double ub = funct.getOneBound();
         standardTest(funct);
-        assertEquals(String.format("Power-switch %s lower bound != 0.0", funct.toString()), 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals(String.format("Power-switch %s upper bound != 2.0", funct.toString()), 2.0, funct.getUpperBound(), 2.0*ulp(2.0));
+        assertEquals(String.format("Power-switch %s zero bound != 0.0", funct.toString()), 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Power-switch %s one bound != 2.0", funct.toString()), 2.0, funct.getOneBound(), 2.0*ulp(2.0));
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals(String.format("Power-switch %s max-zero-derivative should return 0", funct.toString()), 0, funct.getHighestOrderZeroDerivative());
@@ -192,10 +191,10 @@ public class SwitchFunctionTest {
         
         logger.info(" Testing power-4 switching function");
         funct = new PowerSwitch(1.0, 4.0);
-        ub = funct.getUpperBound();
+        ub = funct.getOneBound();
         standardTest(funct);
-        assertEquals(String.format("Power-switch %s lower bound != 0.0", funct.toString()), 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals(String.format("Power-switch %s upper bound != 1.0", funct.toString()), 1.0, funct.getUpperBound(), ULP_ONE_2);
+        assertEquals(String.format("Power-switch %s zero bound != 0.0", funct.toString()), 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Power-switch %s one bound != 1.0", funct.toString()), 1.0, funct.getOneBound(), ULP_ONE_2);
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals(String.format("Power-switch %s max-zero-derivative should return 0", funct.toString()), 0, funct.getHighestOrderZeroDerivative());
@@ -218,10 +217,10 @@ public class SwitchFunctionTest {
         
         logger.info(" Testing power-4 switching function with double-wide bounds");
         funct = new PowerSwitch(0.5, 4.0);
-        ub = funct.getUpperBound();
+        ub = funct.getOneBound();
         standardTest(funct);
-        assertEquals(String.format("Power-switch %s lower bound != 0.0", funct.toString()), 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals(String.format("Power-switch %s upper bound != 2.0", funct.toString()), 2.0, funct.getUpperBound(), 2.0*ulp(2.0));
+        assertEquals(String.format("Power-switch %s zero bound != 0.0", funct.toString()), 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Power-switch %s one bound != 2.0", funct.toString()), 2.0, funct.getOneBound(), 2.0*ulp(2.0));
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals(String.format("Power-switch %s max-zero-derivative should return 0", funct.toString()), 0, funct.getHighestOrderZeroDerivative());
@@ -244,10 +243,10 @@ public class SwitchFunctionTest {
         
         logger.info(" Testing square-root switching function");
         funct = new PowerSwitch(1.0, 0.5);
-        ub = funct.getUpperBound();
+        ub = funct.getOneBound();
         standardTest(funct);
-        assertEquals(String.format("Power-switch %s lower bound != 0.0", funct.toString()), 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals(String.format("Power-switch %s upper bound != 1.0", funct.toString()), 1.0, funct.getUpperBound(), ULP_ONE_2);
+        assertEquals(String.format("Power-switch %s zero bound != 0.0", funct.toString()), 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Power-switch %s one bound != 1.0", funct.toString()), 1.0, funct.getOneBound(), ULP_ONE_2);
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals(String.format("Power-switch %s max-zero-derivative should return 0", funct.toString()), 0, funct.getHighestOrderZeroDerivative());
@@ -270,10 +269,10 @@ public class SwitchFunctionTest {
         
         logger.info(" Testing square-root switching function with double-wide bounds");
         funct = new PowerSwitch(0.5, 0.5);
-        ub = funct.getUpperBound();
+        ub = funct.getOneBound();
         standardTest(funct);
-        assertEquals(String.format("Power-switch %s lower bound != 0.0", funct.toString()), 0.0, funct.getLowerBound(), ULP_ZERO_2);
-        assertEquals(String.format("Power-switch %s upper bound != 2.0", funct.toString()), 2.0, funct.getUpperBound(), 2.0*ulp(2.0));
+        assertEquals(String.format("Power-switch %s zero bound != 0.0", funct.toString()), 0.0, funct.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Power-switch %s one bound != 2.0", funct.toString()), 2.0, funct.getOneBound(), 2.0*ulp(2.0));
         assertFalse("Power switches are not constant outside the bounds.", funct.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", funct.validOutsideBounds());
         assertEquals(String.format("Power-switch %s max-zero-derivative should return 0", funct.toString()), 0, funct.getHighestOrderZeroDerivative());
@@ -305,8 +304,8 @@ public class SwitchFunctionTest {
         MultiplicativeSwitch sf = new MultiplicativeSwitch();
         standardTest(sf);
         
-        assertEquals("Default multiplicative switch lower bound != 0.0", 0.0, sf.getLowerBound(), ULP_ZERO_2);
-        assertEquals("Default power-switch upper bound != 1.0", 1.0, sf.getUpperBound(), ULP_ONE_2);
+        assertEquals("Default multiplicative switch zero bound != 0.0", 0.0, sf.getZeroBound(), ULP_ZERO_2);
+        assertEquals("Default power-switch one bound != 1.0", 1.0, sf.getOneBound(), ULP_ONE_2);
         assertFalse("Power switches are not constant outside the bounds.", sf.constantOutsideBounds());
         assertFalse("Power switches are not valid outside the bounds.", sf.validOutsideBounds());
         assertEquals("Default power-switch max-zero-derivative should return 2", 2, sf.getHighestOrderZeroDerivative());
@@ -316,28 +315,302 @@ public class SwitchFunctionTest {
         standardTest(sf);
         
         sf = new MultiplicativeSwitch(9.0, 7.2);
-        standardTest(sf, true);
+        standardTest(sf, LOOSE_TOLERANCE);
     }
     
+    @Test
     public void trigTest() {
         logger.info(" Testing trigonometric switch functionality");
+        double piOverTwo = Math.PI * 0.5;
+        
         SquaredTrigSwitch sf = new SquaredTrigSwitch(false);
-        standardTest(sf);
+        standardTest(sf, MID_TOLERANCE);
+        double a = piOverTwo;
+        assertEquals("Default sine switch zero bound != 0.0", 0.0, sf.getZeroBound(), ULP_ZERO_2);
+        assertEquals("Default sine switch one bound != 1.0", 1.0, sf.getOneBound(), ULP_ONE_2);
+        assertFalse("Sine switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertTrue("Sine switches are valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Default sine switch max-zero-derivative should return 1", 1, sf.getHighestOrderZeroDerivative());
+        assertTrue("Default sine switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+        
+        for (double x = 0; x <= 1.0; x += 0.01) {
+            double delta = 10.0 * ulp(x);
+            double ax = a*x;
+            double sinOf = FastMath.sin(ax);
+            double cosOf = FastMath.cos(ax);
+            
+            double valAt = sf.valueAt(x);
+            double trueVal = sinOf * sinOf;
+            assertEquals(String.format("Value of default sine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, valAt), trueVal, valAt, delta);
+            
+            double derivAt = sf.firstDerivative(x);
+            trueVal = 2.0 * a * sinOf * cosOf;
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("First derivative of default sine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, derivAt), trueVal, derivAt, delta);
+            
+            double d2 = sf.secondDerivative(x);
+            trueVal = 2.0 * a * a * ((cosOf * cosOf) - (sinOf * sinOf));
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("Second derivative of default sine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, d2), trueVal, d2, delta);
+        }
+        
+        logger.info(" Testing manually-constructed default sine-squared switch.");
+        
+        sf = new SquaredTrigSwitch(piOverTwo, false);
+        standardTest(sf, MID_TOLERANCE);
+        a = piOverTwo;
+        assertEquals("Default sine switch zero bound != 0.0", 0.0, sf.getZeroBound(), ULP_ZERO_2);
+        assertEquals("Default sine switch one bound != 1.0", 1.0, sf.getOneBound(), ULP_ONE_2);
+        assertFalse("Sine switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertTrue("Sine switches are valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Default sine switch max-zero-derivative should return 1", 1, sf.getHighestOrderZeroDerivative());
+        assertTrue("Default sine switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+        
+        for (double x = 0; x <= 1.0; x += 0.01) {
+            double delta = 10.0 * ulp(x);
+            double ax = a*x;
+            double sinOf = FastMath.sin(ax);
+            double cosOf = FastMath.cos(ax);
+            
+            double valAt = sf.valueAt(x);
+            double trueVal = sinOf * sinOf;
+            assertEquals(String.format("Value of default sine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, valAt), trueVal, valAt, delta);
+            
+            double derivAt = sf.firstDerivative(x);
+            trueVal = 2.0 * a * sinOf * cosOf;
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("First derivative of default sine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, derivAt), trueVal, derivAt, delta);
+            
+            double d2 = sf.secondDerivative(x);
+            trueVal = 2.0 * a * a * ((cosOf * cosOf) - (sinOf * sinOf));
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("Second derivative of default sine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, d2), trueVal, d2, delta);
+        }
+        
+        logger.info(" Testing default cosine-squared switch.");
+        
+        sf = new SquaredTrigSwitch(true);
+        standardTest(sf, MID_TOLERANCE);
+        a = piOverTwo;
+        assertEquals("Default cosine switch zero bound != 1.0", 1.0, sf.getZeroBound(), ULP_ONE_2);
+        assertEquals("Default cosine switch one bound != 0.0", 0.0, sf.getOneBound(), ULP_ZERO_2);
+        assertFalse("Cosine switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertTrue("Cosine switches are valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Default cosine switch max-zero-derivative should return 1", 1, sf.getHighestOrderZeroDerivative());
+        assertTrue("Default cosine switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+        
+        for (double x = 0; x <= 1.0; x += 0.01) {
+            double delta = 10.0 * ulp(x);
+            double ax = a*x;
+            double sinOf = FastMath.sin(ax);
+            double cosOf = FastMath.cos(ax);
+            
+            double valAt = sf.valueAt(x);
+            double trueVal = cosOf * cosOf;
+            assertEquals(String.format("Value of default cosine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, valAt), trueVal, valAt, delta);
+            
+            double derivAt = sf.firstDerivative(x);
+            trueVal = -2.0 * a * sinOf * cosOf;
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("First derivative of default cosine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, derivAt), trueVal, derivAt, delta);
+            
+            double d2 = sf.secondDerivative(x);
+            trueVal = 2.0 * a * a * ((sinOf * sinOf) - (cosOf * cosOf));
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("Second derivative of default cosine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, d2), trueVal, d2, delta);
+        }
+        
+        logger.info(" Testing manually constructed default cosine-squared switch.");
+        
+        sf = new SquaredTrigSwitch(piOverTwo, true);
+        standardTest(sf, MID_TOLERANCE);
+        a = piOverTwo;
+        assertEquals("Default cosine switch zero bound != 1.0", 1.0, sf.getZeroBound(), ULP_ONE_2);
+        assertEquals("Default cosine switch one bound != 0.0", 0.0, sf.getOneBound(), ULP_ZERO_2);
+        assertFalse("Cosine switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertTrue("Cosine switches are valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Default cosine switch max-zero-derivative should return 1", 1, sf.getHighestOrderZeroDerivative());
+        assertTrue("Default cosine switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+        
+        for (double x = 0; x <= 1.0; x += 0.01) {
+            double delta = 10.0 * ulp(x);
+            double ax = a*x;
+            double sinOf = FastMath.sin(ax);
+            double cosOf = FastMath.cos(ax);
+            
+            double valAt = sf.valueAt(x);
+            double trueVal = cosOf * cosOf;
+            assertEquals(String.format("Value of default cosine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, valAt), trueVal, valAt, delta);
+            
+            double derivAt = sf.firstDerivative(x);
+            trueVal = -2.0 * a * sinOf * cosOf;
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("First derivative of default cosine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, derivAt), trueVal, derivAt, delta);
+            
+            double d2 = sf.secondDerivative(x);
+            trueVal = 2.0 * a * a * ((sinOf * sinOf) - (cosOf * cosOf));
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("Second derivative of default cosine switch at %8.4g should be %8.4g, was %8.4g", x, trueVal, d2), trueVal, d2, delta);
+        }
+        
+        logger.info(" Testing sine-squared switch with unadjusted (pi/2) bounds.");
+        
+        a = 1.0;
+        sf = new SquaredTrigSwitch(a, false);
+        standardTest(sf, MID_TOLERANCE);
+        assertEquals(String.format("Sine switch %s zero bound != 0.0", sf), 0.0, sf.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Sine switch %s one bound != 1.0", sf), piOverTwo, sf.getOneBound(), ULP_ONE_2);
+        assertFalse("Sine switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertTrue("Sine switches are valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Sine switch max-zero-derivative should return 1", 1, sf.getHighestOrderZeroDerivative());
+        assertTrue("Sine switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+        
+        for (double x = 0; x <= 1.0; x += 0.01) {
+            double delta = 10.0 * ulp(x);
+            double ax = a*x;
+            double sinOf = FastMath.sin(ax);
+            double cosOf = FastMath.cos(ax);
+            
+            double valAt = sf.valueAt(x);
+            double trueVal = sinOf * sinOf;
+            assertEquals(String.format("Value of sine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, valAt), trueVal, valAt, delta);
+            
+            double derivAt = sf.firstDerivative(x);
+            trueVal = 2.0 * a * sinOf * cosOf;
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("First derivative of sine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, derivAt), trueVal, derivAt, delta);
+            
+            double d2 = sf.secondDerivative(x);
+            trueVal = 2.0 * a * a * ((cosOf * cosOf) - (sinOf * sinOf));
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("Second derivative of sine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, d2), trueVal, d2, delta);
+        }
+        
+        logger.info(" Testing  sine-squared switch with doubled (2.0) bounds.");
+        
+        a = 0.5 * piOverTwo;
+        sf = new SquaredTrigSwitch(a, false);
+        standardTest(sf, MID_TOLERANCE);
+        assertEquals(String.format("Sine switch %s zero bound != 0.0", sf), 0.0, sf.getZeroBound(), ULP_ZERO_2);
+        assertEquals(String.format("Sine switch %s one bound != 1.0", sf), 2.0, sf.getOneBound(), 2.0 * ulp(2.0));
+        assertFalse("Sine switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertTrue("Sine switches are valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Sine switch max-zero-derivative should return 1", 1, sf.getHighestOrderZeroDerivative());
+        assertTrue("Sine switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+        
+        for (double x = 0; x <= 1.0; x += 0.01) {
+            double delta = 10.0 * ulp(x);
+            double ax = a*x;
+            double sinOf = FastMath.sin(ax);
+            double cosOf = FastMath.cos(ax);
+            
+            double valAt = sf.valueAt(x);
+            double trueVal = sinOf * sinOf;
+            assertEquals(String.format("Value of sine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, valAt), trueVal, valAt, delta);
+            
+            double derivAt = sf.firstDerivative(x);
+            trueVal = 2.0 * a * sinOf * cosOf;
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("First derivative of sine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, derivAt), trueVal, derivAt, delta);
+            
+            double d2 = sf.secondDerivative(x);
+            trueVal = 2.0 * a * a * ((cosOf * cosOf) - (sinOf * sinOf));
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 100.0*ulp(trueVal);
+            assertEquals(String.format("Second derivative of sine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, d2), trueVal, d2, delta);
+        }
+        
+        logger.info(" Testing cosine-squared switch with unadjusted (pi/2) bounds.");
+        
+        a = 1.0;
+        sf = new SquaredTrigSwitch(a, true);
+        standardTest(sf, MID_TOLERANCE);
+        assertEquals(String.format("Cosine switch %s zero bound != 1.0", sf), piOverTwo, sf.getZeroBound(), 2.0*ulp(piOverTwo));
+        assertEquals(String.format("Cosine switch %s one bound != 0.0", sf), 0.0, sf.getOneBound(), ULP_ZERO_2);
+        assertFalse("Cosine switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertTrue("Cosine switches are valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Cosine switch max-zero-derivative should return 1", 1, sf.getHighestOrderZeroDerivative());
+        assertTrue("Cosine switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+        
+        for (double x = 0; x <= 1.0; x += 0.01) {
+            double delta = 50.0 * ulp(x);
+            double ax = a*x;
+            double sinOf = FastMath.sin(ax);
+            double cosOf = FastMath.cos(ax);
+            
+            double valAt = sf.valueAt(x);
+            double trueVal = cosOf * cosOf;
+            assertEquals(String.format("Value of cosine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, valAt), trueVal, valAt, delta);
+            
+            double derivAt = sf.firstDerivative(x);
+            trueVal = -2.0 * a * sinOf * cosOf;
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 200.0*ulp(trueVal);
+            assertEquals(String.format("First derivative of cosine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, derivAt), trueVal, derivAt, delta);
+            
+            double d2 = sf.secondDerivative(x);
+            trueVal = 2.0 * a * a * ((sinOf * sinOf) - (cosOf * cosOf));
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 200.0*ulp(trueVal);
+            assertEquals(String.format("Second derivative of cosine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, d2), trueVal, d2, delta);
+        }
+        
+        logger.info(" Testing cosine-squared switch with doubled (2.0) bounds..");
+        
+        a = 0.5 * piOverTwo;
+        sf = new SquaredTrigSwitch(a, true);
+        standardTest(sf, MID_TOLERANCE);
+        assertEquals(String.format("Cosine switch %s zero bound != 2.0", sf), 2.0, sf.getZeroBound(), 2.0*ulp(2.0));
+        assertEquals(String.format("Cosine switch %s one bound != 0.0", sf), 0.0, sf.getOneBound(), ULP_ZERO_2);
+        assertFalse("Cosine switches are not constant outside the bounds.", sf.constantOutsideBounds());
+        assertTrue("Cosine switches are valid outside the bounds.", sf.validOutsideBounds());
+        assertEquals("Cosine switch max-zero-derivative should return 1", 1, sf.getHighestOrderZeroDerivative());
+        assertTrue("Cosine switch should be equal unity with symmetric inputs", sf.symmetricToUnity());
+        
+        for (double x = 0; x <= 1.0; x += 0.01) {
+            double delta = 50.0 * ulp(x);
+            double ax = a*x;
+            double sinOf = FastMath.sin(ax);
+            double cosOf = FastMath.cos(ax);
+            
+            double valAt = sf.valueAt(x);
+            double trueVal = cosOf * cosOf;
+            assertEquals(String.format("Value of cosine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, valAt), trueVal, valAt, delta);
+            
+            double derivAt = sf.firstDerivative(x);
+            trueVal = -2.0 * a * sinOf * cosOf;
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 200.0*ulp(trueVal);
+            assertEquals(String.format("First derivative of cosine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, derivAt), trueVal, derivAt, delta);
+            
+            double d2 = sf.secondDerivative(x);
+            trueVal = 2.0 * a * a * ((sinOf * sinOf) - (cosOf * cosOf));
+            delta = (trueVal < 1.0E-10) ? 1.0E-14 : 200.0*ulp(trueVal);
+            assertEquals(String.format("Second derivative of cosine switch %s at %8.4g should be %8.4g, was %8.4g", sf, x, trueVal, d2), trueVal, d2, delta);
+        }
     }
     
+    /**
+     * Standard set of tests that all implementations of 
+     * UnivariateSwitchingFunction should pass; by default uses tight tolerances.
+     * @param sf Switching function to test.
+     */
     private void standardTest(UnivariateSwitchingFunction sf) {
-        standardTest(sf, false);
+        standardTest(sf, ULP_ONE_100);
     }
     
-    private void standardTest(UnivariateSwitchingFunction sf, boolean looseTolerances) {
-        double ub = sf.getUpperBound();
-        double lb = sf.getLowerBound();
+    /**
+     * Standard set of tests that all implementations of 
+     * UnivariateSwitchingFunction should pass. If looseTolerances is set, uses
+     * a much looser tolerance for acceptance (1/1 million) instead of the 
+     * default tolerances, approximately 100*ulp(0) and 100*ulp(1).
+     * 
+     * @param sf Switching function to test.
+     * @param looseTolerances Use looser tolerances for test acceptance
+     */
+    private void standardTest(UnivariateSwitchingFunction sf, double tolerance) {
+        double ub = sf.getOneBound();
+        double lb = sf.getZeroBound();
         double increment = ((ub - lb) * 0.01);
         
-        double minBound = looseTolerances ? MIN_SWITCH_VAL : (0.0 - ULP_ZERO_100);
-        double maxBound = looseTolerances ? MAX_SWITCH_VAL : (1.0 + ULP_ZERO_100);
-        double zeroTol = looseTolerances ? LOOSE_TOLERANCE : ULP_ZERO_100;
-        double oneTol = looseTolerances ? LOOSE_TOLERANCE : ULP_ONE_100;
+        double minBound = 0.0 - tolerance;
+        double maxBound = 1.0 + tolerance;
         
         for (int i = 0; i < 101; i++) {
             double pastLB = i * increment;
@@ -352,21 +625,21 @@ public class SwitchFunctionTest {
                 assertEquals(String.format("Switching function %s should be "
                         + "symmetrical; values %7.4f and %7.4f at %7.4f and %7.4f "
                         + "do not sum to unity", sf.toString(), val, symmVal, x, symmX), 
-                        1.0, (val + symmVal), oneTol);
+                        1.0, (val + symmVal), tolerance);
             }
         }
         
         boolean validOutside = sf.validOutsideBounds();
         boolean constantOutside = sf.constantOutsideBounds();
-        double valAtUB = sf.valueAt(sf.getUpperBound());
-        double valAtLB = sf.valueAt(sf.getLowerBound());
-        if (Math.abs(valAtLB) < zeroTol) {
-            assertEquals(String.format("Switching function %s value at lower bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), lb, valAtLB), 0.0, valAtLB, zeroTol);
-            assertEquals(String.format("Switching function %s value at upper bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), ub, valAtUB), 1.0, valAtUB, oneTol);
+        double valAtUB = sf.valueAt(sf.getOneBound());
+        double valAtLB = sf.valueAt(sf.getZeroBound());
+        if (Math.abs(valAtLB) < tolerance) {
+            assertEquals(String.format("Switching function %s value at zero bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), lb, valAtLB), 0.0, valAtLB, tolerance);
+            assertEquals(String.format("Switching function %s value at one bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), ub, valAtUB), 1.0, valAtUB, tolerance);
         } else {
-            assertEquals(String.format("Switching function %s value at lower bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), lb, valAtLB), 1.0, valAtLB, oneTol);
-            assertEquals(String.format("Switching function %s value at upper bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), ub, valAtUB), 0.0, valAtUB, zeroTol);
-            logger.info(String.format(" Value of switching function %s at lower bound was 1.0, not 0.0; switching functions usually start at 0", sf));
+            assertEquals(String.format("Switching function %s value at zero bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), lb, valAtLB), 1.0, valAtLB, tolerance);
+            assertEquals(String.format("Switching function %s value at one bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), ub, valAtUB), 0.0, valAtUB, tolerance);
+            logger.info(String.format(" Value of switching function %s at zero bound was 1.0, not 0.0; switching functions usually start at 0", sf));
         }
         if (validOutside || constantOutside) {
             for (int i = 1; i < 251; i++) {
@@ -375,14 +648,14 @@ public class SwitchFunctionTest {
                 double val = sf.valueAt(x);
                 assertTrue(String.format("Switching function %s value at %8.4g (outside lb-ub) was %8.4g, not in the range 0-1 inclusive", sf.toString(), x, val), val > minBound && val < maxBound);
                 if (constantOutside) {
-                    assertEquals(String.format("Switching function %s value at %8.4g was %8.4g, did not match lower bound value %8.4g", sf.toString(), x, val, valAtLB), valAtLB, val, oneTol);
+                    assertEquals(String.format("Switching function %s value at %8.4g was %8.4g, did not match zero bound value %8.4g", sf.toString(), x, val, valAtLB), valAtLB, val, tolerance);
                 }
                 
                 x = ub + pastBounds;
                 val = sf.valueAt(x);
                 assertTrue(String.format("Switching function %s value at %8.4g (outside lb-ub) was %8.4g, not in the range 0-1 inclusive", sf.toString(), x, val), val >= 0.0 && val <= 1.0);
                 if (constantOutside) {
-                    assertEquals(String.format("Switching function %s value at %8.4g was %8.4g, did not match upper bound value %8.4g", sf.toString(), x, val, valAtUB), valAtUB, val, oneTol);
+                    assertEquals(String.format("Switching function %s value at %8.4g was %8.4g, did not match one bound value %8.4g", sf.toString(), x, val, valAtUB), valAtUB, val, tolerance);
                 }
             }
         }
@@ -390,19 +663,19 @@ public class SwitchFunctionTest {
         int maxZeroOrder = sf.getHighestOrderZeroDerivative();
         if (maxZeroOrder >= 1) {
             double deriv = sf.firstDerivative(lb);
-            assertEquals(String.format("Switching function %s first derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), lb, deriv), 0.0, deriv, zeroTol);
+            assertEquals(String.format("Switching function %s first derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), lb, deriv), 0.0, deriv, tolerance);
             deriv = sf.firstDerivative(ub);
-            assertEquals(String.format("Switching function %s first derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), ub, deriv), 0.0, deriv, zeroTol);
+            assertEquals(String.format("Switching function %s first derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), ub, deriv), 0.0, deriv, tolerance);
             if (maxZeroOrder >= 2) {
                 deriv = sf.secondDerivative(lb);
-                assertEquals(String.format("Switching function %s second derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), lb, deriv), 0.0, deriv, zeroTol);
+                assertEquals(String.format("Switching function %s second derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), lb, deriv), 0.0, deriv, tolerance);
                 deriv = sf.secondDerivative(ub);
-                assertEquals(String.format("Switching function %s second derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), ub, deriv), 0.0, deriv, zeroTol);
+                assertEquals(String.format("Switching function %s second derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), ub, deriv), 0.0, deriv, tolerance);
                 for (int i = 3; i <= maxZeroOrder; i++) {
                     deriv = sf.nthDerivative(lb, i);
-                    assertEquals(String.format("Switching function %s %d-order derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), i, lb, deriv), 0.0, deriv, zeroTol);
+                    assertEquals(String.format("Switching function %s %d-order derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), i, lb, deriv), 0.0, deriv, tolerance);
                     deriv = sf.nthDerivative(ub, i);
-                    assertEquals(String.format("Switching function %s %d-order derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), i, ub, deriv), 0.0, deriv, zeroTol);
+                    assertEquals(String.format("Switching function %s %d-order derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), i, ub, deriv), 0.0, deriv, tolerance);
                 }
             }
         }

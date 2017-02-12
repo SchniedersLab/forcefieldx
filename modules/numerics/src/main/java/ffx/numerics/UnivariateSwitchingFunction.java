@@ -52,16 +52,16 @@ package ffx.numerics;
 public interface UnivariateSwitchingFunction {
     
     /**
-     * Gets the lower bound, where f(x) becomes zero.
-     * @return Lower bound
+     * Gets the zero bound, where f(x) becomes zero.
+     * @return Zero bound
      */
-    public double getLowerBound();
+    public double getZeroBound();
     
     /**
-     * Gets the upper bound, where f(x) becomes one.
-     * @return Upper bound
+     * Gets the one bound, where f(x) becomes one.
+     * @return One bound
      */
-    public double getUpperBound();
+    public double getOneBound();
     
     /**
      * Remains 0 below the lower bound, and 1 above the upper bound (i.e. 

@@ -41,6 +41,9 @@ import ffx.numerics.UnivariateSwitchingFunction;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
  * The 6 coefficients of the multiplicative polynomial switch are unique given
@@ -154,12 +157,12 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     }
 
     @Override
-    public double getLowerBound() {
+    public double getZeroBound() {
         return off < cut ? off : cut;
     }
 
     @Override
-    public double getUpperBound() {
+    public double getOneBound() {
         return cut > off ? cut : off;
     }
     

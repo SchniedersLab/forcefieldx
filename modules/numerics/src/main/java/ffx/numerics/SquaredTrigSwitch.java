@@ -98,13 +98,13 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     }
 
     @Override
-    public double getLowerBound() {
-        return 0;
+    public double getZeroBound() {
+        return cosine ? halfPeriod : 0;
     }
 
     @Override
-    public double getUpperBound() {
-        return halfPeriod;
+    public double getOneBound() {
+        return cosine ? 0 : halfPeriod;
     }
 
     @Override
@@ -175,6 +175,10 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
         }
     }
     
+    /**
+     * Get the repeating period of this switch.
+     * @return Period
+     */
     public double getPeriod() {
         return 2.0 * halfPeriod;
     }

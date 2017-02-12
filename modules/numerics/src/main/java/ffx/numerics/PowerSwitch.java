@@ -69,12 +69,12 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
     }
     
     @Override
-    public double getLowerBound() {
+    public double getZeroBound() {
         return 0;
     }
 
     @Override
-    public double getUpperBound() {
+    public double getOneBound() {
         return ub;
     }
 
