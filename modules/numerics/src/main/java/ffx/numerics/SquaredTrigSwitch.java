@@ -186,4 +186,10 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     public boolean isCosine() {
         return cosine;
     }
+    
+    @Override
+    public String toString() {
+        String form = cosine ? "Cosine" : "Sine";
+        return String.format("%s-squared switching function of form f(x) = sin^2(%8.4g * x)", form, multiplier);
+    }
 }

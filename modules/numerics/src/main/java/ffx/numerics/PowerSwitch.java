@@ -90,7 +90,8 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
 
     @Override
     public int getHighestOrderZeroDerivative() {
-        return beta > 0 ? ((int) beta) - 1 : 0;
+        //return beta > 0 ? ((int) beta) - 1 : 0;
+        return 0;
     }
     
     @Override
@@ -106,16 +107,19 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
 
     @Override
     public double firstDerivative(double x) throws IllegalArgumentException {
-        return beta * FastMath.pow(x, beta-1);
+        x *= mult;
+        return beta * mult * FastMath.pow(x, beta-1);
     }
 
     @Override
     public double secondDerivative(double x) throws IllegalArgumentException {
-        return beta == 1.0 ? 0.0 : beta * (beta - 1) * FastMath.pow(x, beta - 2);
+        x *= mult;
+        return beta == 1.0 ? 0.0 : beta * (beta - 1) * mult * mult * FastMath.pow(x, beta - 2);
     }
 
     @Override
     public double nthDerivative(double x, int order) throws IllegalArgumentException {
+        x *= mult;
         if (order < 1) {
             throw new IllegalArgumentException("Order must be >= 1");
         }
@@ -131,11 +135,31 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
                 } else {
                     double val = FastMath.pow(x, beta - order);
                     for (int i = 0; i < order; i++) {
-                        val *= (beta - i);
+                        val *= (beta - i) * mult;
                     }
                     return val;
                 }
         }
     }
     
+    /**
+     * Gets the value of a in f(x) = (a*x)^beta.
+     * @return Multiplier of input
+     */
+    public double getMultiplier() {
+        return mult;
+    }
+    
+    /**
+     * Gets the value of beta in f(x) = (a*x)^beta
+     * @return Exponent of input
+     */
+    public double getExponent() {
+        return beta;
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("Power switching function f(x) = (%8.4g * x)^%8.4g", mult, beta);
+    }
 }

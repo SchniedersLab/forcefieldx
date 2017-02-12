@@ -155,12 +155,12 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
 
     @Override
     public double getLowerBound() {
-        return off;
+        return off < cut ? off : cut;
     }
 
     @Override
     public double getUpperBound() {
-        return cut;
+        return cut > off ? cut : off;
     }
     
     @Override
@@ -227,5 +227,11 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
                 return 0;
         }
     }
-
+    
+    @Override
+    public String toString() {
+        return String.format("Multiplicative switch of form f(x) = %8.4g*x^5 + "
+                + "%8.4g*x^4 + %8.4g*x^3 + %8.4g*x^2 + %8.4g*x + %8.4g", 
+                c5, c4, c3, c2, c1, c0);
+    }
 }
