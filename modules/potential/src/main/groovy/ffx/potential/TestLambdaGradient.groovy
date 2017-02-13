@@ -11,7 +11,7 @@ import groovy.cli.Unparsed;
 import groovy.util.CliBuilder;
 
 // FFX Imports
-import ffx.numerics.Potential
+import ffx.numerics.Potential;
 import ffx.numerics.PowerSwitch;
 import ffx.numerics.SquaredTrigSwitch;
 import ffx.numerics.UnivariateSwitchingFunction;

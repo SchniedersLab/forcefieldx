@@ -465,6 +465,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         region = new EnergyRegion();
         team = new ParallelTeam(1);
         this.switchFunction = switchFunction;
+        logger.info(String.format(" Dual topology using switching function %s", switchFunction));
     }
     
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
@@ -623,6 +624,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         region = new EnergyRegion();
         team = new ParallelTeam(1);
         this.switchFunction = switchFunction;
+        logger.info(String.format(" Dual topology using switching function %s", switchFunction));
     }
 
     /**
