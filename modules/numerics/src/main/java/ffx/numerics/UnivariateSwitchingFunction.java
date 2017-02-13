@@ -78,8 +78,16 @@ public interface UnivariateSwitchingFunction {
     public boolean validOutsideBounds();
     
     /**
+     * Returns the highest-order, guaranteed-zero derivative at the zero bound.
+     * @return 
+     */
+    public default int highestOrderZeroDerivativeAtZeroBound() {
+        return getHighestOrderZeroDerivative();
+    }
+    
+    /**
      * The highest-order derivative that is zero at the bounds.
-     * @return Maximum zero derivative at bounds.
+     * @return Maximum order zero derivative at bounds.
      */
     public int getHighestOrderZeroDerivative();
     

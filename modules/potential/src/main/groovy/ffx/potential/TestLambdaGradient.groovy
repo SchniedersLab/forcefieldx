@@ -11,7 +11,10 @@ import groovy.cli.Unparsed;
 import groovy.util.CliBuilder;
 
 // FFX Imports
-import ffx.numerics.Potential;
+import ffx.numerics.Potential
+import ffx.numerics.PowerSwitch;
+import ffx.numerics.SquaredTrigSwitch;
+import ffx.numerics.UnivariateSwitchingFunction;
 
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
@@ -23,6 +26,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import ffx.potential.nonbonded.MultiplicativeSwitch;
 import ffx.potential.nonbonded.NeighborList;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
@@ -114,11 +118,6 @@ class TestLambdaGradient extends Script {
          */
         @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
         /**
-         * -uaR or -unsharedRadius sets a radius around unshared atoms where, if any residues/molecules match across dual-topologies, they are additionally set unshared.
-         */
-        /*@Option(shortName='uaR', longName='unsharedRadius', defaultValue='0.0', 
-            description='Additionally select residues/molecules within this many Angstroms of unshared atoms to unshare; residue names and numbers must match across dual-topologies.') double unsharedRadius;*/
-        /**
          * -v or --verbose is a flag to print out energy at each step.
          */
         @Option(shortName='v', longName='verbose', defaultValue='false', description='Print out the energy for each step') boolean print;
@@ -132,10 +131,27 @@ class TestLambdaGradient extends Script {
         @Option(shortName='d', longName='dx', defaultValue='1.0e-5', description='Finite-difference step size (in Angstroms)') double step;
         /**
          * -le or --lambdaExponent sets the power of lambda used by dual 
-         * topologies.
+         * topologies. Now deprecated by numeric argument to -sf.
          */
+        
         @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0', 
-            description='Exponent to apply to dual topology lambda.') double lamExp;
+            description='DEPRECATED: Exponent to apply to dual topology lambda.') double lamExp;
+        /**
+         * -sf or --switchingFunction sets the switching function to be used by
+         * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)
+         * + cos^2(pi/2*lambda)*E2(1-lambda), MULT uses a 5'th-order polynomial
+         * switching function with zero first and second derivatives at the end
+         * (same function as used for van der Waals switch), and a number uses
+         * the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
+         * 
+         * All of these are generalizations of Udt = f(l)*E1(l) + 
+         * f(1-l)*E2(1-lambda), where f(l) is a continuous switching function
+         * such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1 for lambda 0-1.
+         * The trigonometric switch can be restated thusly, since 
+         * cos^2(pi/2*lambda) is identical to sin^2(pi/2*(1-lambda)), f(1-l).
+         */
+        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0', 
+            description='Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)') String lambdaFunction;
         /**
          * -sdX or --skipdX disables the very long atomic gradient tests and 
          * only performs dU/dL, dU2/dL2, and dU2/dLdX tests. Useful if the 
@@ -410,6 +426,33 @@ class TestLambdaGradient extends Script {
         
         Potential potential;
         
+        UnivariateSwitchingFunction sf;
+        if (options.lambdaFunction) {
+            String lf = options.lambdaFunction.toUpperCase();
+            switch (lf) {
+                case ~/^-?[0-9]*\.?[0-9]+/:
+                    double exp = Double.parseDouble(lf);
+                    sf = new PowerSwitch(1.0, exp);
+                    break;
+                case "TRIG":
+                    sf = new SquaredTrigSwitch(false);
+                    break;
+                case "MULT":
+                    sf = new MultiplicativeSwitch(0.0, 1.0);
+                    break;
+                default:
+                    try {
+                        double beta = Double.parseDouble(lf);
+                        sf = new PowerSwitch(1.0, beta);
+                    } catch (NumberFormatException ex) {
+                        logger.warning(String.format("Argument to option -sf %s could not be properly parsed; using default linear switch", options.lambdaFunction));
+                        sf = new PowerSwitch(1.0, 1.0);
+                    }
+            }
+        } else {
+            sf = new PowerSwitch(1.0, options.lamExp);
+        }
+        
         List<Integer> uniqueA;
         List<Integer> uniqueB;
         if (nArgs >= 4) {
@@ -539,7 +582,7 @@ class TestLambdaGradient extends Script {
                 break;
             case 2:
                 sb.append("dual topology ");
-                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
+                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
                 if (numParallel == 2) {
                     dte.setParallel(true);
                 }
@@ -548,8 +591,8 @@ class TestLambdaGradient extends Script {
             case 4:
                 sb.append("quad topology ");
                 
-                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
-                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], options.lamExp);
+                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
                 QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
                 if (numParallel >= 2) {
                     qte.setParallel(true);
@@ -563,12 +606,12 @@ class TestLambdaGradient extends Script {
             case 8:
                 sb.append("oct-topology ");
                 
-                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], options.lamExp);
-                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], options.lamExp);
+                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
                 QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
                 
-                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], options.lamExp);
-                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], options.lamExp);
+                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
+                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
                 QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
                 
                 OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
