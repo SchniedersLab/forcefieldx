@@ -1143,6 +1143,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                     born[i] = pow(sum / PI4_3, THIRD);
                     born[i] = 1.0 / born[i];
+                    if (born[i] < baseRi) {
+                        born[i] = baseRi;
+                    }
                 }
 
                 /*
