@@ -1139,11 +1139,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 } else {
                     double sum = sharedBorn.get(i);
                     if (sum <= 0.0) {
-                        sum = 0.001;
+                        sum = PI4_3 / (baseRi * baseRi * baseRi);
                     }
                     born[i] = pow(sum / PI4_3, THIRD);
                     born[i] = 1.0 / born[i];
-                    if (born[i] < baseRi) {
+                    if (born[i] < baseRi || Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
                         born[i] = baseRi;
                     }
                 }
