@@ -79,6 +79,7 @@ public class CoordRestraint implements LambdaInterface {
     private double d2EdL2 = 0.0;
     private final double lambdaGradient[];
     private boolean lambdaTerm = false;
+    private boolean restrainWithLambda = true;
     private int atom1Index;
     private int atom2Index;
     private int atom3Index;
@@ -94,7 +95,7 @@ public class CoordRestraint implements LambdaInterface {
      * @param forceField the ForceField to apply.
      */
     public CoordRestraint(Atom[] atoms, ForceField forceField) {
-        this(atoms, forceField, true);
+        this(atoms, forceField, forceField.getBoolean(ForceField.ForceFieldBoolean.RESTRAIN_WITH_LAMBDA, true));
     }
 
     /**
@@ -122,7 +123,8 @@ public class CoordRestraint implements LambdaInterface {
         this.atoms = atoms;
         nAtoms = atoms.length;
 
-        //lambdaTerm = false;
+        restrainWithLambda = useLambda;
+
         if (useLambda) {
             lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         } else {
@@ -141,7 +143,8 @@ public class CoordRestraint implements LambdaInterface {
 
         forceConstant = forceConst;
 
-        logger.info(String.format("\n Coordinate Restraint (k = %8.4f, lambdaTerm=%s):", forceConstant * 2.0, lambdaTerm));
+        logger.info(String.format("\n Coordinate Restraint Atoms (k = %6.3f, lambdaTerm=%s):",
+                forceConstant * 2.0, lambdaTerm));
 
         initialCoordinates = new double[3][nAtoms];
         for (int i = 0; i < nAtoms; i++) {
@@ -337,11 +340,6 @@ public class CoordRestraint implements LambdaInterface {
             dLambdaPow = 0.0;
             d2LambdaPow = 0.0;
         }
-    }
-
-    public void setLambdaTerm(boolean lambdaTerm) {
-        this.lambdaTerm = lambdaTerm;
-        setLambda(lambda);
     }
 
     public void setCoordinatePin(double[][] newInitialCoordinates) {

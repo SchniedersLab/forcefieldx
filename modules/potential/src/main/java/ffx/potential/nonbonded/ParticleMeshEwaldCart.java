@@ -221,22 +221,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Reference to the force field being used.
      */
     private final ForceField forceField;
-    /**
-     * Unit cell and spacegroup information.
-     */
-    private Crystal crystal;
-    /**
-     * Number of symmetry operators.
-     */
-    private int nSymm;
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom atoms[];
-    /**
-     * The number of atoms in the system.
-     */
-    private int nAtoms;
 
     /**
      * Neighbor lists, without atoms beyond the real space cutoff.
@@ -299,7 +283,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * Power on L in front of the pairwise multipole potential.
      */
-    private double permLambdaExponent = 1.0;
+    private double permLambdaExponent = 3.0;
     /**
      * Begin turning on permanent multipoles at Lambda = 0.4;
      */
@@ -324,6 +308,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * default.
      */
     private boolean doLigandVaporElec = true;
+    /**
+     * Intramolecular electrostatics for the ligand in done in GK implicit
+     * solvent.
+     */
+    private boolean doLigandGKElec = false;
+
     /**
      * Condensed phase SCF without the ligand present is included by default.
      * For DualTopologyEnergy calculations it can be turned off.
@@ -819,9 +809,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 permLambdaAlpha = 2.0;
             }
             /**
-             * A PERMANENT_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
-             * the beginning of the permanent schedule. Choosing a power of 3
-             * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
+             * A PERMANENT_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at the
+             * beginning of the permanent schedule. Choosing a power of 3 or
+             * greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              */
             permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 3.0);
             if (permLambdaExponent < 3.0) {
@@ -833,7 +823,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              */
             polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
-            if (polLambdaExponent < 3.0) {
+            if (polLambdaExponent < 1.0) {
                 polLambdaExponent = 3.0;
             }
             /**
@@ -868,6 +858,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * the ligand in vapor will be considered.
              */
             doLigandVaporElec = forceField.getBoolean(ForceFieldBoolean.LIGAND_VAPOR_ELEC, true);
+            doLigandGKElec = forceField.getBoolean(ForceFieldBoolean.LIGAND_GK_ELEC, false);
             doNoLigandCondensedSCF = forceField.getBoolean(ForceFieldBoolean.NO_LIGAND_CONDENSED_SCF, true);
 
             /**
@@ -1009,18 +1000,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         realSpaceEnergyTime = new long[maxThreads];
         realSpaceSCFTime = new long[maxThreads];
 
-        /**
-         * Generalized Kirkwood currently requires aperiodic Ewald. The GK
-         * reaction field is added to the intra-molecular to give a
-         * self-consistent reaction field.
-         */
-        generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
-        if (generalizedKirkwoodTerm) {
-            generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, crystal, parallelTeam);
-        } else {
-            generalizedKirkwood = null;
-        }
-
         if (lambdaTerm) {
             StringBuilder sb = new StringBuilder("   Alchemical Parameters\n");
             sb.append(format("    Permanent Multipole Range:      %5.3f-%5.3f\n",
@@ -1033,8 +1012,25 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         polLambdaStart, polLambdaEnd));
                 sb.append(format("    Condensed SCF Without Ligand:         %B\n", doNoLigandCondensedSCF));
             }
-            sb.append(format("    Vapor Electrostatics:                 %B\n", doLigandVaporElec));
+            if (!doLigandGKElec) {
+                sb.append(format("    Vapor Electrostatics:                 %B\n", doLigandVaporElec));
+            } else {
+                sb.append(format("    GK Electrostatics at L=0:             %B\n", doLigandGKElec));
+            }
             logger.info(sb.toString());
+        }
+
+        /**
+         * Generalized Kirkwood currently requires aperiodic Ewald.
+         *
+         * The GK reaction field is added to the intra-molecular field to give
+         * the self-consistent reaction field.
+         */
+        generalizedKirkwoodTerm = forceField.getBoolean(ForceFieldBoolean.GKTERM, false);
+        if (generalizedKirkwoodTerm || doLigandGKElec) {
+            generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, crystal, parallelTeam);
+        } else {
+            generalizedKirkwood = null;
         }
     }
 
@@ -1219,7 +1215,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             vaporCrystal = new Crystal(3 * vacuumOff, 3 * vacuumOff, 3 * vacuumOff, 90.0, 90.0, 90.0, "P1");
             vaporCrystal.setAperiodic(true);
             NeighborList vacuumNeighborList = new NeighborList(null, vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
-
             vacuumNeighborList.setIntermolecular(false, molecule);
 
             vaporLists = new int[1][nAtoms][];
@@ -1634,7 +1629,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
          * Turn off GK if in use.
          */
         boolean gkBack = generalizedKirkwoodTerm;
-        generalizedKirkwoodTerm = false;
+
+        if (doLigandGKElec) {
+            generalizedKirkwoodTerm = true;
+            generalizedKirkwood.setNeighborList(vaporLists);
+            generalizedKirkwood.setLambda(lambda);
+            generalizedKirkwood.setCutoff(off);
+            generalizedKirkwood.setCrystal(vaporCrystal);
+            generalizedKirkwood.setLambdaFunction(polarizationScale, dEdLSign * dlPowPol, dEdLSign * d2lPowPol);
+        } else {
+            generalizedKirkwoodTerm = false;
+        }
 
         double energy = computeEnergy(false);
 
@@ -6742,7 +6747,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         if (generalizedKirkwoodTerm) {
-            generalizedKirkwood.setLambda(lambda);
+            generalizedKirkwood.setLambda(polLambda);
+            generalizedKirkwood.setLambdaFunction(lPowPol, dlPowPol, d2lPowPol);
         }
 
     }
@@ -6766,7 +6772,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             return 0.0;
         }
         double dEdL = shareddEdLambda.get();
-        if (generalizedKirkwoodTerm) {
+        if (generalizedKirkwoodTerm || doLigandGKElec) {
             dEdL += generalizedKirkwood.getdEdL();
         }
         return dEdL;
@@ -6781,7 +6787,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             return 0.0;
         }
         double d2EdL2 = sharedd2EdLambda2.get();
-        if (generalizedKirkwoodTerm) {
+        if (generalizedKirkwoodTerm || doLigandGKElec) {
             d2EdL2 += generalizedKirkwood.getd2EdL2();
         }
         return d2EdL2;
