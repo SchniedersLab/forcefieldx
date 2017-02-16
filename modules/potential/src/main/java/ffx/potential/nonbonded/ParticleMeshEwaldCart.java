@@ -1382,7 +1382,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             if (doLigandVaporElec) {
                 lambdaMode = LambdaMode.VAPOR;
                 temp = energy;
-                energy = ligandAperiodicElec();
+                energy = ligandElec();
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine(String.format(" Vacuum energy:   %20.8f", energy - temp));
                 }
@@ -1565,7 +1565,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * B.) Polarization scaled as in Step 2 by (1 - lambda).
      */
-    private double ligandAperiodicElec() {
+    private double ligandElec() {
         for (int i = 0; i < nAtoms; i++) {
             use[i] = atoms[i].applyLambda();
         }

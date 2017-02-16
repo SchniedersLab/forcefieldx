@@ -63,6 +63,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 
 import edu.rit.mp.DoubleBuf;
 
+import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
@@ -586,14 +587,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     double mass = molecularAssembly.getMass();
                     double density = potential.getCrystal().getDensity(mass);
-                    if (systemFilter.writeFile(optFile, false)) {
-                        optFile = systemFilter.getFile();
-                        logger.info(String.format(" Minimum: %12.6f (%12.6f g/cc) optimized from %12.6f at step %d (%s).",
-                                minEnergy, density, startingEnergy, energyCount, optFile.getName()));
-                    } else {
-                        logger.info(String.format(" Minimum: %12.6f (%12.6f g/cc) optimized from %12.6f at step %d.",
-                                minEnergy, density, startingEnergy, energyCount));
-                    }
+                    systemFilter.writeFile(optFile, false);
+                    Crystal uc = potential.getCrystal().getUnitCell();
+                    logger.info(String.format(" Minimum: %12.6f %s (%12.6f g/cc) optimized from %12.6f at step %d.",
+                            minEnergy, uc.toShortString(), density, startingEnergy, energyCount));
                 }
             } catch (EnergyException ex) {
                 String message = ex.getMessage();
