@@ -144,9 +144,9 @@ class TTosrw extends Script {
          */
         @Option(shortName='w', longName='write', defaultValue='1.0', description='Interval to write out coordinates (psec).') double write;
         /**
-         * -t or --temperature sets the simulation temperatures in Kelvins.
+         * -t or --temperature sets the simulation temperature (Kelvin).
          */
-        @Option(shortName='t', longName='temperature', defaultValue='298.15', description='Temperature in Kelvins') double temp;
+        @Option(shortName='t', longName='temperature', defaultValue='298.15', description='Temperature (Kelvin)') double temp;
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
@@ -245,7 +245,7 @@ class TTosrw extends Script {
         /**
          * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
          */
-        @Option(shortName='hd', longName='maxDensity', defaultValue='1.5',
+        @Option(shortName='hd', longName='maxDensity', defaultValue='1.6',
             description='Maximum density allowed by the barostat') double maxDensity;
         /**
          * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
@@ -277,7 +277,7 @@ class TTosrw extends Script {
          * -tp or --temperingParam sets the Dama et al tempering rate parameter,
          * in multiples of kBT.
          */
-        @Option(shortName='tp', longName='temperingParam', defaultValue='2.0',
+        @Option(shortName='tp', longName='temperingParam', defaultValue='4.0',
             description='Dama et al tempering rate parameter in multiples of kBT') double temperParam;
         /**
          * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart
@@ -311,11 +311,11 @@ class TTosrw extends Script {
         @Option(shortName='dw', longName='distributeWalkers',
             description='AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.') String distWalksString;
         /**
-         * -le or --lambdaExponent sets the power of lambda used by dual 
+         * -le or --lambdaExponent sets the power of lambda used by dual
          * topologies. Now deprecated by numeric argument to -sf.
          */
-        
-        @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0', 
+
+        @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0',
             description='DEPRECATED: Exponent to apply to dual topology lambda.') double lamExp;
         /**
          * -sf or --switchingFunction sets the switching function to be used by
@@ -324,14 +324,14 @@ class TTosrw extends Script {
          * switching function with zero first and second derivatives at the end
          * (same function as used for van der Waals switch), and a number uses
          * the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
-         * 
-         * All of these are generalizations of Udt = f(l)*E1(l) + 
+         *
+         * All of these are generalizations of Udt = f(l)*E1(l) +
          * f(1-l)*E2(1-lambda), where f(l) is a continuous switching function
          * such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1 for lambda 0-1.
-         * The trigonometric switch can be restated thusly, since 
+         * The trigonometric switch can be restated thusly, since
          * cos^2(pi/2*lambda) is identical to sin^2(pi/2*(1-lambda)), f(1-l).
          */
-        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0', 
+        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0',
             description='Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)') String lambdaFunction;
 
 
@@ -665,29 +665,29 @@ class TTosrw extends Script {
         }
 
         CrystalPotential potential;
-        
+
         UnivariateSwitchingFunction sf;
         if (options.lambdaFunction) {
             String lf = options.lambdaFunction.toUpperCase();
             switch (lf) {
-                case ~/^-?[0-9]*\.?[0-9]+/:
-                    double exp = Double.parseDouble(lf);
-                    sf = new PowerSwitch(1.0, exp);
-                    break;
-                case "TRIG":
-                    sf = new SquaredTrigSwitch(false);
-                    break;
-                case "MULT":
-                    sf = new MultiplicativeSwitch(0.0, 1.0);
-                    break;
-                default:
-                    try {
-                        double beta = Double.parseDouble(lf);
-                        sf = new PowerSwitch(1.0, beta);
-                    } catch (NumberFormatException ex) {
-                        logger.warning(String.format("Argument to option -sf %s could not be properly parsed; using default linear switch", options.lambdaFunction));
-                        sf = new PowerSwitch(1.0, 1.0);
-                    }
+            case ~/^-?[0-9]*\.?[0-9]+/:
+                double exp = Double.parseDouble(lf);
+                sf = new PowerSwitch(1.0, exp);
+                break;
+            case "TRIG":
+                sf = new SquaredTrigSwitch(false);
+                break;
+            case "MULT":
+                sf = new MultiplicativeSwitch(0.0, 1.0);
+                break;
+            default:
+                try {
+                    double beta = Double.parseDouble(lf);
+                    sf = new PowerSwitch(1.0, beta);
+                } catch (NumberFormatException ex) {
+                    logger.warning(String.format("Argument to option -sf %s could not be properly parsed; using default linear switch", options.lambdaFunction));
+                    sf = new PowerSwitch(1.0, 1.0);
+                }
             }
         } else {
             sf = new PowerSwitch(1.0, options.lamExp);

@@ -896,14 +896,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     }
 
     /**
-     * Sets the Dama et al tempering parameter, as a multiple of kbT. T is
-     * presently assumed to be 298.0K.
+     * Sets the Dama et al tempering parameter, as a multiple of kBT.
      *
      * @param temper
      */
     public void setDeltaT(double temper) {
         temperingFactor = temper;
-        deltaT = temperingFactor * R * temperature;
+        if (temperingFactor > 0.0) {
+                deltaT = temperingFactor * R * temperature;
+        } else {
+                deltaT = Double.MAX_VALUE;
+        }
     }
 
     /**
