@@ -115,37 +115,28 @@ import static ffx.potential.parameters.MultipoleType.t200;
 public class GeneralizedKirkwood implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
-
     /**
      * Permittivity of water at STP.
      */
     private static final double dWater = 78.3;
-    
-    /**
-     * Set of force fields for which we have fitted GK/GB radii.
-     */
-    private static final Set<String> fittedForceFields;
-    static {
-        fittedForceFields = new HashSet<>();
-        String[] fitted = { "AMOEBA-PROTEIN-2013", "AMBER99SB" };
-        fittedForceFields.addAll(Arrays.asList(fitted));
-    }
-    
     /**
      * Default bondi scale factor.
      */
     private static final double DEFAULT_BONDI_SCALE = 1.15;
-    
     /**
-     * The requested permittivity.
+     * Set of force fields for which we have fitted GK/GB radii.
      */
-    private double epsilon = dWater;
+    private static final Set<String> fittedForceFields;
+
+    static {
+        fittedForceFields = new HashSet<>();
+        String[] fitted = {"AMOEBA-PROTEIN-2013", "AMBER99SB"};
+        fittedForceFields.addAll(Arrays.asList(fitted));
+    }
+
     /**
      * Kirkwood multipolar reaction field constants.
      */
-//    private static final double fc = 1.0 * (1.0 - dWater) / (0.0 + 1.0 * dWater);
-//    private static final double fd = 2.0 * (1.0 - dWater) / (1.0 + 2.0 * dWater);
-//    private static final double fq = 3.0 * (1.0 - dWater) / (2.0 + 3.0 * dWater);
     private final double fc;
     private final double fd;
     private final double fq;
@@ -161,6 +152,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Cavitation surface tension coefficient (kcal/mol/A^2).
      */
     private final double surfaceTension;
+    /**
+     * The requested permittivity.
+     */
+    private double epsilon = dWater;
 
     private final double bornaiTerm;
     private final double probe;
@@ -186,7 +181,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private int maxNumAtoms;
     private final ParticleMeshEwald particleMeshEwald;
     private final ParallelTeam parallelTeam;
-    private final Crystal crystal;
+    private Crystal crystal;
     private final BornRadiiRegion bornRadiiRegion;
     private final PermanentGKFieldRegion permanentGKFieldRegion;
     private final InducedGKFieldRegion inducedGKFieldRegion;
@@ -211,17 +206,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Lambda torque array for each thread.
      */
     private double lambdaTorque[][][];
+
     private int neighborLists[][][];
+
     private SharedDoubleArray sharedBornGrad;
     protected SharedDoubleArray sharedGKField[];
     protected SharedDoubleArray sharedGKFieldCR[];
-    private final double cutoff;
-    private final double cut2;
+    private double cutoff;
+    private double cut2;
     private final NonPolar nonPolar;
 
-    private double lambda = 1.0;
-    private double solvationEnergy = 0.0;
     private boolean lambdaTerm = false;
+    private double lambda = 1.0;
+    private double lPow = 1.0;
+    private double dlPow = 0.0;
+    private double dl2Pow = 0.0;
+
+    private double solvationEnergy = 0.0;
 
     private long gkTime = 0;
     private long pmfTime = 0;
@@ -260,8 +261,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
     private final ForceField forceField;
-    
+
     private static final Level GK_WARN_LEVEL;
+
     static {
         String suppressGKwarnings = System.getProperty("gk-suppressWarnings");
         if (suppressGKwarnings != null && Boolean.parseBoolean(suppressGKwarnings)) {
@@ -289,10 +291,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
         this.forceField = forceField;
         String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
                 ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
-        forcefieldName = forcefieldName.replaceAll("_","-");
+        forcefieldName = forcefieldName.replaceAll("_", "-");
         boolean doUseFitRadii = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_USEFITRADII, true);
         boolean hasFittedRadii = fittedForceFields.contains(forcefieldName.toUpperCase());
-        
+
         if (doUseFitRadii) {
             if (hasFittedRadii) {
                 useFittedRadii = true;
@@ -307,14 +309,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(" (GK) Verbose radii enabled.");
         }
         verboseRadii = vRadii;
-        
+
         try {
             this.epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON);
             logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
         } catch (Exception e) {
             this.epsilon = dWater;
         }
-        
+
         double bondiScaleValue;
         try {
             bondiScaleValue = forceField.getDouble(ForceField.ForceFieldDouble.GK_BONDIOVERRIDE);
@@ -326,7 +328,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
         bondiScale = bondiScaleValue;
-        
+
         /*String bondiOverride = System.getProperty("gk-bondiOverride");
         if (bondiOverride != null) {
             bondiScale = Double.parseDouble(bondiOverride);
@@ -341,7 +343,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
             }
         }*/
-        
         String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
         if (radiiProp != null) {
             String tokens[] = radiiProp.split(",");
@@ -356,7 +357,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 radiiOverride.put(type, factor);
             }
         }
-        
+
         String radiiByNumber = forceField.getString(ForceField.ForceFieldString.GK_RADIIBYNUMBER, null);
         if (radiiByNumber != null) {
             String tokens[] = radiiByNumber.split(",");
@@ -425,6 +426,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         cutoff = particleMeshEwald.getEwaldCutoff();
         cut2 = cutoff * cutoff;
+
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
 
         initAtomArrays();
@@ -474,18 +476,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         surfaceTension = forceField.getDouble(ForceField.ForceFieldDouble.SURFACE_TENSION, tensionDefault);
 
-        logger.info(" Continuum Solvation ");
-        logger.info(format("  Generalized Kirkwood Cut-Off:        %8.3f (A)", cutoff));
-        logger.info(format("  Solvent Dielectric:                  %8.3f", epsilon));
-        logger.info(format("  Non-Polar Model:                     %8s",
+        logger.info("  Continuum Solvation ");
+        logger.info(format("   Generalized Kirkwood Cut-Off:       %8.3f (A)", cutoff));
+        logger.info(format("   Solvent Dielectric:                 %8.3f", epsilon));
+        logger.info(format("   Non-Polar Model:                    %8s",
                 nonPolar.toString().replace('_', '-')));
 
         if (cavitationRegion != null) {
-            logger.info(format("  Cavitation Probe Radius:             %8.3f (A)", probe));
-            logger.info(format("  Cavitation Surface Tension:          %8.3f (Kcal/mol/A^2)", surfaceTension));
+            logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
+            logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         }
 
-        logger.info("");
+    }
+
+    public void setCutoff(double cutoff) {
+        this.cutoff = cutoff;
+        this.cut2 = cutoff * cutoff;
+    }
+
+    public void setCrystal(Crystal crystal) {
+        this.crystal = crystal;
+    }
+
+    public void setNeighborList(int neighbors[][][]) {
+        this.neighborLists = neighbors;
     }
 
     public void setAtoms(Atom atoms[]) {
@@ -737,7 +751,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             baseRadiusWithBondi[i] = baseRadius[i] * bondiFactor;
 
         }
-        
+
         // Resets verboseRadii; reduces logging messages when mutating MultiResidues.
         verboseRadii = false;
 
@@ -939,7 +953,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         if (lambdaTerm) {
-            return lambda * solvationEnergy;
+            return lPow * solvationEnergy;
         } else {
             return solvationEnergy;
         }
@@ -947,8 +961,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * Returns the cavitation component (if applicable) of GK energy. If this GK
-     * is operating without a cavitation term, it either returns 0, or throws
-     * an error if throwError is true.
+     * is operating without a cavitation term, it either returns 0, or throws an
+     * error if throwError is true.
+     *
      * @param throwError
      * @return Cavitation energy
      */
@@ -965,11 +980,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
         }
     }
-    
+
     /**
      * Returns the dispersion component (if applicable) of GK energy. If this GK
-     * is operating without a dispersion term, it either returns 0, or throws
-     * an error if throwError is true.
+     * is operating without a dispersion term, it either returns 0, or throws an
+     * error if throwError is true.
+     *
      * @param throwError
      * @return Cavitation energy
      */
@@ -986,7 +1002,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
         }
     }
-    
+
     /**
      * <p>
      * getInteractions</p>
@@ -998,9 +1014,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
-     * Updates the value of lambda.
+     * Updates the value of lPow.
      *
-     * @param lambda the current lambda value.
+     * @param lambda the current lPow value.
      */
     @Override
     public void setLambda(double lambda) {
@@ -1011,7 +1027,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * If the lambdaTerm flag is false, lambda must be set to one.
              */
             this.lambda = 1.0;
+            lPow = 1.0;
+            dlPow = 0.0;
+            dl2Pow = 0.0;
         }
+    }
+
+    public void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
+        this.lPow = lPow;
+        this.dlPow = dlPow;
+        this.dl2Pow = dl2Pow;
     }
 
     /**
@@ -1028,7 +1053,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
-            return solvationEnergy;
+            return dlPow * solvationEnergy;
         }
         return 0.0;
     }
@@ -1040,7 +1065,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     @Override
     public double getd2EdL2() {
-        return 0.0;
+        if (lambdaTerm) {
+            return dl2Pow * solvationEnergy;
+        } else {
+            return 0.0;
+        }
     }
 
     /**
@@ -1051,19 +1080,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
     @Override
     public void getdEdXdL(double[] gradient) {
     }
-    
+
     public static NonPolar getNonPolarModel(String nonpolarModel) {
         try {
             return NonPolar.valueOf(nonpolarModel);
         } catch (IllegalArgumentException ex) {
             logger.warning("Unrecognized nonpolar model requested; defaulting to NONE.");
             return NonPolar.NONE;
+
         }
-    }
-
-    public enum NonPolar {
-
-        CAV, CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
     }
 
     /**
@@ -1114,10 +1139,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 } else {
                     double sum = sharedBorn.get(i);
                     if (sum <= 0.0) {
-                        sum = 0.001;
+                        sum = PI4_3 / (baseRi * baseRi * baseRi);
                     }
                     born[i] = pow(sum / PI4_3, THIRD);
                     born[i] = 1.0 / born[i];
+                    if (born[i] < baseRi || Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
+                        born[i] = baseRi;
+                    }
                 }
 
                 /*
@@ -1267,537 +1295,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             term = (3.0 * (r2 - scaledRi2) + 6.0 * u2 - 8.0 * ur) / u4r
                                     - (3.0 * (r2 - scaledRi2) + 6.0 * l2 - 8.0 * lr) / l4r;
                             localBorn[k] -= PI_12 * term;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Compute Hydrophobic PMF.
-     *
-     * @since 1.0
-     */
-    private class HydrophobicPMFRegion extends ParallelRegion {
-
-        // Radius of a carbon atom.
-        private final double rCarbon = 1.7;
-        // Radius of a water molecule.
-        private final double rWater = 1.4;
-        // Constant for calculation of atomic surface area.
-        private final double safact = 0.3516;
-        // Surface area of a hydrophobic carbon atom.
-        private final double acSurf = 120.7628;
-        // tanh slope (set very steep).
-        private final double tSlope = 100.0;
-        // Shift the tanh plot along the x-axis.
-        private final double tOffset = 6.0;
-        // Cutoff distance for pairwise HPMF interactions.
-        private final double hpmfCut = 11.0;
-        // Cutoff squared
-        private final double hpmfCut2 = hpmfCut * hpmfCut;
-        // Hydrophobic PMF well depth parameter.
-        private final double h1 = -0.7308004860404441194;
-        private final double h2 = 0.2001645051578760659;
-        private final double h3 = -0.0905499953418473502;
-        // Hydrophobic PMF well center point.
-        private final double c1 = 3.8167879266271396155;
-        private final double c2 = 5.4669162286016419472;
-        private final double c3 = 7.1167694861385353278;
-        // Reciprocal of the hydrophobic PMF well width.
-        private final double w1 = 1.6858993102248638341;
-        private final double w2 = 1.3906405621629980285;
-        private final double w3 = 1.5741657341338335385;
-        private final double rSurf = rCarbon + 2.0 * rWater;
-        private final double piSurf = PI * (rCarbon + rWater);
-        // Radius of each atom for use with hydrophobic PMF.
-        private final double rPMF[];
-        // Number of hydrophobic carbon atoms in the system.
-        private final int nCarbon;
-        // Number of the atom for each HPMF carbon atom site.
-        private final int iCarbon[];
-        // SASA value for each hydrophobic PMF carbon atom
-        private final double carbonSASA[];
-        // SASA value
-        private final double tanhSA[];
-        // Loop to find the SASA value of each hydrophobic carbon.
-        private final CarbonSASALoop carbonSASALoop[];
-        // Loop to find the hydrophobic energy.
-        private final HydrophobicPMFLoop hydrophobicPMFLoop[];
-        // Loop to find the SASA chain rule derivatives.
-        private final CarbonSASACRLoop carbonSASACRLoop[];
-        // Shared energy variable.
-        private final SharedDouble sharedEnergy;
-        private boolean gradient;
-        private final double dtanhSA[];
-        private final double sasa[];
-        private final double carbonSASACR[];
-
-        public HydrophobicPMFRegion(int nt) {
-            logger.info(String.format(" Hydrophobic PMF cut-off:              %8.2f (A)", hpmfCut));
-            /**
-             * Count hydrophobic carbons.
-             */
-            int count = 0;
-            for (int i = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                int atomicNumber = atom.getAtomicNumber();
-                if (atomicNumber == 6) {
-                    List<Bond> bonds = atom.getBonds();
-                    int bondCount = bonds.size();
-                    if (bondCount <= 2) {
-                        continue;
-                    }
-                    boolean keep = true;
-                    for (int j = 0; j < bondCount; j++) {
-                        Atom atom2 = bonds.get(j).get1_2(atom);
-                        int atomicNumber2 = atom2.getAtomicNumber();
-                        if (bondCount == 3 && atomicNumber2 == 8) {
-                            keep = false;
-                            break;
-                        }
-                    }
-                    if (keep) {
-                        count++;
-                    }
-                }
-            }
-            /**
-             * Allocate arrays.
-             */
-            rPMF = new double[nAtoms];
-            nCarbon = count;
-            iCarbon = new int[nCarbon];
-            carbonSASA = new double[nCarbon];
-            carbonSASACR = new double[nCarbon];
-            tanhSA = new double[nCarbon];
-            dtanhSA = new double[nCarbon];
-            sasa = new double[nCarbon];
-
-            carbonSASALoop = new CarbonSASALoop[nt];
-            hydrophobicPMFLoop = new HydrophobicPMFLoop[nt];
-            carbonSASACRLoop = new CarbonSASACRLoop[nt];
-            for (int i = 0; i < nt; i++) {
-                carbonSASALoop[i] = new CarbonSASALoop();
-                hydrophobicPMFLoop[i] = new HydrophobicPMFLoop();
-                carbonSASACRLoop[i] = new CarbonSASACRLoop();
-            }
-            sharedEnergy = new SharedDouble();
-
-            /**
-             * Assign hydrophobic carbon values.
-             */
-            int index = 0;
-            for (int i = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                int atomicNumber = atom.getAtomicNumber();
-                if (atomicNumber == 6) {
-                    int nh = 0;
-                    List<Bond> bonds = atom.getBonds();
-                    int bondCount = bonds.size();
-                    if (bondCount <= 2) {
-                        continue;
-                    }
-                    boolean keep = true;
-                    for (int j = 0; j < bondCount; j++) {
-                        Atom atom2 = bonds.get(j).get1_2(atom);
-                        int atomicNumber2 = atom2.getAtomicNumber();
-                        if (atomicNumber2 == 1) {
-                            nh++;
-                        }
-                        if (bondCount == 3 && atomicNumber2 == 8) {
-                            keep = false;
-                        }
-                    }
-                    if (keep) {
-                        iCarbon[index] = i;
-                        carbonSASA[index] = 1.0;
-                        if (bondCount == 3 && nh == 0) {
-                            carbonSASA[index] = 1.554;
-                        } else if (bondCount == 3 && nh == 1) {
-                            carbonSASA[index] = 1.073;
-                        } else if (bondCount == 4 && nh == 1) {
-                            carbonSASA[index] = 1.276;
-                        } else if (bondCount == 4 && nh == 2) {
-                            carbonSASA[index] = 1.045;
-                        } else if (bondCount == 4 && nh == 3) {
-                            carbonSASA[index] = 0.880;
-                        }
-                        carbonSASA[index] = carbonSASA[index] * safact / acSurf;
-                        if (logger.isLoggable(Level.FINEST)) {
-                            logger.finest(String.format(" %d Base HPMF SASA for atom %d: %10.8f",
-                                    index + 1, i + 1, carbonSASA[index]));
-                        }
-                        index++;
-                    }
-                }
-            }
-
-            /**
-             * Assign HPMF atomic radii from traditional Bondi values
-             */
-            for (int i = 0; i < nAtoms; i++) {
-                rPMF[i] = 2.0;
-                int atmnum = atoms[i].getAtomicNumber();
-                switch (atmnum) {
-                    case 0:
-                        rPMF[i] = 0.0;
-                        break;
-                    case 1:
-                        rPMF[i] = 1.20;
-                        break;
-                    case 2:
-                        rPMF[i] = 1.40;
-                        break;
-                    case 5:
-                        rPMF[i] = 1.80;
-                        break;
-                    case 6:
-                        rPMF[i] = 1.70;
-                        break;
-                    case 7:
-                        rPMF[i] = 1.55;
-                        break;
-                    case 8:
-                        rPMF[i] = 1.50;
-                        break;
-                    case 9:
-                        rPMF[i] = 1.47;
-                        break;
-                    case 10:
-                        rPMF[i] = 1.54;
-                        break;
-                    case 14:
-                        rPMF[i] = 2.10;
-                        break;
-                    case 15:
-                        rPMF[i] = 1.80;
-                        break;
-                    case 16:
-                        rPMF[i] = 1.80;
-                        break;
-                    case 17:
-                        rPMF[i] = 1.75;
-                        break;
-                    case 18:
-                        rPMF[i] = 1.88;
-                        break;
-                    case 34:
-                        rPMF[i] = 1.90;
-                        break;
-                    case 35:
-                        rPMF[i] = 1.85;
-                        break;
-                    case 36:
-                        rPMF[i] = 2.02;
-                        break;
-                    case 53:
-                        rPMF[i] = 1.98;
-                        break;
-                    case 54:
-                        rPMF[i] = 2.16;
-                        break;
-                }
-            }
-        }
-
-        public void setGradient(boolean gradient) {
-            this.gradient = gradient;
-        }
-
-        public double getEnergy() {
-            return sharedEnergy.get();
-        }
-
-        @Override
-        public void start() {
-            sharedEnergy.set(0);
-        }
-
-        @Override
-        public void run() {
-            int ti = getThreadIndex();
-            try {
-                execute(0, nCarbon - 1, carbonSASALoop[ti]);
-                execute(0, nCarbon - 2, hydrophobicPMFLoop[ti]);
-                if (gradient) {
-                    execute(0, nCarbon - 1, carbonSASACRLoop[ti]);
-                }
-            } catch (Exception e) {
-                String message = "Fatal exception computing Born radii in thread " + ti + "\n";
-                logger.log(Level.SEVERE, message, e);
-            }
-        }
-
-        /**
-         * Compute Hydrophobic PMF radii.
-         *
-         * @since 1.0
-         */
-        private class CarbonSASALoop extends IntegerForLoop {
-
-            @Override
-            public void run(int lb, int ub) {
-                /**
-                 * Get the surface area for each hydrophobic carbon atom.
-                 */
-                for (int ii = lb; ii <= ub; ii++) {
-                    final int i = iCarbon[ii];
-                    if (!use[i]) {
-                        continue;
-                    }
-                    final double carbonSA = carbonSASA[ii];
-                    double sa = acSurf;
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    int count = 0;
-                    for (int k = 0; k < nAtoms; k++) {
-                        if (i != k && use[k]) {
-                            final double xr = x[k] - xi;
-                            final double yr = y[k] - yi;
-                            final double zr = z[k] - zi;
-                            final double r2 = xr * xr + yr * yr + zr * zr;
-                            double rk = rPMF[k];
-                            double rBig = rk + rSurf;
-                            if (r2 < rBig * rBig) {
-                                final double r = sqrt(r2);
-                                final double rSmall = rk - rCarbon;
-                                final double part = piSurf * (rBig - r) * (1.0 + rSmall / r);
-                                sa *= (1.0 - carbonSA * part);
-                                count++;
-                            }
-                        }
-                    }
-                    sasa[ii] = sa;
-                    //sasa[ii] = carbonSA;
-                    double tSA = tanh(tSlope * (sa - tOffset));
-                    tanhSA[ii] = 0.5 * (1.0 + tSA);
-                    dtanhSA[ii] = 0.5 * tSlope * (1.0 - tSA * tSA);
-                }
-            }
-        }
-
-        /**
-         * Compute Born radii for a range of atoms via the Grycuk method.
-         *
-         * @since 1.0
-         */
-        private class HydrophobicPMFLoop extends IntegerForLoop {
-
-            private double energy;
-            // Omit
-            private final int omit[];
-            private double gX[];
-            private double gY[];
-            private double gZ[];
-
-            public HydrophobicPMFLoop() {
-                omit = new int[nAtoms];
-            }
-
-            @Override
-            public void start() {
-                energy = 0.0;
-                for (int i = 0; i < nAtoms; i++) {
-                    omit[i] = -1;
-                }
-                int threadID = getThreadIndex();
-                gX = grad[threadID][0];
-                gY = grad[threadID][1];
-                gZ = grad[threadID][2];
-                if (gradient) {
-                    for (int i = 0; i < nCarbon; i++) {
-                        carbonSASACR[i] = 0.0;
-                    }
-                }
-            }
-
-            @Override
-            public void run(int lb, int ub) {
-                /**
-                 * Hydrophobic PME energy.
-                 */
-                for (int ii = lb; ii <= ub; ii++) {
-                    final int i = iCarbon[ii];
-                    if (!use[i]) {
-                        continue;
-                    }
-                    double tanhSAi = tanhSA[ii];
-                    Atom ssAtom = null;
-                    Atom atom = atoms[i];
-                    List<Bond> bonds = atom.getBonds();
-                    for (Bond bond : bonds) {
-                        Atom atom2 = bond.get1_2(atom);
-                        int k = atom2.getIndex() - 1;
-                        if (!use[k]) {
-                            continue;
-                        }
-                        omit[k] = i;
-                        if (atom2.getAtomicNumber() == 16) {
-                            ssAtom = atom2;
-                        }
-                    }
-                    List<Angle> angles = atom.getAngles();
-                    for (Angle angle : angles) {
-                        Atom atom2 = angle.get1_3(atom);
-                        if (atom2 != null) {
-                            int k = atom2.getIndex() - 1;
-                            if (!use[k]) {
-                                continue;
-                            }
-                            omit[k] = i;
-                        }
-                    }
-                    List<Torsion> torsions = atom.getTorsions();
-                    for (Torsion torsion : torsions) {
-                        Atom atom2 = torsion.get1_4(atom);
-                        if (atom2 != null) {
-                            int k = atom2.getIndex() - 1;
-                            if (!use[k]) {
-                                continue;
-                            }
-                            omit[k] = i;
-                            if (ssAtom != null) {
-                                List<Bond> bonds2 = atom2.getBonds();
-                                for (Bond bond : bonds2) {
-                                    Atom s = bond.get1_2(atom2);
-                                    if (s.getAtomicNumber() == 16) {
-                                        List<Bond> sBonds = s.getBonds();
-                                        for (Bond sBond : sBonds) {
-                                            Atom s2 = sBond.get1_2(s);
-                                            if (s2 == ssAtom) {
-                                                omit[k] = -1;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    double e = 0.0;
-                    for (int kk = ii + 1; kk < nCarbon; kk++) {
-                        int k = iCarbon[kk];
-                        if (!use[k]) {
-                            continue;
-                        }
-                        if (omit[k] != i) {
-                            final double xr = xi - x[k];
-                            final double yr = yi - y[k];
-                            final double zr = zi - z[k];
-                            final double r2 = xr * xr + yr * yr + zr * zr;
-                            if (r2 < hpmfCut2) {
-                                final double r = sqrt(r2);
-                                final double a1 = (r - c1) * w1;
-                                final double a2 = (r - c2) * w2;
-                                final double a3 = (r - c3) * w3;
-                                final double e1 = h1 * exp(-a1 * a1);
-                                final double e2 = h2 * exp(-a2 * a2);
-                                final double e3 = h3 * exp(-a3 * a3);
-                                final double t1t2 = tanhSAi * tanhSA[kk];
-                                final double sum = (e1 + e2 + e3);
-                                e += sum * t1t2;
-                                if (gradient) {
-                                    /**
-                                     * First part of hydrophobic PMF derivative
-                                     * calculation.
-                                     */
-                                    double de1 = -2.0 * e1 * a1 * w1;
-                                    double de2 = -2.0 * e2 * a2 * w2;
-                                    double de3 = -2.0 * e3 * a3 * w3;
-                                    double dsum = (de1 + de2 + de3) * t1t2 / r;
-                                    double dedx = dsum * xr;
-                                    double dedy = dsum * yr;
-                                    double dedz = dsum * zr;
-                                    gX[i] += dedx;
-                                    gY[i] += dedy;
-                                    gZ[i] += dedz;
-                                    gX[k] -= dedx;
-                                    gY[k] -= dedy;
-                                    gZ[k] -= dedz;
-                                    /**
-                                     * Chain Rule Term.
-                                     */
-                                    carbonSASACR[ii] += sum * tanhSA[kk] * dtanhSA[ii];
-                                    carbonSASACR[kk] += sum * tanhSA[ii] * dtanhSA[kk];
-                                }
-                            }
-                        }
-                    }
-                    energy += e;
-                }
-            }
-
-            @Override
-            public void finish() {
-                sharedEnergy.addAndGet(energy);
-            }
-        }
-
-        /**
-         * Compute Hydrophobic PMF chain rule term.
-         *
-         * @since 1.0
-         */
-        private class CarbonSASACRLoop extends IntegerForLoop {
-
-            private double gX[];
-            private double gY[];
-            private double gZ[];
-
-            public CarbonSASACRLoop() {
-            }
-
-            @Override
-            public void start() {
-                int threadID = getThreadIndex();
-                gX = grad[threadID][0];
-                gY = grad[threadID][1];
-                gZ = grad[threadID][2];
-            }
-
-            @Override
-            public void run(int lb, int ub) {
-                for (int ii = lb; ii <= ub; ii++) {
-                    final int i = iCarbon[ii];
-                    if (!use[i]) {
-                        continue;
-                    }
-                    final double carbonSA = carbonSASA[ii];
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    for (int k = 0; k < nAtoms; k++) {
-                        if (i != k && use[k]) {
-                            final double xr = xi - x[k];
-                            final double yr = yi - y[k];
-                            final double zr = zi - z[k];
-                            final double r2 = xr * xr + yr * yr + zr * zr;
-                            double rk = rPMF[k];
-                            double rBig = rk + rSurf;
-                            if (r2 <= rBig * rBig) {
-                                final double r = sqrt(r2);
-                                final double rSmall = rk - rCarbon;
-                                final double rr = 1.0 / r;
-                                final double rr2 = rr * rr;
-                                final double part = piSurf * (rBig - r) * (1.0 + rSmall * rr);
-                                double t1b = -piSurf * (1.0 + rBig * rSmall * rr2);
-                                double t1a = -sasa[ii] / (1.0 / carbonSA - part);
-                                double de = t1a * t1b * rr * carbonSASACR[ii];
-                                double dedx = de * xr;
-                                double dedy = de * yr;
-                                double dedz = de * zr;
-                                gX[i] += dedx;
-                                gY[i] += dedy;
-                                gZ[i] += dedz;
-                                gX[k] -= dedx;
-                                gY[k] -= dedy;
-                                gZ[k] -= dedz;
-                            }
                         }
                     }
                 }
@@ -3327,21 +2824,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 final double dedx = dEdX();
                 final double dedy = dEdY();
                 final double dedz = dEdZ();
-                gX[i] -= lambda * dedx;
-                gY[i] -= lambda * dedy;
-                gZ[i] -= lambda * dedz;
+                gX[i] -= lPow * dedx;
+                gY[i] -= lPow * dedy;
+                gZ[i] -= lPow * dedz;
                 gb_local[i] += drbi;
-                gX[k] += lambda * dedx;
-                gY[k] += lambda * dedy;
-                gZ[k] += lambda * dedz;
+                gX[k] += lPow * dedx;
+                gY[k] += lPow * dedy;
+                gZ[k] += lPow * dedz;
                 gb_local[k] += drbk;
                 if (lambdaTerm) {
-                    lgX[i] -= dedx;
-                    lgY[i] -= dedy;
-                    lgZ[i] -= dedz;
-                    lgX[k] += dedx;
-                    lgY[k] += dedy;
-                    lgZ[k] += dedz;
+                    lgX[i] -= dlPow * dedx;
+                    lgY[i] -= dlPow * dedy;
+                    lgZ[i] -= dlPow * dedz;
+                    lgX[k] += dlPow * dedx;
+                    lgY[k] += dlPow * dedy;
+                    lgZ[k] += dlPow * dedz;
                 }
                 permanentEnergyTorque(i, k);
             }
@@ -3692,19 +3189,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tkx += 2.0 * (qxyk * kxz + qyyk * kyz + qyzk * kzz - qxzk * kxy - qyzk * kyy - qzzk * kzy);
                 tky += 2.0 * (qxzk * kxx + qyzk * kyx + qzzk * kzx - qxxk * kxz - qxyk * kyz - qxzk * kzz);
                 tkz += 2.0 * (qxxk * kxy + qxyk * kyy + qxzk * kzy - qxyk * kxx - qyyk * kyx - qyzk * kzx);
-                tX[i] += lambda * tix;
-                tY[i] += lambda * tiy;
-                tZ[i] += lambda * tiz;
-                tX[k] += lambda * tkx;
-                tY[k] += lambda * tky;
-                tZ[k] += lambda * tkz;
+                tX[i] += lPow * tix;
+                tY[i] += lPow * tiy;
+                tZ[i] += lPow * tiz;
+                tX[k] += lPow * tkx;
+                tY[k] += lPow * tky;
+                tZ[k] += lPow * tkz;
                 if (lambdaTerm) {
-                    ltX[i] += tix;
-                    ltY[i] += tiy;
-                    ltZ[i] += tiz;
-                    ltX[k] += tkx;
-                    ltY[k] += tky;
-                    ltZ[k] += tkz;
+                    ltX[i] += dlPow * tix;
+                    ltY[i] += dlPow * tiy;
+                    ltZ[i] += dlPow * tiz;
+                    ltX[k] += dlPow * tkx;
+                    ltY[k] += dlPow * tky;
+                    ltZ[k] += dlPow * tkz;
                 }
             }
 
@@ -3894,21 +3391,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 if (i == k) {
                     gb_local[i] += dbi;
                 } else {
-                    gX[i] -= lambda * dpdx;
-                    gY[i] -= lambda * dpdy;
-                    gZ[i] -= lambda * dpdz;
+                    gX[i] -= lPow * dpdx;
+                    gY[i] -= lPow * dpdy;
+                    gZ[i] -= lPow * dpdz;
                     gb_local[i] += dbi;
-                    gX[k] += lambda * dpdx;
-                    gY[k] += lambda * dpdy;
-                    gZ[k] += lambda * dpdz;
+                    gX[k] += lPow * dpdx;
+                    gY[k] += lPow * dpdy;
+                    gZ[k] += lPow * dpdz;
                     gb_local[k] += dbk;
                     if (lambdaTerm) {
-                        lgX[i] -= dpdx;
-                        lgY[i] -= dpdy;
-                        lgZ[i] -= dpdz;
-                        lgX[k] += dpdx;
-                        lgY[k] += dpdy;
-                        lgZ[k] += dpdz;
+                        lgX[i] -= dlPow * dpdx;
+                        lgY[i] -= dlPow * dpdy;
+                        lgZ[i] -= dlPow * dpdz;
+                        lgX[k] += dlPow * dpdx;
+                        lgY[k] += dlPow * dpdy;
+                        lgZ[k] += dlPow * dpdz;
                     }
                 }
                 polarizationEnergyTorque(i, k);
@@ -4007,19 +3504,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tkx += 2.0 * (qxyk * fkxz + qyyk * fkyz + qyzk * fkzz - qxzk * fkxy - qyzk * fkyy - qzzk * fkzy);
                 tky += 2.0 * (qxzk * fkxx + qyzk * fkyx + qzzk * fkzx - qxxk * fkxz - qxyk * fkyz - qxzk * fkzz);
                 tkz += 2.0 * (qxxk * fkxy + qxyk * fkyy + qxzk * fkzy - qxyk * fkxx - qyyk * fkyx - qyzk * fkzx);
-                tX[i] += lambda * tix;
-                tY[i] += lambda * tiy;
-                tZ[i] += lambda * tiz;
-                tX[k] += lambda * tkx;
-                tY[k] += lambda * tky;
-                tZ[k] += lambda * tkz;
+                tX[i] += lPow * tix;
+                tY[i] += lPow * tiy;
+                tZ[i] += lPow * tiz;
+                tX[k] += lPow * tkx;
+                tY[k] += lPow * tky;
+                tZ[k] += lPow * tkz;
                 if (lambdaTerm) {
-                    ltX[i] += tix;
-                    ltY[i] += tiy;
-                    ltZ[i] += tiz;
-                    ltX[k] += tkx;
-                    ltY[k] += tky;
-                    ltZ[k] += tkz;
+                    ltX[i] += dlPow * tix;
+                    ltY[i] += dlPow * tiy;
+                    ltZ[i] += dlPow * tiz;
+                    ltX[k] += dlPow * tkx;
+                    ltY[k] += dlPow * tky;
+                    ltZ[k] += dlPow * tkz;
                 }
             }
         }
@@ -4167,19 +3664,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             double dedx = de * xr;
                             double dedy = de * yr;
                             double dedz = de * zr;
-                            gX[i] += lambda * dedx;
-                            gY[i] += lambda * dedy;
-                            gZ[i] += lambda * dedz;
-                            gX[k] -= lambda * dedx;
-                            gY[k] -= lambda * dedy;
-                            gZ[k] -= lambda * dedz;
+                            gX[i] += lPow * dedx;
+                            gY[i] += lPow * dedy;
+                            gZ[i] += lPow * dedz;
+                            gX[k] -= lPow * dedx;
+                            gY[k] -= lPow * dedy;
+                            gZ[k] -= lPow * dedz;
                             if (lambdaTerm) {
-                                lgX[i] += dedx;
-                                lgY[i] += dedy;
-                                lgZ[i] += dedz;
-                                lgX[k] -= dedx;
-                                lgY[k] -= dedy;
-                                lgZ[k] -= dedz;
+                                lgX[i] += dlPow * dedx;
+                                lgY[i] += dlPow * dedy;
+                                lgZ[i] += dlPow * dedz;
+                                lgX[k] -= dlPow * dedx;
+                                lgY[k] -= dlPow * dedy;
+                                lgZ[k] -= dlPow * dedz;
                             }
 
                             // Atom k being descreeened by atom i.
@@ -4223,19 +3720,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             dedx = de * xr;
                             dedy = de * yr;
                             dedz = de * zr;
-                            gX[i] += lambda * dedx;
-                            gY[i] += lambda * dedy;
-                            gZ[i] += lambda * dedz;
-                            gX[k] -= lambda * dedx;
-                            gY[k] -= lambda * dedy;
-                            gZ[k] -= lambda * dedz;
+                            gX[i] += lPow * dedx;
+                            gY[i] += lPow * dedy;
+                            gZ[i] += lPow * dedz;
+                            gX[k] -= lPow * dedx;
+                            gY[k] -= lPow * dedy;
+                            gZ[k] -= lPow * dedz;
                             if (lambdaTerm) {
-                                lgX[i] += dedx;
-                                lgY[i] += dedy;
-                                lgZ[i] += dedz;
-                                lgX[k] -= dedx;
-                                lgY[k] -= dedy;
-                                lgZ[k] -= dedz;
+                                lgX[i] += dlPow * dedx;
+                                lgY[i] += dlPow * dedy;
+                                lgZ[i] += dlPow * dedz;
+                                lgX[k] -= dlPow * dedx;
+                                lgY[k] -= dlPow * dedy;
+                                lgZ[k] -= dlPow * dedz;
                             }
                         }
                     }
@@ -4664,19 +4161,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         double dedx = de * xr;
                         double dedy = de * yr;
                         double dedz = de * zr;
-                        gX[i] += lambda * dedx;
-                        gY[i] += lambda * dedy;
-                        gZ[i] += lambda * dedz;
-                        gX[k] -= lambda * dedx;
-                        gY[k] -= lambda * dedy;
-                        gZ[k] -= lambda * dedz;
+                        gX[i] += lPow * dedx;
+                        gY[i] += lPow * dedy;
+                        gZ[i] += lPow * dedz;
+                        gX[k] -= lPow * dedx;
+                        gY[k] -= lPow * dedy;
+                        gZ[k] -= lPow * dedz;
                         if (lambdaTerm) {
-                            lgX[i] += dedx;
-                            lgY[i] += dedy;
-                            lgZ[i] += dedz;
-                            lgX[k] -= dedx;
-                            lgY[k] -= dedy;
-                            lgZ[k] -= dedz;
+                            lgX[i] += dlPow * dedx;
+                            lgY[i] += dlPow * dedy;
+                            lgZ[i] += dlPow * dedz;
+                            lgX[k] -= dlPow * dedx;
+                            lgY[k] -= dlPow * dedy;
+                            lgZ[k] -= dlPow * dedz;
                         }
                     }
                 }
@@ -5149,19 +4646,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         int in = intag[k];
                         double t1 = arcsum * rrisq * (bsqk - rrisq + r[in] * r[in])
                                 / (rri2 * bsqk * bk);
-                        dArea[0][ir] -= lambda * txk * t1 * wght;
-                        dArea[1][ir] -= lambda * tyk * t1 * wght;
-                        dArea[2][ir] -= lambda * tzk * t1 * wght;
-                        dArea[0][in] += lambda * txk * t1 * wght;
-                        dArea[1][in] += lambda * tyk * t1 * wght;
-                        dArea[2][in] += lambda * tzk * t1 * wght;
+                        dArea[0][ir] -= lPow * txk * t1 * wght;
+                        dArea[1][ir] -= lPow * tyk * t1 * wght;
+                        dArea[2][ir] -= lPow * tzk * t1 * wght;
+                        dArea[0][in] += lPow * txk * t1 * wght;
+                        dArea[1][in] += lPow * tyk * t1 * wght;
+                        dArea[2][in] += lPow * tzk * t1 * wght;
                         if (lambdaTerm) {
-                            ldArea[0][ir] -= txk * t1 * wght;
-                            ldArea[1][ir] -= tyk * t1 * wght;
-                            ldArea[2][ir] -= tzk * t1 * wght;
-                            ldArea[0][in] += txk * t1 * wght;
-                            ldArea[1][in] += tyk * t1 * wght;
-                            ldArea[2][in] += tzk * t1 * wght;
+                            ldArea[0][ir] -= dlPow * txk * t1 * wght;
+                            ldArea[1][ir] -= dlPow * tyk * t1 * wght;
+                            ldArea[2][ir] -= dlPow * tzk * t1 * wght;
+                            ldArea[0][in] += dlPow * txk * t1 * wght;
+                            ldArea[1][in] += dlPow * tyk * t1 * wght;
+                            ldArea[2][in] += dlPow * tzk * t1 * wght;
                         }
                     }
                     area[ir] = ib * pix2 + exang + arclen;
@@ -5374,19 +4871,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             int in = intag[k];
                             t1 = arcsum * rrisq * (bsqk - rrisq + r[in] * r[in])
                                     / (rri2 * bsqk * bk);
-                            dArea[0][ir] -= lambda * txk * t1 * wght;
-                            dArea[1][ir] -= lambda * tyk * t1 * wght;
-                            dArea[2][ir] -= lambda * tzk * t1 * wght;
-                            dArea[0][in] += lambda * txk * t1 * wght;
-                            dArea[1][in] += lambda * tyk * t1 * wght;
-                            dArea[2][in] += lambda * tzk * t1 * wght;
+                            dArea[0][ir] -= lPow * txk * t1 * wght;
+                            dArea[1][ir] -= lPow * tyk * t1 * wght;
+                            dArea[2][ir] -= lPow * tzk * t1 * wght;
+                            dArea[0][in] += lPow * txk * t1 * wght;
+                            dArea[1][in] += lPow * tyk * t1 * wght;
+                            dArea[2][in] += lPow * tzk * t1 * wght;
                             if (lambdaTerm) {
-                                ldArea[0][ir] -= txk * t1 * wght;
-                                ldArea[1][ir] -= tyk * t1 * wght;
-                                ldArea[2][ir] -= tzk * t1 * wght;
-                                ldArea[0][in] += txk * t1 * wght;
-                                ldArea[1][in] += tyk * t1 * wght;
-                                ldArea[2][in] += tzk * t1 * wght;
+                                ldArea[0][ir] -= dlPow * txk * t1 * wght;
+                                ldArea[1][ir] -= dlPow * tyk * t1 * wght;
+                                ldArea[2][ir] -= dlPow * tzk * t1 * wght;
+                                ldArea[0][in] += dlPow * txk * t1 * wght;
+                                ldArea[1][in] += dlPow * tyk * t1 * wght;
+                                ldArea[2][in] += dlPow * tzk * t1 * wght;
                             }
                         }
                         continue;
@@ -5482,19 +4979,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             double day = axy * faca + ayy * facb + azy * facc;
                             double daz = azz * facc - axz * faca;
                             int in = intag[l];
-                            dArea[0][ir] += lambda * dax * wght;
-                            dArea[1][ir] += lambda * day * wght;
-                            dArea[2][ir] += lambda * daz * wght;
-                            dArea[0][in] -= lambda * dax * wght;
-                            dArea[1][in] -= lambda * day * wght;
-                            dArea[2][in] -= lambda * daz * wght;
+                            dArea[0][ir] += lPow * dax * wght;
+                            dArea[1][ir] += lPow * day * wght;
+                            dArea[2][ir] += lPow * daz * wght;
+                            dArea[0][in] -= lPow * dax * wght;
+                            dArea[1][in] -= lPow * day * wght;
+                            dArea[2][in] -= lPow * daz * wght;
                             if (lambdaTerm) {
-                                ldArea[0][ir] += dax * wght;
-                                ldArea[1][ir] += day * wght;
-                                ldArea[2][ir] += daz * wght;
-                                ldArea[0][in] -= dax * wght;
-                                ldArea[1][in] -= day * wght;
-                                ldArea[2][in] -= daz * wght;
+                                ldArea[0][ir] += dlPow * dax * wght;
+                                ldArea[1][ir] += dlPow * day * wght;
+                                ldArea[2][ir] += dlPow * daz * wght;
+                                ldArea[0][in] -= dlPow * dax * wght;
+                                ldArea[1][in] -= dlPow * day * wght;
+                                ldArea[2][in] -= dlPow * daz * wght;
                             }
                         }
 
@@ -5504,19 +5001,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         int in = intag[k];
                         t1 = arcsum * rrisq * (bsqk - rrisq + r[in] * r[in])
                                 / (rri2 * bsqk * bk);
-                        dArea[0][ir] -= lambda * txk * t1 * wght;
-                        dArea[1][ir] -= lambda * tyk * t1 * wght;
-                        dArea[2][ir] -= lambda * tzk * t1 * wght;
-                        dArea[0][in] += lambda * txk * t1 * wght;
-                        dArea[1][in] += lambda * tyk * t1 * wght;
-                        dArea[2][in] += lambda * tzk * t1 * wght;
+                        dArea[0][ir] -= lPow * txk * t1 * wght;
+                        dArea[1][ir] -= lPow * tyk * t1 * wght;
+                        dArea[2][ir] -= lPow * tzk * t1 * wght;
+                        dArea[0][in] += lPow * txk * t1 * wght;
+                        dArea[1][in] += lPow * tyk * t1 * wght;
+                        dArea[2][in] += lPow * tzk * t1 * wght;
                         if (lambdaTerm) {
-                            ldArea[0][ir] -= txk * t1 * wght;
-                            ldArea[1][ir] -= tyk * t1 * wght;
-                            ldArea[2][ir] -= tzk * t1 * wght;
-                            ldArea[0][in] += txk * t1 * wght;
-                            ldArea[1][in] += tyk * t1 * wght;
-                            ldArea[2][in] += tzk * t1 * wght;
+                            ldArea[0][ir] -= dlPow * txk * t1 * wght;
+                            ldArea[1][ir] -= dlPow * tyk * t1 * wght;
+                            ldArea[2][ir] -= dlPow * tzk * t1 * wght;
+                            ldArea[0][in] += dlPow * txk * t1 * wght;
+                            ldArea[1][in] += dlPow * tyk * t1 * wght;
+                            ldArea[2][in] += dlPow * tzk * t1 * wght;
                         }
                     }
                 }
@@ -9733,11 +9230,547 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     /**
+     * Compute Hydrophobic PMF.
+     *
+     * @since 1.0
+     */
+    private class HydrophobicPMFRegion extends ParallelRegion {
+
+        // Radius of a carbon atom.
+        private final double rCarbon = 1.7;
+        // Radius of a water molecule.
+        private final double rWater = 1.4;
+        // Constant for calculation of atomic surface area.
+        private final double safact = 0.3516;
+        // Surface area of a hydrophobic carbon atom.
+        private final double acSurf = 120.7628;
+        // tanh slope (set very steep).
+        private final double tSlope = 100.0;
+        // Shift the tanh plot along the x-axis.
+        private final double tOffset = 6.0;
+        // Cutoff distance for pairwise HPMF interactions.
+        private final double hpmfCut = 11.0;
+        // Cutoff squared
+        private final double hpmfCut2 = hpmfCut * hpmfCut;
+        // Hydrophobic PMF well depth parameter.
+        private final double h1 = -0.7308004860404441194;
+        private final double h2 = 0.2001645051578760659;
+        private final double h3 = -0.0905499953418473502;
+        // Hydrophobic PMF well center point.
+        private final double c1 = 3.8167879266271396155;
+        private final double c2 = 5.4669162286016419472;
+        private final double c3 = 7.1167694861385353278;
+        // Reciprocal of the hydrophobic PMF well width.
+        private final double w1 = 1.6858993102248638341;
+        private final double w2 = 1.3906405621629980285;
+        private final double w3 = 1.5741657341338335385;
+        private final double rSurf = rCarbon + 2.0 * rWater;
+        private final double piSurf = PI * (rCarbon + rWater);
+        // Radius of each atom for use with hydrophobic PMF.
+        private final double rPMF[];
+        // Number of hydrophobic carbon atoms in the system.
+        private final int nCarbon;
+        // Number of the atom for each HPMF carbon atom site.
+        private final int iCarbon[];
+        // SASA value for each hydrophobic PMF carbon atom
+        private final double carbonSASA[];
+        // SASA value
+        private final double tanhSA[];
+        // Loop to find the SASA value of each hydrophobic carbon.
+        private final CarbonSASALoop carbonSASALoop[];
+        // Loop to find the hydrophobic energy.
+        private final HydrophobicPMFLoop hydrophobicPMFLoop[];
+        // Loop to find the SASA chain rule derivatives.
+        private final CarbonSASACRLoop carbonSASACRLoop[];
+        // Shared energy variable.
+        private final SharedDouble sharedEnergy;
+        private boolean gradient;
+        private final double dtanhSA[];
+        private final double sasa[];
+        private final double carbonSASACR[];
+
+        public HydrophobicPMFRegion(int nt) {
+            logger.info(String.format(" Hydrophobic PMF cut-off:              %8.2f (A)", hpmfCut));
+            /**
+             * Count hydrophobic carbons.
+             */
+            int count = 0;
+            for (int i = 0; i < nAtoms; i++) {
+                Atom atom = atoms[i];
+                int atomicNumber = atom.getAtomicNumber();
+                if (atomicNumber == 6) {
+                    List<Bond> bonds = atom.getBonds();
+                    int bondCount = bonds.size();
+                    if (bondCount <= 2) {
+                        continue;
+                    }
+                    boolean keep = true;
+                    for (int j = 0; j < bondCount; j++) {
+                        Atom atom2 = bonds.get(j).get1_2(atom);
+                        int atomicNumber2 = atom2.getAtomicNumber();
+                        if (bondCount == 3 && atomicNumber2 == 8) {
+                            keep = false;
+                            break;
+                        }
+                    }
+                    if (keep) {
+                        count++;
+                    }
+                }
+            }
+            /**
+             * Allocate arrays.
+             */
+            rPMF = new double[nAtoms];
+            nCarbon = count;
+            iCarbon = new int[nCarbon];
+            carbonSASA = new double[nCarbon];
+            carbonSASACR = new double[nCarbon];
+            tanhSA = new double[nCarbon];
+            dtanhSA = new double[nCarbon];
+            sasa = new double[nCarbon];
+
+            carbonSASALoop = new CarbonSASALoop[nt];
+            hydrophobicPMFLoop = new HydrophobicPMFLoop[nt];
+            carbonSASACRLoop = new CarbonSASACRLoop[nt];
+            for (int i = 0; i < nt; i++) {
+                carbonSASALoop[i] = new CarbonSASALoop();
+                hydrophobicPMFLoop[i] = new HydrophobicPMFLoop();
+                carbonSASACRLoop[i] = new CarbonSASACRLoop();
+            }
+            sharedEnergy = new SharedDouble();
+
+            /**
+             * Assign hydrophobic carbon values.
+             */
+            int index = 0;
+            for (int i = 0; i < nAtoms; i++) {
+                Atom atom = atoms[i];
+                int atomicNumber = atom.getAtomicNumber();
+                if (atomicNumber == 6) {
+                    int nh = 0;
+                    List<Bond> bonds = atom.getBonds();
+                    int bondCount = bonds.size();
+                    if (bondCount <= 2) {
+                        continue;
+                    }
+                    boolean keep = true;
+                    for (int j = 0; j < bondCount; j++) {
+                        Atom atom2 = bonds.get(j).get1_2(atom);
+                        int atomicNumber2 = atom2.getAtomicNumber();
+                        if (atomicNumber2 == 1) {
+                            nh++;
+                        }
+                        if (bondCount == 3 && atomicNumber2 == 8) {
+                            keep = false;
+                        }
+                    }
+                    if (keep) {
+                        iCarbon[index] = i;
+                        carbonSASA[index] = 1.0;
+                        if (bondCount == 3 && nh == 0) {
+                            carbonSASA[index] = 1.554;
+                        } else if (bondCount == 3 && nh == 1) {
+                            carbonSASA[index] = 1.073;
+                        } else if (bondCount == 4 && nh == 1) {
+                            carbonSASA[index] = 1.276;
+                        } else if (bondCount == 4 && nh == 2) {
+                            carbonSASA[index] = 1.045;
+                        } else if (bondCount == 4 && nh == 3) {
+                            carbonSASA[index] = 0.880;
+                        }
+                        carbonSASA[index] = carbonSASA[index] * safact / acSurf;
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest(String.format(" %d Base HPMF SASA for atom %d: %10.8f",
+                                    index + 1, i + 1, carbonSASA[index]));
+                        }
+                        index++;
+                    }
+                }
+            }
+
+            /**
+             * Assign HPMF atomic radii from traditional Bondi values
+             */
+            for (int i = 0; i < nAtoms; i++) {
+                rPMF[i] = 2.0;
+                int atmnum = atoms[i].getAtomicNumber();
+                switch (atmnum) {
+                    case 0:
+                        rPMF[i] = 0.0;
+                        break;
+                    case 1:
+                        rPMF[i] = 1.20;
+                        break;
+                    case 2:
+                        rPMF[i] = 1.40;
+                        break;
+                    case 5:
+                        rPMF[i] = 1.80;
+                        break;
+                    case 6:
+                        rPMF[i] = 1.70;
+                        break;
+                    case 7:
+                        rPMF[i] = 1.55;
+                        break;
+                    case 8:
+                        rPMF[i] = 1.50;
+                        break;
+                    case 9:
+                        rPMF[i] = 1.47;
+                        break;
+                    case 10:
+                        rPMF[i] = 1.54;
+                        break;
+                    case 14:
+                        rPMF[i] = 2.10;
+                        break;
+                    case 15:
+                        rPMF[i] = 1.80;
+                        break;
+                    case 16:
+                        rPMF[i] = 1.80;
+                        break;
+                    case 17:
+                        rPMF[i] = 1.75;
+                        break;
+                    case 18:
+                        rPMF[i] = 1.88;
+                        break;
+                    case 34:
+                        rPMF[i] = 1.90;
+                        break;
+                    case 35:
+                        rPMF[i] = 1.85;
+                        break;
+                    case 36:
+                        rPMF[i] = 2.02;
+                        break;
+                    case 53:
+                        rPMF[i] = 1.98;
+                        break;
+                    case 54:
+                        rPMF[i] = 2.16;
+                        break;
+                }
+            }
+        }
+
+        public void setGradient(boolean gradient) {
+            this.gradient = gradient;
+        }
+
+        public double getEnergy() {
+            return sharedEnergy.get();
+        }
+
+        @Override
+        public void start() {
+            sharedEnergy.set(0);
+        }
+
+        @Override
+        public void run() {
+            int ti = getThreadIndex();
+            try {
+                execute(0, nCarbon - 1, carbonSASALoop[ti]);
+                execute(0, nCarbon - 2, hydrophobicPMFLoop[ti]);
+                if (gradient) {
+                    execute(0, nCarbon - 1, carbonSASACRLoop[ti]);
+                }
+            } catch (Exception e) {
+                String message = "Fatal exception computing Born radii in thread " + ti + "\n";
+                logger.log(Level.SEVERE, message, e);
+            }
+        }
+
+        /**
+         * Compute Hydrophobic PMF radii.
+         *
+         * @since 1.0
+         */
+        private class CarbonSASALoop extends IntegerForLoop {
+
+            @Override
+            public void run(int lb, int ub) {
+                /**
+                 * Get the surface area for each hydrophobic carbon atom.
+                 */
+                for (int ii = lb; ii <= ub; ii++) {
+                    final int i = iCarbon[ii];
+                    if (!use[i]) {
+                        continue;
+                    }
+                    final double carbonSA = carbonSASA[ii];
+                    double sa = acSurf;
+                    final double xi = x[i];
+                    final double yi = y[i];
+                    final double zi = z[i];
+                    int count = 0;
+                    for (int k = 0; k < nAtoms; k++) {
+                        if (i != k && use[k]) {
+                            final double xr = x[k] - xi;
+                            final double yr = y[k] - yi;
+                            final double zr = z[k] - zi;
+                            final double r2 = xr * xr + yr * yr + zr * zr;
+                            double rk = rPMF[k];
+                            double rBig = rk + rSurf;
+                            if (r2 < rBig * rBig) {
+                                final double r = sqrt(r2);
+                                final double rSmall = rk - rCarbon;
+                                final double part = piSurf * (rBig - r) * (1.0 + rSmall / r);
+                                sa *= (1.0 - carbonSA * part);
+                                count++;
+                            }
+                        }
+                    }
+                    sasa[ii] = sa;
+                    //sasa[ii] = carbonSA;
+                    double tSA = tanh(tSlope * (sa - tOffset));
+                    tanhSA[ii] = 0.5 * (1.0 + tSA);
+                    dtanhSA[ii] = 0.5 * tSlope * (1.0 - tSA * tSA);
+                }
+            }
+        }
+
+        /**
+         * Compute Born radii for a range of atoms via the Grycuk method.
+         *
+         * @since 1.0
+         */
+        private class HydrophobicPMFLoop extends IntegerForLoop {
+
+            private double energy;
+            // Omit
+            private final int omit[];
+            private double gX[];
+            private double gY[];
+            private double gZ[];
+
+            public HydrophobicPMFLoop() {
+                omit = new int[nAtoms];
+            }
+
+            @Override
+            public void start() {
+                energy = 0.0;
+                for (int i = 0; i < nAtoms; i++) {
+                    omit[i] = -1;
+                }
+                int threadID = getThreadIndex();
+                gX = grad[threadID][0];
+                gY = grad[threadID][1];
+                gZ = grad[threadID][2];
+                if (gradient) {
+                    for (int i = 0; i < nCarbon; i++) {
+                        carbonSASACR[i] = 0.0;
+                    }
+                }
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                /**
+                 * Hydrophobic PME energy.
+                 */
+                for (int ii = lb; ii <= ub; ii++) {
+                    final int i = iCarbon[ii];
+                    if (!use[i]) {
+                        continue;
+                    }
+                    double tanhSAi = tanhSA[ii];
+                    Atom ssAtom = null;
+                    Atom atom = atoms[i];
+                    List<Bond> bonds = atom.getBonds();
+                    for (Bond bond : bonds) {
+                        Atom atom2 = bond.get1_2(atom);
+                        int k = atom2.getIndex() - 1;
+                        if (!use[k]) {
+                            continue;
+                        }
+                        omit[k] = i;
+                        if (atom2.getAtomicNumber() == 16) {
+                            ssAtom = atom2;
+                        }
+                    }
+                    List<Angle> angles = atom.getAngles();
+                    for (Angle angle : angles) {
+                        Atom atom2 = angle.get1_3(atom);
+                        if (atom2 != null) {
+                            int k = atom2.getIndex() - 1;
+                            if (!use[k]) {
+                                continue;
+                            }
+                            omit[k] = i;
+                        }
+                    }
+                    List<Torsion> torsions = atom.getTorsions();
+                    for (Torsion torsion : torsions) {
+                        Atom atom2 = torsion.get1_4(atom);
+                        if (atom2 != null) {
+                            int k = atom2.getIndex() - 1;
+                            if (!use[k]) {
+                                continue;
+                            }
+                            omit[k] = i;
+                            if (ssAtom != null) {
+                                List<Bond> bonds2 = atom2.getBonds();
+                                for (Bond bond : bonds2) {
+                                    Atom s = bond.get1_2(atom2);
+                                    if (s.getAtomicNumber() == 16) {
+                                        List<Bond> sBonds = s.getBonds();
+                                        for (Bond sBond : sBonds) {
+                                            Atom s2 = sBond.get1_2(s);
+                                            if (s2 == ssAtom) {
+                                                omit[k] = -1;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    final double xi = x[i];
+                    final double yi = y[i];
+                    final double zi = z[i];
+                    double e = 0.0;
+                    for (int kk = ii + 1; kk < nCarbon; kk++) {
+                        int k = iCarbon[kk];
+                        if (!use[k]) {
+                            continue;
+                        }
+                        if (omit[k] != i) {
+                            final double xr = xi - x[k];
+                            final double yr = yi - y[k];
+                            final double zr = zi - z[k];
+                            final double r2 = xr * xr + yr * yr + zr * zr;
+                            if (r2 < hpmfCut2) {
+                                final double r = sqrt(r2);
+                                final double a1 = (r - c1) * w1;
+                                final double a2 = (r - c2) * w2;
+                                final double a3 = (r - c3) * w3;
+                                final double e1 = h1 * exp(-a1 * a1);
+                                final double e2 = h2 * exp(-a2 * a2);
+                                final double e3 = h3 * exp(-a3 * a3);
+                                final double t1t2 = tanhSAi * tanhSA[kk];
+                                final double sum = (e1 + e2 + e3);
+                                e += sum * t1t2;
+                                if (gradient) {
+                                    /**
+                                     * First part of hydrophobic PMF derivative
+                                     * calculation.
+                                     */
+                                    double de1 = -2.0 * e1 * a1 * w1;
+                                    double de2 = -2.0 * e2 * a2 * w2;
+                                    double de3 = -2.0 * e3 * a3 * w3;
+                                    double dsum = (de1 + de2 + de3) * t1t2 / r;
+                                    double dedx = dsum * xr;
+                                    double dedy = dsum * yr;
+                                    double dedz = dsum * zr;
+                                    gX[i] += dedx;
+                                    gY[i] += dedy;
+                                    gZ[i] += dedz;
+                                    gX[k] -= dedx;
+                                    gY[k] -= dedy;
+                                    gZ[k] -= dedz;
+                                    /**
+                                     * Chain Rule Term.
+                                     */
+                                    carbonSASACR[ii] += sum * tanhSA[kk] * dtanhSA[ii];
+                                    carbonSASACR[kk] += sum * tanhSA[ii] * dtanhSA[kk];
+                                }
+                            }
+                        }
+                    }
+                    energy += e;
+                }
+            }
+
+            @Override
+            public void finish() {
+                sharedEnergy.addAndGet(energy);
+            }
+        }
+
+        /**
+         * Compute Hydrophobic PMF chain rule term.
+         *
+         * @since 1.0
+         */
+        private class CarbonSASACRLoop extends IntegerForLoop {
+
+            private double gX[];
+            private double gY[];
+            private double gZ[];
+
+            public CarbonSASACRLoop() {
+            }
+
+            @Override
+            public void start() {
+                int threadID = getThreadIndex();
+                gX = grad[threadID][0];
+                gY = grad[threadID][1];
+                gZ = grad[threadID][2];
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int ii = lb; ii <= ub; ii++) {
+                    final int i = iCarbon[ii];
+                    if (!use[i]) {
+                        continue;
+                    }
+                    final double carbonSA = carbonSASA[ii];
+                    final double xi = x[i];
+                    final double yi = y[i];
+                    final double zi = z[i];
+                    for (int k = 0; k < nAtoms; k++) {
+                        if (i != k && use[k]) {
+                            final double xr = xi - x[k];
+                            final double yr = yi - y[k];
+                            final double zr = zi - z[k];
+                            final double r2 = xr * xr + yr * yr + zr * zr;
+                            double rk = rPMF[k];
+                            double rBig = rk + rSurf;
+                            if (r2 <= rBig * rBig) {
+                                final double r = sqrt(r2);
+                                final double rSmall = rk - rCarbon;
+                                final double rr = 1.0 / r;
+                                final double rr2 = rr * rr;
+                                final double part = piSurf * (rBig - r) * (1.0 + rSmall * rr);
+                                double t1b = -piSurf * (1.0 + rBig * rSmall * rr2);
+                                double t1a = -sasa[ii] / (1.0 / carbonSA - part);
+                                double de = t1a * t1b * rr * carbonSASACR[ii];
+                                double dedx = de * xr;
+                                double dedy = de * yr;
+                                double dedz = de * zr;
+                                gX[i] += dedx;
+                                gY[i] += dedy;
+                                gZ[i] += dedz;
+                                gX[k] -= dedx;
+                                gY[k] -= dedy;
+                                gZ[k] -= dedz;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Some static constants.
      */
     private static final double THIRD = 1.0 / 3.0;
     private static final double PI4_3 = 4.0 / 3.0 * PI;
     private static final double PI_12 = PI / 12.0;
+
+    public enum NonPolar {
+
+        CAV, CAV_DISP, HYDROPHOBIC_PMF, BORN_CAV_DISP, BORN_SOLV, NONE
+    }
 
     private static enum RADII_MAP_TYPE {
         ATOMTYPE, BIOTYPE, NONE;

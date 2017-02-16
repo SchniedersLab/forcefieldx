@@ -40,11 +40,9 @@ package ffx.potential.nonbonded;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Set;
-//import java.util.stream.Collectors;
-//import java.util.stream.IntStream;
 
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
@@ -109,7 +107,7 @@ public class NeighborList extends ParallelRegion {
      */
     private static final Logger logger = Logger.getLogger(NeighborList.class.getName());
     /**
-     * The crystal object defines the unit cell dimensions and spacegroup.
+     * The crystal object defines the unit cell dimensions and space group.
      */
     private Crystal crystal;
     /**
@@ -163,7 +161,8 @@ public class NeighborList extends ParallelRegion {
      */
     private int symmetryMateCount;
     /**
-     * Number of atoms in the asymmetry unit with interactions lists greater than 0.
+     * Number of atoms in the asymmetry unit with interactions lists greater
+     * than 0.
      */
     private int atomsWithIteractions;
     /**
@@ -255,11 +254,11 @@ public class NeighborList extends ParallelRegion {
     /**
      * The sum of the cutoff + buffer.
      */
-    private final double total;
+    private final double cutoffPlusBuffer;
     /**
      * Total^2 for distance comparisons without taking a sqrt.
      */
-    private final double total2;
+    private final double cutoffPlusBuffer2;
     /**
      * The array of fractional "a", "b", and "c" coordinates.
      */
@@ -334,8 +333,8 @@ public class NeighborList extends ParallelRegion {
         /**
          * Configure the neighbor cutoff and list rebuilding criteria.
          */
-        total = cutoff + buffer;
-        total2 = total * total;
+        cutoffPlusBuffer = cutoff + buffer;
+        cutoffPlusBuffer2 = cutoffPlusBuffer * cutoffPlusBuffer;
         motion2 = (buffer / 2.0) * (buffer / 2.0);
 
         /**
@@ -360,19 +359,21 @@ public class NeighborList extends ParallelRegion {
         this.intermolecular = intermolecular;
         this.molecules = molecules;
     }
-    
+
     /**
      * If disableUpdates true, disable updating the neighbor list upon motion.
-     * Use with caution; best recommendation is to only use if all atoms have
-     * a coordinate restraint.
+     * Use with caution; best recommendation is to only use if all atoms have a
+     * coordinate restraint.
+     *
      * @param disableUpdate Disable updating the neighbor list
      */
     public void setDisableUpdates(boolean disableUpdate) {
         this.disableUpdates = disableUpdate;
     }
-    
+
     /**
      * Getter for the disableUpdates field.
+     *
      * @return If neighbor list updates disabled
      */
     public boolean getDisableUpdates() {
@@ -415,9 +416,8 @@ public class NeighborList extends ParallelRegion {
          * Assert that the boundary conditions defined by the crystal allow use
          * of the minimum image condition.
          */
-        if (!crystal.aperiodic() )
-        {
-            assert (sphere > total);
+        if (!crystal.aperiodic()) {
+            assert (sphere > cutoffPlusBuffer);
         }
 
         /**
@@ -430,9 +430,9 @@ public class NeighborList extends ParallelRegion {
          * totalA is the smallest a-axis for a subcell, given nEdgeA subcells
          * along the a-axis, that assures all neighbors will be found.
          */
-        double totalA = total / (double) nEdgeA;
-        double totalB = total / (double) nEdgeB;
-        double totalC = total / (double) nEdgeC;
+        double totalA = cutoffPlusBuffer / (double) nEdgeA;
+        double totalB = cutoffPlusBuffer / (double) nEdgeB;
+        double totalC = cutoffPlusBuffer / (double) nEdgeC;
         nA = (int) floor(crystal.interfacialRadiusA / totalA);
         nB = (int) floor(crystal.interfacialRadiusB / totalB);
         nC = (int) floor(crystal.interfacialRadiusC / totalC);
@@ -577,9 +577,10 @@ public class NeighborList extends ParallelRegion {
     public int[][][] getNeighborList() {
         return lists;
     }
-    
+
     /**
      * Takes a list of Atoms and obtains the local indices for these atoms.
+     *
      * @param atomsToIndex Atoms to index
      * @return Indices thereof
      */
@@ -594,10 +595,11 @@ public class NeighborList extends ParallelRegion {
         }
         return indices;
     }
-    
+
     /**
      * Returns the indices of atoms neighboring the passed set of atom indices.
      * Returned Set is exclusive of the passed-in indices.
+     *
      * @param atomIndices Atom indices
      * @param maxDist Maximum distance to consider
      * @return Set of neighboring atoms indices
@@ -630,7 +632,7 @@ public class NeighborList extends ParallelRegion {
                 }
             }
         }
-        
+
         /*Set<Integer> neighbors = atomIndices.parallelStream().
                 mapToInt(Integer::intValue).
                 flatMap(i -> {
@@ -657,12 +659,12 @@ public class NeighborList extends ParallelRegion {
                 }).boxed().collect(Collectors.toSet());*/
         return neighbors;
     }
-    
+
     /**
      * Returns a set of Atoms neighboring those passed in. If their indices are
-     * already available, preferentially use getNeighborIndices instead. Is 
+     * already available, preferentially use getNeighborIndices instead. Is
      * exclusive of passed atoms.
-     * 
+     *
      * @param atomList Atoms to find neighbors of
      * @param maxDist Maximum distance to consider a neighbor
      * @return Set of neighboring Atoms
@@ -690,7 +692,7 @@ public class NeighborList extends ParallelRegion {
     private void print() {
         StringBuilder sb = new StringBuilder(format("   Buffer:                                %5.2f (A)\n", buffer));
         sb.append(format("   Cut-off:                               %5.2f (A)\n", cutoff));
-        sb.append(format("   Total:                                 %5.2f (A)\n", total));
+        sb.append(format("   Total:                                 %5.2f (A)\n", cutoffPlusBuffer));
         sb.append(format("   Neighbors in the asymmetric unit:%11d\n", asymmetricUnitCount));
         if (nSymm > 1) {
             int num = (asymmetricUnitCount + symmetryMateCount) * nSymm;
@@ -703,8 +705,8 @@ public class NeighborList extends ParallelRegion {
     /**
      * Assign asymmetric and symmetry mate atoms to cells.
      *
-     * This is very fast; there is little to be gained from
-     * parallelizing it at this point.
+     * This is very fast; there is little to be gained from parallelizing it at
+     * this point.
      *
      * @since 1.0
      */
@@ -1137,7 +1139,7 @@ public class NeighborList extends ParallelRegion {
                     final double yr = yi - yj;
                     final double zr = zi - zj;
                     final double d2 = crystal.image(xr, yr, zr);
-                    if (d2 <= total2) {
+                    if (d2 <= cutoffPlusBuffer2) {
                         /**
                          * Warn about close overlaps.
                          */
