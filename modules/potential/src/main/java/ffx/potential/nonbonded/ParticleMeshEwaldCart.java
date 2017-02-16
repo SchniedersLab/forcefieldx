@@ -1382,7 +1382,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             if (doLigandVaporElec) {
                 lambdaMode = LambdaMode.VAPOR;
                 temp = energy;
-                energy = vaporElec();
+                energy = ligandAperiodicElec();
                 if (logger.isLoggable(Level.FINE)) {
                     logger.fine(String.format(" Vacuum energy:   %20.8f", energy - temp));
                 }
@@ -1559,13 +1559,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     /**
-     * 3.) Ligand in vapor
+     * 3.) Aperiodic ligand electrostatics.
      *
      * A.) Real space with an Ewald coefficient of 0.0 (no reciprocal space).
      *
      * B.) Polarization scaled as in Step 2 by (1 - lambda).
      */
-    private double vaporElec() {
+    private double ligandAperiodicElec() {
         for (int i = 0; i < nAtoms; i++) {
             use[i] = atoms[i].applyLambda();
         }
@@ -1630,6 +1630,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
          */
         boolean gkBack = generalizedKirkwoodTerm;
 
+        /**
+         * Turn off Pre-conditioned conjugate gradient SCF solver.
+         */
+        SCFAlgorithm scfBack = scfAlgorithm;
+        scfAlgorithm = SCFAlgorithm.SOR;
+
         if (doLigandGKElec) {
             generalizedKirkwoodTerm = true;
             generalizedKirkwood.setNeighborList(vaporLists);
@@ -1659,6 +1665,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         dlAlpha = dlAlphaBack;
         d2lAlpha = d2lAlphaBack;
         generalizedKirkwoodTerm = gkBack;
+        scfAlgorithm = scfBack;
 
         fill(use, true);
 
@@ -2005,7 +2012,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 break;
             case CG:
             default:
-                //iterations = scfByCG();
                 iterations = scfByPCG(print, startTime);
                 break;
         }
