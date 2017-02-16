@@ -821,9 +821,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * A POLARIZATION_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
              * the beginning of the polarization schedule. Choosing a power of 3
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
+             * 
+             * For DualForceField resolution switching, the Polarization energy will be changed at the
+             * DualForceField level, and not interpolated within ForceFieldEnergy / PME. Thus, we
+             * set the exponent to 0.0 in this case.
              */
             polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
-            if (polLambdaExponent < 1.0) {
+            if (polLambdaExponent < 0.0) {
                 polLambdaExponent = 3.0;
             }
             /**
@@ -6736,12 +6740,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             double polWindow = polLambdaEnd - polLambdaStart;
             double polLambdaScale = 1.0 / polWindow;
             polLambda = polLambdaScale * (lambda - polLambdaStart);
-            lPowPol = pow(polLambda, polLambdaExponent);
-            if (polLambdaExponent >= 1.0) {
-                dlPowPol = polLambdaExponent * pow(polLambda, polLambdaExponent - 1.0);
-                if (polLambdaExponent >= 2.0) {
-                    d2lPowPol = polLambdaExponent * (polLambdaExponent - 1.0)
-                            * pow(polLambda, polLambdaExponent - 2.0);
+            if (polLambdaExponent > 0.0) {
+                lPowPol = pow(polLambda, polLambdaExponent);
+                if (polLambdaExponent >= 1.0) {
+                    dlPowPol = polLambdaExponent * pow(polLambda, polLambdaExponent - 1.0);
+                    if (polLambdaExponent >= 2.0) {
+                        d2lPowPol = polLambdaExponent * (polLambdaExponent - 1.0)
+                                * pow(polLambda, polLambdaExponent - 2.0);
+                    }
                 }
             }
             /**
