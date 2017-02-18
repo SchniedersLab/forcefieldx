@@ -821,7 +821,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * A POLARIZATION_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
              * the beginning of the polarization schedule. Choosing a power of 3
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
-             * 
+             *
              * For DualForceField resolution switching, the Polarization energy will be changed at the
              * DualForceField level, and not interpolated within ForceFieldEnergy / PME. Thus, we
              * set the exponent to 0.0 in this case.
@@ -1279,6 +1279,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             globalMultipole = new double[nSymmNew][nAtoms][10];
             inducedDipole = new double[nSymmNew][nAtoms][3];
             inducedDipoleCR = new double[nSymmNew][nAtoms][3];
+            if (generalizedKirkwood != null) {
+                generalizedKirkwood.setAtoms(atoms);
+            }
         }
         nSymm = nSymmNew;
         neighborLists = neighborList.getNeighborList();

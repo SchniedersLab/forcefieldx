@@ -289,6 +289,26 @@ public class GeneralizedKirkwood implements LambdaInterface {
             ParallelTeam parallelTeam) {
 
         this.forceField = forceField;
+        this.atoms = atoms;
+        this.particleMeshEwald = particleMeshEwald;
+        this.crystal = crystal;
+        this.parallelTeam = parallelTeam;
+        nAtoms = atoms.length;
+        maxNumAtoms = nAtoms;
+        polarization = particleMeshEwald.polarization;
+
+        try {
+            epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON);
+            logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
+        } catch (Exception e) {
+            epsilon = dWater;
+        }
+
+        // Se the Kirkwood multipolar reaction field constants.
+        fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
+        fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
+        fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
+
         String forcefieldName = forceField.getString(ForceField.ForceFieldString.FORCEFIELD,
                 ForceField.ForceFieldName.AMOEBA_BIO_2009.toString());
         forcefieldName = forcefieldName.replaceAll("_", "-");
@@ -310,13 +330,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
         verboseRadii = vRadii;
 
-        try {
-            this.epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON);
-            logger.info(format(" (GK) GLOBAL dielectric constant set to %.2f", epsilon));
-        } catch (Exception e) {
-            this.epsilon = dWater;
-        }
-
         double bondiScaleValue;
         try {
             bondiScaleValue = forceField.getDouble(ForceField.ForceFieldDouble.GK_BONDIOVERRIDE);
@@ -329,20 +342,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
         bondiScale = bondiScaleValue;
 
-        /*String bondiOverride = System.getProperty("gk-bondiOverride");
-        if (bondiOverride != null) {
-            bondiScale = Double.parseDouble(bondiOverride);
-            logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
-        } else {
-            if (useFittedRadii) {
-                bondiScale = solventRadii.getDefaultBondi();
-            } else {
-                bondiScale = 1.15;
-            }
-            if (verboseRadii) {
-                logger.info(format(" (GK) Scaling GLOBAL bondi radii by factor: %.2f", bondiScale));
-            }
-        }*/
         String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
         if (radiiProp != null) {
             String tokens[] = radiiProp.split(",");
@@ -372,20 +371,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 radiiByNumberMap.put(num, factor);
             }
         }
-
-        // Se the Kirkwood multipolar reaction field constants.
-        fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
-        fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
-        fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
-
-        this.parallelTeam = parallelTeam;
-        nAtoms = atoms.length;
-        maxNumAtoms = nAtoms;
-        this.particleMeshEwald = particleMeshEwald;
-        polarization = particleMeshEwald.polarization;
-        neighborLists = particleMeshEwald.neighborLists;
-        this.crystal = crystal;
-        this.atoms = atoms;
 
         NonPolar nonpolarModel = NonPolar.CAV_DISP;
         try {
@@ -436,7 +421,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
          * Dual-Topology and the GK energy will be scaled with the overall
          * system lambda value.
          */
-        double polLambdaExp = forceField.getDouble(ForceField.ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 1.0);
+        double polLambdaExp = forceField.getDouble(ForceField.ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
         if (polLambdaExp == 0.0) {
             lambdaTerm = false;
             logger.info(" GK lambda term set to false.");
@@ -535,6 +520,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         globalMultipole = particleMeshEwald.globalMultipole[0];
         inducedDipole = particleMeshEwald.inducedDipole[0];
         inducedDipoleCR = particleMeshEwald.inducedDipoleCR[0];
+        neighborLists = particleMeshEwald.neighborLists;
         grad = particleMeshEwald.getGradient();
         torque = particleMeshEwald.getTorque();
         lambdaGrad = particleMeshEwald.getLambdaGradient();
