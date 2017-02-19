@@ -37,18 +37,12 @@
  */
 package ffx.potential.utils;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.crystal.Crystal;
@@ -115,17 +109,59 @@ public class PotentialsUtils implements PotentialsFunctions {
      * @return Array of MolecularAssembly.
      */
     @Override
-    public MolecularAssembly[] open(String file) {
+    public MolecularAssembly[] openAll(String file) {
         PotentialsFileOpener opener = new PotentialsFileOpener(file);
         opener.run();
         lastFilter = opener.getFilter();
         return opener.getAllAssemblies();
     }
     
+    @Override
+    public MolecularAssembly open(String filename) {
+        PotentialsFileOpener opener = new PotentialsFileOpener(filename);
+        opener.run();
+        lastFilter = opener.getFilter();
+        if (opener.getAllAssemblies().length > 1) {
+            logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", filename);
+        }
+        return opener.getAssembly();
+    }
+    
+    /**
+     * One one file object.
+     */
     public MolecularAssembly open(File file) {
         PotentialsFileOpener opener = new PotentialsFileOpener(file);
         opener.run();
+        lastFilter = opener.getFilter();
+        if (opener.getAllAssemblies().length > 1) {
+            logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
+        }
         return opener.getAssembly();
+    }
+    
+    /**
+     * Open one filename string without printing all the header material.
+     */
+    public MolecularAssembly openQuietly(String filename) {
+        Logger ffxLog = Logger.getLogger("ffx");
+        Level prevLev = ffxLog.getLevel();
+        ffxLog.setLevel(Level.WARNING);
+        MolecularAssembly mola = open(filename);
+        ffxLog.setLevel(prevLev);
+        return mola;
+    }
+    
+    /**
+     * Open one File object without printing all the header material.
+     */
+    public MolecularAssembly openQuietly(File file) {
+        Logger ffxLog = Logger.getLogger("ffx");
+        Level prevLev = ffxLog.getLevel();
+        ffxLog.setLevel(Level.WARNING);
+        MolecularAssembly mola = open(file);
+        ffxLog.setLevel(prevLev);
+        return mola;
     }
 
     /**
@@ -136,7 +172,7 @@ public class PotentialsUtils implements PotentialsFunctions {
      * @return Array of MolecularAssembly.
      */
     @Override
-    public MolecularAssembly[] open(String[] files) {
+    public MolecularAssembly[] openAll(String[] files) {
         PotentialsFileOpener opener = new PotentialsFileOpener(files);
         opener.run();
         lastFilter = opener.getFilter();
@@ -152,7 +188,7 @@ public class PotentialsUtils implements PotentialsFunctions {
      * @return Array of MolecularAssembly.
      */
     @Override
-    public MolecularAssembly[] open(String file, int nThreads) {
+    public MolecularAssembly[] openAll(String file, int nThreads) {
         PotentialsFileOpener opener = new PotentialsFileOpener(file);
         opener.setNThreads(nThreads);
         opener.run();

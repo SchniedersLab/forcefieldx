@@ -181,7 +181,7 @@ public class OPLSCrystalEnergyTest {
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
         PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
+        molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
 
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);

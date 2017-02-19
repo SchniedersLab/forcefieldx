@@ -93,21 +93,21 @@ public class UIUtils implements AlgorithmFunctions {
     }
 
     @Override
-    public FFXSystem[] open(String file) {
+    public FFXSystem[] openAll(String file) {
         FFXSystem[] systems = mainPanel.openWait(file);
         lastFilter = mainPanel.getFilter();
         return systems;
     }
 
     @Override
-    public FFXSystem[] open(String[] files) {
+    public FFXSystem[] openAll(String[] files) {
         FFXSystem[] systems = mainPanel.openWait(files);
         lastFilter = mainPanel.getFilter();
         return systems;
     }
 
     @Override
-    public FFXSystem[] open(String file, int nThreads) {
+    public FFXSystem[] openAll(String file, int nThreads) {
         FFXSystem[] systems = mainPanel.openWait(file, nThreads);
         lastFilter = mainPanel.getFilter();
         return systems;

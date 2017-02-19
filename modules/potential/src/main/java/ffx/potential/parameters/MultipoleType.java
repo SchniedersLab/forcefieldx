@@ -146,9 +146,20 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             convertBohrToElectronAngstroms();
         }
         checkMultipole();
-        packedMultipole = new double[]{charge, dipole[0], dipole[1], dipole[2],
-                quadrupole[0][0], quadrupole[1][1], quadrupole[2][2],
-                quadrupole[0][1], quadrupole[0][2], quadrupole[1][2]};
+//        packedMultipole = new double[]{charge, dipole[0], dipole[1], dipole[2],
+//                quadrupole[0][0], quadrupole[1][1], quadrupole[2][2],
+//                quadrupole[0][1], quadrupole[0][2], quadrupole[1][2]};
+        packedMultipole = new double[10];
+        packedMultipole[t000] = charge;
+        packedMultipole[t100] = dipole[0];
+        packedMultipole[t010] = dipole[1];
+        packedMultipole[t001] = dipole[2];
+        packedMultipole[t200] = quadrupole[0][0];
+        packedMultipole[t020] = quadrupole[1][1];
+        packedMultipole[t002] = quadrupole[2][2];
+        packedMultipole[t110] = quadrupole[0][1];
+        packedMultipole[t101] = quadrupole[0][2];
+        packedMultipole[t011] = quadrupole[1][2];
     }
     
     /**

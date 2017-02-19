@@ -58,17 +58,19 @@ import static java.lang.String.format;
 import javax.swing.tree.TreeNode;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtUtils.SB;
-import ffx.potential.extended.TitrationESV.TitrationUtils;
-import ffx.potential.extended.TitrationESV.TitrationUtils.Titr;
+import ffx.potential.extended.TitrationUtils.Titr;
+import ffx.potential.nonbonded.Multipole;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -90,7 +92,7 @@ public final class ExtUtils {
     private static final Logger logger = Logger.getLogger(ExtUtils.class.getName());
     private static final Random rng = ThreadLocalRandom.current();
     private static final CallerID cid = new CallerID();
-    private static final CompositeConfiguration extConfig = new CompositeConfiguration();
+    private static final Configuration esvConfig = new CompositeConfiguration();
     
     public static MolecularAssembly openFullyProtonated(File structure) {
         String name = format("%s-prot", FilenameUtils.removeExtension(structure.getName()));
@@ -119,11 +121,15 @@ public final class ExtUtils {
         return mola;
     }
     
-    /**
-     * ("log-format") Shorthand for the ubiquitous logger.info(String.format("why",42));
-     */
-    public static void logf(String msg, Object... args) {
-        cid.getCallingLogger().info(format(msg, args));
+    public static void initializeBackgroundMultipoles(List<Atom> backgroundAtoms, ForceField ff) {
+        for (int i = 0; i < backgroundAtoms.size(); i++) {
+            Atom bg = backgroundAtoms.get(i);
+            Multipole multipole = Multipole.buildMultipole(bg, ff);
+            if (multipole == null) {
+                logger.severe(format("No multipole could be assigned to atom %s of type %s.",
+                        bg.toString(), bg.getAtomType()));
+            }
+        }
     }
     
     /**
@@ -226,9 +232,9 @@ public final class ExtUtils {
                     key, value, defaultVal.toString()));
             throw ex;
         }
-        extConfig.setProperty(key, parsed);
-        System.setProperty(key, parsed.toString());
-//        logf(" ESV Property: %s = %s", key, parsed.toString());
+        if (key.startsWith("esv-")) {
+            esvConfig.setProperty(key, parsed);
+        }
         return parsed;
     }
     
@@ -237,22 +243,38 @@ public final class ExtUtils {
      */
     public static final <T extends Enum<T>> T prop(Class<T> type, String key, T def)
             throws IllegalArgumentException {
-        T parsed = (System.getProperty(key) != null) ? T.valueOf(type, System.getProperty(key)) : def;
-        extConfig.setProperty(key, parsed);
-        System.setProperty(key, parsed.toString());
-//        logf(" ESV Property: %s = %s", key, parsed.toString());
-        return parsed;
+        String value = System.getProperty(key);
+        if (value == null) {
+            return def;
+        }
+        try {
+            T parsed = T.valueOf(type, value);
+            if (key.startsWith("esv-")) {
+                esvConfig.setProperty(key, parsed);
+            }
+            return parsed;
+        } catch (IllegalArgumentException ex) {
+            SB.nlogfn("Invalid property definition: %s = %s for type %s.", key, value, type.getName());
+            SB.logfn( "  Allowable values:  %s", Arrays.toString(type.getEnumConstants()));
+            SB.logf(  "  Returning default: %s", def.toString());
+            SB.warning();
+            return def;
+        }
     }
 
-    public static void printExtConfig() {
-        Iterator<String> it = extConfig.getKeys();
-        SB.logfn("\n Extended Configuration: ");
+    public static void printEsvConfig() {
+        Iterator<String> it = esvConfig.getKeys();
+        SB.logfn("\n Extended Configuration ");
         while (it.hasNext()) {
             String key = it.next();
-            SB.logfn("   %16s = %6s", key, extConfig.getProperty(key).toString());
+            SB.logfn("   %-20s : %5s", key, esvConfig.getProperty(key).toString());
         }
         SB.nl();
         SB.print();
+    }
+    
+    public static Configuration getEsvConfig() {
+        return esvConfig;
     }
     
     /**
@@ -347,57 +369,81 @@ public final class ExtUtils {
     }
     
     /**
-     * SB help group messages for togetherness-printing, relieves arthritis from
-     * typing ".append(.format(" ad nauseum, handles newlines succinctly, and
-     * does away with laborious ".toString()" formatting. And it even logs through
-     * the logger of the *calling* class despite living in ExtUtils. Switch today!
+     * The SB utility:
+     *  1) relieves arthritis from typing ".append(.format(" ad nauseum,
+     *  2) handles newlines succinctly,
+     *  3) cuts memory allocation,
+     *  4) and prints through the logger of the calling class.
+     * Use print() to send messages to the console when ready.
+     * Stop wasting your life away with Logger and switch to SB today!
      */
     public static class SB {
         private SB() { /* utility singleton */ }
-        private static StringBuilder sb = new StringBuilder();
-        public static void clear() { sb = new StringBuilder(); }
+        private static final int initialCapacity = 500;
+        private static final StringBuilder sb = new StringBuilder(initialCapacity);
         /**
-         * append formatted message; use print() to send to console
+         * (log) with (f)ormat
          */
         public static void logf(String msg, Object... args) {
             sb.append(format(msg, args));
         }
         /**
-         * append formatted message plus newline; use print() to send to console
+         * (log) with (f)ormat, (n)ewline
          */
         public static void logfn(String msg, Object... args) {
             sb.append(format(msg, args)).append("\n");
         }
         /**
-         * append newline, then formatted message; use print() to send to console
+         * (n)ewline, (log) with (f)ormat
          */
         public static void nlogf(String msg, Object... args) {
             sb.append("\n").append(format(msg, args));
         }
+        /**
+         * (n)ewline, (log) with (f)ormat, (n)ewline
+         */
         public static void nlogfn(String msg, Object... args) {
             sb.append("\n").append(format(msg, args)).append("\n");
         }
+        /**
+         * (log) with (f)ormat, (p)rint
+         */
         public static void logfp(String msg, Object... args) {
             synchronized (SB.class) {
                 sb.append(format(msg, args));
                 print();
             }
         }
+        /**
+         * (n)ew(l)ine
+         */
         public static void nl() {
             sb.append("\n");
         }
+        /**
+         * Send to calling logger.
+         */
         public static void print() {
             cid.getCallingLogger().log(Level.INFO, sb.toString());
             clear();
         }
+        /**
+         * Send to calling logger as a warning.
+         */
         public static void warning(String msg, Object... args) {
             sb.append(format(msg, args));
             warning();
         }
+        /**
+         * Send to calling logger as a warning.
+         */
         public static void warning() {
             cid.getCallingLogger().log(Level.WARNING, sb.toString());
             clear();
         }
+        /**
+         * Send to calling logger or discard message.
+         */
         public static void printIf(boolean print) {
             if (print) {
                 print();
@@ -405,18 +451,130 @@ public final class ExtUtils {
                 clear();
             }
         }
-        public static String coerceFormat(String msg, Object... args) {
+        /**
+         * Discard message.
+         */
+        public static void clear() {
+            sb.replace(0, sb.capacity(), "");
+        }
+        /**
+         * Attempt to automatically coerce toString() requirements.
+         */
+        private static String format(String msg, Object... args) {
             try {
-                return format(msg, args);
+                return String.format(msg, args);
             } catch (IllegalFormatException ex) {
-                try {
-                    // NR: search for indexes of %s rather than replace all
-                    return format(msg, Arrays.toString(args));
-                } catch (IllegalFormatException ex2) {
-                    throw ex2;
-                }
+                // NR: search for indexes of %s rather than replacing all
+                return String.format(msg, arrayToStrings(args));
             }
         }
+    }
+    
+    public class SB_Instance {
+        public SB_Instance() {}
+        private static final int initialCapacity = 500;
+        private final StringBuilder sb = new StringBuilder(initialCapacity);
+        /**
+         * (log) with (f)ormat
+         */
+        public void logf(String msg, Object... args) {
+            sb.append(format(msg, args));
+        }
+        /**
+         * (log) with (f)ormat, (n)ewline
+         */
+        public void logfn(String msg, Object... args) {
+            sb.append(format(msg, args)).append("\n");
+        }
+        /**
+         * (n)ewline, (log) with (f)ormat
+         */
+        public void nlogf(String msg, Object... args) {
+            sb.append("\n").append(format(msg, args));
+        }
+        /**
+         * (n)ewline, (log) with (f)ormat, (n)ewline
+         */
+        public void nlogfn(String msg, Object... args) {
+            sb.append("\n").append(format(msg, args)).append("\n");
+        }
+        /**
+         * (log) with (f)ormat, (p)rint
+         */
+        public void logfp(String msg, Object... args) {
+            synchronized (SB.class) {
+                sb.append(format(msg, args));
+                print();
+            }
+        }
+        /**
+         * (n)ew(l)ine
+         */
+        public void nl() {
+            sb.append("\n");
+        }
+        /**
+         * Send to calling logger.
+         */
+        public void print() {
+            cid.getCallingLogger().log(Level.INFO, sb.toString());
+            clear();
+        }
+        /**
+         * Send to calling logger as a warning.
+         */
+        public void warning(String msg, Object... args) {
+            sb.append(format(msg, args));
+            warning();
+        }
+        /**
+         * Send to calling logger as a warning.
+         */
+        public void warning() {
+            cid.getCallingLogger().log(Level.WARNING, sb.toString());
+            clear();
+        }
+        /**
+         * Send to calling logger or discard message.
+         */
+        public void printIf(boolean print) {
+            if (print) {
+                print();
+            } else {
+                clear();
+            }
+        }
+        /**
+         * Discard message.
+         */
+        public void clear() {
+            sb.replace(0, sb.capacity(), "");
+        }
+        /**
+         * Attempt to automatically coerce toString() requirements.
+         */
+        private String format(String msg, Object... args) {
+            try {
+                return String.format(msg, args);
+            } catch (IllegalFormatException ex) {
+                // NR: search for indexes of %s rather than replacing all
+                return String.format(msg, arrayToStrings(args));
+            }
+        }
+    }
+    
+    /**
+     * Returns the result of calling toString() on each element of the array.
+     *  Returned type is Object[] (rather than String[]) to support use as varargs.
+     *  Example: 
+     *      format("%s",          Arrays.toString( array );  // GOOD
+     *      format("%s %s %s %s", Arrays.toString( array );  // FAIL
+     * 
+     *      format("%s",          arrayToStrings( array );   // FAIL
+     *      format("%s %s %s %s", arrayToStrings( array );   // GOOD
+     */
+    public static Object[] arrayToStrings(Object[] args) {
+        return Arrays.stream(args).map(Object::toString).toArray();
     }
     
     /**

@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -61,6 +62,7 @@ import javax.vecmath.Point2d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
+import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.extended.ExtendedVariable;
@@ -69,7 +71,6 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.VDWType;
 
-import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 
@@ -89,9 +90,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public enum Resolution {
         FIXEDCHARGE, AMOEBA;
     }
-
+    
     private Resolution resolution = Resolution.AMOEBA;
-
+    
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
     }
@@ -223,9 +224,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     private int xyzIndex = -1;
     /**
-     * Persistent index parallel to xyzIndex.
+     * Persistent (unmodifiable) indexing alternative to xyzIndex.
      */
-    public static int indexer = 1;
     public final int persistentIndex;
     /**
      * PDB "resname" record.
@@ -370,7 +370,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double globalQuadrupole[][] = null;
     private boolean applyState = false;
     private ExtendedVariable esv = null;
-    private int esvState = -1;
     private int moleculeNumber = 0;
     // solvation
     private double bornRadius;
@@ -407,7 +406,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     /* Extended System handling */
     private MultipoleType esvMultipoleM;
     private MultipoleType esvMultipoleMdot;
-    private static Indexing indexing = prop(Indexing.class, "atom-indexing", Indexing.XYZ);
 
     /**
      * Default constructor.
@@ -421,7 +419,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         currentCol = previousCol = RendererCache.toAtomColor(name);
         colorModel = ColorModel.CPK;
         redXYZ = null;
-        persistentIndex = indexer++;
+        persistentIndex = MolecularAssembly.persistentAtomIndexer++;
         //this.atomSerial = atomSerialCount.getAndIncrement();
     }
 
@@ -941,9 +939,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public void setESV(ExtendedVariable set) {
         if (esv != null && esv != set) {
-            logger.severe(format("Mutiple ESVs for one atom is not currently supported.\n"
-                               + "    offender: %s %s -> %s",
-                    this.toString(), esv.toString(), set.toString()));
+            logger.log(Level.SEVERE, "Mutiple ESVs for one atom is not currently supported.\n"
+                                   + "    offender: {0} {1} -> {2}",
+                    new String[]{this.toString(), esv.toString(), set.toString()});
         }
         esv = set;
     }
@@ -953,11 +951,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     
     public MultipoleType getEsvMultipoleM() {
-        if (getEsv() == null) {
-            return getMultipoleType();
-        }
-        if (!getEsv().isReady()) {
-//            SB.warning(" Atom.getEsvMultipoleM() fallback to getMultipoleType: %s", this.toString());
+        if (getEsv() == null || !getEsv().isReady()) {
+            logger.log(Level.WARNING, "@Atom.getEsvM: fallback to getMultipoleType by {0}", this.toString());
             return getMultipoleType();
         }
         return esvMultipoleM;
@@ -968,22 +963,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     
     public MultipoleType getEsvMultipoleMdot() {
-        if (getEsv() == null) {
-            return getMultipoleType();
-        }
-        if (!getEsv().isReady()) {
-//            SB.warning(" Atom.getEsvMultipoleM() fallback to getMultipoleType: %s", this.toString());
+        if (getEsv() == null || !getEsv().isReady()) {
+            logger.log(Level.WARNING, "@Atom.getEsvMdot: fallback to getMultipoleType() by {0}", this.toString());
             return getMultipoleType();
         }
         return esvMultipoleMdot;
-    }
-
-    public void setEsvState(int state) {
-        esvState = state;
-    }
-
-    public int getEsvState() {
-        return esvState;
     }
 
     /**
@@ -2361,6 +2345,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
             }
         }
         
+        if (!isBackground) {
+            for (Atom atom : torsion.getAtomArray()) {
+                if (atom.isBackground()) {
+                    return;
+                }
+            }
+        }
+        
         torsions.add(torsion);
         Atom a14 = torsion.get1_4(this);
         if (a14 != null) {
@@ -2702,8 +2694,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
         xyzIndex = set;
     }
     
+    /**
+     * Note: the MolecularAssembly to which this Atom belongs is cached.
+     * If you wanna move atoms between assemblies, un-cache it.
+     */
     public final int getIndex() {
-        switch (indexing) {
+        switch (MolecularAssembly.atomIndexing) {
             case PERSIST:
                 return persistentIndex;
             default:
@@ -2712,13 +2708,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
     
-    public static void resetIndexing() {
-        indexer = 1;
-    }
-
-    public static void setIndexing(Indexing mode) {
-        Atom.indexing = mode;
-    }
 
     /**
      * <p>

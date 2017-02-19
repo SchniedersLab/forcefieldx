@@ -210,6 +210,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private double permanentMultipoleEnergy;
     /**
+     * Not implemented in Cart.
+     * Permanent multipole energy (kcal/mol) due to real-space interactions only.
+     */
+    private double permanentRealSpaceEnergy = 0.0;
+    /**
      * Polarization energy (kcal/mol).
      */
     private double polarizationEnergy;
@@ -1143,6 +1148,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * @param atoms
      */
+    @Override
     public void setFixedCharges(Atom atoms[]) {
         for (Atom ai : atoms) {
             if (ai.getResolution() == Resolution.FIXEDCHARGE) {
@@ -1248,6 +1254,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         initSoftCore = true;
     }
 
+    @Override
     public void setAtoms(Atom atoms[], int molecule[]) {
         if (lambdaTerm && atoms.length != nAtoms) {
             logger.severe(" Changing the number of atoms is not compatible with use of Lambda.");
@@ -1266,6 +1273,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
+    @Override
     public void setCrystal(Crystal crystal) {
         /**
          * Check if memory allocation is required.
@@ -1300,6 +1308,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * @param print If <code>true</code>, extra logging is enabled.
      * @return return the total electrostatic energy (permanent + polarization).
      */
+    @Override
     public double energy(boolean gradient, boolean print) {
 
         this.gradient = gradient;
@@ -1809,6 +1818,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * @return a int.
      */
+    @Override
     public int getInteractions() {
         return interactions;
     }
@@ -1819,8 +1829,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * @return a double.
      */
+    @Override
     public double getPermanentEnergy() {
         return permanentMultipoleEnergy;
+    }
+    
+    @Override
+    public double getPermanentRealSpaceEnergy() {
+        return permanentRealSpaceEnergy;
     }
 
     /**
@@ -1829,6 +1845,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * @return a double.
      */
+    @Override
     public double getPolarizationEnergy() {
         return polarizationEnergy;
     }
@@ -1839,14 +1856,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * @return a double.
      */
+    @Override
     public double getGKEnergy() {
         return generalizedKirkwoodEnergy;
     }
 
+    @Override
     public double getCavitationEnergy(boolean throwError) {
         return generalizedKirkwood.getCavitationEnergy(throwError);
     }
 
+    @Override
     public double getDispersionEnergy(boolean throwError) {
         return generalizedKirkwood.getDispersionEnergy(throwError);
     }
@@ -1865,6 +1885,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * @return a int.
      */
+    @Override
     public int getGKInteractions() {
         return gkInteractions;
     }
@@ -1895,6 +1916,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * @return an array of double.
      */
+    @Override
     protected double[][][] getGradient() {
         return grad;
     }
@@ -1905,14 +1927,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      *
      * @return an array of double.
      */
+    @Override
     protected double[][][] getTorque() {
         return torque;
     }
 
+    @Override
     protected double[][][] getLambdaGradient() {
         return lambdaGrad;
     }
 
+    @Override
     protected double[][][] getLambdaTorque() {
         return lambdaTorque;
     }
@@ -2114,6 +2139,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return completedSCFCycles;
     }
 
+    @Override
     public void destroy() throws Exception {
         if (fftTeam != null) {
             try {
@@ -5999,6 +6025,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return cutoff;
     }
 
+    @Override
     public double getEwaldCutoff() {
         return off;
     }

@@ -85,6 +85,7 @@ import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RelativeSolvation;
+import ffx.potential.bonded.RelativeSolvation.SolvationLibrary;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RestraintBond;
 import ffx.potential.bonded.StretchBend;
@@ -224,6 +225,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double totalBondedEnergy;
     private double vanDerWaalsEnergy;
     private double permanentMultipoleEnergy;
+    private double permanentRealSpaceEnergy;
     private double polarizationEnergy;
     private double totalElectrostaticEnergy;
     private double totalNonBondedEnergy;
@@ -243,16 +245,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double[] optimizationScaling = null;
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
+    private boolean printOnFailure;
     private boolean printCompact = prop("ffe-combineBonded", false);
     private boolean printOverride = prop("ffe-printOverride", false);
-    private boolean printOnFailure;
+    private final boolean decomposePme = prop("ffe-decomposePme", false);
+    private final boolean noHeader = prop("ffe-noHeader", false);
     /**
      * *************************************
      */
     /*      Extended System Variables       */
     private ExtendedSystem esvSystem = null;
     private final boolean pmeQI = prop("pme-qi", false);
-    private final boolean decomposeEsvEnergy = prop("esv-decompose", false);
+    private final boolean decomposeEsvBias = prop("esv-decompose", false);
     /**
      * *************************************
      */
@@ -269,7 +273,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
         this(molecularAssembly, null);
     }
-
+    
     /**
      * <p>
      * Constructor for ForceFieldEnergy.</p>
@@ -284,6 +288,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     public ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
+        if (noHeader) {
+            logger.setLevel(Level.WARNING);
+        }
+        
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
@@ -441,46 +449,25 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         rigidHydrogens = forceField.getBoolean(ForceFieldBoolean.RIGID_HYDROGENS, false);
         rigidScale = forceField.getDouble(ForceFieldDouble.RIGID_SCALE, 10.0);
 
-        String relSolvLibrary = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
-        relativeSolvationTerm = true;
         nRelativeSolvations = 0;
-        switch (relSolvLibrary) {
-            case "AUTO":
-                if (generalizedKirkwoodTerm) {
-                    if (name.toUpperCase().contains("OPLS")) {
-                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P, forceField);
-                        // Change when we have good Generalized Born numbers of our own for OPLS.
-                    } else {
-                        relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK, forceField);
-                    }
-                } else {
-                    relativeSolvationTerm = false;
-                    relativeSolvation = null;
-                }
-                break;
-            case "GK":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.GK, forceField);
-                break;
-            case "EXPLICIT":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.EXPLICIT, forceField);
-                break;
-            case "WOLFENDEN":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.WOLFENDEN, forceField);
-                break;
-            case "CABANI":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.CABANI, forceField);
-                break;
-            case "MACCALLUM_SPC":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_SPC, forceField);
-                break;
-            case "MACCALLUM_TIP4P":
-                relativeSolvation = new RelativeSolvation(RelativeSolvation.SolvationLibrary.MACCALLUM_TIP4P, forceField);
-                break;
-            case "NONE":
-            default:
-                relativeSolvationTerm = false;
-                relativeSolvation = null;
-                break;
+        String relSolvLibrary = forceField.getString(ForceFieldString.RELATIVE_SOLVATION, "NONE").toUpperCase();
+        SolvationLibrary library = SolvationLibrary.valueOf(relSolvLibrary);
+        if (library == SolvationLibrary.AUTO) {
+            if (generalizedKirkwoodTerm && name.toUpperCase().contains("OPLS")) {
+                library = SolvationLibrary.MACCALLUM_TIP4P;
+                // Change when we have good Generalized Born numbers of our own for OPLS.
+            } else if (generalizedKirkwoodTerm) {
+                library = SolvationLibrary.GK;
+            } else {
+                library = SolvationLibrary.NONE;
+            }
+        }
+        if (library != SolvationLibrary.NONE) {
+            relativeSolvationTerm = true;
+            relativeSolvation = new RelativeSolvation(library, forceField);
+        } else {
+            relativeSolvationTerm = false;
+            relativeSolvation = null;
         }
 
         boolean checkAllNodeCharges = forceField.getBoolean(ForceFieldBoolean.CHECK_ALL_NODE_CHARGES, false);
@@ -717,6 +704,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         bondedRegion = new BondedRegion();
 
         molecularAssembly.setPotential(this);
+        if (noHeader) {
+            logger.setLevel(logger.getParent().getLevel());
+        }
     }
 
     /**
@@ -1140,6 +1130,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public void setLambdaBondedTerms(boolean lambdaBondedTerms) {
         this.lambdaBondedTerms = lambdaBondedTerms;
     }
+    
+    /**
+     * Easy!
+     */
+    public double energy () {
+        return energy(false, false);
+    }
 
     /**
      * <p>
@@ -1191,6 +1188,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             // Zero out the potential energy of each non-bonded term.
             vanDerWaalsEnergy = 0.0;
             permanentMultipoleEnergy = 0.0;
+            permanentRealSpaceEnergy = 0.0;
             polarizationEnergy = 0.0;
             totalElectrostaticEnergy = 0.0;
             totalNonBondedEnergy = 0.0;
@@ -1260,6 +1258,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     electrostaticTime = -System.nanoTime();
                     totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
                     permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
+                    permanentRealSpaceEnergy = particleMeshEwald.getPermanentRealSpaceEnergy();
                     polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
                     nPermanentInteractions = particleMeshEwald.getInteractions();
                     solvationEnergy = particleMeshEwald.getGKEnergy();
@@ -1298,7 +1297,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             totalNonBondedEnergy = vanDerWaalsEnergy + totalElectrostaticEnergy + relativeSolvationEnergy;
             totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
             if (esvTerm) {
-                esvBias = esvSystem.getBiasEnergy(null);
+                esvBias = esvSystem.getBiasEnergy();
                 totalEnergy += esvBias;
             }
         } catch (EnergyException ex) {
@@ -1566,12 +1565,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     nVanDerWaalInteractions, vanDerWaalsTime * toSeconds));
         }
         if (multipoleTerm && nPermanentInteractions > 0) {
+            String pmeTitle = (particleMeshEwald instanceof ParticleMeshEwaldQI)
+                    ? "Q.Int. Multipoles "
+                    : "Atomic Multipoles ";
             if (polarizationTerm) {
                 sb.append(String.format("  %s %16.8f %12d\n",
-                        "Atomic Multipoles ", permanentMultipoleEnergy, nPermanentInteractions));
+                        pmeTitle, permanentMultipoleEnergy, nPermanentInteractions));
             } else {
                 sb.append(String.format("  %s %16.8f %12d %12.3f\n",
-                        "Atomic Multipoles ", permanentMultipoleEnergy, nPermanentInteractions, electrostaticTime * toSeconds));
+                        pmeTitle, permanentMultipoleEnergy, nPermanentInteractions, electrostaticTime * toSeconds));
+            }
+            if (pmeQI && decomposePme) {
+                sb.append(((ParticleMeshEwaldQI) particleMeshEwald).getDecomposition());
             }
         }
         if (polarizationTerm && nPermanentInteractions > 0) {
@@ -2364,6 +2369,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public double getPermanentMultipoleEnergy() {
         return permanentMultipoleEnergy;
     }
+    
+    public double getPermanentRealSpaceEnergy() {
+        return permanentRealSpaceEnergy;
+    }
 
     public int getPermanentInteractions() {
         return nPermanentInteractions;
@@ -2785,10 +2794,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
             // Zero out shared restraint energy values.
             sharedRestraintBondEnergy.set(0.0);
-
-            if (esvTerm) {
-                esvSystem.updateBondedEsvLambda();
-            }
 
             // Assure capacity of the gradient arrays.
             if (gradient) {

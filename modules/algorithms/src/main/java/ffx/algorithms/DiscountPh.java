@@ -73,9 +73,10 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.extended.ExtConstants;
 import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.extended.ExtendedSystem.EsvConfiguration;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationESV.TitrationUtils;
+import ffx.potential.extended.TitrationUtils;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parsers.PDBFilter;
@@ -84,7 +85,6 @@ import ffx.potential.utils.SystemTemperatureException;
 
 import static ffx.potential.extended.ExtUtils.DebugHandler.VERBOSE;
 import static ffx.potential.extended.ExtUtils.formatArray;
-import static ffx.potential.extended.ExtUtils.logf;
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**
@@ -113,6 +113,7 @@ public class DiscountPh {
     // Extended System and Monte Carlo
     private double pH;
     private final ExtendedSystem esvSystem;
+    private final EsvConfiguration esvConfig;
     private double targetTemperature = 298.15;
     private final Random rng = new Random();
     private int movesAccepted;
@@ -160,6 +161,7 @@ public class DiscountPh {
             boolean initVelocities, String fileType, double writeRestartInterval, File dyn) {
         this.mola = mola;
         this.esvSystem = esvSystem;
+        this.esvConfig = esvSystem.getConfig();
         this.molDyn = molDyn;
         this.dt = timeStep;
         this.printInterval = printInterval;
@@ -176,7 +178,7 @@ public class DiscountPh {
         library = RotamerLibrary.getDefaultLibrary();
 
         // Print system props.
-        SB.logfn(" Advanced option flags: ");
+        SB.logfp(" Advanced option flags: ");
         System.getProperties().keySet().stream()
                 .filter(k -> {
                     String key = k.toString().toLowerCase();
@@ -187,7 +189,7 @@ public class DiscountPh {
                     }
                     return false;
                 })
-                .forEach(key -> SB.logf(" #%s=%s",
+                .forEach(key -> SB.logfp(" #%s=%s",
                         key.toString(), System.getProperty(key.toString())));
         SB.printIf(true);
 
@@ -200,7 +202,7 @@ public class DiscountPh {
         library.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
         library.setUseOrigCoordsRotamer(false);
 
-        logf(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", pH);
+        SB.logfp(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", pH);
 
         ffe.reInit();
     }
@@ -218,7 +220,7 @@ public class DiscountPh {
         // Take an energy to get all the types assigned.
         currentTotalEnergy();
 
-        logf(" Testing interpolation of Histidine: ");
+        SB.logfp(" Testing interpolation of Histidine: ");
         Residue his = null, hie = null, hid = null;
         List<Residue> resList = mola.getResidueList();
         for (Residue res : resList) {
@@ -238,14 +240,14 @@ public class DiscountPh {
             Atom hidAtom = (Atom) hid.getAtomNode(hisAtom.getName());
             Atom hieAtom = (Atom) hie.getAtomNode(hisAtom.getName());
             if (hidAtom == null || hieAtom == null) {
-                logf(" No triplet for atom %s", hisAtom);
+                SB.logfp(" No triplet for atom %s", hisAtom);
             } else {
-                logf(" Triplet: %s %s %s\n", ((MSNode) hisAtom).getName(), ((MSNode) hidAtom).getName(), ((MSNode) hieAtom).getName());
+                SB.logfp(" Triplet: %s %s %s\n", ((MSNode) hisAtom).getName(), ((MSNode) hidAtom).getName(), ((MSNode) hieAtom).getName());
                 if (((MSNode) hisAtom).getName().equalsIgnoreCase("ND1")) {
                     hisNd = hisAtom;
                     hidNd = hidAtom;
                     hieNd = hieAtom;
-                    logf("  Found the Nd atoms!");
+                    SB.logfp("  Found the Nd atoms!");
                 }
             }
         }
@@ -259,7 +261,7 @@ public class DiscountPh {
          *          0      1.5000         0   -9.0000
          *    -1.0000           0    6.0000   -4.0000
             */
-        SB.logf(" Bicubic Interpolation (0.0 0.5 1.0): \n");
+        SB.logfp(" Bicubic Interpolation (0.0 0.5 1.0): \n");
         double[][] alpha = new double[][]{{0, 0, 3, -2}, {0, 0, 0, 0}, {0, 1.5, 0, -9}, {-1, 0, 6, -4}};
         double sum = 0.0;
         for (double lp = 0.0; lp < 1.0; lp += 0.1) {
@@ -270,8 +272,8 @@ public class DiscountPh {
                         p += alpha[i][j] * pow(lp,i) * pow(lt,j);
                     }
                 }
-//                SB.logf(" lp,lt,p: %.2f %.2f %g", lp, lt, p);
-                SB.logf(" %g", p);
+//                SB.logfp(" lp,lt,p: %.2f %.2f %g", lp, lt, p);
+                SB.logfp(" %g", p);
             }
             SB.nl();
         }
@@ -287,7 +289,7 @@ public class DiscountPh {
         }
         int[] frameAtomTypes = null;
 
-        SB.logf(" Successive cubic interpolation (ND): \n");
+        SB.logfp(" Successive cubic interpolation (ND): \n");
         for (double lt = 0.0; lt < 1.0; lt += 0.25) {
             MultipoleType scaleTaut[] = new MultipoleType[]{hidNdType, hieNdType};
             double weightTaut[] = new double[]{lt, 1.0 - lt};
@@ -296,7 +298,7 @@ public class DiscountPh {
                 MultipoleType scaleProt[] = new MultipoleType[]{hisNdType, tautType};
                 double weightProt[] = new double[]{lp, 1.0 - lp};
                 MultipoleType protType = MultipoleType.scale(scaleProt, weightProt, frameAtomTypes);
-                SB.logf(" lt,lp,finalType{c,d,q}: %.2f %.2f %g %s %s\n",
+                SB.logfp(" lt,lp,finalType{c,d,q}: %.2f %.2f %g %s %s\n",
                         lt, lp, protType.charge, formatArray(protType.dipole), formatArray(protType.quadrupole));
             }
         }
@@ -319,17 +321,17 @@ public class DiscountPh {
         while (stepsTaken < totalSteps) {
             tryContinuousTitrationMove(titrationDuration, temperature);
             if (stepsTaken + titrationFrequency < totalSteps) {
-                logf(" Re-launching DISCOuNT-pH MD for %d steps.", titrationFrequency);
+                SB.logfp(" Re-launching DISCOuNT-pH MD for %d steps.", titrationFrequency);
                 molDyn.redynamic(titrationFrequency, temperature);
                 stepsTaken += titrationFrequency;
             } else {
-                logf(" Launching final run of DISCOuNT-pH MD for %d steps.", totalSteps - stepsTaken);
+                SB.logfp(" Launching final run of DISCOuNT-pH MD for %d steps.", totalSteps - stepsTaken);
                 molDyn.redynamic(totalSteps - stepsTaken, temperature);
                 stepsTaken = totalSteps;
                 break;
             }
         }
-        logf(" DISCOuNT-pH completed %d steps and %d moves, of which %d were accepted.",
+        SB.logfp(" DISCOuNT-pH completed %d steps and %d moves, of which %d were accepted.",
                 totalSteps, totalSteps / titrationFrequency, movesAccepted);
     }
 
@@ -368,11 +370,10 @@ public class DiscountPh {
         return chosen;
     }
 
-    private List<ExtendedVariable> createESVs(List<Residue> chosen) {
+    private List<ExtendedVariable> createESVs(List<Residue> chosen, EsvConfiguration config) {
         for (Residue res : chosen) {
             MultiResidue titr = TitrationUtils.titrationFactory(mola, res);
-            TitrationESV esv = new TitrationESV(titr, pH);
-            esv.readyup();
+            TitrationESV esv = new TitrationESV(config, titr, pH);
             esvSystem.addVariable(esv);
             titratingESVs.add(esv);
         }
@@ -388,10 +389,10 @@ public class DiscountPh {
         for (String crID : crIDs) {
             Character chain = crID.charAt(0);
             int num = Integer.parseInt(crID.substring(1));
-            logf(" Looking for crID %c,%d.", chain, num);
+            SB.logfp(" Looking for crID %c,%d.", chain, num);
             boolean found = false;
             for (Residue res : allRes) {
-                logf(" Checking residue %s,%c,%d...",
+                SB.logfp(" Checking residue %s,%c,%d...",
                         res, res.getChainID(), res.getResidueNumber());
                 if (res.getChainID().charValue() == chain) {
                     if (res.getResidueNumber() == num) {
@@ -434,8 +435,7 @@ public class DiscountPh {
         }
         // Create containers (MR or ESV) for titratables.
         for (Residue res : chosenResidues) {
-            TitrationESV esv = new TitrationESV(TitrationUtils.titrationFactory(mola, res), pH, dt);
-            esv.readyup();
+            TitrationESV esv = new TitrationESV(esvConfig, TitrationUtils.titrationFactory(mola, res), pH, dt);
             titratingESVs.add(esv);
             titratingMultiResidues.add(esv.getMultiRes());
         }
@@ -658,8 +658,8 @@ public class DiscountPh {
         molDyn.attachExtendedSystem(esvSystem);
         molDyn.setNotifyMonteCarlo(false);
 
-        logf(" Trying continuous titration move:");
-        logf("   Starting energy: %10.4g", eo);
+        SB.logfp(" Trying continuous titration move:");
+        SB.logfp("   Starting energy: %10.4g", eo);
         molDyn.redynamic(titrationDuration, targetTemperature);
         logger.info(" Move finished; detaching extended system.");
         molDyn.detachExtendedSystem();
@@ -671,8 +671,8 @@ public class DiscountPh {
         double kT = ExtConstants.Boltzmann * temperature;
         final double crit = exp(-dGmc / kT);
         final double rand = rng.nextDouble();
-        logf("   Final energy:    %10.4g", en);
-        logf("   dG_mc,crit,rng:  %10.4g, %.4f, %.4f", dGmc, crit, rand);
+        SB.logfp("   Final energy:    %10.4g", en);
+        SB.logfp("   dG_mc,crit,rng:  %10.4g, %.4f, %.4f", dGmc, crit, rand);
         long took = System.nanoTime() - startTime;
         if (dGmc <= crit) {
             logger.info(" Move accepted!");
@@ -832,13 +832,13 @@ public class DiscountPh {
         molDyn.reInit();
 
         StringBuilder sb = new StringBuilder();
-        SB.logfn("Active:");
+        SB.logfp("Active:");
         for (Atom a : multiRes.getActive().getAtomList()) {
-            SB.logfn("  %s", a);
+            SB.logfp("  %s", a);
         }
-        SB.logfn("Inactive:");
+        SB.logfp("Inactive:");
         for (Atom a : multiRes.getInactive().get(0).getAtomList()) {
-            SB.logfn("  %s", a);
+            SB.logfp("  %s", a);
         }
         SB.print();
 
@@ -878,7 +878,7 @@ public class DiscountPh {
                     Atom inactiveAtom = (Atom) inactive.getAtomNode(activeName);
 //                    debug(3, String.format(" inactiveAtom = %s", inactiveAtom));
                     if (inactiveAtom != null) {
-//                        logf(String.format(" Propagating %s\n          to %s.", activeAtom, inactiveAtom));
+//                        SB.logfp(String.format(" Propagating %s\n          to %s.", activeAtom, inactiveAtom));
                         // Propagate position and gradient.
                         double activeXYZ[] = activeAtom.getXYZ(null);
                         inactiveAtom.setXYZ(activeXYZ);
@@ -895,7 +895,7 @@ public class DiscountPh {
                         double activePrevAcc[] = new double[3];
                         activeAtom.getPreviousAcceleration(activePrevAcc);
                         inactiveAtom.setPreviousAcceleration(activePrevAcc);
-                        logf(String.format("\n          to %s.", activeAtom, inactiveAtom));
+                        SB.logfp(String.format("\n          to %s.", activeAtom, inactiveAtom));
                     } else {
                         if (activeName.equals("C") || activeName.equals("O") || activeName.equals("N") || activeName.equals("CA")
                                 || activeName.equals("H") || activeName.equals("HA")) {
@@ -936,7 +936,7 @@ public class DiscountPh {
                         Atom HZ1 = (Atom) inactive.getAtomNode("HZ1");
                         BondedUtils.intxyz(HZ3, NZ, 1.02, CE, 109.5, HZ1, 109.5, -1);
                         resetMe = HZ3;
-//                        logf(" Moved 'stranded' hydrogen %s.", HZ3);
+//                        SB.logfp(" Moved 'stranded' hydrogen %s.", HZ3);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HZ3 = buildHydrogen(inactive, "HZ3", NZ, 1.02, CE, 109.5, HZ1, 109.5, -1, k + 9, forceField, null);
                         break;
@@ -948,7 +948,7 @@ public class DiscountPh {
                         Atom OD1 = (Atom) inactive.getAtomNode("OD1");
                         BondedUtils.intxyz(HD2, OD2, 0.98, CG, 108.7, OD1, 0.0, 0);
                         resetMe = HD2;
-//                        logf(" Moved 'stranded' hydrogen %s.", HD2);
+//                        SB.logfp(" Moved 'stranded' hydrogen %s.", HD2);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HD2 = buildHydrogen(residue, "HD2", OD2, 0.98, CG, 108.7, OD1, 0.0, 0, k + 5, forceField, bondList);
                         break;
@@ -960,7 +960,7 @@ public class DiscountPh {
                         Atom OE1 = (Atom) inactive.getAtomNode("OE1");
                         BondedUtils.intxyz(HE2, OE2, 0.98, CD, 108.7, OE1, 0.0, 0);
                         resetMe = HE2;
-//                        logf(" Moved 'stranded' hydrogen %s.", HE2);
+//                        SB.logfp(" Moved 'stranded' hydrogen %s.", HE2);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HE2 = buildHydrogen(residue, "HE2", OE2, 0.98, CD, 108.7, OE1, 0.0, 0, k + 7, forceField, bondList);
                         break;
@@ -985,8 +985,8 @@ public class DiscountPh {
                         HD1.setVelocity(molDyn.getThermostat().maxwellIndividual(HD1.getMass()));
                         HD1.setAcceleration(new double[]{0, 0, 0});
                         HD1.setPreviousAcceleration(new double[]{0, 0, 0});
-//                        logf(" Moved 'stranded' hydrogen %s.", HE2);
-//                        logf(" Moved 'stranded' hydrogen %s.", HD1);
+//                        SB.logfp(" Moved 'stranded' hydrogen %s.", HE2);
+//                        SB.logfp(" Moved 'stranded' hydrogen %s.", HD1);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HE2 = buildHydrogen(residue, "HE2", NE2, 1.02, CD2, 126.0, CE1, 126.0, 1, k + 10, forceField, bondList);
                         // Atom HD1 = buildHydrogen(residue, "HD1", ND1, 1.02, CG, 126.0, CB, 0.0, 0, k + 4, forceField, bondList);
@@ -1021,7 +1021,7 @@ public class DiscountPh {
                         Atom CA = (Atom) inactive.getAtomNode("CA");
                         BondedUtils.intxyz(HG, SG, 1.34, CB, 96.0, CA, 180.0, 0);
                         resetMe = HG;
-//                        logf(" Moved 'stranded' hydrogen %s.", HG);
+//                        SB.logfp(" Moved 'stranded' hydrogen %s.", HG);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HG = buildHydrogen(residue, "HG", SG, 1.34, CB, 96.0, CA, 180.0, 0, k + 3, forceField, bondList);
                         break;
@@ -1033,7 +1033,7 @@ public class DiscountPh {
                         Atom CE2 = (Atom) inactive.getAtomNode("CE2");
                         BondedUtils.intxyz(HH, OH, 0.97, CZ, 108.0, CE2, 0.0, 0);
                         resetMe = HH;
-//                        logf(" Moved 'stranded' hydrogen %s.", HH);
+//                        SB.logfp(" Moved 'stranded' hydrogen %s.", HH);
                         // Parameters from AminoAcidUtils, line:
                         // Atom HH = buildHydrogen(residue, "HH", OH, 0.97, CZ, 108.0, CE2, 0.0, 0, k + 9, forceField, bondList);
                         break;
@@ -1060,7 +1060,7 @@ public class DiscountPh {
                         // TODO add check for null inactive
                         /* TODO also loop the other way (for each inactive: active.getAtomNode(inactive.getName())
                                 to ensure that all atoms get treated? */
-//                        logf(" %s\n %s\n", activeAtom, inactiveAtom);
+//                        SB.logfp(" %s\n %s\n", activeAtom, inactiveAtom);
                     }
                 }
             }

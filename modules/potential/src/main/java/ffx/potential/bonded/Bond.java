@@ -72,6 +72,7 @@ import static ffx.potential.parameters.BondType.units;
  * @since 1.0
  *
  */
+@SuppressWarnings("CloneableImplementsClone")
 public class Bond extends BondedTerm {
 
     private static final Logger logger = Logger.getLogger(Bond.class.getName());

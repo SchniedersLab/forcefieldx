@@ -37,11 +37,12 @@
  */
 package ffx.potential.bonded;
 
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.RelativeSolvationType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.RelativeSolvationType;
 
 /**
  * A relative solvation term for chemical perturbations.
@@ -463,7 +464,7 @@ public class RelativeSolvation {
     
     public enum SolvationLibrary {
         WOLFENDEN, CABANI, EXPLICIT, GK, MACCALLUM_SPC, MACCALLUM_TIP4P, OPLS_EXPLICIT,
-        OPLS_GK
+        OPLS_GK, AUTO, NONE
         /**
          * Citations:
          * Wolfenden et al:
