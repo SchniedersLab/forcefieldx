@@ -51,10 +51,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
-import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
@@ -255,7 +253,8 @@ public class Barostat implements CrystalPotential {
     private double gammaSD = 0;
     private final int printFrequency = 1000;
     private double minDensity = 0.75;
-    private double maxDensity = 1.50;
+    // NNQQ Peptide has a density of 1.4.
+    private double maxDensity = 1.60;
     private MoveType moveType = MoveType.SIDE;
 
     /**

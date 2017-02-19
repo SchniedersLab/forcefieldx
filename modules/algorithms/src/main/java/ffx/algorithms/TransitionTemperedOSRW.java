@@ -63,6 +63,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 
 import edu.rit.mp.DoubleBuf;
 
+import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.LambdaInterface;
@@ -586,14 +587,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     double mass = molecularAssembly.getMass();
                     double density = potential.getCrystal().getDensity(mass);
-                    if (systemFilter.writeFile(optFile, false)) {
-                        optFile = systemFilter.getFile();
-                        logger.info(String.format(" Minimum: %12.6f (%12.6f g/cc) optimized from %12.6f at step %d (%s).",
-                                minEnergy, density, startingEnergy, energyCount, optFile.getName()));
-                    } else {
-                        logger.info(String.format(" Minimum: %12.6f (%12.6f g/cc) optimized from %12.6f at step %d.",
-                                minEnergy, density, startingEnergy, energyCount));
-                    }
+                    systemFilter.writeFile(optFile, false);
+                    Crystal uc = potential.getCrystal().getUnitCell();
+                    logger.info(String.format(" Minimum: %12.6f %s (%12.6f g/cc) optimized from %12.6f at step %d.",
+                            minEnergy, uc.toShortString(), density, startingEnergy, energyCount));
                 }
             } catch (EnergyException ex) {
                 String message = ex.getMessage();
@@ -899,14 +896,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     }
 
     /**
-     * Sets the Dama et al tempering parameter, as a multiple of kbT. T is
-     * presently assumed to be 298.0K.
+     * Sets the Dama et al tempering parameter, as a multiple of kBT.
      *
      * @param temper
      */
     public void setDeltaT(double temper) {
         temperingFactor = temper;
-        deltaT = temperingFactor * R * temperature;
+        if (temperingFactor > 0.0) {
+                deltaT = temperingFactor * R * temperature;
+        } else {
+                deltaT = Double.MAX_VALUE;
+        }
     }
 
     /**

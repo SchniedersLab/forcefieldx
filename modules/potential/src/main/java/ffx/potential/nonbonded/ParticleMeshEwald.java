@@ -71,6 +71,7 @@ public abstract class ParticleMeshEwald {
      * The number of atoms in the system.
      */
     protected int nAtoms;
+
     /**
      * Polarization modes include "direct", in which induced dipoles do not
      * interact, and "mutual" that converges the self-consistent field to a
@@ -123,8 +124,9 @@ public abstract class ParticleMeshEwald {
      */
     protected static final int tensorCount = MultipoleTensor.tensorCount(3);
     protected static final double oneThird = 1.0 / 3.0;
-    
+
     public class EnergyForceTorque {
+
         public double energy;
         public double[] permFi = new double[3];
         public double[] permTi = new double[3];
@@ -215,6 +217,7 @@ public abstract class ParticleMeshEwald {
 
     /**
      * Log the real space electrostatics interaction.
+     *
      * @param i Atom i.
      * @param k Atom j.
      * @param r The distance rij.

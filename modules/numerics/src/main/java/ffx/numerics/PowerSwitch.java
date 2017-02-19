@@ -87,10 +87,19 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
     public boolean validOutsideBounds() {
         return false;
     }
+    
+    /**
+     * Power switch derivatives can be zero at the zero bound if the exponent
+     * is greater than the derivative order.
+     * @return 
+     */
+    @Override
+    public int highestOrderZeroDerivativeAtZeroBound() {
+        return beta >= 1 ? ((int) beta) - 1 : 0;
+    }
 
     @Override
     public int getHighestOrderZeroDerivative() {
-        //return beta > 0 ? ((int) beta) - 1 : 0;
         return 0;
     }
     

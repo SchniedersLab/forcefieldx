@@ -605,9 +605,9 @@ public class SwitchFunctionTest {
      * @param looseTolerances Use looser tolerances for test acceptance
      */
     private void standardTest(UnivariateSwitchingFunction sf, double tolerance) {
-        double ub = sf.getOneBound();
-        double lb = sf.getZeroBound();
-        double increment = ((ub - lb) * 0.01);
+        double oneBound = sf.getOneBound();
+        double zeroBound = sf.getZeroBound();
+        double increment = ((oneBound - zeroBound) * 0.01);
         
         double minBound = 0.0 - tolerance;
         double maxBound = 1.0 + tolerance;
@@ -615,12 +615,12 @@ public class SwitchFunctionTest {
         for (int i = 0; i < 101; i++) {
             double pastLB = i * increment;
             // Slightly convoluted logic to avoid any round-off errors at ub.
-            double x = (i == 100) ? ub : lb + pastLB;
+            double x = (i == 100) ? oneBound : zeroBound + pastLB;
             double val = sf.valueAt(x);
             assertTrue(String.format("Switching function %s value at %8.4g was %8.4g, not in the range 0-1 inclusive", sf.toString(), x, val), val >= minBound && val <= maxBound);
             
             if (sf.symmetricToUnity()) {
-                double symmX = ub - pastLB;
+                double symmX = oneBound - pastLB;
                 double symmVal = sf.valueAt(symmX);
                 assertEquals(String.format("Switching function %s should be "
                         + "symmetrical; values %7.4f and %7.4f at %7.4f and %7.4f "
@@ -634,24 +634,24 @@ public class SwitchFunctionTest {
         double valAtUB = sf.valueAt(sf.getOneBound());
         double valAtLB = sf.valueAt(sf.getZeroBound());
         if (Math.abs(valAtLB) < tolerance) {
-            assertEquals(String.format("Switching function %s value at zero bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), lb, valAtLB), 0.0, valAtLB, tolerance);
-            assertEquals(String.format("Switching function %s value at one bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), ub, valAtUB), 1.0, valAtUB, tolerance);
+            assertEquals(String.format("Switching function %s value at zero bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), zeroBound, valAtLB), 0.0, valAtLB, tolerance);
+            assertEquals(String.format("Switching function %s value at one bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), oneBound, valAtUB), 1.0, valAtUB, tolerance);
         } else {
-            assertEquals(String.format("Switching function %s value at zero bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), lb, valAtLB), 1.0, valAtLB, tolerance);
-            assertEquals(String.format("Switching function %s value at one bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), ub, valAtUB), 0.0, valAtUB, tolerance);
+            assertEquals(String.format("Switching function %s value at zero bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), zeroBound, valAtLB), 1.0, valAtLB, tolerance);
+            assertEquals(String.format("Switching function %s value at one bound %8.4g was not 0.0 or 1.0, was %8.4g", sf.toString(), oneBound, valAtUB), 0.0, valAtUB, tolerance);
             logger.info(String.format(" Value of switching function %s at zero bound was 1.0, not 0.0; switching functions usually start at 0", sf));
         }
         if (validOutside || constantOutside) {
             for (int i = 1; i < 251; i++) {
                 double pastBounds = i * increment;
-                double x = lb - pastBounds;
+                double x = zeroBound - pastBounds;
                 double val = sf.valueAt(x);
                 assertTrue(String.format("Switching function %s value at %8.4g (outside lb-ub) was %8.4g, not in the range 0-1 inclusive", sf.toString(), x, val), val > minBound && val < maxBound);
                 if (constantOutside) {
                     assertEquals(String.format("Switching function %s value at %8.4g was %8.4g, did not match zero bound value %8.4g", sf.toString(), x, val, valAtLB), valAtLB, val, tolerance);
                 }
                 
-                x = ub + pastBounds;
+                x = oneBound + pastBounds;
                 val = sf.valueAt(x);
                 assertTrue(String.format("Switching function %s value at %8.4g (outside lb-ub) was %8.4g, not in the range 0-1 inclusive", sf.toString(), x, val), val >= 0.0 && val <= 1.0);
                 if (constantOutside) {
@@ -662,20 +662,34 @@ public class SwitchFunctionTest {
         
         int maxZeroOrder = sf.getHighestOrderZeroDerivative();
         if (maxZeroOrder >= 1) {
-            double deriv = sf.firstDerivative(lb);
-            assertEquals(String.format("Switching function %s first derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), lb, deriv), 0.0, deriv, tolerance);
-            deriv = sf.firstDerivative(ub);
-            assertEquals(String.format("Switching function %s first derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), ub, deriv), 0.0, deriv, tolerance);
+            double deriv = sf.firstDerivative(zeroBound);
+            assertEquals(String.format("Switching function %s first derivative at lb %8.4g was nonzero value %8.4g", sf.toString(), zeroBound, deriv), 0.0, deriv, tolerance);
+            deriv = sf.firstDerivative(oneBound);
+            assertEquals(String.format("Switching function %s first derivative at ub %8.4g was nonzero value %8.4g", sf.toString(), oneBound, deriv), 0.0, deriv, tolerance);
             if (maxZeroOrder >= 2) {
-                deriv = sf.secondDerivative(lb);
-                assertEquals(String.format("Switching function %s second derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), lb, deriv), 0.0, deriv, tolerance);
-                deriv = sf.secondDerivative(ub);
-                assertEquals(String.format("Switching function %s second derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), ub, deriv), 0.0, deriv, tolerance);
+                deriv = sf.secondDerivative(zeroBound);
+                assertEquals(String.format("Switching function %s second derivative at lb %8.4g was nonzero value %8.4g", sf.toString(), zeroBound, deriv), 0.0, deriv, tolerance);
+                deriv = sf.secondDerivative(oneBound);
+                assertEquals(String.format("Switching function %s second derivative at ub %8.4g was nonzero value %8.4g", sf.toString(), oneBound, deriv), 0.0, deriv, tolerance);
                 for (int i = 3; i <= maxZeroOrder; i++) {
-                    deriv = sf.nthDerivative(lb, i);
-                    assertEquals(String.format("Switching function %s %d-order derivative at lb %8.4g was nonzero value $8.4g", sf.toString(), i, lb, deriv), 0.0, deriv, tolerance);
-                    deriv = sf.nthDerivative(ub, i);
-                    assertEquals(String.format("Switching function %s %d-order derivative at ub %8.4g was nonzero value $8.4g", sf.toString(), i, ub, deriv), 0.0, deriv, tolerance);
+                    deriv = sf.nthDerivative(zeroBound, i);
+                    assertEquals(String.format("Switching function %s %d-order derivative at lb %8.4g was nonzero value %8.4g", sf.toString(), i, zeroBound, deriv), 0.0, deriv, tolerance);
+                    deriv = sf.nthDerivative(oneBound, i);
+                    assertEquals(String.format("Switching function %s %d-order derivative at ub %8.4g was nonzero value %8.4g", sf.toString(), i, oneBound, deriv), 0.0, deriv, tolerance);
+                }
+            }
+        }
+        
+        int maxOrderAtZero = sf.highestOrderZeroDerivativeAtZeroBound();
+        if (maxOrderAtZero != maxZeroOrder && maxOrderAtZero > 0) {
+            double deriv = sf.firstDerivative(zeroBound);
+            assertEquals(String.format("Switching function %s first derivative at lb %8.4g was nonzero value %8.4g", sf.toString(), zeroBound, deriv), 0.0, deriv, tolerance);
+            if (maxOrderAtZero >= 2) {
+                deriv = sf.secondDerivative(zeroBound);
+                assertEquals(String.format("Switching function %s second derivative at lb %8.4g was nonzero value %8.4g", sf.toString(), zeroBound, deriv), 0.0, deriv, tolerance);
+                for (int i = 3; i <= maxZeroOrder; i++) {
+                    deriv = sf.nthDerivative(zeroBound, i);
+                    assertEquals(String.format("Switching function %s %d-order derivative at lb %8.4g was nonzero value %8.4g", sf.toString(), i, zeroBound, deriv), 0.0, deriv, tolerance);
                 }
             }
         }

@@ -131,8 +131,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
     /**
-     * Contains ALL atoms, both foreground and background. Background atoms need to be
-     * present to be included in bonded terms
+     * Contains ALL atoms, both foreground and background. Background atoms need
+     * to be present to be included in bonded terms
      */
     private Atom[] atomsExtended;
     private Crystal crystal;
@@ -187,6 +187,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean generalizedKirkwoodTerm;
     private boolean ncsTerm;
     private boolean restrainTerm;
+    private boolean restrainWithLambda;
     private boolean comTerm;
     private boolean esvTerm;
     private boolean lambdaTerm;
@@ -350,6 +351,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         restraintBondTerm = false;
         lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         restrainTerm = forceField.getBoolean(ForceFieldBoolean.RESTRAINTERM, false);
+        restrainWithLambda = forceField.getBoolean(ForceField.ForceFieldBoolean.RESTRAIN_WITH_LAMBDA, true);
         comTerm = forceField.getBoolean(ForceFieldBoolean.COMRESTRAINTERM, false);
         lambdaTorsions = forceField.getBoolean(ForceFieldBoolean.LAMBDA_TORSIONS, false);
         printOnFailure = forceField.getBoolean(ForceFieldBoolean.PRINT_ON_FAILURE, false);
@@ -433,6 +435,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
          */
         if (!aperiodic) {
             this.crystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, cutOff2);
+            logger.info(format("\n Density:                              %6.3f (g/cc)", crystal.getDensity(molecularAssembly.getMass())));
             logger.info(crystal.toString());
         } else {
             this.crystal = unitCell;
@@ -511,7 +514,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         // Collect, count, pack and sort stretch-bends.
         if (stretchBendTerm) {
-          ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
+            ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
             nStretchBends = stretchBend.size();
             stretchBends = stretchBend.toArray(new StretchBend[nStretchBends]);
             Arrays.sort(stretchBends);
@@ -662,7 +665,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         vanderWaals.getNeighborList(), form, parallelTeam);
             }
             double charge = molecularAssembly.getCharge(checkAllNodeCharges);
-            logger.info(String.format("\n Overall system charge:            %10.3f", charge));
+            logger.info(String.format(" Overall system charge:            %10.3f", charge));
         } else {
             particleMeshEwald = null;
         }
@@ -1117,7 +1120,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (comTerm) {
             logger.severe(" COM restrain energy term cannot be used with variable systems sizes.");
         }
-        
+
         bondedRegion = new BondedRegion();
     }
 
@@ -2634,7 +2637,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
          * Z-component of the dU/dX/dL coordinate gradient.
          */
         private final AtomicDoubleArray lambdaGradZ;
-        
+
         // Shared RMSD variables.
         private final SharedDouble sharedBondRMSD;
         private final SharedDouble sharedAngleRMSD;
