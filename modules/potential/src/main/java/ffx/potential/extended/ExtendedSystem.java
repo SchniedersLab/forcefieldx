@@ -74,20 +74,21 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     private final EsvConfiguration config = new EsvConfiguration();
     public class EsvConfiguration {
         // Properties: Static Final
-        final boolean esvVdwFlag         = prop("esv-useVdw",true);
-        final boolean esvPmeFlag         = prop("esv-usePme", true);
-        final boolean esvTempOverride    = prop("esv-tempOverride", true);
-        final boolean esvPrintOverride   = prop("esv-printOverride", false);
-        final boolean esvScaleBonded     = prop("esv-scaleBonded", true);
-        final boolean backgroundBondedHookup = prop("esv-backgroundBonded", true);
-        final boolean esvDecomposeBonded = prop("esv-decomposeBonded", true);
-        final boolean esvPropagation     = prop("esv-propagation", false);
-        final Double biasOverride        = prop("esv-biasOverride", Double.NaN);
-        final double thetaMass           = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
-        final double thetaFriction       = prop("esv-thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
+        public final boolean esvVdwFlag         = prop("esv-useVdw",true);
+        public final boolean esvPmeFlag         = prop("esv-usePme", true);
+        public final boolean esvTempOverride    = prop("esv-tempOverride", true);
+        public final boolean esvPrintOverride   = prop("esv-printOverride", false);
+        public final boolean esvScaleBonded     = prop("esv-scaleBonded", true);
+        public final boolean backgroundBondedHookup = prop("esv-backgroundBonded", true);
+        public final boolean esvScaleUnshared   = prop("esv-scaleUnshared", true);
+        public final boolean esvDecomposeBonded = prop("esv-decomposeBonded", true);
+        public final boolean esvPropagation     = prop("esv-propagation", false);
+        public final Double biasOverride        = prop("esv-biasOverride", Double.NaN);
+        public final double thetaMass           = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
+        public final double thetaFriction       = prop("esv-thetaFriction", 1.0e-19);    // from OSRW, reasonably 60/ps
 
         // Properties: Mutable
-        boolean esvBiasTerm = prop("esv-biasTerm", true);
+        public boolean esvBiasTerm = prop("esv-biasTerm", true);
     }
     
     // Atom Lists

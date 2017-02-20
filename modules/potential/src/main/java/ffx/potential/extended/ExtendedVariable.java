@@ -227,10 +227,26 @@ public abstract class ExtendedVariable {
     }
     
     public void updateMultipoleTypes() {
-        for (Atom fg : atomsShared) {
+        List<Atom> iterate = (config.esvScaleUnshared)
+                ? ExtUtils.joinedListView(atomsShared, atomsUnshared)
+                : atomsShared;
+        for (Atom fg : iterate) {
+//            MultipoleType Ptype, Utype;
             Atom bg = fg2bg.get(fg);
             MultipoleType Ptype = fg.getMultipoleType();
-            MultipoleType Utype =  bg.getMultipoleType();
+            MultipoleType Utype;
+            if (bg == null) {
+                if (atomsUnshared.contains(fg)) {
+                    Utype = new MultipoleType(0.0, new double[]{0.0,0.0,0.0},
+                            new double[][]{{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}},
+                            Ptype.frameAtomTypes, Ptype.frameDefinition, false);
+                } else {
+                    SB.warning("Error @ESV.updateMultipoles: bg null && !unshared.");
+                    Utype = null;
+                }
+            } else {
+                Utype = bg.getMultipoleType();
+            }
             MultipoleType types[] = new MultipoleType[]{Ptype, Utype};
             double mWeights[] = new double[]{lambda, 1.0 - lambda};
             double mdotWeights[] = new double[]{1.0, -1.0};

@@ -121,6 +121,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * Charge, dipole, and quadrupole packed into 1d.
      */
     public final double[] packedMultipole;
+    public static final MultipoleType ZEROS = new MultipoleType(
+            0.0, new double[3], new double[3][3], null, null);
 
     /**
      * Multipole Constructor.
@@ -920,7 +922,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         }
         MultipoleFrameDefinition frame = types[0].frameDefinition;
         for (MultipoleType type : types) {
-            if (type.frameDefinition != frame) {
+            if (type != ZEROS && type.frameDefinition != frame) {
                 logger.severe("All frame definitions must match.");
             }
         }

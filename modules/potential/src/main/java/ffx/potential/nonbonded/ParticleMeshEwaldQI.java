@@ -180,8 +180,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     private boolean esvTerm = false;
     private ExtendedSystem esvSystem;
     private int numESVs = 0;
-    private boolean esvAtomsUnshared[];            // [nAtoms] Titrating hydrogens only.
-    private boolean esvAtomsShared[];          // [nAtoms] All other atoms on ESV residues.
+    private boolean esvAtomsSoft[];            // [nAtoms] Titrating hydrogens only.
+    private boolean esvAtomsScaled[];          // [nAtoms] All other atoms on ESV residues.
     private int esvIdByAtom[];               // [nAtoms] EsvID, index in gradient array
     private double esvLambda[];             // [nAtoms] Only the "out-front" lambda is switched.
     private double esvLambdaSwitch[];       // [nAtoms] Current lambda, switched.
@@ -1066,10 +1066,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             }
             
             /* Extended System variables */
-            esvAtomsUnshared = new boolean[nAtoms];    // Only true for titrating hydrogens.
-            esvAtomsShared = new boolean[nAtoms];  // True for other ESV residue atoms.
-            fill(esvAtomsUnshared, false);
-            fill(esvAtomsShared, false);
+            esvAtomsSoft = new boolean[nAtoms];    // Only true for titrating hydrogens.
+            esvAtomsScaled = new boolean[nAtoms];  // True for other ESV residue atoms.
+            fill(esvAtomsSoft, false);
+            fill(esvAtomsScaled, false);
             if (esvTerm) {
                 globalMultipoleDot = new double[nSymm][nAtoms][10];
                 updateEsvLambda();
@@ -3930,8 +3930,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         continue;
                     }
                     final Atom ai = atoms[i];
-                    final boolean esviScaled = esvAtomsShared[i];
-                    final boolean esviSoft = esvAtomsUnshared[i];
+                    final boolean esviScaled = esvAtomsScaled[i];
+                    final boolean esviSoft = esvAtomsSoft[i];
                     final int moleculei = molecule[i];
                     /**
                      * Set masking scale factors.
@@ -3956,8 +3956,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             continue;
                         }
                         final Atom ak = atoms[k];
-                        final boolean esvkScaled = esvAtomsShared[k];
-                        final boolean esvkSoft = esvAtomsUnshared[k];
+                        final boolean esvkScaled = esvAtomsScaled[k];
+                        final boolean esvkSoft = esvAtomsSoft[k];
                         final boolean softk = isSoft[k];    // includes ESV softs
                         boolean sameMolecule = (moleculei == molecule[k]);
                         if (lambdaMode == LambdaMode.VAPOR) {
@@ -4822,7 +4822,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002]
                                 + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
                         eSelf += aewald1 * (cii + aewald2 * (dii / 3.0 + 2.0 * aewald2 * qii / 45.0));
-                        if (esvTerm && esvAtomsUnshared[i]) {
+                        if (esvTerm && esvAtomsSoft[i]) {
                             int esvi = esvIdByAtom[i];
                             // TODO verify that this is an add when eSelf above is += ...
 //                            esvRealDerivShared[esvi].addAndGet(eSelf * dsc2dL * dEdLSign);
@@ -4842,7 +4842,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 double d2UdL2 = 0.0;
                 for (int i = lb; i <= ub; i++) {
                     if (use[i]) {
-                        final boolean esvi = esvAtomsUnshared[i];
+                        final boolean esvi = esvAtomsSoft[i];
                         final double phi[] = cartMultipolePhi[i];
                         final double mpole[] = multipole[i];
                         final double fmpole[] = fracMultipoles[i];
@@ -5303,7 +5303,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     for (int ii = lb; ii <= ub; ii++) {
                         Atom atom = atoms[ii];
                         /* For shared ESV atoms, pipe in the interpolated multipole instead. */
-                        final double in[] = (esvTerm && esvAtomsShared[ii] && esvPmeScaled) 
+                        final double in[] = (esvTerm && esvAtomsScaled[ii] && esvPmeScaled) 
                                 ? atom.getEsvMultipoleM().packedMultipole
                                 : localMultipole[ii];
                         final double out[] = globalMultipole[iSymm][ii];
@@ -5383,7 +5383,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             out[t101] = globalQuadrupole[0][2] * traceScale * elecScale;
                             out[t011] = globalQuadrupole[1][2] * traceScale * elecScale;
                             /* For ESV atoms, also rotate and scale the Mdot multipole. */
-                            if (esvTerm && esvAtomsShared[ii] && esvPmeScaled) {
+                            if (esvTerm && esvAtomsScaled[ii] && esvPmeScaled) {
                                 final double[] mdot = atom.getEsvMultipoleMdot().packedMultipole;
                                 final double[] mdotDipole = new double[]
                                     {mdot[t100], mdot[t010], mdot[t001]};
@@ -6358,8 +6358,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
     }
 
     public void detachExtendedSystem() {
-        fill(esvAtomsUnshared, false);
-        fill(esvAtomsShared, false);
+        fill(esvAtomsSoft, false);
+        fill(esvAtomsScaled, false);
         esvTerm = false;
         esvSystem = null;
         esvLambdaSwitch = null;
@@ -6385,22 +6385,27 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         // Query ExtendedSystem to create local preloads of all lambda quantities.
         numESVs = esvSystem.size();
         if (esvLambda == null || esvLambda.length < nAtoms) {
-            esvAtomsShared = new boolean[nAtoms];
-            esvAtomsUnshared = new boolean[nAtoms];
+            esvAtomsScaled = new boolean[nAtoms];
+            esvAtomsSoft = new boolean[nAtoms];
             esvLambda = new double[nAtoms];
             esvLambdaSwitch = new double[nAtoms];
             esvSwitchDeriv = new double[nAtoms];
             esvIdByAtom = new int[nAtoms];
-            fill(esvAtomsUnshared, false);
-            fill(esvAtomsShared, false);
+            fill(esvAtomsSoft, false);
+            fill(esvAtomsScaled, false);
             fill(esvLambda, 1.0);
             fill(esvLambdaSwitch, 1.0);
             fill(esvSwitchDeriv, 0.0);
             fill(esvIdByAtom, -1);
         }
         for (int i = 0; i < nAtoms; i++) {
-            esvAtomsShared[i] = esvSystem.isShared(i);
-            esvAtomsUnshared[i] = esvSystem.isUnshared(i);
+            if (esvSystem.getConfig().esvScaleUnshared) {
+                esvAtomsScaled[i] = esvSystem.isShared(i) || esvSystem.isUnshared(i);
+                esvAtomsSoft[i] = false;
+            } else {
+                esvAtomsScaled[i] = esvSystem.isShared(i);
+                esvAtomsSoft[i] = esvSystem.isUnshared(i);
+            }
             esvLambda[i] = esvSystem.getLambda(i);
             esvLambdaSwitch[i] = esvSystem.getLambdaSwitch(i);
             esvSwitchDeriv[i] = esvSystem.getSwitchDeriv(i);
@@ -6412,7 +6417,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         /* Preload switched MultipoleTypes that composite foreground + backgrouind
             atoms (for all ESV'd atoms except the titrating H).                 */
         for (int i = 0; i < nAtoms; i++) {
-            if (esvAtomsShared[i]) {
+            if (esvAtomsScaled[i]) {
                 if (atoms[i].getEsvMultipoleM() == null || atoms[i].getEsvMultipoleMdot() == null) {
                     SB.warning("@QI.updateEsv: shared atom missing multipole-M or -Mdot.");
                 }
