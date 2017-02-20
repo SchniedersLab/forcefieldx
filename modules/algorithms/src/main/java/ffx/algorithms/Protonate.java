@@ -75,7 +75,7 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationESV.TitrationUtils;
+import ffx.potential.extended.TitrationUtils;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 
@@ -471,23 +471,21 @@ public class Protonate implements MonteCarloListener {
                 titratingMultis.add(multiRes);
                 logger.info(String.format(" Titrating: %s", multiRes));
             } else {
-                // Then some form of DISCOUNT.
+                /* Continuous Mode.
+                 * Create an ExtendedSystem and hook everything up. */
+                esvSystem = new ExtendedSystem(mola);
+                titratingESVs.forEach(esvSystem::addVariable);
+                mola.getPotentialEnergy().attachExtendedSystem(esvSystem);
                 double dt = (System.getProperty("cphmd-dt") == null) ? 1.0
                         : Double.parseDouble(System.getProperty("cphmd-dt"));
-                TitrationESV esv = new TitrationESV(TitrationUtils.titrationFactory(mola, res), pH, dt);
-                esv.readyup();
+                TitrationESV esv = new TitrationESV(esvSystem.getConfig(),
+                        TitrationUtils.titrationFactory(mola, res), pH, dt);
                 titratingESVs.add(esv);
                 titratingMultis.add(esv.getMultiRes());
             }
         }
 
-        // If DISCOUNT, create the ExtendedSystem and hook everything up.
-        if (mode != Mode.DISCRETE) {
-            // MJS: removed pH from constructor
-            esvSystem = new ExtendedSystem(mola);
-            titratingESVs.forEach(esvSystem::addVariable);
-            mola.getPotentialEnergy().attachExtendedSystem(esvSystem);
-        }
+
 
         ready = true;
     }

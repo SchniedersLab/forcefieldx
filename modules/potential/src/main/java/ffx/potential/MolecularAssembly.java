@@ -83,6 +83,7 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom.Indexing;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
@@ -97,6 +98,7 @@ import ffx.potential.parameters.ForceField;
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
+import static ffx.potential.extended.ExtUtils.prop;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,
@@ -118,6 +120,13 @@ public class MolecularAssembly extends MSGroup {
      */
     public static final double KCAL_TO_KJ = 4.184;
     private static double[] a = new double[3];
+    
+    public static final Indexing atomIndexing = prop(Indexing.class, "sys-atomIndexing", Indexing.XYZ);
+    /**
+     * Persistent index parallel to xyzIndex.
+     */
+    public static int persistentAtomIndexer = 1;
+    
     // MolecularSystem member variables
     private File file;
     protected ForceField forceField;
@@ -164,7 +173,7 @@ public class MolecularAssembly extends MSGroup {
      */
     public MolecularAssembly(String name) {
         super(name);
-        getAtomNode().setName("MacroMolecules");
+        MolecularAssembly.this.getAtomNode().setName("MacroMolecules");
         add(molecules);
         add(ions);
         add(water);

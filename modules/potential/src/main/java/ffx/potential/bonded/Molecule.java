@@ -48,14 +48,15 @@ import ffx.potential.parameters.ForceField;
  * @author Michael J. Schnieders
  *
  */
+@SuppressWarnings("CloneableImplementsClone")
 public class Molecule extends MSGroup {
 
-    private Logger logger = Logger.getLogger(Molecule.class.getName());
+    private static final Logger logger = Logger.getLogger(Molecule.class.getName());
     private static final long serialVersionUID = 1L;
     /**
-     * Constant <code>MultiScaleLevel=2</code>
+     * Apparently unused, and hides the field from MSNode.
      */
-    public static final int MultiScaleLevel = 2;
+//    public static final int MultiScaleLevel = 2;
     /**
      * Residue number assigned in PDB files.
      */

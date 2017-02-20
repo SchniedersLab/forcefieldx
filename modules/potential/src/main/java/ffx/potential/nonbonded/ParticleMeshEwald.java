@@ -134,6 +134,24 @@ public abstract class ParticleMeshEwald {
         public double[] permTk = new double[3];
         public double dPermdZ;
     }
+    
+    public class LambdaFactors {
+        public double sc1 = 0.0;
+        public double dsc1dL = 0.0;
+        public double d2sc1dL2 = 0.0;
+        public double sc2 = 1.0;
+        public double dsc2dL = 0.0;
+        public double d2sc2dL2 = 0.0;
+        public LambdaFactors(double sc1, double dsc1dL, double d2sc1dL2,
+                             double sc2, double dsc2dL, double d2sc2dL2) {
+            this.sc1 = sc1;
+            this.dsc1dL = dsc1dL;
+            this.d2sc1dL2 = d2sc1dL2;
+            this.sc2 = sc2;
+            this.dsc2dL = dsc2dL;
+            this.d2sc2dL2 = d2sc2dL2;
+        }
+    }
 
     public abstract double getEwaldCutoff();
 
@@ -164,6 +182,8 @@ public abstract class ParticleMeshEwald {
     public abstract double energy(boolean gradient, boolean print);
 
     public abstract double getPermanentEnergy();
+    
+    public abstract double getPermanentRealSpaceEnergy();
 
     public abstract double getPolarizationEnergy();
 

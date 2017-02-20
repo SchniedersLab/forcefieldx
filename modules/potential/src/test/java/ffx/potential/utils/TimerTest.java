@@ -61,7 +61,7 @@ public final class TimerTest {
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource("ffx/potential/structures/ubiquitin.xyz").getPath());
         PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
+        molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
     }
 
     @Test

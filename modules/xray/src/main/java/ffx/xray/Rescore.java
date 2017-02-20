@@ -60,8 +60,6 @@
  */
 package ffx.xray;
 
-import ffx.realspace.RealSpaceData;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -81,12 +79,13 @@ import edu.rit.pj.ParallelTeam;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.potential.MolecularAssembly;
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceFile;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
-import ffx.realspace.RealSpaceFile;
 
 import static ffx.algorithms.ClusterStructures.generatePath;
 import static ffx.xray.Rescore.RescoreStrategy.ENERGY_EVAL;
@@ -219,8 +218,7 @@ public class Rescore {
         String filename = pwdPath.relativize(filepath).toString();
         File retFile = modelFile;
         try {
-            MolecularAssembly[] openedAssemblies = utils.open(filename);
-            MolecularAssembly assembly = openedAssemblies[0];
+            MolecularAssembly assembly = utils.open(filename);
             switch (rscType) {
                 case NO_RESCORE:
                     logger.warning(" Rescore is being called with rscType = NO_RESCORE");
@@ -349,7 +347,7 @@ public class Rescore {
             }
             double e = utils.returnEnergy(assembly);
             energies[i] = new DoubleIndexPair(i, e);
-            utils.closeAll(openedAssemblies);
+            utils.close(assembly);
         } catch (Exception ex) {
             logger.warning(String.format(" Exception rescoring on file %s", filename));
             logger.info(ex.toString());

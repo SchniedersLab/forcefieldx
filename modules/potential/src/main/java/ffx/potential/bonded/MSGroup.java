@@ -704,10 +704,11 @@ public abstract class MSGroup extends MSNode {
         return null;
     }
     
-    public Atom getNodeAsAtom(String n) {
+    public Atom getAtomByName(String n, boolean caseInsensitive) {
         ArrayList<MSNode> list = getAtomNodeList();
         for (MSNode msNode : list) {
-            if (msNode.getName().compareTo(n) == 0) {
+            if (msNode.getName().equals(n)
+                    || (caseInsensitive && msNode.getName().equalsIgnoreCase(n))) {
                 return (Atom) msNode;
             }
         }

@@ -38,11 +38,13 @@
 package ffx.potential.utils;
 
 import java.io.File;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
-import java.util.List;
 
 /**
  * The PotentialsFunctions interface specifies utility methods such as opening
@@ -57,6 +59,7 @@ import java.util.List;
  * @author Michael J. Schnieders
  */
 public interface PotentialsFunctions {
+    static final Logger logger = Logger.getLogger(PotentialsFunctions.class.getName());
 
     /**
      * True if using a local implementation (not in a user interfaces module).
@@ -65,13 +68,21 @@ public interface PotentialsFunctions {
      */
     abstract public boolean isLocal(); // Return true if the local implementation from Potentials.
 
+    default public MolecularAssembly open(String filename) {
+        MolecularAssembly[] assemblies = openAll(filename);
+        if (assemblies.length > 1) {
+            logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", filename);
+        }
+        return assemblies[0];
+    }
+    
     /**
      * Opens a file and returns all created MolecularAssembly objects.
      *
      * @param file Filename to open
      * @return Array of MolecularAssembly.
      */
-    abstract public MolecularAssembly[] open(String file);
+    abstract public MolecularAssembly[] openAll(String file);
 
     /**
      * Opens an array of files and returns the created MolecularAssembly
@@ -80,7 +91,7 @@ public interface PotentialsFunctions {
      * @param files Filenames to open.
      * @return Array of MolecularAssembly.
      */
-    abstract public MolecularAssembly[] open(String[] files);
+    abstract public MolecularAssembly[] openAll(String[] files);
 
     /**
      * Opens a file and returns all created MolecularAssembly objects, setting
@@ -91,8 +102,8 @@ public interface PotentialsFunctions {
      * @param nThreads Use non-default num threads
      * @return Array of MolecularAssembly.
      */
-    default public MolecularAssembly[] open(String file, int nThreads) {
-        return open(file);
+    default public MolecularAssembly[] openAll(String file, int nThreads) {
+        return openAll(file);
     }
 
     /**
@@ -104,8 +115,8 @@ public interface PotentialsFunctions {
      * @param nThreads Use non-default num threads
      * @return Array of MolecularAssembly.
      */
-    default public MolecularAssembly[] open(String[] file, int nThreads) {
-        return open(file);
+    default public MolecularAssembly[] open(String[] files, int nThreads) {
+        return openAll(files);
     }
 
     /**

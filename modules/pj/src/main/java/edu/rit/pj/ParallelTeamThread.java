@@ -118,6 +118,9 @@ class ParallelTeamThread
                     System.err.println("Parallel team thread " + myIndex
                             + ": ParallelRegion.run() threw an exception");
                     exc.printStackTrace(System.err);
+                    if (exc.getCause() != null) {
+                        exc.getCause().printStackTrace(System.err);
+                    }
                 }
                 myTeam.myExceptionMap.put(myIndex, exc);
             }

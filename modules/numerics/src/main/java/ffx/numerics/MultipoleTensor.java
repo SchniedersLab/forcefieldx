@@ -94,7 +94,7 @@ public class MultipoleTensor {
 
     private OPERATOR operator;
     private COORDINATES coordinates;
-    private COORDINATES bufferCoordinates = COORDINATES.GLOBAL;
+    private final COORDINATES bufferCoordinates;
 
     private final int order;
     /**
@@ -177,6 +177,7 @@ public class MultipoleTensor {
         this.order = order;
         this.operator = operator;
         this.coordinates = coordinates;
+        this.bufferCoordinates = coordinates;
         this.beta = beta;
         if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
             // logger.warning("Tried beta of zero for screened coulomb tensor.");
@@ -2438,12 +2439,9 @@ public class MultipoleTensor {
      * It is possible to construct the buffer in the QI frame, but one must first
      * implement the appropriate chain term associated therewith. (It's like -2*alpha.)
      */
-    public void setBufferCoordinates(COORDINATES coord) {
-        if (coord == COORDINATES.QI) {
-            throw new UnsupportedOperationException();
-        }
-        this.bufferCoordinates = coord;
-    }
+//    private void setBufferCoordinates(COORDINATES coord) {
+//        this.bufferCoordinates = coord;
+//    }
     
     public double getdEdZbuff() {
         return dEdZ;
@@ -4169,6 +4167,7 @@ public class MultipoleTensor {
         if (args == null || args.length < 4) {
             logger.info(" Usage: java ffx.numerics.MultipoleTensor order dx dy dz");
         }
+        
         int order = Integer.parseInt(args[0]);
         double dx = Double.parseDouble(args[1]);
         double dy = Double.parseDouble(args[2]);
@@ -4193,58 +4192,149 @@ public class MultipoleTensor {
             0.21, 0.31, 0.41,
             -0.51, -0.61, 1.12, 0.70, 0.81, 0.91};
 
-        for (int j = 0; j < cycles; j++) {
-            long timeGlobalT = -System.nanoTime();
-            for (int i = 0; i < n2; i++) {
-                r[0] = Math.random();
-                r[1] = Math.random();
-                r[2] = Math.random();
-                multipoleTensor.setR(r);
-                multipoleTensor.order6();
-            }
-            timeGlobalT += System.nanoTime();
-
-            long timeGlobal = -System.nanoTime();
-            for (int i = 0; i < n2; i++) {
-                r[0] = Math.random();
-                r[1] = Math.random();
-                r[2] = Math.random();
-                multipoleTensor.setR(r);
-                multipoleTensor.setMultipoles(Qi, Qk);
-                double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
-                if (Double.isNaN(e) || Double.isInfinite(e)) {
-                    multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Ti, Tk);
+        boolean testTimings = false;
+        boolean testValues = true;
+        boolean testDeriv = true;
+        
+        if (testTimings) {
+            logger.info(format(" Timings "));
+            for (int j = 0; j < cycles; j++) {
+                long timeGlobalT = -System.nanoTime();
+                for (int i = 0; i < n2; i++) {
+                    r[0] = Math.random();
+                    r[1] = Math.random();
+                    r[2] = Math.random();
+                    multipoleTensor.setR(r);
+                    multipoleTensor.order6();
                 }
-            }
-            timeGlobal += System.nanoTime();
+                timeGlobalT += System.nanoTime();
 
-            multipoleTensor.setCoordinateSystem(COORDINATES.QI);
-            long timeQIT = -System.nanoTime();
-            for (int i = 0; i < n2; i++) {
+                long timeGlobal = -System.nanoTime();
+                for (int i = 0; i < n2; i++) {
+                    r[0] = Math.random();
+                    r[1] = Math.random();
+                    r[2] = Math.random();
+                    multipoleTensor.setR(r);
+                    multipoleTensor.setMultipoles(Qi, Qk);
+                    double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+                }
+                timeGlobal += System.nanoTime();
+
+                multipoleTensor.setCoordinateSystem(COORDINATES.QI);
+                long timeQIT = -System.nanoTime();
+                for (int i = 0; i < n2; i++) {
+                    r[0] = Math.random();
+                    r[1] = Math.random();
+                    r[2] = Math.random();
+                    multipoleTensor.setR_QI(r);
+                    multipoleTensor.order6QI();
+                }
+                timeQIT += System.nanoTime();
+
+                long timeQI = -System.nanoTime();
+                for (int i = 0; i < n2; i++) {
+                    r[0] = 0.0;
+                    r[1] = 0.0;
+                    r[2] = Math.random();
+                    multipoleTensor.setR_QI(r);
+                    multipoleTensor.setMultipoles(Qi, Qk);
+                    double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
+                }
+                timeQI += System.nanoTime();
+
+                logger.info(String.format("\n Global Frame: %6.4f %6.4f\n QI:           %6.4f %6.4f\n",
+                        timeGlobalT * 1.0e-9, timeGlobal * 1.0e-9, timeQIT * 1.0e-9, timeQI * 1.0e-9));
+            }
+        }
+        
+        
+        if (testValues) {
+            int iters = 10;
+            logger.info(format(" Values "));
+            double buffer = 0.0;
+            order = 5;
+            for (int i = 0; i < iters; i++) {
                 r[0] = Math.random();
                 r[1] = Math.random();
                 r[2] = Math.random();
-                multipoleTensor.setR_QI(r);
-                multipoleTensor.order6QI();
+                MultipoleTensor tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, COORDINATES.GLOBAL, order, 1e-6);
+                tensor.setR(r, buffer);
+                tensor.setMultipoles(Qi, Qk);
+                tensor.order5();
+                double eGlob = tensor.multipoleEnergy(Fi, Ti, Tk);
+                double deGlob = tensor.getdEdZbuff();
+                tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, COORDINATES.QI, order, 1e-6);
+                tensor.setR(r, buffer);
+                tensor.setMultipoles(Qi, Qk);
+                tensor.order5QI();
+                double eQI = tensor.multipoleEnergy(Fi, Ti, Tk);
+                double deQI = tensor.getdEdZbuff();
+                logger.info(format("\n Glob: %10.4f  %10.4f\n QI:   %10.4f  %10.4f",
+                        eGlob, deGlob, eQI, deQI));
+//
+//                tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, COORDINATES.GLOBAL, order, 1e-6);
+//                tensor.setBufferCoordinates(COORDINATES.QI);
+//                tensor.setR(r, buffer);
+//                tensor.setMultipoles(Qi, Qk);
+//                tensor.order5();
+//                double eGlob2 = tensor.multipoleEnergy(Fi, Ti, Tk);
+//                double deGlob2 = tensor.getdEdZbuff();
+//                tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, COORDINATES.QI, order, 1e-6);
+//                tensor.setBufferCoordinates(COORDINATES.QI);
+//                tensor.setR(r, buffer);
+//                tensor.setMultipoles(Qi, Qk);
+//                tensor.order5QI();
+//                double eQI2 = tensor.multipoleEnergy(Fi, Ti, Tk);
+//                double deQI2 = tensor.getdEdZbuff();
+//                logger.info(format("\n Glob: %10.4f  %10.4f\n QI:   %10.4f  %10.4f",
+//                        eGlob2, deGlob2, eQI2, deQI2));
             }
-            timeQIT += System.nanoTime();
-
-            long timeQI = -System.nanoTime();
-            for (int i = 0; i < n2; i++) {
-                r[0] = 0.0;
-                r[1] = 0.0;
-                r[2] = Math.random();
-                multipoleTensor.setR_QI(r);
-                multipoleTensor.setMultipoles(Qi, Qk);
-                double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
-                if (Double.isNaN(e) || Double.isInfinite(e)) {
-                    multipoleTensor.nanWarning(e, r, Qi, Qk, Fi, Ti, Tk);
-                }
-            }
-            timeQI += System.nanoTime();
-
-            logger.info(String.format("\n Global Frame: %6.4f %6.4f\n QI:           %6.4f %6.4f\n",
-                    timeGlobalT * 1.0e-9, timeGlobal * 1.0e-9, timeQIT * 1.0e-9, timeQI * 1.0e-9));
+        }
+        
+        if (testDeriv) {
+            r[0] = Math.random();
+            r[1] = Math.random();
+            r[2] = Math.random();
+            double buffer = 4.0;
+            double step = 1e-6;
+            
+            logger.info(" Testing Global Deriv: ");
+            MultipoleTensor tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, COORDINATES.GLOBAL, order, 1e-6);
+            tensor.setR(r, buffer);
+            tensor.setMultipoles(Qi, Qk);
+            tensor.order5QI();
+            double eGB = tensor.multipoleEnergy(Fi, Ti, Tk);
+            double deGB = tensor.getdEdZbuff();
+            
+            tensor.setR(r, buffer + step);
+            tensor.order5QI();
+            double eGBplus = tensor.multipoleEnergy(Fi, Ti, Tk);
+            tensor.setR(r, buffer - step);
+            tensor.order5QI();
+            double eGBminus = tensor.multipoleEnergy(Fi, Ti, Tk);
+            
+            double GBnumeric = (eGBplus - eGBminus) / (2*step);
+            double GBanalytic = deGB;
+            logger.info(format("\n Numeric:  %10.8f\n Analytic: %10.8f", GBnumeric, GBanalytic));
+            
+            logger.info(" Testing QI Deriv: ");
+            tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, COORDINATES.QI, order, 1e-6);
+            tensor.setR(r, buffer);
+            tensor.setMultipoles(Qi, Qk);
+            tensor.order5QI();
+            double eQI = tensor.multipoleEnergy(Fi, Ti, Tk);
+            double deQI = tensor.getdEdZbuff();
+            
+            tensor.setR(r, buffer + step);
+            tensor.order5QI();
+            double eQIplus = tensor.multipoleEnergy(Fi, Ti, Tk);
+            tensor.setR(r, buffer - step);
+            tensor.order5QI();
+            double eQIminus = tensor.multipoleEnergy(Fi, Ti, Tk);
+            
+            double QInumeric = (eQIplus - eQIminus) / (2*step);
+            double QIanalytic = deQI;
+            logger.info(format("\n Numeric:  %10.8f\n Analytic: %10.8f", QInumeric, QIanalytic));
         }
 
         /**
