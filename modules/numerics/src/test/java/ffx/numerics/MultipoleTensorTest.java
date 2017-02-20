@@ -85,6 +85,16 @@ public class MultipoleTensorTest {
     private final double damp;
     private final double aiak;
     private double lambdaFunction;
+    
+    private static final boolean testAllQI;
+    static {
+        String testQIstring = System.getProperty("testAllQI");
+        if (testQIstring != null) {
+            testAllQI = Boolean.parseBoolean(testQIstring);
+        } else {
+            testAllQI = false;
+        }
+    }
 
     private final double Qi[] = {0.11,
         0.21, 0.31, 0.41,
@@ -380,6 +390,9 @@ public class MultipoleTensorTest {
 
     @Test
     public void energyAndForceQITest() {
+        if (!testAllQI) {
+            return;
+        }
 
         if (operator == OPERATOR.THOLE_FIELD) {
             return;
