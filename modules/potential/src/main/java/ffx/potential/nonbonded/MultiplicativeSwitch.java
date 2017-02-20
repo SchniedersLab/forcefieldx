@@ -38,7 +38,7 @@
 package ffx.potential.nonbonded;
 
 import ffx.numerics.UnivariateSwitchingFunction;
-import java.util.logging.Logger;
+//import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 
@@ -70,7 +70,7 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     private final double fourC4;
     private final double fiveC5;
 
-    private final static Logger logger = Logger.getLogger(MultiplicativeSwitch.class.getName());
+    //private final static Logger logger = Logger.getLogger(MultiplicativeSwitch.class.getName());
     
     /**
      * Constructs a MultiplicativeSwitch that starts at 0 at 0, ends at 1.0 at 1,
@@ -116,7 +116,10 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      * @return Value of switch at r
      */ 
     public double taper(double r) {
-        return taper(r, r*r, r*r*r, r*r*r*r, r*r*r*r*r);
+        // Minimize number of multiply operations by storing r^2, r^3.
+        double r2 = r*r;
+        double r3 = r2*r;
+        return taper(r, r2, r3, r2*r2, r3*r2);
     }
     
     /**
@@ -125,7 +128,9 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      * @return First derivative of switch at r
      */
     public double dtaper(double r) {
-        return dtaper(r, r*r, r*r*r, r*r*r*r);
+        // Minimize number of multiply operations by storing r^2.
+        double r2 = r*r;
+        return dtaper(r, r2, r2*r, r2*r2);
     }
 
     /**
@@ -195,10 +200,15 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
 
     @Override
     public double secondDerivative(double x) {
-        double val = 20.0 * c5 * x*x*x;
+        /*double val = 20.0 * c5 * x*x*x;
         val += c4 * 12.0 * x*x;
         val += c3 * 6.0 *x;
-        val += c2 * 2.0;
+        val += c2 * 2.0;*/
+        double x2 = x*x;
+        double val = 20.0 * c5 * x2 * x;
+        val += 12.0 * c4 * x2;
+        val += 6.0 * c3 * x;
+        val += 2.0 * c2;
         return val;
     }
 

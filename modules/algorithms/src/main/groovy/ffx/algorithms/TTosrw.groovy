@@ -383,7 +383,7 @@ class TTosrw extends Script {
             }
         }
 
-        MolecularAssembly[] opened = aFuncts.open(toOpen, threadsPer);
+        MolecularAssembly[] opened = aFuncts.openAll(toOpen, threadsPer);
         MolecularAssembly mola = aFuncts.getActiveAssembly();
         processFile(options, mola, structFile, topNum);
     }

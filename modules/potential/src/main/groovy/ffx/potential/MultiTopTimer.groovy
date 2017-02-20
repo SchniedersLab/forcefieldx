@@ -167,7 +167,7 @@ class MultiTopTimer extends Script {
     def energies = [];   // ForceFieldEnergy
 
     private void openFile(Options options, String toOpen, int topNum) {
-        MolecularAssembly[] opened = pFuncts.open(toOpen, threadsPer);
+        MolecularAssembly[] opened = pFuncts.openAll(toOpen, threadsPer);
         MolecularAssembly mola = pFuncts.getActiveAssembly();
         processFile(options, mola, topNum);
     }
