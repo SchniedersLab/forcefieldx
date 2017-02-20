@@ -94,7 +94,7 @@ public class MultipoleTensor {
 
     private OPERATOR operator;
     private COORDINATES coordinates;
-    private final COORDINATES bufferCoordinates;
+    private final COORDINATES bufferCoordinates = COORDINATES.GLOBAL;
 
     private final int order;
     /**
@@ -177,7 +177,6 @@ public class MultipoleTensor {
         this.order = order;
         this.operator = operator;
         this.coordinates = coordinates;
-        this.bufferCoordinates = coordinates;
         this.beta = beta;
         if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
             // logger.warning("Tried beta of zero for screened coulomb tensor.");
@@ -4246,7 +4245,6 @@ public class MultipoleTensor {
                         timeGlobalT * 1.0e-9, timeGlobal * 1.0e-9, timeQIT * 1.0e-9, timeQI * 1.0e-9));
             }
         }
-        
         
         if (testValues) {
             int iters = 10;
