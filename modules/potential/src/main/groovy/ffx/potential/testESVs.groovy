@@ -205,7 +205,7 @@ System.setProperty("esv-backgroundBonded", "true");         // hook up BG bonded
 Logger ffxlog = Logger.getLogger("ffx");
 
 // Open fully protonated and create TitrationESV objects.
-MolecularAssembly mola = utils.openQuietly(filename);
+MolecularAssembly mola = utils.open(filename);
 ForceFieldEnergy ffe = mola.getPotentialEnergy();
 ExtendedSystem esvSystem = new ExtendedSystem(mola);
 

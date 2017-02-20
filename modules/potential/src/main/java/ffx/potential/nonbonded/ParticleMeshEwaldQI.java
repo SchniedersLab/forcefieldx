@@ -3982,7 +3982,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             double permL = (lambda - permLambdaStart) * windowScale;
                             double permLi = (li - permLambdaStart) * windowScale;
                             double permLk = (lk - permLambdaStart) * windowScale;
-                            double permLambdaProduct = lambda * esvLambda[i] * esvLambda[k];                            
+                            double permLambdaProduct = lambda * esvLambda[i] * esvLambda[k];
                             /* TODO: add windowing support
                              *       requires the following line and alt treatment of dsc1,dsc2 below */
 //                            permLambdaProduct = permL * permLi * permLk;
@@ -4124,80 +4124,121 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                                 tyk_local[k] += scalar * eft.permTk[1];
                                 tzk_local[k] += scalar * eft.permTk[2];
                             }
-                            if (esviScaled && esvPmeScaled) {
-                                final double[] multipoleDotI = atoms[i].getEsvMultipoleMdot().packedMultipole;
-                                EnergyForceTorque eftDotI = pairPermEnergy(dx_local, multipoleDotI, globalMultipoleK, lf);
-                                final double dLproduct_dLi = esvLambda[k] * lambda;
-                                final double dUdLi = eftDotI.energy * dLproduct_dLi;
-                                final int idxi = esvIdByAtom[i];
-                                dEdEsvLocal[idxi] += dUdLi;
-//                                esvRealDerivShared[idxi].addAndGet(dEdLi);
-                            }
-                            if (esvkScaled && esvPmeScaled) {
-                                final double[] multipoleDotK = atoms[k].getEsvMultipoleMdot().packedMultipole;
-                                EnergyForceTorque eftDotK = pairPermEnergy(dx_local, globalMultipoleI, multipoleDotK, lf);
-                                final double dLproduct_dLk = esvLambda[i] * lambda;
-                                final double dUdLk = eftDotK.energy * dLproduct_dLk;
-                                final int idxk = esvIdByAtom[k];
-                                dEdEsvLocal[idxk] += dUdLk;
-//                                esvRealDerivShared[idxk].addAndGet(dEdLk);
-                            }
                             if (soft) {
-                                final double F = lf.sc1;
-                                final double dFdL = lf.dsc1dL;
-                                final double P = eft.energy;
-                                final double dPdF = eft.dPermdZ;
-                                final double S = lf.sc2;
-                                final double dSdL = lf.dsc2dL;
+                                final double F = lf.sc1;            // Buffer, alpha*(1-Lp)^2
+                                final double dFdL = lf.dsc1dL;      // dBuffer_dLp
+                                final double S = lf.sc2;            // Lp
+                                final double dSdL = lf.dsc2dL;      // dLpdL
+                                double P = eft.energy;              // Energy
+                                double dPdF = eft.dPermdZ;          // dEnergy_dBuffer
+                                
+                                /* Option: exchange P when both soft and scaled. */
+                                if (esvTerm && esvPmeScaled) {
+                                    if (esviScaled) {
+                                        final double[] multipoleDotI = atoms[i].getEsvMultipoleMdot().packedMultipole;
+                                        EnergyForceTorque eftDotI = pairPermEnergy(dx_local, multipoleDotI, globalMultipoleK, lf);
+                                        P = eftDotI.energy;
+                                        dPdF = eftDotI.dPermdZ;
+                                    }
+                                    if (esvkScaled) {
+                                        final double[] multipoleDotK = atoms[k].getEsvMultipoleMdot().packedMultipole;
+                                        EnergyForceTorque eftDotK = pairPermEnergy(dx_local, globalMultipoleI, multipoleDotK, lf);
+                                        P = eftDotK.energy;
+                                        dPdF = eftDotK.dPermdZ;
+                                    }
+                                }
 
                                 final double termA = dSdL * P;
                                 final double termB = S * dPdF * dFdL;
-                                final double thisInteraction = selfScale * (termA + termB);
-                                dUdL += thisInteraction;
+                                final double dU_dLambdaProduct = selfScale * (termA + termB);
+                                final double dLambdaProduct_dL = esvLambda[i] * esvLambda[k];
+                                dUdL += dU_dLambdaProduct * dLambdaProduct_dL;
 
                                 /* dU/dL/dX, of first term: d[dlPow * ereal]/dx             */
-                                double scalar = selfScale * lf.dsc2dL;
-                                lgX[i] += scalar * eft.permFi[0];
-                                lgY[i] += scalar * eft.permFi[1];
-                                lgZ[i] += scalar * eft.permFi[2];
-                                ltX[i] += scalar * eft.permTi[0];
-                                ltY[i] += scalar * eft.permTi[1];
-                                ltZ[i] += scalar * eft.permTi[2];
-                                lxk_local[k] -= scalar * eft.permFi[0];
-                                lyk_local[k] -= scalar * eft.permFi[1];
-                                lzk_local[k] -= scalar * eft.permFi[2];
-                                ltxk_local[k] += scalar * eft.permTk[0];
-                                ltyk_local[k] += scalar * eft.permTk[1];
-                                ltzk_local[k] += scalar * eft.permTk[2];
+                                final double scalar1 = selfScale * lf.dsc2dL;
+                                lgX[i] += scalar1 * eft.permFi[0];
+                                lgY[i] += scalar1 * eft.permFi[1];
+                                lgZ[i] += scalar1 * eft.permFi[2];
+                                ltX[i] += scalar1 * eft.permTi[0];
+                                ltY[i] += scalar1 * eft.permTi[1];
+                                ltZ[i] += scalar1 * eft.permTi[2];
+                                lxk_local[k] -= scalar1 * eft.permFi[0];
+                                lyk_local[k] -= scalar1 * eft.permFi[1];
+                                lzk_local[k] -= scalar1 * eft.permFi[2];
+                                ltxk_local[k] += scalar1 * eft.permTk[0];
+                                ltyk_local[k] += scalar1 * eft.permTk[1];
+                                ltzk_local[k] += scalar1 * eft.permTk[2];
 
                                 /* dU/dL/dX, of second term: d[lPow*dlAlpha*dRealdL]/dX     */
                                 // No additional call to MT; use 6th order tensor instead.
-                                scalar = selfScale * lf.sc2 * lf.dsc1dL;
-                                lgX[i] += scalar * eft.permFi[0];
-                                lgY[i] += scalar * eft.permFi[1];
-                                lgZ[i] += scalar * eft.permFi[2];
-                                ltX[i] += scalar * eft.permTi[0];
-                                ltY[i] += scalar * eft.permTi[1];
-                                ltZ[i] += scalar * eft.permTi[2];
-                                lxk_local[k] -= scalar * eft.permFi[0];
-                                lyk_local[k] -= scalar * eft.permFi[1];
-                                lzk_local[k] -= scalar * eft.permFi[2];
-                                ltxk_local[k] += scalar * eft.permTk[0];
-                                ltyk_local[k] += scalar * eft.permTk[1];
-                                ltzk_local[k] += scalar * eft.permTk[2];
+                                final double scalar2 = selfScale * lf.sc2 * lf.dsc1dL;
+                                lgX[i] += scalar2 * eft.permFi[0];
+                                lgY[i] += scalar2 * eft.permFi[1];
+                                lgZ[i] += scalar2 * eft.permFi[2];
+                                ltX[i] += scalar2 * eft.permTi[0];
+                                ltY[i] += scalar2 * eft.permTi[1];
+                                ltZ[i] += scalar2 * eft.permTi[2];
+                                lxk_local[k] -= scalar2 * eft.permFi[0];
+                                lyk_local[k] -= scalar2 * eft.permFi[1];
+                                lzk_local[k] -= scalar2 * eft.permFi[2];
+                                ltxk_local[k] += scalar2 * eft.permTk[0];
+                                ltyk_local[k] += scalar2 * eft.permTk[1];
+                                ltzk_local[k] += scalar2 * eft.permTk[2];
                                 if (esviSoft && esvPmeSoft) {
-                                    double dUdLi = dUdL * esvLambda[k] * lambda;
+                                    final double dLambdaProduct_dLi = esvLambda[k] * lambda;
+                                    final double dUdLi = dU_dLambdaProduct * dLambdaProduct_dLi;
                                     int idxi = esvIdByAtom[i];
                                     dEdEsvLocal[idxi] += dUdLi;
-//                                    esvRealDerivShared[idxi].addAndGet(dUdLi);
                                 }
                                 if (esvkSoft && esvPmeSoft) {
-                                    double dUdLk = dUdL * esvLambda[i] * lambda;
+                                    final double dLambdaProduct_dLk = esvLambda[i] * lambda;
+                                    final double dUdLk = dU_dLambdaProduct * dLambdaProduct_dLk;
                                     int idxk = esvIdByAtom[k];
                                     dEdEsvLocal[idxk] += dUdLk;
-//                                    esvRealDerivShared[idxk].addAndGet(dUdLk);
                                 }
-                            }   // soft
+                                /* Option: leave P as-is. 
+                                if (esviSoft && esvkScaled && esvPmeSoft && esvPmeScaled) {
+                                    final double[] multipoleDotI = atoms[i].getEsvMultipoleMdot().packedMultipole;
+                                    EnergyForceTorque eftDotI = pairPermEnergy(dx_local, multipoleDotI, globalMultipoleK, lf);
+                                    final double Pprime = eftDotI.energy;
+                                    final double dPprimedF = eftDotI.dPermdZ;
+                                    final double dUprime_dLambdaProduct =
+                                            selfScale * ((dSdL * Pprime) + (S * dPprimedF * dFdL));
+                                    final double dLambdaProduct_dLi = esvLambda[k] * lambda;
+                                    final double dUprimedLi = dUprime_dLambdaProduct * dLambdaProduct_dLi;
+                                    int idxi = esvIdByAtom[i];
+                                    dEdEsvLocal[idxi] += dUprimedLi;
+                                }
+                                if (esvkSoft && esviScaled && esvPmeSoft && esvPmeScaled) {
+                                    final double[] multipoleDotK = atoms[k].getEsvMultipoleMdot().packedMultipole;
+                                    EnergyForceTorque eftDotK = pairPermEnergy(dx_local, globalMultipoleI, multipoleDotK, lf);
+                                    final double Pprime = eftDotK.energy;
+                                    final double dPprimedF = eftDotK.dPermdZ;
+                                    final double dUprime_dLambdaProduct =
+                                            selfScale * ((dSdL * Pprime) + (S * dPprimedF * dFdL));
+                                    final double dLambdaProduct_dLk = esvLambda[i] * lambda;
+                                    final double dUprimedLk = dUprime_dLambdaProduct * dLambdaProduct_dLk;
+                                    int idxk = esvIdByAtom[k];
+                                    dEdEsvLocal[idxk] += dUprimedLk;
+                                }
+                                */
+                            } else {
+                                /* Not soft. */
+                                if (esviScaled && esvPmeScaled) {
+                                    final double[] multipoleDotI = atoms[i].getEsvMultipoleMdot().packedMultipole;
+                                    EnergyForceTorque eftDotI = pairPermEnergy(dx_local, multipoleDotI, globalMultipoleK, lf);
+                                    final double dUdLi = eftDotI.energy;
+                                    final int idxi = esvIdByAtom[i];
+                                    dEdEsvLocal[idxi] += dUdLi;
+                                }
+                                if (esvkScaled && esvPmeScaled) {
+                                    final double[] multipoleDotK = atoms[k].getEsvMultipoleMdot().packedMultipole;
+                                    EnergyForceTorque eftDotK = pairPermEnergy(dx_local, globalMultipoleI, multipoleDotK, lf);
+                                    final double dUdLk = eftDotK.energy;
+                                    final int idxk = esvIdByAtom[k];
+                                    dEdEsvLocal[idxk] += dUdLk;
+                                }
+                            }
                             count++;
                             continue;
                         }
@@ -5262,7 +5303,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     for (int ii = lb; ii <= ub; ii++) {
                         Atom atom = atoms[ii];
                         /* For shared ESV atoms, pipe in the interpolated multipole instead. */
-                        final double in[] = (esvTerm && esvAtomsShared[ii]) 
+                        final double in[] = (esvTerm && esvAtomsShared[ii] && esvPmeScaled) 
                                 ? atom.getEsvMultipoleM().packedMultipole
                                 : localMultipole[ii];
                         final double out[] = globalMultipole[iSymm][ii];
@@ -5342,7 +5383,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                             out[t101] = globalQuadrupole[0][2] * traceScale * elecScale;
                             out[t011] = globalQuadrupole[1][2] * traceScale * elecScale;
                             /* For ESV atoms, also rotate and scale the Mdot multipole. */
-                            if (esvTerm && esvAtomsShared[ii]) {
+                            if (esvTerm && esvAtomsShared[ii] && esvPmeScaled) {
                                 final double[] mdot = atom.getEsvMultipoleMdot().packedMultipole;
                                 final double[] mdotDipole = new double[]
                                     {mdot[t100], mdot[t010], mdot[t001]};
