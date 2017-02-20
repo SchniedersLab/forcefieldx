@@ -952,7 +952,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     
     public MultipoleType getEsvMultipoleM() {
         if (getEsv() == null || !getEsv().isReady()) {
-            logger.log(Level.WARNING, "@Atom.getEsvM: fallback to getMultipoleType by {0}", this.toString());
+//            logger.log(Level.WARNING, "@Atom.getEsvM: fallback to getMultipoleType by {0}", this.toString());
             return getMultipoleType();
         }
         return esvMultipoleM;
@@ -964,7 +964,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     
     public MultipoleType getEsvMultipoleMdot() {
         if (getEsv() == null || !getEsv().isReady()) {
-            logger.log(Level.WARNING, "@Atom.getEsvMdot: fallback to getMultipoleType() by {0}", this.toString());
+//            logger.log(Level.WARNING, "@Atom.getEsvMdot: fallback to getMultipoleType() by {0}", this.toString());
             return getMultipoleType();
         }
         return esvMultipoleMdot;
