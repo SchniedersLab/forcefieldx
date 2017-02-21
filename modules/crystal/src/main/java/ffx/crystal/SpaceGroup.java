@@ -727,7 +727,7 @@ public class SpaceGroup {
      * @return True if the restrictions are satisfied, false otherwise.
      */
     public static double[] resetUnitCellParams(CrystalSystem crystalSystem) {
-        double params[] = {0.25 + random(), 0.25 + random(), 0.25 + random(), 90.0, 90.0, 90.0};
+        double params[] = {0.1 + random(), 0.1 + random(), 0.1 + random(), 90.0, 90.0, 90.0};
         switch (crystalSystem) {
             case TRICLINIC:
             case MONOCLINIC:
