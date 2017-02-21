@@ -57,7 +57,7 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
     /**
      * Force constant.
      */
-    public final double forceConstant;
+    public double forceConstant;
 
     /**
      * PiTorsionType Constructor.
@@ -69,6 +69,10 @@ public final class PiTorsionType extends BaseType implements Comparator<String> 
         super(ForceField.ForceFieldType.PITORS, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
+    }
+
+    public void setScaleFactor(double scale) {
+        forceConstant *= scale;
     }
 
     /**
