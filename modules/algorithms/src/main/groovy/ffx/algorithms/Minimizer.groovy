@@ -128,7 +128,7 @@ class Minimizer extends Script {
     def energies = [];   // ForceFieldEnergy
 
     private void openFile(Options options, String toOpen, int topNum) {
-        MolecularAssembly[] opened = aFuncts.open(toOpen, threadsPer);
+        MolecularAssembly[] opened = aFuncts.openAll(toOpen, threadsPer);
         MolecularAssembly mola = aFuncts.getActiveAssembly();
         processFile(options, mola, topNum);
     }
