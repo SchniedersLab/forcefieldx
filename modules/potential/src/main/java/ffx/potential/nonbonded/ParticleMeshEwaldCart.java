@@ -214,6 +214,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Permanent multipole energy (kcal/mol) due to real-space interactions only.
      */
     private double permanentRealSpaceEnergy = 0.0;
+    private double permanentReciprocalEnergy;
     /**
      * Polarization energy (kcal/mol).
      */
@@ -1856,6 +1857,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     @Override
     public double getPermanentRealSpaceEnergy() {
         return permanentRealSpaceEnergy;
+    }
+    
+    @Override
+    public double getPermanentReciprocalEnergy() {
+        return permanentReciprocalEnergy;
+    }
+    
+    @Override
+    public String getDecomposition() {
+        return "";
     }
 
     /**

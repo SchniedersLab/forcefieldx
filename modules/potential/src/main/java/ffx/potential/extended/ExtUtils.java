@@ -563,6 +563,13 @@ public final class ExtUtils {
         }
     }
     
+    public static StringBuilder removeFinalNewline(StringBuilder sb) {
+        if (sb.lastIndexOf("\n") + 1 == sb.length()) {
+            sb.replace(sb.length() - 1, sb.length(), "");
+        }
+        return sb;
+    }
+    
     /**
      * Returns the result of calling toString() on each element of the array.
      *  Returned type is Object[] (rather than String[]) to support use as varargs.

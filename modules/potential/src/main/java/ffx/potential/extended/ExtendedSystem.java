@@ -82,6 +82,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         public final boolean backgroundBondedHookup = prop("esv-backgroundBonded", true);
         public final boolean esvScaleUnshared   = prop("esv-scaleUnshared", true);
         public final boolean esvDecomposeBonded = prop("esv-decomposeBonded", true);
+        public final boolean esvDecomposePme    = prop("esv-decomposePme", true);
         public final boolean esvPropagation     = prop("esv-propagation", false);
         public final Double biasOverride        = prop("esv-biasOverride", Double.NaN);
         public final double thetaMass           = prop("esv-thetaMass", 1.0e-18);            // from OSRW, reasonably 100 a.m.u.
@@ -441,7 +442,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      * Called reflectively from Groovy by script testESVs.
      */
     public double getdPermRealdL(int esvID) {
-        return (config.esvPmeFlag) ? pme.getdEdEsv(esvID) : 0.0;
+        return (config.esvPmeFlag) ? pme.getdPermRealdEsv(esvID) : 0.0;
+    }
+    
+    public double getdReciprocaldL(int esvID) {
+        return (config.esvPmeFlag) ? pme.getdReciprocaldEsv(esvID) : 0.0;
     }
 
     private double getdEdL(int esvID, double temperature, boolean print) {
@@ -461,7 +466,13 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
         if (config.esvPmeFlag) {
             double dPme = pme.getdEdEsv(esvID);
-            SB.logfn("  PME    %d: %g", esvID, dPme);
+            SB.logfn(    "  PME    %d: %g", esvID, dPme);
+            if (config.esvDecomposePme) {
+                double permReal = pme.getdPermRealdEsv(esvID);
+                double reciprocal = pme.getdReciprocaldEsv(esvID);
+                SB.logfn("    Perm-Real:  %g", permReal);
+                SB.logfn("    Reciprocal: %g", reciprocal);
+            }
             esvDeriv += dPme;
         }
         if (config.esvScaleBonded) {
@@ -500,6 +511,10 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         }
         SB.printIf(print);
         return esvDeriv;
+    }
+    
+    public ExtendedVariable getEsv(int esvID) {
+        return esvList.get(esvID);
     }
 
     public String getBiasDecomposition() {

@@ -227,6 +227,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double vanDerWaalsEnergy;
     private double permanentMultipoleEnergy;
     private double permanentRealSpaceEnergy;
+    private double permanentReciprocalEnergy;
     private double polarizationEnergy;
     private double totalElectrostaticEnergy;
     private double totalNonBondedEnergy;
@@ -1262,6 +1263,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
                     permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
                     permanentRealSpaceEnergy = particleMeshEwald.getPermanentRealSpaceEnergy();
+                    permanentReciprocalEnergy = particleMeshEwald.getPermanentReciprocalEnergy();
                     polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
                     nPermanentInteractions = particleMeshEwald.getInteractions();
                     solvationEnergy = particleMeshEwald.getGKEnergy();
@@ -1578,8 +1580,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                         pmeTitle, permanentMultipoleEnergy, nPermanentInteractions, electrostaticTime * toSeconds));
             }
-            if (pmeQI && decomposePme) {
-                sb.append(((ParticleMeshEwaldQI) particleMeshEwald).getDecomposition());
+            if (decomposePme) {
+                sb.append(particleMeshEwald.getDecomposition());
             }
         }
         if (polarizationTerm && nPermanentInteractions > 0) {
@@ -2375,6 +2377,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     
     public double getPermanentRealSpaceEnergy() {
         return permanentRealSpaceEnergy;
+    }
+    
+    public double getPermanentReciprocalEnergy() {
+        return permanentReciprocalEnergy;
     }
 
     public int getPermanentInteractions() {
