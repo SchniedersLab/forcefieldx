@@ -1138,6 +1138,15 @@ public class ForceField {
         return iSolvRadTypes;
     }
 
+    public void setTorsionScale(double scaleFactor) {
+        for (TorsionType type : torsionTypes.values()) {
+            type.setScaleFactor(scaleFactor);
+        }
+        for (PiTorsionType type : piTorsionTypes.values()) {
+            type.setScaleFactor(scaleFactor);
+        }
+    }
+
     /**
      * <p>
      * getForceFieldTypeCount</p>
@@ -1499,7 +1508,7 @@ public class ForceField {
         /* Generalized Kirkwood dielectric and debugging */
         GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE,
         /* Miscellaneous */
-        RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT
+        RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE
     }
 
     public enum ForceFieldInteger {

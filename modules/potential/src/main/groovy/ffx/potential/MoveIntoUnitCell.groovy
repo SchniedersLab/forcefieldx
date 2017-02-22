@@ -220,12 +220,12 @@ class MoveIntoUnitCell extends Script {
             }
         }
 
-        String ext = FilenameUtils.getExtension(filename);
-        filename = FilenameUtils.removeExtension(filename);
+        String ext = FilenameUtils.getExtension(modelFilename);
+        filename = FilenameUtils.removeExtension(modelFilename);
         if (ext.toUpperCase().contains("XYZ")) {
-            functions.saveAsXYZ(assemblies[0], new File(filename + ".xyz"))
+            functions.saveAsXYZ(assemblies[0], new File(modelFilename + ".xyz"))
         } else {
-            functions.saveAsPDB(assemblies, new File(filename + ".pdb"))
+            functions.saveAsPDB(assemblies, new File(modelFilename + ".pdb"))
         }
 
     }
