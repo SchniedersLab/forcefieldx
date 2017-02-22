@@ -561,7 +561,7 @@ private void openFile(String toOpen, File structFile, int topNum) {
                 def m = rangeregex.matcher(range);
                 if (m.find()) {
                     int rangeStart = Integer.parseInt(m.group(1));
-                    int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                    int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                     if (rangeStart > rangeEnd) {
                         logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                     }
@@ -601,7 +601,7 @@ private void openFile(String toOpen, File structFile, int topNum) {
                 def m = rangeregex.matcher(range);
                 if (m.find()) {
                     int rangeStart = Integer.parseInt(m.group(1));
-                    int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                    int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                     if (rangeStart > rangeEnd) {
                         logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                     }
@@ -665,7 +665,7 @@ if (ranges1) {
 for (range in ranges1) {
 def m = rangeregex.matcher(range);
 if (m.find()) {
-if (m.groupCount() > 1) {
+if (m.group(2) != null) {
 int rangeStart = Integer.parseInt(m.group(1));
 int rangeEnd = Integer.parseInt(m.group(2));
 if (rangeStart > rangeEnd) {
@@ -853,7 +853,7 @@ if (arguments.size() == 1) {
     for (range in ranges2) {
     def m = rangeregex.matcher(range);
     if (m.find()) {
-    if (m.groupCount() > 1) {
+    if (m.group(2) != null) {
     int rangeStart = Integer.parseInt(m.group(1));
     int rangeEnd = Integer.parseInt(m.group(2));
     if (rangeStart > rangeEnd) {
@@ -948,7 +948,7 @@ if (arguments.size() == 1) {
             def m = rangeregex.matcher(range);
             if (m.find()) {
                 int rangeStart = Integer.parseInt(m.group(1));
-                int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                 if (rangeStart > rangeEnd) {
                     logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                 }
@@ -988,7 +988,7 @@ if (arguments.size() == 1) {
             def m = rangeregex.matcher(range);
             if (m.find()) {
                 int rangeStart = Integer.parseInt(m.group(1));
-                int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                 if (rangeStart > rangeEnd) {
                     logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                 }

@@ -155,7 +155,7 @@ class Minimizer extends Script {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
@@ -200,7 +200,7 @@ class Minimizer extends Script {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
@@ -316,7 +316,7 @@ class Minimizer extends Script {
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
                         logger.info(String.format("Range %s A rangeStart %d groupCount %d", range, rangeStart, m.groupCount()));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
@@ -355,7 +355,7 @@ class Minimizer extends Script {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
