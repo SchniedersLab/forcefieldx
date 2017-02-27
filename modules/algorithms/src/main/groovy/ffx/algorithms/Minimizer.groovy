@@ -68,6 +68,14 @@ class Minimizer extends Script {
          */
         @Option(shortName='f2', longName='final2', defaultValue='-1', description='Final ligand atom for the 2nd topology') int f2;
         /**
+         * --la1 or -ligAtoms1 allows for multiple ranges and/or singletons of ligand atoms in the first topology, separated by periods.
+         */
+        @Option(shortName='la1', longName='ligAtoms1', description='Period-separated ranges of 1st toplogy ligand atoms (e.g. 40-50.72-83)') String ligAt1;
+        /**
+         * --la2 or -ligAtoms2 allows for multiple ranges and/or singletons of ligand atoms in the second topology, separated by periods.
+         */
+        @Option(shortName='la2', longName='ligAtoms2', description='Period-separated ranges of 2nd toplogy ligand atoms (e.g. 40-50.72-83)') String ligAt2;
+        /**
          * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
          */
         @Option(shortName='es1', longName='noElecStart1', defaultValue='1', description='Starting no-electrostatics atom for 1st topology') int es1;
@@ -272,6 +280,13 @@ class Minimizer extends Script {
             numParallel = 1;
         } else {
             threadsPer = threadsAvail / numParallel;
+        }
+        
+        if (options.ligAt1) {
+            ranges1 = options.ligAt1.tokenize(".");
+        }
+        if (options.ligAt2) {
+            ranges2 = options.ligAt2.tokenize(".");
         }
         
         if (!arguments || arguments.isEmpty()) {
