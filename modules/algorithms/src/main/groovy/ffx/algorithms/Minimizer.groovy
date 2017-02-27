@@ -17,6 +17,9 @@ import ffx.algorithms.AlgorithmUtils;
 import ffx.algorithms.Minimize;
 
 import ffx.numerics.Potential;
+import ffx.numerics.PowerSwitch
+import ffx.numerics.SquaredTrigSwitch
+import ffx.numerics.UnivariateSwitchingFunction
 
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
@@ -25,6 +28,7 @@ import ffx.potential.OctTopologyEnergy;
 import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.nonbonded.MultiplicativeSwitch
 
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;
@@ -115,6 +119,22 @@ class Minimizer extends Script {
         //@Option(shortName='uaB', longName='unsharedB', numberOfArgumentsString='*', valueSeparator='.', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String[] unsharedB;
         // I'm not sure it's worthwhile to clutter up the options with something that can be set by property.
         //@Option(shortName='p', longName='polarization', defaultValue='MUTUAL', description='Polarization model: [none/direct/mutual]') String polarizationModel;
+        /**
+         * -sf or --switchingFunction sets the switching function to be used by
+         * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)
+         * + cos^2(pi/2*lambda)*E2(1-lambda), MULT uses a 5'th-order polynomial
+         * switching function with zero first and second derivatives at the end
+         * (same function as used for van der Waals switch), and a number uses
+         * the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
+         * 
+         * All of these are generalizations of Udt = f(l)*E1(l) + 
+         * f(1-l)*E2(1-lambda), where f(l) is a continuous switching function
+         * such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1 for lambda 0-1.
+         * The trigonometric switch can be restated thusly, since 
+         * cos^2(pi/2*lambda) is identical to sin^2(pi/2*(1-lambda)), f(1-l).
+         */
+        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0', 
+            description='Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)') String lambdaFunction;
         
         
         /**
@@ -316,6 +336,33 @@ class Minimizer extends Script {
         
         Potential potential;
         
+        UnivariateSwitchingFunction sf;
+        if (options.lambdaFunction) {
+            String lf = options.lambdaFunction.toUpperCase();
+            switch (lf) {
+                case ~/^-?[0-9]*\.?[0-9]+/:
+                    double exp = Double.parseDouble(lf);
+                    sf = new PowerSwitch(1.0, exp);
+                    break;
+                case "TRIG":
+                    sf = new SquaredTrigSwitch(false);
+                    break;
+                case "MULT":
+                    sf = new MultiplicativeSwitch(0.0, 1.0);
+                    break;
+                default:
+                    try {
+                        double beta = Double.parseDouble(lf);
+                        sf = new PowerSwitch(1.0, beta);
+                    } catch (NumberFormatException ex) {
+                        logger.warning(String.format("Argument to option -sf %s could not be properly parsed; using default linear switch", options.lambdaFunction));
+                        sf = new PowerSwitch(1.0, 1.0);
+                    }
+            }
+        } else {
+            sf = new PowerSwitch(1.0, options.lamExp);
+        }
+        
         List<Integer> uniqueA;
         List<Integer> uniqueB;
         if (nArgs >= 4) {
@@ -411,7 +458,7 @@ class Minimizer extends Script {
                 break;
             case 2:
                 logger.info(String.format("\n Running minimize on dual topology [%s,%s]", topologies[0].getFile().getName(), topologies[1].getFile().getName()));
-                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1]);
+                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
                 if (numParallel == 2) {
                     dte.setParallel(true);
                 }
@@ -422,8 +469,8 @@ class Minimizer extends Script {
                 sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
                 logger.info(sb.toString());
                 
-                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1]);
-                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2]);
+                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
                 QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
                 if (numParallel >= 2) {
                     qte.setParallel(true);
@@ -440,12 +487,12 @@ class Minimizer extends Script {
                 sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
                 logger.info(sb.toString());
                 
-                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1]);
-                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2]);
+                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
                 QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
                 
-                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5]);
-                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6]);
+                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
+                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
                 QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
                 
                 OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
