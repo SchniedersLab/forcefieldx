@@ -545,6 +545,8 @@ public class XRayEnergy implements LambdaInterface, Potential {
 
     /**
      * Fill gradient array with occupancy gradients.
+     * Note: this also acts to constrain the occupancies
+     * by moving the gradient vector COM to zero
      *
      * @param g array to add gradients to
      */
@@ -562,6 +564,11 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     }
                 }
             }
+            /*
+             * should this be normalized with respect
+             * to number of atoms in residue in addition
+             * to the number of conformers?
+             */
             ave /= list.size();
             for (Residue r : list) {
                 for (Atom a : r.getAtomList()) {
@@ -570,6 +577,7 @@ public class XRayEnergy implements LambdaInterface, Potential {
                     }
                 }
                 if (list.size() > 1) {
+                    // subtract average to move COM to zero
                     g[index] -= ave;
                 }
                 index++;

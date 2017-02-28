@@ -176,7 +176,7 @@ public class RefinementModel {
                 }
             }
         }
-
+        
         /**
          * For mapping between atoms between different molecular assemblies.
          */
@@ -239,17 +239,30 @@ public class RefinementModel {
         totalAtomArray = totalAtomList.toArray(new Atom[totalAtomList.size()]);
         activeAtomArray = activeAtomList.toArray(new Atom[activeAtomList.size()]);
 
+        /**
+         * Make sure the occupancy values make sense,
+         * otherwise print warnings
+         * (since this could destabilize the refinement,
+         * should we error out?)
+         */
+        
         for (ArrayList<Residue> list : altResidues) {
+            double tocc = 0.0;
+            for (Residue r : list) {
+                for (Atom a : r.getAtomList()) {
+                    if (a.getOccupancy() < 1.0 || a.getOccupancy() > 1.0) {
+                        tocc += a.getOccupancy();
+                        break;
+                    }
+                }
+            }
+            if (tocc < 1.0 || tocc > 1.0) {
+                Residue r = list.get(0);
+                logger.log(Level.WARNING, " Residue {0} occupancy does not sum to 1.0!\n This should be fixed or checked due to possible instability in refinement!\n", r.getChainID() + " " + r.toString());
+            }
             if (list.size() == 1) {
                 Residue r = list.get(0);
-                logger.log(Level.INFO, " Residue {0} is a single conformer with non-unity occupancy.\n Occupancy will be refined independently!", r.toString());
-            }
-        }
-
-        for (ArrayList<Molecule> list : altMolecules) {
-            if (list.size() == 1) {
-                Molecule m = list.get(0);
-                logger.log(Level.INFO, " Molecule {0} is a single conformer with non-unity occupancy.\n Occupancy will be refined independently!", m.toString());
+                logger.log(Level.WARNING, " Residue {0} is a single conformer with non-unity occupancy.\n Occupancy will be refined independently!\n", r.getChainID() + " " + r.toString());
             }
         }
     }
