@@ -129,7 +129,6 @@ class MultiTopTimer extends Script {
          * -v or --verbose, if set false, disables the fully detailed printing of energy components at each step.
          */
         @Option(shortName='v', longName='verbose', defaultValue='true', description='Compute the gradients as well as energies.') String verboseString;
-        //@Option(shortName='v', longName='verbose', defaultValue='true', description='Print out the complete energy for each step.') String verboseString;
         /**
          * -sf or --switchingFunction sets the switching function to be used by
          * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)

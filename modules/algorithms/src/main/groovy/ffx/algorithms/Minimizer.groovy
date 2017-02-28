@@ -17,9 +17,9 @@ import ffx.algorithms.AlgorithmUtils;
 import ffx.algorithms.Minimize;
 
 import ffx.numerics.Potential;
-import ffx.numerics.PowerSwitch
-import ffx.numerics.SquaredTrigSwitch
-import ffx.numerics.UnivariateSwitchingFunction
+import ffx.numerics.PowerSwitch;
+import ffx.numerics.SquaredTrigSwitch;
+import ffx.numerics.UnivariateSwitchingFunction;
 
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
@@ -28,7 +28,7 @@ import ffx.potential.OctTopologyEnergy;
 import ffx.potential.QuadTopologyEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.nonbonded.MultiplicativeSwitch
+import ffx.potential.nonbonded.MultiplicativeSwitch;
 
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils;

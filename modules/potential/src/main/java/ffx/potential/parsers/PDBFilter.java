@@ -44,9 +44,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -218,6 +222,16 @@ public final class PDBFilter extends SystemFilter {
      */
     private int modelsWritten = -1;
     private boolean noVersioning = false;
+    private final static Set<String> backboneNames;
+    static {
+        Set<String> bbAts = new HashSet<>();
+        //String[] names = {"C", "CA", "N", "O", "H", "H1", "H2", "H3", "OXT", "OT2"};
+        String[] names = {"C", "CA", "N", "O", "OXT", "OT2"};
+        bbAts.addAll(Arrays.asList(names));
+        backboneNames = Collections.unmodifiableSet(bbAts);
+        // If necessary, can now expose backboneNames as a public, final 
+        // unmodifiable Set.
+    }
 
     /**
      * <p>
@@ -709,20 +723,26 @@ public final class PDBFilter extends SystemFilter {
 
                                 printAtom = false;
                                 if (mutate) {
+                                    boolean doBreak = false;
                                     for (Mutation mtn : mutations) {
                                         if (chainID == mtn.chainChar
                                                 && resSeq == mtn.resID) {
                                             String atomName = name.toUpperCase();
-                                            if (atomName.equals("N") || atomName.equals("C")
-                                                    || atomName.equals("O") || atomName.equals("CA")) {
+                                            /*if (atomName.equals("N") || atomName.equals("C")
+                                                    || atomName.equals("O") || atomName.equals("CA")) {*/
+                                            if (backboneNames.contains(atomName)) {
                                                 printAtom = true;
                                                 resName = mtn.resName;
                                             } else {
                                                 logger.info(String.format(" Deleting atom %s of %s %d",
                                                         atomName, resName, resSeq));
+                                                doBreak = true;
                                                 break;
                                             }
                                         }
+                                    }
+                                    if (doBreak) {
+                                        break;
                                     }
                                 }
                                 d = new double[3];
