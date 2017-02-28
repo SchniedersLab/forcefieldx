@@ -493,7 +493,9 @@ public final class XRayFormFactor implements FormFactor {
         if (occupancy < 0.0) {
             StringBuilder sb = new StringBuilder();
             sb.append(" Negative occupancy for atom: " + atom.toString());
-            sb.append(" \nResetting to 0.0\n");
+            sb.append("\n Resetting to 0.0");
+            sb.append("\n this can cause instability in refinement and");
+            sb.append("\n possibly checked/corrected!");
             logger.warning(sb.toString());
             occupancy = 0.0;
             atom.setOccupancy(0.0);

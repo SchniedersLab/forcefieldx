@@ -453,6 +453,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 break;
             case OCCUPANCIES:
                 logger.info(" Mode: Occupancies");
+                break;
             case COORDINATES_AND_OCCUPANCIES:
                 logger.info(" Mode: Coordinates and Occupancies");
                 break;
