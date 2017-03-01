@@ -421,7 +421,7 @@ class TTosrw extends Script {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
@@ -466,7 +466,7 @@ class TTosrw extends Script {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
@@ -802,7 +802,7 @@ class TTosrw extends Script {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
@@ -842,7 +842,7 @@ class TTosrw extends Script {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
                         int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.groupCount() > 1) ? Integer.parseInt(m.group(2)) : rangeStart;
+                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }

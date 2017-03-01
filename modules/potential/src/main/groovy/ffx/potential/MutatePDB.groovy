@@ -109,7 +109,7 @@ class MutatePDB extends Script {
         }
 
 
-        int resID = options.resID
+        int resID = options.resid;
         String resName = options.resname
         Character chain = options.chain
 

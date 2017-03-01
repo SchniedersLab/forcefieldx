@@ -124,11 +124,11 @@ if (options.l) {
 }
 
 if (options.w) {
-    windows = Integer.parseInteger(options.w);
+    windows = Integer.parseInt(options.w);
 }
 
 if (options.n) {
-    steps = Integer.parseInteger(options.n);
+    steps = Integer.parseInt(options.n);
 }
 
 logger.info("\n Running simulated annealing on " + modelfilename);
