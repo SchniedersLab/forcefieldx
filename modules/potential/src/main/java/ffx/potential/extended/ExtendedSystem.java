@@ -435,18 +435,38 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
      * Called reflectively from Groovy by script testESVs.
      */
     public double getdVdwdL(int esvID) {
-        return (config.esvVdwFlag) ? vdw.getdEdEsv(esvID) : 0.0;
+        if (!config.esvVdwFlag) {
+            logger.warning("Called for VdW ESV deriv while !esvVdw.");
+            return 0.0;
+        }
+        return vdw.getdEdEsv(esvID);
     }
     
     /**
      * Called reflectively from Groovy by script testESVs.
      */
     public double getdPermRealdL(int esvID) {
-        return (config.esvPmeFlag) ? pme.getdPermRealdEsv(esvID) : 0.0;
+        if (!config.esvPmeFlag) {
+            logger.warning("Called for PermReal ESV deriv while !esvPme.");
+            return 0.0;
+        }
+        return pme.getdPermRealdEsv(esvID);
     }
     
-    public double getdReciprocaldL(int esvID) {
-        return (config.esvPmeFlag) ? pme.getdReciprocaldEsv(esvID) : 0.0;
+    public double getdPermRecipSelf_dL(int esvID) {
+        if (!config.esvPmeFlag) {
+            logger.warning("Called for Reciprocal ESV deriv while !esvPme.");
+            return 0.0;
+        }
+        return pme.getdPermRecipSelf_dEsv(esvID);
+    }
+    
+    public double getdPermRecipMpole_dL(int esvID) {
+        if (!config.esvPmeFlag) {
+            logger.warning("Called for Reciprocal ESV deriv while !esvPme.");
+            return 0.0;
+        }
+        return pme.getdPermRecipMpole_dEsv(esvID);
     }
 
     private double getdEdL(int esvID, double temperature, boolean print) {
@@ -457,30 +477,40 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         double esvDeriv = 0.0;
         SB.logfn(" %s derivative components: ", esv.getName());
         if (config.esvBiasTerm) {
-            esvDeriv += esv.getTotalBiasDeriv(temperature, print);
+            final double dBias = esv.getTotalBiasDeriv(temperature, print);
+            SB.logfn("  %-6s %2d: %g", "Biases", esvID, dBias);
+            final double dDiscr = esv.getDiscrBiasDeriv();
+            SB.logfn("    Discretize:     %g", dDiscr);
+            if (esv instanceof TitrationESV) {
+                final double dPh = ((TitrationESV) esv).getPhBiasDeriv(temperature);
+                SB.logfn("    Acidostat:      %g", dPh);
+            }
+            esvDeriv += dBias;
         }
         if (config.esvVdwFlag) {
-            double dVdw = vdw.getdEdEsv(esvID);
-            SB.logfn("  vdW    %d: %g", esvID, dVdw);
+            final double dVdw = vdw.getdEdEsv(esvID);
+            SB.logfn("  %-6s %2d: %g", "VdW", esvID, dVdw);
             esvDeriv += dVdw;
         }
         if (config.esvPmeFlag) {
-            double dPme = pme.getdEdEsv(esvID);
-            SB.logfn(    "  PME    %d: %g", esvID, dPme);
+            final double dPme = pme.getdEdEsv(esvID);
+            SB.logfn(    "  %-6s %2d: %g", "PME", esvID, dPme);
             if (config.esvDecomposePme) {
                 double permReal = pme.getdPermRealdEsv(esvID);
-                double reciprocal = pme.getdReciprocaldEsv(esvID);
-                SB.logfn("    Perm-Real:  %g", permReal);
-                SB.logfn("    Reciprocal: %g", reciprocal);
+                double permRecipSelf = pme.getdPermRecipSelf_dEsv(esvID);
+                double permRecipMpole = pme.getdPermRecipMpole_dEsv(esvID);
+                SB.logfn("    PermReal:       %g", permReal);
+                SB.logfn("    PermRecipSelf:  %g", permRecipSelf);
+                SB.logfn("    PermRecipMpole: %g", permRecipMpole);
             }
             esvDeriv += dPme;
         }
         if (config.esvScaleBonded) {
-            double dBonded = esv.getBondedDeriv();
+            final double dBonded = esv.getBondedDeriv();
+            SB.logfn("  %-6s %2d: %g", "Bonded", esvID, dBonded);
             esvDeriv += dBonded;
-            if (print && config.esvDecomposeBonded) {
-                // Decompose the bonded derivative into term types.
-                SB.logfn("  Bonded %d: %g", esvID, dBonded);
+            /* If desired, decompose bonded contribution into component types from foreground and background. */
+            if (config.esvDecomposeBonded) {
                 // Foreground portion:
                 double fgSum = 0.0;
                 HashMap<Class<? extends BondedTerm>,SharedDouble> fgMap =
@@ -508,6 +538,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
                             bgMap.get(clas).get());
                 }
             }
+        }
+        if (Double.isNaN(esvDeriv) || !Double.isFinite(esvDeriv)) {
+            SB.warning("NaN/Inf lambda derivative: %s", this);
         }
         SB.printIf(print);
         return esvDeriv;

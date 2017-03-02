@@ -156,12 +156,6 @@ public class MultipoleTensor {
      */
     private final double work[];
     private double dEdZ, d2EdZ2;
-    /**
-     * To help avoid misuse. For example: setting a new distance and then calling
-     * energy silently returns an incorrect result. It is necessary to call
-     * setMultipoles() every time, and to do so after distance is selected.
-     */
-    private boolean isReady = false;
 
     /**
      * <p>
@@ -311,7 +305,6 @@ public class MultipoleTensor {
      * @param operator
      */
     public final void setOperator(OPERATOR operator) {
-        isReady = false;
         this.operator = operator;
 
         OPERATOR op = operator;
@@ -333,7 +326,7 @@ public class MultipoleTensor {
 
     }
 
-    public void generateTensor() {
+    void generateTensor() {
         switch (order) {
             case 5:
                 generateTensor5();
@@ -347,7 +340,7 @@ public class MultipoleTensor {
         }
     }
 
-    public void generateTensor4() {
+    private void generateTensor4() {
         switch (coordinates) {
             case QI:
                 order4QI();
@@ -358,7 +351,7 @@ public class MultipoleTensor {
         }
     }
 
-    public void generateTensor5() {
+    private void generateTensor5() {
         switch (coordinates) {
             case QI:
                 order5QI();
@@ -369,9 +362,8 @@ public class MultipoleTensor {
         }
     }
 
-    public void setCoordinateSystem(COORDINATES coordinates) {
+    private void setCoordinateSystem(COORDINATES coordinates) {
         this.coordinates = coordinates;
-        isReady = false;
     }
 
     /**
@@ -393,9 +385,57 @@ public class MultipoleTensor {
         }
         return false;
     }
+    
+    /**
+     * Prepare this tensor with the given parameters; lambdaFunction necessary only
+     * for softcored interactions, dipoles needed only for polarizable interactions.
+     * @param r interatomic distance
+     * @param lambdaFunction add additional atomic distance to account for softcoring
+     * @param Qi multipole of first atom: (q,dx,dy,dz,Qxx,Qyy,Qzz,Qxy,Qxz,Qyz)
+     * @param Qk multipole of second atom: (q,dx,dy,dz,Qxx,Qyy,Qzz,Qxy,Qxz,Qyz)
+     * @param Ui dipole of first atom
+     * @param UiCR masked dipole of first atom
+     * @param Uk dipole of second atom
+     * @param UkCR masked dipole of second atom
+     */
+    public void generateTensor(double r[], double lambdaFunction, double[] Qi, double[] Qk,
+            double Ui[], double UiCR[], double Uk[], double UkCR[]) {
+        setR(r, lambdaFunction);
+        setMultipoles(Qi, Qk);
+        setDipoles(Ui, UiCR, Uk, UkCR);
+        generateTensor();
+    }
+    
+    /**
+     * @see MultipoleTensor#generateTensor(double, double, double[],double[], double[], double[], double[], double[])
+     */
+    public void generateTensor(double r[], double[] Qi, double[] Qk,
+            double Ui[], double UiCR[], double Uk[], double UkCR[]) {
+        setR(r);
+        setMultipoles(Qi, Qk);
+        setDipoles(Ui, UiCR, Uk, UkCR);
+        generateTensor();
+    }
+    
+    /**
+     * @see MultipoleTensor#generateTensor(double, double, double[], double[], double[], double[], double[], double[])
+     */
+    public void generateTensor(double r[], double[] Qi, double[] Qk) {
+        setR(r);
+        setMultipoles(Qi, Qk);
+        generateTensor();
+    }
+    
+    /**
+     * @see MultipoleTensor#generateTensor(double, double, double[], double[], double[], double[], double[], double[])
+     */
+    public void generateTensor(double r[], double lambdaFunction, double[] Qi, double[] Qk) {
+        setR(r, lambdaFunction);
+        setMultipoles(Qi, Qk);
+        generateTensor();
+    }
 
-    public void setR(double r[]) {
-        isReady = false;
+    void setR(double r[]) {
         switch (coordinates) {
             case QI:
                 x = 0.0;
@@ -416,8 +456,7 @@ public class MultipoleTensor {
         }
     }
 
-    public void setR(double r[], double lambdaFunction) {
-        isReady = false;
+    void setR(double r[], double lambdaFunction) {
         switch (coordinates) {
             case QI:
                 setR_QI(r, lambdaFunction);
@@ -460,9 +499,6 @@ public class MultipoleTensor {
     }
 
     public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
-        if (!isReady) {
-            logger.severe("Must set multipoles after distance, regardless of changes thereto.");
-        }
         switch (coordinates) {
             case GLOBAL:
             default:
@@ -474,9 +510,6 @@ public class MultipoleTensor {
 
     public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
-        if (!isReady) {
-            logger.severe("Must set multipoles after distance, regardless of changes thereto.");
-        }
         switch (coordinates) {
             case GLOBAL:
             default:
@@ -569,7 +602,7 @@ public class MultipoleTensor {
      *
      * @param tensor
      */
-    public void log(double tensor[]) {
+    void log(double tensor[]) {
 
         StringBuilder sb = new StringBuilder();
 
@@ -4607,7 +4640,7 @@ public class MultipoleTensor {
     private static final double ONE_THIRD = 1.0 / 3.0;
     private static final double TWO_THIRD = 2.0 / 3.0;
 
-    public void setMultipoles(double Qi[], double Qk[]) {
+    void setMultipoles(double Qi[], double Qk[]) {
         switch (coordinates) {
             case GLOBAL:
             default:
@@ -4619,15 +4652,9 @@ public class MultipoleTensor {
                 multipoleKtoQI(Qk);
                 break;
         }
-        isReady = true;
     }
 
-    private void setMultipolesQI(double Qi[], double Qk[]) {
-        multipoleItoQI(Qi);
-        multipoleKtoQI(Qk);
-    }
-
-    public void setDipoles(double Ui[], double UiCR[], double Uk[], double UkCR[]) {
+    void setDipoles(double Ui[], double UiCR[], double Uk[], double UkCR[]) {
         switch (coordinates) {
             case GLOBAL:
             default:
@@ -4639,7 +4666,6 @@ public class MultipoleTensor {
                 dipoleKtoQI(Uk, UkCR);
                 break;
         }
-        isReady = true;
     }
 
     private void setDipolesQI(double Ui[], double UiCR[], double Uk[], double UkCR[]) {

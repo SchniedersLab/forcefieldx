@@ -2389,8 +2389,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return permanentRealSpaceEnergy;
     }
     
-    public double getPermanentReciprocalEnergy() {
-        return permanentReciprocalEnergy;
+    public double getPermanentReciprocalSelfEnergy() {
+        return ((ParticleMeshEwaldQI) particleMeshEwald).getPermRecipSelf();
+    }
+    
+    public double getPermanentReciprocalMpoleEnergy() {
+        return ((ParticleMeshEwaldQI) particleMeshEwald).getPermRecipMpole();
     }
 
     public int getPermanentInteractions() {
@@ -2445,6 +2449,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @return
      */
+    // TODO refactor to protect hierarchy; too bad package-private doesn't allow sub-packages
     public VanDerWaals getVdwNode() {
         if (vanderWaals == null) {
             logger.warning("FFE passed null VdW object.");
@@ -2458,6 +2463,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @return
      */
+    // TODO refactor, as getVdwNode()
     public ParticleMeshEwald getPmeNode() {
         if (particleMeshEwald == null) {
             logger.warning("FFE passed null PME object.");

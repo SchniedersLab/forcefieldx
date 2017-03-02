@@ -319,8 +319,8 @@ public abstract class ExtendedVariable {
 
     @Override
     public String toString() {
-        return String.format("%s (%4.2f->%4.2f)",
-                this.getName(), getLambda(), getLambdaSwitch());
+        return String.format("%s (%4.2f)",
+                this.getName(), getLambda());
     }
 
     /**
