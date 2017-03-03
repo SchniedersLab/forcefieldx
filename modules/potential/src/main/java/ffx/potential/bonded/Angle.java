@@ -720,8 +720,6 @@ public class Angle extends BondedTerm implements BondedEnergy {
         if (this2 > a2) {
             return 1;
         }
-        // There should never be duplicate, identical angle objects.
-        assert (!(this0 == a0 && this1 == a1 && this2 == a2));
         return 0;
     }
 }

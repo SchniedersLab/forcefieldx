@@ -99,7 +99,6 @@ import static ffx.potential.extended.ExtUtils.DebugHandler.VERBOSE;
 import static ffx.potential.extended.ExtUtils.DebugHandler.debugIntI;
 import static ffx.potential.extended.ExtUtils.DebugHandler.debugIntK;
 import static ffx.potential.extended.ExtUtils.prop;
-import static ffx.potential.nonbonded.ParticleMeshEwald.oneThird;
 import static ffx.potential.parameters.MultipoleType.ELECTRIC;
 import static ffx.potential.parameters.MultipoleType.checkMultipoleChirality;
 import static ffx.potential.parameters.MultipoleType.getRotationMatrix;
@@ -662,7 +661,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         permanentSchedule = neighborList.getPairwiseSchedule();
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
-        maxThreads = parallelTeam.getThreadCount() + 1;
+        /* TODO Discern why the following reduction was needed to pass ParallelJava assertions. */
+//        maxThreads = parallelTeam.getThreadCount() + 1;
+        maxThreads = parallelTeam.getThreadCount();
 
         polsor = forceField.getDouble(ForceFieldDouble.POLAR_SOR, 0.70);
         poleps = forceField.getDouble(ForceFieldDouble.POLAR_EPS, 1e-5);
@@ -1775,9 +1776,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
          *
          * Then compute the permanent and reciprocal space energy.
          */
-        try {
+//        try {
             if (reciprocalSpaceTerm && aewald > 0.0) {
-                parallelTeam.execute(reciprocalEnergyRegion);
+                try {
+                    parallelTeam.execute(reciprocalEnergyRegion);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    if (ex.getCause() != null) {
+                        ex.getCause().printStackTrace();
+                    }
+                    logger.severe("Exception computing the reciprocal space energy.");
+                }
                 interactions += nAtoms;
                 eself = reciprocalEnergyRegion.getPermanentSelfEnergy();
                 erecip = reciprocalEnergyRegion.getPermanentReciprocalEnergy();
@@ -1788,7 +1797,15 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
             }
 
             realSpaceTimeTotal = -System.nanoTime();
-            parallelTeam.execute(qiRealSpaceEnergyRegion);
+            try {
+                parallelTeam.execute(qiRealSpaceEnergyRegion);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                if (ex.getCause() != null) {
+                    ex.getCause().printStackTrace();
+                }
+                logger.severe("Exception computing the real space energy.");
+            }
             realSpaceTimeTotal += System.nanoTime();
             ereal = qiRealSpaceEnergyRegion.getPermanentEnergy();
             permanentRealSpaceEnergy = ereal;
@@ -1799,10 +1816,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 logger.info(format(" (perm,pol,time):  qi (%12.6f  %12.6f) %8.3f ms",
                         ereal, ereali, realSpaceTimeTotal * TO_MS));
             }
-        } catch (Exception e) {
-            String message = "Exception computing the electrostatic energy.\n";
-            logger.log(Level.SEVERE, message, e);
-        }
+//        } catch (Exception e) {
+//            String message = "Exception computing the electrostatic energy.\n";
+//            logger.log(Level.SEVERE, message, e);
+//        }
 
         /**
          * Compute the generalized Kirkwood solvation free energy.
@@ -4102,30 +4119,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                         } else {
                             /* Ureal = interact Mi with Mk.
                              * dUreal/dLi = interact MdotI with Mk.
-                             * dUreal/dLk = interact Mi with MdotK.
-                             */
-                            /* Shared atoms have interpolated multipoles placed in the globalMultipole
-                             * array now by the RotateMultipoles loop instead.
-                            double[] multipoleI = globalMultipoleI;
-                            if (esviScaled && esvPmeScaled) {
-                                if (atoms[i].getEsv().getLambda() == 1.0) {
-                                    SB.logfn(" %d,globalPre:  %s", i, Arrays.toString(multipoleI));
-                                }
-                                multipoleI = atoms[i].getEsvMultipoleM().packedMultipole;
-                                if (atoms[i].getEsv().getLambda() == 1.0) {
-                                    SB.logfn("    globalPost: %s", Arrays.toString(multipoleI));
-                                    SB.print();
-                                }
-                            }
-                            double[] multipoleK = globalMultipoleK;
-                            if (esvkScaled && esvPmeScaled) {
-                                try {
-                                    multipoleK = atoms[k].getEsvMultipoleM().packedMultipole;
-                                } catch (NullPointerException ex) {
-                                    SB.warning("i,k,atoms[i],atoms[k]: %d %d %s %s",
-                                            i, k, atoms[i], atoms[k]);
-                                }
-                            }   */
+                             * dUreal/dLk = interact Mi with MdotK.     */
                             LambdaFactors lf = new LambdaFactors(sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2);
                             EnergyForceTorque eft = pairPermEnergy(dx_local, globalMultipoleI, globalMultipoleK, lf);
                             permanentEnergy += eft.energy;
@@ -4991,26 +4985,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 if (esvTerm) {
                     // Every-time, parallel reduction to shared esv deriv.
                     for (int i = 0; i < numESVs; i++) {
-//                        double esvRecipDerivLocal;
-//                        switch (recipMode) {
-//                            case SELF_ONLY:
-//                                esvRecipDerivLocal = esvRecipDerivLocal_Self[i];
-//                                break;
-//                            case MPOLE_ONLY:
-//                                esvRecipDerivLocal = esvRecipDerivLocal_Mpole[i];
-//                                break;
-//                            default:
-//                            case ALL:
-//                                esvRecipDerivLocal = esvRecipDerivLocal_Self[i] + esvRecipDerivLocal_Mpole[i];
-//                        }
-//                        if (VERBOSE()) {
-//                            SB.logfp(" Recip Self,Mpole: %.4f + %.4f = %.4f", 
-//                                esvRecipDerivLocal_Self[i], esvRecipDerivLocal_Mpole[i], esvRecipDerivLocal);
-//                        }
                         esvRecipDerivShared_Self[i].addAndGet(esvRecipDerivLocal_Self[i]);
                         esvRecipDerivShared_Mpole[i].addAndGet(esvRecipDerivLocal_Mpole[i]);
-//                        double esvRecipDerivLocal = esvRecipDerivLocal_Self[i] + esvRecipDerivLocal_Mpole[i];
-//                        esvRecipDerivShared[i].addAndGet(esvRecipDerivLocal);
                     }
                 }
             }

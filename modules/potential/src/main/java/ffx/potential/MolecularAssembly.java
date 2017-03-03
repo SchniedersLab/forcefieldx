@@ -732,7 +732,7 @@ public class MolecularAssembly extends MSGroup {
             for (Polymer polymer : polymers) {
                 List<Atom> atomList = polymer.getAtomList();
                 for (Atom atom : atomList) {
-                    moleculeNumber[atom.getIndex() - 1] = current;
+                    moleculeNumber[atom.getXyzIndex() - 1] = current;
                 }
                 current++;
             }
@@ -742,7 +742,7 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode molecule : molecules.getChildList()) {
             List<Atom> atomList = molecule.getAtomList();
             for (Atom atom : atomList) {
-                moleculeNumber[atom.getIndex() - 1] = current;
+                moleculeNumber[atom.getXyzIndex() - 1] = current;
                 atom.setMoleculeNumber(current);
             }
             current++;
@@ -752,7 +752,7 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode wat : water.getChildList()) {
             List<Atom> atomList = wat.getAtomList();
             for (Atom atom : atomList) {
-                moleculeNumber[atom.getIndex() - 1] = current;
+                moleculeNumber[atom.getXyzIndex() - 1] = current;
             }
             current++;
         }
@@ -761,7 +761,7 @@ public class MolecularAssembly extends MSGroup {
         for (MSNode ion : ions.getChildList()) {
             List<Atom> atomList = ion.getAtomList();
             for (Atom atom : atomList) {
-                moleculeNumber[atom.getIndex() - 1] = current;
+                moleculeNumber[atom.getXyzIndex() - 1] = current;
             }
             current++;
         }

@@ -553,7 +553,7 @@ public class VanDerWaals implements MaskingInterface,
 
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
-            assert (i == ai.getIndex() - 1);
+            assert (i == ai.getXyzIndex() - 1);
             double xyz[] = ai.getXYZ(null);
             int i3 = i * 3;
             coordinates[i3 + XX] = xyz[XX];

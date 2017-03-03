@@ -107,8 +107,6 @@ public class Bond extends BondedTerm {
         if (this1 > a1) {
             return 1;
         }
-        // There should not be duplicate, identical bond objects.
-        assert (!(this0 == a0 && this1 == a1));
         return 0;
     }
 
