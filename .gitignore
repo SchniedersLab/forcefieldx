@@ -1,28 +1,28 @@
+# See also https://git-scm.com/docs/gitignore#_pattern_format
+#   Entries without a slash are treated as globs (match in any directory).
+#   Ending '/' matches directories only (as globs).
+#   Leading '/' matches search root (location of .gitignore)
+#   Leading '.' character has to be matched explicitly.
+#   The '*' does not match '/' (use '**' to match >1 nested directories).
 
 bin/ffx-all.jar
+bin/scheduler.log
+conf/*.jar
+
+*.iml
+nb-configuration.xml
+catalog.xml
+.DS_Store
+.classpath
+.project
+
 keystore/
 target/
 scripts/
-tests
-modules/*/target/
 lib/
-modules/*/catalog.xml
-modules/*/src/site/resources/scripts/
-modules/*/.classpath
-modules/*/.settings
-modules/*/.project
-module/*/.DS_Store
-catalog.xml
-.classpath
-.project
+release/
+website/
 .settings/
 .idea/
-release/
-/.netbeans/
-nb-configuration.xml
-conf/*.jar
-bin/scheduler.log
-.DS_Store
-website/
-*/.DS_Store
-*.iml
+.netbeans/
+
