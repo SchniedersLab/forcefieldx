@@ -431,7 +431,7 @@ public final class ExtUtils {
          * Send to calling logger as a warning.
          */
         public static void warning(String msg, Object... args) {
-            sb.append(format(msg, args));
+            sb.insert(0, format(msg, args));
             warning();
         }
         /**
@@ -440,6 +440,12 @@ public final class ExtUtils {
         public static void warning() {
             cid.getCallingLogger().log(Level.WARNING, sb.toString());
             clear();
+        }
+        /**
+         * Insert a formatted string preceding current message; newline included.
+         */
+        public static void headern(String msg, Object... args) {
+            sb.insert(0, format(msg, args) + format("\n"));
         }
         /**
          * Send to calling logger or discard message.
@@ -561,6 +567,13 @@ public final class ExtUtils {
                 return String.format(msg, arrayToStrings(args));
             }
         }
+    }
+    
+    public static StringBuilder removeFinalNewline(StringBuilder sb) {
+        if (sb.lastIndexOf("\n") + 1 == sb.length()) {
+            sb.replace(sb.length() - 1, sb.length(), "");
+        }
+        return sb;
     }
     
     /**

@@ -290,7 +290,8 @@ public class OutOfPlaneBend extends BondedTerm {
             }
         }
         if (esvTerm) {
-            setEsvDeriv(energy * dedesvChain / esvLambda);
+            final double esvLambdaInv = (esvLambda != 0.0) ? 1/esvLambda : 1.0;
+            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
         }
         return energy;
     }

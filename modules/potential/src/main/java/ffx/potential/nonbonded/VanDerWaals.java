@@ -553,7 +553,7 @@ public class VanDerWaals implements MaskingInterface,
 
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
-            assert (i == ai.getIndex() - 1);
+            assert (i == ai.getXyzIndex() - 1);
             double xyz[] = ai.getXYZ(null);
             int i3 = i * 3;
             coordinates[i3 + XX] = xyz[XX];
@@ -1402,7 +1402,7 @@ public class VanDerWaals implements MaskingInterface,
             /**
              * Log timings.
              */
-            if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
+            if (threadIndex == 0 && logger.isLoggable(Level.FINER)) {
                 double total = (initializationTotal + vdwTotal + reductionTotal) * 1e-9;
                 logger.fine(format("\n van der Waals: %7.4f (sec)", total));
                 logger.fine(" Thread    Init    Energy  Reduce  Total     Counts");

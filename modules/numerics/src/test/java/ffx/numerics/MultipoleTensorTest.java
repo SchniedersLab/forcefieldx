@@ -163,13 +163,9 @@ public class MultipoleTensorTest {
          */
         multipoleTensor.noStorageRecursion(r, noStorageTensor);
         multipoleTensor.recursion(r, tensor);
-        if (order == 4) {
-            multipoleTensor.order4();
-            multipoleTensor.getTensor(fastTensor);
-        } else if (order == 5) {
-            multipoleTensor.order5();
-            multipoleTensor.getTensor(fastTensor);
-        }
+        multipoleTensor.generateTensor();
+        multipoleTensor.getTensor(fastTensor);
+        
         for (int i = 0; i < tensorCount; i++) {
             double expect = noStorageTensor[i];
             double actual = tensor[i];
@@ -192,15 +188,10 @@ public class MultipoleTensorTest {
         fill(fastTensor, 0.0);
         multipoleTensor.noStorageRecursionQI(r, noStorageTensor);
         multipoleTensor.recursionQI(r, tensor);
-        if (order == 4) {
-            multipoleTensor.setTensor(fastTensor);
-            multipoleTensor.order4QI();
-            multipoleTensor.getTensor(fastTensor);
-        } else if (order == 5) {
-            multipoleTensor.setTensor(fastTensor);
-            multipoleTensor.order5QI();
-            multipoleTensor.getTensor(fastTensor);
-        }
+        multipoleTensor.setTensor(fastTensor);
+        multipoleTensor.generateTensor();
+        multipoleTensor.getTensor(fastTensor);
+
         for (int i = 0; i < tensorCount; i++) {
             double expect = noStorageTensor[i];
             double actual = tensor[i];
@@ -254,17 +245,10 @@ public class MultipoleTensorTest {
         tensorFiniteDifference(multipoleTensor, delta2,
                 tensorsPx, tensorsNx, tensorsPy, tensorsNy, tensorsPz, tensorsNz);
 
-        if (order == 5) {
-            multipoleTensor.order5();
-            multipoleTensor.getTensor(tensor);
-            tensorFiniteDifference(multipoleTensor, delta2,
-                    tensorsPx, tensorsNx, tensorsPy, tensorsNy, tensorsPz, tensorsNz);
-        } else if (order == 4) {
-            multipoleTensor.order4();
-            multipoleTensor.getTensor(tensor);
-            tensorFiniteDifference(multipoleTensor, delta2,
-                    tensorsPx, tensorsNx, tensorsPy, tensorsNy, tensorsPz, tensorsNz);
-        }
+        multipoleTensor.generateTensor();
+        multipoleTensor.getTensor(tensor);
+        tensorFiniteDifference(multipoleTensor, delta2,
+                tensorsPx, tensorsNx, tensorsPy, tensorsNy, tensorsPz, tensorsNz);
     }
 
     @Test
@@ -294,15 +278,9 @@ public class MultipoleTensorTest {
         multipoleTensor.recursionQI(r, tensor);
         tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
 
-        if (order == 5) {
-            multipoleTensor.order5QI();
-            multipoleTensor.getTensor(tensor);
-            tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
-        } else if (order == 4) {
-            multipoleTensor.order4QI();
-            multipoleTensor.getTensor(tensor);
-            tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
-        }
+        multipoleTensor.generateTensor();
+        multipoleTensor.getTensor(tensor);
+        tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
     }
 
     @Test
@@ -322,9 +300,7 @@ public class MultipoleTensorTest {
         double Fi[] = new double[3];
         double Ti[] = new double[3];
         double Tk[] = new double[3];
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
 
         double energy = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
 
@@ -335,42 +311,32 @@ public class MultipoleTensorTest {
         double analyticdEdF = multipoleTensor.getdEdZbuff();
 
         r[0] += delta;
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double posX = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[0] -= delta2;
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double negX = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[0] += delta;
         r[1] += delta;
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double posY = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[1] -= delta2;
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double negY = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[1] += delta;
         r[2] += delta;
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double posZ = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[2] -= delta2;
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double negZ = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[2] += delta;
 
         lambdaFunction += delta;
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double posF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         lambdaFunction -= delta2;
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double negF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         lambdaFunction += delta;
 
@@ -406,9 +372,7 @@ public class MultipoleTensorTest {
         double Ti[] = new double[3];
         double Tk[] = new double[3];
 
-        multipoleTensor.setR(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double energy = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
 
         double aX = -Fi[0];
@@ -418,50 +382,34 @@ public class MultipoleTensorTest {
         double analyticdEdF = multipoleTensor.getdEdZbuff();
 
         r[0] += delta;
-        multipoleTensor.setR_QI(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double posX = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[0] -= delta2;
-        multipoleTensor.setR_QI(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double negX = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[0] += delta;
 
         r[1] += delta;
-        multipoleTensor.setR_QI(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double posY = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[1] -= delta2;
-        multipoleTensor.setR_QI(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double negY = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[1] += delta;
 
         r[2] += delta;
-        multipoleTensor.setR_QI(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double posZ = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[2] -= delta2;
-        multipoleTensor.setR_QI(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double negZ = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         r[2] += delta;
 
         lambdaFunction += delta;
-        multipoleTensor.setR_QI(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double posF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         lambdaFunction -= delta2;
-        multipoleTensor.setR_QI(r, lambdaFunction);
-        multipoleTensor.setMultipoles(Qi, Qk);
-        multipoleTensor.generateTensor();
+        multipoleTensor.generateTensor(r, lambdaFunction, Qi, Qk);
         double negF = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
         lambdaFunction += delta;
 

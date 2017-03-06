@@ -107,8 +107,6 @@ public class Bond extends BondedTerm {
         if (this1 > a1) {
             return 1;
         }
-        // There should not be duplicate, identical bond objects.
-        assert (!(this0 == a0 && this1 == a1));
         return 0;
     }
 
@@ -711,7 +709,8 @@ public class Bond extends BondedTerm {
         }
         value = dv;
         if (esvTerm) {
-            setEsvDeriv(energy * dedesvChain / esvLambda);
+            final double esvLambdaInv = (esvLambda != 0.0) ? 1/esvLambda : 1.0;
+            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
         }
         return energy;
     }

@@ -121,12 +121,12 @@ public abstract class ExtendedVariable {
     private final int moleculeNumber;
 
     /* Bonded energy and derivative handling        */
-    private List<BondedTerm> bondedFg, bondedBg;  // valence terms for each side; mola won't see zro by default
+    private List<BondedTerm> bondedFg, bondedBg;    // valence terms for each side; mola won't see zro by default
     private MSNode termNode;                        // modified to contain all applicable bonded terms
     private final SharedDouble bondedDeriv = new SharedDouble();    // bonded dUdL reduction target
     private final HashMap<Class<? extends BondedTerm>,SharedDouble> fgBondedDerivDecomp;    // foreground dUdL by term
     private final HashMap<Class<? extends BondedTerm>,SharedDouble> bgBondedDerivDecomp;    // background dUdL by term
-    private final HashMap<Atom,Atom> fg2bg = new HashMap<>();   // maps multipole end points of this ESV's lambda path
+    private final HashMap<Atom,Atom> fg2bg = new HashMap<>();       // maps multipole end points of this ESV's lambda path
     private final EsvConfiguration config;
     
     /**
@@ -319,8 +319,8 @@ public abstract class ExtendedVariable {
 
     @Override
     public String toString() {
-        return String.format("%s (%4.2f->%4.2f)",
-                this.getName(), getLambda(), getLambdaSwitch());
+        return String.format("%s (%4.2f)",
+                this.getName(), getLambda());
     }
 
     /**
