@@ -41,43 +41,43 @@ class SaveRotamers extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
+        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
          * -c or --chain to specify chain
          */
-        @Option(longName='chain', shortName='c', description='Single character chain name (default is \' \').') char chain
+        @Option(longName='chain', shortName='c', description='Single character chain name (default is \' \').') char chain;
         /**
          * -l or --library to select rotamer library 
          */
-        @Option(longName='library', shortName='l', description='Available rotamer libraries are Ponder and Richards (1) or Richardson (2).') int library
+        @Option(longName='library', shortName='l', description='Available rotamer libraries are Ponder and Richards (1) or Richardson (2).') int library;
         /**
          * -r or --resid to select residue number 
          */
-        @Option(longName='resid', shortName='r', description='Residue number.') int resid
+        @Option(longName='resid', shortName='r', description='Residue number.') int resid;
         /**
          * -i or --independent to draw nucleic acid rotamers independently of chain context
          */ 
-        @Option(longName='independent', shortName='i', defaultValue='false', description='Independent draws nucleic acid rotamers independently of chain context (true if flag is present).') boolean independent
+        @Option(longName='independent', shortName='i', defaultValue='false', description='Independent draws nucleic acid rotamers independently of chain context (true if flag is present).') boolean independent;
         /**
          * -s or --start to select first rotamer to draw. Indexed form rotamer 0
          */
-        @Option(longName='start', shortName='s', description='First rotamer to draw. Indexed from rotamer 0.') int start
+        @Option(longName='start', shortName='s', description='First rotamer to draw. Indexed from rotamer 0.') int start;
         /**
          * -f or --finish to select last rotamer to draw. Indexed from rotamer 0
          */
-        @Option(longName='finish', shortName='f', description='Last rotamer to draw. Indexed from rotamer 0.') int finish
+        @Option(longName='finish', shortName='f', description='Last rotamer to draw. Indexed from rotamer 0.') int finish;
         /**
          * -x or --all to draw all rotamers beginning from the passed rotamer number (overrides other options). Indexed from rotamer 0.
          */
-        @Option(longName='all', shortName='x', description='Draw all rotamers beginning from the passed rotamer number (overrides other options). Indexed from rotamer 0.') int all
+        @Option(longName='all', shortName='x', description='Draw all rotamers beginning from the passed rotamer number (overrides other options). Indexed from rotamer 0.') int all;
         /**
          * -u or --upstreamPucker to adjust the pucker of the 5\' residue to match the rotamer. Use flag to turn on
          */ 
-        @Option(longName='upstreamPucker', shortName='u', defaultValue='false', description='Adjusts the pucker of the 5\' residue to match the rotamer (true if flag is present)') boolean upstreamPucker
+        @Option(longName='upstreamPucker', shortName='u', defaultValue='false', description='Adjusts the pucker of the 5\' residue to match the rotamer (true if flag is present)') boolean upstreamPucker;
         /**
          * The final argument(s) should be one or more filenames.
          */
-        @Unparsed List<String> filenames
+        @Unparsed List<String> filenames;
     }
 
     /**
@@ -259,7 +259,7 @@ class SaveRotamers extends Script {
                     } else {
                         //functions.saveAsPDB(systems, new File(modelFilename + ".pdb"));
                         logger.info(String.format("Saving rotamer %d", i))
-                        functions.saveAsXYZ(activeAssembly, new File(modelFilename + ".pdb"));
+                        functions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"));
                     }
                 }
             }
@@ -290,7 +290,7 @@ class SaveRotamers extends Script {
                     } else {
                         //saveAsPDB(systems, new File(modelFilename + ".pdb"));
                         logger.info(String.format("Saving rotamer %d", i))
-                        functions.saveAsXYZ(activeAssembly, new File(modelFilename + ".pdb"));
+                        functions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"));
                     }
                 }
             }
