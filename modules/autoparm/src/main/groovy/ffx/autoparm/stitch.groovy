@@ -115,7 +115,8 @@ for(int i = 0; i < (arguments.size()); i++){
     
 }//end read command line dynamically "for"
 
-Stitch(fragmentParameters, textFiles);
+Stitch stitch = new Stitch(fragmentParameters, textFiles);
+ForceField newFF = stitch.combinePatches();
 
 return;
 

@@ -82,17 +82,27 @@ public class Stitch {
         // Create array of forcefields
         ForceField[] forcefield = new ForceField[nFragments];
 
-        // Read in parent atom names.
+        // TODO: Read parent atom names into parentAtomNames
+        // Read from uniqueAtomNamesTextFiles?
+        
         String parentAtomNames[] = null;
         
+        
+        // Loop over fragments.
         for (int i = 0; i < nFragments; i++) {
-            // Loop over fragments.
+            
             // Read in force field patch
             ForceField currentPatch = new ForceField(null);
+            
             // Read in Rae's atom labels
-            HashMap<String, Integer> fragmentMap = new HashMap<>();
+            // <UniqueAtomName, Type>
+            HashMap<String,String> fragmentMap = new HashMap<>();
+            //HashMap<String, Integer> fragmentMap = new HashMap<>();
+            
             // Match atom labels to AtomType instances
-            HashMap<Integer, Integer> typeMap = createMap(parentAtomNames, fragmentMap);
+            // <type#, newType#>
+            HashMap<String, String> typeMap = createMap(parentAtomNames, fragmentMap);
+            
             // Overwrite AtomType name (i.e. PolType atom names are wrong)
             // Loop over all force field terms
             // If term includes only valid atoms (i.e. valid atom names) from the overall molecule, 
@@ -263,7 +273,7 @@ public class Stitch {
         return parent;
     }
     
-    private HashMap<Integer, Integer> createMap(String[] parentAtomNames, HashMap<String, Integer> fragmentMap) {
+    /*private HashMap<Integer, Integer> createMap(String[] parentAtomNames, HashMap<String, Integer> fragmentMap) {
         HashMap<Integer, Integer> hashMap = new HashMap<>();
         int numParentAtoms = parentAtomNames.length;
         for (String key : fragmentMap.keySet()) {
@@ -276,9 +286,32 @@ public class Stitch {
             }
         }
         return hashMap;
+    }*/
+    
+    private HashMap<String, String> createMap(String[] parentAtomNames, HashMap<String, String> fragmentMap) {
+        HashMap<String, String> hashMap = new HashMap<>();
+        int numParentAtoms = parentAtomNames.length;
+        for (String key : fragmentMap.keySet()) {
+            String type = fragmentMap.get(key);
+            for (int i = 0; i < numParentAtoms; i++) {
+                if (parentAtomNames[i].equalsIgnoreCase(key)) {
+                    String newType = type;
+                    hashMap.put(type, newType);
+                }
+            }
+        }
+        return hashMap;
     }
     
-    private void updateAtomClasses(int currentTypes[], HashMap<Integer, Integer> map) {
+    /*private void updateAtomClasses(int currentTypes[], HashMap<Integer, Integer> map) {
+        if (currentTypes == null) {
+            return;
+        }
+        for (int i = 0; i < currentTypes.length; i++) {
+            currentTypes[i] = map.get(currentTypes[i]);
+        }
+    }*/
+    private void updateAtomClasses(String currentTypes[], HashMap<String, String> map) {
         if (currentTypes == null) {
             return;
         }
