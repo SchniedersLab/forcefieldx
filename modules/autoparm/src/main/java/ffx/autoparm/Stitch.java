@@ -112,7 +112,7 @@ public class Stitch {
             AngleType fragAngleType = null;
             // Map
             int[] polTypeAngleClasses = fragAngleType.atomClasses;
-            updateAtomClasses(polTypeAngleClasses, typeMap);
+            //updateAtomClasses(polTypeAngleClasses, typeMap);
             fragAngleType.setKey(AngleType.sortKey(polTypeAngleClasses));
             String angleKey = fragAngleType.getKey();
             AngleType parentAngleType = parent.getAngleType(angleKey);
@@ -128,7 +128,7 @@ public class Stitch {
             BondType fragBondType = null;
             // Map 
             int[] polTypeBondClasses = fragBondType.atomClasses;
-            updateAtomClasses(polTypeBondClasses, typeMap);
+            //updateAtomClasses(polTypeBondClasses, typeMap);
             fragBondType.setKey(BondType.sortKey(polTypeBondClasses));
             String bondKey = fragBondType.getKey();
             BondType parentBondType = parent.getBondType(bondKey);
@@ -144,7 +144,7 @@ public class Stitch {
             MultipoleType fragMultipoleType = null;
             // Map
             int[] multipoleFrameTypes = fragMultipoleType.frameAtomTypes;
-            updateAtomClasses(multipoleFrameTypes, typeMap);
+            //updateAtomClasses(multipoleFrameTypes, typeMap);
             fragMultipoleType.setKey(multipoleFrameTypes);
             String multipoleKey = fragMultipoleType.getKey();
             MultipoleType parentMultipoleType = parent.getMultipoleType(multipoleKey);
@@ -160,7 +160,7 @@ public class Stitch {
             OutOfPlaneBendType fragOutOfPlaneBendType = null;
             // Map
             int[] polTypeOutOfPlaneBendClasses = fragOutOfPlaneBendType.atomClasses;
-            updateAtomClasses(polTypeOutOfPlaneBendClasses, typeMap);
+            //updateAtomClasses(polTypeOutOfPlaneBendClasses, typeMap);
             fragOutOfPlaneBendType.setKey(polTypeOutOfPlaneBendClasses);
             String outOfPlaneBendKey = fragOutOfPlaneBendType.getKey();
             OutOfPlaneBendType parentOutOfPlaneBendType = parent.getOutOfPlaneBendType(outOfPlaneBendKey);
@@ -176,7 +176,7 @@ public class Stitch {
             PiTorsionType fragPiTorsionType = null;
             // Map
             int[] polTypePiTorsionClasses = fragPiTorsionType.atomClasses;
-            updateAtomClasses(polTypePiTorsionClasses, typeMap);
+            //updateAtomClasses(polTypePiTorsionClasses, typeMap);
             fragPiTorsionType.setKey(PiTorsionType.sortKey(polTypePiTorsionClasses));
             String piTorsionKey = fragPiTorsionType.getKey();
             PiTorsionType parentPiTorsionType = parent.getPiTorsionType(piTorsionKey);
@@ -192,7 +192,7 @@ public class Stitch {
             StretchBendType fragStretchBendType = null;
             // Map
             int[] polTypeStretchBendClasses = fragStretchBendType.atomClasses;
-            updateAtomClasses(polTypeStretchBendClasses, typeMap);
+            //updateAtomClasses(polTypeStretchBendClasses, typeMap);
             fragStretchBendType.setKey(StretchBendType.sortKey(polTypeStretchBendClasses));
             String stretchBendKey = fragStretchBendType.getKey();
             StretchBendType parentStretchBendType = parent.getStretchBendType(stretchBendKey);
@@ -208,7 +208,7 @@ public class Stitch {
             TorsionTorsionType fragTorsionTorsionType = null;
             // Map
             int[] polTypeTorsionTorsionClasses = fragTorsionTorsionType.atomClasses;
-            updateAtomClasses(polTypeTorsionTorsionClasses, typeMap);
+            //updateAtomClasses(polTypeTorsionTorsionClasses, typeMap);
             fragTorsionTorsionType.setKey(TorsionTorsionType.sortKey(polTypeTorsionTorsionClasses));
             String torsionTorsionKey = fragTorsionTorsionType.getKey();
             TorsionTorsionType parentTorsionTorsionType = parent.getTorsionTorsionType(torsionTorsionKey);
@@ -224,7 +224,7 @@ public class Stitch {
             TorsionType fragTorsionType = null;
             // Map
             int[] polTypeTorsionClasses = fragTorsionType.atomClasses;
-            updateAtomClasses(polTypeTorsionClasses, typeMap);
+            //updateAtomClasses(polTypeTorsionClasses, typeMap);
             fragTorsionType.setKey(TorsionType.sortKey(polTypeTorsionClasses));
             String torsionKey = fragTorsionType.getKey();
             TorsionType parentTorsionType = parent.getTorsionType(torsionKey);
@@ -240,7 +240,7 @@ public class Stitch {
             UreyBradleyType fragUreyBradleyType = null;
             // Map
             int[] polTypeUreyBradleyClasses = fragUreyBradleyType.atomClasses;
-            updateAtomClasses(polTypeUreyBradleyClasses, typeMap);
+            //updateAtomClasses(polTypeUreyBradleyClasses, typeMap);
             fragUreyBradleyType.setKey(UreyBradleyType.sortKey(polTypeUreyBradleyClasses));
             String ureyBradleyKey = fragUreyBradleyType.getKey();
             UreyBradleyType parentUreyBradleyType = parent.getUreyBradleyType(ureyBradleyKey);
@@ -257,7 +257,7 @@ public class Stitch {
             // Map
             int[] polTypeVDWClass = null;
             polTypeVDWClass[0] = fragVDWType.atomClass;
-            updateAtomClasses(polTypeVDWClass, typeMap);
+            //updateAtomClasses(polTypeVDWClass, typeMap);
             fragVDWType.setKey(polTypeVDWClass);
             String vdwKey = fragVDWType.getKey();
             VDWType parentVDWType = parent.getVDWType(vdwKey);
@@ -303,7 +303,7 @@ public class Stitch {
         return hashMap;
     }
     
-    /*private void updateAtomClasses(int currentTypes[], HashMap<Integer, Integer> map) {
+    /*private void //updateAtomClasses(int currentTypes[], HashMap<Integer, Integer> map) {
         if (currentTypes == null) {
             return;
         }
