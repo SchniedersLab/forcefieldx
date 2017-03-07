@@ -51,6 +51,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PatchCombiner
 import ffx.potential.MolecularAssembly;
+import ffx.autoparm.Stitch;
 
 //Java Imports
 import java.io.FileReader;
