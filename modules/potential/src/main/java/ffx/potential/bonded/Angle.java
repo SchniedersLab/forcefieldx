@@ -642,7 +642,8 @@ public class Angle extends BondedTerm implements BondedEnergy {
                 break;
         }
         if (esvTerm) {
-            setEsvDeriv(energy * dedesvChain / esvLambda);
+            final double esvLambdaInv = (esvLambda != 0.0) ? 1/esvLambda : 1.0;
+            setEsvDeriv(energy * dedesvChain * esvLambdaInv);
         }
         return energy;
     }
@@ -719,8 +720,6 @@ public class Angle extends BondedTerm implements BondedEnergy {
         if (this2 > a2) {
             return 1;
         }
-        // There should never be duplicate, identical angle objects.
-        assert (!(this0 == a0 && this1 == a1 && this2 == a2));
         return 0;
     }
 }

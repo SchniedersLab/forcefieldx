@@ -184,6 +184,10 @@ public abstract class ParticleMeshEwald {
     public abstract double getPermanentEnergy();
     
     public abstract double getPermanentRealSpaceEnergy();
+    
+    public abstract double getPermanentReciprocalEnergy();
+    
+    public abstract String getDecomposition();
 
     public abstract double getPolarizationEnergy();
 

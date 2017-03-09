@@ -63,6 +63,7 @@ public class SolventRadii {
                 atomtypeToBondi = amoebapro13ByAtomtype;
                 biotypeToBondi = amoebapro13ByBiotype;
                 break;
+            case "AMBER99SB-TIP3F":
             case "AMBER99SB":
                 defaultBondi = 1.25;
                 overlapScale = 0.55;

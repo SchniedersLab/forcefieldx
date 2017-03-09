@@ -396,7 +396,6 @@ public class Unstitch {
         if (fragContainer.getAtomCount() < mx) {
 
             //Builds 3D model of fragment molecule
-            //System.out.println("\nEntering mb3d for fragment" + number+"\n");
             ModelBuilder3D mb3d;
             mb3d = ModelBuilder3D.getInstance(SilentChemObjectBuilder.getInstance());
             IAtomContainer molecule = null;
@@ -404,16 +403,22 @@ public class Unstitch {
             String[] originalAtomTypeNames = new String[fragContainer.getAtomCount()];
             for (int i = 0; i < originalAtomTypeNames.length; i++) {
                 originalAtomTypeNames[i] = fragContainer.getAtom(i).getAtomTypeName();
-                //System.out.println("Atom " + (i + 1) + " type: " + originalAtomTypeNames[i]);
+                System.out.println("Atom " + (i + 1) + " type: " + originalAtomTypeNames[i]);
             }
 
-            //molecule = mb3d.generate3DCoordinates(mol, false);
+            /* 
+                Edits made here decide whether to use ExhFrag IAtomContainer fragments or
+                SMILES-string derived fragments (commented out lines of "molecule ="
+                and "File fragsdf =")
+            */
+            molecule = mb3d.generate3DCoordinates(mol, false);
             //molecule = mb3d.generate3DCoordinates(fragContainer, true);
+            
             //"eaten" fragments checked for already
             //write output to SDF
-            File fragsdf = writeSDF(fragContainer, number);
+            File fragsdf = writeSDF(molecule, number);
+            //File fragsdf = writeSDF(fragContainer, number);
 
-            //fragcounter++;
         }
 
     } //end "iAtomContainerTo3DModel" IAtomContainer to 3D model converter

@@ -69,7 +69,6 @@ import ffx.numerics.AtomicDoubleArray;
 import ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.MultiDoubleArray;
 import ffx.numerics.PJDoubleArray;
-import ffx.numerics.Potential.STATE;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -111,6 +110,8 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
 import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
+import static ffx.potential.bonded.Atom.Resolution.AMOEBA;
+import static ffx.potential.bonded.Atom.Resolution.FIXEDCHARGE;
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
@@ -227,6 +228,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double vanDerWaalsEnergy;
     private double permanentMultipoleEnergy;
     private double permanentRealSpaceEnergy;
+    private double permanentReciprocalEnergy;
     private double polarizationEnergy;
     private double totalElectrostaticEnergy;
     private double totalNonBondedEnergy;
@@ -301,7 +303,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         // Check that atom ordering is correct and count the number of active atoms.
         for (int i = 0; i < nAtoms; i++) {
-            int index = atoms[i].getIndex() - 1;
+            int index = atoms[i].getXyzIndex() - 1;
             assert (i == index);
         }
 
@@ -804,15 +806,17 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Check that atom ordering is correct and count number of Active atoms.
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            int index = atom.getIndex() - 1;
-            assert (i == index);
-            atom.setXyzIndex(i + 1);
+            int index = atom.getXyzIndex() - 1;
+            if (index != i) {
+//                logger.log(Level.WARNING, "Expected index {0} for atom {1}, but found {2}.", 
+//                        new Object[]{i, atom, index});
+                atom.setXyzIndex(i + 1);
+            }
         }
 
         // Collect, count, pack and sort bonds.
         if (bondTerm) {
             ArrayList<ROLS> bond = molecularAssembly.getBondList();
-//            List<BondedTerm> bond = molecularAssembly.getDescendants(Bond.class);
             nBonds = 0;
             for (ROLS r : bond) {
                 if (keep((Bond) r)) {
@@ -841,7 +845,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Collect, count, pack and sort angles.
         if (angleTerm) {
             ArrayList<ROLS> angle = molecularAssembly.getAngleList();
-            List<BondedTerm> angle2 = molecularAssembly.getDescendants(Angle.class);
             nAngles = 0;
             for (ROLS r : angle) {
                 if (keep((Angle) r)) {
@@ -871,7 +874,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Collect, count, pack and sort stretch-bends.
         if (stretchBendTerm) {
             ArrayList<ROLS> stretchBend = molecularAssembly.getStretchBendList();
-//            List<BondedTerm> stretchBend = molecularAssembly.getDescendants(StretchBend.class);
             nStretchBends = 0;
             for (ROLS r : stretchBend) {
                 if (keep((StretchBend) r)) {
@@ -900,7 +902,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Collect, count, pack and sort Urey-Bradleys.
         if (ureyBradleyTerm) {
             ArrayList<ROLS> ureyBradley = molecularAssembly.getUreyBradleyList();
-//            List<BondedTerm> ureyBradley = molecularAssembly.getDescendants(UreyBradley.class);
             nUreyBradleys = 0;
             for (ROLS r : ureyBradley) {
                 if (keep((UreyBradley) r)) {
@@ -964,7 +965,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Collect, count, pack and sort out-of-plane bends.
         if (outOfPlaneBendTerm) {
             ArrayList<ROLS> outOfPlaneBend = molecularAssembly.getOutOfPlaneBendList();
-//            List<BondedTerm> outOfPlaneBend = molecularAssembly.getDescendants(OutOfPlaneBend.class);
             nOutOfPlaneBends = 0;
             for (ROLS r : outOfPlaneBend) {
                 if (keep((OutOfPlaneBend) r)) {
@@ -993,7 +993,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Collect, count, pack and sort torsions.
         if (torsionTerm) {
             ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
-//            List<BondedTerm> torsion = molecularAssembly.getDescendants(Torsion.class);
             nTorsions = 0;
             for (ROLS r : torsion) {
                 if (keep((Torsion) r)) {
@@ -1022,7 +1021,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Collect, count, pack and sort pi-orbital torsions.
         if (piOrbitalTorsionTerm) {
             ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
-//            List<BondedTerm> piOrbitalTorsion = molecularAssembly.getDescendants(PiOrbitalTorsion.class);
             nPiOrbitalTorsions = 0;
             for (ROLS r : piOrbitalTorsion) {
                 if (keep((PiOrbitalTorsion) r)) {
@@ -1050,7 +1048,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Collect, count, pack and sort torsion-torsions.
         if (torsionTorsionTerm) {
             ArrayList<ROLS> torsionTorsion = molecularAssembly.getTorsionTorsionList();
-//            List<BondedTerm> torsionTorsion = molecularAssembly.getDescendants(TorsionTorsion.class);
             nTorsionTorsions = 0;
             for (ROLS r : torsionTorsion) {
                 if (keep((TorsionTorsion) r)) {
@@ -1078,7 +1075,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Collect, count, pack and sort improper torsions.
         if (improperTorsionTerm) {
             ArrayList<ROLS> improperTorsion = molecularAssembly.getImproperTorsionList();
-//            List<BondedTerm> improperTorsion = molecularAssembly.getDescendants(ImproperTorsion.class);
             nImproperTorsions = 0;
             for (ROLS r : improperTorsion) {
                 if (keep((ImproperTorsion) r)) {
@@ -1272,6 +1268,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     totalElectrostaticEnergy = particleMeshEwald.energy(gradient, print);
                     permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
                     permanentRealSpaceEnergy = particleMeshEwald.getPermanentRealSpaceEnergy();
+                    permanentReciprocalEnergy = particleMeshEwald.getPermanentReciprocalEnergy();
                     polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
                     nPermanentInteractions = particleMeshEwald.getInteractions();
                     solvationEnergy = particleMeshEwald.getGKEnergy();
@@ -1588,8 +1585,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                         pmeTitle, permanentMultipoleEnergy, nPermanentInteractions, electrostaticTime * toSeconds));
             }
-            if (pmeQI && decomposePme) {
-                sb.append(((ParticleMeshEwaldQI) particleMeshEwald).getDecomposition());
+            if (decomposePme) {
+                sb.append(particleMeshEwald.getDecomposition());
             }
         }
         if (polarizationTerm && nPermanentInteractions > 0) {
@@ -2386,6 +2383,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public double getPermanentRealSpaceEnergy() {
         return permanentRealSpaceEnergy;
     }
+    
+    public double getPermanentReciprocalSelfEnergy() {
+        return ((ParticleMeshEwaldQI) particleMeshEwald).getPermRecipSelf();
+    }
+    
+    public double getPermanentReciprocalMpoleEnergy() {
+        return ((ParticleMeshEwaldQI) particleMeshEwald).getPermRecipMpole();
+    }
 
     public int getPermanentInteractions() {
         return nPermanentInteractions;
@@ -2439,6 +2444,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @return
      */
+    // TODO refactor to protect hierarchy; too bad package-private doesn't allow sub-packages
     public VanDerWaals getVdwNode() {
         if (vanderWaals == null) {
             logger.warning("FFE passed null VdW object.");
@@ -2452,6 +2458,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @return
      */
+    // TODO refactor, as getVdwNode()
     public ParticleMeshEwald getPmeNode() {
         if (particleMeshEwald == null) {
             logger.warning("FFE passed null PME object.");

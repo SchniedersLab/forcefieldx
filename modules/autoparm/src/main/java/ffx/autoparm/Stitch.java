@@ -82,17 +82,27 @@ public class Stitch {
         // Create array of forcefields
         ForceField[] forcefield = new ForceField[nFragments];
 
-        // Read in parent atom names.
+        // TODO: Read parent atom names into parentAtomNames
+        // Read from uniqueAtomNamesTextFiles?
+        
         String parentAtomNames[] = null;
         
+        
+        // Loop over fragments.
         for (int i = 0; i < nFragments; i++) {
-            // Loop over fragments.
+            
             // Read in force field patch
             ForceField currentPatch = new ForceField(null);
+            
             // Read in Rae's atom labels
-            HashMap<String, Integer> fragmentMap = new HashMap<>();
+            // <UniqueAtomName, Type>
+            HashMap<String,String> fragmentMap = new HashMap<>();
+            //HashMap<String, Integer> fragmentMap = new HashMap<>();
+            
             // Match atom labels to AtomType instances
-            HashMap<Integer, Integer> typeMap = createMap(parentAtomNames, fragmentMap);
+            // <type#, newType#>
+            HashMap<String, String> typeMap = createMap(parentAtomNames, fragmentMap);
+            
             // Overwrite AtomType name (i.e. PolType atom names are wrong)
             // Loop over all force field terms
             // If term includes only valid atoms (i.e. valid atom names) from the overall molecule, 
@@ -102,7 +112,7 @@ public class Stitch {
             AngleType fragAngleType = null;
             // Map
             int[] polTypeAngleClasses = fragAngleType.atomClasses;
-            updateAtomClasses(polTypeAngleClasses, typeMap);
+            //updateAtomClasses(polTypeAngleClasses, typeMap);
             fragAngleType.setKey(AngleType.sortKey(polTypeAngleClasses));
             String angleKey = fragAngleType.getKey();
             AngleType parentAngleType = parent.getAngleType(angleKey);
@@ -118,7 +128,7 @@ public class Stitch {
             BondType fragBondType = null;
             // Map 
             int[] polTypeBondClasses = fragBondType.atomClasses;
-            updateAtomClasses(polTypeBondClasses, typeMap);
+            //updateAtomClasses(polTypeBondClasses, typeMap);
             fragBondType.setKey(BondType.sortKey(polTypeBondClasses));
             String bondKey = fragBondType.getKey();
             BondType parentBondType = parent.getBondType(bondKey);
@@ -134,7 +144,7 @@ public class Stitch {
             MultipoleType fragMultipoleType = null;
             // Map
             int[] multipoleFrameTypes = fragMultipoleType.frameAtomTypes;
-            updateAtomClasses(multipoleFrameTypes, typeMap);
+            //updateAtomClasses(multipoleFrameTypes, typeMap);
             fragMultipoleType.setKey(multipoleFrameTypes);
             String multipoleKey = fragMultipoleType.getKey();
             MultipoleType parentMultipoleType = parent.getMultipoleType(multipoleKey);
@@ -150,7 +160,7 @@ public class Stitch {
             OutOfPlaneBendType fragOutOfPlaneBendType = null;
             // Map
             int[] polTypeOutOfPlaneBendClasses = fragOutOfPlaneBendType.atomClasses;
-            updateAtomClasses(polTypeOutOfPlaneBendClasses, typeMap);
+            //updateAtomClasses(polTypeOutOfPlaneBendClasses, typeMap);
             fragOutOfPlaneBendType.setKey(polTypeOutOfPlaneBendClasses);
             String outOfPlaneBendKey = fragOutOfPlaneBendType.getKey();
             OutOfPlaneBendType parentOutOfPlaneBendType = parent.getOutOfPlaneBendType(outOfPlaneBendKey);
@@ -166,7 +176,7 @@ public class Stitch {
             PiTorsionType fragPiTorsionType = null;
             // Map
             int[] polTypePiTorsionClasses = fragPiTorsionType.atomClasses;
-            updateAtomClasses(polTypePiTorsionClasses, typeMap);
+            //updateAtomClasses(polTypePiTorsionClasses, typeMap);
             fragPiTorsionType.setKey(PiTorsionType.sortKey(polTypePiTorsionClasses));
             String piTorsionKey = fragPiTorsionType.getKey();
             PiTorsionType parentPiTorsionType = parent.getPiTorsionType(piTorsionKey);
@@ -182,7 +192,7 @@ public class Stitch {
             StretchBendType fragStretchBendType = null;
             // Map
             int[] polTypeStretchBendClasses = fragStretchBendType.atomClasses;
-            updateAtomClasses(polTypeStretchBendClasses, typeMap);
+            //updateAtomClasses(polTypeStretchBendClasses, typeMap);
             fragStretchBendType.setKey(StretchBendType.sortKey(polTypeStretchBendClasses));
             String stretchBendKey = fragStretchBendType.getKey();
             StretchBendType parentStretchBendType = parent.getStretchBendType(stretchBendKey);
@@ -198,7 +208,7 @@ public class Stitch {
             TorsionTorsionType fragTorsionTorsionType = null;
             // Map
             int[] polTypeTorsionTorsionClasses = fragTorsionTorsionType.atomClasses;
-            updateAtomClasses(polTypeTorsionTorsionClasses, typeMap);
+            //updateAtomClasses(polTypeTorsionTorsionClasses, typeMap);
             fragTorsionTorsionType.setKey(TorsionTorsionType.sortKey(polTypeTorsionTorsionClasses));
             String torsionTorsionKey = fragTorsionTorsionType.getKey();
             TorsionTorsionType parentTorsionTorsionType = parent.getTorsionTorsionType(torsionTorsionKey);
@@ -214,7 +224,7 @@ public class Stitch {
             TorsionType fragTorsionType = null;
             // Map
             int[] polTypeTorsionClasses = fragTorsionType.atomClasses;
-            updateAtomClasses(polTypeTorsionClasses, typeMap);
+            //updateAtomClasses(polTypeTorsionClasses, typeMap);
             fragTorsionType.setKey(TorsionType.sortKey(polTypeTorsionClasses));
             String torsionKey = fragTorsionType.getKey();
             TorsionType parentTorsionType = parent.getTorsionType(torsionKey);
@@ -230,7 +240,7 @@ public class Stitch {
             UreyBradleyType fragUreyBradleyType = null;
             // Map
             int[] polTypeUreyBradleyClasses = fragUreyBradleyType.atomClasses;
-            updateAtomClasses(polTypeUreyBradleyClasses, typeMap);
+            //updateAtomClasses(polTypeUreyBradleyClasses, typeMap);
             fragUreyBradleyType.setKey(UreyBradleyType.sortKey(polTypeUreyBradleyClasses));
             String ureyBradleyKey = fragUreyBradleyType.getKey();
             UreyBradleyType parentUreyBradleyType = parent.getUreyBradleyType(ureyBradleyKey);
@@ -247,7 +257,7 @@ public class Stitch {
             // Map
             int[] polTypeVDWClass = null;
             polTypeVDWClass[0] = fragVDWType.atomClass;
-            updateAtomClasses(polTypeVDWClass, typeMap);
+            //updateAtomClasses(polTypeVDWClass, typeMap);
             fragVDWType.setKey(polTypeVDWClass);
             String vdwKey = fragVDWType.getKey();
             VDWType parentVDWType = parent.getVDWType(vdwKey);
@@ -263,7 +273,7 @@ public class Stitch {
         return parent;
     }
     
-    private HashMap<Integer, Integer> createMap(String[] parentAtomNames, HashMap<String, Integer> fragmentMap) {
+    /*private HashMap<Integer, Integer> createMap(String[] parentAtomNames, HashMap<String, Integer> fragmentMap) {
         HashMap<Integer, Integer> hashMap = new HashMap<>();
         int numParentAtoms = parentAtomNames.length;
         for (String key : fragmentMap.keySet()) {
@@ -276,9 +286,32 @@ public class Stitch {
             }
         }
         return hashMap;
+    }*/
+    
+    private HashMap<String, String> createMap(String[] parentAtomNames, HashMap<String, String> fragmentMap) {
+        HashMap<String, String> hashMap = new HashMap<>();
+        int numParentAtoms = parentAtomNames.length;
+        for (String key : fragmentMap.keySet()) {
+            String type = fragmentMap.get(key);
+            for (int i = 0; i < numParentAtoms; i++) {
+                if (parentAtomNames[i].equalsIgnoreCase(key)) {
+                    String newType = type;
+                    hashMap.put(type, newType);
+                }
+            }
+        }
+        return hashMap;
     }
     
-    private void updateAtomClasses(int currentTypes[], HashMap<Integer, Integer> map) {
+    /*private void //updateAtomClasses(int currentTypes[], HashMap<Integer, Integer> map) {
+        if (currentTypes == null) {
+            return;
+        }
+        for (int i = 0; i < currentTypes.length; i++) {
+            currentTypes[i] = map.get(currentTypes[i]);
+        }
+    }*/
+    private void updateAtomClasses(String currentTypes[], HashMap<String, String> map) {
         if (currentTypes == null) {
             return;
         }

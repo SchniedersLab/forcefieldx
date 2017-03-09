@@ -62,7 +62,6 @@ import ffx.potential.extended.TitrationUtils.Titr;
  */
 public final class TitrationESV extends ExtendedVariable {
 
-    // System handles
     private static final Logger logger = Logger.getLogger(TitrationESV.class.getName());
     private final MultiResidue titrating;           // from TitrationUtils.titrationFactory()
     private final double referenceEnergy;           // deprotonation free energy of a model tripeptide
@@ -70,9 +69,6 @@ public final class TitrationESV extends ExtendedVariable {
     private final double constPh;                   // Simulation pH.
     private final double pKaModel;                  // Reference pKa value.
 
-    /**
-     * @{inherit_doc}
-     */
     public TitrationESV(EsvConfiguration esvConfig, MultiResidue multiRes, double constPh, double biasMag) {
         super(esvConfig, multiRes, biasMag, 1.0);
         this.constPh = constPh;
@@ -94,10 +90,6 @@ public final class TitrationESV extends ExtendedVariable {
     protected double getTotalBias(double temperature, boolean print) {
         double eDiscr = getDiscrBias();
         double ePh = getPhBias(temperature);
-        if (print) {
-            SB.logfn(" eDiscr %d: %g", index, eDiscr);
-            SB.logfn(" epH    %d: %g", index, ePh);
-        }
         return (eDiscr + ePh);
     }
 
@@ -105,10 +97,6 @@ public final class TitrationESV extends ExtendedVariable {
     protected double getTotalBiasDeriv(double temperature, boolean print) {
         double dDiscr = getDiscrBiasDeriv();
         double dPh = getPhBiasDeriv(temperature);
-        if (print) {
-            SB.logfn("  Discr  %d: %g", index, dDiscr);
-            SB.logfn("  pH     %d: %g", index, dPh);
-        }
         return (dDiscr + dPh);
     }
 
@@ -120,25 +108,22 @@ public final class TitrationESV extends ExtendedVariable {
      * This method returns U_pH + U_mod_prot.
      */
     protected double getPhBias(double temperature) {
-        double lambda = getLambdaSwitch();
-        double uph = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*lambda;
-//        buglog(" U(pH): 2.303kT*(pKa-pH)*L = %.4g * (%.2f - %.2f) * %.2f = %.4g",
-//                ExtConstants.log10*ExtConstants.Boltzmann*temperature,
-//                pKaModel, constPh, lambda, uph);
-        double umod = referenceEnergy * lambda;     // TODO PRIO find PMFs for monomers/trimers/pentapeptides
-//        return uph + umod;
-        return umod;
+        double lswitch = getLambdaSwitch();
+        double uph = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*lswitch;
+        double umod = referenceEnergy * lswitch;     // TODO Find PMFs for monomers/trimers/pentapeptides.
+        return uph + umod;
+//        return umod;
     }
 
     protected double getPhBiasDeriv(double temperature) {
-        double chain = getSwitchDeriv();
-        double duphdl = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh);
+        double dlswitch = getSwitchDeriv();
+        double duphdl = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*dlswitch;
 //        buglog(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g",
 //                ExtConstants.log10*ExtConstants.Boltzmann*temperature,
 //                pKaModel, constPh, duphdl);
-        double dumoddl = referenceEnergy * chain;
-//        return duphdl + dumoddl;
-        return dumoddl;
+        double dumoddl = referenceEnergy * dlswitch;
+        return duphdl + dumoddl;
+//        return dumoddl;
     }
 
     @Override

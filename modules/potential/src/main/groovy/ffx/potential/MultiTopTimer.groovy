@@ -129,7 +129,6 @@ class MultiTopTimer extends Script {
          * -v or --verbose, if set false, disables the fully detailed printing of energy components at each step.
          */
         @Option(shortName='v', longName='verbose', defaultValue='true', description='Compute the gradients as well as energies.') String verboseString;
-        //@Option(shortName='v', longName='verbose', defaultValue='true', description='Print out the complete energy for each step.') String verboseString;
         /**
          * -sf or --switchingFunction sets the switching function to be used by
          * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)
@@ -404,6 +403,7 @@ class MultiTopTimer extends Script {
             if (options.unsharedA) {
                 def ra = [] as Set;
                 String[] toksA = options.unsharedA.tokenize(".");
+                Atom[] atA1 = topologies[0].getAtomArray();
                 for (range in toksA) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
@@ -412,13 +412,16 @@ class MultiTopTimer extends Script {
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
-                        logger.info(String.format("Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
+                        logger.info(String.format(" Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
+                        logger.info(String.format(" First atom in range: %s", atA1[rangeStart-1]));
+                        if (rangeEnd > rangeStart) {
+                            logger.info(String.format(" Last atom in range: %s", atA1[rangeEnd-1]))
+                        }
                         for (int i = rangeStart; i <= rangeEnd; i++) {
                             ra.add(i-1);
                         }
                     }
                 }
-                Atom[] atA1 = topologies[0].getAtomArray();
                 int counter = 0;
                 def raAdj = [] as Set; // Indexed by common variables in dtA.
                 for (int i = 0; i < atA1.length; i++) {
@@ -444,6 +447,7 @@ class MultiTopTimer extends Script {
             if (options.unsharedB) {
                 def rb = [] as Set;
                 String[] toksB = options.unsharedB.tokenize(".");
+                Atom[] atB1 = topologies[2].getAtomArray();
                 for (range in toksB) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
@@ -452,13 +456,16 @@ class MultiTopTimer extends Script {
                         if (rangeStart > rangeEnd) {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
-                        logger.info(String.format("Range %s for B, start %d end %d", range, rangeStart, rangeEnd));
+                        logger.info(String.format(" Range %s for B, start %d end %d", range, rangeStart, rangeEnd));
+                        logger.info(String.format(" First atom in range: %s", atB1[rangeStart-1]));
+                        if (rangeEnd > rangeStart) {
+                            logger.info(String.format(" Last atom in range: %s", atB1[rangeEnd-1]))
+                        }
                         for (int i = rangeStart; i <= rangeEnd; i++) {
                             rb.add(i-1);
                         }
                     }
                 }
-                Atom[] atB1 = topologies[2].getAtomArray();
                 int counter = 0;
                 def rbAdj = [] as Set; // Indexed by common variables in dtA.
                 for (int i = 0; i < atB1.length; i++) {
