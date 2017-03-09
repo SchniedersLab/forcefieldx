@@ -335,14 +335,17 @@ public class XYZFilter extends SystemFilter {
             }
 
             snapShot++;
-            logger.info(String.format(" Reading snapshot %d of %s.",
-                    snapShot, activeMolecularAssembly));
 
             data = bufferedReader.readLine();
             // Read past blank lines
             while (data != null && data.trim().equals("")) {
                 data = bufferedReader.readLine();
             }
+            if (data == null) {
+                return false;
+            }
+
+            logger.info(String.format(" Attempting to read snapshot %d.", snapShot));
             try {
                 int nArchive = Integer.parseInt(data.trim().split(" +")[0]);
                 if (nArchive != nSystem) {
@@ -353,7 +356,7 @@ public class XYZFilter extends SystemFilter {
                     logger.warning(message);
                     return false;
                 }
-            } catch (Exception e) {
+            } catch (NumberFormatException e) {
                 logger.warning(e.toString());
                 return false;
             }
@@ -704,6 +707,12 @@ public class XYZFilter extends SystemFilter {
             config.setProperty("alpha", alpha);
             config.setProperty("beta", beta);
             config.setProperty("gamma", gamma);
+
+            Crystal crystal = activeMolecularAssembly.getCrystal();
+            if (crystal != null) {
+                crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+            }
+
         }
         return true;
     }

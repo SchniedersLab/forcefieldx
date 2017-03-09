@@ -115,7 +115,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         lastFilter = opener.getFilter();
         return opener.getAllAssemblies();
     }
-    
+
     @Override
     public MolecularAssembly open(String filename) {
         PotentialsFileOpener opener = new PotentialsFileOpener(filename);
@@ -126,9 +126,12 @@ public class PotentialsUtils implements PotentialsFunctions {
         }
         return opener.getAssembly();
     }
-    
+
     /**
      * One one file object.
+     *
+     * @param file
+     * @return
      */
     public MolecularAssembly open(File file) {
         PotentialsFileOpener opener = new PotentialsFileOpener(file);
@@ -139,9 +142,12 @@ public class PotentialsUtils implements PotentialsFunctions {
         }
         return opener.getAssembly();
     }
-    
+
     /**
      * Open one filename string without printing all the header material.
+     *
+     * @param filename
+     * @return
      */
     public MolecularAssembly openQuietly(String filename) {
         Logger ffxLog = Logger.getLogger("ffx");
@@ -151,9 +157,12 @@ public class PotentialsUtils implements PotentialsFunctions {
         ffxLog.setLevel(prevLev);
         return mola;
     }
-    
+
     /**
      * Open one File object without printing all the header material.
+     *
+     * @param file
+     * @return
      */
     public MolecularAssembly openQuietly(File file) {
         Logger ffxLog = Logger.getLogger("ffx");
@@ -326,6 +335,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             if (!xyzFilter.writeFile(file, false)) {
                 logger.info(String.format(" Save failed for %s", assembly.toString()));
             }
+            lastFilter = xyzFilter;
         }
     }
 
@@ -357,6 +367,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             if (!filter.writeFileAsP1(file, false, crystal)) {
                 logger.info(String.format(" Save failed for %s", assembly.toString()));
             }
+            lastFilter = filter;
         }
     }
 
@@ -377,6 +388,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             if (!pdbFilter.writeFile(file, false)) {
                 logger.info(String.format(" Save failed for %s", assembly.toString()));
             }
+            lastFilter = pdbFilter;
         }
     }
 
@@ -393,6 +405,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             logger.info(" No valid file provided to save assembly to.");
         } else {
             PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
+            lastFilter = pdbFilter;
             if (!pdbFilter.writeFile(file, false)) {
                 logger.info(String.format(" Save failed for %s", assembly.toString()));
             } else {
@@ -450,6 +463,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             if (!pdbFilter.writeSIFTFile(file, false, resAndScore)) {
                 logger.info(String.format(" Save failed for %s", assembly.toString()));
             }
+            lastFilter = pdbFilter;
         }
     }
 
@@ -471,6 +485,7 @@ public class PotentialsUtils implements PotentialsFunctions {
             PDBFilter pdbFilter = new PDBFilter(file,
                     Arrays.asList(assemblies), null, null);
             pdbFilter.writeFile(file, false);
+            lastFilter = pdbFilter;
         }
     }
 
@@ -484,6 +499,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assemblies), null, null);
             pdbFilter.writeSIFTFile(file, false, resAndScore);
+            lastFilter = pdbFilter;
         }
     }
 

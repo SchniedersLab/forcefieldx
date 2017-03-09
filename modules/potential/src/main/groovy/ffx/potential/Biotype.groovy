@@ -22,7 +22,7 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc Biotype &lt;filename&gt;
  */
-class Biotype {
+class Biotype extends Script {
 
     /**
      * Options for the Biotype Script.
