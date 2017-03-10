@@ -574,6 +574,16 @@ class MultiTopTimer extends Script {
         
         LambdaInterface linter = (LambdaInterface) potential;
         
+        // Turn on computation of lambda derivatives if l >= 0 or > 1 argument
+        if (options.initialLambda >= 0.0 || nArgs > 1) {
+            double lamToUse = options.initialLambda;
+            if (lamToUse < 0.0 || lamToUse > 1.0) {
+                logger.warning(String.format(" Lambda value %8.4g out-of-bounds of 0-1; resetting to 0.5", options.initialLambda));
+                lamToUse = 0.5;
+            }
+            linter.setLambda(lamToUse);
+        }
+        
         boolean print = true;
         if (options.verboseString) {
             print = Boolean.parseBoolean(options.verboseString);
