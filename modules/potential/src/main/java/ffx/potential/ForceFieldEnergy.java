@@ -1312,6 +1312,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
         } catch (EnergyException ex) {
             if (printOnFailure) {
+                File origFile = molecularAssembly.getFile();
                 String timeString = LocalDateTime.now().format(DateTimeFormatter.
                         ofPattern("yyyy_MM_dd-HH_mm_ss"));
 
@@ -1323,6 +1324,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 filename = ef.versionFile(filename);
                 logger.info(String.format(" Writing on-error snapshot to file %s", filename));
                 ef.saveAsPDB(molecularAssembly, new File(filename));
+                molecularAssembly.setFile(origFile);
             }
 
             if (ex.doCauseSevere()) {
