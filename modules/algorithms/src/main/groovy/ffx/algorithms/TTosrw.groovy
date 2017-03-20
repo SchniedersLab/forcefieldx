@@ -50,6 +50,8 @@ import ffx.potential.bonded.RotamerLibrary;
 
 import ffx.potential.nonbonded.MultiplicativeSwitch;
 
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 
 /**
  * The TTosrw script uses the Transition-Tempered Orthogonal Space Random Walk
@@ -995,6 +997,17 @@ class TTosrw extends Script {
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
         logger.info(sb.toString());
+        
+        logger.info(" Starting energy (before .dyn restart loaded):");
+        //vacuumNeighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
+        boolean updatesDisabled = topologies[0].getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+        if (updatesDisabled) {
+            logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
+        }
+        double[] x = new double[potential.getNumberOfVariables()];
+        potential.getCoordinates(x);
+        
+        potential.energy(x, true);
 
         LambdaInterface linter = (LambdaInterface) potential;
 
@@ -1005,7 +1018,7 @@ class TTosrw extends Script {
                 optStructure(topologies[0], energies[0]);
                 break;
             case 2:
-                if (dualTopologyEnergy.getNumSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
+                if (potential.getNumSharedVariables() == potential.getNumberOfVariables()) {
                     logger.info(" Generating starting structures based on dual-topology:");
                     optStructure(topologies[0], potential);
                 } else {
