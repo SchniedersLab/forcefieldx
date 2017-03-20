@@ -999,7 +999,6 @@ class TTosrw extends Script {
         logger.info(sb.toString());
         
         logger.info(" Starting energy (before .dyn restart loaded):");
-        //vacuumNeighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
         boolean updatesDisabled = topologies[0].getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");

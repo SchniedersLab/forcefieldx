@@ -49,6 +49,11 @@ import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 
+import ffx.numerics.Potential;
+
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldBoolean;
+
 // Number of molecular dynamics steps
 int nSteps = 1000000;
 
@@ -168,6 +173,17 @@ if (arguments != null && arguments.size() > 0) {
 } else {
     modelfilename = active.getFile();
 }
+
+Potential potential = active.getPotentialEnergy();
+logger.info(" Starting energy (before .dyn restart loaded):");
+boolean updatesDisabled = active.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+if (updatesDisabled) {
+    logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
+}
+double[] x = new double[potential.getNumberOfVariables()];
+potential.getCoordinates(x);
+
+potential.energy(x, true);
 
 logger.info("\n Running molecular dynmaics on " + modelfilename);
 
