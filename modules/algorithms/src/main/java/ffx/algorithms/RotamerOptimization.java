@@ -6578,6 +6578,10 @@ public class RotamerOptimization implements Terminatable {
 
     public void setWindowSize(int windowSize) {
         this.windowSize = windowSize;
+        if (this.increment > windowSize) {
+            logger.info(String.format(" Decreasing increment to match window size %d", windowSize));
+            this.increment = windowSize;
+        }
     }
 
     public void setVideoWriter(boolean writeVideo, boolean ignoreInactiveAtoms, boolean skipEnergies) {
