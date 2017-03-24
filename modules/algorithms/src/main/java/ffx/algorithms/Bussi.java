@@ -88,7 +88,7 @@ public class Bussi extends Thermostat {
         super(dof, x, v, mass, type, targetTemperature);
         this.name = Thermostats.BUSSI;
         this.tau = tau;
-        this.bussiRandom = new Random(0);
+        this.bussiRandom = new Random();
     }
 
     /**
