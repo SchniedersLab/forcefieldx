@@ -71,6 +71,7 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.VDWType;
 
+import static ffx.potential.extended.SBLogger.SB;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 
@@ -576,7 +577,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean isHetero() {
         return hetatm;
     }
-
+    
     public Atom copy() {
         double coords[] = {xyz[0], xyz[1], xyz[2]};
         Atom atom = new Atom(getIndex(), getName(), getAltLoc(), coords,
@@ -678,7 +679,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             point3d.y = getY();
             point3d.z = getZ();
             RendererCache.getScreenCoordinate(canvas, node, point3d, point2d);
-            g2d.drawString(toShortString(), (float) point2d.x,
+            g2d.drawString(describe(Atom.Descriptions.INDEX_NAME), (float) point2d.x,
                     (float) point2d.y);
         }
 
@@ -934,11 +935,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public ExtendedVariable getEsv() {
         return esv;
     }
-
-    public void setESV(ExtendedVariable set) {
+    
+    public final void setESV(ExtendedVariable set) {
         if (esv != null && esv != set) {
-            logger.log(Level.SEVERE, "Mutiple ESVs for one atom is not currently supported.\n"
-                                   + "    offender: {0} {1} -> {2}",
+            logger.log(Level.SEVERE, "Mutiple ESVs attached to one atom is not supported.\n"
+                                   + "    offender: {0}: {1}, {2}",
                     new String[]{this.toString(), esv.toString(), set.toString()});
         }
         esv = set;
@@ -949,8 +950,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     
     public MultipoleType getEsvMultipoleM() {
-        if (getEsv() == null || !getEsv().isReady()) {
-//            logger.log(Level.WARNING, "@Atom.getEsvM: fallback to getMultipoleType by {0}", this.toString());
+        if (getEsv() == null) {
             return getMultipoleType();
         }
         return esvMultipoleM;
@@ -961,8 +961,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     
     public MultipoleType getEsvMultipoleMdot() {
-        if (getEsv() == null || !getEsv().isReady()) {
-//            logger.log(Level.WARNING, "@Atom.getEsvMdot: fallback to getMultipoleType() by {0}", this.toString());
+        if (getEsv() == null) {
             return getMultipoleType();
         }
         return esvMultipoleMdot;
@@ -2729,21 +2728,22 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
-    public String toNameNumberString() {
-        return String.format("%s %d", getName(), resSeq);
+    public enum Descriptions {
+        DEFAULT, TRIM, INDEX_NAME, RESNUM_NAME;
     }
     
-    /**
-     * <p>
-     * toShortString</p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String toShortString() {
-        if (shortString == null) {
-            shortString = format("%d-%s", getIndex(), getName());
+    public String describe(Descriptions type) {
+        switch (type) {
+            default:
+            case DEFAULT:
+                return toString();
+            case TRIM:
+                return format("%d-%-3s %s %s%d", getIndex(), getName(), resName, segID, resSeq);
+            case INDEX_NAME:
+                return format("%d-%s", getIndex(), getName());
+            case RESNUM_NAME:
+                return format("%d-%s", resSeq, getName());
         }
-        return shortString;
     }
 
     /**

@@ -64,6 +64,7 @@ import ffx.potential.parsers.INTFileFilter;
 import ffx.potential.parsers.INTFilter;
 import ffx.potential.parsers.PDBFileFilter;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
@@ -90,6 +91,7 @@ public class PotentialsFileOpener implements FileOpener {
     private List<CompositeConfiguration> propertyList;
     private CompositeConfiguration activeProperties;
     private SystemFilter filter;
+    private List<Mutation> mutationsToApply;
 
     public PotentialsFileOpener(File file) {
         if (!file.exists() || !file.isFile()) {
@@ -215,6 +217,10 @@ public class PotentialsFileOpener implements FileOpener {
         propertyList = new ArrayList<>();
     }
     
+    public void setMutations(List<Mutation> mutations) {
+        mutationsToApply = mutations;
+    }
+    
     public void setNThreads(int nThreads) {
         this.nThreads = nThreads;
     }
@@ -261,6 +267,15 @@ public class PotentialsFileOpener implements FileOpener {
             } else {
                 throw new IllegalArgumentException(String.format(" File %s could not be recognized as a valid PDB, XYZ, INT, or ARC file.", pathI.toString()));
             }
+            
+            /* If on-open mutations requested, add them to filter. */
+            if (mutationsToApply != null && !mutationsToApply.isEmpty()) {
+                if (!(filter instanceof PDBFilter)) {
+                    throw new UnsupportedOperationException("Applying mutations during open only supported by PDB filter atm.");
+                }
+                ((PDBFilter) filter).mutate(mutationsToApply);
+            }
+            
             if (filter.readFile()) {
                 if (!(filter instanceof PDBFilter)) {
                     Utilities.biochemistry(assembly, filter.getAtomList());

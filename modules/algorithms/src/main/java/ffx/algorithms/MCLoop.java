@@ -175,7 +175,7 @@ public class MCLoop implements MonteCarloListener {
      * @param molAss
      */
     @Override
-    public boolean mcUpdate(MolecularAssembly molAss) {
+    public boolean mcUpdate() {
 
         stepCount++;
         if (skipAlgorithm == true){

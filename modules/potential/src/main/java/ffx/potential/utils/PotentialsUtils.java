@@ -40,6 +40,7 @@ package ffx.potential.utils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,6 +55,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 
@@ -132,6 +134,21 @@ public class PotentialsUtils implements PotentialsFunctions {
      */
     public MolecularAssembly open(File file) {
         PotentialsFileOpener opener = new PotentialsFileOpener(file);
+        opener.run();
+        lastFilter = opener.getFilter();
+        if (opener.getAllAssemblies().length > 1) {
+            logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
+        }
+        return opener.getAssembly();
+    }
+    
+    /**
+     * Mutates file on-the-fly as it is being opened.
+     * Used to open files for pHMD in fully-protonated form.
+     */
+    public MolecularAssembly openWithMutations(File file, List<Mutation> mutations) {
+        PotentialsFileOpener opener = new PotentialsFileOpener(file);
+        opener.setMutations(mutations);
         opener.run();
         lastFilter = opener.getFilter();
         if (opener.getAllAssemblies().length > 1) {
@@ -427,10 +444,10 @@ public class PotentialsUtils implements PotentialsFunctions {
                     if (saveFile.exists()) {
                         logger.warning(String.format(" Could not successfully version file "
                                 + "%s: appending to file %s", saveFileName, saveFile.getName()));
-                        if (!pdbFilter.writeFileWithHeader(saveFile, symSb, true)) {
+                        if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), true)) {
                             logger.info(String.format(" Save failed for %s", saveFile.getName()));
                         }
-                    } else if (!pdbFilter.writeFileWithHeader(saveFile, symSb, false)) {
+                    } else if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), false)) {
                         logger.info(String.format(" Save failed for %s", saveFile.getName()));
                     }
                 }
@@ -549,7 +566,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         Atom atoms[] = mola.getAtomArray();
         for (int i = 0; i < atoms.length; i++) {
             String resName = atoms[i].getResidueName();
-            String atomName = atoms[i].toShortString();
+            String atomName = atoms[i].describe(Atom.Descriptions.TRIM);
             AtomType atomType = atoms[i].getAtomType();
             int typeNum = atomType.type;
             int classNum = atomType.atomClass;

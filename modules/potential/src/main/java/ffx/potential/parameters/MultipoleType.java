@@ -926,13 +926,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
                 logger.severe("All frame definitions must match.");
             }
         }
-//        double denominator = Arrays.stream(weights).sum();
-//        if (denominator != 1.0) {
-//            logger.warning("Input multipole weights did not sum to unity; normalizing.");
-//            for (int w = 0; w < weights.length; w++) {
-//                weights[w] = weights[w] / denominator;
-//            }
-//        }
         double weightedCharge = 0.0;
         double weightedDipole[] = new double[3];
         double weightedQuadrupole[][] = new double[3][3];

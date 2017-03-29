@@ -655,7 +655,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
         switch (angleMode) {
             case NORMAL:
                 logger.info(String.format(
-                        " %8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
+                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
                         atoms[0].getIndex(), atoms[0].getAtomType().name,
                         atoms[1].getIndex(), atoms[1].getAtomType().name,
                         atoms[2].getIndex(), atoms[2].getAtomType().name,
@@ -663,7 +663,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
                 break;
             case IN_PLANE:
                 logger.info(String.format(
-                        " %8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
+                        " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
                         atoms[0].getIndex(), atoms[0].getAtomType().name,
                         atoms[1].getIndex(), atoms[1].getAtomType().name,
                         atoms[2].getIndex(), atoms[2].getAtomType().name,
@@ -679,7 +679,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
      */
     @Override
     public String toString() {
-        return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
+        return String.format("%-s  (%7.1f,%7.2f)", id, value, energy);
     }
 
     /**

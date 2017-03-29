@@ -1,9 +1,45 @@
+/**
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
+ */
 package ffx.potential.utils;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,13 +60,10 @@ import static org.junit.Assert.assertEquals;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationUtils;
+import ffx.potential.extended.SBLogger;
+
+import static ffx.potential.extended.SBLogger.SB;
 
 /**
  *
@@ -38,19 +71,21 @@ import ffx.potential.extended.TitrationUtils;
  */
 @RunWith(Parameterized.class)
 public class ExtendedVariableTest {
-    
-    private static final Logger logger = Logger.getLogger(ExtendedVariableTest.class.getName());
-    private final PotentialsUtils utils = new PotentialsUtils();
+    /**
+     * Handle on the root log allows easy global silencing (like during multi-file setup).
+     */
+    private static final Logger logMaster = Logger.getLogger("ffx");
+    private static final PotentialsUtils utils = new PotentialsUtils();
     
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
             /* Arguments to the class constructor. */
-            {"A2", "A4", 1.0e-5, 
-             "lyd-lyd-cryst.pdb", 65.3397,
-             "lyd-lys-cryst.pdb", 78.7910,
-             "lys-lyd-cryst.pdb", 76.9447,
-             "lys-lys-cryst.pdb", 97.0408}
+            {"A2", "A4", 1.0e-4, 
+             "lyd-lyd-cryst.pdb", 65.339655,
+             "lyd-lys-cryst.pdb", 129.231033,
+             "lys-lyd-cryst.pdb", 127.384741,
+             "lys-lys-cryst.pdb", 197.920812}
         });
     }
     
@@ -60,7 +95,7 @@ public class ExtendedVariableTest {
     private static final boolean testPolarization = false;
     private static final double cutoff = 5.0;
     private static final boolean verbose = false;
-    private static String resourcePrefix = "ffx/potential/structures/";
+    private static final String resourcePrefix = "ffx/potential/structures/";
     
     private final String residA, residB;
     private final String filename00;
@@ -73,11 +108,9 @@ public class ExtendedVariableTest {
     private final double energy11;
     private final double tolerance;
     
-    private final double lambda = 0.28;
-    private final double step = 0.0001;
-    private final double biasMag = 1.0;
-    private final double pH = 7.4;
-    private final int numESVs = 2;
+    private static final double[] initialLambda = new double[]{0.28, 0.55};
+    private static final double pH = 7.4;
+    private static final int numESVs = 2;
     
     private MolecularAssembly mola;
     private ExtendedSystem esvSystem;
@@ -123,11 +156,11 @@ public class ExtendedVariableTest {
 
         // Optional Potential
         System.setProperty("vdwterm", String.valueOf(testVdw));                 // van der Waals
-        System.setProperty("esv-useVdw", String.valueOf(testVdw));
+        System.setProperty("esv-vdw", String.valueOf(testVdw));
         System.setProperty("mpoleterm", String.valueOf(testPermReal));          // permanent real space
         System.setProperty("pme-qi", String.valueOf(testPermReal));
-        System.setProperty("esv-usePme", String.valueOf(testPermReal));
-        System.setProperty("recipterm", String.valueOf(testReciprocal));         // permanent reciprocal space
+        System.setProperty("esv-pme", String.valueOf(testPermReal));
+        System.setProperty("recipterm", String.valueOf(testReciprocal));        // permanent reciprocal space
         System.setProperty("polarizeterm", String.valueOf(testPolarization));   // polarization
         if (testPolarization) {
             System.setProperty("polarization", "DIRECT");
@@ -162,7 +195,7 @@ public class ExtendedVariableTest {
 
         // Logging Settings
         System.setProperty("ffe-combineBonded", "true");        // fold all bonded contributions into a single line
-        System.setProperty("ffe-decomposePme", "true");         // print the six components of PME: {real,recip}*{self,perm,ind}    
+        System.setProperty("ffe-decomposePme", "true");         // print the six components of PME: {real,recip}*{self,perm,ind}
     }
     
     /**
@@ -224,70 +257,55 @@ public class ExtendedVariableTest {
         System.clearProperty("ffe-decomposePme");
     }
     
-    @Before
-    public void setUp() {}
-    
     @After
-    public void tearDown() {}
-
-    private MolecularAssembly openResource(String filename) {
-        return openResource(filename, false);
+    public void tearDown() {
+        mola = null;
+        ffe = null;
+        esvSystem = null;
+        logMaster.setLevel(Level.INFO);
     }
     
+    public void setup(boolean quietly) {
+        mola = openResource(filename11, quietly);
+        ffe = mola.getPotentialEnergy();
+        esvSystem = new ExtendedSystem(mola, pH);
+        // Create extended variables and add them to the system.
+        String[] resIDs = new String[]{residA, residB};
+        esvSystem.populate(resIDs);
+        ffe.attachExtendedSystem(esvSystem);
+        // Turn off checks for overlapping atoms, which is expected for lambda=0.
+        ffe.getCrystal().setSpecialPositionCutoff(0.0);
+        for (int i = 0; i < numESVs; i++) {
+            esvSystem.setLambda(i, initialLambda[i]);
+        }
+    }
+    
+    /**
+     * Locates files packed into the uberjar by Maven.
+     */
     private MolecularAssembly openResource(String filename, boolean quietly) {
         ClassLoader cl = this.getClass().getClassLoader();
         File structure = new File(cl.getResource(resourcePrefix + filename).getPath());
         return (quietly) ? utils.openQuietly(structure) : utils.open(structure);
     }
-    
-    @Test
-    public void test() {
-        mola = openResource(filename11, false);
-        ffe = mola.getPotentialEnergy();
-        esvSystem = new ExtendedSystem(mola);
-        
-        Polymer[] polymers = mola.getChains();
-        String[] rlTokens = {residA, residB};
-        double temperature = 298.15;
-        for (int i = 0; i < numESVs; i++) {
-            Character chainID = rlTokens[i].charAt(0);
-            int resNum = Integer.parseInt(rlTokens[i].substring(1));
-            Optional<Residue> target = Optional.empty();
-            for (Polymer p : polymers) {
-                if (p.getChainID().equals(chainID)) {
-                    target = p.getResidues().stream()
-                            .filter((Residue res) -> res.getResidueNumber() == resNum)
-                            .findFirst();
-                    break;
-                }
-            }
-            if (!target.isPresent()) {
-                logger.log(Level.SEVERE, "Couldn't find target residue {0}", rlTokens[i]);
-            }
-
-            SB.logfp("Residue: %s", target.get());
-            MultiResidue titrating = TitrationUtils.titrationFactory(mola, target.get());
-            
-            TitrationESV esv = new TitrationESV(esvSystem.getConfig(), titrating, pH, biasMag);
-            esvSystem.addVariable(esv);
-        }
-        
-        // Attach populated esvSystem to the potential.
-        ffe.attachExtendedSystem(esvSystem);
-        // Turn off checks for overlapping atoms, which is expected for lambda=0.
-        ffe.getCrystal().setSpecialPositionCutoff(0.0);
-        
-        testDerivatives();
-        testEndStates();
-        testSmoothness();
+    private MolecularAssembly openResource(String filename) {
+        return openResource(filename, false);
     }
-    
+    private MolecularAssembly openResourceQuietly(String filename) {
+        return openResource(filename, true);
+    }
+        
     /**
      * Analytic Derivative vs Finite Difference: VdW,PermReal,PermRecip,Total
      */
-    private void testDerivatives() {
+    @Test
+    public void testDerivatives() {
+        logMaster.setLevel(Level.WARNING);
+        setup(false);
+        final double step = 0.000001;
+        final double width = 2.0 * step;
         for (int i = 0; i < numESVs; i++) {
-            esvSystem.setLambda(i, lambda);
+            esvSystem.setLambda(i, initialLambda[i]);
         }
         for (int i = 0; i < numESVs; i++) {
             esvSystem.setLambda(i, 0.0);
@@ -295,56 +313,51 @@ public class ExtendedVariableTest {
             esvSystem.setLambda(i, 1.0);
             final double e1 = ffe.energy(true, false);
             SB.logfn(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f", i, e1, e0, e1-e0);
-
-            esvSystem.setLambda(i, lambda - step);
+            
+            esvSystem.setLambda(i, initialLambda[i] - step);
             final double totalLow = ffe.energy(true, false);
             final double vdwLow = ffe.getVanDerWaalsEnergy();
             final double realLow = ffe.getPermanentRealSpaceEnergy();
             final double selfLow = ffe.getPermanentReciprocalSelfEnergy();
             final double recipLow = ffe.getPermanentReciprocalMpoleEnergy();
-
-            esvSystem.setLambda(i, lambda + step);
+            
+            esvSystem.setLambda(i, initialLambda[i] + step);
             final double totalHigh = ffe.energy(true, false);
             final double vdwHigh = ffe.getVanDerWaalsEnergy();
             final double realHigh = ffe.getPermanentRealSpaceEnergy();
             final double selfHigh = ffe.getPermanentReciprocalSelfEnergy();
             final double recipHigh = ffe.getPermanentReciprocalMpoleEnergy();
-
-            esvSystem.setLambda(i, lambda);
-            final double totalCenter = ffe.energy(true, true);
-            final double vdwCenter = ffe.getVanDerWaalsEnergy();
-            final double realCenter = ffe.getPermanentRealSpaceEnergy();
-            final double selfCenter = ffe.getPermanentReciprocalSelfEnergy();
-            final double recipCenter = ffe.getPermanentReciprocalMpoleEnergy();
-
+            
+            esvSystem.setLambda(i, initialLambda[i]);
             final double vdwAnalytic = esvSystem.getdVdwdL(i);
-            final double vdwNumeric = (vdwHigh - vdwLow) / (2 * step);
-            final double vdwError = Math.abs(vdwNumeric - vdwAnalytic);
             final double realAnalytic = esvSystem.getdPermRealdL(i);
-            final double realNumeric = (realHigh - realLow) / (2 * step);
-            final double realError = Math.abs(realNumeric - realAnalytic);
             final double selfAnalytic = esvSystem.getdPermRecipSelf_dL(i);
-            final double selfNumeric = (selfHigh - selfLow) / (2 * step);
-            final double selfError = Math.abs(selfNumeric - selfAnalytic);
             final double recipAnalytic = esvSystem.getdPermRecipMpole_dL(i);
-            final double recipNumeric = (recipHigh - recipLow) / (2 * step);
-            final double recipError = Math.abs(recipNumeric - recipAnalytic);
             final double totalAnalytic = esvSystem.getdEdL(i, true);
-            final double totalNumeric = (totalHigh - totalLow) / (2 * step);
+            
+            final double vdwNumeric = (vdwHigh - vdwLow) / (2 * step);
+            final double vdwError = Math.abs(vdwNumeric - vdwAnalytic);            
+            final double realNumeric = (realHigh - realLow) / width;
+            final double realError = Math.abs(realNumeric - realAnalytic);            
+            final double selfNumeric = (selfHigh - selfLow) / width;
+            final double selfError = Math.abs(selfNumeric - selfAnalytic);            
+            final double recipNumeric = (recipHigh - recipLow) / width;
+            final double recipError = Math.abs(recipNumeric - recipAnalytic);            
+            final double totalNumeric = (totalHigh - totalLow) / width;
             final double totalError = Math.abs(totalNumeric - totalAnalytic);
-
+            
             String esvName = esvSystem.getEsv(i).getName();
             SB.nlogf("  Finite Difference Test: %s", esvName);
             SB.nlogf(" *************************");
             SB.logf(StringUtils.repeat("*", esvName.length() + 1));
             SB.logfn("   %10s   %10s    %10s    %10s    %10s", "vdw", "permReal", "permSelf", "permRecip", "total");
             SB.logfn(" Numeric  Derivatives (@lambda %4.2f): %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f",
-                    lambda, vdwNumeric, realNumeric, selfNumeric, recipNumeric, totalNumeric);
+                    initialLambda[i], vdwNumeric, realNumeric, selfNumeric, recipNumeric, totalNumeric);
             SB.logfn(" Analytic Derivatives (@lambda %4.2f): %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f",
-                    lambda, vdwAnalytic, realAnalytic, selfAnalytic, recipAnalytic, totalAnalytic);
+                    initialLambda[i], vdwAnalytic, realAnalytic, selfAnalytic, recipAnalytic, totalAnalytic);
             SB.logfn(" Error:                               %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f",
                     vdwError, realError, selfError, recipError, totalError);
-            SB.print();
+            SB.force();
             
             assertEquals("VdW Deriv", 0.0, vdwError, tolerance);
             assertEquals("PermReal Deriv", 0.0, realError, tolerance);
@@ -358,36 +371,51 @@ public class ExtendedVariableTest {
      * Verify that a lys-lys system with two ESVs can exactly reproduce the energy
      * yielded by vanilla energy() calls on mutated PDB files.
      */
-    private void testEndStates() {
+    @Test
+    public void testEndStates() {
+        logMaster.setLevel(Level.WARNING);
+        setup(true);        
         esvSystem.setLambda("A", 0.0);
         esvSystem.setLambda("B", 0.0);
-        ffe.energy(true, false);
+        final double esvTot00 = ffe.energy(true, false) - esvSystem.getBiasEnergy();
+        final double esvBias00 = esvSystem.getBiasEnergy();
+        SB.force("Tot,Bias: %g %g", esvTot00, esvBias00);
         final double esvVdw00 = ffe.getVanDerWaalsEnergy();
         final double esvPme00 = ffe.getPermanentRealSpaceEnergy();
         final double esvRcp00 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
-
+        
         esvSystem.setLambda("A", 0.0);
         esvSystem.setLambda("B", 1.0);
-        ffe.energy(true, false);
+        final double esvTot01 = ffe.energy(true, false) - esvSystem.getBiasEnergy();
+        final double esvBias01 = esvSystem.getBiasEnergy();
+        SB.force("Tot,Bias: %g %g", esvTot01, esvBias01);
         final double esvVdw01 = ffe.getVanDerWaalsEnergy();
         final double esvPme01 = ffe.getPermanentRealSpaceEnergy();
         final double esvRcp01 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
 
         esvSystem.setLambda("A", 1.0);
         esvSystem.setLambda("B", 0.0);
-        ffe.energy(true, false);
+        final double esvTot10 = ffe.energy(true, false) - esvSystem.getBiasEnergy();
+        final double esvBias10 = esvSystem.getBiasEnergy();
+        SB.force("Tot,Bias: %g %g", esvTot10, esvBias10);
         final double esvVdw10 = ffe.getVanDerWaalsEnergy();
         final double esvPme10 = ffe.getPermanentRealSpaceEnergy();
         final double esvRcp10 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
 
         esvSystem.setLambda("A", 1.0);
         esvSystem.setLambda("B", 1.0);
-        ffe.energy(true, false);
+        final double esvTot11 = ffe.energy(true, false) - esvSystem.getBiasEnergy();
+        final double esvBias11 = esvSystem.getBiasEnergy();
+        SB.force("Tot,Bias: %g %g", esvTot11, esvBias11);
         final double esvVdw11 = ffe.getVanDerWaalsEnergy();
         final double esvPme11 = ffe.getPermanentRealSpaceEnergy();
         final double esvRcp11 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
 
         StringBuilder ext = new StringBuilder();
+        ext.append(format("%-9s %-7s %10.5f\n", "Total", "0-0", esvTot00));
+        ext.append(format("%-9s %-7s %10.5f\n", "Total", "0-1", esvTot01));
+        ext.append(format("%-9s %-7s %10.5f\n", "Total", "1-0", esvTot10));
+        ext.append(format("%-9s %-7s %10.5f\n", "Total", "1-1", esvTot11));
         if (testVdw) {
             ext.append(format("%-9s %-7s %10.5f\n", "VanWaals", "0-0", esvVdw00));
             ext.append(format("%-9s %-7s %10.5f\n", "VanWaals", "0-1", esvVdw01));
@@ -407,6 +435,7 @@ public class ExtendedVariableTest {
             ext.append(format("%-9s %-7s %10.5f\n", "PermRecip", "1-1", esvRcp11));
         }
 
+        StringBuilder tot = new StringBuilder();
         StringBuilder vdw = new StringBuilder();
         StringBuilder pme = new StringBuilder();
         StringBuilder rcp = new StringBuilder();
@@ -420,7 +449,12 @@ public class ExtendedVariableTest {
         vanilla = openResource(filename00, true);
         vanillaFFE = vanilla.getPotentialEnergy();
         state = filename00;
-        vanillaFFE.energy(true, false);
+        {
+            final double Utot = vanillaFFE.energy(true, false);
+            assertEquals("total00", energy00, Utot, tolerance);
+            assertEquals("total00", Utot, esvTot00, tolerance);
+            tot.append(format("%-9s %-7.7s %10.5f\n", "Total", state, Utot));
+        }
         if (testVdw) {
             final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
             assertEquals("vdw00", vanWaals, esvVdw00, tolerance);
@@ -442,7 +476,12 @@ public class ExtendedVariableTest {
         vanilla = openResource(filename01, true);
         vanillaFFE = vanilla.getPotentialEnergy();
         state = filename01;
-        vanillaFFE.energy(true, false);
+        {
+            final double Utot = vanillaFFE.energy(true, false);
+            assertEquals("total01", energy01, Utot, tolerance);
+            assertEquals("total01", Utot, esvTot01, tolerance);
+            tot.append(format("%-9s %-7.7s %10.5f\n", "Total", state, Utot));
+        }
         if (testVdw) {
             final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
             assertEquals("vdw01", vanWaals, esvVdw01, tolerance);
@@ -464,7 +503,12 @@ public class ExtendedVariableTest {
         vanilla = openResource(filename10, true);
         vanillaFFE = vanilla.getPotentialEnergy();
         state = filename10;
-        vanillaFFE.energy(true, false);
+        {
+            final double Utot = vanillaFFE.energy(true, false);
+            assertEquals("total10", energy10, Utot, tolerance);
+            assertEquals("total10", Utot, esvTot10, tolerance);
+            tot.append(format("%-9s %-7.7s %10.5f\n", "Total", state, Utot));
+        }
         if (testVdw) {
             final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
             assertEquals("vdw10", vanWaals, esvVdw10, tolerance);
@@ -486,7 +530,12 @@ public class ExtendedVariableTest {
         vanilla = openResource(filename11, true);
         vanillaFFE = vanilla.getPotentialEnergy();
         state = filename11;
-        vanillaFFE.energy(true, false);
+        {
+            final double Utot = vanillaFFE.energy(true, false);
+            assertEquals("total11", energy11, Utot, tolerance);
+            assertEquals("total11", Utot, esvTot11, tolerance);
+            tot.append(format("%-9s %-7.7s %10.5f\n", "Total", state, Utot));
+        }
         if (testVdw) {
             final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
             assertEquals("vdw11", vanWaals, esvVdw11, tolerance);
@@ -505,26 +554,30 @@ public class ExtendedVariableTest {
         utils.close(vanilla);
 
         StringBuilder van = new StringBuilder();
+        van.append(tot.toString());
         if (testVdw) van.append(vdw.toString());
         if (testPermReal) van.append(pme.toString());
         if (testReciprocal) van.append(rcp.toString());
         String[] vanLines = van.toString().split("\\n");
         String[] extLines = ext.toString().split("\\n");
         StringBuilder sb = new StringBuilder();
-        sb.append(format("\n  Two-site End State Analysis \n"));
-        sb.append(format(" ***************************** \n"));
-        sb.append(format(" %-30s     %-30s\n","Extended System (1 Assembly)","Mutated Files (4 Assemblies)"));
+        SB.nlogfn("  Two-site End State Analysis ");
+        SB.logfn(" ***************************** ");
+        SB.logfn(" %-30s     %-30s","Extended System (1 Assembly)","Mutated Files (4 Assemblies)");
         for (int i = 0; i < extLines.length; i++) {
-            sb.append(format(" %-30s     %-30s\n", extLines[i], vanLines[i]));
+            SB.logfn(" %-30s     %-30s", extLines[i], vanLines[i]);
         }
-        logger.info(sb.toString());
+        SB.force();
     }
     
     /**
      * Numerically ensure that the energy and lambda derivatives are smooth all 
      * along both ESV coordinates in the dilysine system.
      */
-    private void testSmoothness() {
+    @Test
+    public void testSmoothness() {
+        logMaster.setLevel(Level.WARNING);
+        setup(true);        
         double[][] totalEnergies, totalDerivsA, totalDerivsB;
         double[][] vdwEnergies, vdwDerivsA, vdwDerivsB;
         double[][] permRealEnergies, permRealDerivsA, permRealDerivsB;
@@ -577,19 +630,19 @@ public class ExtendedVariableTest {
         
         /* Printing loop */
         StringBuilder sb = new StringBuilder();
-        sb.append(format("\n  Smoothness Verification: Total \n"));
-        sb.append(format(" ******************************** \n"));
-        printAsTable(totalEnergies, "U_Total", sb);
-        printAsTable(totalDerivsA, "dU_dEsvA", sb);
-        printAsTable(totalDerivsB, "dU_dEsvB", sb);
-        logger.info(sb.toString());
+        SB.nlogfn("  Smoothness Verification: Total ");
+        SB.logfn(" ******************************** ");
+        printAsTable(totalEnergies, "U_Total", SB);
+        printAsTable(totalDerivsA, "dU_dEsvA", SB);
+        printAsTable(totalDerivsB, "dU_dEsvB", SB);
+        SB.force();
         
         /* TODO: improve upon the following arbitrary definition of approximate smoothness. */
         final int testRow = 2;
         final double min = Arrays.stream(totalEnergies[testRow]).min().getAsDouble();
         final double max = Arrays.stream(totalEnergies[testRow]).max().getAsDouble();
         final double maxChange = (max - min) * 0.5;
-        final double maxDirectionSignChanges = 2;
+        final int maxDirectionSignChanges = 2;
         int directionSignChanges = 0;
         for (int idxB = 0; idxB < 10; idxB++) {
             final double here = totalEnergies[testRow][idxB];
@@ -614,30 +667,30 @@ public class ExtendedVariableTest {
         
         if (testVdw && verbose) {
             sb = new StringBuilder();
-            sb.append(format("\n  Smoothness Verification: VdW "));
-            sb.append(format(" ****************************** "));
-            printAsTable(vdwEnergies, "vanWaals", sb);
-            printAsTable(vdwDerivsA, "dVdw_dA", sb);
-            printAsTable(vdwDerivsB, "dVdw_dB", sb);
-            logger.info(sb.toString());
+            SB.nlogfn("  Smoothness Verification: VdW ");
+            SB.logfn(" ****************************** ");
+            printAsTable(vdwEnergies, "vanWaals", SB);
+            printAsTable(vdwDerivsA, "dVdw_dA", SB);
+            printAsTable(vdwDerivsB, "dVdw_dB", SB);
+            SB.force();
         }
         if (testPermReal && verbose) {
             sb = new StringBuilder();
-            sb.append(format("\n  Smoothness Verification: PermReal "));
-            sb.append(format(" *********************************** "));
-            printAsTable(permRealEnergies, "permReal", sb);
-            printAsTable(permRealDerivsA, "dPRealdA", sb);
-            printAsTable(permRealDerivsB, "dPRealdB", sb);
-            logger.info(sb.toString());
+            SB.nlogfn("  Smoothness Verification: PermReal ");
+            SB.logfn(" *********************************** ");
+            printAsTable(permRealEnergies, "permReal", SB);
+            printAsTable(permRealDerivsA, "dPRealdA", SB);
+            printAsTable(permRealDerivsB, "dPRealdB", SB);
+            SB.force();
         }
         if (testReciprocal && verbose) {
             sb = new StringBuilder();
-            sb.append(format("\n  Smoothness Verification: PermRecip "));
-            sb.append(format(" ************************************ "));
-            printAsTable(permRecipEnergies, "permRcp", sb);
-            printAsTable(permRecipDerivsA, "dPRcp_dA", sb);
-            printAsTable(permRecipDerivsB, "dPRcp_dB", sb);
-            logger.info(sb.toString());
+            SB.nlogfn("  Smoothness Verification: PermRecip ");
+            SB.logfn(" ************************************ ");
+            printAsTable(permRecipEnergies, "permRcp", SB);
+            printAsTable(permRecipDerivsA, "dPRcp_dA", SB);
+            printAsTable(permRecipDerivsB, "dPRcp_dB", SB);
+            SB.force();
         }
     }
     
@@ -645,36 +698,36 @@ public class ExtendedVariableTest {
         printAsTable(values, title, null);
     }
     
-    private StringBuilder printAsTable(double[][] values, String title, StringBuilder sb) {
-        if (sb == null) {
-            sb = new StringBuilder();
+    private SBLogger printAsTable(double[][] values, String title, SBLogger sb) {
+        if (SB == null) {
+            sb = new SBLogger();
         }
         if (title == null) title = "Title?";
-        sb.append(format(" %8s %8.1f %8.1f %8.1f %8.1f %8s %8s %8s %8.1f %8.1f %8.1f %8.1f", 
-                title, 0.0, 0.1, 0.2, 0.3, "<   ", " EvA  ", ">   ", 0.7, 0.8, 0.9, 1.0));
+        sb.logf(" %8s %8.1f %8.1f %8.1f %8.1f %8s %8s %8s %8.1f %8.1f %8.1f %8.1f", 
+                title, 0.0, 0.1, 0.2, 0.3, "<   ", " EvA  ", ">   ", 0.7, 0.8, 0.9, 1.0);
         for (int idxA = 0; idxA <= 10; idxA++) {
             double evA = idxA / 10.0;
             switch (idxA) {
                 case 4:
-                    sb.append(format("\n %8s", " ^ "));
+                    sb.nlogf(" %8s", " ^ ");
                     break;
                 case 5:
-                    sb.append(format("\n %8s", "EvB"));
+                    sb.nlogf(" %8s", "EvB");
                     break;
                 case 6:
-                    sb.append(format("\n %8s", " v "));
+                    sb.nlogf(" %8s", " v ");
                     break;
                 default:
-                    sb.append(format("\n %8.1f", evA));
+                    sb.nlogf(" %8.1f", evA);
             }
             for (int idxB = 0; idxB <= 10; idxB++) {
                 double evB = idxB / 10.0;
                 String value = format("%8.4f", values[idxA][idxB]);
                 int max = (value.length() < 8) ? value.length() : 8;
-                sb.append(format(" %8s", value.substring(0,max)));
+                sb.logf(" %8s", value.substring(0,max));
             }
         }
-        sb.append(format("\n"));
+        sb.nl();
         return sb;
     }
 }

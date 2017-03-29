@@ -584,14 +584,10 @@ public class MultipoleTensor {
                 // == (1/r) * (1/r^3) * (1/r^5) * (1/r^7) * ...
                 ir = 1.0 / R;
                 ir2 = ir * ir;
-                StringBuilder sb = new StringBuilder();
-                sb.append(format("Coulomb shit for R,ir = %g,%g: 000(j),001(j),...\n", R, ir));
                 for (int n = 0; n < o1; n++) {
                     T000[n] = T000j[n] * ir;
-                    sb.append(format("     %g (%g)\n", T000[n], T000j[n]));
                     ir *= ir2;
                 }
-//                logger.info(sb.toString());
         }
     }
     private static final double threeFifths = 3.0 / 5.0;

@@ -113,6 +113,7 @@ import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
 import static ffx.potential.bonded.Atom.Resolution.AMOEBA;
 import static ffx.potential.bonded.Atom.Resolution.FIXEDCHARGE;
 import static ffx.potential.extended.ExtUtils.prop;
+import static ffx.potential.extended.SBLogger.SB;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
@@ -751,6 +752,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
             ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
         }
+        if (crystal != null) {
+            crystal.setSpecialPositionCutoff(0.0);
+        }
         reInit();
     }
 
@@ -794,22 +798,37 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * Need to remove degree of freedom that are lost to prevent heating.
+     */
     public void reInit() {
-        atoms = (esvTerm) ? esvSystem.getExtendedAndBackgroundAtoms() : molecularAssembly.getAtomArray();
-        int[] molecule = (esvTerm) ? esvSystem.getExtendedAndBackgroundMolecule() : molecularAssembly.getMoleculeNumbers();
+        int[] molecule;
+        if (esvTerm) {
+            if (esvSystem.config.backgroundAtomsInFFE) {
+                atoms = esvSystem.getExtendedAndBackgroundAtoms();
+                molecule = esvSystem.getExtendedAndBackgroundMolecule();
+            } else {
+                atoms = esvSystem.getExtendedAtoms();
+                molecule = esvSystem.getExtendedMolecule();
+            }
+        } else {
+            atoms = molecularAssembly.getAtomArray();
+            molecule = molecularAssembly.getMoleculeNumbers();
+        }
         nAtoms = atoms.length;
 
+        /* TODO Decide on only growing vs. always modifying xyz.
         if (xyz.length < 3 * nAtoms) {
             xyz = new double[nAtoms * 3];
-        }
+        }   */
+        xyz = new double[nAtoms * 3];
+        getCoordinates(xyz);
 
         // Check that atom ordering is correct and count number of Active atoms.
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             int index = atom.getXyzIndex() - 1;
             if (index != i) {
-//                logger.log(Level.WARNING, "Expected index {0} for atom {1}, but found {2}.", 
-//                        new Object[]{i, atom, index});
                 atom.setXyzIndex(i + 1);
             }
         }
@@ -1141,10 +1160,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     
     /**
-     * Easy!
+     * @see ForceFieldEnergy::energy(boolean, boolean)
      */
     public double energy () {
-        return energy(false, false);
+        return energy(true, false);
     }
 
     /**
@@ -1871,8 +1890,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
-     * The coords array should only contain coordinates of for active atoms.
-     *
+     * The coordinate array should only contain active atoms.
      * @param coords
      */
     private void setCoordinates(double coords[]) {
@@ -1882,7 +1900,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atoms[i];
-            if (a.isActive()) {
+            if (a.isActive() && !a.isBackground()) {
                 double x = coords[index++];
                 double y = coords[index++];
                 double z = coords[index++];
@@ -1934,7 +1952,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         int index = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atoms[i];
-            if (a.isActive()) {
+            if (a.isActive() && !a.isBackground()) {
                 x[index++] = a.getX();
                 x[index++] = a.getY();
                 x[index++] = a.getZ();
@@ -1970,7 +1988,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public int getNumberOfVariables() {
         int nActive = 0;
         for (int i = 0; i < nAtoms; i++) {
-            if (atoms[i].isActive()) {
+            if (atoms[i].isActive() && !atoms[i].isBackground()) {
                 nActive++;
             }
         }

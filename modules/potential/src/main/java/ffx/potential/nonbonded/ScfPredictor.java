@@ -56,13 +56,13 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.util.Pair;
 
-import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 
 import static ffx.numerics.VectorMath.binomial;
+import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * Predict Mutual Induced Dipoles based on previous steps.

@@ -539,7 +539,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 lambdaZeroFilter.setListMode(true);
             }
             lambdaZeroFilter.clearListOutput();
-            lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalWeight)));
+            lambdaZeroFilter.writeFileWithHeader(lambdaFile, format("%.4f,%d", lambda, totalWeight));
             traversalInHand = lambdaZeroFilter.getListOutput();
             traversalSnapshotTarget = 0;
         } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
@@ -549,7 +549,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 lambdaOneFilter.setListMode(true);
             }
             lambdaOneFilter.clearListOutput();
-            lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d", lambda, totalWeight)));
+            lambdaOneFilter.writeFileWithHeader(lambdaFile, format("%.4f,%d", lambda, totalWeight));
             traversalInHand = lambdaOneFilter.getListOutput();
             traversalSnapshotTarget = 1;
         }

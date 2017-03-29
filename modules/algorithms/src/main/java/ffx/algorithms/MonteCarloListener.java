@@ -53,10 +53,12 @@ public interface MonteCarloListener {
     /**
      * After a successful step or interval of an algorithm, this method of the
      * listener will be called.
+	 * 
+	 * Temperature argument is necessary since Potentials package cannot import Thermostat/MD.
      *
      * @param active The system the algorithm is operating on.
      * @return A return of <code>true</code> indicates the algorithm continues.
      */
-    public abstract boolean mcUpdate(MolecularAssembly active);
+    public abstract boolean mcUpdate(double temperature);
 
 }

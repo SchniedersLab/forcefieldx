@@ -298,6 +298,12 @@ public final class PDBFilter extends SystemFilter {
             mutations = new ArrayList<>();
         }
         mutations.add(new Mutation(resID, chainID, name));
+    }    
+    public void mutate(Mutation mutation) {
+        mutations.add(mutation);
+    }
+    public void mutate(List<Mutation> mutations) {
+        this.mutations.addAll(mutations);
     }
 
     /**
@@ -1157,52 +1163,38 @@ public final class PDBFilter extends SystemFilter {
     public void setLogWrites(boolean logWrites) {
         this.logWrites = logWrites;
     }
-
-    /**
-     * <p>
-     * writeFileWithHeader</p>
-     *
-     * @param saveFile a {@link java.io.File} object.
-     * @param header a {@link java.lang.StringBuilder} object.
-     * @return a boolean.
-     */
-    public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
-        return writeFileWithHeader(saveFile, header, true);
-    }
-
-    /**
-     * <p>
-     * writeFileWithHeader</p>
-     *
-     * @param saveFile a {@link java.io.File} object.
-     * @param header a {@link java.lang.StringBuilder} object.
-     * @param append a boolean.
-     * @return a boolean.
-     */
-    public boolean writeFileWithHeader(File saveFile, StringBuilder header, boolean append) {
+    
+    public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
         FileWriter fw;
         BufferedWriter bw;
-        if (header.charAt(header.length() - 1) != '\n') {
-            header.append("\n");
-        }
         try {
             File newFile = saveFile;
             activeMolecularAssembly.setFile(newFile);
             activeMolecularAssembly.setName(newFile.getName());
-            if (!listMode) {
+            if (listMode) {
+                listOutput.add(header);
+            } else {
                 fw = new FileWriter(newFile, append);
                 bw = new BufferedWriter(fw);
-                bw.write(header.toString());
+                bw.write(header);
+                bw.newLine();
                 bw.close();
-            } else {
-                listOutput.add(header.toString());
             }
         } catch (Exception e) {
             String message = "Exception writing to file: " + saveFile.toString();
             logger.log(Level.WARNING, message, e);
             return false;
         }
-        return writeFile(saveFile, true);
+        if (writeFile(saveFile, true)) {
+            logger.log(Level.INFO, " Wrote PDB to file {0}", saveFile.getPath());
+            return true;
+        } else {
+            logger.log(Level.INFO, " Error writing to file {0}", saveFile.getPath());
+            return false;
+        }
+    }
+    public boolean writeFileWithHeader(File saveFile, String header) {
+        return writeFileWithHeader(saveFile, header, true);
     }
 
     /**
@@ -3719,7 +3711,13 @@ public final class PDBFilter extends SystemFilter {
 
     private Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo, int key)
             throws MissingHeavyAtomException {
-        return BondedUtils.buildHeavy(residue, atomName, bondedTo, key, forceField, bondList);
+        try {
+            return BondedUtils.buildHeavy(residue, atomName, bondedTo, key, forceField, bondList);
+        } catch (MissingHeavyAtomException ex) {
+            bondedTo.removeFromParent();
+            residue.destroy();
+            return null;
+        }
     }
 
     private Atom buildHydrogen(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
@@ -3791,7 +3789,7 @@ public final class PDBFilter extends SystemFilter {
         return newSegID;
     }
 
-    private class Mutation {
+    public static class Mutation {
         /**
          * Residue ID of the residue to mutate.
          */
@@ -3804,7 +3802,7 @@ public final class PDBFilter extends SystemFilter {
          * Character for the chain ID of the residue that will be mutated.
          */
         final char chainChar;
-        Mutation(int resID, char chainChar, String newResName) {
+        public Mutation(int resID, char chainChar, String newResName) {
             if (newResName == null || newResName.length() != 3) {
                 logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
             }
@@ -3816,6 +3814,9 @@ public final class PDBFilter extends SystemFilter {
             this.resID = resID;
             this.chainChar = chainChar;
             this.resName = newResName;
+        }
+        public Mutation(char chain, int res, String newName) {
+            this(res, chain, newName);
         }
     }
 

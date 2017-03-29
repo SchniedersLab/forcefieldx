@@ -37,22 +37,15 @@
  */
 package ffx.potential.extended;
 
-import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import ffx.potential.bonded.MultiResidue;
-import ffx.potential.extended.ExtUtils.SB;
-import ffx.potential.extended.ExtendedSystem.EsvConfiguration;
-import ffx.potential.extended.TitrationUtils.Titr;
+import ffx.potential.extended.TitrationUtils.Titration;
 
 /**
  * An extended system variable that allows continuous fractional protonation of an amino acid.
  * All atomic charges and bonded terms scale linearly between prot and deprot states.
- *
- * TODO List:
- * TODO Assess need to finalize MultiResidues before adding and using them in TitrationESVs.
- *
+ * 
  * Possible expansions:
  *  (1) Add back the ability to interact with OSRW lambda and thereby combine with protein design (QuadTop).
  *  (2) Allow triple-state systems such as histidine with 0.5 protons per nitrogen or tautomeric ASP/GLU.
@@ -62,28 +55,18 @@ import ffx.potential.extended.TitrationUtils.Titr;
  */
 public final class TitrationESV extends ExtendedVariable {
 
-    private static final Logger logger = Logger.getLogger(TitrationESV.class.getName());
     private final MultiResidue titrating;           // from TitrationUtils.titrationFactory()
     private final double referenceEnergy;           // deprotonation free energy of a model tripeptide
-
     private final double constPh;                   // Simulation pH.
     private final double pKaModel;                  // Reference pKa value.
-
-    public TitrationESV(EsvConfiguration esvConfig, MultiResidue multiRes, double constPh, double biasMag) {
-        super(esvConfig, multiRes, biasMag, 1.0);
-        this.constPh = constPh;
+    
+    public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
+        super(esvSystem, multiRes, 1.0);
+        this.constPh = esvSystem.constantSystemPh;
         this.titrating = multiRes;
-        Titr titr = TitrationUtils.titrationLookup(titrating.getActive());
-        this.referenceEnergy = titr.refEnergy;
-        this.pKaModel = titr.pKa;
-    }
-
-    public TitrationESV(EsvConfiguration esvConfig, MultiResidue titrating, double constPh) {
-        this(esvConfig, titrating, constPh, 1.0);
-    }
-
-    public MultiResidue getMultiRes() {
-        return titrating;
+        Titration titration = Titration.lookup(titrating.getActive());
+        this.referenceEnergy = titration.refEnergy;
+        this.pKaModel = titration.pKa;
     }
 
     @Override
@@ -108,27 +91,21 @@ public final class TitrationESV extends ExtendedVariable {
      * This method returns U_pH + U_mod_prot.
      */
     protected double getPhBias(double temperature) {
-        double lswitch = getLambdaSwitch();
-        double uph = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*lswitch;
-        double umod = referenceEnergy * lswitch;     // TODO Find PMFs for monomers/trimers/pentapeptides.
+        double lambda = getLambda();
+        double uph = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*lambda;
+        double umod = referenceEnergy * lambda;     // TODO Find PMFs for monomers/trimers/pentapeptides.
         return uph + umod;
-//        return umod;
     }
 
     protected double getPhBiasDeriv(double temperature) {
-        double dlswitch = getSwitchDeriv();
-        double duphdl = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*dlswitch;
-//        buglog(" dU(pH)dL: 2.303kT*(pKa-pH) = %.4g * (%.2f - %.2f) = %.4g",
-//                ExtConstants.log10*ExtConstants.Boltzmann*temperature,
-//                pKaModel, constPh, duphdl);
-        double dumoddl = referenceEnergy * dlswitch;
+        double duphdl = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh);
+        double dumoddl = referenceEnergy;
         return duphdl + dumoddl;
-//        return dumoddl;
     }
 
     @Override
     public String getName() {
-        return format("ESV-Titr_%d", index);
+        return format("Titr%d", esvIndex);
     }
 
 }

@@ -128,7 +128,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
     }
     
     @Override
-    public boolean mcUpdate(MolecularAssembly mola) {
+    public boolean mcUpdate() {
         steps++;
         if (steps % mcFrequency == 0) {
             return cbmcStep();

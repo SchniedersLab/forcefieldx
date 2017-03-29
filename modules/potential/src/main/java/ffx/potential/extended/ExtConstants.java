@@ -39,6 +39,7 @@ package ffx.potential.extended;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -51,7 +52,7 @@ public class ExtConstants {
     public static final List<String> titratableHydrogenNames = 
             Arrays.asList("HH", "HG", "HE2", "HD1", "HE2", "HD2", "HZ3");
     public static final List<String> backboneNames = Arrays.asList("N","CA","C","O","HA","H");
-    
+	
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */
@@ -77,9 +78,18 @@ public class ExtConstants {
      * Random force conversion to (kcal/mol/A)^2; formerly randomForce2.
      */
     public static final double forceToKcalSquared = forceToKcal * forceToKcal;
-    
     public static final double roomTemperature = 298.15;
-    
+    /**
+	 * Conversion from natural to base ten.
+	 */
     public static final double log10 = Math.log(10);
+    /**
+	 * Nanoseconds to seconds.
+	 */
+    public static final double ns2sec = 1e-9;
+	/**
+	 * Propagation occurs on master thread only; otherwise use (multiple, unshared) ThreadLocalRandoms.
+	 */
+	public static final Random RNG = new Random();
     
 }

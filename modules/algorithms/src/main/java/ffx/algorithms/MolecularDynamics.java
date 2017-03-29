@@ -64,6 +64,9 @@ import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 
+import static ffx.potential.extended.ExtUtils.prop;
+import static ffx.potential.extended.SBLogger.SB;
+
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -75,6 +78,7 @@ import ffx.potential.parsers.XYZFilter;
 public class MolecularDynamics implements Runnable, Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
+    private static final double NS2SEC = 1e-9;
     private final MolecularAssembly molecularAssembly;
     private final List<AssemblyInfo> assemblies;
     private final Potential potential;
@@ -85,6 +89,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private File restartFile = null;
     private DYNFilter dynFilter = null;
     private int printFrequency = 100;
+    private int printEsvFrequency = -1;
     private int saveSnapshotFrequency = 1000;
     private int removeCOMMotionFrequency = 100;
     private boolean initVelocities = true;
@@ -110,10 +115,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private int saveRestartFileFrequency = 1000;
     private String fileType = "XYZ";
     private double restartFrequency = 0.1;
-    private boolean notifyMonteCarlo = true;
-    private ExtendedSystem extendedSystem;
+    private ExtendedSystem esvSystem;
     private DynamicsState dynamicsState;
     private double totalSimTime = 0.0;
+    
+    private final boolean reinitRemovesCOM = prop("md-reinitRemovesCOM", true);
+    private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
+    public enum MonteCarloNotification {
+        NEVER, EACH_STEP, AFTER_DYNAMICS;
+    }
 
     /**
      * <p>
@@ -238,25 +248,30 @@ public class MolecularDynamics implements Runnable, Terminatable {
             ExtendedSystem esvSystem) {
         this(assembly, potentialEnergy, properties, listener,
                 requestedThermostat, requestedIntegrator);
-        this.extendedSystem = esvSystem;
+        this.esvSystem = esvSystem;
     }
 
     /**
      * Reinitialize the MD engine after a chemical change.
      */
     public void reInit() {
-        mass = potential.getMass();
+        final boolean removeCenterOfMassMotion = reinitRemovesCOM;
         numberOfVariables = potential.getNumberOfVariables();
-        x = potential.getCoordinates(x);
-        v = potential.getVelocity(v);
-        a = potential.getAcceleration(a);
-        aPrevious = potential.getPreviousAcceleration(aPrevious);
+        mass = potential.getMass();
+        x = new double[numberOfVariables];
+        v = new double[numberOfVariables];
+        a = new double[numberOfVariables];
+        aPrevious = new double[numberOfVariables];
+        grad = new double[numberOfVariables];
+        potential.getCoordinates(x);
+        potential.getVelocity(v);
+        potential.getAcceleration(a);
+        potential.getPreviousAcceleration(aPrevious);
         if (potential instanceof ForceFieldEnergy) {
             grad = ((ForceFieldEnergy) potential).getGradients(grad);
-        } else if (grad.length < numberOfVariables) {
-            grad = new double[numberOfVariables];
         }
-        thermostat.setNumberOfVariables(numberOfVariables, x, v, mass, potential.getVariableTypes());
+        thermostat.setNumberOfVariables(numberOfVariables, x, v, mass,
+                potential.getVariableTypes(), removeCenterOfMassMotion);
         integrator.setNumberOfVariables(numberOfVariables, x, v, a, aPrevious, mass);
     }
 
@@ -362,23 +377,25 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return toRemove.size();
     }
 
-    public void setNotifyMonteCarlo(boolean set) {
-        notifyMonteCarlo = set;
-    }
-
-    public void setMonteCarloListener(MonteCarloListener listener) {
+    public void setMonteCarloListener(MonteCarloListener listener, MonteCarloNotification when) {
         monteCarloListener = listener;
+        mcNotification = when;
     }
 
-    public void attachExtendedSystem(ExtendedSystem system) {
-        if (system != null && extendedSystem != null) {
-//            logger.warning("ExtendedSystem already attached to MD.");
+    public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
+        if (esvSystem != null) {
+            logger.warning("An ExtendedSystem is already attached to this MD!");
         }
-        extendedSystem = system;
+        esvSystem = system;
+        printEsvFrequency = printFrequency;
+		logger.info(format(" Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
+		reInit();
     }
 
     public void detachExtendedSystem() {
-        extendedSystem = null;
+		logger.info(format(" Detached extended system (%s) from molecular dynamics.", esvSystem.toString()));
+        esvSystem = null;
+		reInit();
     }
 
     /**
@@ -511,17 +528,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         this.nSteps = nSteps;
         totalSimTime = 0.0;
-//        this.dt = timeStep * 1.0e-3;
-//        printFrequency = (int) (printInterval / this.dt);
-//        saveSnapshotFrequency = (int) (saveInterval / this.dt);
-//        saveSnapshotAsPDB = true;
-//        if (fileType.equals("XYZ")) {
-//            saveSnapshotAsPDB = false;
-//        }
-//        saveRestartFileFrequency = (int) (restartFrequency / this.dt);
-//        if (pdbFilter == null) {
-//            logger.warning("pdbf");
-//        }
         this.targetTemperature = temperature;
         thermostat.setTargetTemperature(temperature);
         this.initVelocities = false;
@@ -669,7 +675,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
             thermostat.setRemoveCenterOfMassMotion(false);
         }
     }
-
+    
+    private int snap = 0;
+    
     /**
      * {@inheritDoc}
      */
@@ -761,9 +769,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         if (!skipIntro) {
-            logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
-            logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
-            logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+            logger.info(format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
+            logger.info(format("  %8s %12s %12s %12s %8s %8s\n", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
+            logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
+                    "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
         }
 
         /**
@@ -772,12 +781,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         long time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
-            if (notifyMonteCarlo && monteCarloListener != null) {
-                long startTime = System.nanoTime();
-                monteCarloListener.mcUpdate(molecularAssembly);
-                x = potential.getCoordinates(x);
-                long took = (long) ((System.nanoTime() - startTime) * 1e-6);
-                // logger.info(String.format(" mcUpdate() took: %d ms", took));
+            /* Notify MonteCarlo handlers such as PhMD or rotamer drivers. */
+            if (monteCarloListener != null && mcNotification == MonteCarloNotification.EACH_STEP) {
+                monteCarloListener.mcUpdate(thermostat.getCurrentTemperature());
             }
 
             /**
@@ -812,6 +818,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Compute the full-step kinetic energy.
              */
             thermostat.kineticEnergy();
+            
+            /* DEBUG; REMOVE */
+            if (currentTemperature > 600.0) {
+                SB.logfn("AtomVelocityDump=%d,DoF=%d:", snap, numberOfVariables);
+                for (int i = 0; i < v.length; i++) {
+                    SB.logf(" %8.4f", v[i]);
+                }
+                SB.nlogf("------------");
+                SB.printIf(true);
+            }
 
             /**
              * Do the full-step thermostat operation.
@@ -848,8 +864,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Update extended system variables if present.
              */
-            if (extendedSystem != null) {
-                extendedSystem.propagateESVs(currentTemperature, dt, step*dt);
+            if (esvSystem != null) {
+                esvSystem.propagateESVs(currentTemperature, dt, step*dt);
             }
 
             /**
@@ -858,27 +874,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
             totalSimTime += dt;
             if (step % printFrequency == 0) {
                 time = System.nanoTime() - time;
-                logger.info(String.format(" %7.3e%13.4f%13.4f%13.4f%9.2f%9.3f", totalSimTime, currentKineticEnergy, currentPotentialEnergy,
-                        currentTotalEnergy, currentTemperature, time * 1.0e-9));
+                logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
+                        totalSimTime, currentKineticEnergy, currentPotentialEnergy,
+                        currentTotalEnergy, currentTemperature, time * NS2SEC));
                 time = System.nanoTime();
+            }
+            if (step % printEsvFrequency == 0 && esvSystem != null) {
+                logger.info(format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()));
             }
 
             /**
-             * Write out snapshots in selected format every
-             * saveSnapshotFrequency steps.
+             * Write out snapshots in selected format every saveSnapshotFrequency steps.
              */
             if (saveSnapshotFrequency > 0 && step % saveSnapshotFrequency == 0) {
-                /*if (archiveFile != null && saveSnapshotAsPDB == false) {
-                    if (xyzFilter.writeFile(archiveFile, true)) {
-                        logger.info(String.format(" Appended snap shot to " + archiveFile.getName()));
-                    } else {
-                        logger.warning(String.format(" Appending snap shot to " + archiveFile.getName() + " failed"));
-                    }
-                } else if (saveSnapshotAsPDB == true) {
-                    if (pdbFilter.writeFile(pdbFile, false)) {
-                        logger.info(String.format(" Wrote PDB file to " + pdbFile.getName()));
-                    }
-                }*/
                 for (AssemblyInfo ai : assemblies) {
                     if (ai.archiveFile != null && !saveSnapshotAsPDB) {
                         if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
@@ -940,13 +948,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         done = true;
         terminate = false;
-
-        if (monteCarloListener != null) {
-            long startTime = System.nanoTime();
-            monteCarloListener.mcUpdate(molecularAssembly);
-            x = potential.getCoordinates(x);
-            long took = (long) ((System.nanoTime() - startTime) * 1e-6);
-            // logger.info(String.format(" mcUpdate() took: %d ms", took));
+        
+        if (monteCarloListener != null && mcNotification == MonteCarloNotification.AFTER_DYNAMICS) {
+            monteCarloListener.mcUpdate(thermostat.getCurrentTemperature());
         }
     }
 
@@ -992,7 +996,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
         XYZFilter xyzFilter = null;
 
         public AssemblyInfo(MolecularAssembly assembly) {
-            this.mola = assembly;
+            mola = assembly;
+            pdbFile = mola.getFile();
+            props = mola.getProperties();
+            pdbFilter = new PDBFilter(mola.getFile(), mola, mola.getForceField(), mola.getProperties());
         }
 
         public MolecularAssembly getAssembly() {

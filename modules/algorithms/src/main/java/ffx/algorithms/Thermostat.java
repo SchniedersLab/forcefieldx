@@ -201,7 +201,7 @@ public abstract class Thermostat {
      * @param type
      */
     public void setNumberOfVariables(int nVariables, double x[], double v[],
-            double mass[], VARIABLE_TYPE type[]) {
+            double mass[], VARIABLE_TYPE type[], boolean removeCenterOfMassMotion) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
