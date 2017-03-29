@@ -50,6 +50,8 @@ import ffx.potential.bonded.RotamerLibrary;
 
 import ffx.potential.nonbonded.MultiplicativeSwitch;
 
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 
 /**
  * The TTosrw script uses the Transition-Tempered Orthogonal Space Random Walk
@@ -760,26 +762,26 @@ class TTosrw extends Script {
         double lambda = options.lambda;
 
         // Apply the command line lambda value if a lambda restart file does not exist.
-        if (!lambdaRestart.exists()) {
-            if (lambda < 0.0 || lambda > 1.0) {
-                if (size > 1) {
-                    //dL = 1.0 / (size - 1.0);
-                    //lambda = rank * dL;
-                    dL = 1.0 / (size + 1.0);
-                    lambda = dL * (rank + 1);
-                    if (lambda > 1.0) {
-                        lambda = 1.0;
-                    }
-                    if (lambda < 0.0) {
-                        lambda = 0.0;
-                    }
-                    logger.info(String.format(" Setting lambda to %5.3f.", lambda));
-                } else {
-                    lambda = 0.5;
-                    logger.info(String.format(" Setting lambda to %5.3f", lambda));
+        //if (!lambdaRestart.exists()) {
+        if (lambda < 0.0 || lambda > 1.0) {
+            if (size > 1) {
+                //dL = 1.0 / (size - 1.0);
+                //lambda = rank * dL;
+                dL = 1.0 / (size + 1.0);
+                lambda = dL * (rank + 1);
+                if (lambda > 1.0) {
+                    lambda = 1.0;
                 }
+                if (lambda < 0.0) {
+                    lambda = 0.0;
+                }
+                logger.info(String.format(" Setting lambda to %5.3f.", lambda));
+            } else {
+                lambda = 0.5;
+                logger.info(String.format(" Setting lambda to %5.3f", lambda));
             }
         }
+        //}
 
         if (fromUI != null) {
             processFile(options, fromUI, structureFile, 0);
@@ -798,6 +800,7 @@ class TTosrw extends Script {
             if (options.unsharedA) {
                 def ra = [] as Set;
                 String[] toksA = options.unsharedA.tokenize(".");
+                Atom[] atA1 = topologies[0].getAtomArray();
                 for (range in toksA) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
@@ -807,12 +810,15 @@ class TTosrw extends Script {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
                         logger.info(String.format("Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
+                        logger.info(String.format(" First atom in range: %s", atA1[rangeStart-1]));
+                        if (rangeEnd > rangeStart) {
+                            logger.info(String.format(" Last atom in range: %s", atA1[rangeEnd-1]));
+                        }
                         for (int i = rangeStart; i <= rangeEnd; i++) {
                             ra.add(i-1);
                         }
                     }
                 }
-                Atom[] atA1 = topologies[0].getAtomArray();
                 int counter = 0;
                 def raAdj = [] as Set; // Indexed by common variables in dtA.
                 for (int i = 0; i < atA1.length; i++) {
@@ -838,6 +844,7 @@ class TTosrw extends Script {
             if (options.unsharedB) {
                 def rb = [] as Set;
                 String[] toksB = options.unsharedB.tokenize(".");
+                Atom[] atB1 = topologies[2].getAtomArray();
                 for (range in toksB) {
                     def m = rangeregex.matcher(range);
                     if (m.find()) {
@@ -847,12 +854,15 @@ class TTosrw extends Script {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
                         logger.info(String.format("Range %s for B, start %d end %d", range, rangeStart, rangeEnd));
+                        logger.info(String.format(" First atom in range: %s", atB1[rangeStart-1]));
+                        if (rangeEnd > rangeStart) {
+                            logger.info(String.format(" Last atom in range: %s", atB1[rangeEnd-1]));
+                        }
                         for (int i = rangeStart; i <= rangeEnd; i++) {
                             rb.add(i-1);
                         }
                     }
                 }
-                Atom[] atB1 = topologies[2].getAtomArray();
                 int counter = 0;
                 def rbAdj = [] as Set; // Indexed by common variables in dtA.
                 for (int i = 0; i < atB1.length; i++) {
@@ -987,8 +997,19 @@ class TTosrw extends Script {
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
         logger.info(sb.toString());
-
+        
+        logger.info(" Starting energy (before .dyn restart loaded):");
+        boolean updatesDisabled = topologies[0].getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+        if (updatesDisabled) {
+            logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
+        }
+        double[] x = new double[potential.getNumberOfVariables()];
+        potential.getCoordinates(x);
         LambdaInterface linter = (LambdaInterface) potential;
+        linter.setLambda(lambda);
+        
+        potential.energy(x, true);
+
 
         if (distResidues) {
             logger.info(" Distributing walker conformations.");
@@ -997,7 +1018,7 @@ class TTosrw extends Script {
                 optStructure(topologies[0], energies[0]);
                 break;
             case 2:
-                if (dualTopologyEnergy.getNumSharedVariables() == dualTopologyEnergy.getNumberOfVariables()) {
+                if (potential.getNumSharedVariables() == potential.getNumberOfVariables()) {
                     logger.info(" Generating starting structures based on dual-topology:");
                     optStructure(topologies[0], potential);
                 } else {

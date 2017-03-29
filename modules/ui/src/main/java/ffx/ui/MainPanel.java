@@ -2181,6 +2181,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                 if (filter.writeFile(saveFile, false)) {
                     // Refresh Panels with the new System name
                     hierarchy.setActive(system);
+                    activeFilter = filter;
                 }
             }
         }
@@ -2227,6 +2228,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                     // Refresh Panels with the new System name
                     hierarchy.setActive(system);
                 }
+                activeFilter = filter;
             }
         }
     }
@@ -2267,6 +2269,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (pdbFilter.writeFile(saveFile, false)) {
             // Refresh Panels with the new System name
             hierarchy.setActive(system);
+            activeFilter = pdbFilter;
         } else {
             logger.log(Level.INFO, " Save failed for: {0}", system);
         }
@@ -2304,6 +2307,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (pdbFilter.writeFile(saveFile, false)) {
             // Refresh Panels with the new System name
             hierarchy.setActive(system);
+            activeFilter = pdbFilter;
         } else {
             logger.log(Level.INFO, " Save failed for: {0}", system);
         }
@@ -2376,6 +2380,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             PDBFilter pdbFilter = new PDBFilter(saveFile,
                     Arrays.asList(activeSystems), null, null);
             pdbFilter.writeFile(saveFile, false);
+            activeFilter = pdbFilter;
         }
     }
     static final Preferences preferences = Preferences.userNodeForPackage(MainPanel.class);

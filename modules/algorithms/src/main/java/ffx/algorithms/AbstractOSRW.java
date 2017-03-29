@@ -476,7 +476,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         maxFLambda = minFLambda + FLambdaBins * dFL;
         FLambda = new double[lambdaBins];
         dUdXdL = new double[nVariables];
-        stochasticRandom = new Random(0);
+        stochasticRandom = new Random();
 
         /**
          * Set up the multi-walker communication variables for Parallel Java

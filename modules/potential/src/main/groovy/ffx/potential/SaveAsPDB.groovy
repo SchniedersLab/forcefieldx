@@ -1,4 +1,5 @@
 package ffx.potential
+
 // SAVE AS PDB
 
 // Apache Imports
@@ -12,6 +13,8 @@ import groovy.cli.Unparsed
 
 // FFX Imports
 import ffx.potential.MolecularAssembly
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
@@ -23,7 +26,7 @@ import ffx.potential.utils.PotentialsUtils
  * ffxc SaveAsPDB [options] &lt;filename&gt;
  */
 class SaveAsPDB extends Script {
-    
+
     /**
      * Options for the SaveAsPDB script saves a file as a PDB file
      * <br>
@@ -41,7 +44,7 @@ class SaveAsPDB extends Script {
          */
         @Unparsed List<String> filenames
     }
-    
+
     /**
      * Execute the script.
      */
@@ -50,12 +53,12 @@ class SaveAsPDB extends Script {
         def cli = new CliBuilder(usage:' ffxc SaveAsPDB [options] <filename>');
         def options = new Options()
         cli.parseFromInstance(options, args)
-        
+
         if (options.help == true) {
             return cli.usage()
         }
 
-    
+
         List<String> arguments = options.filenames;
         String modelFilename = null
         if (arguments != null && arguments.size() > 0) {
@@ -68,8 +71,8 @@ class SaveAsPDB extends Script {
             modelFilename = active.getFile()
         }
 
-        logger.info("\n Writing out PDB for " + modelFilename);
-        
+        logger.info("\n Saving PDB for " + modelFilename);
+
         PotentialsFunctions functions
         try {
             // Use a method closure to try to get an instance of UIUtils (the User Interfaces
@@ -82,11 +85,24 @@ class SaveAsPDB extends Script {
         }
 
         MolecularAssembly[] assemblies = functions.open(modelFilename)
+        SystemFilter openFilter = functions.getFilter()
         MolecularAssembly activeAssembly = assemblies[0]
-        modelFilename = FilenameUtils.removeExtension(modelFilename) + ".pdb";
-        functions.saveAsPDB(activeAssembly, new File(modelFilename));
-    }
 
+        modelFilename = FilenameUtils.removeExtension(modelFilename) + ".pdb"
+        File modelFile = new File(modelFilename)
+
+        functions.saveAsPDB(activeAssembly, modelFile)
+        PDBFilter saveFilter = (PDBFilter) functions.getFilter()
+        saveFilter.setModelNumbering(true);
+
+        try {
+            while (openFilter.readNext(false)) {
+                saveFilter.writeFile(modelFile, true);
+            }
+        } catch (Exception e) {
+            // Do nothing.
+        }
+    }
 }
 
 

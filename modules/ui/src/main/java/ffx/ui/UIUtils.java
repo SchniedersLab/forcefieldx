@@ -146,6 +146,7 @@ public class UIUtils implements AlgorithmFunctions {
     public void saveAsXYZ(MolecularAssembly assembly, File file) {
         Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.saveAsXYZ(file);
+        lastFilter = mainPanel.getFilter();
         switchBack(origSys);
     }
 
@@ -153,6 +154,7 @@ public class UIUtils implements AlgorithmFunctions {
     public void saveAsP1(MolecularAssembly assembly, File file) {
         Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.saveAsP1(file);
+        lastFilter = mainPanel.getFilter();
         switchBack(origSys);
     }
 
@@ -160,6 +162,7 @@ public class UIUtils implements AlgorithmFunctions {
     public void saveAsPDB(MolecularAssembly assembly, File file) {
         Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.saveAsPDB(file);
+        lastFilter = mainPanel.getFilter();
         switchBack(origSys);
     }
 
@@ -208,12 +211,14 @@ public class UIUtils implements AlgorithmFunctions {
     @Override
     public void saveAsPDB(MolecularAssembly[] assemblies, File file) {
         mainPanel.saveAsPDB(assemblies, file);
+        lastFilter = mainPanel.getFilter();
     }
 
     @Override
     public void savePDBSymMates(MolecularAssembly assembly, File file) {
         Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.savePDBSymMates(file, "_symMate");
+        lastFilter = mainPanel.getFilter();
         switchBack(origSys);
     }
 
@@ -221,6 +226,7 @@ public class UIUtils implements AlgorithmFunctions {
     public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
         Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.savePDBSymMates(file, suffix);
+        lastFilter = mainPanel.getFilter();
         switchBack(origSys);
     }
 

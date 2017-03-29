@@ -130,7 +130,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     static {
         fittedForceFields = new HashSet<>();
-        String[] fitted = {"AMOEBA-PROTEIN-2013", "AMBER99SB"};
+        /**
+         * AMOEBA-PROTEIN-2013 and AMBER99SB as fitted by Stephen D. LuCore.
+         * AMBER99SB-TIP3F is an alias for AMBER99SB, just with different
+         * explicit-solvent parameters (no re-fitting of GB parameters).
+         */
+        String[] fitted = {"AMOEBA-PROTEIN-2013", "AMBER99SB", "AMBER99SB-TIP3F"};
         fittedForceFields.addAll(Arrays.asList(fitted));
     }
 

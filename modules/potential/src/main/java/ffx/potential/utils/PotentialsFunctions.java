@@ -71,11 +71,11 @@ public interface PotentialsFunctions {
     default public MolecularAssembly open(String filename) {
         MolecularAssembly[] assemblies = openAll(filename);
         if (assemblies.length > 1) {
-            logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", filename);
+            logger.log(Level.WARNING, " Found multiple assemblies in file {0}, opening first.", filename);
         }
         return assemblies[0];
     }
-    
+
     /**
      * Opens a file and returns all created MolecularAssembly objects.
      *
@@ -111,7 +111,7 @@ public interface PotentialsFunctions {
      * objects, setting any underlying Potential to use a certain number of
      * threads. Default implementation simply ignores nThreads.
      *
-     * @param file Filenames to open.
+     * @param files
      * @param nThreads Use non-default num threads
      * @return Array of MolecularAssembly.
      */

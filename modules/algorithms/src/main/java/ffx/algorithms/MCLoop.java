@@ -175,7 +175,7 @@ public class MCLoop implements MonteCarloListener {
      * @param molAss
      */
     @Override
-    public boolean mcUpdate() {
+    public boolean mcUpdate(double temperature) {
 
         stepCount++;
         if (skipAlgorithm == true){

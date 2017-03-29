@@ -503,7 +503,7 @@ public class Looptimizer implements Potential {
         FLambda = new double[lambdaBins];
         dUdXdL = new double[nVariables];
         energyCount = -1;
-        stochasticRandom = new Random(0);
+        stochasticRandom = new Random();
 
         /**
          * Set up the multi-walker communication variables for Parallel Java

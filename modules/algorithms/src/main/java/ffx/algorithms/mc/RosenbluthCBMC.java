@@ -128,7 +128,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
     }
     
     @Override
-    public boolean mcUpdate() {
+    public boolean mcUpdate(double temperature) {
         steps++;
         if (steps % mcFrequency == 0) {
             return cbmcStep();
