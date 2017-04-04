@@ -84,8 +84,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private Integrator integrator;
     private File restartFile = null;
     private DYNFilter dynFilter = null;
-    private int printFrequency = 100;
-    private int saveSnapshotFrequency = 1000;
+    private static final int DEFAULT_PRINT_FREQ = 250;
+    private int printFrequency = DEFAULT_PRINT_FREQ;
+    private static final int DEFAULT_SNAP_FREQ = 10000;
+    private int saveSnapshotFrequency = DEFAULT_SNAP_FREQ;
     private int removeCOMMotionFrequency = 100;
     private boolean initVelocities = true;
     private boolean loadRestart = false;
@@ -418,7 +420,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Convert the print interval to a print frequency.
          */
-        printFrequency = 100;
+        printFrequency = DEFAULT_PRINT_FREQ;
         if (printInterval >= this.dt) {
             printFrequency = (int) (printInterval / this.dt);
         }
@@ -426,7 +428,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Convert the save interval to a save frequency.
          */
-        saveSnapshotFrequency = 1000;
+        saveSnapshotFrequency = DEFAULT_SNAP_FREQ;
         if (saveInterval >= this.dt) {
             saveSnapshotFrequency = (int) (saveInterval / this.dt);
         }

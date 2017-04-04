@@ -140,11 +140,11 @@ class TTosrw extends Script {
         /**
          * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
          */
-        @Option(shortName='r', longName='report', defaultValue='0.1', description='Interfal to report thermodynamics (psec).') double report;
+        @Option(shortName='r', longName='report', defaultValue='0.25', description='Interfal to report thermodynamics (psec).') double report;
         /**
          * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
          */
-        @Option(shortName='w', longName='write', defaultValue='1.0', description='Interval to write out coordinates (psec).') double write;
+        @Option(shortName='w', longName='write', defaultValue='10.0', description='Interval to write out coordinates (psec).') double write;
         /**
          * -t or --temperature sets the simulation temperature (Kelvin).
          */
