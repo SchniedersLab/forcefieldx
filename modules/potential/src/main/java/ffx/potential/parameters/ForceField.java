@@ -1449,6 +1449,8 @@ public class ForceField {
         AMOEBA_BIO_2009,
         AMOEBA_BIO_2009_ORIG,
         AMOEBA_PROTEIN_2013,
+        AMOEBA_DIRECT_2013,
+        AMOEBA_FIXED_2013,
         IAMOEBA_WATER,
         OPLS_AAL
     }
