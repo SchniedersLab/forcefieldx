@@ -461,6 +461,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 archFile = new File(filename + ".arc");
                 ainfo.archiveFile = XYZFilter.version(archFile);
             }
+            if (ainfo.pdbFile == null) {
+                String extName = FilenameUtils.getExtension(file.getName());
+                if (extName.toLowerCase().startsWith("pdb")) {
+                    ainfo.pdbFile = file;
+                } else {
+                    ainfo.pdbFile = new File(filename + ".pdb");
+                }
+            }
             if (ainfo.xyzFilter == null) {
                 ainfo.xyzFilter = new XYZFilter(file, mola, mola.getForceField(), aprops);
             }
