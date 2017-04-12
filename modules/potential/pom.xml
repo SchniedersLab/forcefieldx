@@ -166,11 +166,11 @@
             <artifactId>bridj</artifactId>
             <version>0.7.0</version>
         </dependency>
-        <dependency>
+        <!-- dependency>
             <groupId>com.nativelibs4java</groupId>
             <artifactId>jnaerator-runtime</artifactId>
             <version>0.13-SNAPSHOT</version>
             <scope>compile</scope>
-        </dependency>
+        </dependency -->
     </dependencies>
 </project>
