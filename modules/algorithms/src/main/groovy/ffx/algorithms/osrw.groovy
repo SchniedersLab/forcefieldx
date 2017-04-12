@@ -146,10 +146,10 @@ int eSteps = 1000;
 double timeStep = 1.0;
 
 // Frequency to log thermodynamics information in picoseconds.
-double printInterval = 0.1;
+double printInterval = 0.25;
 
 // Frequency to write out coordinates in picoseconds.
-double saveInterval = 1.0;
+double saveInterval = 10.0;
 
 // File type of coordinate snapshots to write out.
 String fileType = "XYZ";

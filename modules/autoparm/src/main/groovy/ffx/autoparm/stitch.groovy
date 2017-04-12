@@ -107,7 +107,8 @@ for(int i = 0; i < (arguments.size()); i++){
         //add to "textFiles" array list
         textFiles.add(arguments.get(i));
     }
-    if(arguments.get(i).contains(".key_5")){
+    //if(arguments.get(i).contains(".key_5")){
+    if(arguments.get(i).contains(".sdf")){
         //add to "fragmentParameters" array list (PolType outputs)
         fragmentParameters.add(arguments.get(i));
     }

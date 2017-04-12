@@ -140,11 +140,11 @@ class TTosrw extends Script {
         /**
          * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
          */
-        @Option(shortName='r', longName='report', defaultValue='0.1', description='Interfal to report thermodynamics (psec).') double report;
+        @Option(shortName='r', longName='report', defaultValue='0.25', description='Interfal to report thermodynamics (psec).') double report;
         /**
          * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
          */
-        @Option(shortName='w', longName='write', defaultValue='1.0', description='Interval to write out coordinates (psec).') double write;
+        @Option(shortName='w', longName='write', defaultValue='10.0', description='Interval to write out coordinates (psec).') double write;
         /**
          * -t or --temperature sets the simulation temperature (Kelvin).
          */
@@ -762,26 +762,26 @@ class TTosrw extends Script {
         double lambda = options.lambda;
 
         // Apply the command line lambda value if a lambda restart file does not exist.
-        if (!lambdaRestart.exists()) {
-            if (lambda < 0.0 || lambda > 1.0) {
-                if (size > 1) {
-                    //dL = 1.0 / (size - 1.0);
-                    //lambda = rank * dL;
-                    dL = 1.0 / (size + 1.0);
-                    lambda = dL * (rank + 1);
-                    if (lambda > 1.0) {
-                        lambda = 1.0;
-                    }
-                    if (lambda < 0.0) {
-                        lambda = 0.0;
-                    }
-                    logger.info(String.format(" Setting lambda to %5.3f.", lambda));
-                } else {
-                    lambda = 0.5;
-                    logger.info(String.format(" Setting lambda to %5.3f", lambda));
+        //if (!lambdaRestart.exists()) {
+        if (lambda < 0.0 || lambda > 1.0) {
+            if (size > 1) {
+                //dL = 1.0 / (size - 1.0);
+                //lambda = rank * dL;
+                dL = 1.0 / (size + 1.0);
+                lambda = dL * (rank + 1);
+                if (lambda > 1.0) {
+                    lambda = 1.0;
                 }
+                if (lambda < 0.0) {
+                    lambda = 0.0;
+                }
+                logger.info(String.format(" Setting lambda to %5.3f.", lambda));
+            } else {
+                lambda = 0.5;
+                logger.info(String.format(" Setting lambda to %5.3f", lambda));
             }
         }
+        //}
 
         if (fromUI != null) {
             processFile(options, fromUI, structureFile, 0);
@@ -1005,10 +1005,11 @@ class TTosrw extends Script {
         }
         double[] x = new double[potential.getNumberOfVariables()];
         potential.getCoordinates(x);
+        LambdaInterface linter = (LambdaInterface) potential;
+        linter.setLambda(lambda);
         
         potential.energy(x, true);
 
-        LambdaInterface linter = (LambdaInterface) potential;
 
         if (distResidues) {
             logger.info(" Distributing walker conformations.");
