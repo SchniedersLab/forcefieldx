@@ -10,6 +10,7 @@ import groovy.util.CliBuilder
 import ffx.potential.MolecularAssembly
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
+import ffx.potential.OpenMMForceFieldEnergy
 
 /**
  * The Energy script evaluates the energy of a system.
@@ -32,6 +33,10 @@ class Energy extends Script {
          * -h or --help to print a help message
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
+        /**
+         * -o or --openmm to try using OpenMM
+         */
+        @Option(shortName='o', defaultValue='false', description='Use OpenMM.') boolean openmm
         /**
          * The final argument(s) should be one or more filenames.
          */
@@ -86,6 +91,9 @@ class Energy extends Script {
         MolecularAssembly activeAssembly = assemblies[0]
         functions.energy(activeAssembly)
 
+        if (options.openmm == true) {
+            OpenMMForceFieldEnergy openMMForceFieldEnergy = new OpenMMForceFieldEnergy(activeAssembly);
+        }
     }
 }
 

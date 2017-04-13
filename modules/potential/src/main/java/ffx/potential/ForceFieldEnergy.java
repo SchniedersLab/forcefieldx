@@ -127,7 +127,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     private static final double toSeconds = 0.000000001;
 
-    private final MolecularAssembly molecularAssembly;
+    protected final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
     /**
      * Contains ALL atoms, both foreground and background. Background atoms need
