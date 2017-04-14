@@ -79,6 +79,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private final OpenMMLibrary openmm = OpenMMLibrary.INSTANCE;
     private final OpenMMAmoebaLibrary amoeba = OpenMMAmoebaLibrary.INSTANCE;
 
+    /**
+     * OpenMMForceFieldEnergy constructor.
+     *
+     * @param molecularAssembly
+     */
     public OpenMMForceFieldEnergy(MolecularAssembly molecularAssembly) {
         super(molecularAssembly);
 
@@ -122,6 +127,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         // Add Bond Forces.
         addBonds();
+
+        // Reference: https://github.com/jayponder/tinker/blob/release/openmm/ommstuff.cpp
+
+        // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommsetuff.cpp
+
+        // Add Urey-Bradley Forces: to do by Hernan - see setupAmoebaUreyBradleyForce line 2115 of openmm-stuff.cpp
 
         // Set initial position.
         loadPositions();
