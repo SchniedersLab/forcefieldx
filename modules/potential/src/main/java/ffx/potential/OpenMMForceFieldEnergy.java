@@ -43,10 +43,9 @@ import java.util.logging.Logger;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
-import simtk.openmm.OpenMMAmoebaLibrary;
-import simtk.openmm.OpenMMLibrary;
 import simtk.openmm.OpenMM_Vec3;
 
+import static simtk.openmm.OpenMMAmoebaLibrary.*;
 import static simtk.openmm.OpenMMLibrary.*;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.*;
 
@@ -76,9 +75,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private PointerByReference initialPosInNm;
     private PointerByReference openMMForces;
 
-    private final OpenMMLibrary openmm = OpenMMLibrary.INSTANCE;
-    private final OpenMMAmoebaLibrary amoeba = OpenMMAmoebaLibrary.INSTANCE;
-
     /**
      * OpenMMForceFieldEnergy constructor.
      *
@@ -92,32 +88,39 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         logger.info("\n\n Initializing OpenMM");
 
         // Print out the OpenMM Version.
-        Pointer version = openmm.OpenMM_Platform_getOpenMMVersion();
+        Pointer version = OpenMM_Platform_getOpenMMVersion();
         logger.log(Level.INFO, " OpenMM Version: {0}", version.getString(0));
 
         // Print out the OpenMM plugin directory.
-        Pointer pluginDir = openmm.OpenMM_Platform_getDefaultPluginsDirectory();
+        Pointer pluginDir = OpenMM_Platform_getDefaultPluginsDirectory();
         logger.log(Level.INFO, " OpenMM Plugin Dir: {0}", pluginDir.getString(0));
 
         // Load plugins and print out plugins.
-        PointerByReference platforms = openmm.OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
-        int numPlatforms = openmm.OpenMM_Platform_getNumPlatforms();
+        PointerByReference platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
+
+        platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
+        int numPlatforms = OpenMM_Platform_getNumPlatforms();
         logger.log(Level.INFO, " Number of OpenMM Plugins: {0}", numPlatforms);
         for (int i = 0; i < numPlatforms; i++) {
-            Pointer platformPtr = openmm.OpenMM_StringArray_get(platforms, i);
+            Pointer platformPtr = OpenMM_StringArray_get(platforms, i);
             logger.log(Level.INFO, " Plugin Library :{0}", platformPtr.getString(0));
         }
-        openmm.OpenMM_StringArray_destroy(platforms);
+        OpenMM_StringArray_destroy(platforms);
 
         // Create the OpenMM System
-        openMMSystem = openmm.OpenMM_System_create();
+        openMMSystem = OpenMM_System_create();
         logger.info(" Created OpenMM System");
 
-        openMMIntegrator = openmm.OpenMM_LangevinIntegrator_create(300.0, 30.0, 0.001);
+        openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
         logger.info(" Created OpenMM Integrator");
 
-        platform = openmm.OpenMM_Platform_getPlatformByName("Reference");
-        logger.info(" Created OpenMM Reference Plaform");
+        platform = OpenMM_Platform_getPlatformByName("Reference");
+
+        if (platform == null) {
+            logger.info(" OpenMM Plaform could not be created.");
+        } else {
+            logger.info(" Created OpenMM Reference Plaform");
+        }
 
         // Load atoms.
         addAtoms();
@@ -138,19 +141,19 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         loadPositions();
 
         // Create a context.
-        context = openmm.OpenMM_Context_create_2(openMMSystem, openMMIntegrator, platform);
+        context = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, platform);
 
         // Load positions into the context.
-        openmm.OpenMM_Context_setPositions(context, initialPosInNm);
+        OpenMM_Context_setPositions(context, initialPosInNm);
 
         int infoMask = OpenMM_State_Positions;
         infoMask += OpenMM_State_Forces;
         infoMask += OpenMM_State_Energy;
 
-        state = openmm.OpenMM_Context_getState(context, infoMask, 0);
+        state = OpenMM_Context_getState(context, infoMask, 0);
 
-        openMMForces = openmm.OpenMM_State_getForces(state);
-        double openMMPotentialEnergy = openmm.OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+        openMMForces = OpenMM_State_getForces(state);
+        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
         logger.log(Level.INFO, " OpenMM Energy: {0}", openMMPotentialEnergy);
 
@@ -160,9 +163,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     private void freeOpenMM() {
-        openmm.OpenMM_Context_destroy(context);
-        openmm.OpenMM_Integrator_destroy(openMMIntegrator);
-        openmm.OpenMM_System_destroy(openMMSystem);
+        OpenMM_Context_destroy(context);
+        OpenMM_Integrator_destroy(openMMIntegrator);
+        OpenMM_System_destroy(openMMSystem);
     }
 
     private void addAtoms() {
@@ -170,20 +173,20 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            openmm.OpenMM_System_addParticle(openMMSystem, atom.getMass());
+            OpenMM_System_addParticle(openMMSystem, atom.getMass());
         }
         logger.log(Level.INFO, " Added particles ({0})", nAtoms);
     }
 
     private void addCCOMRemover() {
         int frequency = 100;
-        PointerByReference cMMotionRemover = openmm.OpenMM_CMMotionRemover_create(frequency);
-        openmm.OpenMM_System_addForce(openMMSystem, cMMotionRemover);
+        PointerByReference cMMotionRemover = OpenMM_CMMotionRemover_create(frequency);
+        OpenMM_System_addForce(openMMSystem, cMMotionRemover);
         logger.log(Level.INFO, " Added center of mass motion remover (frequency: {0})", frequency);
     }
 
     private void addBonds() {
-        PointerByReference amoebaBondForce = amoeba.OpenMM_AmoebaBondForce_create();
+        PointerByReference amoebaBondForce = OpenMM_AmoebaBondForce_create();
         double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
         Bond bonds[] = ffxForceFieldEnergy.getBonds();
         int nBonds = bonds.length;
@@ -192,22 +195,22 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             int i1 = bond.getAtom(0).getXyzIndex() - 1;
             int i2 = bond.getAtom(1).getXyzIndex() - 1;
             BondType bondType = bond.bondType;
-            amoeba.OpenMM_AmoebaBondForce_addBond(amoebaBondForce, i1, i2,
+            OpenMM_AmoebaBondForce_addBond(amoebaBondForce, i1, i2,
                     bond.bondType.distance * OpenMM_NmPerAngstrom,
                     kParameterConversion * bondType.forceConstant * BondType.units);
 
         }
-        amoeba.OpenMM_AmoebaBondForce_setAmoebaGlobalBondCubic(amoebaBondForce,
+        OpenMM_AmoebaBondForce_setAmoebaGlobalBondCubic(amoebaBondForce,
                 BondType.cubic / OpenMM_NmPerAngstrom);
-        amoeba.OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(amoebaBondForce,
+        OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(amoebaBondForce,
                 BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
 
-        openmm.OpenMM_System_addForce(openMMSystem, amoebaBondForce);
+        OpenMM_System_addForce(openMMSystem, amoebaBondForce);
         logger.log(Level.INFO, " Added bonds ({0})", nBonds);
     }
 
     private void loadPositions() {
-        initialPosInNm = openmm.OpenMM_Vec3Array_create(0);
+        initialPosInNm = OpenMM_Vec3Array_create(0);
 
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
@@ -217,7 +220,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             posInNm.x = atom.getX() * OpenMM_NmPerAngstrom;
             posInNm.y = atom.getY() * OpenMM_NmPerAngstrom;
             posInNm.z = atom.getZ() * OpenMM_NmPerAngstrom;
-            openmm.OpenMM_Vec3Array_append(initialPosInNm, posInNm);
+            OpenMM_Vec3Array_append(initialPosInNm, posInNm);
         }
     }
 }

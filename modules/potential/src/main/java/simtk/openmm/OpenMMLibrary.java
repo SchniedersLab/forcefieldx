@@ -63,11 +63,14 @@ import com.sun.jna.ptr.PointerByReference;
  * <a href="http://rococoa.dev.java.net/">Rococoa</a>, or
  * <a href="http://jna.dev.java.net/">JNA</a>.
  */
-public interface OpenMMLibrary extends Library {
+public class OpenMMLibrary implements Library {
 
     public static final String JNA_LIBRARY_NAME = "OpenMM";
     public static final NativeLibrary JNA_NATIVE_LIB = NativeLibrary.getInstance(OpenMMLibrary.JNA_LIBRARY_NAME);
-    public static final OpenMMLibrary INSTANCE = (OpenMMLibrary) Native.loadLibrary(OpenMMLibrary.JNA_LIBRARY_NAME, OpenMMLibrary.class);
+
+    static {
+        Native.register(OpenMMLibrary.class, OpenMMLibrary.JNA_NATIVE_LIB);
+    }
 
     /**
      * Global Constants
@@ -235,302 +238,302 @@ public interface OpenMMLibrary extends Library {
      * Original signature :
      * <code>OpenMM_Vec3 OpenMM_Vec3_scale(const OpenMM_Vec3, double)</code>
      */
-    OpenMM_Vec3.ByValue OpenMM_Vec3_scale(OpenMM_Vec3.ByValue vec, double scale);
+    public static native OpenMM_Vec3.ByValue OpenMM_Vec3_scale(OpenMM_Vec3.ByValue vec, double scale);
 
     /**
      * OpenMM_Vec3Array<br>
      * Original signature :
      * <code>OpenMM_Vec3Array* OpenMM_Vec3Array_create(int)</code>
      */
-    PointerByReference OpenMM_Vec3Array_create(int size);
+    public static native PointerByReference OpenMM_Vec3Array_create(int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_Vec3Array_destroy(OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_Vec3Array_destroy(PointerByReference array);
+    public static native void OpenMM_Vec3Array_destroy(PointerByReference array);
 
     /**
      * Original signature :
      * <code>int OpenMM_Vec3Array_getSize(const OpenMM_Vec3Array*)</code>
      */
-    int OpenMM_Vec3Array_getSize(PointerByReference array);
+    public static native int OpenMM_Vec3Array_getSize(PointerByReference array);
 
     /**
      * Original signature :
      * <code>void OpenMM_Vec3Array_resize(OpenMM_Vec3Array*, int)</code>
      */
-    void OpenMM_Vec3Array_resize(PointerByReference array, int size);
+    public static native void OpenMM_Vec3Array_resize(PointerByReference array, int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_Vec3Array_append(OpenMM_Vec3Array*, const OpenMM_Vec3)</code>
      */
-    void OpenMM_Vec3Array_append(PointerByReference array, OpenMM_Vec3.ByValue vec);
+    public static native void OpenMM_Vec3Array_append(PointerByReference array, OpenMM_Vec3.ByValue vec);
 
     /**
      * Original signature :
      * <code>void OpenMM_Vec3Array_set(OpenMM_Vec3Array*, int, const OpenMM_Vec3)</code>
      */
-    void OpenMM_Vec3Array_set(PointerByReference array, int index, OpenMM_Vec3.ByValue vec);
+    public static native void OpenMM_Vec3Array_set(PointerByReference array, int index, OpenMM_Vec3.ByValue vec);
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3* OpenMM_Vec3Array_get(const OpenMM_Vec3Array*, int)</code>
      */
-    OpenMM_Vec3 OpenMM_Vec3Array_get(PointerByReference array, int index);
+    public static native OpenMM_Vec3 OpenMM_Vec3Array_get(PointerByReference array, int index);
 
     /**
      * OpenMM_StringArray<br>
      * Original signature :
      * <code>OpenMM_StringArray* OpenMM_StringArray_create(int)</code>
      */
-    PointerByReference OpenMM_StringArray_create(int size);
+    public static native PointerByReference OpenMM_StringArray_create(int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_StringArray_destroy(OpenMM_StringArray*)</code>
      */
-    void OpenMM_StringArray_destroy(PointerByReference array);
+    public static native void OpenMM_StringArray_destroy(PointerByReference array);
 
     /**
      * Original signature :
      * <code>int OpenMM_StringArray_getSize(const OpenMM_StringArray*)</code>
      */
-    int OpenMM_StringArray_getSize(PointerByReference array);
+    public static native int OpenMM_StringArray_getSize(PointerByReference array);
 
     /**
      * Original signature :
      * <code>void OpenMM_StringArray_resize(OpenMM_StringArray*, int)</code>
      */
-    void OpenMM_StringArray_resize(PointerByReference array, int size);
+    public static native void OpenMM_StringArray_resize(PointerByReference array, int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_StringArray_append(OpenMM_StringArray*, const char*)</code>
      */
-    void OpenMM_StringArray_append(PointerByReference array, String string);
+    public static native void OpenMM_StringArray_append(PointerByReference array, String string);
 
     /**
      * Original signature :
      * <code>void OpenMM_StringArray_append(OpenMM_StringArray*, const char*)</code>
      */
-    void OpenMM_StringArray_append(PointerByReference array, Pointer string);
+    public static native void OpenMM_StringArray_append(PointerByReference array, Pointer string);
 
     /**
      * Original signature :
      * <code>void OpenMM_StringArray_set(OpenMM_StringArray*, int, const char*)</code>
      */
-    void OpenMM_StringArray_set(PointerByReference array, int index, String string);
+    public static native void OpenMM_StringArray_set(PointerByReference array, int index, String string);
 
     /**
      * Original signature :
      * <code>void OpenMM_StringArray_set(OpenMM_StringArray*, int, const char*)</code>
      */
-    void OpenMM_StringArray_set(PointerByReference array, int index, Pointer string);
+    public static native void OpenMM_StringArray_set(PointerByReference array, int index, Pointer string);
 
     /**
      * Original signature :
      * <code>char* OpenMM_StringArray_get(const OpenMM_StringArray*, int)</code>
      */
-    Pointer OpenMM_StringArray_get(PointerByReference array, int index);
+    public static native Pointer OpenMM_StringArray_get(PointerByReference array, int index);
 
     /**
      * OpenMM_BondArray<br>
      * Original signature :
      * <code>OpenMM_BondArray* OpenMM_BondArray_create(int)</code>
      */
-    PointerByReference OpenMM_BondArray_create(int size);
+    public static native PointerByReference OpenMM_BondArray_create(int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_BondArray_destroy(OpenMM_BondArray*)</code>
      */
-    void OpenMM_BondArray_destroy(PointerByReference array);
+    public static native void OpenMM_BondArray_destroy(PointerByReference array);
 
     /**
      * Original signature :
      * <code>int OpenMM_BondArray_getSize(const OpenMM_BondArray*)</code>
      */
-    int OpenMM_BondArray_getSize(PointerByReference array);
+    public static native int OpenMM_BondArray_getSize(PointerByReference array);
 
     /**
      * Original signature :
      * <code>void OpenMM_BondArray_resize(OpenMM_BondArray*, int)</code>
      */
-    void OpenMM_BondArray_resize(PointerByReference array, int size);
+    public static native void OpenMM_BondArray_resize(PointerByReference array, int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_BondArray_append(OpenMM_BondArray*, int, int)</code>
      */
-    void OpenMM_BondArray_append(PointerByReference array, int particle1, int particle2);
+    public static native void OpenMM_BondArray_append(PointerByReference array, int particle1, int particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_BondArray_set(OpenMM_BondArray*, int, int, int)</code>
      */
-    void OpenMM_BondArray_set(PointerByReference array, int index, int particle1, int particle2);
+    public static native void OpenMM_BondArray_set(PointerByReference array, int index, int particle1, int particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_BondArray_get(const OpenMM_BondArray*, int, int*, int*)</code>
      */
-    void OpenMM_BondArray_get(PointerByReference array, int index, IntBuffer particle1, IntBuffer particle2);
+    public static native void OpenMM_BondArray_get(PointerByReference array, int index, IntBuffer particle1, IntBuffer particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_BondArray_get(const OpenMM_BondArray*, int, int*, int*)</code>
      */
-    void OpenMM_BondArray_get(PointerByReference array, int index, IntByReference particle1, IntByReference particle2);
+    public static native void OpenMM_BondArray_get(PointerByReference array, int index, IntByReference particle1, IntByReference particle2);
 
     /**
      * OpenMM_ParameterArray<br>
      * Original signature :
      * <code>int OpenMM_ParameterArray_getSize(const OpenMM_ParameterArray*)</code>
      */
-    int OpenMM_ParameterArray_getSize(PointerByReference array);
+    public static native int OpenMM_ParameterArray_getSize(PointerByReference array);
 
     /**
      * Original signature :
      * <code>double OpenMM_ParameterArray_get(const OpenMM_ParameterArray*, const char*)</code>
      */
-    double OpenMM_ParameterArray_get(PointerByReference array, String name);
+    public static native double OpenMM_ParameterArray_get(PointerByReference array, String name);
 
     /**
      * Original signature :
      * <code>double OpenMM_ParameterArray_get(const OpenMM_ParameterArray*, const char*)</code>
      */
-    double OpenMM_ParameterArray_get(PointerByReference array, Pointer name);
+    public static native double OpenMM_ParameterArray_get(PointerByReference array, Pointer name);
 
     /**
      * OpenMM_PropertyArray<br>
      * Original signature :
      * <code>int OpenMM_PropertyArray_getSize(const OpenMM_PropertyArray*)</code>
      */
-    int OpenMM_PropertyArray_getSize(PointerByReference array);
+    public static native int OpenMM_PropertyArray_getSize(PointerByReference array);
 
     /**
      * Original signature :
      * <code>char* OpenMM_PropertyArray_get(const OpenMM_PropertyArray*, const char*)</code>
      */
-    Pointer OpenMM_PropertyArray_get(PointerByReference array, String name);
+    public static native Pointer OpenMM_PropertyArray_get(PointerByReference array, String name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_PropertyArray_get(const OpenMM_PropertyArray*, const char*)</code>
      */
-    Pointer OpenMM_PropertyArray_get(PointerByReference array, Pointer name);
+    public static native Pointer OpenMM_PropertyArray_get(PointerByReference array, Pointer name);
 
     /**
      * OpenMM_DoubleArray<br>
      * Original signature :
      * <code>OpenMM_DoubleArray* OpenMM_DoubleArray_create(int)</code>
      */
-    PointerByReference OpenMM_DoubleArray_create(int size);
+    public static native PointerByReference OpenMM_DoubleArray_create(int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_DoubleArray_destroy(OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_DoubleArray_destroy(PointerByReference array);
+    public static native void OpenMM_DoubleArray_destroy(PointerByReference array);
 
     /**
      * Original signature :
      * <code>int OpenMM_DoubleArray_getSize(const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_DoubleArray_getSize(PointerByReference array);
+    public static native int OpenMM_DoubleArray_getSize(PointerByReference array);
 
     /**
      * Original signature :
      * <code>void OpenMM_DoubleArray_resize(OpenMM_DoubleArray*, int)</code>
      */
-    void OpenMM_DoubleArray_resize(PointerByReference array, int size);
+    public static native void OpenMM_DoubleArray_resize(PointerByReference array, int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_DoubleArray_append(OpenMM_DoubleArray*, double)</code>
      */
-    void OpenMM_DoubleArray_append(PointerByReference array, double value);
+    public static native void OpenMM_DoubleArray_append(PointerByReference array, double value);
 
     /**
      * Original signature :
      * <code>void OpenMM_DoubleArray_set(OpenMM_DoubleArray*, int, double)</code>
      */
-    void OpenMM_DoubleArray_set(PointerByReference array, int index, double value);
+    public static native void OpenMM_DoubleArray_set(PointerByReference array, int index, double value);
 
     /**
      * Original signature :
      * <code>double OpenMM_DoubleArray_get(const OpenMM_DoubleArray*, int)</code>
      */
-    double OpenMM_DoubleArray_get(PointerByReference array, int index);
+    public static native double OpenMM_DoubleArray_get(PointerByReference array, int index);
 
     /**
      * OpenMM_IntArray<br>
      * Original signature :
      * <code>OpenMM_IntArray* OpenMM_IntArray_create(int)</code>
      */
-    PointerByReference OpenMM_IntArray_create(int size);
+    public static native PointerByReference OpenMM_IntArray_create(int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_IntArray_destroy(OpenMM_IntArray*)</code>
      */
-    void OpenMM_IntArray_destroy(PointerByReference array);
+    public static native void OpenMM_IntArray_destroy(PointerByReference array);
 
     /**
      * Original signature :
      * <code>int OpenMM_IntArray_getSize(const OpenMM_IntArray*)</code>
      */
-    int OpenMM_IntArray_getSize(PointerByReference array);
+    public static native int OpenMM_IntArray_getSize(PointerByReference array);
 
     /**
      * Original signature :
      * <code>void OpenMM_IntArray_resize(OpenMM_IntArray*, int)</code>
      */
-    void OpenMM_IntArray_resize(PointerByReference array, int size);
+    public static native void OpenMM_IntArray_resize(PointerByReference array, int size);
 
     /**
      * Original signature :
      * <code>void OpenMM_IntArray_append(OpenMM_IntArray*, int)</code>
      */
-    void OpenMM_IntArray_append(PointerByReference array, int value);
+    public static native void OpenMM_IntArray_append(PointerByReference array, int value);
 
     /**
      * Original signature :
      * <code>void OpenMM_IntArray_set(OpenMM_IntArray*, int, int)</code>
      */
-    void OpenMM_IntArray_set(PointerByReference array, int index, int value);
+    public static native void OpenMM_IntArray_set(PointerByReference array, int index, int value);
 
     /**
      * Original signature :
      * <code>int OpenMM_IntArray_get(const OpenMM_IntArray*, int)</code>
      */
-    int OpenMM_IntArray_get(PointerByReference array, int index);
+    public static native int OpenMM_IntArray_get(PointerByReference array, int index);
 
     /**
      * OpenMM_IntSet<br>
      * Original signature : <code>OpenMM_IntSet* OpenMM_IntSet_create()</code>
      */
-    PointerByReference OpenMM_IntSet_create();
+    public static native PointerByReference OpenMM_IntSet_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_IntSet_destroy(OpenMM_IntSet*)</code>
      */
-    void OpenMM_IntSet_destroy(PointerByReference set);
+    public static native void OpenMM_IntSet_destroy(PointerByReference set);
 
     /**
      * Original signature :
      * <code>int OpenMM_IntSet_getSize(const OpenMM_IntSet*)</code>
      */
-    int OpenMM_IntSet_getSize(PointerByReference set);
+    public static native int OpenMM_IntSet_getSize(PointerByReference set);
 
     /**
      * Original signature :
      * <code>void OpenMM_IntSet_insert(OpenMM_IntSet*, int)</code>
      */
-    void OpenMM_IntSet_insert(PointerByReference set, int value);
+    public static native void OpenMM_IntSet_insert(PointerByReference set, int value);
 
     /**
      * These methods need to be handled specially, since their C++ APIs cannot
@@ -540,5354 +543,5354 @@ public interface OpenMMLibrary extends Library {
      * Original signature :
      * <code>OpenMM_State* OpenMM_Context_getState(const OpenMM_Context*, int, int)</code>
      */
-    PointerByReference OpenMM_Context_getState(PointerByReference target, int types, int enforcePeriodicBox);
+    public static native PointerByReference OpenMM_Context_getState(PointerByReference target, int types, int enforcePeriodicBox);
 
     /**
      * Original signature :
      * <code>OpenMM_State* OpenMM_Context_getState_2(const OpenMM_Context*, int, int, int)</code>
      */
-    PointerByReference OpenMM_Context_getState_2(PointerByReference target, int types, int enforcePeriodicBox, int groups);
+    public static native PointerByReference OpenMM_Context_getState_2(PointerByReference target, int types, int enforcePeriodicBox, int groups);
 
     /**
      * Original signature :
      * <code>OpenMM_StringArray* OpenMM_Platform_loadPluginsFromDirectory(const char*)</code>
      */
-    PointerByReference OpenMM_Platform_loadPluginsFromDirectory(String directory);
+    public static native PointerByReference OpenMM_Platform_loadPluginsFromDirectory(String directory);
 
     /**
      * Original signature :
      * <code>OpenMM_StringArray* OpenMM_Platform_getPluginLoadFailures()</code>
      */
-    PointerByReference OpenMM_Platform_getPluginLoadFailures();
+    public static native PointerByReference OpenMM_Platform_getPluginLoadFailures();
 
     /**
      * Original signature :
      * <code>char* OpenMM_XmlSerializer_serializeSystem(const OpenMM_System*)</code>
      */
-    Pointer OpenMM_XmlSerializer_serializeSystem(PointerByReference system);
+    public static native Pointer OpenMM_XmlSerializer_serializeSystem(PointerByReference system);
 
     /**
      * Original signature :
      * <code>char* OpenMM_XmlSerializer_serializeState(const OpenMM_State*)</code>
      */
-    Pointer OpenMM_XmlSerializer_serializeState(PointerByReference state);
+    public static native Pointer OpenMM_XmlSerializer_serializeState(PointerByReference state);
 
     /**
      * Original signature :
      * <code>char* OpenMM_XmlSerializer_serializeIntegrator(const OpenMM_Integrator*)</code>
      */
-    Pointer OpenMM_XmlSerializer_serializeIntegrator(PointerByReference integrator);
+    public static native Pointer OpenMM_XmlSerializer_serializeIntegrator(PointerByReference integrator);
 
     /**
      * Original signature :
      * <code>OpenMM_System* OpenMM_XmlSerializer_deserializeSystem(const char*)</code>
      */
-    PointerByReference OpenMM_XmlSerializer_deserializeSystem(String xml);
+    public static native PointerByReference OpenMM_XmlSerializer_deserializeSystem(String xml);
 
     /**
      * Original signature :
      * <code>OpenMM_State* OpenMM_XmlSerializer_deserializeState(const char*)</code>
      */
-    PointerByReference OpenMM_XmlSerializer_deserializeState(String xml);
+    public static native PointerByReference OpenMM_XmlSerializer_deserializeState(String xml);
 
     /**
      * Original signature :
      * <code>OpenMM_Integrator* OpenMM_XmlSerializer_deserializeIntegrator(const char*)</code>
      */
-    PointerByReference OpenMM_XmlSerializer_deserializeIntegrator(String xml);
+    public static native PointerByReference OpenMM_XmlSerializer_deserializeIntegrator(String xml);
 
     /**
      * Force<br>
      * Original signature :
      * <code>void OpenMM_Force_destroy(OpenMM_Force*)</code>
      */
-    void OpenMM_Force_destroy(PointerByReference target);
+    public static native void OpenMM_Force_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_Force_getForceGroup(const OpenMM_Force*)</code>
      */
-    int OpenMM_Force_getForceGroup(PointerByReference target);
+    public static native int OpenMM_Force_getForceGroup(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Force_setForceGroup(OpenMM_Force*, int)</code>
      */
-    void OpenMM_Force_setForceGroup(PointerByReference target, int group);
+    public static native void OpenMM_Force_setForceGroup(PointerByReference target, int group);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_Force_usesPeriodicBoundaryConditions(const OpenMM_Force*)</code>
      */
-    int OpenMM_Force_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_Force_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * AndersenThermostat<br>
      * Original signature :
      * <code>OpenMM_AndersenThermostat* OpenMM_AndersenThermostat_create(double, double)</code>
      */
-    PointerByReference OpenMM_AndersenThermostat_create(double defaultTemperature, double defaultCollisionFrequency);
+    public static native PointerByReference OpenMM_AndersenThermostat_create(double defaultTemperature, double defaultCollisionFrequency);
 
     /**
      * Original signature :
      * <code>void OpenMM_AndersenThermostat_destroy(OpenMM_AndersenThermostat*)</code>
      */
-    void OpenMM_AndersenThermostat_destroy(PointerByReference target);
+    public static native void OpenMM_AndersenThermostat_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_AndersenThermostat_Temperature()</code>
      */
-    Pointer OpenMM_AndersenThermostat_Temperature();
+    public static native Pointer OpenMM_AndersenThermostat_Temperature();
 
     /**
      * Original signature :
      * <code>char* OpenMM_AndersenThermostat_CollisionFrequency()</code>
      */
-    Pointer OpenMM_AndersenThermostat_CollisionFrequency();
+    public static native Pointer OpenMM_AndersenThermostat_CollisionFrequency();
 
     /**
      * Original signature :
      * <code>double OpenMM_AndersenThermostat_getDefaultTemperature(const OpenMM_AndersenThermostat*)</code>
      */
-    double OpenMM_AndersenThermostat_getDefaultTemperature(PointerByReference target);
+    public static native double OpenMM_AndersenThermostat_getDefaultTemperature(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_AndersenThermostat_setDefaultTemperature(OpenMM_AndersenThermostat*, double)</code>
      */
-    void OpenMM_AndersenThermostat_setDefaultTemperature(PointerByReference target, double temperature);
+    public static native void OpenMM_AndersenThermostat_setDefaultTemperature(PointerByReference target, double temperature);
 
     /**
      * Original signature :
      * <code>double OpenMM_AndersenThermostat_getDefaultCollisionFrequency(const OpenMM_AndersenThermostat*)</code>
      */
-    double OpenMM_AndersenThermostat_getDefaultCollisionFrequency(PointerByReference target);
+    public static native double OpenMM_AndersenThermostat_getDefaultCollisionFrequency(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_AndersenThermostat_setDefaultCollisionFrequency(OpenMM_AndersenThermostat*, double)</code>
      */
-    void OpenMM_AndersenThermostat_setDefaultCollisionFrequency(PointerByReference target, double frequency);
+    public static native void OpenMM_AndersenThermostat_setDefaultCollisionFrequency(PointerByReference target, double frequency);
 
     /**
      * Original signature :
      * <code>int OpenMM_AndersenThermostat_getRandomNumberSeed(const OpenMM_AndersenThermostat*)</code>
      */
-    int OpenMM_AndersenThermostat_getRandomNumberSeed(PointerByReference target);
+    public static native int OpenMM_AndersenThermostat_getRandomNumberSeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_AndersenThermostat_setRandomNumberSeed(OpenMM_AndersenThermostat*, int)</code>
      */
-    void OpenMM_AndersenThermostat_setRandomNumberSeed(PointerByReference target, int seed);
+    public static native void OpenMM_AndersenThermostat_setRandomNumberSeed(PointerByReference target, int seed);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_AndersenThermostat_usesPeriodicBoundaryConditions(const OpenMM_AndersenThermostat*)</code>
      */
-    int OpenMM_AndersenThermostat_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_AndersenThermostat_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Integrator<br>
      * Original signature :
      * <code>void OpenMM_Integrator_destroy(OpenMM_Integrator*)</code>
      */
-    void OpenMM_Integrator_destroy(PointerByReference target);
+    public static native void OpenMM_Integrator_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_Integrator_getStepSize(const OpenMM_Integrator*)</code>
      */
-    double OpenMM_Integrator_getStepSize(PointerByReference target);
+    public static native double OpenMM_Integrator_getStepSize(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Integrator_setStepSize(OpenMM_Integrator*, double)</code>
      */
-    void OpenMM_Integrator_setStepSize(PointerByReference target, double size);
+    public static native void OpenMM_Integrator_setStepSize(PointerByReference target, double size);
 
     /**
      * Original signature :
      * <code>double OpenMM_Integrator_getConstraintTolerance(const OpenMM_Integrator*)</code>
      */
-    double OpenMM_Integrator_getConstraintTolerance(PointerByReference target);
+    public static native double OpenMM_Integrator_getConstraintTolerance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Integrator_setConstraintTolerance(OpenMM_Integrator*, double)</code>
      */
-    void OpenMM_Integrator_setConstraintTolerance(PointerByReference target, double tol);
+    public static native void OpenMM_Integrator_setConstraintTolerance(PointerByReference target, double tol);
 
     /**
      * Original signature :
      * <code>void OpenMM_Integrator_step(OpenMM_Integrator*, int)</code>
      */
-    void OpenMM_Integrator_step(PointerByReference target, int steps);
+    public static native void OpenMM_Integrator_step(PointerByReference target, int steps);
 
     /**
      * BrownianIntegrator<br>
      * Original signature :
      * <code>OpenMM_BrownianIntegrator* OpenMM_BrownianIntegrator_create(double, double, double)</code>
      */
-    PointerByReference OpenMM_BrownianIntegrator_create(double temperature, double frictionCoeff, double stepSize);
+    public static native PointerByReference OpenMM_BrownianIntegrator_create(double temperature, double frictionCoeff, double stepSize);
 
     /**
      * Original signature :
      * <code>void OpenMM_BrownianIntegrator_destroy(OpenMM_BrownianIntegrator*)</code>
      */
-    void OpenMM_BrownianIntegrator_destroy(PointerByReference target);
+    public static native void OpenMM_BrownianIntegrator_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_BrownianIntegrator_getTemperature(const OpenMM_BrownianIntegrator*)</code>
      */
-    double OpenMM_BrownianIntegrator_getTemperature(PointerByReference target);
+    public static native double OpenMM_BrownianIntegrator_getTemperature(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_BrownianIntegrator_setTemperature(OpenMM_BrownianIntegrator*, double)</code>
      */
-    void OpenMM_BrownianIntegrator_setTemperature(PointerByReference target, double temp);
+    public static native void OpenMM_BrownianIntegrator_setTemperature(PointerByReference target, double temp);
 
     /**
      * Original signature :
      * <code>double OpenMM_BrownianIntegrator_getFriction(const OpenMM_BrownianIntegrator*)</code>
      */
-    double OpenMM_BrownianIntegrator_getFriction(PointerByReference target);
+    public static native double OpenMM_BrownianIntegrator_getFriction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_BrownianIntegrator_setFriction(OpenMM_BrownianIntegrator*, double)</code>
      */
-    void OpenMM_BrownianIntegrator_setFriction(PointerByReference target, double coeff);
+    public static native void OpenMM_BrownianIntegrator_setFriction(PointerByReference target, double coeff);
 
     /**
      * Original signature :
      * <code>int OpenMM_BrownianIntegrator_getRandomNumberSeed(const OpenMM_BrownianIntegrator*)</code>
      */
-    int OpenMM_BrownianIntegrator_getRandomNumberSeed(PointerByReference target);
+    public static native int OpenMM_BrownianIntegrator_getRandomNumberSeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_BrownianIntegrator_setRandomNumberSeed(OpenMM_BrownianIntegrator*, int)</code>
      */
-    void OpenMM_BrownianIntegrator_setRandomNumberSeed(PointerByReference target, int seed);
+    public static native void OpenMM_BrownianIntegrator_setRandomNumberSeed(PointerByReference target, int seed);
 
     /**
      * Original signature :
      * <code>void OpenMM_BrownianIntegrator_step(OpenMM_BrownianIntegrator*, int)</code>
      */
-    void OpenMM_BrownianIntegrator_step(PointerByReference target, int steps);
+    public static native void OpenMM_BrownianIntegrator_step(PointerByReference target, int steps);
 
     /**
      * CMAPTorsionForce<br>
      * Original signature :
      * <code>OpenMM_CMAPTorsionForce* OpenMM_CMAPTorsionForce_create()</code>
      */
-    PointerByReference OpenMM_CMAPTorsionForce_create();
+    public static native PointerByReference OpenMM_CMAPTorsionForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_destroy(OpenMM_CMAPTorsionForce*)</code>
      */
-    void OpenMM_CMAPTorsionForce_destroy(PointerByReference target);
+    public static native void OpenMM_CMAPTorsionForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CMAPTorsionForce_getNumMaps(const OpenMM_CMAPTorsionForce*)</code>
      */
-    int OpenMM_CMAPTorsionForce_getNumMaps(PointerByReference target);
+    public static native int OpenMM_CMAPTorsionForce_getNumMaps(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CMAPTorsionForce_getNumTorsions(const OpenMM_CMAPTorsionForce*)</code>
      */
-    int OpenMM_CMAPTorsionForce_getNumTorsions(PointerByReference target);
+    public static native int OpenMM_CMAPTorsionForce_getNumTorsions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CMAPTorsionForce_addMap(OpenMM_CMAPTorsionForce*, int, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CMAPTorsionForce_addMap(PointerByReference target, int size, PointerByReference energy);
+    public static native int OpenMM_CMAPTorsionForce_addMap(PointerByReference target, int size, PointerByReference energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_getMapParameters(const OpenMM_CMAPTorsionForce*, int, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CMAPTorsionForce_getMapParameters(PointerByReference target, int index, IntBuffer size, PointerByReference energy);
+    public static native void OpenMM_CMAPTorsionForce_getMapParameters(PointerByReference target, int index, IntBuffer size, PointerByReference energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_getMapParameters(const OpenMM_CMAPTorsionForce*, int, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CMAPTorsionForce_getMapParameters(PointerByReference target, int index, IntByReference size, PointerByReference energy);
+    public static native void OpenMM_CMAPTorsionForce_getMapParameters(PointerByReference target, int index, IntByReference size, PointerByReference energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_setMapParameters(OpenMM_CMAPTorsionForce*, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CMAPTorsionForce_setMapParameters(PointerByReference target, int index, int size, PointerByReference energy);
+    public static native void OpenMM_CMAPTorsionForce_setMapParameters(PointerByReference target, int index, int size, PointerByReference energy);
 
     /**
      * Original signature :
      * <code>int OpenMM_CMAPTorsionForce_addTorsion(OpenMM_CMAPTorsionForce*, int, int, int, int, int, int, int, int, int)</code>
      */
-    int OpenMM_CMAPTorsionForce_addTorsion(PointerByReference target, int map, int a1, int a2, int a3, int a4, int b1, int b2, int b3, int b4);
+    public static native int OpenMM_CMAPTorsionForce_addTorsion(PointerByReference target, int map, int a1, int a2, int a3, int a4, int b1, int b2, int b3, int b4);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_getTorsionParameters(const OpenMM_CMAPTorsionForce*, int, int*, int*, int*, int*, int*, int*, int*, int*, int*)</code>
      */
-    void OpenMM_CMAPTorsionForce_getTorsionParameters(PointerByReference target, int index, IntBuffer map, IntBuffer a1, IntBuffer a2, IntBuffer a3, IntBuffer a4, IntBuffer b1, IntBuffer b2, IntBuffer b3, IntBuffer b4);
+    public static native void OpenMM_CMAPTorsionForce_getTorsionParameters(PointerByReference target, int index, IntBuffer map, IntBuffer a1, IntBuffer a2, IntBuffer a3, IntBuffer a4, IntBuffer b1, IntBuffer b2, IntBuffer b3, IntBuffer b4);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_getTorsionParameters(const OpenMM_CMAPTorsionForce*, int, int*, int*, int*, int*, int*, int*, int*, int*, int*)</code>
      */
-    void OpenMM_CMAPTorsionForce_getTorsionParameters(PointerByReference target, int index, IntByReference map, IntByReference a1, IntByReference a2, IntByReference a3, IntByReference a4, IntByReference b1, IntByReference b2, IntByReference b3, IntByReference b4);
+    public static native void OpenMM_CMAPTorsionForce_getTorsionParameters(PointerByReference target, int index, IntByReference map, IntByReference a1, IntByReference a2, IntByReference a3, IntByReference a4, IntByReference b1, IntByReference b2, IntByReference b3, IntByReference b4);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_setTorsionParameters(OpenMM_CMAPTorsionForce*, int, int, int, int, int, int, int, int, int, int)</code>
      */
-    void OpenMM_CMAPTorsionForce_setTorsionParameters(PointerByReference target, int index, int map, int a1, int a2, int a3, int a4, int b1, int b2, int b3, int b4);
+    public static native void OpenMM_CMAPTorsionForce_setTorsionParameters(PointerByReference target, int index, int map, int a1, int a2, int a3, int a4, int b1, int b2, int b3, int b4);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_updateParametersInContext(OpenMM_CMAPTorsionForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CMAPTorsionForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CMAPTorsionForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMAPTorsionForce_setUsesPeriodicBoundaryConditions(OpenMM_CMAPTorsionForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_CMAPTorsionForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_CMAPTorsionForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CMAPTorsionForce_usesPeriodicBoundaryConditions(const OpenMM_CMAPTorsionForce*)</code>
      */
-    int OpenMM_CMAPTorsionForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CMAPTorsionForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * CMMotionRemover<br>
      * Original signature :
      * <code>OpenMM_CMMotionRemover* OpenMM_CMMotionRemover_create(int)</code>
      */
-    PointerByReference OpenMM_CMMotionRemover_create(int frequency);
+    public static native PointerByReference OpenMM_CMMotionRemover_create(int frequency);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMMotionRemover_destroy(OpenMM_CMMotionRemover*)</code>
      */
-    void OpenMM_CMMotionRemover_destroy(PointerByReference target);
+    public static native void OpenMM_CMMotionRemover_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CMMotionRemover_getFrequency(const OpenMM_CMMotionRemover*)</code>
      */
-    int OpenMM_CMMotionRemover_getFrequency(PointerByReference target);
+    public static native int OpenMM_CMMotionRemover_getFrequency(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CMMotionRemover_setFrequency(OpenMM_CMMotionRemover*, int)</code>
      */
-    void OpenMM_CMMotionRemover_setFrequency(PointerByReference target, int freq);
+    public static native void OpenMM_CMMotionRemover_setFrequency(PointerByReference target, int freq);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions(const OpenMM_CMMotionRemover*)</code>
      */
-    int OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CMMotionRemover_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * CompoundIntegrator<br>
      * Original signature :
      * <code>OpenMM_CompoundIntegrator* OpenMM_CompoundIntegrator_create()</code>
      */
-    PointerByReference OpenMM_CompoundIntegrator_create();
+    public static native PointerByReference OpenMM_CompoundIntegrator_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_CompoundIntegrator_destroy(OpenMM_CompoundIntegrator*)</code>
      */
-    void OpenMM_CompoundIntegrator_destroy(PointerByReference target);
+    public static native void OpenMM_CompoundIntegrator_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CompoundIntegrator_getNumIntegrators(const OpenMM_CompoundIntegrator*)</code>
      */
-    int OpenMM_CompoundIntegrator_getNumIntegrators(PointerByReference target);
+    public static native int OpenMM_CompoundIntegrator_getNumIntegrators(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CompoundIntegrator_addIntegrator(OpenMM_CompoundIntegrator*, OpenMM_Integrator*)</code>
      */
-    int OpenMM_CompoundIntegrator_addIntegrator(PointerByReference target, PointerByReference integrator);
+    public static native int OpenMM_CompoundIntegrator_addIntegrator(PointerByReference target, PointerByReference integrator);
 
     /**
      * Original signature :
      * <code>OpenMM_Integrator* OpenMM_CompoundIntegrator_getIntegrator(OpenMM_CompoundIntegrator*, int)</code>
      */
-    PointerByReference OpenMM_CompoundIntegrator_getIntegrator(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_CompoundIntegrator_getIntegrator(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CompoundIntegrator_getCurrentIntegrator(const OpenMM_CompoundIntegrator*)</code>
      */
-    int OpenMM_CompoundIntegrator_getCurrentIntegrator(PointerByReference target);
+    public static native int OpenMM_CompoundIntegrator_getCurrentIntegrator(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CompoundIntegrator_setCurrentIntegrator(OpenMM_CompoundIntegrator*, int)</code>
      */
-    void OpenMM_CompoundIntegrator_setCurrentIntegrator(PointerByReference target, int index);
+    public static native void OpenMM_CompoundIntegrator_setCurrentIntegrator(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>double OpenMM_CompoundIntegrator_getStepSize(const OpenMM_CompoundIntegrator*)</code>
      */
-    double OpenMM_CompoundIntegrator_getStepSize(PointerByReference target);
+    public static native double OpenMM_CompoundIntegrator_getStepSize(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CompoundIntegrator_setStepSize(OpenMM_CompoundIntegrator*, double)</code>
      */
-    void OpenMM_CompoundIntegrator_setStepSize(PointerByReference target, double size);
+    public static native void OpenMM_CompoundIntegrator_setStepSize(PointerByReference target, double size);
 
     /**
      * Original signature :
      * <code>double OpenMM_CompoundIntegrator_getConstraintTolerance(const OpenMM_CompoundIntegrator*)</code>
      */
-    double OpenMM_CompoundIntegrator_getConstraintTolerance(PointerByReference target);
+    public static native double OpenMM_CompoundIntegrator_getConstraintTolerance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CompoundIntegrator_setConstraintTolerance(OpenMM_CompoundIntegrator*, double)</code>
      */
-    void OpenMM_CompoundIntegrator_setConstraintTolerance(PointerByReference target, double tol);
+    public static native void OpenMM_CompoundIntegrator_setConstraintTolerance(PointerByReference target, double tol);
 
     /**
      * Original signature :
      * <code>void OpenMM_CompoundIntegrator_step(OpenMM_CompoundIntegrator*, int)</code>
      */
-    void OpenMM_CompoundIntegrator_step(PointerByReference target, int steps);
+    public static native void OpenMM_CompoundIntegrator_step(PointerByReference target, int steps);
 
     /**
      * Context<br>
      * Original signature :
      * <code>OpenMM_Context* OpenMM_Context_create(const OpenMM_System*, OpenMM_Integrator*)</code>
      */
-    PointerByReference OpenMM_Context_create(PointerByReference system, PointerByReference integrator);
+    public static native PointerByReference OpenMM_Context_create(PointerByReference system, PointerByReference integrator);
 
     /**
      * Original signature :
      * <code>OpenMM_Context* OpenMM_Context_create_2(const OpenMM_System*, OpenMM_Integrator*, OpenMM_Platform*)</code>
      */
-    PointerByReference OpenMM_Context_create_2(PointerByReference system, PointerByReference integrator, PointerByReference platform);
+    public static native PointerByReference OpenMM_Context_create_2(PointerByReference system, PointerByReference integrator, PointerByReference platform);
 
     /**
      * Original signature :
      * <code>OpenMM_Context* OpenMM_Context_create_3(const OpenMM_System*, OpenMM_Integrator*, OpenMM_Platform*, const OpenMM_PropertyArray*)</code>
      */
-    PointerByReference OpenMM_Context_create_3(PointerByReference system, PointerByReference integrator, PointerByReference platform, PointerByReference properties);
+    public static native PointerByReference OpenMM_Context_create_3(PointerByReference system, PointerByReference integrator, PointerByReference platform, PointerByReference properties);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_destroy(OpenMM_Context*)</code>
      */
-    void OpenMM_Context_destroy(PointerByReference target);
+    public static native void OpenMM_Context_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_System* OpenMM_Context_getSystem(const OpenMM_Context*)</code>
      */
-    PointerByReference OpenMM_Context_getSystem(PointerByReference target);
+    public static native PointerByReference OpenMM_Context_getSystem(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Integrator* OpenMM_Context_getIntegrator(OpenMM_Context*)</code>
      */
-    PointerByReference OpenMM_Context_getIntegrator(PointerByReference target);
+    public static native PointerByReference OpenMM_Context_getIntegrator(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Platform* OpenMM_Context_getPlatform(OpenMM_Context*)</code>
      */
-    PointerByReference OpenMM_Context_getPlatform(PointerByReference target);
+    public static native PointerByReference OpenMM_Context_getPlatform(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_setState(OpenMM_Context*, const OpenMM_State*)</code>
      */
-    void OpenMM_Context_setState(PointerByReference target, PointerByReference state);
+    public static native void OpenMM_Context_setState(PointerByReference target, PointerByReference state);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_setTime(OpenMM_Context*, double)</code>
      */
-    void OpenMM_Context_setTime(PointerByReference target, double time);
+    public static native void OpenMM_Context_setTime(PointerByReference target, double time);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_setPositions(OpenMM_Context*, const OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_Context_setPositions(PointerByReference target, PointerByReference positions);
+    public static native void OpenMM_Context_setPositions(PointerByReference target, PointerByReference positions);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_setVelocities(OpenMM_Context*, const OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_Context_setVelocities(PointerByReference target, PointerByReference velocities);
+    public static native void OpenMM_Context_setVelocities(PointerByReference target, PointerByReference velocities);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_setVelocitiesToTemperature(OpenMM_Context*, double, int)</code>
      */
-    void OpenMM_Context_setVelocitiesToTemperature(PointerByReference target, double temperature, int randomSeed);
+    public static native void OpenMM_Context_setVelocitiesToTemperature(PointerByReference target, double temperature, int randomSeed);
 
     /**
      * Original signature :
      * <code>OpenMM_ParameterArray* OpenMM_Context_getParameters(const OpenMM_Context*)</code>
      */
-    PointerByReference OpenMM_Context_getParameters(PointerByReference target);
+    public static native PointerByReference OpenMM_Context_getParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_Context_getParameter(const OpenMM_Context*, const char*)</code>
      */
-    double OpenMM_Context_getParameter(PointerByReference target, String name);
+    public static native double OpenMM_Context_getParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>double OpenMM_Context_getParameter(const OpenMM_Context*, const char*)</code>
      */
-    double OpenMM_Context_getParameter(PointerByReference target, Pointer name);
+    public static native double OpenMM_Context_getParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_setParameter(OpenMM_Context*, const char*, double)</code>
      */
-    void OpenMM_Context_setParameter(PointerByReference target, String name, double value);
+    public static native void OpenMM_Context_setParameter(PointerByReference target, String name, double value);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_setParameter(OpenMM_Context*, const char*, double)</code>
      */
-    void OpenMM_Context_setParameter(PointerByReference target, Pointer name, double value);
+    public static native void OpenMM_Context_setParameter(PointerByReference target, Pointer name, double value);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_setPeriodicBoxVectors(OpenMM_Context*, const OpenMM_Vec3*, const OpenMM_Vec3*, const OpenMM_Vec3*)</code>
      */
-    void OpenMM_Context_setPeriodicBoxVectors(PointerByReference target, OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c);
+    public static native void OpenMM_Context_setPeriodicBoxVectors(PointerByReference target, OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_applyConstraints(OpenMM_Context*, double)</code>
      */
-    void OpenMM_Context_applyConstraints(PointerByReference target, double tol);
+    public static native void OpenMM_Context_applyConstraints(PointerByReference target, double tol);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_applyVelocityConstraints(OpenMM_Context*, double)</code>
      */
-    void OpenMM_Context_applyVelocityConstraints(PointerByReference target, double tol);
+    public static native void OpenMM_Context_applyVelocityConstraints(PointerByReference target, double tol);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_computeVirtualSites(OpenMM_Context*)</code>
      */
-    void OpenMM_Context_computeVirtualSites(PointerByReference target);
+    public static native void OpenMM_Context_computeVirtualSites(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Context_reinitialize(OpenMM_Context*)</code>
      */
-    void OpenMM_Context_reinitialize(PointerByReference target);
+    public static native void OpenMM_Context_reinitialize(PointerByReference target);
 
     /**
      * TabulatedFunction<br>
      * Original signature :
      * <code>void OpenMM_TabulatedFunction_destroy(OpenMM_TabulatedFunction*)</code>
      */
-    void OpenMM_TabulatedFunction_destroy(PointerByReference target);
+    public static native void OpenMM_TabulatedFunction_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_TabulatedFunction* OpenMM_TabulatedFunction_Copy(const OpenMM_TabulatedFunction*)</code>
      */
-    PointerByReference OpenMM_TabulatedFunction_Copy(PointerByReference target);
+    public static native PointerByReference OpenMM_TabulatedFunction_Copy(PointerByReference target);
 
     /**
      * Continuous1DFunction<br>
      * Original signature :
      * <code>OpenMM_Continuous1DFunction* OpenMM_Continuous1DFunction_create(const OpenMM_DoubleArray*, double, double)</code>
      */
-    PointerByReference OpenMM_Continuous1DFunction_create(PointerByReference values, double min, double max);
+    public static native PointerByReference OpenMM_Continuous1DFunction_create(PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous1DFunction_destroy(OpenMM_Continuous1DFunction*)</code>
      */
-    void OpenMM_Continuous1DFunction_destroy(PointerByReference target);
+    public static native void OpenMM_Continuous1DFunction_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous1DFunction_getFunctionParameters(const OpenMM_Continuous1DFunction*, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_Continuous1DFunction_getFunctionParameters(PointerByReference target, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
+    public static native void OpenMM_Continuous1DFunction_getFunctionParameters(PointerByReference target, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous1DFunction_getFunctionParameters(const OpenMM_Continuous1DFunction*, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_Continuous1DFunction_getFunctionParameters(PointerByReference target, PointerByReference values, DoubleByReference min, DoubleByReference max);
+    public static native void OpenMM_Continuous1DFunction_getFunctionParameters(PointerByReference target, PointerByReference values, DoubleByReference min, DoubleByReference max);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous1DFunction_setFunctionParameters(OpenMM_Continuous1DFunction*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_Continuous1DFunction_setFunctionParameters(PointerByReference target, PointerByReference values, double min, double max);
+    public static native void OpenMM_Continuous1DFunction_setFunctionParameters(PointerByReference target, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>OpenMM_Continuous1DFunction* OpenMM_Continuous1DFunction_Copy(const OpenMM_Continuous1DFunction*)</code>
      */
-    PointerByReference OpenMM_Continuous1DFunction_Copy(PointerByReference target);
+    public static native PointerByReference OpenMM_Continuous1DFunction_Copy(PointerByReference target);
 
     /**
      * Continuous2DFunction<br>
      * Original signature :
      * <code>OpenMM_Continuous2DFunction* OpenMM_Continuous2DFunction_create(int, int, const OpenMM_DoubleArray*, double, double, double, double)</code>
      */
-    PointerByReference OpenMM_Continuous2DFunction_create(int xsize, int ysize, PointerByReference values, double xmin, double xmax, double ymin, double ymax);
+    public static native PointerByReference OpenMM_Continuous2DFunction_create(int xsize, int ysize, PointerByReference values, double xmin, double xmax, double ymin, double ymax);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous2DFunction_destroy(OpenMM_Continuous2DFunction*)</code>
      */
-    void OpenMM_Continuous2DFunction_destroy(PointerByReference target);
+    public static native void OpenMM_Continuous2DFunction_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous2DFunction_getFunctionParameters(const OpenMM_Continuous2DFunction*, int*, int*, OpenMM_DoubleArray*, double*, double*, double*, double*)</code>
      */
-    void OpenMM_Continuous2DFunction_getFunctionParameters(PointerByReference target, IntBuffer xsize, IntBuffer ysize, PointerByReference values, DoubleBuffer xmin, DoubleBuffer xmax, DoubleBuffer ymin, DoubleBuffer ymax);
+    public static native void OpenMM_Continuous2DFunction_getFunctionParameters(PointerByReference target, IntBuffer xsize, IntBuffer ysize, PointerByReference values, DoubleBuffer xmin, DoubleBuffer xmax, DoubleBuffer ymin, DoubleBuffer ymax);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous2DFunction_getFunctionParameters(const OpenMM_Continuous2DFunction*, int*, int*, OpenMM_DoubleArray*, double*, double*, double*, double*)</code>
      */
-    void OpenMM_Continuous2DFunction_getFunctionParameters(PointerByReference target, IntByReference xsize, IntByReference ysize, PointerByReference values, DoubleByReference xmin, DoubleByReference xmax, DoubleByReference ymin, DoubleByReference ymax);
+    public static native void OpenMM_Continuous2DFunction_getFunctionParameters(PointerByReference target, IntByReference xsize, IntByReference ysize, PointerByReference values, DoubleByReference xmin, DoubleByReference xmax, DoubleByReference ymin, DoubleByReference ymax);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous2DFunction_setFunctionParameters(OpenMM_Continuous2DFunction*, int, int, const OpenMM_DoubleArray*, double, double, double, double)</code>
      */
-    void OpenMM_Continuous2DFunction_setFunctionParameters(PointerByReference target, int xsize, int ysize, PointerByReference values, double xmin, double xmax, double ymin, double ymax);
+    public static native void OpenMM_Continuous2DFunction_setFunctionParameters(PointerByReference target, int xsize, int ysize, PointerByReference values, double xmin, double xmax, double ymin, double ymax);
 
     /**
      * Original signature :
      * <code>OpenMM_Continuous2DFunction* OpenMM_Continuous2DFunction_Copy(const OpenMM_Continuous2DFunction*)</code>
      */
-    PointerByReference OpenMM_Continuous2DFunction_Copy(PointerByReference target);
+    public static native PointerByReference OpenMM_Continuous2DFunction_Copy(PointerByReference target);
 
     /**
      * Continuous3DFunction<br>
      * Original signature :
      * <code>OpenMM_Continuous3DFunction* OpenMM_Continuous3DFunction_create(int, int, int, const OpenMM_DoubleArray*, double, double, double, double, double, double)</code>
      */
-    PointerByReference OpenMM_Continuous3DFunction_create(int xsize, int ysize, int zsize, PointerByReference values, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
+    public static native PointerByReference OpenMM_Continuous3DFunction_create(int xsize, int ysize, int zsize, PointerByReference values, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous3DFunction_destroy(OpenMM_Continuous3DFunction*)</code>
      */
-    void OpenMM_Continuous3DFunction_destroy(PointerByReference target);
+    public static native void OpenMM_Continuous3DFunction_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous3DFunction_getFunctionParameters(const OpenMM_Continuous3DFunction*, int*, int*, int*, OpenMM_DoubleArray*, double*, double*, double*, double*, double*, double*)</code>
      */
-    void OpenMM_Continuous3DFunction_getFunctionParameters(PointerByReference target, IntBuffer xsize, IntBuffer ysize, IntBuffer zsize, PointerByReference values, DoubleBuffer xmin, DoubleBuffer xmax, DoubleBuffer ymin, DoubleBuffer ymax, DoubleBuffer zmin, DoubleBuffer zmax);
+    public static native void OpenMM_Continuous3DFunction_getFunctionParameters(PointerByReference target, IntBuffer xsize, IntBuffer ysize, IntBuffer zsize, PointerByReference values, DoubleBuffer xmin, DoubleBuffer xmax, DoubleBuffer ymin, DoubleBuffer ymax, DoubleBuffer zmin, DoubleBuffer zmax);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous3DFunction_getFunctionParameters(const OpenMM_Continuous3DFunction*, int*, int*, int*, OpenMM_DoubleArray*, double*, double*, double*, double*, double*, double*)</code>
      */
-    void OpenMM_Continuous3DFunction_getFunctionParameters(PointerByReference target, IntByReference xsize, IntByReference ysize, IntByReference zsize, PointerByReference values, DoubleByReference xmin, DoubleByReference xmax, DoubleByReference ymin, DoubleByReference ymax, DoubleByReference zmin, DoubleByReference zmax);
+    public static native void OpenMM_Continuous3DFunction_getFunctionParameters(PointerByReference target, IntByReference xsize, IntByReference ysize, IntByReference zsize, PointerByReference values, DoubleByReference xmin, DoubleByReference xmax, DoubleByReference ymin, DoubleByReference ymax, DoubleByReference zmin, DoubleByReference zmax);
 
     /**
      * Original signature :
      * <code>void OpenMM_Continuous3DFunction_setFunctionParameters(OpenMM_Continuous3DFunction*, int, int, int, const OpenMM_DoubleArray*, double, double, double, double, double, double)</code>
      */
-    void OpenMM_Continuous3DFunction_setFunctionParameters(PointerByReference target, int xsize, int ysize, int zsize, PointerByReference values, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
+    public static native void OpenMM_Continuous3DFunction_setFunctionParameters(PointerByReference target, int xsize, int ysize, int zsize, PointerByReference values, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax);
 
     /**
      * Original signature :
      * <code>OpenMM_Continuous3DFunction* OpenMM_Continuous3DFunction_Copy(const OpenMM_Continuous3DFunction*)</code>
      */
-    PointerByReference OpenMM_Continuous3DFunction_Copy(PointerByReference target);
+    public static native PointerByReference OpenMM_Continuous3DFunction_Copy(PointerByReference target);
 
     /**
      * CustomAngleForce<br>
      * Original signature :
      * <code>OpenMM_CustomAngleForce* OpenMM_CustomAngleForce_create(const char*)</code>
      */
-    PointerByReference OpenMM_CustomAngleForce_create(String energy);
+    public static native PointerByReference OpenMM_CustomAngleForce_create(String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_destroy(OpenMM_CustomAngleForce*)</code>
      */
-    void OpenMM_CustomAngleForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomAngleForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_getNumAngles(const OpenMM_CustomAngleForce*)</code>
      */
-    int OpenMM_CustomAngleForce_getNumAngles(PointerByReference target);
+    public static native int OpenMM_CustomAngleForce_getNumAngles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_getNumPerAngleParameters(const OpenMM_CustomAngleForce*)</code>
      */
-    int OpenMM_CustomAngleForce_getNumPerAngleParameters(PointerByReference target);
+    public static native int OpenMM_CustomAngleForce_getNumPerAngleParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_getNumGlobalParameters(const OpenMM_CustomAngleForce*)</code>
      */
-    int OpenMM_CustomAngleForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomAngleForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_getNumEnergyParameterDerivatives(const OpenMM_CustomAngleForce*)</code>
      */
-    int OpenMM_CustomAngleForce_getNumEnergyParameterDerivatives(PointerByReference target);
+    public static native int OpenMM_CustomAngleForce_getNumEnergyParameterDerivatives(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomAngleForce_getEnergyFunction(const OpenMM_CustomAngleForce*)</code>
      */
-    Pointer OpenMM_CustomAngleForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomAngleForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setEnergyFunction(OpenMM_CustomAngleForce*, const char*)</code>
      */
-    void OpenMM_CustomAngleForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomAngleForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setEnergyFunction(OpenMM_CustomAngleForce*, const char*)</code>
      */
-    void OpenMM_CustomAngleForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomAngleForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_addPerAngleParameter(OpenMM_CustomAngleForce*, const char*)</code>
      */
-    int OpenMM_CustomAngleForce_addPerAngleParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomAngleForce_addPerAngleParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_addPerAngleParameter(OpenMM_CustomAngleForce*, const char*)</code>
      */
-    int OpenMM_CustomAngleForce_addPerAngleParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomAngleForce_addPerAngleParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomAngleForce_getPerAngleParameterName(const OpenMM_CustomAngleForce*, int)</code>
      */
-    Pointer OpenMM_CustomAngleForce_getPerAngleParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomAngleForce_getPerAngleParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setPerAngleParameterName(OpenMM_CustomAngleForce*, int, const char*)</code>
      */
-    void OpenMM_CustomAngleForce_setPerAngleParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomAngleForce_setPerAngleParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setPerAngleParameterName(OpenMM_CustomAngleForce*, int, const char*)</code>
      */
-    void OpenMM_CustomAngleForce_setPerAngleParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomAngleForce_setPerAngleParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_addGlobalParameter(OpenMM_CustomAngleForce*, const char*, double)</code>
      */
-    int OpenMM_CustomAngleForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomAngleForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_addGlobalParameter(OpenMM_CustomAngleForce*, const char*, double)</code>
      */
-    int OpenMM_CustomAngleForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomAngleForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomAngleForce_getGlobalParameterName(const OpenMM_CustomAngleForce*, int)</code>
      */
-    Pointer OpenMM_CustomAngleForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomAngleForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setGlobalParameterName(OpenMM_CustomAngleForce*, int, const char*)</code>
      */
-    void OpenMM_CustomAngleForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomAngleForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setGlobalParameterName(OpenMM_CustomAngleForce*, int, const char*)</code>
      */
-    void OpenMM_CustomAngleForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomAngleForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomAngleForce_getGlobalParameterDefaultValue(const OpenMM_CustomAngleForce*, int)</code>
      */
-    double OpenMM_CustomAngleForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomAngleForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setGlobalParameterDefaultValue(OpenMM_CustomAngleForce*, int, double)</code>
      */
-    void OpenMM_CustomAngleForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomAngleForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_addEnergyParameterDerivative(OpenMM_CustomAngleForce*, const char*)</code>
      */
-    void OpenMM_CustomAngleForce_addEnergyParameterDerivative(PointerByReference target, String name);
+    public static native void OpenMM_CustomAngleForce_addEnergyParameterDerivative(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_addEnergyParameterDerivative(OpenMM_CustomAngleForce*, const char*)</code>
      */
-    void OpenMM_CustomAngleForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
+    public static native void OpenMM_CustomAngleForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomAngleForce_getEnergyParameterDerivativeName(const OpenMM_CustomAngleForce*, int)</code>
      */
-    Pointer OpenMM_CustomAngleForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomAngleForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomAngleForce_addAngle(OpenMM_CustomAngleForce*, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomAngleForce_addAngle(PointerByReference target, int particle1, int particle2, int particle3, PointerByReference parameters);
+    public static native int OpenMM_CustomAngleForce_addAngle(PointerByReference target, int particle1, int particle2, int particle3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_getAngleParameters(const OpenMM_CustomAngleForce*, int, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomAngleForce_getAngleParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, PointerByReference parameters);
+    public static native void OpenMM_CustomAngleForce_getAngleParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_getAngleParameters(const OpenMM_CustomAngleForce*, int, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomAngleForce_getAngleParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, PointerByReference parameters);
+    public static native void OpenMM_CustomAngleForce_getAngleParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setAngleParameters(OpenMM_CustomAngleForce*, int, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomAngleForce_setAngleParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, PointerByReference parameters);
+    public static native void OpenMM_CustomAngleForce_setAngleParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_updateParametersInContext(OpenMM_CustomAngleForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomAngleForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomAngleForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomAngleForce_setUsesPeriodicBoundaryConditions(OpenMM_CustomAngleForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_CustomAngleForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_CustomAngleForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomAngleForce_usesPeriodicBoundaryConditions(const OpenMM_CustomAngleForce*)</code>
      */
-    int OpenMM_CustomAngleForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomAngleForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * CustomBondForce<br>
      * Original signature :
      * <code>OpenMM_CustomBondForce* OpenMM_CustomBondForce_create(const char*)</code>
      */
-    PointerByReference OpenMM_CustomBondForce_create(String energy);
+    public static native PointerByReference OpenMM_CustomBondForce_create(String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_destroy(OpenMM_CustomBondForce*)</code>
      */
-    void OpenMM_CustomBondForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomBondForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_getNumBonds(const OpenMM_CustomBondForce*)</code>
      */
-    int OpenMM_CustomBondForce_getNumBonds(PointerByReference target);
+    public static native int OpenMM_CustomBondForce_getNumBonds(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_getNumPerBondParameters(const OpenMM_CustomBondForce*)</code>
      */
-    int OpenMM_CustomBondForce_getNumPerBondParameters(PointerByReference target);
+    public static native int OpenMM_CustomBondForce_getNumPerBondParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_getNumGlobalParameters(const OpenMM_CustomBondForce*)</code>
      */
-    int OpenMM_CustomBondForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomBondForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_getNumEnergyParameterDerivatives(const OpenMM_CustomBondForce*)</code>
      */
-    int OpenMM_CustomBondForce_getNumEnergyParameterDerivatives(PointerByReference target);
+    public static native int OpenMM_CustomBondForce_getNumEnergyParameterDerivatives(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomBondForce_getEnergyFunction(const OpenMM_CustomBondForce*)</code>
      */
-    Pointer OpenMM_CustomBondForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomBondForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setEnergyFunction(OpenMM_CustomBondForce*, const char*)</code>
      */
-    void OpenMM_CustomBondForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomBondForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setEnergyFunction(OpenMM_CustomBondForce*, const char*)</code>
      */
-    void OpenMM_CustomBondForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomBondForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_addPerBondParameter(OpenMM_CustomBondForce*, const char*)</code>
      */
-    int OpenMM_CustomBondForce_addPerBondParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomBondForce_addPerBondParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_addPerBondParameter(OpenMM_CustomBondForce*, const char*)</code>
      */
-    int OpenMM_CustomBondForce_addPerBondParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomBondForce_addPerBondParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomBondForce_getPerBondParameterName(const OpenMM_CustomBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomBondForce_getPerBondParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomBondForce_getPerBondParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setPerBondParameterName(OpenMM_CustomBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomBondForce_setPerBondParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomBondForce_setPerBondParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setPerBondParameterName(OpenMM_CustomBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomBondForce_setPerBondParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomBondForce_setPerBondParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_addGlobalParameter(OpenMM_CustomBondForce*, const char*, double)</code>
      */
-    int OpenMM_CustomBondForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomBondForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_addGlobalParameter(OpenMM_CustomBondForce*, const char*, double)</code>
      */
-    int OpenMM_CustomBondForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomBondForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomBondForce_getGlobalParameterName(const OpenMM_CustomBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomBondForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomBondForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setGlobalParameterName(OpenMM_CustomBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomBondForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomBondForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setGlobalParameterName(OpenMM_CustomBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomBondForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomBondForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomBondForce_getGlobalParameterDefaultValue(const OpenMM_CustomBondForce*, int)</code>
      */
-    double OpenMM_CustomBondForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomBondForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setGlobalParameterDefaultValue(OpenMM_CustomBondForce*, int, double)</code>
      */
-    void OpenMM_CustomBondForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomBondForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_addEnergyParameterDerivative(OpenMM_CustomBondForce*, const char*)</code>
      */
-    void OpenMM_CustomBondForce_addEnergyParameterDerivative(PointerByReference target, String name);
+    public static native void OpenMM_CustomBondForce_addEnergyParameterDerivative(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_addEnergyParameterDerivative(OpenMM_CustomBondForce*, const char*)</code>
      */
-    void OpenMM_CustomBondForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
+    public static native void OpenMM_CustomBondForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomBondForce_getEnergyParameterDerivativeName(const OpenMM_CustomBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomBondForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomBondForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomBondForce_addBond(OpenMM_CustomBondForce*, int, int, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomBondForce_addBond(PointerByReference target, int particle1, int particle2, PointerByReference parameters);
+    public static native int OpenMM_CustomBondForce_addBond(PointerByReference target, int particle1, int particle2, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_getBondParameters(const OpenMM_CustomBondForce*, int, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomBondForce_getBondParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, PointerByReference parameters);
+    public static native void OpenMM_CustomBondForce_getBondParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_getBondParameters(const OpenMM_CustomBondForce*, int, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomBondForce_getBondParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, PointerByReference parameters);
+    public static native void OpenMM_CustomBondForce_getBondParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setBondParameters(OpenMM_CustomBondForce*, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomBondForce_setBondParameters(PointerByReference target, int index, int particle1, int particle2, PointerByReference parameters);
+    public static native void OpenMM_CustomBondForce_setBondParameters(PointerByReference target, int index, int particle1, int particle2, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_updateParametersInContext(OpenMM_CustomBondForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomBondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomBondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomBondForce_setUsesPeriodicBoundaryConditions(OpenMM_CustomBondForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_CustomBondForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_CustomBondForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomBondForce_usesPeriodicBoundaryConditions(const OpenMM_CustomBondForce*)</code>
      */
-    int OpenMM_CustomBondForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomBondForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * CustomCentroidBondForce<br>
      * Original signature :
      * <code>OpenMM_CustomCentroidBondForce* OpenMM_CustomCentroidBondForce_create(int, const char*)</code>
      */
-    PointerByReference OpenMM_CustomCentroidBondForce_create(int numGroups, String energy);
+    public static native PointerByReference OpenMM_CustomCentroidBondForce_create(int numGroups, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_destroy(OpenMM_CustomCentroidBondForce*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomCentroidBondForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_getNumGroupsPerBond(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_getNumGroupsPerBond(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_getNumGroupsPerBond(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_getNumGroups(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_getNumGroups(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_getNumGroups(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_getNumBonds(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_getNumBonds(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_getNumBonds(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_getNumPerBondParameters(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_getNumPerBondParameters(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_getNumPerBondParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_getNumGlobalParameters(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_getNumEnergyParameterDerivatives(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_getNumEnergyParameterDerivatives(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_getNumEnergyParameterDerivatives(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_getNumTabulatedFunctions(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_getNumTabulatedFunctions(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_getNumTabulatedFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_getNumFunctions(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_getNumFunctions(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_getNumFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCentroidBondForce_getEnergyFunction(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    Pointer OpenMM_CustomCentroidBondForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomCentroidBondForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setEnergyFunction(OpenMM_CustomCentroidBondForce*, const char*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomCentroidBondForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setEnergyFunction(OpenMM_CustomCentroidBondForce*, const char*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomCentroidBondForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_addPerBondParameter(OpenMM_CustomCentroidBondForce*, const char*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_addPerBondParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomCentroidBondForce_addPerBondParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_addPerBondParameter(OpenMM_CustomCentroidBondForce*, const char*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_addPerBondParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomCentroidBondForce_addPerBondParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCentroidBondForce_getPerBondParameterName(const OpenMM_CustomCentroidBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomCentroidBondForce_getPerBondParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomCentroidBondForce_getPerBondParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setPerBondParameterName(OpenMM_CustomCentroidBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setPerBondParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomCentroidBondForce_setPerBondParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setPerBondParameterName(OpenMM_CustomCentroidBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setPerBondParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomCentroidBondForce_setPerBondParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_addGlobalParameter(OpenMM_CustomCentroidBondForce*, const char*, double)</code>
      */
-    int OpenMM_CustomCentroidBondForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomCentroidBondForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_addGlobalParameter(OpenMM_CustomCentroidBondForce*, const char*, double)</code>
      */
-    int OpenMM_CustomCentroidBondForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomCentroidBondForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCentroidBondForce_getGlobalParameterName(const OpenMM_CustomCentroidBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomCentroidBondForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomCentroidBondForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setGlobalParameterName(OpenMM_CustomCentroidBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomCentroidBondForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setGlobalParameterName(OpenMM_CustomCentroidBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomCentroidBondForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomCentroidBondForce_getGlobalParameterDefaultValue(const OpenMM_CustomCentroidBondForce*, int)</code>
      */
-    double OpenMM_CustomCentroidBondForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomCentroidBondForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setGlobalParameterDefaultValue(OpenMM_CustomCentroidBondForce*, int, double)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomCentroidBondForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative(OpenMM_CustomCentroidBondForce*, const char*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative(PointerByReference target, String name);
+    public static native void OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative(OpenMM_CustomCentroidBondForce*, const char*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
+    public static native void OpenMM_CustomCentroidBondForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCentroidBondForce_getEnergyParameterDerivativeName(const OpenMM_CustomCentroidBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomCentroidBondForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomCentroidBondForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_addGroup(OpenMM_CustomCentroidBondForce*, const OpenMM_IntArray*, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_addGroup(PointerByReference target, PointerByReference particles, PointerByReference weights);
+    public static native int OpenMM_CustomCentroidBondForce_addGroup(PointerByReference target, PointerByReference particles, PointerByReference weights);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_getGroupParameters(const OpenMM_CustomCentroidBondForce*, int, OpenMM_IntArray*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_getGroupParameters(PointerByReference target, int index, PointerByReference particles, PointerByReference weights);
+    public static native void OpenMM_CustomCentroidBondForce_getGroupParameters(PointerByReference target, int index, PointerByReference particles, PointerByReference weights);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setGroupParameters(OpenMM_CustomCentroidBondForce*, int, const OpenMM_IntArray*, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setGroupParameters(PointerByReference target, int index, PointerByReference particles, PointerByReference weights);
+    public static native void OpenMM_CustomCentroidBondForce_setGroupParameters(PointerByReference target, int index, PointerByReference particles, PointerByReference weights);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_addBond(OpenMM_CustomCentroidBondForce*, const OpenMM_IntArray*, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_addBond(PointerByReference target, PointerByReference groups, PointerByReference parameters);
+    public static native int OpenMM_CustomCentroidBondForce_addBond(PointerByReference target, PointerByReference groups, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_getBondParameters(const OpenMM_CustomCentroidBondForce*, int, OpenMM_IntArray*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_getBondParameters(PointerByReference target, int index, PointerByReference groups, PointerByReference parameters);
+    public static native void OpenMM_CustomCentroidBondForce_getBondParameters(PointerByReference target, int index, PointerByReference groups, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setBondParameters(OpenMM_CustomCentroidBondForce*, int, const OpenMM_IntArray*, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setBondParameters(PointerByReference target, int index, PointerByReference groups, PointerByReference parameters);
+    public static native void OpenMM_CustomCentroidBondForce_setBondParameters(PointerByReference target, int index, PointerByReference groups, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_addTabulatedFunction(OpenMM_CustomCentroidBondForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
+    public static native int OpenMM_CustomCentroidBondForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCentroidBondForce_addTabulatedFunction(OpenMM_CustomCentroidBondForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
+    public static native int OpenMM_CustomCentroidBondForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>OpenMM_TabulatedFunction* OpenMM_CustomCentroidBondForce_getTabulatedFunction(OpenMM_CustomCentroidBondForce*, int)</code>
      */
-    PointerByReference OpenMM_CustomCentroidBondForce_getTabulatedFunction(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_CustomCentroidBondForce_getTabulatedFunction(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCentroidBondForce_getTabulatedFunctionName(const OpenMM_CustomCentroidBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomCentroidBondForce_getTabulatedFunctionName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomCentroidBondForce_getTabulatedFunctionName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_updateParametersInContext(OpenMM_CustomCentroidBondForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomCentroidBondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomCentroidBondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(OpenMM_CustomCentroidBondForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomCentroidBondForce_usesPeriodicBoundaryConditions(const OpenMM_CustomCentroidBondForce*)</code>
      */
-    int OpenMM_CustomCentroidBondForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomCentroidBondForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * CustomCompoundBondForce<br>
      * Original signature :
      * <code>OpenMM_CustomCompoundBondForce* OpenMM_CustomCompoundBondForce_create(int, const char*)</code>
      */
-    PointerByReference OpenMM_CustomCompoundBondForce_create(int numParticles, String energy);
+    public static native PointerByReference OpenMM_CustomCompoundBondForce_create(int numParticles, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_destroy(OpenMM_CustomCompoundBondForce*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomCompoundBondForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_getNumParticlesPerBond(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_getNumParticlesPerBond(PointerByReference target);
+    public static native int OpenMM_CustomCompoundBondForce_getNumParticlesPerBond(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_getNumBonds(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_getNumBonds(PointerByReference target);
+    public static native int OpenMM_CustomCompoundBondForce_getNumBonds(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_getNumPerBondParameters(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_getNumPerBondParameters(PointerByReference target);
+    public static native int OpenMM_CustomCompoundBondForce_getNumPerBondParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_getNumGlobalParameters(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomCompoundBondForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_getNumEnergyParameterDerivatives(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_getNumEnergyParameterDerivatives(PointerByReference target);
+    public static native int OpenMM_CustomCompoundBondForce_getNumEnergyParameterDerivatives(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_getNumTabulatedFunctions(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_getNumTabulatedFunctions(PointerByReference target);
+    public static native int OpenMM_CustomCompoundBondForce_getNumTabulatedFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_getNumFunctions(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_getNumFunctions(PointerByReference target);
+    public static native int OpenMM_CustomCompoundBondForce_getNumFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCompoundBondForce_getEnergyFunction(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    Pointer OpenMM_CustomCompoundBondForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomCompoundBondForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setEnergyFunction(OpenMM_CustomCompoundBondForce*, const char*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomCompoundBondForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setEnergyFunction(OpenMM_CustomCompoundBondForce*, const char*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomCompoundBondForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addPerBondParameter(OpenMM_CustomCompoundBondForce*, const char*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addPerBondParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomCompoundBondForce_addPerBondParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addPerBondParameter(OpenMM_CustomCompoundBondForce*, const char*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addPerBondParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomCompoundBondForce_addPerBondParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCompoundBondForce_getPerBondParameterName(const OpenMM_CustomCompoundBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomCompoundBondForce_getPerBondParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomCompoundBondForce_getPerBondParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setPerBondParameterName(OpenMM_CustomCompoundBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setPerBondParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomCompoundBondForce_setPerBondParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setPerBondParameterName(OpenMM_CustomCompoundBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setPerBondParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomCompoundBondForce_setPerBondParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addGlobalParameter(OpenMM_CustomCompoundBondForce*, const char*, double)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomCompoundBondForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addGlobalParameter(OpenMM_CustomCompoundBondForce*, const char*, double)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomCompoundBondForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCompoundBondForce_getGlobalParameterName(const OpenMM_CustomCompoundBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomCompoundBondForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomCompoundBondForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setGlobalParameterName(OpenMM_CustomCompoundBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomCompoundBondForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setGlobalParameterName(OpenMM_CustomCompoundBondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomCompoundBondForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomCompoundBondForce_getGlobalParameterDefaultValue(const OpenMM_CustomCompoundBondForce*, int)</code>
      */
-    double OpenMM_CustomCompoundBondForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomCompoundBondForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setGlobalParameterDefaultValue(OpenMM_CustomCompoundBondForce*, int, double)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomCompoundBondForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_addEnergyParameterDerivative(OpenMM_CustomCompoundBondForce*, const char*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_addEnergyParameterDerivative(PointerByReference target, String name);
+    public static native void OpenMM_CustomCompoundBondForce_addEnergyParameterDerivative(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_addEnergyParameterDerivative(OpenMM_CustomCompoundBondForce*, const char*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
+    public static native void OpenMM_CustomCompoundBondForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCompoundBondForce_getEnergyParameterDerivativeName(const OpenMM_CustomCompoundBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomCompoundBondForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomCompoundBondForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addBond(OpenMM_CustomCompoundBondForce*, const OpenMM_IntArray*, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addBond(PointerByReference target, PointerByReference particles, PointerByReference parameters);
+    public static native int OpenMM_CustomCompoundBondForce_addBond(PointerByReference target, PointerByReference particles, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_getBondParameters(const OpenMM_CustomCompoundBondForce*, int, OpenMM_IntArray*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_getBondParameters(PointerByReference target, int index, PointerByReference particles, PointerByReference parameters);
+    public static native void OpenMM_CustomCompoundBondForce_getBondParameters(PointerByReference target, int index, PointerByReference particles, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setBondParameters(OpenMM_CustomCompoundBondForce*, int, const OpenMM_IntArray*, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setBondParameters(PointerByReference target, int index, PointerByReference particles, PointerByReference parameters);
+    public static native void OpenMM_CustomCompoundBondForce_setBondParameters(PointerByReference target, int index, PointerByReference particles, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addTabulatedFunction(OpenMM_CustomCompoundBondForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
+    public static native int OpenMM_CustomCompoundBondForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addTabulatedFunction(OpenMM_CustomCompoundBondForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
+    public static native int OpenMM_CustomCompoundBondForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>OpenMM_TabulatedFunction* OpenMM_CustomCompoundBondForce_getTabulatedFunction(OpenMM_CustomCompoundBondForce*, int)</code>
      */
-    PointerByReference OpenMM_CustomCompoundBondForce_getTabulatedFunction(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_CustomCompoundBondForce_getTabulatedFunction(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomCompoundBondForce_getTabulatedFunctionName(const OpenMM_CustomCompoundBondForce*, int)</code>
      */
-    Pointer OpenMM_CustomCompoundBondForce_getTabulatedFunctionName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomCompoundBondForce_getTabulatedFunctionName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addFunction(OpenMM_CustomCompoundBondForce*, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addFunction(PointerByReference target, String name, PointerByReference values, double min, double max);
+    public static native int OpenMM_CustomCompoundBondForce_addFunction(PointerByReference target, String name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomCompoundBondForce_addFunction(OpenMM_CustomCompoundBondForce*, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    int OpenMM_CustomCompoundBondForce_addFunction(PointerByReference target, Pointer name, PointerByReference values, double min, double max);
+    public static native int OpenMM_CustomCompoundBondForce_addFunction(PointerByReference target, Pointer name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_getFunctionParameters(const OpenMM_CustomCompoundBondForce*, int, char**, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
+    public static native void OpenMM_CustomCompoundBondForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_getFunctionParameters(const OpenMM_CustomCompoundBondForce*, int, char**, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleByReference min, DoubleByReference max);
+    public static native void OpenMM_CustomCompoundBondForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleByReference min, DoubleByReference max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setFunctionParameters(OpenMM_CustomCompoundBondForce*, int, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setFunctionParameters(PointerByReference target, int index, String name, PointerByReference values, double min, double max);
+    public static native void OpenMM_CustomCompoundBondForce_setFunctionParameters(PointerByReference target, int index, String name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setFunctionParameters(OpenMM_CustomCompoundBondForce*, int, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setFunctionParameters(PointerByReference target, int index, Pointer name, PointerByReference values, double min, double max);
+    public static native void OpenMM_CustomCompoundBondForce_setFunctionParameters(PointerByReference target, int index, Pointer name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_updateParametersInContext(OpenMM_CustomCompoundBondForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomCompoundBondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomCompoundBondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomCompoundBondForce_setUsesPeriodicBoundaryConditions(OpenMM_CustomCompoundBondForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_CustomCompoundBondForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_CustomCompoundBondForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomCompoundBondForce_usesPeriodicBoundaryConditions(const OpenMM_CustomCompoundBondForce*)</code>
      */
-    int OpenMM_CustomCompoundBondForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomCompoundBondForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * CustomExternalForce<br>
      * Original signature :
      * <code>OpenMM_CustomExternalForce* OpenMM_CustomExternalForce_create(const char*)</code>
      */
-    PointerByReference OpenMM_CustomExternalForce_create(String energy);
+    public static native PointerByReference OpenMM_CustomExternalForce_create(String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_destroy(OpenMM_CustomExternalForce*)</code>
      */
-    void OpenMM_CustomExternalForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomExternalForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomExternalForce_getNumParticles(const OpenMM_CustomExternalForce*)</code>
      */
-    int OpenMM_CustomExternalForce_getNumParticles(PointerByReference target);
+    public static native int OpenMM_CustomExternalForce_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomExternalForce_getNumPerParticleParameters(const OpenMM_CustomExternalForce*)</code>
      */
-    int OpenMM_CustomExternalForce_getNumPerParticleParameters(PointerByReference target);
+    public static native int OpenMM_CustomExternalForce_getNumPerParticleParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomExternalForce_getNumGlobalParameters(const OpenMM_CustomExternalForce*)</code>
      */
-    int OpenMM_CustomExternalForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomExternalForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomExternalForce_getEnergyFunction(const OpenMM_CustomExternalForce*)</code>
      */
-    Pointer OpenMM_CustomExternalForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomExternalForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_setEnergyFunction(OpenMM_CustomExternalForce*, const char*)</code>
      */
-    void OpenMM_CustomExternalForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomExternalForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_setEnergyFunction(OpenMM_CustomExternalForce*, const char*)</code>
      */
-    void OpenMM_CustomExternalForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomExternalForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomExternalForce_addPerParticleParameter(OpenMM_CustomExternalForce*, const char*)</code>
      */
-    int OpenMM_CustomExternalForce_addPerParticleParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomExternalForce_addPerParticleParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomExternalForce_addPerParticleParameter(OpenMM_CustomExternalForce*, const char*)</code>
      */
-    int OpenMM_CustomExternalForce_addPerParticleParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomExternalForce_addPerParticleParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomExternalForce_getPerParticleParameterName(const OpenMM_CustomExternalForce*, int)</code>
      */
-    Pointer OpenMM_CustomExternalForce_getPerParticleParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomExternalForce_getPerParticleParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_setPerParticleParameterName(OpenMM_CustomExternalForce*, int, const char*)</code>
      */
-    void OpenMM_CustomExternalForce_setPerParticleParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomExternalForce_setPerParticleParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_setPerParticleParameterName(OpenMM_CustomExternalForce*, int, const char*)</code>
      */
-    void OpenMM_CustomExternalForce_setPerParticleParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomExternalForce_setPerParticleParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomExternalForce_addGlobalParameter(OpenMM_CustomExternalForce*, const char*, double)</code>
      */
-    int OpenMM_CustomExternalForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomExternalForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomExternalForce_addGlobalParameter(OpenMM_CustomExternalForce*, const char*, double)</code>
      */
-    int OpenMM_CustomExternalForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomExternalForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomExternalForce_getGlobalParameterName(const OpenMM_CustomExternalForce*, int)</code>
      */
-    Pointer OpenMM_CustomExternalForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomExternalForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_setGlobalParameterName(OpenMM_CustomExternalForce*, int, const char*)</code>
      */
-    void OpenMM_CustomExternalForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomExternalForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_setGlobalParameterName(OpenMM_CustomExternalForce*, int, const char*)</code>
      */
-    void OpenMM_CustomExternalForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomExternalForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomExternalForce_getGlobalParameterDefaultValue(const OpenMM_CustomExternalForce*, int)</code>
      */
-    double OpenMM_CustomExternalForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomExternalForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_setGlobalParameterDefaultValue(OpenMM_CustomExternalForce*, int, double)</code>
      */
-    void OpenMM_CustomExternalForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomExternalForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomExternalForce_addParticle(OpenMM_CustomExternalForce*, int, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomExternalForce_addParticle(PointerByReference target, int particle, PointerByReference parameters);
+    public static native int OpenMM_CustomExternalForce_addParticle(PointerByReference target, int particle, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_getParticleParameters(const OpenMM_CustomExternalForce*, int, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomExternalForce_getParticleParameters(PointerByReference target, int index, IntBuffer particle, PointerByReference parameters);
+    public static native void OpenMM_CustomExternalForce_getParticleParameters(PointerByReference target, int index, IntBuffer particle, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_getParticleParameters(const OpenMM_CustomExternalForce*, int, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomExternalForce_getParticleParameters(PointerByReference target, int index, IntByReference particle, PointerByReference parameters);
+    public static native void OpenMM_CustomExternalForce_getParticleParameters(PointerByReference target, int index, IntByReference particle, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_setParticleParameters(OpenMM_CustomExternalForce*, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomExternalForce_setParticleParameters(PointerByReference target, int index, int particle, PointerByReference parameters);
+    public static native void OpenMM_CustomExternalForce_setParticleParameters(PointerByReference target, int index, int particle, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomExternalForce_updateParametersInContext(OpenMM_CustomExternalForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomExternalForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomExternalForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomExternalForce_usesPeriodicBoundaryConditions(const OpenMM_CustomExternalForce*)</code>
      */
-    int OpenMM_CustomExternalForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomExternalForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomGBForce* OpenMM_CustomGBForce_create()</code>
      */
-    PointerByReference OpenMM_CustomGBForce_create();
+    public static native PointerByReference OpenMM_CustomGBForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_destroy(OpenMM_CustomGBForce*)</code>
      */
-    void OpenMM_CustomGBForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomGBForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumParticles(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumParticles(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumExclusions(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumExclusions(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumExclusions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumPerParticleParameters(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumPerParticleParameters(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumPerParticleParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumGlobalParameters(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumEnergyParameterDerivatives(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumEnergyParameterDerivatives(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumEnergyParameterDerivatives(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumTabulatedFunctions(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumTabulatedFunctions(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumTabulatedFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumFunctions(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumFunctions(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumComputedValues(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumComputedValues(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumComputedValues(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_getNumEnergyTerms(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNumEnergyTerms(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNumEnergyTerms(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomGBForce_NonbondedMethod OpenMM_CustomGBForce_getNonbondedMethod(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_getNonbondedMethod(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_getNonbondedMethod(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setNonbondedMethod(OpenMM_CustomGBForce*, OpenMM_CustomGBForce_NonbondedMethod)</code>
      */
-    void OpenMM_CustomGBForce_setNonbondedMethod(PointerByReference target, int method);
+    public static native void OpenMM_CustomGBForce_setNonbondedMethod(PointerByReference target, int method);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomGBForce_getCutoffDistance(const OpenMM_CustomGBForce*)</code>
      */
-    double OpenMM_CustomGBForce_getCutoffDistance(PointerByReference target);
+    public static native double OpenMM_CustomGBForce_getCutoffDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setCutoffDistance(OpenMM_CustomGBForce*, double)</code>
      */
-    void OpenMM_CustomGBForce_setCutoffDistance(PointerByReference target, double distance);
+    public static native void OpenMM_CustomGBForce_setCutoffDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addPerParticleParameter(OpenMM_CustomGBForce*, const char*)</code>
      */
-    int OpenMM_CustomGBForce_addPerParticleParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomGBForce_addPerParticleParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addPerParticleParameter(OpenMM_CustomGBForce*, const char*)</code>
      */
-    int OpenMM_CustomGBForce_addPerParticleParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomGBForce_addPerParticleParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomGBForce_getPerParticleParameterName(const OpenMM_CustomGBForce*, int)</code>
      */
-    Pointer OpenMM_CustomGBForce_getPerParticleParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomGBForce_getPerParticleParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setPerParticleParameterName(OpenMM_CustomGBForce*, int, const char*)</code>
      */
-    void OpenMM_CustomGBForce_setPerParticleParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomGBForce_setPerParticleParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setPerParticleParameterName(OpenMM_CustomGBForce*, int, const char*)</code>
      */
-    void OpenMM_CustomGBForce_setPerParticleParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomGBForce_setPerParticleParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addGlobalParameter(OpenMM_CustomGBForce*, const char*, double)</code>
      */
-    int OpenMM_CustomGBForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomGBForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addGlobalParameter(OpenMM_CustomGBForce*, const char*, double)</code>
      */
-    int OpenMM_CustomGBForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomGBForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomGBForce_getGlobalParameterName(const OpenMM_CustomGBForce*, int)</code>
      */
-    Pointer OpenMM_CustomGBForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomGBForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setGlobalParameterName(OpenMM_CustomGBForce*, int, const char*)</code>
      */
-    void OpenMM_CustomGBForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomGBForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setGlobalParameterName(OpenMM_CustomGBForce*, int, const char*)</code>
      */
-    void OpenMM_CustomGBForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomGBForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomGBForce_getGlobalParameterDefaultValue(const OpenMM_CustomGBForce*, int)</code>
      */
-    double OpenMM_CustomGBForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomGBForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setGlobalParameterDefaultValue(OpenMM_CustomGBForce*, int, double)</code>
      */
-    void OpenMM_CustomGBForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomGBForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_addEnergyParameterDerivative(OpenMM_CustomGBForce*, const char*)</code>
      */
-    void OpenMM_CustomGBForce_addEnergyParameterDerivative(PointerByReference target, String name);
+    public static native void OpenMM_CustomGBForce_addEnergyParameterDerivative(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_addEnergyParameterDerivative(OpenMM_CustomGBForce*, const char*)</code>
      */
-    void OpenMM_CustomGBForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
+    public static native void OpenMM_CustomGBForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomGBForce_getEnergyParameterDerivativeName(const OpenMM_CustomGBForce*, int)</code>
      */
-    Pointer OpenMM_CustomGBForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomGBForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addParticle(OpenMM_CustomGBForce*, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomGBForce_addParticle(PointerByReference target, PointerByReference parameters);
+    public static native int OpenMM_CustomGBForce_addParticle(PointerByReference target, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getParticleParameters(const OpenMM_CustomGBForce*, int, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomGBForce_getParticleParameters(PointerByReference target, int index, PointerByReference parameters);
+    public static native void OpenMM_CustomGBForce_getParticleParameters(PointerByReference target, int index, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setParticleParameters(OpenMM_CustomGBForce*, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomGBForce_setParticleParameters(PointerByReference target, int index, PointerByReference parameters);
+    public static native void OpenMM_CustomGBForce_setParticleParameters(PointerByReference target, int index, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addComputedValue(OpenMM_CustomGBForce*, const char*, const char*, OpenMM_CustomGBForce_ComputationType)</code>
      */
-    int OpenMM_CustomGBForce_addComputedValue(PointerByReference target, String name, String expression, int type);
+    public static native int OpenMM_CustomGBForce_addComputedValue(PointerByReference target, String name, String expression, int type);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addComputedValue(OpenMM_CustomGBForce*, const char*, const char*, OpenMM_CustomGBForce_ComputationType)</code>
      */
-    int OpenMM_CustomGBForce_addComputedValue(PointerByReference target, Pointer name, Pointer expression, int type);
+    public static native int OpenMM_CustomGBForce_addComputedValue(PointerByReference target, Pointer name, Pointer expression, int type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getComputedValueParameters(const OpenMM_CustomGBForce*, int, char**, char**, OpenMM_CustomGBForce_ComputationType*)</code>
      */
-    void OpenMM_CustomGBForce_getComputedValueParameters(PointerByReference target, int index, PointerByReference name, PointerByReference expression, IntBuffer type);
+    public static native void OpenMM_CustomGBForce_getComputedValueParameters(PointerByReference target, int index, PointerByReference name, PointerByReference expression, IntBuffer type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getComputedValueParameters(const OpenMM_CustomGBForce*, int, char**, char**, OpenMM_CustomGBForce_ComputationType*)</code>
      */
-    void OpenMM_CustomGBForce_getComputedValueParameters(PointerByReference target, int index, PointerByReference name, PointerByReference expression, IntByReference type);
+    public static native void OpenMM_CustomGBForce_getComputedValueParameters(PointerByReference target, int index, PointerByReference name, PointerByReference expression, IntByReference type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setComputedValueParameters(OpenMM_CustomGBForce*, int, const char*, const char*, OpenMM_CustomGBForce_ComputationType)</code>
      */
-    void OpenMM_CustomGBForce_setComputedValueParameters(PointerByReference target, int index, String name, String expression, int type);
+    public static native void OpenMM_CustomGBForce_setComputedValueParameters(PointerByReference target, int index, String name, String expression, int type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setComputedValueParameters(OpenMM_CustomGBForce*, int, const char*, const char*, OpenMM_CustomGBForce_ComputationType)</code>
      */
-    void OpenMM_CustomGBForce_setComputedValueParameters(PointerByReference target, int index, Pointer name, Pointer expression, int type);
+    public static native void OpenMM_CustomGBForce_setComputedValueParameters(PointerByReference target, int index, Pointer name, Pointer expression, int type);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addEnergyTerm(OpenMM_CustomGBForce*, const char*, OpenMM_CustomGBForce_ComputationType)</code>
      */
-    int OpenMM_CustomGBForce_addEnergyTerm(PointerByReference target, String expression, int type);
+    public static native int OpenMM_CustomGBForce_addEnergyTerm(PointerByReference target, String expression, int type);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addEnergyTerm(OpenMM_CustomGBForce*, const char*, OpenMM_CustomGBForce_ComputationType)</code>
      */
-    int OpenMM_CustomGBForce_addEnergyTerm(PointerByReference target, Pointer expression, int type);
+    public static native int OpenMM_CustomGBForce_addEnergyTerm(PointerByReference target, Pointer expression, int type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getEnergyTermParameters(const OpenMM_CustomGBForce*, int, char**, OpenMM_CustomGBForce_ComputationType*)</code>
      */
-    void OpenMM_CustomGBForce_getEnergyTermParameters(PointerByReference target, int index, PointerByReference expression, IntBuffer type);
+    public static native void OpenMM_CustomGBForce_getEnergyTermParameters(PointerByReference target, int index, PointerByReference expression, IntBuffer type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getEnergyTermParameters(const OpenMM_CustomGBForce*, int, char**, OpenMM_CustomGBForce_ComputationType*)</code>
      */
-    void OpenMM_CustomGBForce_getEnergyTermParameters(PointerByReference target, int index, PointerByReference expression, IntByReference type);
+    public static native void OpenMM_CustomGBForce_getEnergyTermParameters(PointerByReference target, int index, PointerByReference expression, IntByReference type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setEnergyTermParameters(OpenMM_CustomGBForce*, int, const char*, OpenMM_CustomGBForce_ComputationType)</code>
      */
-    void OpenMM_CustomGBForce_setEnergyTermParameters(PointerByReference target, int index, String expression, int type);
+    public static native void OpenMM_CustomGBForce_setEnergyTermParameters(PointerByReference target, int index, String expression, int type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setEnergyTermParameters(OpenMM_CustomGBForce*, int, const char*, OpenMM_CustomGBForce_ComputationType)</code>
      */
-    void OpenMM_CustomGBForce_setEnergyTermParameters(PointerByReference target, int index, Pointer expression, int type);
+    public static native void OpenMM_CustomGBForce_setEnergyTermParameters(PointerByReference target, int index, Pointer expression, int type);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addExclusion(OpenMM_CustomGBForce*, int, int)</code>
      */
-    int OpenMM_CustomGBForce_addExclusion(PointerByReference target, int particle1, int particle2);
+    public static native int OpenMM_CustomGBForce_addExclusion(PointerByReference target, int particle1, int particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getExclusionParticles(const OpenMM_CustomGBForce*, int, int*, int*)</code>
      */
-    void OpenMM_CustomGBForce_getExclusionParticles(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2);
+    public static native void OpenMM_CustomGBForce_getExclusionParticles(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getExclusionParticles(const OpenMM_CustomGBForce*, int, int*, int*)</code>
      */
-    void OpenMM_CustomGBForce_getExclusionParticles(PointerByReference target, int index, IntByReference particle1, IntByReference particle2);
+    public static native void OpenMM_CustomGBForce_getExclusionParticles(PointerByReference target, int index, IntByReference particle1, IntByReference particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setExclusionParticles(OpenMM_CustomGBForce*, int, int, int)</code>
      */
-    void OpenMM_CustomGBForce_setExclusionParticles(PointerByReference target, int index, int particle1, int particle2);
+    public static native void OpenMM_CustomGBForce_setExclusionParticles(PointerByReference target, int index, int particle1, int particle2);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addTabulatedFunction(OpenMM_CustomGBForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomGBForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
+    public static native int OpenMM_CustomGBForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addTabulatedFunction(OpenMM_CustomGBForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomGBForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
+    public static native int OpenMM_CustomGBForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>OpenMM_TabulatedFunction* OpenMM_CustomGBForce_getTabulatedFunction(OpenMM_CustomGBForce*, int)</code>
      */
-    PointerByReference OpenMM_CustomGBForce_getTabulatedFunction(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_CustomGBForce_getTabulatedFunction(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomGBForce_getTabulatedFunctionName(const OpenMM_CustomGBForce*, int)</code>
      */
-    Pointer OpenMM_CustomGBForce_getTabulatedFunctionName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomGBForce_getTabulatedFunctionName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addFunction(OpenMM_CustomGBForce*, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    int OpenMM_CustomGBForce_addFunction(PointerByReference target, String name, PointerByReference values, double min, double max);
+    public static native int OpenMM_CustomGBForce_addFunction(PointerByReference target, String name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomGBForce_addFunction(OpenMM_CustomGBForce*, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    int OpenMM_CustomGBForce_addFunction(PointerByReference target, Pointer name, PointerByReference values, double min, double max);
+    public static native int OpenMM_CustomGBForce_addFunction(PointerByReference target, Pointer name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getFunctionParameters(const OpenMM_CustomGBForce*, int, char**, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_CustomGBForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
+    public static native void OpenMM_CustomGBForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_getFunctionParameters(const OpenMM_CustomGBForce*, int, char**, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_CustomGBForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleByReference min, DoubleByReference max);
+    public static native void OpenMM_CustomGBForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleByReference min, DoubleByReference max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setFunctionParameters(OpenMM_CustomGBForce*, int, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_CustomGBForce_setFunctionParameters(PointerByReference target, int index, String name, PointerByReference values, double min, double max);
+    public static native void OpenMM_CustomGBForce_setFunctionParameters(PointerByReference target, int index, String name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_setFunctionParameters(OpenMM_CustomGBForce*, int, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_CustomGBForce_setFunctionParameters(PointerByReference target, int index, Pointer name, PointerByReference values, double min, double max);
+    public static native void OpenMM_CustomGBForce_setFunctionParameters(PointerByReference target, int index, Pointer name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomGBForce_updateParametersInContext(OpenMM_CustomGBForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomGBForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomGBForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomGBForce_usesPeriodicBoundaryConditions(const OpenMM_CustomGBForce*)</code>
      */
-    int OpenMM_CustomGBForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomGBForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomHbondForce* OpenMM_CustomHbondForce_create(const char*)</code>
      */
-    PointerByReference OpenMM_CustomHbondForce_create(String energy);
+    public static native PointerByReference OpenMM_CustomHbondForce_create(String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_destroy(OpenMM_CustomHbondForce*)</code>
      */
-    void OpenMM_CustomHbondForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomHbondForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_getNumDonors(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNumDonors(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNumDonors(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_getNumAcceptors(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNumAcceptors(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNumAcceptors(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_getNumExclusions(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNumExclusions(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNumExclusions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_getNumPerDonorParameters(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNumPerDonorParameters(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNumPerDonorParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_getNumPerAcceptorParameters(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNumPerAcceptorParameters(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNumPerAcceptorParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_getNumGlobalParameters(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_getNumTabulatedFunctions(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNumTabulatedFunctions(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNumTabulatedFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_getNumFunctions(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNumFunctions(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNumFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomHbondForce_getEnergyFunction(const OpenMM_CustomHbondForce*)</code>
      */
-    Pointer OpenMM_CustomHbondForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomHbondForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setEnergyFunction(OpenMM_CustomHbondForce*, const char*)</code>
      */
-    void OpenMM_CustomHbondForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomHbondForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setEnergyFunction(OpenMM_CustomHbondForce*, const char*)</code>
      */
-    void OpenMM_CustomHbondForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomHbondForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomHbondForce_NonbondedMethod OpenMM_CustomHbondForce_getNonbondedMethod(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_getNonbondedMethod(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_getNonbondedMethod(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setNonbondedMethod(OpenMM_CustomHbondForce*, OpenMM_CustomHbondForce_NonbondedMethod)</code>
      */
-    void OpenMM_CustomHbondForce_setNonbondedMethod(PointerByReference target, int method);
+    public static native void OpenMM_CustomHbondForce_setNonbondedMethod(PointerByReference target, int method);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomHbondForce_getCutoffDistance(const OpenMM_CustomHbondForce*)</code>
      */
-    double OpenMM_CustomHbondForce_getCutoffDistance(PointerByReference target);
+    public static native double OpenMM_CustomHbondForce_getCutoffDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setCutoffDistance(OpenMM_CustomHbondForce*, double)</code>
      */
-    void OpenMM_CustomHbondForce_setCutoffDistance(PointerByReference target, double distance);
+    public static native void OpenMM_CustomHbondForce_setCutoffDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addPerDonorParameter(OpenMM_CustomHbondForce*, const char*)</code>
      */
-    int OpenMM_CustomHbondForce_addPerDonorParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomHbondForce_addPerDonorParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addPerDonorParameter(OpenMM_CustomHbondForce*, const char*)</code>
      */
-    int OpenMM_CustomHbondForce_addPerDonorParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomHbondForce_addPerDonorParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomHbondForce_getPerDonorParameterName(const OpenMM_CustomHbondForce*, int)</code>
      */
-    Pointer OpenMM_CustomHbondForce_getPerDonorParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomHbondForce_getPerDonorParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setPerDonorParameterName(OpenMM_CustomHbondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomHbondForce_setPerDonorParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomHbondForce_setPerDonorParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setPerDonorParameterName(OpenMM_CustomHbondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomHbondForce_setPerDonorParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomHbondForce_setPerDonorParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addPerAcceptorParameter(OpenMM_CustomHbondForce*, const char*)</code>
      */
-    int OpenMM_CustomHbondForce_addPerAcceptorParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomHbondForce_addPerAcceptorParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addPerAcceptorParameter(OpenMM_CustomHbondForce*, const char*)</code>
      */
-    int OpenMM_CustomHbondForce_addPerAcceptorParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomHbondForce_addPerAcceptorParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomHbondForce_getPerAcceptorParameterName(const OpenMM_CustomHbondForce*, int)</code>
      */
-    Pointer OpenMM_CustomHbondForce_getPerAcceptorParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomHbondForce_getPerAcceptorParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setPerAcceptorParameterName(OpenMM_CustomHbondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomHbondForce_setPerAcceptorParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomHbondForce_setPerAcceptorParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setPerAcceptorParameterName(OpenMM_CustomHbondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomHbondForce_setPerAcceptorParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomHbondForce_setPerAcceptorParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addGlobalParameter(OpenMM_CustomHbondForce*, const char*, double)</code>
      */
-    int OpenMM_CustomHbondForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomHbondForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addGlobalParameter(OpenMM_CustomHbondForce*, const char*, double)</code>
      */
-    int OpenMM_CustomHbondForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomHbondForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomHbondForce_getGlobalParameterName(const OpenMM_CustomHbondForce*, int)</code>
      */
-    Pointer OpenMM_CustomHbondForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomHbondForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setGlobalParameterName(OpenMM_CustomHbondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomHbondForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomHbondForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setGlobalParameterName(OpenMM_CustomHbondForce*, int, const char*)</code>
      */
-    void OpenMM_CustomHbondForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomHbondForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomHbondForce_getGlobalParameterDefaultValue(const OpenMM_CustomHbondForce*, int)</code>
      */
-    double OpenMM_CustomHbondForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomHbondForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setGlobalParameterDefaultValue(OpenMM_CustomHbondForce*, int, double)</code>
      */
-    void OpenMM_CustomHbondForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomHbondForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addDonor(OpenMM_CustomHbondForce*, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomHbondForce_addDonor(PointerByReference target, int d1, int d2, int d3, PointerByReference parameters);
+    public static native int OpenMM_CustomHbondForce_addDonor(PointerByReference target, int d1, int d2, int d3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_getDonorParameters(const OpenMM_CustomHbondForce*, int, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomHbondForce_getDonorParameters(PointerByReference target, int index, IntBuffer d1, IntBuffer d2, IntBuffer d3, PointerByReference parameters);
+    public static native void OpenMM_CustomHbondForce_getDonorParameters(PointerByReference target, int index, IntBuffer d1, IntBuffer d2, IntBuffer d3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_getDonorParameters(const OpenMM_CustomHbondForce*, int, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomHbondForce_getDonorParameters(PointerByReference target, int index, IntByReference d1, IntByReference d2, IntByReference d3, PointerByReference parameters);
+    public static native void OpenMM_CustomHbondForce_getDonorParameters(PointerByReference target, int index, IntByReference d1, IntByReference d2, IntByReference d3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setDonorParameters(OpenMM_CustomHbondForce*, int, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomHbondForce_setDonorParameters(PointerByReference target, int index, int d1, int d2, int d3, PointerByReference parameters);
+    public static native void OpenMM_CustomHbondForce_setDonorParameters(PointerByReference target, int index, int d1, int d2, int d3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addAcceptor(OpenMM_CustomHbondForce*, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomHbondForce_addAcceptor(PointerByReference target, int a1, int a2, int a3, PointerByReference parameters);
+    public static native int OpenMM_CustomHbondForce_addAcceptor(PointerByReference target, int a1, int a2, int a3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_getAcceptorParameters(const OpenMM_CustomHbondForce*, int, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomHbondForce_getAcceptorParameters(PointerByReference target, int index, IntBuffer a1, IntBuffer a2, IntBuffer a3, PointerByReference parameters);
+    public static native void OpenMM_CustomHbondForce_getAcceptorParameters(PointerByReference target, int index, IntBuffer a1, IntBuffer a2, IntBuffer a3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_getAcceptorParameters(const OpenMM_CustomHbondForce*, int, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomHbondForce_getAcceptorParameters(PointerByReference target, int index, IntByReference a1, IntByReference a2, IntByReference a3, PointerByReference parameters);
+    public static native void OpenMM_CustomHbondForce_getAcceptorParameters(PointerByReference target, int index, IntByReference a1, IntByReference a2, IntByReference a3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setAcceptorParameters(OpenMM_CustomHbondForce*, int, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomHbondForce_setAcceptorParameters(PointerByReference target, int index, int a1, int a2, int a3, PointerByReference parameters);
+    public static native void OpenMM_CustomHbondForce_setAcceptorParameters(PointerByReference target, int index, int a1, int a2, int a3, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addExclusion(OpenMM_CustomHbondForce*, int, int)</code>
      */
-    int OpenMM_CustomHbondForce_addExclusion(PointerByReference target, int donor, int acceptor);
+    public static native int OpenMM_CustomHbondForce_addExclusion(PointerByReference target, int donor, int acceptor);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_getExclusionParticles(const OpenMM_CustomHbondForce*, int, int*, int*)</code>
      */
-    void OpenMM_CustomHbondForce_getExclusionParticles(PointerByReference target, int index, IntBuffer donor, IntBuffer acceptor);
+    public static native void OpenMM_CustomHbondForce_getExclusionParticles(PointerByReference target, int index, IntBuffer donor, IntBuffer acceptor);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_getExclusionParticles(const OpenMM_CustomHbondForce*, int, int*, int*)</code>
      */
-    void OpenMM_CustomHbondForce_getExclusionParticles(PointerByReference target, int index, IntByReference donor, IntByReference acceptor);
+    public static native void OpenMM_CustomHbondForce_getExclusionParticles(PointerByReference target, int index, IntByReference donor, IntByReference acceptor);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setExclusionParticles(OpenMM_CustomHbondForce*, int, int, int)</code>
      */
-    void OpenMM_CustomHbondForce_setExclusionParticles(PointerByReference target, int index, int donor, int acceptor);
+    public static native void OpenMM_CustomHbondForce_setExclusionParticles(PointerByReference target, int index, int donor, int acceptor);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addTabulatedFunction(OpenMM_CustomHbondForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomHbondForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
+    public static native int OpenMM_CustomHbondForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addTabulatedFunction(OpenMM_CustomHbondForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomHbondForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
+    public static native int OpenMM_CustomHbondForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>OpenMM_TabulatedFunction* OpenMM_CustomHbondForce_getTabulatedFunction(OpenMM_CustomHbondForce*, int)</code>
      */
-    PointerByReference OpenMM_CustomHbondForce_getTabulatedFunction(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_CustomHbondForce_getTabulatedFunction(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomHbondForce_getTabulatedFunctionName(const OpenMM_CustomHbondForce*, int)</code>
      */
-    Pointer OpenMM_CustomHbondForce_getTabulatedFunctionName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomHbondForce_getTabulatedFunctionName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addFunction(OpenMM_CustomHbondForce*, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    int OpenMM_CustomHbondForce_addFunction(PointerByReference target, String name, PointerByReference values, double min, double max);
+    public static native int OpenMM_CustomHbondForce_addFunction(PointerByReference target, String name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomHbondForce_addFunction(OpenMM_CustomHbondForce*, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    int OpenMM_CustomHbondForce_addFunction(PointerByReference target, Pointer name, PointerByReference values, double min, double max);
+    public static native int OpenMM_CustomHbondForce_addFunction(PointerByReference target, Pointer name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_getFunctionParameters(const OpenMM_CustomHbondForce*, int, char**, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_CustomHbondForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
+    public static native void OpenMM_CustomHbondForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_getFunctionParameters(const OpenMM_CustomHbondForce*, int, char**, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_CustomHbondForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleByReference min, DoubleByReference max);
+    public static native void OpenMM_CustomHbondForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleByReference min, DoubleByReference max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setFunctionParameters(OpenMM_CustomHbondForce*, int, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_CustomHbondForce_setFunctionParameters(PointerByReference target, int index, String name, PointerByReference values, double min, double max);
+    public static native void OpenMM_CustomHbondForce_setFunctionParameters(PointerByReference target, int index, String name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_setFunctionParameters(OpenMM_CustomHbondForce*, int, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_CustomHbondForce_setFunctionParameters(PointerByReference target, int index, Pointer name, PointerByReference values, double min, double max);
+    public static native void OpenMM_CustomHbondForce_setFunctionParameters(PointerByReference target, int index, Pointer name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomHbondForce_updateParametersInContext(OpenMM_CustomHbondForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomHbondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomHbondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomHbondForce_usesPeriodicBoundaryConditions(const OpenMM_CustomHbondForce*)</code>
      */
-    int OpenMM_CustomHbondForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomHbondForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomIntegrator* OpenMM_CustomIntegrator_create(double)</code>
      */
-    PointerByReference OpenMM_CustomIntegrator_create(double stepSize);
+    public static native PointerByReference OpenMM_CustomIntegrator_create(double stepSize);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_destroy(OpenMM_CustomIntegrator*)</code>
      */
-    void OpenMM_CustomIntegrator_destroy(PointerByReference target);
+    public static native void OpenMM_CustomIntegrator_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_getNumGlobalVariables(const OpenMM_CustomIntegrator*)</code>
      */
-    int OpenMM_CustomIntegrator_getNumGlobalVariables(PointerByReference target);
+    public static native int OpenMM_CustomIntegrator_getNumGlobalVariables(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_getNumPerDofVariables(const OpenMM_CustomIntegrator*)</code>
      */
-    int OpenMM_CustomIntegrator_getNumPerDofVariables(PointerByReference target);
+    public static native int OpenMM_CustomIntegrator_getNumPerDofVariables(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_getNumComputations(const OpenMM_CustomIntegrator*)</code>
      */
-    int OpenMM_CustomIntegrator_getNumComputations(PointerByReference target);
+    public static native int OpenMM_CustomIntegrator_getNumComputations(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addGlobalVariable(OpenMM_CustomIntegrator*, const char*, double)</code>
      */
-    int OpenMM_CustomIntegrator_addGlobalVariable(PointerByReference target, String name, double initialValue);
+    public static native int OpenMM_CustomIntegrator_addGlobalVariable(PointerByReference target, String name, double initialValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addGlobalVariable(OpenMM_CustomIntegrator*, const char*, double)</code>
      */
-    int OpenMM_CustomIntegrator_addGlobalVariable(PointerByReference target, Pointer name, double initialValue);
+    public static native int OpenMM_CustomIntegrator_addGlobalVariable(PointerByReference target, Pointer name, double initialValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomIntegrator_getGlobalVariableName(const OpenMM_CustomIntegrator*, int)</code>
      */
-    Pointer OpenMM_CustomIntegrator_getGlobalVariableName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomIntegrator_getGlobalVariableName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addPerDofVariable(OpenMM_CustomIntegrator*, const char*, double)</code>
      */
-    int OpenMM_CustomIntegrator_addPerDofVariable(PointerByReference target, String name, double initialValue);
+    public static native int OpenMM_CustomIntegrator_addPerDofVariable(PointerByReference target, String name, double initialValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addPerDofVariable(OpenMM_CustomIntegrator*, const char*, double)</code>
      */
-    int OpenMM_CustomIntegrator_addPerDofVariable(PointerByReference target, Pointer name, double initialValue);
+    public static native int OpenMM_CustomIntegrator_addPerDofVariable(PointerByReference target, Pointer name, double initialValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomIntegrator_getPerDofVariableName(const OpenMM_CustomIntegrator*, int)</code>
      */
-    Pointer OpenMM_CustomIntegrator_getPerDofVariableName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomIntegrator_getPerDofVariableName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomIntegrator_getGlobalVariable(const OpenMM_CustomIntegrator*, int)</code>
      */
-    double OpenMM_CustomIntegrator_getGlobalVariable(PointerByReference target, int index);
+    public static native double OpenMM_CustomIntegrator_getGlobalVariable(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomIntegrator_getGlobalVariableByName(const OpenMM_CustomIntegrator*, const char*)</code>
      */
-    double OpenMM_CustomIntegrator_getGlobalVariableByName(PointerByReference target, String name);
+    public static native double OpenMM_CustomIntegrator_getGlobalVariableByName(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomIntegrator_getGlobalVariableByName(const OpenMM_CustomIntegrator*, const char*)</code>
      */
-    double OpenMM_CustomIntegrator_getGlobalVariableByName(PointerByReference target, Pointer name);
+    public static native double OpenMM_CustomIntegrator_getGlobalVariableByName(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setGlobalVariable(OpenMM_CustomIntegrator*, int, double)</code>
      */
-    void OpenMM_CustomIntegrator_setGlobalVariable(PointerByReference target, int index, double value);
+    public static native void OpenMM_CustomIntegrator_setGlobalVariable(PointerByReference target, int index, double value);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setGlobalVariableByName(OpenMM_CustomIntegrator*, const char*, double)</code>
      */
-    void OpenMM_CustomIntegrator_setGlobalVariableByName(PointerByReference target, String name, double value);
+    public static native void OpenMM_CustomIntegrator_setGlobalVariableByName(PointerByReference target, String name, double value);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setGlobalVariableByName(OpenMM_CustomIntegrator*, const char*, double)</code>
      */
-    void OpenMM_CustomIntegrator_setGlobalVariableByName(PointerByReference target, Pointer name, double value);
+    public static native void OpenMM_CustomIntegrator_setGlobalVariableByName(PointerByReference target, Pointer name, double value);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_getPerDofVariable(const OpenMM_CustomIntegrator*, int, OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_CustomIntegrator_getPerDofVariable(PointerByReference target, int index, PointerByReference values);
+    public static native void OpenMM_CustomIntegrator_getPerDofVariable(PointerByReference target, int index, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_getPerDofVariableByName(const OpenMM_CustomIntegrator*, const char*, OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_CustomIntegrator_getPerDofVariableByName(PointerByReference target, String name, PointerByReference values);
+    public static native void OpenMM_CustomIntegrator_getPerDofVariableByName(PointerByReference target, String name, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_getPerDofVariableByName(const OpenMM_CustomIntegrator*, const char*, OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_CustomIntegrator_getPerDofVariableByName(PointerByReference target, Pointer name, PointerByReference values);
+    public static native void OpenMM_CustomIntegrator_getPerDofVariableByName(PointerByReference target, Pointer name, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setPerDofVariable(OpenMM_CustomIntegrator*, int, const OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_CustomIntegrator_setPerDofVariable(PointerByReference target, int index, PointerByReference values);
+    public static native void OpenMM_CustomIntegrator_setPerDofVariable(PointerByReference target, int index, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setPerDofVariableByName(OpenMM_CustomIntegrator*, const char*, const OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_CustomIntegrator_setPerDofVariableByName(PointerByReference target, String name, PointerByReference values);
+    public static native void OpenMM_CustomIntegrator_setPerDofVariableByName(PointerByReference target, String name, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setPerDofVariableByName(OpenMM_CustomIntegrator*, const char*, const OpenMM_Vec3Array*)</code>
      */
-    void OpenMM_CustomIntegrator_setPerDofVariableByName(PointerByReference target, Pointer name, PointerByReference values);
+    public static native void OpenMM_CustomIntegrator_setPerDofVariableByName(PointerByReference target, Pointer name, PointerByReference values);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addComputeGlobal(OpenMM_CustomIntegrator*, const char*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_addComputeGlobal(PointerByReference target, String variable, String expression);
+    public static native int OpenMM_CustomIntegrator_addComputeGlobal(PointerByReference target, String variable, String expression);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addComputeGlobal(OpenMM_CustomIntegrator*, const char*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_addComputeGlobal(PointerByReference target, Pointer variable, Pointer expression);
+    public static native int OpenMM_CustomIntegrator_addComputeGlobal(PointerByReference target, Pointer variable, Pointer expression);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addComputePerDof(OpenMM_CustomIntegrator*, const char*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_addComputePerDof(PointerByReference target, String variable, String expression);
+    public static native int OpenMM_CustomIntegrator_addComputePerDof(PointerByReference target, String variable, String expression);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addComputePerDof(OpenMM_CustomIntegrator*, const char*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_addComputePerDof(PointerByReference target, Pointer variable, Pointer expression);
+    public static native int OpenMM_CustomIntegrator_addComputePerDof(PointerByReference target, Pointer variable, Pointer expression);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addComputeSum(OpenMM_CustomIntegrator*, const char*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_addComputeSum(PointerByReference target, String variable, String expression);
+    public static native int OpenMM_CustomIntegrator_addComputeSum(PointerByReference target, String variable, String expression);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addComputeSum(OpenMM_CustomIntegrator*, const char*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_addComputeSum(PointerByReference target, Pointer variable, Pointer expression);
+    public static native int OpenMM_CustomIntegrator_addComputeSum(PointerByReference target, Pointer variable, Pointer expression);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addConstrainPositions(OpenMM_CustomIntegrator*)</code>
      */
-    int OpenMM_CustomIntegrator_addConstrainPositions(PointerByReference target);
+    public static native int OpenMM_CustomIntegrator_addConstrainPositions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addConstrainVelocities(OpenMM_CustomIntegrator*)</code>
      */
-    int OpenMM_CustomIntegrator_addConstrainVelocities(PointerByReference target);
+    public static native int OpenMM_CustomIntegrator_addConstrainVelocities(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_addUpdateContextState(OpenMM_CustomIntegrator*)</code>
      */
-    int OpenMM_CustomIntegrator_addUpdateContextState(PointerByReference target);
+    public static native int OpenMM_CustomIntegrator_addUpdateContextState(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_beginIfBlock(OpenMM_CustomIntegrator*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_beginIfBlock(PointerByReference target, String condition);
+    public static native int OpenMM_CustomIntegrator_beginIfBlock(PointerByReference target, String condition);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_beginIfBlock(OpenMM_CustomIntegrator*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_beginIfBlock(PointerByReference target, Pointer condition);
+    public static native int OpenMM_CustomIntegrator_beginIfBlock(PointerByReference target, Pointer condition);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_beginWhileBlock(OpenMM_CustomIntegrator*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_beginWhileBlock(PointerByReference target, String condition);
+    public static native int OpenMM_CustomIntegrator_beginWhileBlock(PointerByReference target, String condition);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_beginWhileBlock(OpenMM_CustomIntegrator*, const char*)</code>
      */
-    int OpenMM_CustomIntegrator_beginWhileBlock(PointerByReference target, Pointer condition);
+    public static native int OpenMM_CustomIntegrator_beginWhileBlock(PointerByReference target, Pointer condition);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_endBlock(OpenMM_CustomIntegrator*)</code>
      */
-    int OpenMM_CustomIntegrator_endBlock(PointerByReference target);
+    public static native int OpenMM_CustomIntegrator_endBlock(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_getComputationStep(const OpenMM_CustomIntegrator*, int, OpenMM_CustomIntegrator_ComputationType*, char**, char**)</code>
      */
-    void OpenMM_CustomIntegrator_getComputationStep(PointerByReference target, int index, IntBuffer type, PointerByReference variable, PointerByReference expression);
+    public static native void OpenMM_CustomIntegrator_getComputationStep(PointerByReference target, int index, IntBuffer type, PointerByReference variable, PointerByReference expression);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_getComputationStep(const OpenMM_CustomIntegrator*, int, OpenMM_CustomIntegrator_ComputationType*, char**, char**)</code>
      */
-    void OpenMM_CustomIntegrator_getComputationStep(PointerByReference target, int index, IntByReference type, PointerByReference variable, PointerByReference expression);
+    public static native void OpenMM_CustomIntegrator_getComputationStep(PointerByReference target, int index, IntByReference type, PointerByReference variable, PointerByReference expression);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomIntegrator_getKineticEnergyExpression(const OpenMM_CustomIntegrator*)</code>
      */
-    Pointer OpenMM_CustomIntegrator_getKineticEnergyExpression(PointerByReference target);
+    public static native Pointer OpenMM_CustomIntegrator_getKineticEnergyExpression(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setKineticEnergyExpression(OpenMM_CustomIntegrator*, const char*)</code>
      */
-    void OpenMM_CustomIntegrator_setKineticEnergyExpression(PointerByReference target, String expression);
+    public static native void OpenMM_CustomIntegrator_setKineticEnergyExpression(PointerByReference target, String expression);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setKineticEnergyExpression(OpenMM_CustomIntegrator*, const char*)</code>
      */
-    void OpenMM_CustomIntegrator_setKineticEnergyExpression(PointerByReference target, Pointer expression);
+    public static native void OpenMM_CustomIntegrator_setKineticEnergyExpression(PointerByReference target, Pointer expression);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomIntegrator_getRandomNumberSeed(const OpenMM_CustomIntegrator*)</code>
      */
-    int OpenMM_CustomIntegrator_getRandomNumberSeed(PointerByReference target);
+    public static native int OpenMM_CustomIntegrator_getRandomNumberSeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_setRandomNumberSeed(OpenMM_CustomIntegrator*, int)</code>
      */
-    void OpenMM_CustomIntegrator_setRandomNumberSeed(PointerByReference target, int seed);
+    public static native void OpenMM_CustomIntegrator_setRandomNumberSeed(PointerByReference target, int seed);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomIntegrator_step(OpenMM_CustomIntegrator*, int)</code>
      */
-    void OpenMM_CustomIntegrator_step(PointerByReference target, int steps);
+    public static native void OpenMM_CustomIntegrator_step(PointerByReference target, int steps);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomManyParticleForce* OpenMM_CustomManyParticleForce_create(int, const char*)</code>
      */
-    PointerByReference OpenMM_CustomManyParticleForce_create(int particlesPerSet, String energy);
+    public static native PointerByReference OpenMM_CustomManyParticleForce_create(int particlesPerSet, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_destroy(OpenMM_CustomManyParticleForce*)</code>
      */
-    void OpenMM_CustomManyParticleForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomManyParticleForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_getNumParticlesPerSet(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_getNumParticlesPerSet(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_getNumParticlesPerSet(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_getNumParticles(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_getNumParticles(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_getNumExclusions(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_getNumExclusions(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_getNumExclusions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_getNumPerParticleParameters(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_getNumPerParticleParameters(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_getNumPerParticleParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_getNumGlobalParameters(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_getNumTabulatedFunctions(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_getNumTabulatedFunctions(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_getNumTabulatedFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomManyParticleForce_getEnergyFunction(const OpenMM_CustomManyParticleForce*)</code>
      */
-    Pointer OpenMM_CustomManyParticleForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomManyParticleForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setEnergyFunction(OpenMM_CustomManyParticleForce*, const char*)</code>
      */
-    void OpenMM_CustomManyParticleForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomManyParticleForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setEnergyFunction(OpenMM_CustomManyParticleForce*, const char*)</code>
      */
-    void OpenMM_CustomManyParticleForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomManyParticleForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomManyParticleForce_NonbondedMethod OpenMM_CustomManyParticleForce_getNonbondedMethod(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_getNonbondedMethod(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_getNonbondedMethod(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setNonbondedMethod(OpenMM_CustomManyParticleForce*, OpenMM_CustomManyParticleForce_NonbondedMethod)</code>
      */
-    void OpenMM_CustomManyParticleForce_setNonbondedMethod(PointerByReference target, int method);
+    public static native void OpenMM_CustomManyParticleForce_setNonbondedMethod(PointerByReference target, int method);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomManyParticleForce_PermutationMode OpenMM_CustomManyParticleForce_getPermutationMode(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_getPermutationMode(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_getPermutationMode(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setPermutationMode(OpenMM_CustomManyParticleForce*, OpenMM_CustomManyParticleForce_PermutationMode)</code>
      */
-    void OpenMM_CustomManyParticleForce_setPermutationMode(PointerByReference target, int mode);
+    public static native void OpenMM_CustomManyParticleForce_setPermutationMode(PointerByReference target, int mode);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomManyParticleForce_getCutoffDistance(const OpenMM_CustomManyParticleForce*)</code>
      */
-    double OpenMM_CustomManyParticleForce_getCutoffDistance(PointerByReference target);
+    public static native double OpenMM_CustomManyParticleForce_getCutoffDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setCutoffDistance(OpenMM_CustomManyParticleForce*, double)</code>
      */
-    void OpenMM_CustomManyParticleForce_setCutoffDistance(PointerByReference target, double distance);
+    public static native void OpenMM_CustomManyParticleForce_setCutoffDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_addPerParticleParameter(OpenMM_CustomManyParticleForce*, const char*)</code>
      */
-    int OpenMM_CustomManyParticleForce_addPerParticleParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomManyParticleForce_addPerParticleParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_addPerParticleParameter(OpenMM_CustomManyParticleForce*, const char*)</code>
      */
-    int OpenMM_CustomManyParticleForce_addPerParticleParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomManyParticleForce_addPerParticleParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomManyParticleForce_getPerParticleParameterName(const OpenMM_CustomManyParticleForce*, int)</code>
      */
-    Pointer OpenMM_CustomManyParticleForce_getPerParticleParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomManyParticleForce_getPerParticleParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setPerParticleParameterName(OpenMM_CustomManyParticleForce*, int, const char*)</code>
      */
-    void OpenMM_CustomManyParticleForce_setPerParticleParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomManyParticleForce_setPerParticleParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setPerParticleParameterName(OpenMM_CustomManyParticleForce*, int, const char*)</code>
      */
-    void OpenMM_CustomManyParticleForce_setPerParticleParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomManyParticleForce_setPerParticleParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_addGlobalParameter(OpenMM_CustomManyParticleForce*, const char*, double)</code>
      */
-    int OpenMM_CustomManyParticleForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomManyParticleForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_addGlobalParameter(OpenMM_CustomManyParticleForce*, const char*, double)</code>
      */
-    int OpenMM_CustomManyParticleForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomManyParticleForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomManyParticleForce_getGlobalParameterName(const OpenMM_CustomManyParticleForce*, int)</code>
      */
-    Pointer OpenMM_CustomManyParticleForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomManyParticleForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setGlobalParameterName(OpenMM_CustomManyParticleForce*, int, const char*)</code>
      */
-    void OpenMM_CustomManyParticleForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomManyParticleForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setGlobalParameterName(OpenMM_CustomManyParticleForce*, int, const char*)</code>
      */
-    void OpenMM_CustomManyParticleForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomManyParticleForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomManyParticleForce_getGlobalParameterDefaultValue(const OpenMM_CustomManyParticleForce*, int)</code>
      */
-    double OpenMM_CustomManyParticleForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomManyParticleForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setGlobalParameterDefaultValue(OpenMM_CustomManyParticleForce*, int, double)</code>
      */
-    void OpenMM_CustomManyParticleForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomManyParticleForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_addParticle(OpenMM_CustomManyParticleForce*, const OpenMM_DoubleArray*, int)</code>
      */
-    int OpenMM_CustomManyParticleForce_addParticle(PointerByReference target, PointerByReference parameters, int type);
+    public static native int OpenMM_CustomManyParticleForce_addParticle(PointerByReference target, PointerByReference parameters, int type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_getParticleParameters(const OpenMM_CustomManyParticleForce*, int, OpenMM_DoubleArray*, int*)</code>
      */
-    void OpenMM_CustomManyParticleForce_getParticleParameters(PointerByReference target, int index, PointerByReference parameters, IntBuffer type);
+    public static native void OpenMM_CustomManyParticleForce_getParticleParameters(PointerByReference target, int index, PointerByReference parameters, IntBuffer type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_getParticleParameters(const OpenMM_CustomManyParticleForce*, int, OpenMM_DoubleArray*, int*)</code>
      */
-    void OpenMM_CustomManyParticleForce_getParticleParameters(PointerByReference target, int index, PointerByReference parameters, IntByReference type);
+    public static native void OpenMM_CustomManyParticleForce_getParticleParameters(PointerByReference target, int index, PointerByReference parameters, IntByReference type);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setParticleParameters(OpenMM_CustomManyParticleForce*, int, const OpenMM_DoubleArray*, int)</code>
      */
-    void OpenMM_CustomManyParticleForce_setParticleParameters(PointerByReference target, int index, PointerByReference parameters, int type);
+    public static native void OpenMM_CustomManyParticleForce_setParticleParameters(PointerByReference target, int index, PointerByReference parameters, int type);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_addExclusion(OpenMM_CustomManyParticleForce*, int, int)</code>
      */
-    int OpenMM_CustomManyParticleForce_addExclusion(PointerByReference target, int particle1, int particle2);
+    public static native int OpenMM_CustomManyParticleForce_addExclusion(PointerByReference target, int particle1, int particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_getExclusionParticles(const OpenMM_CustomManyParticleForce*, int, int*, int*)</code>
      */
-    void OpenMM_CustomManyParticleForce_getExclusionParticles(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2);
+    public static native void OpenMM_CustomManyParticleForce_getExclusionParticles(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_getExclusionParticles(const OpenMM_CustomManyParticleForce*, int, int*, int*)</code>
      */
-    void OpenMM_CustomManyParticleForce_getExclusionParticles(PointerByReference target, int index, IntByReference particle1, IntByReference particle2);
+    public static native void OpenMM_CustomManyParticleForce_getExclusionParticles(PointerByReference target, int index, IntByReference particle1, IntByReference particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setExclusionParticles(OpenMM_CustomManyParticleForce*, int, int, int)</code>
      */
-    void OpenMM_CustomManyParticleForce_setExclusionParticles(PointerByReference target, int index, int particle1, int particle2);
+    public static native void OpenMM_CustomManyParticleForce_setExclusionParticles(PointerByReference target, int index, int particle1, int particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_createExclusionsFromBonds(OpenMM_CustomManyParticleForce*, const OpenMM_BondArray*, int)</code>
      */
-    void OpenMM_CustomManyParticleForce_createExclusionsFromBonds(PointerByReference target, PointerByReference bonds, int bondCutoff);
+    public static native void OpenMM_CustomManyParticleForce_createExclusionsFromBonds(PointerByReference target, PointerByReference bonds, int bondCutoff);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_getTypeFilter(const OpenMM_CustomManyParticleForce*, int, OpenMM_IntSet*)</code>
      */
-    void OpenMM_CustomManyParticleForce_getTypeFilter(PointerByReference target, int index, PointerByReference types);
+    public static native void OpenMM_CustomManyParticleForce_getTypeFilter(PointerByReference target, int index, PointerByReference types);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_setTypeFilter(OpenMM_CustomManyParticleForce*, int, const OpenMM_IntSet*)</code>
      */
-    void OpenMM_CustomManyParticleForce_setTypeFilter(PointerByReference target, int index, PointerByReference types);
+    public static native void OpenMM_CustomManyParticleForce_setTypeFilter(PointerByReference target, int index, PointerByReference types);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_addTabulatedFunction(OpenMM_CustomManyParticleForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomManyParticleForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
+    public static native int OpenMM_CustomManyParticleForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomManyParticleForce_addTabulatedFunction(OpenMM_CustomManyParticleForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomManyParticleForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
+    public static native int OpenMM_CustomManyParticleForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>OpenMM_TabulatedFunction* OpenMM_CustomManyParticleForce_getTabulatedFunction(OpenMM_CustomManyParticleForce*, int)</code>
      */
-    PointerByReference OpenMM_CustomManyParticleForce_getTabulatedFunction(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_CustomManyParticleForce_getTabulatedFunction(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomManyParticleForce_getTabulatedFunctionName(const OpenMM_CustomManyParticleForce*, int)</code>
      */
-    Pointer OpenMM_CustomManyParticleForce_getTabulatedFunctionName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomManyParticleForce_getTabulatedFunctionName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomManyParticleForce_updateParametersInContext(OpenMM_CustomManyParticleForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomManyParticleForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomManyParticleForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomManyParticleForce_usesPeriodicBoundaryConditions(const OpenMM_CustomManyParticleForce*)</code>
      */
-    int OpenMM_CustomManyParticleForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomManyParticleForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomNonbondedForce* OpenMM_CustomNonbondedForce_create(const char*)</code>
      */
-    PointerByReference OpenMM_CustomNonbondedForce_create(String energy);
+    public static native PointerByReference OpenMM_CustomNonbondedForce_create(String energy);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomNonbondedForce* OpenMM_CustomNonbondedForce_create_2(const OpenMM_CustomNonbondedForce*)</code>
      */
-    PointerByReference OpenMM_CustomNonbondedForce_create_2(PointerByReference rhs);
+    public static native PointerByReference OpenMM_CustomNonbondedForce_create_2(PointerByReference rhs);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_destroy(OpenMM_CustomNonbondedForce*)</code>
      */
-    void OpenMM_CustomNonbondedForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomNonbondedForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_getNumParticles(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNumParticles(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_getNumExclusions(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNumExclusions(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNumExclusions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_getNumPerParticleParameters(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNumPerParticleParameters(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNumPerParticleParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_getNumGlobalParameters(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_getNumTabulatedFunctions(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNumTabulatedFunctions(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNumTabulatedFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_getNumFunctions(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNumFunctions(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNumFunctions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_getNumInteractionGroups(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNumInteractionGroups(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNumInteractionGroups(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_getNumEnergyParameterDerivatives(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNumEnergyParameterDerivatives(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNumEnergyParameterDerivatives(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomNonbondedForce_getEnergyFunction(const OpenMM_CustomNonbondedForce*)</code>
      */
-    Pointer OpenMM_CustomNonbondedForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomNonbondedForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setEnergyFunction(OpenMM_CustomNonbondedForce*, const char*)</code>
      */
-    void OpenMM_CustomNonbondedForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomNonbondedForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setEnergyFunction(OpenMM_CustomNonbondedForce*, const char*)</code>
      */
-    void OpenMM_CustomNonbondedForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomNonbondedForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>OpenMM_CustomNonbondedForce_NonbondedMethod OpenMM_CustomNonbondedForce_getNonbondedMethod(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getNonbondedMethod(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getNonbondedMethod(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setNonbondedMethod(OpenMM_CustomNonbondedForce*, OpenMM_CustomNonbondedForce_NonbondedMethod)</code>
      */
-    void OpenMM_CustomNonbondedForce_setNonbondedMethod(PointerByReference target, int method);
+    public static native void OpenMM_CustomNonbondedForce_setNonbondedMethod(PointerByReference target, int method);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomNonbondedForce_getCutoffDistance(const OpenMM_CustomNonbondedForce*)</code>
      */
-    double OpenMM_CustomNonbondedForce_getCutoffDistance(PointerByReference target);
+    public static native double OpenMM_CustomNonbondedForce_getCutoffDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setCutoffDistance(OpenMM_CustomNonbondedForce*, double)</code>
      */
-    void OpenMM_CustomNonbondedForce_setCutoffDistance(PointerByReference target, double distance);
+    public static native void OpenMM_CustomNonbondedForce_setCutoffDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomNonbondedForce_getUseSwitchingFunction(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getUseSwitchingFunction(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getUseSwitchingFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setUseSwitchingFunction(OpenMM_CustomNonbondedForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_CustomNonbondedForce_setUseSwitchingFunction(PointerByReference target, int use);
+    public static native void OpenMM_CustomNonbondedForce_setUseSwitchingFunction(PointerByReference target, int use);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomNonbondedForce_getSwitchingDistance(const OpenMM_CustomNonbondedForce*)</code>
      */
-    double OpenMM_CustomNonbondedForce_getSwitchingDistance(PointerByReference target);
+    public static native double OpenMM_CustomNonbondedForce_getSwitchingDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setSwitchingDistance(OpenMM_CustomNonbondedForce*, double)</code>
      */
-    void OpenMM_CustomNonbondedForce_setSwitchingDistance(PointerByReference target, double distance);
+    public static native void OpenMM_CustomNonbondedForce_setSwitchingDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomNonbondedForce_getUseLongRangeCorrection(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_getUseLongRangeCorrection(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_getUseLongRangeCorrection(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setUseLongRangeCorrection(OpenMM_CustomNonbondedForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_CustomNonbondedForce_setUseLongRangeCorrection(PointerByReference target, int use);
+    public static native void OpenMM_CustomNonbondedForce_setUseLongRangeCorrection(PointerByReference target, int use);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addPerParticleParameter(OpenMM_CustomNonbondedForce*, const char*)</code>
      */
-    int OpenMM_CustomNonbondedForce_addPerParticleParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomNonbondedForce_addPerParticleParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addPerParticleParameter(OpenMM_CustomNonbondedForce*, const char*)</code>
      */
-    int OpenMM_CustomNonbondedForce_addPerParticleParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomNonbondedForce_addPerParticleParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomNonbondedForce_getPerParticleParameterName(const OpenMM_CustomNonbondedForce*, int)</code>
      */
-    Pointer OpenMM_CustomNonbondedForce_getPerParticleParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomNonbondedForce_getPerParticleParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setPerParticleParameterName(OpenMM_CustomNonbondedForce*, int, const char*)</code>
      */
-    void OpenMM_CustomNonbondedForce_setPerParticleParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomNonbondedForce_setPerParticleParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setPerParticleParameterName(OpenMM_CustomNonbondedForce*, int, const char*)</code>
      */
-    void OpenMM_CustomNonbondedForce_setPerParticleParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomNonbondedForce_setPerParticleParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addGlobalParameter(OpenMM_CustomNonbondedForce*, const char*, double)</code>
      */
-    int OpenMM_CustomNonbondedForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomNonbondedForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addGlobalParameter(OpenMM_CustomNonbondedForce*, const char*, double)</code>
      */
-    int OpenMM_CustomNonbondedForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomNonbondedForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomNonbondedForce_getGlobalParameterName(const OpenMM_CustomNonbondedForce*, int)</code>
      */
-    Pointer OpenMM_CustomNonbondedForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomNonbondedForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setGlobalParameterName(OpenMM_CustomNonbondedForce*, int, const char*)</code>
      */
-    void OpenMM_CustomNonbondedForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomNonbondedForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setGlobalParameterName(OpenMM_CustomNonbondedForce*, int, const char*)</code>
      */
-    void OpenMM_CustomNonbondedForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomNonbondedForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomNonbondedForce_getGlobalParameterDefaultValue(const OpenMM_CustomNonbondedForce*, int)</code>
      */
-    double OpenMM_CustomNonbondedForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomNonbondedForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setGlobalParameterDefaultValue(OpenMM_CustomNonbondedForce*, int, double)</code>
      */
-    void OpenMM_CustomNonbondedForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomNonbondedForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(OpenMM_CustomNonbondedForce*, const char*)</code>
      */
-    void OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(PointerByReference target, String name);
+    public static native void OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(OpenMM_CustomNonbondedForce*, const char*)</code>
      */
-    void OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
+    public static native void OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomNonbondedForce_getEnergyParameterDerivativeName(const OpenMM_CustomNonbondedForce*, int)</code>
      */
-    Pointer OpenMM_CustomNonbondedForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomNonbondedForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addParticle(OpenMM_CustomNonbondedForce*, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomNonbondedForce_addParticle(PointerByReference target, PointerByReference parameters);
+    public static native int OpenMM_CustomNonbondedForce_addParticle(PointerByReference target, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_getParticleParameters(const OpenMM_CustomNonbondedForce*, int, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomNonbondedForce_getParticleParameters(PointerByReference target, int index, PointerByReference parameters);
+    public static native void OpenMM_CustomNonbondedForce_getParticleParameters(PointerByReference target, int index, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setParticleParameters(OpenMM_CustomNonbondedForce*, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomNonbondedForce_setParticleParameters(PointerByReference target, int index, PointerByReference parameters);
+    public static native void OpenMM_CustomNonbondedForce_setParticleParameters(PointerByReference target, int index, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addExclusion(OpenMM_CustomNonbondedForce*, int, int)</code>
      */
-    int OpenMM_CustomNonbondedForce_addExclusion(PointerByReference target, int particle1, int particle2);
+    public static native int OpenMM_CustomNonbondedForce_addExclusion(PointerByReference target, int particle1, int particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_getExclusionParticles(const OpenMM_CustomNonbondedForce*, int, int*, int*)</code>
      */
-    void OpenMM_CustomNonbondedForce_getExclusionParticles(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2);
+    public static native void OpenMM_CustomNonbondedForce_getExclusionParticles(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_getExclusionParticles(const OpenMM_CustomNonbondedForce*, int, int*, int*)</code>
      */
-    void OpenMM_CustomNonbondedForce_getExclusionParticles(PointerByReference target, int index, IntByReference particle1, IntByReference particle2);
+    public static native void OpenMM_CustomNonbondedForce_getExclusionParticles(PointerByReference target, int index, IntByReference particle1, IntByReference particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setExclusionParticles(OpenMM_CustomNonbondedForce*, int, int, int)</code>
      */
-    void OpenMM_CustomNonbondedForce_setExclusionParticles(PointerByReference target, int index, int particle1, int particle2);
+    public static native void OpenMM_CustomNonbondedForce_setExclusionParticles(PointerByReference target, int index, int particle1, int particle2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_createExclusionsFromBonds(OpenMM_CustomNonbondedForce*, const OpenMM_BondArray*, int)</code>
      */
-    void OpenMM_CustomNonbondedForce_createExclusionsFromBonds(PointerByReference target, PointerByReference bonds, int bondCutoff);
+    public static native void OpenMM_CustomNonbondedForce_createExclusionsFromBonds(PointerByReference target, PointerByReference bonds, int bondCutoff);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addTabulatedFunction(OpenMM_CustomNonbondedForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomNonbondedForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
+    public static native int OpenMM_CustomNonbondedForce_addTabulatedFunction(PointerByReference target, String name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addTabulatedFunction(OpenMM_CustomNonbondedForce*, const char*, OpenMM_TabulatedFunction*)</code>
      */
-    int OpenMM_CustomNonbondedForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
+    public static native int OpenMM_CustomNonbondedForce_addTabulatedFunction(PointerByReference target, Pointer name, PointerByReference function);
 
     /**
      * Original signature :
      * <code>OpenMM_TabulatedFunction* OpenMM_CustomNonbondedForce_getTabulatedFunction(OpenMM_CustomNonbondedForce*, int)</code>
      */
-    PointerByReference OpenMM_CustomNonbondedForce_getTabulatedFunction(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_CustomNonbondedForce_getTabulatedFunction(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomNonbondedForce_getTabulatedFunctionName(const OpenMM_CustomNonbondedForce*, int)</code>
      */
-    Pointer OpenMM_CustomNonbondedForce_getTabulatedFunctionName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomNonbondedForce_getTabulatedFunctionName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addFunction(OpenMM_CustomNonbondedForce*, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    int OpenMM_CustomNonbondedForce_addFunction(PointerByReference target, String name, PointerByReference values, double min, double max);
+    public static native int OpenMM_CustomNonbondedForce_addFunction(PointerByReference target, String name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addFunction(OpenMM_CustomNonbondedForce*, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    int OpenMM_CustomNonbondedForce_addFunction(PointerByReference target, Pointer name, PointerByReference values, double min, double max);
+    public static native int OpenMM_CustomNonbondedForce_addFunction(PointerByReference target, Pointer name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_getFunctionParameters(const OpenMM_CustomNonbondedForce*, int, char**, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_CustomNonbondedForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
+    public static native void OpenMM_CustomNonbondedForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleBuffer min, DoubleBuffer max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_getFunctionParameters(const OpenMM_CustomNonbondedForce*, int, char**, OpenMM_DoubleArray*, double*, double*)</code>
      */
-    void OpenMM_CustomNonbondedForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleByReference min, DoubleByReference max);
+    public static native void OpenMM_CustomNonbondedForce_getFunctionParameters(PointerByReference target, int index, PointerByReference name, PointerByReference values, DoubleByReference min, DoubleByReference max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setFunctionParameters(OpenMM_CustomNonbondedForce*, int, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_CustomNonbondedForce_setFunctionParameters(PointerByReference target, int index, String name, PointerByReference values, double min, double max);
+    public static native void OpenMM_CustomNonbondedForce_setFunctionParameters(PointerByReference target, int index, String name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setFunctionParameters(OpenMM_CustomNonbondedForce*, int, const char*, const OpenMM_DoubleArray*, double, double)</code>
      */
-    void OpenMM_CustomNonbondedForce_setFunctionParameters(PointerByReference target, int index, Pointer name, PointerByReference values, double min, double max);
+    public static native void OpenMM_CustomNonbondedForce_setFunctionParameters(PointerByReference target, int index, Pointer name, PointerByReference values, double min, double max);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomNonbondedForce_addInteractionGroup(OpenMM_CustomNonbondedForce*, const OpenMM_IntSet*, const OpenMM_IntSet*)</code>
      */
-    int OpenMM_CustomNonbondedForce_addInteractionGroup(PointerByReference target, PointerByReference set1, PointerByReference set2);
+    public static native int OpenMM_CustomNonbondedForce_addInteractionGroup(PointerByReference target, PointerByReference set1, PointerByReference set2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_getInteractionGroupParameters(const OpenMM_CustomNonbondedForce*, int, OpenMM_IntSet*, OpenMM_IntSet*)</code>
      */
-    void OpenMM_CustomNonbondedForce_getInteractionGroupParameters(PointerByReference target, int index, PointerByReference set1, PointerByReference set2);
+    public static native void OpenMM_CustomNonbondedForce_getInteractionGroupParameters(PointerByReference target, int index, PointerByReference set1, PointerByReference set2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_setInteractionGroupParameters(OpenMM_CustomNonbondedForce*, int, const OpenMM_IntSet*, const OpenMM_IntSet*)</code>
      */
-    void OpenMM_CustomNonbondedForce_setInteractionGroupParameters(PointerByReference target, int index, PointerByReference set1, PointerByReference set2);
+    public static native void OpenMM_CustomNonbondedForce_setInteractionGroupParameters(PointerByReference target, int index, PointerByReference set1, PointerByReference set2);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomNonbondedForce_updateParametersInContext(OpenMM_CustomNonbondedForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomNonbondedForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomNonbondedForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomNonbondedForce_usesPeriodicBoundaryConditions(const OpenMM_CustomNonbondedForce*)</code>
      */
-    int OpenMM_CustomNonbondedForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomNonbondedForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * CustomTorsionForce<br>
      * Original signature :
      * <code>OpenMM_CustomTorsionForce* OpenMM_CustomTorsionForce_create(const char*)</code>
      */
-    PointerByReference OpenMM_CustomTorsionForce_create(String energy);
+    public static native PointerByReference OpenMM_CustomTorsionForce_create(String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_destroy(OpenMM_CustomTorsionForce*)</code>
      */
-    void OpenMM_CustomTorsionForce_destroy(PointerByReference target);
+    public static native void OpenMM_CustomTorsionForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_getNumTorsions(const OpenMM_CustomTorsionForce*)</code>
      */
-    int OpenMM_CustomTorsionForce_getNumTorsions(PointerByReference target);
+    public static native int OpenMM_CustomTorsionForce_getNumTorsions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_getNumPerTorsionParameters(const OpenMM_CustomTorsionForce*)</code>
      */
-    int OpenMM_CustomTorsionForce_getNumPerTorsionParameters(PointerByReference target);
+    public static native int OpenMM_CustomTorsionForce_getNumPerTorsionParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_getNumGlobalParameters(const OpenMM_CustomTorsionForce*)</code>
      */
-    int OpenMM_CustomTorsionForce_getNumGlobalParameters(PointerByReference target);
+    public static native int OpenMM_CustomTorsionForce_getNumGlobalParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_getNumEnergyParameterDerivatives(const OpenMM_CustomTorsionForce*)</code>
      */
-    int OpenMM_CustomTorsionForce_getNumEnergyParameterDerivatives(PointerByReference target);
+    public static native int OpenMM_CustomTorsionForce_getNumEnergyParameterDerivatives(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomTorsionForce_getEnergyFunction(const OpenMM_CustomTorsionForce*)</code>
      */
-    Pointer OpenMM_CustomTorsionForce_getEnergyFunction(PointerByReference target);
+    public static native Pointer OpenMM_CustomTorsionForce_getEnergyFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setEnergyFunction(OpenMM_CustomTorsionForce*, const char*)</code>
      */
-    void OpenMM_CustomTorsionForce_setEnergyFunction(PointerByReference target, String energy);
+    public static native void OpenMM_CustomTorsionForce_setEnergyFunction(PointerByReference target, String energy);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setEnergyFunction(OpenMM_CustomTorsionForce*, const char*)</code>
      */
-    void OpenMM_CustomTorsionForce_setEnergyFunction(PointerByReference target, Pointer energy);
+    public static native void OpenMM_CustomTorsionForce_setEnergyFunction(PointerByReference target, Pointer energy);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_addPerTorsionParameter(OpenMM_CustomTorsionForce*, const char*)</code>
      */
-    int OpenMM_CustomTorsionForce_addPerTorsionParameter(PointerByReference target, String name);
+    public static native int OpenMM_CustomTorsionForce_addPerTorsionParameter(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_addPerTorsionParameter(OpenMM_CustomTorsionForce*, const char*)</code>
      */
-    int OpenMM_CustomTorsionForce_addPerTorsionParameter(PointerByReference target, Pointer name);
+    public static native int OpenMM_CustomTorsionForce_addPerTorsionParameter(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomTorsionForce_getPerTorsionParameterName(const OpenMM_CustomTorsionForce*, int)</code>
      */
-    Pointer OpenMM_CustomTorsionForce_getPerTorsionParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomTorsionForce_getPerTorsionParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setPerTorsionParameterName(OpenMM_CustomTorsionForce*, int, const char*)</code>
      */
-    void OpenMM_CustomTorsionForce_setPerTorsionParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomTorsionForce_setPerTorsionParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setPerTorsionParameterName(OpenMM_CustomTorsionForce*, int, const char*)</code>
      */
-    void OpenMM_CustomTorsionForce_setPerTorsionParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomTorsionForce_setPerTorsionParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_addGlobalParameter(OpenMM_CustomTorsionForce*, const char*, double)</code>
      */
-    int OpenMM_CustomTorsionForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
+    public static native int OpenMM_CustomTorsionForce_addGlobalParameter(PointerByReference target, String name, double defaultValue);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_addGlobalParameter(OpenMM_CustomTorsionForce*, const char*, double)</code>
      */
-    int OpenMM_CustomTorsionForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
+    public static native int OpenMM_CustomTorsionForce_addGlobalParameter(PointerByReference target, Pointer name, double defaultValue);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomTorsionForce_getGlobalParameterName(const OpenMM_CustomTorsionForce*, int)</code>
      */
-    Pointer OpenMM_CustomTorsionForce_getGlobalParameterName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomTorsionForce_getGlobalParameterName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setGlobalParameterName(OpenMM_CustomTorsionForce*, int, const char*)</code>
      */
-    void OpenMM_CustomTorsionForce_setGlobalParameterName(PointerByReference target, int index, String name);
+    public static native void OpenMM_CustomTorsionForce_setGlobalParameterName(PointerByReference target, int index, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setGlobalParameterName(OpenMM_CustomTorsionForce*, int, const char*)</code>
      */
-    void OpenMM_CustomTorsionForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
+    public static native void OpenMM_CustomTorsionForce_setGlobalParameterName(PointerByReference target, int index, Pointer name);
 
     /**
      * Original signature :
      * <code>double OpenMM_CustomTorsionForce_getGlobalParameterDefaultValue(const OpenMM_CustomTorsionForce*, int)</code>
      */
-    double OpenMM_CustomTorsionForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
+    public static native double OpenMM_CustomTorsionForce_getGlobalParameterDefaultValue(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setGlobalParameterDefaultValue(OpenMM_CustomTorsionForce*, int, double)</code>
      */
-    void OpenMM_CustomTorsionForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
+    public static native void OpenMM_CustomTorsionForce_setGlobalParameterDefaultValue(PointerByReference target, int index, double defaultValue);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_addEnergyParameterDerivative(OpenMM_CustomTorsionForce*, const char*)</code>
      */
-    void OpenMM_CustomTorsionForce_addEnergyParameterDerivative(PointerByReference target, String name);
+    public static native void OpenMM_CustomTorsionForce_addEnergyParameterDerivative(PointerByReference target, String name);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_addEnergyParameterDerivative(OpenMM_CustomTorsionForce*, const char*)</code>
      */
-    void OpenMM_CustomTorsionForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
+    public static native void OpenMM_CustomTorsionForce_addEnergyParameterDerivative(PointerByReference target, Pointer name);
 
     /**
      * Original signature :
      * <code>char* OpenMM_CustomTorsionForce_getEnergyParameterDerivativeName(const OpenMM_CustomTorsionForce*, int)</code>
      */
-    Pointer OpenMM_CustomTorsionForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
+    public static native Pointer OpenMM_CustomTorsionForce_getEnergyParameterDerivativeName(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_CustomTorsionForce_addTorsion(OpenMM_CustomTorsionForce*, int, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    int OpenMM_CustomTorsionForce_addTorsion(PointerByReference target, int particle1, int particle2, int particle3, int particle4, PointerByReference parameters);
+    public static native int OpenMM_CustomTorsionForce_addTorsion(PointerByReference target, int particle1, int particle2, int particle3, int particle4, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_getTorsionParameters(const OpenMM_CustomTorsionForce*, int, int*, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomTorsionForce_getTorsionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, IntBuffer particle4, PointerByReference parameters);
+    public static native void OpenMM_CustomTorsionForce_getTorsionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, IntBuffer particle4, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_getTorsionParameters(const OpenMM_CustomTorsionForce*, int, int*, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomTorsionForce_getTorsionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, IntByReference particle4, PointerByReference parameters);
+    public static native void OpenMM_CustomTorsionForce_getTorsionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, IntByReference particle4, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setTorsionParameters(OpenMM_CustomTorsionForce*, int, int, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_CustomTorsionForce_setTorsionParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, int particle4, PointerByReference parameters);
+    public static native void OpenMM_CustomTorsionForce_setTorsionParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, int particle4, PointerByReference parameters);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_updateParametersInContext(OpenMM_CustomTorsionForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_CustomTorsionForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_CustomTorsionForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_CustomTorsionForce_setUsesPeriodicBoundaryConditions(OpenMM_CustomTorsionForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_CustomTorsionForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_CustomTorsionForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_CustomTorsionForce_usesPeriodicBoundaryConditions(const OpenMM_CustomTorsionForce*)</code>
      */
-    int OpenMM_CustomTorsionForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_CustomTorsionForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Discrete1DFunction<br>
      * Original signature :
      * <code>OpenMM_Discrete1DFunction* OpenMM_Discrete1DFunction_create(const OpenMM_DoubleArray*)</code>
      */
-    PointerByReference OpenMM_Discrete1DFunction_create(PointerByReference values);
+    public static native PointerByReference OpenMM_Discrete1DFunction_create(PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete1DFunction_destroy(OpenMM_Discrete1DFunction*)</code>
      */
-    void OpenMM_Discrete1DFunction_destroy(PointerByReference target);
+    public static native void OpenMM_Discrete1DFunction_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete1DFunction_getFunctionParameters(const OpenMM_Discrete1DFunction*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_Discrete1DFunction_getFunctionParameters(PointerByReference target, PointerByReference values);
+    public static native void OpenMM_Discrete1DFunction_getFunctionParameters(PointerByReference target, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete1DFunction_setFunctionParameters(OpenMM_Discrete1DFunction*, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_Discrete1DFunction_setFunctionParameters(PointerByReference target, PointerByReference values);
+    public static native void OpenMM_Discrete1DFunction_setFunctionParameters(PointerByReference target, PointerByReference values);
 
     /**
      * Original signature :
      * <code>OpenMM_Discrete1DFunction* OpenMM_Discrete1DFunction_Copy(const OpenMM_Discrete1DFunction*)</code>
      */
-    PointerByReference OpenMM_Discrete1DFunction_Copy(PointerByReference target);
+    public static native PointerByReference OpenMM_Discrete1DFunction_Copy(PointerByReference target);
 
     /**
      * Discrete2DFunction<br>
      * Original signature :
      * <code>OpenMM_Discrete2DFunction* OpenMM_Discrete2DFunction_create(int, int, const OpenMM_DoubleArray*)</code>
      */
-    PointerByReference OpenMM_Discrete2DFunction_create(int xsize, int ysize, PointerByReference values);
+    public static native PointerByReference OpenMM_Discrete2DFunction_create(int xsize, int ysize, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete2DFunction_destroy(OpenMM_Discrete2DFunction*)</code>
      */
-    void OpenMM_Discrete2DFunction_destroy(PointerByReference target);
+    public static native void OpenMM_Discrete2DFunction_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete2DFunction_getFunctionParameters(const OpenMM_Discrete2DFunction*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_Discrete2DFunction_getFunctionParameters(PointerByReference target, IntBuffer xsize, IntBuffer ysize, PointerByReference values);
+    public static native void OpenMM_Discrete2DFunction_getFunctionParameters(PointerByReference target, IntBuffer xsize, IntBuffer ysize, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete2DFunction_getFunctionParameters(const OpenMM_Discrete2DFunction*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_Discrete2DFunction_getFunctionParameters(PointerByReference target, IntByReference xsize, IntByReference ysize, PointerByReference values);
+    public static native void OpenMM_Discrete2DFunction_getFunctionParameters(PointerByReference target, IntByReference xsize, IntByReference ysize, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete2DFunction_setFunctionParameters(OpenMM_Discrete2DFunction*, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_Discrete2DFunction_setFunctionParameters(PointerByReference target, int xsize, int ysize, PointerByReference values);
+    public static native void OpenMM_Discrete2DFunction_setFunctionParameters(PointerByReference target, int xsize, int ysize, PointerByReference values);
 
     /**
      * Original signature :
      * <code>OpenMM_Discrete2DFunction* OpenMM_Discrete2DFunction_Copy(const OpenMM_Discrete2DFunction*)</code>
      */
-    PointerByReference OpenMM_Discrete2DFunction_Copy(PointerByReference target);
+    public static native PointerByReference OpenMM_Discrete2DFunction_Copy(PointerByReference target);
 
     /**
      * Discrete3DFunction<br>
      * Original signature :
      * <code>OpenMM_Discrete3DFunction* OpenMM_Discrete3DFunction_create(int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    PointerByReference OpenMM_Discrete3DFunction_create(int xsize, int ysize, int zsize, PointerByReference values);
+    public static native PointerByReference OpenMM_Discrete3DFunction_create(int xsize, int ysize, int zsize, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete3DFunction_destroy(OpenMM_Discrete3DFunction*)</code>
      */
-    void OpenMM_Discrete3DFunction_destroy(PointerByReference target);
+    public static native void OpenMM_Discrete3DFunction_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete3DFunction_getFunctionParameters(const OpenMM_Discrete3DFunction*, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_Discrete3DFunction_getFunctionParameters(PointerByReference target, IntBuffer xsize, IntBuffer ysize, IntBuffer zsize, PointerByReference values);
+    public static native void OpenMM_Discrete3DFunction_getFunctionParameters(PointerByReference target, IntBuffer xsize, IntBuffer ysize, IntBuffer zsize, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete3DFunction_getFunctionParameters(const OpenMM_Discrete3DFunction*, int*, int*, int*, OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_Discrete3DFunction_getFunctionParameters(PointerByReference target, IntByReference xsize, IntByReference ysize, IntByReference zsize, PointerByReference values);
+    public static native void OpenMM_Discrete3DFunction_getFunctionParameters(PointerByReference target, IntByReference xsize, IntByReference ysize, IntByReference zsize, PointerByReference values);
 
     /**
      * Original signature :
      * <code>void OpenMM_Discrete3DFunction_setFunctionParameters(OpenMM_Discrete3DFunction*, int, int, int, const OpenMM_DoubleArray*)</code>
      */
-    void OpenMM_Discrete3DFunction_setFunctionParameters(PointerByReference target, int xsize, int ysize, int zsize, PointerByReference values);
+    public static native void OpenMM_Discrete3DFunction_setFunctionParameters(PointerByReference target, int xsize, int ysize, int zsize, PointerByReference values);
 
     /**
      * Original signature :
      * <code>OpenMM_Discrete3DFunction* OpenMM_Discrete3DFunction_Copy(const OpenMM_Discrete3DFunction*)</code>
      */
-    PointerByReference OpenMM_Discrete3DFunction_Copy(PointerByReference target);
+    public static native PointerByReference OpenMM_Discrete3DFunction_Copy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_GayBerneForce* OpenMM_GayBerneForce_create()</code>
      */
-    PointerByReference OpenMM_GayBerneForce_create();
+    public static native PointerByReference OpenMM_GayBerneForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_destroy(OpenMM_GayBerneForce*)</code>
      */
-    void OpenMM_GayBerneForce_destroy(PointerByReference target);
+    public static native void OpenMM_GayBerneForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_GayBerneForce_getNumParticles(const OpenMM_GayBerneForce*)</code>
      */
-    int OpenMM_GayBerneForce_getNumParticles(PointerByReference target);
+    public static native int OpenMM_GayBerneForce_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_GayBerneForce_getNumExceptions(const OpenMM_GayBerneForce*)</code>
      */
-    int OpenMM_GayBerneForce_getNumExceptions(PointerByReference target);
+    public static native int OpenMM_GayBerneForce_getNumExceptions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_GayBerneForce_NonbondedMethod OpenMM_GayBerneForce_getNonbondedMethod(const OpenMM_GayBerneForce*)</code>
      */
-    int OpenMM_GayBerneForce_getNonbondedMethod(PointerByReference target);
+    public static native int OpenMM_GayBerneForce_getNonbondedMethod(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_setNonbondedMethod(OpenMM_GayBerneForce*, OpenMM_GayBerneForce_NonbondedMethod)</code>
      */
-    void OpenMM_GayBerneForce_setNonbondedMethod(PointerByReference target, int method);
+    public static native void OpenMM_GayBerneForce_setNonbondedMethod(PointerByReference target, int method);
 
     /**
      * Original signature :
      * <code>double OpenMM_GayBerneForce_getCutoffDistance(const OpenMM_GayBerneForce*)</code>
      */
-    double OpenMM_GayBerneForce_getCutoffDistance(PointerByReference target);
+    public static native double OpenMM_GayBerneForce_getCutoffDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_setCutoffDistance(OpenMM_GayBerneForce*, double)</code>
      */
-    void OpenMM_GayBerneForce_setCutoffDistance(PointerByReference target, double distance);
+    public static native void OpenMM_GayBerneForce_setCutoffDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_GayBerneForce_getUseSwitchingFunction(const OpenMM_GayBerneForce*)</code>
      */
-    int OpenMM_GayBerneForce_getUseSwitchingFunction(PointerByReference target);
+    public static native int OpenMM_GayBerneForce_getUseSwitchingFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_setUseSwitchingFunction(OpenMM_GayBerneForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_GayBerneForce_setUseSwitchingFunction(PointerByReference target, int use);
+    public static native void OpenMM_GayBerneForce_setUseSwitchingFunction(PointerByReference target, int use);
 
     /**
      * Original signature :
      * <code>double OpenMM_GayBerneForce_getSwitchingDistance(const OpenMM_GayBerneForce*)</code>
      */
-    double OpenMM_GayBerneForce_getSwitchingDistance(PointerByReference target);
+    public static native double OpenMM_GayBerneForce_getSwitchingDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_setSwitchingDistance(OpenMM_GayBerneForce*, double)</code>
      */
-    void OpenMM_GayBerneForce_setSwitchingDistance(PointerByReference target, double distance);
+    public static native void OpenMM_GayBerneForce_setSwitchingDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>int OpenMM_GayBerneForce_addParticle(OpenMM_GayBerneForce*, double, double, int, int, double, double, double, double, double, double)</code>
      */
-    int OpenMM_GayBerneForce_addParticle(PointerByReference target, double sigma, double epsilon, int xparticle, int yparticle, double sx, double sy, double sz, double ex, double ey, double ez);
+    public static native int OpenMM_GayBerneForce_addParticle(PointerByReference target, double sigma, double epsilon, int xparticle, int yparticle, double sx, double sy, double sz, double ex, double ey, double ez);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_getParticleParameters(const OpenMM_GayBerneForce*, int, double*, double*, int*, int*, double*, double*, double*, double*, double*, double*)</code>
      */
-    void OpenMM_GayBerneForce_getParticleParameters(PointerByReference target, int index, DoubleBuffer sigma, DoubleBuffer epsilon, IntBuffer xparticle, IntBuffer yparticle, DoubleBuffer sx, DoubleBuffer sy, DoubleBuffer sz, DoubleBuffer ex, DoubleBuffer ey, DoubleBuffer ez);
+    public static native void OpenMM_GayBerneForce_getParticleParameters(PointerByReference target, int index, DoubleBuffer sigma, DoubleBuffer epsilon, IntBuffer xparticle, IntBuffer yparticle, DoubleBuffer sx, DoubleBuffer sy, DoubleBuffer sz, DoubleBuffer ex, DoubleBuffer ey, DoubleBuffer ez);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_getParticleParameters(const OpenMM_GayBerneForce*, int, double*, double*, int*, int*, double*, double*, double*, double*, double*, double*)</code>
      */
-    void OpenMM_GayBerneForce_getParticleParameters(PointerByReference target, int index, DoubleByReference sigma, DoubleByReference epsilon, IntByReference xparticle, IntByReference yparticle, DoubleByReference sx, DoubleByReference sy, DoubleByReference sz, DoubleByReference ex, DoubleByReference ey, DoubleByReference ez);
+    public static native void OpenMM_GayBerneForce_getParticleParameters(PointerByReference target, int index, DoubleByReference sigma, DoubleByReference epsilon, IntByReference xparticle, IntByReference yparticle, DoubleByReference sx, DoubleByReference sy, DoubleByReference sz, DoubleByReference ex, DoubleByReference ey, DoubleByReference ez);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_setParticleParameters(OpenMM_GayBerneForce*, int, double, double, int, int, double, double, double, double, double, double)</code>
      */
-    void OpenMM_GayBerneForce_setParticleParameters(PointerByReference target, int index, double sigma, double epsilon, int xparticle, int yparticle, double sx, double sy, double sz, double ex, double ey, double ez);
+    public static native void OpenMM_GayBerneForce_setParticleParameters(PointerByReference target, int index, double sigma, double epsilon, int xparticle, int yparticle, double sx, double sy, double sz, double ex, double ey, double ez);
 
     /**
      * Original signature :
      * <code>int OpenMM_GayBerneForce_addException(OpenMM_GayBerneForce*, int, int, double, double, OpenMM_Boolean)</code>
      */
-    int OpenMM_GayBerneForce_addException(PointerByReference target, int particle1, int particle2, double sigma, double epsilon, int replace);
+    public static native int OpenMM_GayBerneForce_addException(PointerByReference target, int particle1, int particle2, double sigma, double epsilon, int replace);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_getExceptionParameters(const OpenMM_GayBerneForce*, int, int*, int*, double*, double*)</code>
      */
-    void OpenMM_GayBerneForce_getExceptionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, DoubleBuffer sigma, DoubleBuffer epsilon);
+    public static native void OpenMM_GayBerneForce_getExceptionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, DoubleBuffer sigma, DoubleBuffer epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_getExceptionParameters(const OpenMM_GayBerneForce*, int, int*, int*, double*, double*)</code>
      */
-    void OpenMM_GayBerneForce_getExceptionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, DoubleByReference sigma, DoubleByReference epsilon);
+    public static native void OpenMM_GayBerneForce_getExceptionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, DoubleByReference sigma, DoubleByReference epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_setExceptionParameters(OpenMM_GayBerneForce*, int, int, int, double, double)</code>
      */
-    void OpenMM_GayBerneForce_setExceptionParameters(PointerByReference target, int index, int particle1, int particle2, double sigma, double epsilon);
+    public static native void OpenMM_GayBerneForce_setExceptionParameters(PointerByReference target, int index, int particle1, int particle2, double sigma, double epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_GayBerneForce_updateParametersInContext(OpenMM_GayBerneForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_GayBerneForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_GayBerneForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_GayBerneForce_usesPeriodicBoundaryConditions(const OpenMM_GayBerneForce*)</code>
      */
-    int OpenMM_GayBerneForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_GayBerneForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_GBSAOBCForce* OpenMM_GBSAOBCForce_create()</code>
      */
-    PointerByReference OpenMM_GBSAOBCForce_create();
+    public static native PointerByReference OpenMM_GBSAOBCForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_destroy(OpenMM_GBSAOBCForce*)</code>
      */
-    void OpenMM_GBSAOBCForce_destroy(PointerByReference target);
+    public static native void OpenMM_GBSAOBCForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_GBSAOBCForce_getNumParticles(const OpenMM_GBSAOBCForce*)</code>
      */
-    int OpenMM_GBSAOBCForce_getNumParticles(PointerByReference target);
+    public static native int OpenMM_GBSAOBCForce_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_GBSAOBCForce_addParticle(OpenMM_GBSAOBCForce*, double, double, double)</code>
      */
-    int OpenMM_GBSAOBCForce_addParticle(PointerByReference target, double charge, double radius, double scalingFactor);
+    public static native int OpenMM_GBSAOBCForce_addParticle(PointerByReference target, double charge, double radius, double scalingFactor);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_getParticleParameters(const OpenMM_GBSAOBCForce*, int, double*, double*, double*)</code>
      */
-    void OpenMM_GBSAOBCForce_getParticleParameters(PointerByReference target, int index, DoubleBuffer charge, DoubleBuffer radius, DoubleBuffer scalingFactor);
+    public static native void OpenMM_GBSAOBCForce_getParticleParameters(PointerByReference target, int index, DoubleBuffer charge, DoubleBuffer radius, DoubleBuffer scalingFactor);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_getParticleParameters(const OpenMM_GBSAOBCForce*, int, double*, double*, double*)</code>
      */
-    void OpenMM_GBSAOBCForce_getParticleParameters(PointerByReference target, int index, DoubleByReference charge, DoubleByReference radius, DoubleByReference scalingFactor);
+    public static native void OpenMM_GBSAOBCForce_getParticleParameters(PointerByReference target, int index, DoubleByReference charge, DoubleByReference radius, DoubleByReference scalingFactor);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_setParticleParameters(OpenMM_GBSAOBCForce*, int, double, double, double)</code>
      */
-    void OpenMM_GBSAOBCForce_setParticleParameters(PointerByReference target, int index, double charge, double radius, double scalingFactor);
+    public static native void OpenMM_GBSAOBCForce_setParticleParameters(PointerByReference target, int index, double charge, double radius, double scalingFactor);
 
     /**
      * Original signature :
      * <code>double OpenMM_GBSAOBCForce_getSolventDielectric(const OpenMM_GBSAOBCForce*)</code>
      */
-    double OpenMM_GBSAOBCForce_getSolventDielectric(PointerByReference target);
+    public static native double OpenMM_GBSAOBCForce_getSolventDielectric(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_setSolventDielectric(OpenMM_GBSAOBCForce*, double)</code>
      */
-    void OpenMM_GBSAOBCForce_setSolventDielectric(PointerByReference target, double dielectric);
+    public static native void OpenMM_GBSAOBCForce_setSolventDielectric(PointerByReference target, double dielectric);
 
     /**
      * Original signature :
      * <code>double OpenMM_GBSAOBCForce_getSoluteDielectric(const OpenMM_GBSAOBCForce*)</code>
      */
-    double OpenMM_GBSAOBCForce_getSoluteDielectric(PointerByReference target);
+    public static native double OpenMM_GBSAOBCForce_getSoluteDielectric(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_setSoluteDielectric(OpenMM_GBSAOBCForce*, double)</code>
      */
-    void OpenMM_GBSAOBCForce_setSoluteDielectric(PointerByReference target, double dielectric);
+    public static native void OpenMM_GBSAOBCForce_setSoluteDielectric(PointerByReference target, double dielectric);
 
     /**
      * Original signature :
      * <code>double OpenMM_GBSAOBCForce_getSurfaceAreaEnergy(const OpenMM_GBSAOBCForce*)</code>
      */
-    double OpenMM_GBSAOBCForce_getSurfaceAreaEnergy(PointerByReference target);
+    public static native double OpenMM_GBSAOBCForce_getSurfaceAreaEnergy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_setSurfaceAreaEnergy(OpenMM_GBSAOBCForce*, double)</code>
      */
-    void OpenMM_GBSAOBCForce_setSurfaceAreaEnergy(PointerByReference target, double energy);
+    public static native void OpenMM_GBSAOBCForce_setSurfaceAreaEnergy(PointerByReference target, double energy);
 
     /**
      * Original signature :
      * <code>OpenMM_GBSAOBCForce_NonbondedMethod OpenMM_GBSAOBCForce_getNonbondedMethod(const OpenMM_GBSAOBCForce*)</code>
      */
-    int OpenMM_GBSAOBCForce_getNonbondedMethod(PointerByReference target);
+    public static native int OpenMM_GBSAOBCForce_getNonbondedMethod(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_setNonbondedMethod(OpenMM_GBSAOBCForce*, OpenMM_GBSAOBCForce_NonbondedMethod)</code>
      */
-    void OpenMM_GBSAOBCForce_setNonbondedMethod(PointerByReference target, int method);
+    public static native void OpenMM_GBSAOBCForce_setNonbondedMethod(PointerByReference target, int method);
 
     /**
      * Original signature :
      * <code>double OpenMM_GBSAOBCForce_getCutoffDistance(const OpenMM_GBSAOBCForce*)</code>
      */
-    double OpenMM_GBSAOBCForce_getCutoffDistance(PointerByReference target);
+    public static native double OpenMM_GBSAOBCForce_getCutoffDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_setCutoffDistance(OpenMM_GBSAOBCForce*, double)</code>
      */
-    void OpenMM_GBSAOBCForce_setCutoffDistance(PointerByReference target, double distance);
+    public static native void OpenMM_GBSAOBCForce_setCutoffDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>void OpenMM_GBSAOBCForce_updateParametersInContext(OpenMM_GBSAOBCForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_GBSAOBCForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_GBSAOBCForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_GBSAOBCForce_usesPeriodicBoundaryConditions(const OpenMM_GBSAOBCForce*)</code>
      */
-    int OpenMM_GBSAOBCForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_GBSAOBCForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * HarmonicAngleForce<br>
      * Original signature :
      * <code>OpenMM_HarmonicAngleForce* OpenMM_HarmonicAngleForce_create()</code>
      */
-    PointerByReference OpenMM_HarmonicAngleForce_create();
+    public static native PointerByReference OpenMM_HarmonicAngleForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicAngleForce_destroy(OpenMM_HarmonicAngleForce*)</code>
      */
-    void OpenMM_HarmonicAngleForce_destroy(PointerByReference target);
+    public static native void OpenMM_HarmonicAngleForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_HarmonicAngleForce_getNumAngles(const OpenMM_HarmonicAngleForce*)</code>
      */
-    int OpenMM_HarmonicAngleForce_getNumAngles(PointerByReference target);
+    public static native int OpenMM_HarmonicAngleForce_getNumAngles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_HarmonicAngleForce_addAngle(OpenMM_HarmonicAngleForce*, int, int, int, double, double)</code>
      */
-    int OpenMM_HarmonicAngleForce_addAngle(PointerByReference target, int particle1, int particle2, int particle3, double angle, double k);
+    public static native int OpenMM_HarmonicAngleForce_addAngle(PointerByReference target, int particle1, int particle2, int particle3, double angle, double k);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicAngleForce_getAngleParameters(const OpenMM_HarmonicAngleForce*, int, int*, int*, int*, double*, double*)</code>
      */
-    void OpenMM_HarmonicAngleForce_getAngleParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, DoubleBuffer angle, DoubleBuffer k);
+    public static native void OpenMM_HarmonicAngleForce_getAngleParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, DoubleBuffer angle, DoubleBuffer k);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicAngleForce_getAngleParameters(const OpenMM_HarmonicAngleForce*, int, int*, int*, int*, double*, double*)</code>
      */
-    void OpenMM_HarmonicAngleForce_getAngleParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, DoubleByReference angle, DoubleByReference k);
+    public static native void OpenMM_HarmonicAngleForce_getAngleParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, DoubleByReference angle, DoubleByReference k);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicAngleForce_setAngleParameters(OpenMM_HarmonicAngleForce*, int, int, int, int, double, double)</code>
      */
-    void OpenMM_HarmonicAngleForce_setAngleParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, double angle, double k);
+    public static native void OpenMM_HarmonicAngleForce_setAngleParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, double angle, double k);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicAngleForce_updateParametersInContext(OpenMM_HarmonicAngleForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_HarmonicAngleForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_HarmonicAngleForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicAngleForce_setUsesPeriodicBoundaryConditions(OpenMM_HarmonicAngleForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_HarmonicAngleForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_HarmonicAngleForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_HarmonicAngleForce_usesPeriodicBoundaryConditions(const OpenMM_HarmonicAngleForce*)</code>
      */
-    int OpenMM_HarmonicAngleForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_HarmonicAngleForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * HarmonicBondForce<br>
      * Original signature :
      * <code>OpenMM_HarmonicBondForce* OpenMM_HarmonicBondForce_create()</code>
      */
-    PointerByReference OpenMM_HarmonicBondForce_create();
+    public static native PointerByReference OpenMM_HarmonicBondForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicBondForce_destroy(OpenMM_HarmonicBondForce*)</code>
      */
-    void OpenMM_HarmonicBondForce_destroy(PointerByReference target);
+    public static native void OpenMM_HarmonicBondForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_HarmonicBondForce_getNumBonds(const OpenMM_HarmonicBondForce*)</code>
      */
-    int OpenMM_HarmonicBondForce_getNumBonds(PointerByReference target);
+    public static native int OpenMM_HarmonicBondForce_getNumBonds(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_HarmonicBondForce_addBond(OpenMM_HarmonicBondForce*, int, int, double, double)</code>
      */
-    int OpenMM_HarmonicBondForce_addBond(PointerByReference target, int particle1, int particle2, double length, double k);
+    public static native int OpenMM_HarmonicBondForce_addBond(PointerByReference target, int particle1, int particle2, double length, double k);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicBondForce_getBondParameters(const OpenMM_HarmonicBondForce*, int, int*, int*, double*, double*)</code>
      */
-    void OpenMM_HarmonicBondForce_getBondParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, DoubleBuffer length, DoubleBuffer k);
+    public static native void OpenMM_HarmonicBondForce_getBondParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, DoubleBuffer length, DoubleBuffer k);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicBondForce_getBondParameters(const OpenMM_HarmonicBondForce*, int, int*, int*, double*, double*)</code>
      */
-    void OpenMM_HarmonicBondForce_getBondParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, DoubleByReference length, DoubleByReference k);
+    public static native void OpenMM_HarmonicBondForce_getBondParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, DoubleByReference length, DoubleByReference k);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicBondForce_setBondParameters(OpenMM_HarmonicBondForce*, int, int, int, double, double)</code>
      */
-    void OpenMM_HarmonicBondForce_setBondParameters(PointerByReference target, int index, int particle1, int particle2, double length, double k);
+    public static native void OpenMM_HarmonicBondForce_setBondParameters(PointerByReference target, int index, int particle1, int particle2, double length, double k);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicBondForce_updateParametersInContext(OpenMM_HarmonicBondForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_HarmonicBondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_HarmonicBondForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_HarmonicBondForce_setUsesPeriodicBoundaryConditions(OpenMM_HarmonicBondForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_HarmonicBondForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_HarmonicBondForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_HarmonicBondForce_usesPeriodicBoundaryConditions(const OpenMM_HarmonicBondForce*)</code>
      */
-    int OpenMM_HarmonicBondForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_HarmonicBondForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * LangevinIntegrator<br>
      * Original signature :
      * <code>OpenMM_LangevinIntegrator* OpenMM_LangevinIntegrator_create(double, double, double)</code>
      */
-    PointerByReference OpenMM_LangevinIntegrator_create(double temperature, double frictionCoeff, double stepSize);
+    public static native PointerByReference OpenMM_LangevinIntegrator_create(double temperature, double frictionCoeff, double stepSize);
 
     /**
      * Original signature :
      * <code>void OpenMM_LangevinIntegrator_destroy(OpenMM_LangevinIntegrator*)</code>
      */
-    void OpenMM_LangevinIntegrator_destroy(PointerByReference target);
+    public static native void OpenMM_LangevinIntegrator_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_LangevinIntegrator_getTemperature(const OpenMM_LangevinIntegrator*)</code>
      */
-    double OpenMM_LangevinIntegrator_getTemperature(PointerByReference target);
+    public static native double OpenMM_LangevinIntegrator_getTemperature(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_LangevinIntegrator_setTemperature(OpenMM_LangevinIntegrator*, double)</code>
      */
-    void OpenMM_LangevinIntegrator_setTemperature(PointerByReference target, double temp);
+    public static native void OpenMM_LangevinIntegrator_setTemperature(PointerByReference target, double temp);
 
     /**
      * Original signature :
      * <code>double OpenMM_LangevinIntegrator_getFriction(const OpenMM_LangevinIntegrator*)</code>
      */
-    double OpenMM_LangevinIntegrator_getFriction(PointerByReference target);
+    public static native double OpenMM_LangevinIntegrator_getFriction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_LangevinIntegrator_setFriction(OpenMM_LangevinIntegrator*, double)</code>
      */
-    void OpenMM_LangevinIntegrator_setFriction(PointerByReference target, double coeff);
+    public static native void OpenMM_LangevinIntegrator_setFriction(PointerByReference target, double coeff);
 
     /**
      * Original signature :
      * <code>int OpenMM_LangevinIntegrator_getRandomNumberSeed(const OpenMM_LangevinIntegrator*)</code>
      */
-    int OpenMM_LangevinIntegrator_getRandomNumberSeed(PointerByReference target);
+    public static native int OpenMM_LangevinIntegrator_getRandomNumberSeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_LangevinIntegrator_setRandomNumberSeed(OpenMM_LangevinIntegrator*, int)</code>
      */
-    void OpenMM_LangevinIntegrator_setRandomNumberSeed(PointerByReference target, int seed);
+    public static native void OpenMM_LangevinIntegrator_setRandomNumberSeed(PointerByReference target, int seed);
 
     /**
      * Original signature :
      * <code>void OpenMM_LangevinIntegrator_step(OpenMM_LangevinIntegrator*, int)</code>
      */
-    void OpenMM_LangevinIntegrator_step(PointerByReference target, int steps);
+    public static native void OpenMM_LangevinIntegrator_step(PointerByReference target, int steps);
 
     /**
      * VirtualSite<br>
      * Original signature :
      * <code>void OpenMM_VirtualSite_destroy(OpenMM_VirtualSite*)</code>
      */
-    void OpenMM_VirtualSite_destroy(PointerByReference target);
+    public static native void OpenMM_VirtualSite_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_VirtualSite_getNumParticles(const OpenMM_VirtualSite*)</code>
      */
-    int OpenMM_VirtualSite_getNumParticles(PointerByReference target);
+    public static native int OpenMM_VirtualSite_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_VirtualSite_getParticle(const OpenMM_VirtualSite*, int)</code>
      */
-    int OpenMM_VirtualSite_getParticle(PointerByReference target, int particle);
+    public static native int OpenMM_VirtualSite_getParticle(PointerByReference target, int particle);
 
     /**
      * LocalCoordinatesSite<br>
      * Original signature :
      * <code>OpenMM_LocalCoordinatesSite* OpenMM_LocalCoordinatesSite_create(int, int, int, const OpenMM_Vec3*, const OpenMM_Vec3*, const OpenMM_Vec3*, const OpenMM_Vec3*)</code>
      */
-    PointerByReference OpenMM_LocalCoordinatesSite_create(int particle1, int particle2, int particle3, OpenMM_Vec3 originWeights, OpenMM_Vec3 xWeights, OpenMM_Vec3 yWeights, OpenMM_Vec3 localPosition);
+    public static native PointerByReference OpenMM_LocalCoordinatesSite_create(int particle1, int particle2, int particle3, OpenMM_Vec3 originWeights, OpenMM_Vec3 xWeights, OpenMM_Vec3 yWeights, OpenMM_Vec3 localPosition);
 
     /**
      * Original signature :
      * <code>void OpenMM_LocalCoordinatesSite_destroy(OpenMM_LocalCoordinatesSite*)</code>
      */
-    void OpenMM_LocalCoordinatesSite_destroy(PointerByReference target);
+    public static native void OpenMM_LocalCoordinatesSite_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3* OpenMM_LocalCoordinatesSite_getOriginWeights(const OpenMM_LocalCoordinatesSite*)</code>
      */
-    OpenMM_Vec3 OpenMM_LocalCoordinatesSite_getOriginWeights(PointerByReference target);
+    public static native OpenMM_Vec3 OpenMM_LocalCoordinatesSite_getOriginWeights(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3* OpenMM_LocalCoordinatesSite_getXWeights(const OpenMM_LocalCoordinatesSite*)</code>
      */
-    OpenMM_Vec3 OpenMM_LocalCoordinatesSite_getXWeights(PointerByReference target);
+    public static native OpenMM_Vec3 OpenMM_LocalCoordinatesSite_getXWeights(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3* OpenMM_LocalCoordinatesSite_getYWeights(const OpenMM_LocalCoordinatesSite*)</code>
      */
-    OpenMM_Vec3 OpenMM_LocalCoordinatesSite_getYWeights(PointerByReference target);
+    public static native OpenMM_Vec3 OpenMM_LocalCoordinatesSite_getYWeights(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3* OpenMM_LocalCoordinatesSite_getLocalPosition(const OpenMM_LocalCoordinatesSite*)</code>
      */
-    OpenMM_Vec3 OpenMM_LocalCoordinatesSite_getLocalPosition(PointerByReference target);
+    public static native OpenMM_Vec3 OpenMM_LocalCoordinatesSite_getLocalPosition(PointerByReference target);
 
     /**
      * LocalEnergyMinimizer<br>
      * Original signature :
      * <code>void OpenMM_LocalEnergyMinimizer_destroy(OpenMM_LocalEnergyMinimizer*)</code>
      */
-    void OpenMM_LocalEnergyMinimizer_destroy(PointerByReference target);
+    public static native void OpenMM_LocalEnergyMinimizer_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_LocalEnergyMinimizer_minimize(OpenMM_Context*, double, int)</code>
      */
-    void OpenMM_LocalEnergyMinimizer_minimize(PointerByReference context, double tolerance, int maxIterations);
+    public static native void OpenMM_LocalEnergyMinimizer_minimize(PointerByReference context, double tolerance, int maxIterations);
 
     /**
      * MonteCarloAnisotropicBarostat<br>
      * Original signature :
      * <code>OpenMM_MonteCarloAnisotropicBarostat* OpenMM_MonteCarloAnisotropicBarostat_create(const OpenMM_Vec3*, double, OpenMM_Boolean, OpenMM_Boolean, OpenMM_Boolean, int)</code>
      */
-    PointerByReference OpenMM_MonteCarloAnisotropicBarostat_create(OpenMM_Vec3 defaultPressure, double defaultTemperature, int scaleX, int scaleY, int scaleZ, int frequency);
+    public static native PointerByReference OpenMM_MonteCarloAnisotropicBarostat_create(OpenMM_Vec3 defaultPressure, double defaultTemperature, int scaleX, int scaleY, int scaleZ, int frequency);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloAnisotropicBarostat_destroy(OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    void OpenMM_MonteCarloAnisotropicBarostat_destroy(PointerByReference target);
+    public static native void OpenMM_MonteCarloAnisotropicBarostat_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloAnisotropicBarostat_PressureX()</code>
      */
-    Pointer OpenMM_MonteCarloAnisotropicBarostat_PressureX();
+    public static native Pointer OpenMM_MonteCarloAnisotropicBarostat_PressureX();
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloAnisotropicBarostat_PressureY()</code>
      */
-    Pointer OpenMM_MonteCarloAnisotropicBarostat_PressureY();
+    public static native Pointer OpenMM_MonteCarloAnisotropicBarostat_PressureY();
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloAnisotropicBarostat_PressureZ()</code>
      */
-    Pointer OpenMM_MonteCarloAnisotropicBarostat_PressureZ();
+    public static native Pointer OpenMM_MonteCarloAnisotropicBarostat_PressureZ();
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloAnisotropicBarostat_Temperature()</code>
      */
-    Pointer OpenMM_MonteCarloAnisotropicBarostat_Temperature();
+    public static native Pointer OpenMM_MonteCarloAnisotropicBarostat_Temperature();
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3* OpenMM_MonteCarloAnisotropicBarostat_getDefaultPressure(const OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    OpenMM_Vec3 OpenMM_MonteCarloAnisotropicBarostat_getDefaultPressure(PointerByReference target);
+    public static native OpenMM_Vec3 OpenMM_MonteCarloAnisotropicBarostat_getDefaultPressure(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloAnisotropicBarostat_setDefaultPressure(OpenMM_MonteCarloAnisotropicBarostat*, const OpenMM_Vec3*)</code>
      */
-    void OpenMM_MonteCarloAnisotropicBarostat_setDefaultPressure(PointerByReference target, OpenMM_Vec3 pressure);
+    public static native void OpenMM_MonteCarloAnisotropicBarostat_setDefaultPressure(PointerByReference target, OpenMM_Vec3 pressure);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_MonteCarloAnisotropicBarostat_getScaleX(const OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    int OpenMM_MonteCarloAnisotropicBarostat_getScaleX(PointerByReference target);
+    public static native int OpenMM_MonteCarloAnisotropicBarostat_getScaleX(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_MonteCarloAnisotropicBarostat_getScaleY(const OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    int OpenMM_MonteCarloAnisotropicBarostat_getScaleY(PointerByReference target);
+    public static native int OpenMM_MonteCarloAnisotropicBarostat_getScaleY(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_MonteCarloAnisotropicBarostat_getScaleZ(const OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    int OpenMM_MonteCarloAnisotropicBarostat_getScaleZ(PointerByReference target);
+    public static native int OpenMM_MonteCarloAnisotropicBarostat_getScaleZ(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_MonteCarloAnisotropicBarostat_getFrequency(const OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    int OpenMM_MonteCarloAnisotropicBarostat_getFrequency(PointerByReference target);
+    public static native int OpenMM_MonteCarloAnisotropicBarostat_getFrequency(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloAnisotropicBarostat_setFrequency(OpenMM_MonteCarloAnisotropicBarostat*, int)</code>
      */
-    void OpenMM_MonteCarloAnisotropicBarostat_setFrequency(PointerByReference target, int freq);
+    public static native void OpenMM_MonteCarloAnisotropicBarostat_setFrequency(PointerByReference target, int freq);
 
     /**
      * Original signature :
      * <code>double OpenMM_MonteCarloAnisotropicBarostat_getDefaultTemperature(const OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    double OpenMM_MonteCarloAnisotropicBarostat_getDefaultTemperature(PointerByReference target);
+    public static native double OpenMM_MonteCarloAnisotropicBarostat_getDefaultTemperature(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloAnisotropicBarostat_setDefaultTemperature(OpenMM_MonteCarloAnisotropicBarostat*, double)</code>
      */
-    void OpenMM_MonteCarloAnisotropicBarostat_setDefaultTemperature(PointerByReference target, double temp);
+    public static native void OpenMM_MonteCarloAnisotropicBarostat_setDefaultTemperature(PointerByReference target, double temp);
 
     /**
      * Original signature :
      * <code>int OpenMM_MonteCarloAnisotropicBarostat_getRandomNumberSeed(const OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    int OpenMM_MonteCarloAnisotropicBarostat_getRandomNumberSeed(PointerByReference target);
+    public static native int OpenMM_MonteCarloAnisotropicBarostat_getRandomNumberSeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloAnisotropicBarostat_setRandomNumberSeed(OpenMM_MonteCarloAnisotropicBarostat*, int)</code>
      */
-    void OpenMM_MonteCarloAnisotropicBarostat_setRandomNumberSeed(PointerByReference target, int seed);
+    public static native void OpenMM_MonteCarloAnisotropicBarostat_setRandomNumberSeed(PointerByReference target, int seed);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_MonteCarloAnisotropicBarostat_usesPeriodicBoundaryConditions(const OpenMM_MonteCarloAnisotropicBarostat*)</code>
      */
-    int OpenMM_MonteCarloAnisotropicBarostat_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_MonteCarloAnisotropicBarostat_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * MonteCarloBarostat<br>
      * Original signature :
      * <code>OpenMM_MonteCarloBarostat* OpenMM_MonteCarloBarostat_create(double, double, int)</code>
      */
-    PointerByReference OpenMM_MonteCarloBarostat_create(double defaultPressure, double defaultTemperature, int frequency);
+    public static native PointerByReference OpenMM_MonteCarloBarostat_create(double defaultPressure, double defaultTemperature, int frequency);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloBarostat_destroy(OpenMM_MonteCarloBarostat*)</code>
      */
-    void OpenMM_MonteCarloBarostat_destroy(PointerByReference target);
+    public static native void OpenMM_MonteCarloBarostat_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloBarostat_Pressure()</code>
      */
-    Pointer OpenMM_MonteCarloBarostat_Pressure();
+    public static native Pointer OpenMM_MonteCarloBarostat_Pressure();
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloBarostat_Temperature()</code>
      */
-    Pointer OpenMM_MonteCarloBarostat_Temperature();
+    public static native Pointer OpenMM_MonteCarloBarostat_Temperature();
 
     /**
      * Original signature :
      * <code>double OpenMM_MonteCarloBarostat_getDefaultPressure(const OpenMM_MonteCarloBarostat*)</code>
      */
-    double OpenMM_MonteCarloBarostat_getDefaultPressure(PointerByReference target);
+    public static native double OpenMM_MonteCarloBarostat_getDefaultPressure(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloBarostat_setDefaultPressure(OpenMM_MonteCarloBarostat*, double)</code>
      */
-    void OpenMM_MonteCarloBarostat_setDefaultPressure(PointerByReference target, double pressure);
+    public static native void OpenMM_MonteCarloBarostat_setDefaultPressure(PointerByReference target, double pressure);
 
     /**
      * Original signature :
      * <code>int OpenMM_MonteCarloBarostat_getFrequency(const OpenMM_MonteCarloBarostat*)</code>
      */
-    int OpenMM_MonteCarloBarostat_getFrequency(PointerByReference target);
+    public static native int OpenMM_MonteCarloBarostat_getFrequency(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloBarostat_setFrequency(OpenMM_MonteCarloBarostat*, int)</code>
      */
-    void OpenMM_MonteCarloBarostat_setFrequency(PointerByReference target, int freq);
+    public static native void OpenMM_MonteCarloBarostat_setFrequency(PointerByReference target, int freq);
 
     /**
      * Original signature :
      * <code>double OpenMM_MonteCarloBarostat_getDefaultTemperature(const OpenMM_MonteCarloBarostat*)</code>
      */
-    double OpenMM_MonteCarloBarostat_getDefaultTemperature(PointerByReference target);
+    public static native double OpenMM_MonteCarloBarostat_getDefaultTemperature(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloBarostat_setDefaultTemperature(OpenMM_MonteCarloBarostat*, double)</code>
      */
-    void OpenMM_MonteCarloBarostat_setDefaultTemperature(PointerByReference target, double temp);
+    public static native void OpenMM_MonteCarloBarostat_setDefaultTemperature(PointerByReference target, double temp);
 
     /**
      * Original signature :
      * <code>int OpenMM_MonteCarloBarostat_getRandomNumberSeed(const OpenMM_MonteCarloBarostat*)</code>
      */
-    int OpenMM_MonteCarloBarostat_getRandomNumberSeed(PointerByReference target);
+    public static native int OpenMM_MonteCarloBarostat_getRandomNumberSeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloBarostat_setRandomNumberSeed(OpenMM_MonteCarloBarostat*, int)</code>
      */
-    void OpenMM_MonteCarloBarostat_setRandomNumberSeed(PointerByReference target, int seed);
+    public static native void OpenMM_MonteCarloBarostat_setRandomNumberSeed(PointerByReference target, int seed);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_MonteCarloBarostat_usesPeriodicBoundaryConditions(const OpenMM_MonteCarloBarostat*)</code>
      */
-    int OpenMM_MonteCarloBarostat_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_MonteCarloBarostat_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_MonteCarloMembraneBarostat* OpenMM_MonteCarloMembraneBarostat_create(double, double, double, OpenMM_MonteCarloMembraneBarostat_XYMode, OpenMM_MonteCarloMembraneBarostat_ZMode, int)</code>
      */
-    PointerByReference OpenMM_MonteCarloMembraneBarostat_create(double defaultPressure, double defaultSurfaceTension, double defaultTemperature, int xymode, int zmode, int frequency);
+    public static native PointerByReference OpenMM_MonteCarloMembraneBarostat_create(double defaultPressure, double defaultSurfaceTension, double defaultTemperature, int xymode, int zmode, int frequency);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloMembraneBarostat_destroy(OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    void OpenMM_MonteCarloMembraneBarostat_destroy(PointerByReference target);
+    public static native void OpenMM_MonteCarloMembraneBarostat_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloMembraneBarostat_Pressure()</code>
      */
-    Pointer OpenMM_MonteCarloMembraneBarostat_Pressure();
+    public static native Pointer OpenMM_MonteCarloMembraneBarostat_Pressure();
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloMembraneBarostat_SurfaceTension()</code>
      */
-    Pointer OpenMM_MonteCarloMembraneBarostat_SurfaceTension();
+    public static native Pointer OpenMM_MonteCarloMembraneBarostat_SurfaceTension();
 
     /**
      * Original signature :
      * <code>char* OpenMM_MonteCarloMembraneBarostat_Temperature()</code>
      */
-    Pointer OpenMM_MonteCarloMembraneBarostat_Temperature();
+    public static native Pointer OpenMM_MonteCarloMembraneBarostat_Temperature();
 
     /**
      * Original signature :
      * <code>double OpenMM_MonteCarloMembraneBarostat_getDefaultPressure(const OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    double OpenMM_MonteCarloMembraneBarostat_getDefaultPressure(PointerByReference target);
+    public static native double OpenMM_MonteCarloMembraneBarostat_getDefaultPressure(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloMembraneBarostat_setDefaultPressure(OpenMM_MonteCarloMembraneBarostat*, double)</code>
      */
-    void OpenMM_MonteCarloMembraneBarostat_setDefaultPressure(PointerByReference target, double pressure);
+    public static native void OpenMM_MonteCarloMembraneBarostat_setDefaultPressure(PointerByReference target, double pressure);
 
     /**
      * Original signature :
      * <code>double OpenMM_MonteCarloMembraneBarostat_getDefaultSurfaceTension(const OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    double OpenMM_MonteCarloMembraneBarostat_getDefaultSurfaceTension(PointerByReference target);
+    public static native double OpenMM_MonteCarloMembraneBarostat_getDefaultSurfaceTension(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloMembraneBarostat_setDefaultSurfaceTension(OpenMM_MonteCarloMembraneBarostat*, double)</code>
      */
-    void OpenMM_MonteCarloMembraneBarostat_setDefaultSurfaceTension(PointerByReference target, double surfaceTension);
+    public static native void OpenMM_MonteCarloMembraneBarostat_setDefaultSurfaceTension(PointerByReference target, double surfaceTension);
 
     /**
      * Original signature :
      * <code>int OpenMM_MonteCarloMembraneBarostat_getFrequency(const OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    int OpenMM_MonteCarloMembraneBarostat_getFrequency(PointerByReference target);
+    public static native int OpenMM_MonteCarloMembraneBarostat_getFrequency(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloMembraneBarostat_setFrequency(OpenMM_MonteCarloMembraneBarostat*, int)</code>
      */
-    void OpenMM_MonteCarloMembraneBarostat_setFrequency(PointerByReference target, int freq);
+    public static native void OpenMM_MonteCarloMembraneBarostat_setFrequency(PointerByReference target, int freq);
 
     /**
      * Original signature :
      * <code>double OpenMM_MonteCarloMembraneBarostat_getDefaultTemperature(const OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    double OpenMM_MonteCarloMembraneBarostat_getDefaultTemperature(PointerByReference target);
+    public static native double OpenMM_MonteCarloMembraneBarostat_getDefaultTemperature(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloMembraneBarostat_setDefaultTemperature(OpenMM_MonteCarloMembraneBarostat*, double)</code>
      */
-    void OpenMM_MonteCarloMembraneBarostat_setDefaultTemperature(PointerByReference target, double temp);
+    public static native void OpenMM_MonteCarloMembraneBarostat_setDefaultTemperature(PointerByReference target, double temp);
 
     /**
      * Original signature :
      * <code>OpenMM_MonteCarloMembraneBarostat_XYMode OpenMM_MonteCarloMembraneBarostat_getXYMode(const OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    int OpenMM_MonteCarloMembraneBarostat_getXYMode(PointerByReference target);
+    public static native int OpenMM_MonteCarloMembraneBarostat_getXYMode(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloMembraneBarostat_setXYMode(OpenMM_MonteCarloMembraneBarostat*, OpenMM_MonteCarloMembraneBarostat_XYMode)</code>
      */
-    void OpenMM_MonteCarloMembraneBarostat_setXYMode(PointerByReference target, int mode);
+    public static native void OpenMM_MonteCarloMembraneBarostat_setXYMode(PointerByReference target, int mode);
 
     /**
      * Original signature :
      * <code>OpenMM_MonteCarloMembraneBarostat_ZMode OpenMM_MonteCarloMembraneBarostat_getZMode(const OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    int OpenMM_MonteCarloMembraneBarostat_getZMode(PointerByReference target);
+    public static native int OpenMM_MonteCarloMembraneBarostat_getZMode(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloMembraneBarostat_setZMode(OpenMM_MonteCarloMembraneBarostat*, OpenMM_MonteCarloMembraneBarostat_ZMode)</code>
      */
-    void OpenMM_MonteCarloMembraneBarostat_setZMode(PointerByReference target, int mode);
+    public static native void OpenMM_MonteCarloMembraneBarostat_setZMode(PointerByReference target, int mode);
 
     /**
      * Original signature :
      * <code>int OpenMM_MonteCarloMembraneBarostat_getRandomNumberSeed(const OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    int OpenMM_MonteCarloMembraneBarostat_getRandomNumberSeed(PointerByReference target);
+    public static native int OpenMM_MonteCarloMembraneBarostat_getRandomNumberSeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_MonteCarloMembraneBarostat_setRandomNumberSeed(OpenMM_MonteCarloMembraneBarostat*, int)</code>
      */
-    void OpenMM_MonteCarloMembraneBarostat_setRandomNumberSeed(PointerByReference target, int seed);
+    public static native void OpenMM_MonteCarloMembraneBarostat_setRandomNumberSeed(PointerByReference target, int seed);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_MonteCarloMembraneBarostat_usesPeriodicBoundaryConditions(const OpenMM_MonteCarloMembraneBarostat*)</code>
      */
-    int OpenMM_MonteCarloMembraneBarostat_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_MonteCarloMembraneBarostat_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_NonbondedForce* OpenMM_NonbondedForce_create()</code>
      */
-    PointerByReference OpenMM_NonbondedForce_create();
+    public static native PointerByReference OpenMM_NonbondedForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_destroy(OpenMM_NonbondedForce*)</code>
      */
-    void OpenMM_NonbondedForce_destroy(PointerByReference target);
+    public static native void OpenMM_NonbondedForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_NonbondedForce_getNumParticles(const OpenMM_NonbondedForce*)</code>
      */
-    int OpenMM_NonbondedForce_getNumParticles(PointerByReference target);
+    public static native int OpenMM_NonbondedForce_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_NonbondedForce_getNumExceptions(const OpenMM_NonbondedForce*)</code>
      */
-    int OpenMM_NonbondedForce_getNumExceptions(PointerByReference target);
+    public static native int OpenMM_NonbondedForce_getNumExceptions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_NonbondedForce_NonbondedMethod OpenMM_NonbondedForce_getNonbondedMethod(const OpenMM_NonbondedForce*)</code>
      */
-    int OpenMM_NonbondedForce_getNonbondedMethod(PointerByReference target);
+    public static native int OpenMM_NonbondedForce_getNonbondedMethod(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setNonbondedMethod(OpenMM_NonbondedForce*, OpenMM_NonbondedForce_NonbondedMethod)</code>
      */
-    void OpenMM_NonbondedForce_setNonbondedMethod(PointerByReference target, int method);
+    public static native void OpenMM_NonbondedForce_setNonbondedMethod(PointerByReference target, int method);
 
     /**
      * Original signature :
      * <code>double OpenMM_NonbondedForce_getCutoffDistance(const OpenMM_NonbondedForce*)</code>
      */
-    double OpenMM_NonbondedForce_getCutoffDistance(PointerByReference target);
+    public static native double OpenMM_NonbondedForce_getCutoffDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setCutoffDistance(OpenMM_NonbondedForce*, double)</code>
      */
-    void OpenMM_NonbondedForce_setCutoffDistance(PointerByReference target, double distance);
+    public static native void OpenMM_NonbondedForce_setCutoffDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_NonbondedForce_getUseSwitchingFunction(const OpenMM_NonbondedForce*)</code>
      */
-    int OpenMM_NonbondedForce_getUseSwitchingFunction(PointerByReference target);
+    public static native int OpenMM_NonbondedForce_getUseSwitchingFunction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setUseSwitchingFunction(OpenMM_NonbondedForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_NonbondedForce_setUseSwitchingFunction(PointerByReference target, int use);
+    public static native void OpenMM_NonbondedForce_setUseSwitchingFunction(PointerByReference target, int use);
 
     /**
      * Original signature :
      * <code>double OpenMM_NonbondedForce_getSwitchingDistance(const OpenMM_NonbondedForce*)</code>
      */
-    double OpenMM_NonbondedForce_getSwitchingDistance(PointerByReference target);
+    public static native double OpenMM_NonbondedForce_getSwitchingDistance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setSwitchingDistance(OpenMM_NonbondedForce*, double)</code>
      */
-    void OpenMM_NonbondedForce_setSwitchingDistance(PointerByReference target, double distance);
+    public static native void OpenMM_NonbondedForce_setSwitchingDistance(PointerByReference target, double distance);
 
     /**
      * Original signature :
      * <code>double OpenMM_NonbondedForce_getReactionFieldDielectric(const OpenMM_NonbondedForce*)</code>
      */
-    double OpenMM_NonbondedForce_getReactionFieldDielectric(PointerByReference target);
+    public static native double OpenMM_NonbondedForce_getReactionFieldDielectric(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setReactionFieldDielectric(OpenMM_NonbondedForce*, double)</code>
      */
-    void OpenMM_NonbondedForce_setReactionFieldDielectric(PointerByReference target, double dielectric);
+    public static native void OpenMM_NonbondedForce_setReactionFieldDielectric(PointerByReference target, double dielectric);
 
     /**
      * Original signature :
      * <code>double OpenMM_NonbondedForce_getEwaldErrorTolerance(const OpenMM_NonbondedForce*)</code>
      */
-    double OpenMM_NonbondedForce_getEwaldErrorTolerance(PointerByReference target);
+    public static native double OpenMM_NonbondedForce_getEwaldErrorTolerance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setEwaldErrorTolerance(OpenMM_NonbondedForce*, double)</code>
      */
-    void OpenMM_NonbondedForce_setEwaldErrorTolerance(PointerByReference target, double tol);
+    public static native void OpenMM_NonbondedForce_setEwaldErrorTolerance(PointerByReference target, double tol);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_getPMEParameters(const OpenMM_NonbondedForce*, double*, int*, int*, int*)</code>
      */
-    void OpenMM_NonbondedForce_getPMEParameters(PointerByReference target, DoubleBuffer alpha, IntBuffer nx, IntBuffer ny, IntBuffer nz);
+    public static native void OpenMM_NonbondedForce_getPMEParameters(PointerByReference target, DoubleBuffer alpha, IntBuffer nx, IntBuffer ny, IntBuffer nz);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_getPMEParameters(const OpenMM_NonbondedForce*, double*, int*, int*, int*)</code>
      */
-    void OpenMM_NonbondedForce_getPMEParameters(PointerByReference target, DoubleByReference alpha, IntByReference nx, IntByReference ny, IntByReference nz);
+    public static native void OpenMM_NonbondedForce_getPMEParameters(PointerByReference target, DoubleByReference alpha, IntByReference nx, IntByReference ny, IntByReference nz);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setPMEParameters(OpenMM_NonbondedForce*, double, int, int, int)</code>
      */
-    void OpenMM_NonbondedForce_setPMEParameters(PointerByReference target, double alpha, int nx, int ny, int nz);
+    public static native void OpenMM_NonbondedForce_setPMEParameters(PointerByReference target, double alpha, int nx, int ny, int nz);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_getPMEParametersInContext(const OpenMM_NonbondedForce*, const OpenMM_Context*, double*, int*, int*, int*)</code>
      */
-    void OpenMM_NonbondedForce_getPMEParametersInContext(PointerByReference target, PointerByReference context, DoubleBuffer alpha, IntBuffer nx, IntBuffer ny, IntBuffer nz);
+    public static native void OpenMM_NonbondedForce_getPMEParametersInContext(PointerByReference target, PointerByReference context, DoubleBuffer alpha, IntBuffer nx, IntBuffer ny, IntBuffer nz);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_getPMEParametersInContext(const OpenMM_NonbondedForce*, const OpenMM_Context*, double*, int*, int*, int*)</code>
      */
-    void OpenMM_NonbondedForce_getPMEParametersInContext(PointerByReference target, PointerByReference context, DoubleByReference alpha, IntByReference nx, IntByReference ny, IntByReference nz);
+    public static native void OpenMM_NonbondedForce_getPMEParametersInContext(PointerByReference target, PointerByReference context, DoubleByReference alpha, IntByReference nx, IntByReference ny, IntByReference nz);
 
     /**
      * Original signature :
      * <code>int OpenMM_NonbondedForce_addParticle(OpenMM_NonbondedForce*, double, double, double)</code>
      */
-    int OpenMM_NonbondedForce_addParticle(PointerByReference target, double charge, double sigma, double epsilon);
+    public static native int OpenMM_NonbondedForce_addParticle(PointerByReference target, double charge, double sigma, double epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_getParticleParameters(const OpenMM_NonbondedForce*, int, double*, double*, double*)</code>
      */
-    void OpenMM_NonbondedForce_getParticleParameters(PointerByReference target, int index, DoubleBuffer charge, DoubleBuffer sigma, DoubleBuffer epsilon);
+    public static native void OpenMM_NonbondedForce_getParticleParameters(PointerByReference target, int index, DoubleBuffer charge, DoubleBuffer sigma, DoubleBuffer epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_getParticleParameters(const OpenMM_NonbondedForce*, int, double*, double*, double*)</code>
      */
-    void OpenMM_NonbondedForce_getParticleParameters(PointerByReference target, int index, DoubleByReference charge, DoubleByReference sigma, DoubleByReference epsilon);
+    public static native void OpenMM_NonbondedForce_getParticleParameters(PointerByReference target, int index, DoubleByReference charge, DoubleByReference sigma, DoubleByReference epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setParticleParameters(OpenMM_NonbondedForce*, int, double, double, double)</code>
      */
-    void OpenMM_NonbondedForce_setParticleParameters(PointerByReference target, int index, double charge, double sigma, double epsilon);
+    public static native void OpenMM_NonbondedForce_setParticleParameters(PointerByReference target, int index, double charge, double sigma, double epsilon);
 
     /**
      * Original signature :
      * <code>int OpenMM_NonbondedForce_addException(OpenMM_NonbondedForce*, int, int, double, double, double, OpenMM_Boolean)</code>
      */
-    int OpenMM_NonbondedForce_addException(PointerByReference target, int particle1, int particle2, double chargeProd, double sigma, double epsilon, int replace);
+    public static native int OpenMM_NonbondedForce_addException(PointerByReference target, int particle1, int particle2, double chargeProd, double sigma, double epsilon, int replace);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_getExceptionParameters(const OpenMM_NonbondedForce*, int, int*, int*, double*, double*, double*)</code>
      */
-    void OpenMM_NonbondedForce_getExceptionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, DoubleBuffer chargeProd, DoubleBuffer sigma, DoubleBuffer epsilon);
+    public static native void OpenMM_NonbondedForce_getExceptionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, DoubleBuffer chargeProd, DoubleBuffer sigma, DoubleBuffer epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_getExceptionParameters(const OpenMM_NonbondedForce*, int, int*, int*, double*, double*, double*)</code>
      */
-    void OpenMM_NonbondedForce_getExceptionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, DoubleByReference chargeProd, DoubleByReference sigma, DoubleByReference epsilon);
+    public static native void OpenMM_NonbondedForce_getExceptionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, DoubleByReference chargeProd, DoubleByReference sigma, DoubleByReference epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setExceptionParameters(OpenMM_NonbondedForce*, int, int, int, double, double, double)</code>
      */
-    void OpenMM_NonbondedForce_setExceptionParameters(PointerByReference target, int index, int particle1, int particle2, double chargeProd, double sigma, double epsilon);
+    public static native void OpenMM_NonbondedForce_setExceptionParameters(PointerByReference target, int index, int particle1, int particle2, double chargeProd, double sigma, double epsilon);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_createExceptionsFromBonds(OpenMM_NonbondedForce*, const OpenMM_BondArray*, double, double)</code>
      */
-    void OpenMM_NonbondedForce_createExceptionsFromBonds(PointerByReference target, PointerByReference bonds, double coulomb14Scale, double lj14Scale);
+    public static native void OpenMM_NonbondedForce_createExceptionsFromBonds(PointerByReference target, PointerByReference bonds, double coulomb14Scale, double lj14Scale);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_NonbondedForce_getUseDispersionCorrection(const OpenMM_NonbondedForce*)</code>
      */
-    int OpenMM_NonbondedForce_getUseDispersionCorrection(PointerByReference target);
+    public static native int OpenMM_NonbondedForce_getUseDispersionCorrection(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setUseDispersionCorrection(OpenMM_NonbondedForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_NonbondedForce_setUseDispersionCorrection(PointerByReference target, int useCorrection);
+    public static native void OpenMM_NonbondedForce_setUseDispersionCorrection(PointerByReference target, int useCorrection);
 
     /**
      * Original signature :
      * <code>int OpenMM_NonbondedForce_getReciprocalSpaceForceGroup(const OpenMM_NonbondedForce*)</code>
      */
-    int OpenMM_NonbondedForce_getReciprocalSpaceForceGroup(PointerByReference target);
+    public static native int OpenMM_NonbondedForce_getReciprocalSpaceForceGroup(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_setReciprocalSpaceForceGroup(OpenMM_NonbondedForce*, int)</code>
      */
-    void OpenMM_NonbondedForce_setReciprocalSpaceForceGroup(PointerByReference target, int group);
+    public static native void OpenMM_NonbondedForce_setReciprocalSpaceForceGroup(PointerByReference target, int group);
 
     /**
      * Original signature :
      * <code>void OpenMM_NonbondedForce_updateParametersInContext(OpenMM_NonbondedForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_NonbondedForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_NonbondedForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_NonbondedForce_usesPeriodicBoundaryConditions(const OpenMM_NonbondedForce*)</code>
      */
-    int OpenMM_NonbondedForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_NonbondedForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * OpenMMException<br>
      * Original signature :
      * <code>OpenMM_OpenMMException* OpenMM_OpenMMException_create(const char*)</code>
      */
-    PointerByReference OpenMM_OpenMMException_create(String message);
+    public static native PointerByReference OpenMM_OpenMMException_create(String message);
 
     /**
      * Original signature :
      * <code>void OpenMM_OpenMMException_destroy(OpenMM_OpenMMException*)</code>
      */
-    void OpenMM_OpenMMException_destroy(PointerByReference target);
+    public static native void OpenMM_OpenMMException_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_OpenMMException_what(const OpenMM_OpenMMException*)</code>
      */
-    Pointer OpenMM_OpenMMException_what(PointerByReference target);
+    public static native Pointer OpenMM_OpenMMException_what(PointerByReference target);
 
     /**
      * OutOfPlaneSite<br>
      * Original signature :
      * <code>OpenMM_OutOfPlaneSite* OpenMM_OutOfPlaneSite_create(int, int, int, double, double, double)</code>
      */
-    PointerByReference OpenMM_OutOfPlaneSite_create(int particle1, int particle2, int particle3, double weight12, double weight13, double weightCross);
+    public static native PointerByReference OpenMM_OutOfPlaneSite_create(int particle1, int particle2, int particle3, double weight12, double weight13, double weightCross);
 
     /**
      * Original signature :
      * <code>void OpenMM_OutOfPlaneSite_destroy(OpenMM_OutOfPlaneSite*)</code>
      */
-    void OpenMM_OutOfPlaneSite_destroy(PointerByReference target);
+    public static native void OpenMM_OutOfPlaneSite_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_OutOfPlaneSite_getWeight12(const OpenMM_OutOfPlaneSite*)</code>
      */
-    double OpenMM_OutOfPlaneSite_getWeight12(PointerByReference target);
+    public static native double OpenMM_OutOfPlaneSite_getWeight12(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_OutOfPlaneSite_getWeight13(const OpenMM_OutOfPlaneSite*)</code>
      */
-    double OpenMM_OutOfPlaneSite_getWeight13(PointerByReference target);
+    public static native double OpenMM_OutOfPlaneSite_getWeight13(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_OutOfPlaneSite_getWeightCross(const OpenMM_OutOfPlaneSite*)</code>
      */
-    double OpenMM_OutOfPlaneSite_getWeightCross(PointerByReference target);
+    public static native double OpenMM_OutOfPlaneSite_getWeightCross(PointerByReference target);
 
     /**
      * PeriodicTorsionForce<br>
      * Original signature :
      * <code>OpenMM_PeriodicTorsionForce* OpenMM_PeriodicTorsionForce_create()</code>
      */
-    PointerByReference OpenMM_PeriodicTorsionForce_create();
+    public static native PointerByReference OpenMM_PeriodicTorsionForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_PeriodicTorsionForce_destroy(OpenMM_PeriodicTorsionForce*)</code>
      */
-    void OpenMM_PeriodicTorsionForce_destroy(PointerByReference target);
+    public static native void OpenMM_PeriodicTorsionForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_PeriodicTorsionForce_getNumTorsions(const OpenMM_PeriodicTorsionForce*)</code>
      */
-    int OpenMM_PeriodicTorsionForce_getNumTorsions(PointerByReference target);
+    public static native int OpenMM_PeriodicTorsionForce_getNumTorsions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_PeriodicTorsionForce_addTorsion(OpenMM_PeriodicTorsionForce*, int, int, int, int, int, double, double)</code>
      */
-    int OpenMM_PeriodicTorsionForce_addTorsion(PointerByReference target, int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k);
+    public static native int OpenMM_PeriodicTorsionForce_addTorsion(PointerByReference target, int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k);
 
     /**
      * Original signature :
      * <code>void OpenMM_PeriodicTorsionForce_getTorsionParameters(const OpenMM_PeriodicTorsionForce*, int, int*, int*, int*, int*, int*, double*, double*)</code>
      */
-    void OpenMM_PeriodicTorsionForce_getTorsionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, IntBuffer particle4, IntBuffer periodicity, DoubleBuffer phase, DoubleBuffer k);
+    public static native void OpenMM_PeriodicTorsionForce_getTorsionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, IntBuffer particle4, IntBuffer periodicity, DoubleBuffer phase, DoubleBuffer k);
 
     /**
      * Original signature :
      * <code>void OpenMM_PeriodicTorsionForce_getTorsionParameters(const OpenMM_PeriodicTorsionForce*, int, int*, int*, int*, int*, int*, double*, double*)</code>
      */
-    void OpenMM_PeriodicTorsionForce_getTorsionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, IntByReference particle4, IntByReference periodicity, DoubleByReference phase, DoubleByReference k);
+    public static native void OpenMM_PeriodicTorsionForce_getTorsionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, IntByReference particle4, IntByReference periodicity, DoubleByReference phase, DoubleByReference k);
 
     /**
      * Original signature :
      * <code>void OpenMM_PeriodicTorsionForce_setTorsionParameters(OpenMM_PeriodicTorsionForce*, int, int, int, int, int, int, double, double)</code>
      */
-    void OpenMM_PeriodicTorsionForce_setTorsionParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k);
+    public static native void OpenMM_PeriodicTorsionForce_setTorsionParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, int particle4, int periodicity, double phase, double k);
 
     /**
      * Original signature :
      * <code>void OpenMM_PeriodicTorsionForce_updateParametersInContext(OpenMM_PeriodicTorsionForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_PeriodicTorsionForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_PeriodicTorsionForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_PeriodicTorsionForce_setUsesPeriodicBoundaryConditions(OpenMM_PeriodicTorsionForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_PeriodicTorsionForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_PeriodicTorsionForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_PeriodicTorsionForce_usesPeriodicBoundaryConditions(const OpenMM_PeriodicTorsionForce*)</code>
      */
-    int OpenMM_PeriodicTorsionForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_PeriodicTorsionForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Platform<br>
      * Original signature :
      * <code>void OpenMM_Platform_destroy(OpenMM_Platform*)</code>
      */
-    void OpenMM_Platform_destroy(PointerByReference target);
+    public static native void OpenMM_Platform_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_Platform_registerPlatform(OpenMM_Platform*)</code>
      */
-    void OpenMM_Platform_registerPlatform(PointerByReference platform);
+    public static native void OpenMM_Platform_registerPlatform(PointerByReference platform);
 
     /**
      * Original signature : <code>int OpenMM_Platform_getNumPlatforms()</code>
      */
-    int OpenMM_Platform_getNumPlatforms();
+    public static native int OpenMM_Platform_getNumPlatforms();
 
     /**
      * Original signature :
      * <code>OpenMM_Platform* OpenMM_Platform_getPlatform(int)</code>
      */
-    PointerByReference OpenMM_Platform_getPlatform(int index);
+    public static native PointerByReference OpenMM_Platform_getPlatform(int index);
 
     /**
      * Original signature :
      * <code>OpenMM_Platform* OpenMM_Platform_getPlatformByName(const char*)</code>
      */
-    PointerByReference OpenMM_Platform_getPlatformByName(String name);
+    public static native PointerByReference OpenMM_Platform_getPlatformByName(String name);
 
     /**
      * Original signature :
      * <code>OpenMM_Platform* OpenMM_Platform_findPlatform(const OpenMM_StringArray*)</code>
      */
-    PointerByReference OpenMM_Platform_findPlatform(PointerByReference kernelNames);
+    public static native PointerByReference OpenMM_Platform_findPlatform(PointerByReference kernelNames);
 
     /**
      * Original signature :
      * <code>void OpenMM_Platform_loadPluginLibrary(const char*)</code>
      */
-    void OpenMM_Platform_loadPluginLibrary(String file);
+    public static native void OpenMM_Platform_loadPluginLibrary(String file);
 
     /**
      * Original signature :
      * <code>char* OpenMM_Platform_getDefaultPluginsDirectory()</code>
      */
-    Pointer OpenMM_Platform_getDefaultPluginsDirectory();
+    public static native Pointer OpenMM_Platform_getDefaultPluginsDirectory();
 
     /**
      * Original signature :
      * <code>char* OpenMM_Platform_getOpenMMVersion()</code>
      */
-    Pointer OpenMM_Platform_getOpenMMVersion();
+    public static native Pointer OpenMM_Platform_getOpenMMVersion();
 
     /**
      * Original signature :
      * <code>char* OpenMM_Platform_getName(const OpenMM_Platform*)</code>
      */
-    Pointer OpenMM_Platform_getName(PointerByReference target);
+    public static native Pointer OpenMM_Platform_getName(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_Platform_getSpeed(const OpenMM_Platform*)</code>
      */
-    double OpenMM_Platform_getSpeed(PointerByReference target);
+    public static native double OpenMM_Platform_getSpeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_Platform_supportsDoublePrecision(const OpenMM_Platform*)</code>
      */
-    int OpenMM_Platform_supportsDoublePrecision(PointerByReference target);
+    public static native int OpenMM_Platform_supportsDoublePrecision(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_StringArray* OpenMM_Platform_getPropertyNames(const OpenMM_Platform*)</code>
      */
-    PointerByReference OpenMM_Platform_getPropertyNames(PointerByReference target);
+    public static native PointerByReference OpenMM_Platform_getPropertyNames(PointerByReference target);
 
     /**
      * Original signature :
      * <code>char* OpenMM_Platform_getPropertyValue(const OpenMM_Platform*, const OpenMM_Context*, __declspec(property) const char*)</code>
      */
-    Pointer OpenMM_Platform_getPropertyValue(PointerByReference target, PointerByReference context, byte charPtr1[]);
+    public static native Pointer OpenMM_Platform_getPropertyValue(PointerByReference target, PointerByReference context, byte charPtr1[]);
 
     /**
      * Original signature :
      * <code>char* OpenMM_Platform_getPropertyValue(const OpenMM_Platform*, const OpenMM_Context*, __declspec(property) const char*)</code>
      */
-    Pointer OpenMM_Platform_getPropertyValue(PointerByReference target, PointerByReference context, Pointer charPtr1);
+    public static native Pointer OpenMM_Platform_getPropertyValue(PointerByReference target, PointerByReference context, Pointer charPtr1);
 
     /**
      * Original signature :
      * <code>void OpenMM_Platform_setPropertyValue(const OpenMM_Platform*, OpenMM_Context*, __declspec(property) const char*, const char*)</code>
      */
-    void OpenMM_Platform_setPropertyValue(PointerByReference target, PointerByReference context, byte charPtr1[], String value);
+    public static native void OpenMM_Platform_setPropertyValue(PointerByReference target, PointerByReference context, byte charPtr1[], String value);
 
     /**
      * Original signature :
      * <code>void OpenMM_Platform_setPropertyValue(const OpenMM_Platform*, OpenMM_Context*, __declspec(property) const char*, const char*)</code>
      */
-    void OpenMM_Platform_setPropertyValue(PointerByReference target, PointerByReference context, Pointer charPtr1, Pointer value);
+    public static native void OpenMM_Platform_setPropertyValue(PointerByReference target, PointerByReference context, Pointer charPtr1, Pointer value);
 
     /**
      * Original signature :
      * <code>char* OpenMM_Platform_getPropertyDefaultValue(const OpenMM_Platform*, __declspec(property) const char*)</code>
      */
-    Pointer OpenMM_Platform_getPropertyDefaultValue(PointerByReference target, byte charPtr1[]);
+    public static native Pointer OpenMM_Platform_getPropertyDefaultValue(PointerByReference target, byte charPtr1[]);
 
     /**
      * Original signature :
      * <code>char* OpenMM_Platform_getPropertyDefaultValue(const OpenMM_Platform*, __declspec(property) const char*)</code>
      */
-    Pointer OpenMM_Platform_getPropertyDefaultValue(PointerByReference target, Pointer charPtr1);
+    public static native Pointer OpenMM_Platform_getPropertyDefaultValue(PointerByReference target, Pointer charPtr1);
 
     /**
      * Original signature :
      * <code>void OpenMM_Platform_setPropertyDefaultValue(OpenMM_Platform*, __declspec(property) const char*, const char*)</code>
      */
-    void OpenMM_Platform_setPropertyDefaultValue(PointerByReference target, byte charPtr1[], String value);
+    public static native void OpenMM_Platform_setPropertyDefaultValue(PointerByReference target, byte charPtr1[], String value);
 
     /**
      * Original signature :
      * <code>void OpenMM_Platform_setPropertyDefaultValue(OpenMM_Platform*, __declspec(property) const char*, const char*)</code>
      */
-    void OpenMM_Platform_setPropertyDefaultValue(PointerByReference target, Pointer charPtr1, Pointer value);
+    public static native void OpenMM_Platform_setPropertyDefaultValue(PointerByReference target, Pointer charPtr1, Pointer value);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_Platform_supportsKernels(const OpenMM_Platform*, const OpenMM_StringArray*)</code>
      */
-    int OpenMM_Platform_supportsKernels(PointerByReference target, PointerByReference kernelNames);
+    public static native int OpenMM_Platform_supportsKernels(PointerByReference target, PointerByReference kernelNames);
 
     /**
      * RBTorsionForce<br>
      * Original signature :
      * <code>OpenMM_RBTorsionForce* OpenMM_RBTorsionForce_create()</code>
      */
-    PointerByReference OpenMM_RBTorsionForce_create();
+    public static native PointerByReference OpenMM_RBTorsionForce_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_RBTorsionForce_destroy(OpenMM_RBTorsionForce*)</code>
      */
-    void OpenMM_RBTorsionForce_destroy(PointerByReference target);
+    public static native void OpenMM_RBTorsionForce_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_RBTorsionForce_getNumTorsions(const OpenMM_RBTorsionForce*)</code>
      */
-    int OpenMM_RBTorsionForce_getNumTorsions(PointerByReference target);
+    public static native int OpenMM_RBTorsionForce_getNumTorsions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_RBTorsionForce_addTorsion(OpenMM_RBTorsionForce*, int, int, int, int, double, double, double, double, double, double)</code>
      */
-    int OpenMM_RBTorsionForce_addTorsion(PointerByReference target, int particle1, int particle2, int particle3, int particle4, double c0, double c1, double c2, double c3, double c4, double c5);
+    public static native int OpenMM_RBTorsionForce_addTorsion(PointerByReference target, int particle1, int particle2, int particle3, int particle4, double c0, double c1, double c2, double c3, double c4, double c5);
 
     /**
      * Original signature :
      * <code>void OpenMM_RBTorsionForce_getTorsionParameters(const OpenMM_RBTorsionForce*, int, int*, int*, int*, int*, double*, double*, double*, double*, double*, double*)</code>
      */
-    void OpenMM_RBTorsionForce_getTorsionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, IntBuffer particle4, DoubleBuffer c0, DoubleBuffer c1, DoubleBuffer c2, DoubleBuffer c3, DoubleBuffer c4, DoubleBuffer c5);
+    public static native void OpenMM_RBTorsionForce_getTorsionParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, IntBuffer particle3, IntBuffer particle4, DoubleBuffer c0, DoubleBuffer c1, DoubleBuffer c2, DoubleBuffer c3, DoubleBuffer c4, DoubleBuffer c5);
 
     /**
      * Original signature :
      * <code>void OpenMM_RBTorsionForce_getTorsionParameters(const OpenMM_RBTorsionForce*, int, int*, int*, int*, int*, double*, double*, double*, double*, double*, double*)</code>
      */
-    void OpenMM_RBTorsionForce_getTorsionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, IntByReference particle4, DoubleByReference c0, DoubleByReference c1, DoubleByReference c2, DoubleByReference c3, DoubleByReference c4, DoubleByReference c5);
+    public static native void OpenMM_RBTorsionForce_getTorsionParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, IntByReference particle3, IntByReference particle4, DoubleByReference c0, DoubleByReference c1, DoubleByReference c2, DoubleByReference c3, DoubleByReference c4, DoubleByReference c5);
 
     /**
      * Original signature :
      * <code>void OpenMM_RBTorsionForce_setTorsionParameters(OpenMM_RBTorsionForce*, int, int, int, int, int, double, double, double, double, double, double)</code>
      */
-    void OpenMM_RBTorsionForce_setTorsionParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, int particle4, double c0, double c1, double c2, double c3, double c4, double c5);
+    public static native void OpenMM_RBTorsionForce_setTorsionParameters(PointerByReference target, int index, int particle1, int particle2, int particle3, int particle4, double c0, double c1, double c2, double c3, double c4, double c5);
 
     /**
      * Original signature :
      * <code>void OpenMM_RBTorsionForce_updateParametersInContext(OpenMM_RBTorsionForce*, OpenMM_Context*)</code>
      */
-    void OpenMM_RBTorsionForce_updateParametersInContext(PointerByReference target, PointerByReference context);
+    public static native void OpenMM_RBTorsionForce_updateParametersInContext(PointerByReference target, PointerByReference context);
 
     /**
      * Original signature :
      * <code>void OpenMM_RBTorsionForce_setUsesPeriodicBoundaryConditions(OpenMM_RBTorsionForce*, OpenMM_Boolean)</code>
      */
-    void OpenMM_RBTorsionForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
+    public static native void OpenMM_RBTorsionForce_setUsesPeriodicBoundaryConditions(PointerByReference target, int periodic);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_RBTorsionForce_usesPeriodicBoundaryConditions(const OpenMM_RBTorsionForce*)</code>
      */
-    int OpenMM_RBTorsionForce_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_RBTorsionForce_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * Original signature : <code>OpenMM_State* OpenMM_State_create()</code>
      */
-    PointerByReference OpenMM_State_create();
+    public static native PointerByReference OpenMM_State_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_State_destroy(OpenMM_State*)</code>
      */
-    void OpenMM_State_destroy(PointerByReference target);
+    public static native void OpenMM_State_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_State_getTime(const OpenMM_State*)</code>
      */
-    double OpenMM_State_getTime(PointerByReference target);
+    public static native double OpenMM_State_getTime(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3Array* OpenMM_State_getPositions(const OpenMM_State*)</code>
      */
-    PointerByReference OpenMM_State_getPositions(PointerByReference target);
+    public static native PointerByReference OpenMM_State_getPositions(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3Array* OpenMM_State_getVelocities(const OpenMM_State*)</code>
      */
-    PointerByReference OpenMM_State_getVelocities(PointerByReference target);
+    public static native PointerByReference OpenMM_State_getVelocities(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Vec3Array* OpenMM_State_getForces(const OpenMM_State*)</code>
      */
-    PointerByReference OpenMM_State_getForces(PointerByReference target);
+    public static native PointerByReference OpenMM_State_getForces(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_State_getKineticEnergy(const OpenMM_State*)</code>
      */
-    double OpenMM_State_getKineticEnergy(PointerByReference target);
+    public static native double OpenMM_State_getKineticEnergy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_State_getPotentialEnergy(const OpenMM_State*)</code>
      */
-    double OpenMM_State_getPotentialEnergy(PointerByReference target);
+    public static native double OpenMM_State_getPotentialEnergy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_State_getPeriodicBoxVectors(const OpenMM_State*, OpenMM_Vec3*, OpenMM_Vec3*, OpenMM_Vec3*)</code>
      */
-    void OpenMM_State_getPeriodicBoxVectors(PointerByReference target, OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c);
+    public static native void OpenMM_State_getPeriodicBoxVectors(PointerByReference target, OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c);
 
     /**
      * Original signature :
      * <code>double OpenMM_State_getPeriodicBoxVolume(const OpenMM_State*)</code>
      */
-    double OpenMM_State_getPeriodicBoxVolume(PointerByReference target);
+    public static native double OpenMM_State_getPeriodicBoxVolume(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_ParameterArray* OpenMM_State_getParameters(const OpenMM_State*)</code>
      */
-    PointerByReference OpenMM_State_getParameters(PointerByReference target);
+    public static native PointerByReference OpenMM_State_getParameters(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_ParameterArray* OpenMM_State_getEnergyParameterDerivatives(const OpenMM_State*)</code>
      */
-    PointerByReference OpenMM_State_getEnergyParameterDerivatives(PointerByReference target);
+    public static native PointerByReference OpenMM_State_getEnergyParameterDerivatives(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_State_getDataTypes(const OpenMM_State*)</code>
      */
-    int OpenMM_State_getDataTypes(PointerByReference target);
+    public static native int OpenMM_State_getDataTypes(PointerByReference target);
 
     /**
      * System<br>
      * Original signature : <code>OpenMM_System* OpenMM_System_create()</code>
      */
-    PointerByReference OpenMM_System_create();
+    public static native PointerByReference OpenMM_System_create();
 
     /**
      * Original signature :
      * <code>void OpenMM_System_destroy(OpenMM_System*)</code>
      */
-    void OpenMM_System_destroy(PointerByReference target);
+    public static native void OpenMM_System_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_System_getNumParticles(const OpenMM_System*)</code>
      */
-    int OpenMM_System_getNumParticles(PointerByReference target);
+    public static native int OpenMM_System_getNumParticles(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_System_addParticle(OpenMM_System*, double)</code>
      */
-    int OpenMM_System_addParticle(PointerByReference target, double mass);
+    public static native int OpenMM_System_addParticle(PointerByReference target, double mass);
 
     /**
      * Original signature :
      * <code>double OpenMM_System_getParticleMass(const OpenMM_System*, int)</code>
      */
-    double OpenMM_System_getParticleMass(PointerByReference target, int index);
+    public static native double OpenMM_System_getParticleMass(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_setParticleMass(OpenMM_System*, int, double)</code>
      */
-    void OpenMM_System_setParticleMass(PointerByReference target, int index, double mass);
+    public static native void OpenMM_System_setParticleMass(PointerByReference target, int index, double mass);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_setVirtualSite(OpenMM_System*, int, OpenMM_VirtualSite*)</code>
      */
-    void OpenMM_System_setVirtualSite(PointerByReference target, int index, PointerByReference virtualSite);
+    public static native void OpenMM_System_setVirtualSite(PointerByReference target, int index, PointerByReference virtualSite);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_System_isVirtualSite(const OpenMM_System*, int)</code>
      */
-    int OpenMM_System_isVirtualSite(PointerByReference target, int index);
+    public static native int OpenMM_System_isVirtualSite(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>OpenMM_VirtualSite* OpenMM_System_getVirtualSite(const OpenMM_System*, int)</code>
      */
-    PointerByReference OpenMM_System_getVirtualSite(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_System_getVirtualSite(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_System_getNumConstraints(const OpenMM_System*)</code>
      */
-    int OpenMM_System_getNumConstraints(PointerByReference target);
+    public static native int OpenMM_System_getNumConstraints(PointerByReference target);
 
     /**
      * Original signature :
      * <code>int OpenMM_System_addConstraint(OpenMM_System*, int, int, double)</code>
      */
-    int OpenMM_System_addConstraint(PointerByReference target, int particle1, int particle2, double distance);
+    public static native int OpenMM_System_addConstraint(PointerByReference target, int particle1, int particle2, double distance);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_getConstraintParameters(const OpenMM_System*, int, int*, int*, double*)</code>
      */
-    void OpenMM_System_getConstraintParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, DoubleBuffer distance);
+    public static native void OpenMM_System_getConstraintParameters(PointerByReference target, int index, IntBuffer particle1, IntBuffer particle2, DoubleBuffer distance);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_getConstraintParameters(const OpenMM_System*, int, int*, int*, double*)</code>
      */
-    void OpenMM_System_getConstraintParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, DoubleByReference distance);
+    public static native void OpenMM_System_getConstraintParameters(PointerByReference target, int index, IntByReference particle1, IntByReference particle2, DoubleByReference distance);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_setConstraintParameters(OpenMM_System*, int, int, int, double)</code>
      */
-    void OpenMM_System_setConstraintParameters(PointerByReference target, int index, int particle1, int particle2, double distance);
+    public static native void OpenMM_System_setConstraintParameters(PointerByReference target, int index, int particle1, int particle2, double distance);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_removeConstraint(OpenMM_System*, int)</code>
      */
-    void OpenMM_System_removeConstraint(PointerByReference target, int index);
+    public static native void OpenMM_System_removeConstraint(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>int OpenMM_System_addForce(OpenMM_System*, OpenMM_Force*)</code>
      */
-    int OpenMM_System_addForce(PointerByReference target, PointerByReference force);
+    public static native int OpenMM_System_addForce(PointerByReference target, PointerByReference force);
 
     /**
      * Original signature :
      * <code>int OpenMM_System_getNumForces(const OpenMM_System*)</code>
      */
-    int OpenMM_System_getNumForces(PointerByReference target);
+    public static native int OpenMM_System_getNumForces(PointerByReference target);
 
     /**
      * Original signature :
      * <code>OpenMM_Force* OpenMM_System_getForce(OpenMM_System*, int)</code>
      */
-    PointerByReference OpenMM_System_getForce(PointerByReference target, int index);
+    public static native PointerByReference OpenMM_System_getForce(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_removeForce(OpenMM_System*, int)</code>
      */
-    void OpenMM_System_removeForce(PointerByReference target, int index);
+    public static native void OpenMM_System_removeForce(PointerByReference target, int index);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_getDefaultPeriodicBoxVectors(const OpenMM_System*, OpenMM_Vec3*, OpenMM_Vec3*, OpenMM_Vec3*)</code>
      */
-    void OpenMM_System_getDefaultPeriodicBoxVectors(PointerByReference target, OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c);
+    public static native void OpenMM_System_getDefaultPeriodicBoxVectors(PointerByReference target, OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c);
 
     /**
      * Original signature :
      * <code>void OpenMM_System_setDefaultPeriodicBoxVectors(OpenMM_System*, const OpenMM_Vec3*, const OpenMM_Vec3*, const OpenMM_Vec3*)</code>
      */
-    void OpenMM_System_setDefaultPeriodicBoxVectors(PointerByReference target, OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c);
+    public static native void OpenMM_System_setDefaultPeriodicBoxVectors(PointerByReference target, OpenMM_Vec3 a, OpenMM_Vec3 b, OpenMM_Vec3 c);
 
     /**
      * Original signature :
      * <code>OpenMM_Boolean OpenMM_System_usesPeriodicBoundaryConditions(const OpenMM_System*)</code>
      */
-    int OpenMM_System_usesPeriodicBoundaryConditions(PointerByReference target);
+    public static native int OpenMM_System_usesPeriodicBoundaryConditions(PointerByReference target);
 
     /**
      * ThreeParticleAverageSite<br>
      * Original signature :
      * <code>OpenMM_ThreeParticleAverageSite* OpenMM_ThreeParticleAverageSite_create(int, int, int, double, double, double)</code>
      */
-    PointerByReference OpenMM_ThreeParticleAverageSite_create(int particle1, int particle2, int particle3, double weight1, double weight2, double weight3);
+    public static native PointerByReference OpenMM_ThreeParticleAverageSite_create(int particle1, int particle2, int particle3, double weight1, double weight2, double weight3);
 
     /**
      * Original signature :
      * <code>void OpenMM_ThreeParticleAverageSite_destroy(OpenMM_ThreeParticleAverageSite*)</code>
      */
-    void OpenMM_ThreeParticleAverageSite_destroy(PointerByReference target);
+    public static native void OpenMM_ThreeParticleAverageSite_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_ThreeParticleAverageSite_getWeight(const OpenMM_ThreeParticleAverageSite*, int)</code>
      */
-    double OpenMM_ThreeParticleAverageSite_getWeight(PointerByReference target, int particle);
+    public static native double OpenMM_ThreeParticleAverageSite_getWeight(PointerByReference target, int particle);
 
     /**
      * TwoParticleAverageSite<br>
      * Original signature :
      * <code>OpenMM_TwoParticleAverageSite* OpenMM_TwoParticleAverageSite_create(int, int, double, double)</code>
      */
-    PointerByReference OpenMM_TwoParticleAverageSite_create(int particle1, int particle2, double weight1, double weight2);
+    public static native PointerByReference OpenMM_TwoParticleAverageSite_create(int particle1, int particle2, double weight1, double weight2);
 
     /**
      * Original signature :
      * <code>void OpenMM_TwoParticleAverageSite_destroy(OpenMM_TwoParticleAverageSite*)</code>
      */
-    void OpenMM_TwoParticleAverageSite_destroy(PointerByReference target);
+    public static native void OpenMM_TwoParticleAverageSite_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_TwoParticleAverageSite_getWeight(const OpenMM_TwoParticleAverageSite*, int)</code>
      */
-    double OpenMM_TwoParticleAverageSite_getWeight(PointerByReference target, int particle);
+    public static native double OpenMM_TwoParticleAverageSite_getWeight(PointerByReference target, int particle);
 
     /**
      * VariableLangevinIntegrator<br>
      * Original signature :
      * <code>OpenMM_VariableLangevinIntegrator* OpenMM_VariableLangevinIntegrator_create(double, double, double)</code>
      */
-    PointerByReference OpenMM_VariableLangevinIntegrator_create(double temperature, double frictionCoeff, double errorTol);
+    public static native PointerByReference OpenMM_VariableLangevinIntegrator_create(double temperature, double frictionCoeff, double errorTol);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableLangevinIntegrator_destroy(OpenMM_VariableLangevinIntegrator*)</code>
      */
-    void OpenMM_VariableLangevinIntegrator_destroy(PointerByReference target);
+    public static native void OpenMM_VariableLangevinIntegrator_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_VariableLangevinIntegrator_getTemperature(const OpenMM_VariableLangevinIntegrator*)</code>
      */
-    double OpenMM_VariableLangevinIntegrator_getTemperature(PointerByReference target);
+    public static native double OpenMM_VariableLangevinIntegrator_getTemperature(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableLangevinIntegrator_setTemperature(OpenMM_VariableLangevinIntegrator*, double)</code>
      */
-    void OpenMM_VariableLangevinIntegrator_setTemperature(PointerByReference target, double temp);
+    public static native void OpenMM_VariableLangevinIntegrator_setTemperature(PointerByReference target, double temp);
 
     /**
      * Original signature :
      * <code>double OpenMM_VariableLangevinIntegrator_getFriction(const OpenMM_VariableLangevinIntegrator*)</code>
      */
-    double OpenMM_VariableLangevinIntegrator_getFriction(PointerByReference target);
+    public static native double OpenMM_VariableLangevinIntegrator_getFriction(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableLangevinIntegrator_setFriction(OpenMM_VariableLangevinIntegrator*, double)</code>
      */
-    void OpenMM_VariableLangevinIntegrator_setFriction(PointerByReference target, double coeff);
+    public static native void OpenMM_VariableLangevinIntegrator_setFriction(PointerByReference target, double coeff);
 
     /**
      * Original signature :
      * <code>double OpenMM_VariableLangevinIntegrator_getErrorTolerance(const OpenMM_VariableLangevinIntegrator*)</code>
      */
-    double OpenMM_VariableLangevinIntegrator_getErrorTolerance(PointerByReference target);
+    public static native double OpenMM_VariableLangevinIntegrator_getErrorTolerance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableLangevinIntegrator_setErrorTolerance(OpenMM_VariableLangevinIntegrator*, double)</code>
      */
-    void OpenMM_VariableLangevinIntegrator_setErrorTolerance(PointerByReference target, double tol);
+    public static native void OpenMM_VariableLangevinIntegrator_setErrorTolerance(PointerByReference target, double tol);
 
     /**
      * Original signature :
      * <code>int OpenMM_VariableLangevinIntegrator_getRandomNumberSeed(const OpenMM_VariableLangevinIntegrator*)</code>
      */
-    int OpenMM_VariableLangevinIntegrator_getRandomNumberSeed(PointerByReference target);
+    public static native int OpenMM_VariableLangevinIntegrator_getRandomNumberSeed(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableLangevinIntegrator_setRandomNumberSeed(OpenMM_VariableLangevinIntegrator*, int)</code>
      */
-    void OpenMM_VariableLangevinIntegrator_setRandomNumberSeed(PointerByReference target, int seed);
+    public static native void OpenMM_VariableLangevinIntegrator_setRandomNumberSeed(PointerByReference target, int seed);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableLangevinIntegrator_step(OpenMM_VariableLangevinIntegrator*, int)</code>
      */
-    void OpenMM_VariableLangevinIntegrator_step(PointerByReference target, int steps);
+    public static native void OpenMM_VariableLangevinIntegrator_step(PointerByReference target, int steps);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableLangevinIntegrator_stepTo(OpenMM_VariableLangevinIntegrator*, double)</code>
      */
-    void OpenMM_VariableLangevinIntegrator_stepTo(PointerByReference target, double time);
+    public static native void OpenMM_VariableLangevinIntegrator_stepTo(PointerByReference target, double time);
 
     /**
      * VariableVerletIntegrator<br>
      * Original signature :
      * <code>OpenMM_VariableVerletIntegrator* OpenMM_VariableVerletIntegrator_create(double)</code>
      */
-    PointerByReference OpenMM_VariableVerletIntegrator_create(double errorTol);
+    public static native PointerByReference OpenMM_VariableVerletIntegrator_create(double errorTol);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableVerletIntegrator_destroy(OpenMM_VariableVerletIntegrator*)</code>
      */
-    void OpenMM_VariableVerletIntegrator_destroy(PointerByReference target);
+    public static native void OpenMM_VariableVerletIntegrator_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>double OpenMM_VariableVerletIntegrator_getErrorTolerance(const OpenMM_VariableVerletIntegrator*)</code>
      */
-    double OpenMM_VariableVerletIntegrator_getErrorTolerance(PointerByReference target);
+    public static native double OpenMM_VariableVerletIntegrator_getErrorTolerance(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableVerletIntegrator_setErrorTolerance(OpenMM_VariableVerletIntegrator*, double)</code>
      */
-    void OpenMM_VariableVerletIntegrator_setErrorTolerance(PointerByReference target, double tol);
+    public static native void OpenMM_VariableVerletIntegrator_setErrorTolerance(PointerByReference target, double tol);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableVerletIntegrator_step(OpenMM_VariableVerletIntegrator*, int)</code>
      */
-    void OpenMM_VariableVerletIntegrator_step(PointerByReference target, int steps);
+    public static native void OpenMM_VariableVerletIntegrator_step(PointerByReference target, int steps);
 
     /**
      * Original signature :
      * <code>void OpenMM_VariableVerletIntegrator_stepTo(OpenMM_VariableVerletIntegrator*, double)</code>
      */
-    void OpenMM_VariableVerletIntegrator_stepTo(PointerByReference target, double time);
+    public static native void OpenMM_VariableVerletIntegrator_stepTo(PointerByReference target, double time);
 
     /**
      * VerletIntegrator<br>
      * Original signature :
      * <code>OpenMM_VerletIntegrator* OpenMM_VerletIntegrator_create(double)</code>
      */
-    PointerByReference OpenMM_VerletIntegrator_create(double stepSize);
+    public static native PointerByReference OpenMM_VerletIntegrator_create(double stepSize);
 
     /**
      * Original signature :
      * <code>void OpenMM_VerletIntegrator_destroy(OpenMM_VerletIntegrator*)</code>
      */
-    void OpenMM_VerletIntegrator_destroy(PointerByReference target);
+    public static native void OpenMM_VerletIntegrator_destroy(PointerByReference target);
 
     /**
      * Original signature :
      * <code>void OpenMM_VerletIntegrator_step(OpenMM_VerletIntegrator*, int)</code>
      */
-    void OpenMM_VerletIntegrator_step(PointerByReference target, int steps);
+    public static native void OpenMM_VerletIntegrator_step(PointerByReference target, int steps);
 
     public static class OpenMM_StringArray extends PointerType {
 
