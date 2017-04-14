@@ -49,8 +49,6 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import javax.xml.crypto.NoSuchMechanismException;
-
 import org.apache.commons.io.FilenameUtils;
 
 import static org.apache.commons.math3.util.FastMath.max;
@@ -129,7 +127,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     private static final double toSeconds = 0.000000001;
 
-    private final MolecularAssembly molecularAssembly;
+    protected final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
     /**
      * Contains ALL atoms, both foreground and background. Background atoms need
@@ -276,7 +274,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
         this(molecularAssembly, null);
     }
-    
+
     /**
      * <p>
      * Constructor for ForceFieldEnergy.</p>
@@ -294,7 +292,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (noHeader) {
             logger.setLevel(Level.WARNING);
         }
-        
+
         // Get a reference to the sorted atom array.
         this.molecularAssembly = molecularAssembly;
         atoms = molecularAssembly.getAtomArray();
@@ -744,10 +742,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
         if (multipoleTerm) {
             if (particleMeshEwald == null) {
-                throw new NoSuchMechanismException();
+                logger.severe(" Coding error - MultipoleTerm true with no PME instance.");
             }
             if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
-                logger.severe("Extended systems can attach only to Quasi-Internal PME. Try -Dpme-qi=true.");
+                logger.severe(" Extended systems can attach only to Quasi-Internal PME. Try -Dpme-qi=true.");
             }
             ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
         }
@@ -808,7 +806,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             Atom atom = atoms[i];
             int index = atom.getXyzIndex() - 1;
             if (index != i) {
-//                logger.log(Level.WARNING, "Expected index {0} for atom {1}, but found {2}.", 
+//                logger.log(Level.WARNING, "Expected index {0} for atom {1}, but found {2}.",
 //                        new Object[]{i, atom, index});
                 atom.setXyzIndex(i + 1);
             }
@@ -1139,11 +1137,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public void setLambdaBondedTerms(boolean lambdaBondedTerms) {
         this.lambdaBondedTerms = lambdaBondedTerms;
     }
-    
+
     /**
      * Easy!
      */
-    public double energy () {
+    public double energy() {
         return energy(false, false);
     }
 
@@ -2381,15 +2379,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public double getPermanentMultipoleEnergy() {
         return permanentMultipoleEnergy;
     }
-    
+
     public double getPermanentRealSpaceEnergy() {
         return permanentRealSpaceEnergy;
     }
-    
+
     public double getPermanentReciprocalSelfEnergy() {
         return ((ParticleMeshEwaldQI) particleMeshEwald).getPermRecipSelf();
     }
-    
+
     public double getPermanentReciprocalMpoleEnergy() {
         return ((ParticleMeshEwaldQI) particleMeshEwald).getPermRecipMpole();
     }

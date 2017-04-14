@@ -88,6 +88,7 @@ public class FFXClassLoader extends URLClassLoader {
         "org.jogamp",
         "org.openscience.cdk",
         "edu.rit.pj",
+        "org.bridj",
         "jcuda"};
     static final List<String> FFX_FILES;
     private static String gluegen = null;
@@ -189,7 +190,9 @@ public class FFXClassLoader extends URLClassLoader {
             "org.biojava/biojava3-alignment.jar",
             "org.biojava/biojava3-phylo.jar",
             // Lars Behnke's hierarchical-clustering-java
-            "com.apporiented/hierarchical-clustering.jar"
+            "com.apporiented/hierarchical-clustering.jar",
+            // OpenMM
+            "simtk/openmm.jar"
         }));
 
         String osName = System.getProperty("os.name").toUpperCase();

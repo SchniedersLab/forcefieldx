@@ -150,6 +150,7 @@ public class Bond extends BondedTerm {
      * List of Bonds that this Bond forms angles with
      */
     private ArrayList<Bond> formsAngleWith = new ArrayList<Bond>();
+
     /**
      * *************************************************************************
      */

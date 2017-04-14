@@ -1,0 +1,23 @@
+
+-limitComments
+
+-runtime BridJ 
+
+-mode StandaloneJar
+
+-jar openmm-7.1.jar
+
+-libFile /usr/local/openmm/lib/libOpenMM.dylib
+
+-package simtk.openmm
+
+-library OpenMM
+
+-package simtk.openmm
+
+-I/usr/local/openmm/include
+
+/usr/local/openmm/include/OpenMMCWrapper.h
+/usr/local/openmm/include/AmoebaOpenMMCWrapper.h
+
+
