@@ -2126,7 +2126,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 if (sb != null) {
                     logger.warning(sb.toString());
                 }
-                String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
+                String message = format(" Fatal SCF convergence failure: RMS Debye increased at iteration %d: (%10.5f > %10.5f)\n", completedSCFCycles, eps, previousEps);
                 throw new EnergyException(message, false);
             }
             /**
@@ -6758,7 +6758,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 if (sb != null) {
                     logger.warning(sb.toString());
                 }
-                String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
+                String message = format(" Fatal SCF convergence failure: RMS Debye increased at iteration %d: (%10.5f > %10.5f)\n", completedSCFCycles, eps, previousEps);
                 throw new EnergyException(message, false);
             }
             /**
