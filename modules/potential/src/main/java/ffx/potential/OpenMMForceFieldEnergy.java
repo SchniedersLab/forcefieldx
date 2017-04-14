@@ -37,6 +37,7 @@
  */
 package ffx.potential;
 
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,9 +50,16 @@ import static simtk.openmm.OpenMMAmoebaLibrary.*;
 import static simtk.openmm.OpenMMLibrary.*;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.*;
 
+import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.nonbonded.NonbondedCutoff;
+import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.VDWType;
+
+import static ffx.potential.parameters.ForceField.toPropertyForm;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -95,8 +103,15 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         Pointer pluginDir = OpenMM_Platform_getDefaultPluginsDirectory();
         logger.log(Level.INFO, " OpenMM Plugin Dir: {0}", pluginDir.getString(0));
 
-        // Load plugins and print out plugins.
+        /**
+         * Load plugins and print out plugins.
+         *
+         * Call the method twice to avoid a bug in OpenMM where not all platforms are
+         * list after the first call.
+         */
         PointerByReference platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
+        OpenMM_StringArray_destroy(platforms);
+        platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
 
         platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
         int numPlatforms = OpenMM_Platform_getNumPlatforms();
@@ -106,6 +121,16 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             logger.log(Level.INFO, " Plugin Library :{0}", platformPtr.getString(0));
         }
         OpenMM_StringArray_destroy(platforms);
+
+        if (logger.isLoggable(Level.FINE)) {
+            PointerByReference pluginFailers = OpenMM_Platform_getPluginLoadFailures();
+            int numFailures = OpenMM_StringArray_getSize(pluginFailers);
+            for (int i = 0; i < numFailures; i++) {
+                Pointer message = OpenMM_StringArray_get(pluginFailers, i);
+                logger.log(Level.FINE, " Plugin load failure: {0}", message.getString(0));
+            }
+            OpenMM_StringArray_destroy(pluginFailers);
+        }
 
         // Create the OpenMM System
         openMMSystem = OpenMM_System_create();
@@ -129,13 +154,18 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         addCCOMRemover();
 
         // Add Bond Forces.
-        addBonds();
-
+        // addBonds();
         // Reference: https://github.com/jayponder/tinker/blob/release/openmm/ommstuff.cpp
-
         // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommsetuff.cpp
-
         // Add Urey-Bradley Forces: to do by Hernan - see setupAmoebaUreyBradleyForce line 2115 of openmm-stuff.cpp
+        // Add vdW force.
+        addVDWForce();
+
+        // Add multipole forces.
+        addMultipoleForce();
+
+        // Set periodic box vectors.
+        setDefaultPeriodicBoxVectors();
 
         // Set initial position.
         loadPositions();
@@ -209,9 +239,80 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         logger.log(Level.INFO, " Added bonds ({0})", nBonds);
     }
 
+    private void addVDWForce() {
+        PointerByReference amoebaVdwForce = OpenMM_AmoebaVdwForce_create();
+        OpenMM_System_addForce(openMMSystem, amoebaVdwForce);
+        OpenMM_Force_setForceGroup(amoebaVdwForce, 1);
+
+        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
+        Crystal crystal = ffxForceFieldEnergy.getCrystal();
+
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+            radScale = 0.5;
+        }
+
+        /**
+         * Note that the API says it wants a SIGMA value.
+         */
+        if (vdwForm.radiusType == VanDerWaalsForm.RADIUS_TYPE.R_MIN) {
+            //radScale *= 1.122462048309372981;
+        }
+
+        int ired[] = vdW.getReductionIndex();
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            VDWType vdwType = atom.getVDWType();
+            OpenMM_AmoebaVdwForce_addParticle(amoebaVdwForce,
+                    ired[i], OpenMM_NmPerAngstrom * vdwType.radius * radScale,
+                    OpenMM_KJPerKcal * vdwType.wellDepth,
+                    vdwType.reductionFactor);
+        }
+
+        OpenMM_AmoebaVdwForce_setSigmaCombiningRule(amoebaVdwForce, toPropertyForm(vdwForm.radiusRule.name()));
+        OpenMM_AmoebaVdwForce_setEpsilonCombiningRule(amoebaVdwForce, toPropertyForm(vdwForm.epsilonRule.name()));
+        OpenMM_AmoebaVdwForce_setCutoffDistance(amoebaVdwForce, nonbondedCutoff.off * OpenMM_NmPerAngstrom);
+        OpenMM_AmoebaVdwForce_setUseDispersionCorrection(amoebaVdwForce, OpenMM_Boolean.OpenMM_False);
+
+        if (crystal.aperiodic()) {
+            OpenMM_AmoebaVdwForce_setNonbondedMethod(amoebaVdwForce,
+                    OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff);
+        } else {
+            OpenMM_AmoebaVdwForce_setNonbondedMethod(amoebaVdwForce,
+                    OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_CutoffPeriodic);
+        }
+
+        /**
+         * Create exclusion lists.
+         */
+        PointerByReference exclusions = OpenMM_IntArray_create(0);
+        double mask[] = new double[nAtoms];
+        Arrays.fill(mask, 1.0);
+        for (int i = 0; i < nAtoms; i++) {
+            OpenMM_IntArray_append(exclusions, i);
+            vdW.applyMask(mask, i);
+            for (int j = 0; j < nAtoms; j++) {
+                if (mask[j] == 0.0) {
+                    OpenMM_IntArray_append(exclusions, j);
+                }
+            }
+            vdW.removeMask(mask, i);
+            OpenMM_AmoebaVdwForce_setParticleExclusions(amoebaVdwForce, i, exclusions);
+            OpenMM_IntArray_resize(exclusions, 0);
+        }
+        OpenMM_IntArray_destroy(exclusions);
+    }
+
+    private void addMultipoleForce() {
+
+    }
+
     private void loadPositions() {
         initialPosInNm = OpenMM_Vec3Array_create(0);
-
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         OpenMM_Vec3.ByValue posInNm = new OpenMM_Vec3.ByValue();
@@ -222,5 +323,28 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             posInNm.z = atom.getZ() * OpenMM_NmPerAngstrom;
             OpenMM_Vec3Array_append(initialPosInNm, posInNm);
         }
+    }
+
+    private void setDefaultPeriodicBoxVectors() {
+
+        OpenMM_Vec3 a = new OpenMM_Vec3();
+        OpenMM_Vec3 b = new OpenMM_Vec3();
+        OpenMM_Vec3 c = new OpenMM_Vec3();
+
+        Crystal crystal = ffxForceFieldEnergy.getCrystal();
+
+        if (!crystal.aperiodic()) {
+            a.x = crystal.a * OpenMM_NmPerAngstrom;
+            a.y = 0.0 * OpenMM_NmPerAngstrom;
+            a.z = 0.0 * OpenMM_NmPerAngstrom;
+            b.x = 0.0 * OpenMM_NmPerAngstrom;
+            b.y = crystal.b * OpenMM_NmPerAngstrom;
+            b.z = 0.0 * OpenMM_NmPerAngstrom;
+            c.x = 0.0 * OpenMM_NmPerAngstrom;
+            c.y = 0.0 * OpenMM_NmPerAngstrom;
+            c.z = crystal.c * OpenMM_NmPerAngstrom;
+            OpenMM_System_setDefaultPeriodicBoxVectors(openMMSystem, a, b, c);
+        }
+
     }
 }
