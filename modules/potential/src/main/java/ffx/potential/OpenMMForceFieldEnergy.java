@@ -44,6 +44,8 @@ import java.util.logging.Logger;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
 import simtk.openmm.OpenMM_Vec3;
 
 import static simtk.openmm.OpenMMAmoebaLibrary.*;
@@ -51,12 +53,19 @@ import static simtk.openmm.OpenMMLibrary.*;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.*;
 
 import ffx.crystal.Crystal;
+import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.Torsion;
 import ffx.potential.nonbonded.NonbondedCutoff;
+import ffx.potential.nonbonded.ParticleMeshEwald;
+import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.VDWType;
 
 import static ffx.potential.parameters.ForceField.toPropertyForm;
@@ -106,8 +115,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         /**
          * Load plugins and print out plugins.
          *
-         * Call the method twice to avoid a bug in OpenMM where not all platforms are
-         * list after the first call.
+         * Call the method twice to avoid a bug in OpenMM where not all
+         * platforms are list after the first call.
          */
         PointerByReference platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
         OpenMM_StringArray_destroy(platforms);
@@ -122,6 +131,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
         OpenMM_StringArray_destroy(platforms);
 
+        /**
+         * Extra logging to print out plugins that failed to load.
+         */
         if (logger.isLoggable(Level.FINE)) {
             PointerByReference pluginFailers = OpenMM_Platform_getPluginLoadFailures();
             int numFailures = OpenMM_StringArray_getSize(pluginFailers);
@@ -159,8 +171,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommsetuff.cpp
         // Add Urey-Bradley Forces: to do by Hernan - see setupAmoebaUreyBradleyForce line 2115 of openmm-stuff.cpp
         // Add vdW force.
-        addVDWForce();
-
+        // addVDWForce();
         // Add multipole forces.
         addMultipoleForce();
 
@@ -309,6 +320,209 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     private void addMultipoleForce() {
 
+        ParticleMeshEwald pme = ffxForceFieldEnergy.getPmeNode();
+        int axisAtom[][] = pme.getAxisAtoms();
+
+        double dipoleConversion = OpenMM_NmPerAngstrom;
+        double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+        double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom
+                * OpenMM_NmPerAngstrom;
+        double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
+
+        PointerByReference amoebaMultipoleForce = OpenMM_AmoebaMultipoleForce_create();
+        OpenMM_System_addForce(openMMSystem, amoebaMultipoleForce);
+        OpenMM_Force_setForceGroup(amoebaMultipoleForce, 1);
+
+        PointerByReference dipoles = OpenMM_DoubleArray_create(3);
+        PointerByReference quadrupoles = OpenMM_DoubleArray_create(9);
+
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            MultipoleType multipoleType = atom.getMultipoleType();
+            PolarizeType polarType = atom.getPolarizeType();
+
+            /**
+             * Define the frame definition.
+             */
+            int axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_NoAxisType;
+            switch (multipoleType.frameDefinition) {
+                case ZONLY:
+                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZOnly;
+                    break;
+                case ZTHENX:
+                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZThenX;
+                    break;
+                case BISECTOR:
+                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_Bisector;
+                    break;
+                case ZTHENBISECTOR:
+                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZBisect;
+                    break;
+                case TRISECTOR:
+                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ThreeFold;
+                    break;
+                default:
+                    break;
+            }
+
+            /**
+             * Load local multipole coefficients.
+             */
+            for (int j = 0; j < 3; j++) {
+                OpenMM_DoubleArray_set(dipoles, j, multipoleType.dipole[j] * dipoleConversion);
+
+            }
+            int l = 0;
+            for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 3; k++) {
+                    OpenMM_DoubleArray_set(quadrupoles, l++, multipoleType.quadrupole[j][k] * quadrupoleConversion / 3.0);
+                }
+            }
+
+            int zaxis = 0;
+            int xaxis = 0;
+            int yaxis = 0;
+            int refAtoms[] = axisAtom[i];
+            if (refAtoms != null) {
+                zaxis = refAtoms[0];
+                if (refAtoms.length > 1) {
+                    xaxis = refAtoms[1];
+                    if (refAtoms.length > 2) {
+                        yaxis = refAtoms[2];
+                    }
+                }
+            }
+
+            /**
+             * Add the multipole.
+             */
+            OpenMM_AmoebaMultipoleForce_addMultipole(amoebaMultipoleForce,
+                    multipoleType.charge, dipoles, quadrupoles,
+                    axisType, zaxis, xaxis, yaxis,
+                    polarType.thole,
+                    polarType.pdamp * dampingFactorConversion,
+                    polarType.polarizability * polarityConversion);
+        }
+        OpenMM_DoubleArray_destroy(dipoles);
+        OpenMM_DoubleArray_destroy(quadrupoles);
+
+        Crystal crystal = ffxForceFieldEnergy.getCrystal();
+        if (!crystal.aperiodic()) {
+            double ewaldTolerance = 1.0e-04;
+            OpenMM_AmoebaMultipoleForce_setNonbondedMethod(amoebaMultipoleForce,
+                    OpenMM_AmoebaMultipoleForce_NonbondedMethod.OpenMM_AmoebaMultipoleForce_PME);
+            OpenMM_AmoebaMultipoleForce_setCutoffDistance(amoebaMultipoleForce,
+                    pme.getEwaldCutoff() * OpenMM_NmPerAngstrom);
+            OpenMM_AmoebaMultipoleForce_setAEwald(amoebaMultipoleForce,
+                    pme.getEwaldCoefficient() / OpenMM_NmPerAngstrom);
+
+            PointerByReference gridDimensions = OpenMM_IntArray_create(3);
+            ReciprocalSpace recip = pme.getReciprocalSpace();
+            OpenMM_IntArray_set(gridDimensions, 0, recip.getXDim());
+            OpenMM_IntArray_set(gridDimensions, 1, recip.getYDim());
+            OpenMM_IntArray_set(gridDimensions, 2, recip.getZDim());
+            OpenMM_AmoebaMultipoleForce_setPmeGridDimensions(amoebaMultipoleForce,
+                    gridDimensions);
+            OpenMM_AmoebaMultipoleForce_setEwaldErrorTolerance(amoebaMultipoleForce, ewaldTolerance);
+            OpenMM_IntArray_destroy(gridDimensions);
+        } else {
+            OpenMM_AmoebaMultipoleForce_setNonbondedMethod(amoebaMultipoleForce,
+                    OpenMM_AmoebaMultipoleForce_NonbondedMethod.OpenMM_AmoebaMultipoleForce_NoCutoff);
+        }
+
+        if (pme.getPolarizationType() == Polarization.DIRECT) {
+            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce,
+                    OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Direct);
+        } else {
+            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce,
+                    OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Mutual);
+        }
+
+        OpenMM_AmoebaMultipoleForce_setMutualInducedMaxIterations(amoebaMultipoleForce, 500);
+        OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon(amoebaMultipoleForce, pme.getPolarEps());
+
+        int ip11[][] = pme.getPolarization11();
+        int ip12[][] = pme.getPolarization12();
+        int ip13[][] = pme.getPolarization13();
+
+        PointerByReference covalentMap = OpenMM_IntArray_create(0);
+        for (int i = 0; i < nAtoms; i++) {
+            Atom ai = atoms[i];
+            for (Bond bond : ai.getBonds()) {
+                int index = bond.get1_2(ai).getIndex() - 1;
+                OpenMM_IntArray_append(covalentMap, index);
+            }
+            OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
+                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent12,
+                    covalentMap);
+            OpenMM_IntArray_resize(covalentMap, 0);
+
+            for (Angle angle : ai.getAngles()) {
+                Atom ak = angle.get1_3(ai);
+                if (ak != null) {
+                    int index = ak.getIndex() - 1;
+                    OpenMM_IntArray_append(covalentMap, index);
+                }
+            }
+            OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
+                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent13,
+                    covalentMap);
+            OpenMM_IntArray_resize(covalentMap, 0);
+
+            for (Torsion torsion : ai.getTorsions()) {
+                Atom ak = torsion.get1_4(ai);
+                if (ak != null) {
+                    int index = ak.getIndex() - 1;
+                    OpenMM_IntArray_append(covalentMap, index);
+                }
+            }
+            OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
+                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent14,
+                    covalentMap);
+            OpenMM_IntArray_resize(covalentMap, 0);
+
+            for (Atom ak : ai.get1_5s()) {
+                int index = ak.getIndex() - 1;
+                OpenMM_IntArray_append(covalentMap, index);
+            }
+
+            OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
+                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent15,
+                    covalentMap);
+            OpenMM_IntArray_resize(covalentMap, 0);
+
+            for (int j = 0; j < ip11[i].length; j++) {
+                OpenMM_IntArray_append(covalentMap, ip11[i][j]);
+            }
+            OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
+                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent11,
+                    covalentMap);
+            OpenMM_IntArray_resize(covalentMap, 0);
+
+            for (int j = 0; j < ip12[i].length; j++) {
+                OpenMM_IntArray_append(covalentMap, ip12[i][j]);
+            }
+            OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
+                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent12,
+                    covalentMap);
+            OpenMM_IntArray_resize(covalentMap, 0);
+
+            for (int j = 0; j < ip13[i].length; j++) {
+                OpenMM_IntArray_append(covalentMap, ip13[i][j]);
+            }
+            OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
+                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent13,
+                    covalentMap);
+            OpenMM_IntArray_resize(covalentMap, 0);
+
+            OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
+                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent14,
+                    covalentMap);
+        }
+
+        OpenMM_IntArray_destroy(covalentMap);
     }
 
     private void loadPositions() {

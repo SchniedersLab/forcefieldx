@@ -210,8 +210,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private double permanentMultipoleEnergy;
     /**
-     * Not implemented in Cart.
-     * Permanent multipole energy (kcal/mol) due to real-space interactions only.
+     * Not implemented in Cart. Permanent multipole energy (kcal/mol) due to
+     * real-space interactions only.
      */
     private double permanentRealSpaceEnergy = 0.0;
     private double permanentReciprocalEnergy;
@@ -418,7 +418,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private double localMultipole[][];
     private MultipoleType.MultipoleFrameDefinition frame[];
-    private int axisAtom[][];
 
     private double cartMultipolePhi[][];
     /**
@@ -442,7 +441,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Induced dipole variables.
      */
     private final double polsor;
-    private final double poleps;
     /**
      * Direct polarization field due to permanent multipoles at polarizable
      * sites within their group are scaled. The scaling is 0.0 in AMOEBA.
@@ -505,14 +503,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private double directDipoleCR[][];
     private double cartesianDipolePhi[][];
     private double cartesianDipolePhiCR[][];
-    private int ip11[][];
-    private int ip12[][];
-    private int ip13[][];
     /**
      * *************************************************************************
      * Mutable Particle Mesh Ewald constants.
      */
-    private double aewald;
     private double alsq2;
     private double an0;
     private double an1;
@@ -522,7 +516,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private double an5;
     private double piEwald;
     private double aewald3;
-    private double off;
     private double off2;
 
     /**
@@ -644,7 +637,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final PCGIterRegion2 pcgIterRegion2;
 
     private final boolean reciprocalSpaceTerm;
-    private final ReciprocalSpace reciprocalSpace;
     private final ReciprocalEnergyRegion reciprocalEnergyRegion;
     private final RealSpaceEnergyRegion realSpaceEnergyRegion;
     private final ReduceRegion reduceRegion;
@@ -828,9 +820,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * the beginning of the polarization schedule. Choosing a power of 3
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              *
-             * For DualForceField resolution switching, the Polarization energy will be changed at the
-             * DualForceField level, and not interpolated within ForceFieldEnergy / PME. Thus, we
-             * set the exponent to 0.0 in this case.
+             * For DualForceField resolution switching, the Polarization energy
+             * will be changed at the DualForceField level, and not interpolated
+             * within ForceFieldEnergy / PME. Thus, we set the exponent to 0.0
+             * in this case.
              */
             polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
             if (polLambdaExponent < 0.0) {
@@ -1853,17 +1846,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     public double getPermanentEnergy() {
         return permanentMultipoleEnergy;
     }
-    
+
     @Override
     public double getPermanentRealSpaceEnergy() {
         return permanentRealSpaceEnergy;
     }
-    
+
     @Override
     public double getPermanentReciprocalEnergy() {
         return permanentReciprocalEnergy;
     }
-    
+
     @Override
     public String getDecomposition() {
         return "";
@@ -6052,11 +6045,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
         }
         return cutoff;
-    }
-
-    @Override
-    public double getEwaldCutoff() {
-        return off;
     }
 
     /**

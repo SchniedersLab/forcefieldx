@@ -1064,9 +1064,9 @@ public class ReciprocalSpace {
      * <p>
      * getXDim</p>
      *
-     * @return a double.
+     * @return a int.
      */
-    public double getXDim() {
+    public int getXDim() {
         return fftX;
     }
 
@@ -1074,9 +1074,9 @@ public class ReciprocalSpace {
      * <p>
      * getYDim</p>
      *
-     * @return a double.
+     * @return a int.
      */
-    public double getYDim() {
+    public int getYDim() {
         return fftY;
     }
 
@@ -1084,9 +1084,9 @@ public class ReciprocalSpace {
      * <p>
      * getZDim</p>
      *
-     * @return a double.
+     * @return a int.
      */
-    public double getZDim() {
+    public int getZDim() {
         return fftZ;
     }
 

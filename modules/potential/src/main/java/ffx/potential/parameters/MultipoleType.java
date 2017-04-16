@@ -117,10 +117,15 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
      * Atom types that define the local frame of this multipole.
      */
     public final int[] frameAtomTypes;
+
     /**
      * Charge, dipole, and quadrupole packed into 1d.
      */
     public final double[] packedMultipole;
+
+    /**
+     * Static MultipoleType with no multipole parameters.
+     */
     public static final MultipoleType ZEROS = new MultipoleType(
             0.0, new double[3], new double[3][3], null, null);
 
@@ -148,9 +153,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             convertBohrToElectronAngstroms();
         }
         checkMultipole();
-//        packedMultipole = new double[]{charge, dipole[0], dipole[1], dipole[2],
-//                quadrupole[0][0], quadrupole[1][1], quadrupole[2][2],
-//                quadrupole[0][1], quadrupole[0][2], quadrupole[1][2]};
         packedMultipole = new double[10];
         packedMultipole[t000] = charge;
         packedMultipole[t100] = dipole[0];
@@ -163,7 +165,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         packedMultipole[t101] = quadrupole[0][2];
         packedMultipole[t011] = quadrupole[1][2];
     }
-    
+
     /**
      * This assumes the dipole and quadrupole are in
      * units of Bohr, and are converted to electron-Angstroms and
@@ -255,7 +257,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             logger.warning(message);
         }
     }
-    
+
     public static boolean assignMultipole(Atom atom, ForceField forceField,
             double multipole[], int i, int axisAtom[][], MultipoleFrameDefinition frame[]) {
         AtomType atomType = atom.getAtomType();
@@ -506,7 +508,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         }
         return false;
     }
-    
+
     private void convertBohrToElectronAngstroms() {
         for (int i = 0; i < 3; i++) {
             dipole[i] *= BOHR;
@@ -725,7 +727,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
                 "                                      "));
         return multipoleBuffer.toString();
     }
-    
+
         /**
      * Nicely formatted multipole string. Dipole and qaudrupole are in
      * electron-Bohrs and electron-Bohrs^2, respectively.
@@ -904,13 +906,13 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         }
         return new MultipoleType(charge, dipole, quadrupole, multipoleFrameTypes, frame);
     }
-    
+
     /**
-     * Create a new MultipoleType representing the weighted average of 
+     * Create a new MultipoleType representing the weighted average of
      * @param types
      * @param weights
      * @param frameTypes
-     * @return 
+     * @return
      */
     public static MultipoleType scale(MultipoleType[] types, double[] weights, int[] frameTypes) {
         if (Arrays.asList(types).contains(null)) {
