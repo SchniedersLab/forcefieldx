@@ -404,7 +404,7 @@ public class VanDerWaals implements MaskingInterface,
         double buff = 2.0;
         double vdwcut;
         if (!crystal.aperiodic()) {
-            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
+            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 12.0);
         } else {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - (buff + 1.0));
             // If aperiodic, set the vdW cutoff to cover everything.
