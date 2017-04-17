@@ -10,6 +10,7 @@ bin/scheduler.log
 conf/*.jar
 
 *.iml
+*.tmp
 nb-configuration.xml
 catalog.xml
 .DS_Store

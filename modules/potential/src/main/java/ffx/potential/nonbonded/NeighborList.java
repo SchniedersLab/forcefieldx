@@ -407,7 +407,7 @@ public class NeighborList extends ParallelRegion {
         }
 
         /**
-         * Find the largest sphere that is inclosed by the unit cell.
+         * Find the largest sphere that is enclosed by the unit cell.
          */
         final double sphere = min(min(crystal.interfacialRadiusA,
                 crystal.interfacialRadiusB), crystal.interfacialRadiusC);

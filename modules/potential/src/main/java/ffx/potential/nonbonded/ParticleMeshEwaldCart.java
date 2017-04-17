@@ -1374,7 +1374,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             lambdaMode = LambdaMode.CONDENSED;
             energy = condensedEnergy();
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Solvated energy: %20.8f", energy));
+                logger.fine(String.format(" Condensed energy: %20.8f", energy));
             }
             /**
              * Condensed phase SCF without ligand atoms.

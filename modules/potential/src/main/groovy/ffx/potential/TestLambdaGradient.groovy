@@ -130,11 +130,11 @@ class TestLambdaGradient extends Script {
          */
         @Option(shortName='d', longName='dx', defaultValue='1.0e-5', description='Finite-difference step size (in Angstroms)') double step;
         /**
-         * -le or --lambdaExponent sets the power of lambda used by dual 
+         * -le or --lambdaExponent sets the power of lambda used by dual
          * topologies. Now deprecated by numeric argument to -sf.
          */
-        
-        @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0', 
+
+        @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0',
             description='DEPRECATED: Exponent to apply to dual topology lambda.') double lamExp;
         /**
          * -sf or --switchingFunction sets the switching function to be used by
@@ -143,30 +143,30 @@ class TestLambdaGradient extends Script {
          * switching function with zero first and second derivatives at the end
          * (same function as used for van der Waals switch), and a number uses
          * the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
-         * 
-         * All of these are generalizations of Udt = f(l)*E1(l) + 
+         *
+         * All of these are generalizations of Udt = f(l)*E1(l) +
          * f(1-l)*E2(1-lambda), where f(l) is a continuous switching function
          * such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1 for lambda 0-1.
-         * The trigonometric switch can be restated thusly, since 
+         * The trigonometric switch can be restated thusly, since
          * cos^2(pi/2*lambda) is identical to sin^2(pi/2*(1-lambda)), f(1-l).
          */
-        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0', 
+        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0',
             description='Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)') String lambdaFunction;
         /**
-         * -sdX or --skipdX disables the very long atomic gradient tests and 
-         * only performs dU/dL, dU2/dL2, and dU2/dLdX tests. Useful if the 
+         * -sdX or --skipdX disables the very long atomic gradient tests and
+         * only performs dU/dL, dU2/dL2, and dU2/dLdX tests. Useful if the
          * script is being used to generate a dU/dL profile.
          */
-        @Option(shortName='sdX', longName='skipdX', defaultValue='false', 
+        @Option(shortName='sdX', longName='skipdX', defaultValue='false',
             description='Skip calculating per-atom dUdX values and only test lambda gradients') boolean skipAtomGradients;
-        
+
         /**
          * The final argument(s) should be one or more filenames.
          */
         @Unparsed List<String> filenames;
     }
-    
-    
+
+
     // Following variables are largely intended to be shared by helper methods such as openFile.
     private static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
     private int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
@@ -185,10 +185,10 @@ class TestLambdaGradient extends Script {
         MolecularAssembly mola = pFuncts.getActiveAssembly();
         processFile(options, mola, topNum);
     }
-    
+
     private void processFile(Options options, MolecularAssembly mola, int topNum) {
         ForceFieldEnergy energy = mola.getPotentialEnergy();
-        
+
         Atom[] atoms = mola.getAtomArray();
         int remainder = (topNum % 2) + 1;
         switch(remainder) {
@@ -223,14 +223,14 @@ class TestLambdaGradient extends Script {
                     }
                 }
             }
-            
+
             // Apply the no electrostatics atom selection
             int noElecStart = options.es1;
             noElecStart = (noElecStart < 1) ? 1 : noElecStart;
-            
+
             int noElecStop = options.ef1;
             noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
-            
+
             for (int i = noElecStart; i <= noElecStop; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setElectrostatics(false);
@@ -268,14 +268,14 @@ class TestLambdaGradient extends Script {
                     }
                 }
             }
-            
+
             // Apply the no electrostatics atom selection
             int noElecStart2 = options.es2;
             noElecStart2 = (noElecStart2 < 1) ? 1 : noElecStart2;
-            
+
             int noElecStop2 = options.ef2;
             noElecStop2 = (noElecStop2 > atoms.length) ? atoms.length : noElecStop2;
-            
+
             for (int i = noElecStart2; i <= noElecStop2; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setElectrostatics(false);
@@ -283,7 +283,7 @@ class TestLambdaGradient extends Script {
             }
             break;
         }
-        
+
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
         energy.getCrystal().setSpecialPositionCutoff(0.0);
         // Save a reference to the topology.
@@ -291,7 +291,7 @@ class TestLambdaGradient extends Script {
         topologies[topNum] = mola;
         energies[topNum] = energy;
     }
-    
+
     /**
      * Compares MSNodes based on:
      * Residue vs. Molecule (must match)
@@ -338,7 +338,7 @@ class TestLambdaGradient extends Script {
             return false;
         }
     }*/
-    
+
     /**
      * Script run method.
      */
@@ -352,18 +352,18 @@ class TestLambdaGradient extends Script {
         if (options.help == true) {
             return cli.usage();
         }
-        
+
         try {
             pFuncts = getPotentialsUtils();
         } catch (MissingMethodException ex) {
             pFuncts = new PotentialsUtils();
         }
-        
+
         List<String> arguments = options.filenames;
         // Check nArgs; should either be number of arguments (min 1), else 1.
         int nArgs = arguments ? arguments.size() : 1;
         nArgs = (nArgs < 1) ? 1 : nArgs;
-        
+
         int numParallel = options.nPar;
         if (threadsAvail % numParallel != 0) {
             logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
@@ -374,7 +374,7 @@ class TestLambdaGradient extends Script {
         } else {
             threadsPer = threadsAvail / numParallel;
         }
-        
+
         if (options.ligAt1) {
             ranges1 = options.ligAt1.tokenize(".");
         }
@@ -396,18 +396,11 @@ class TestLambdaGradient extends Script {
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
         if (nArgs >= 2) {
-            // Condensed phase polarization is evaluated over the entire range.
-            System.setProperty("polarization-lambda-start","0.0");
-            // Polarization energy is not scaled individually by lambda, but
-            // along with the overall potential energy of a topology.
-            System.setProperty("polarization-lambda-exponent","0.0");
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
             System.setProperty("ligand-vapor-elec","false");
-            // Condensed phase polarization, without the ligand present, is unecessary.
-            System.setProperty("no-ligand-condensed-scf","false");
         }
-        
+
         if (!arguments || arguments.isEmpty()) {
             MolecularAssembly mola = aFuncts.getActiveAssembly();
             if (mola == null) {
@@ -415,7 +408,7 @@ class TestLambdaGradient extends Script {
             }
             arguments = new ArrayList<>();
             arguments.add(mola.getFile().getName());
-            
+
             processFile(mola);
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs));
@@ -423,9 +416,9 @@ class TestLambdaGradient extends Script {
                 openFile(options, arguments.get(i), i);
             }
         }
-        
+
         Potential potential;
-        
+
         UnivariateSwitchingFunction sf;
         if (options.lambdaFunction) {
             String lf = options.lambdaFunction.toUpperCase();
@@ -452,13 +445,13 @@ class TestLambdaGradient extends Script {
         } else {
             sf = new PowerSwitch(1.0, options.lamExp);
         }
-        
+
         List<Integer> uniqueA;
         List<Integer> uniqueB;
         if (nArgs >= 4) {
             uniqueA = new ArrayList<>();
             uniqueB = new ArrayList<>();
-            
+
             if (options.unsharedA) {
                 //rangesA = options.uaA.tokenize(".");
                 def ra = [] as Set;
@@ -546,7 +539,7 @@ class TestLambdaGradient extends Script {
                     uniqueB.addAll(rbAdj);
                 }
             }
-            
+
             /*if (options.unsharedRadius > 0.0) {
                 Atom[] atomsA = topologies[0].getAtomArray();
                 Atom[] atomsB = topologies[2].getAtomArray();
@@ -554,19 +547,19 @@ class TestLambdaGradient extends Script {
                 NeighborList nlistB = energies[2].getVdwNode().getNeighborList();
                 Set<Integer> nearbyA = nlistA.getNeighborIndices(uniqueA, options.unsharedRadius);
                 Set<Integer> nearbyB = nlistB.getNeighborIndices(uniqueB, options.unsharedRadius);
-                
+
                 Set<MSNode> nodesA = nearbyA.stream().map({i -> return atomsA[i];}).
                     map({at -> return at.getMoleculeOrResidue();}).
                     filter({node -> return node != null;}).
                     collect(Collectors.toSet());
-                
+
                 Set<MSNode> nodesB = nearbyB.stream().map({i -> return atomsB[i];}).
                     map({at -> return at.getMoleculeOrResidue();}).
                     filter({node -> return node != null;}).
                     collect(Collectors.toSet());
             }*/
         }
-        
+
         StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ");
         switch (nArgs) {
             case 1:
@@ -585,7 +578,7 @@ class TestLambdaGradient extends Script {
                             Atom ai = atoms[i - 1];
                             ai.setActive(true);
                         }
-                    } 
+                    }
                }
                 break;
             case 2:
@@ -598,7 +591,7 @@ class TestLambdaGradient extends Script {
                 break;
             case 4:
                 sb.append("quad topology ");
-                
+
                 DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
                 DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
                 QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
@@ -613,15 +606,15 @@ class TestLambdaGradient extends Script {
                 break;
             case 8:
                 sb.append("oct-topology ");
-                
+
                 DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
                 DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
                 QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
-                
+
                 DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
                 DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
                 QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
-                
+
                 OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
                 if (numParallel >= 2) {
                     ote.setParallel(true);
@@ -644,9 +637,9 @@ class TestLambdaGradient extends Script {
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
         logger.info(sb.toString());
-        
+
         LambdaInterface linter = (LambdaInterface) potential;
-        
+
         // End boilerplate open-topologies code.
 
         // Reset the number of variables for the case of dual topology.
