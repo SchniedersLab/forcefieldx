@@ -2623,6 +2623,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public Bond[] getBonds() {
         return bonds;
     }
+    
+    public UreyBradley[] getUreyBradleys(){
+        return ureyBradleys;
+    }
 
     private class BondedRegion extends ParallelRegion {
 

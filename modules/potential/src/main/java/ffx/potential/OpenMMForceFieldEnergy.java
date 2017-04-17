@@ -57,6 +57,7 @@ import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
+import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
@@ -66,9 +67,11 @@ import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 
 import static ffx.potential.parameters.ForceField.toPropertyForm;
+
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -170,10 +173,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         // Reference: https://github.com/jayponder/tinker/blob/release/openmm/ommstuff.cpp
         // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommsetuff.cpp
         // Add Urey-Bradley Forces: to do by Hernan - see setupAmoebaUreyBradleyForce line 2115 of openmm-stuff.cpp
+        addUreyBradleys();
+        
         // Add vdW force.
         // addVDWForce();
+        
         // Add multipole forces.
-        addMultipoleForce();
+        // addMultipoleForce();
 
         // Set periodic box vectors.
         setDefaultPeriodicBoxVectors();
@@ -248,6 +254,33 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         OpenMM_System_addForce(openMMSystem, amoebaBondForce);
         logger.log(Level.INFO, " Added bonds ({0})", nBonds);
+    }
+
+    private void addUreyBradleys() {
+        PointerByReference amoebaBondForce = OpenMM_AmoebaBondForce_create();
+        UreyBradley ureyBradleys[] = ffxForceFieldEnergy.getUreyBradleys();
+        
+        double kParameterConversion = UreyBradleyType.units * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+        int nUreys = ureyBradleys.length;
+
+        for (int i = 0; i < nUreys; i++) {
+            UreyBradley ureyBradley = ureyBradleys[i];
+            int i1 = ureyBradley.getAtom(0).getXyzIndex() - 1;
+            int i2 = ureyBradley.getAtom(2).getXyzIndex() - 1;
+            UreyBradleyType ureyBradleyType = ureyBradley.ureyBradleyType;
+            OpenMM_AmoebaBondForce_addBond(amoebaBondForce, i1, i2,
+                    ureyBradleyType.distance * OpenMM_NmPerAngstrom,
+                    ureyBradleyType.forceConstant * kParameterConversion);
+        }
+
+        OpenMM_AmoebaBondForce_setAmoebaGlobalBondCubic(amoebaBondForce,
+                UreyBradleyType.cubic / OpenMM_NmPerAngstrom);
+        OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(amoebaBondForce,
+                UreyBradleyType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+        
+        OpenMM_System_addForce(openMMSystem, amoebaBondForce);
+        logger.log(Level.INFO, " Added Urey-Bradleys ({0})", nUreys);
+
     }
 
     private void addVDWForce() {
