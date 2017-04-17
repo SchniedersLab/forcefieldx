@@ -11,9 +11,6 @@
     <version>1.0.0-beta</version>
     <description>Software for Molecular Biophysics</description>
     <url>http://ffx.biochem.uiowa.edu</url>
-    <prerequisites>
-        <maven>3.2.0</maven>
-    </prerequisites>
     <issueManagement>
         <system>GitHub Issues</system>
         <url>http://github.com/mjschnie/ffx/issues</url>
@@ -359,7 +356,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.6.1</version>
                     <inherited>true</inherited>
                     <configuration>
                         <debug>true</debug>
@@ -489,7 +486,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.5.0</version>
+                    <version>1.6.0</version>
                 </plugin>
                 <!--<plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -544,6 +541,29 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>1.4.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-java</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>1.8</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>3.3</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>1.8</version>
                 <inherited>false</inherited>
@@ -579,7 +599,7 @@
                     <dependency>
                         <groupId>org.apache.maven.wagon</groupId>
                         <artifactId>wagon-webdav-jackrabbit</artifactId>
-                        <version>2.10</version>
+                        <version>2.12</version>
                     </dependency>
                     <dependency>
                         <groupId>lt.velykis.maven.skins</groupId>

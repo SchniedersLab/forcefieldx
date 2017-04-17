@@ -136,14 +136,14 @@ class MultiTopTimer extends Script {
          * switching function with zero first and second derivatives at the end
          * (same function as used for van der Waals switch), and a number uses
          * the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
-         * 
-         * All of these are generalizations of Udt = f(l)*E1(l) + 
+         *
+         * All of these are generalizations of Udt = f(l)*E1(l) +
          * f(1-l)*E2(1-lambda), where f(l) is a continuous switching function
          * such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1 for lambda 0-1.
-         * The trigonometric switch can be restated thusly, since 
+         * The trigonometric switch can be restated thusly, since
          * cos^2(pi/2*lambda) is identical to sin^2(pi/2*(1-lambda)), f(1-l).
          */
-        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0', 
+        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0',
             description='Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)') String lambdaFunction;
 
         /**
@@ -151,7 +151,7 @@ class MultiTopTimer extends Script {
          */
         @Unparsed List<String> filenames;
     }
-    
+
     // Following variables are largely intended to be shared by helper methods such as openFile.
     private static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
     private int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
@@ -170,10 +170,10 @@ class MultiTopTimer extends Script {
         MolecularAssembly mola = pFuncts.getActiveAssembly();
         processFile(options, mola, topNum);
     }
-    
+
     private void processFile(Options options, MolecularAssembly mola, int topNum) {
         ForceFieldEnergy energy = mola.getPotentialEnergy();
-        
+
         Atom[] atoms = mola.getAtomArray();
         int remainder = (topNum % 2) + 1;
         switch(remainder) {
@@ -208,14 +208,14 @@ class MultiTopTimer extends Script {
                     }
                 }
             }
-            
+
             // Apply the no electrostatics atom selection
             int noElecStart = options.es1;
             noElecStart = (noElecStart < 1) ? 1 : noElecStart;
-            
+
             int noElecStop = options.ef1;
             noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
-            
+
             for (int i = noElecStart; i <= noElecStop; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setElectrostatics(false);
@@ -253,14 +253,14 @@ class MultiTopTimer extends Script {
                     }
                 }
             }
-            
+
             // Apply the no electrostatics atom selection
             int noElecStart2 = options.es2;
             noElecStart2 = (noElecStart2 < 1) ? 1 : noElecStart2;
-            
+
             int noElecStop2 = options.ef2;
             noElecStop2 = (noElecStop2 > atoms.length) ? atoms.length : noElecStop2;
-            
+
             for (int i = noElecStart2; i <= noElecStop2; i++) {
                 Atom ai = atoms[i - 1];
                 ai.setElectrostatics(false);
@@ -268,7 +268,7 @@ class MultiTopTimer extends Script {
             }
             break;
         }
-        
+
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
         energy.getCrystal().setSpecialPositionCutoff(0.0);
         // Save a reference to the topology.
@@ -276,7 +276,7 @@ class MultiTopTimer extends Script {
         topologies[topNum] = mola;
         energies[topNum] = energy;
     }
-    
+
     def run() {
 
         def cli = new CliBuilder(usage:' ffxc MultiTopTimer [options] <filename> [file2...]', header:' Options:');
@@ -287,18 +287,18 @@ class MultiTopTimer extends Script {
         if (options.help == true) {
             return cli.usage();
         }
-        
+
         try {
             pFuncts = getPotentialsUtils();
         } catch (MissingMethodException ex) {
             pFuncts = new PotentialsUtils();
         }
-        
+
         List<String> arguments = options.filenames;
         // Check nArgs; should either be number of arguments (min 1), else 1.
         int nArgs = arguments ? arguments.size() : 1;
         nArgs = (nArgs < 1) ? 1 : nArgs;
-        
+
         int numParallel = options.nPar;
         if (threadsAvail % numParallel != 0) {
             logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
@@ -309,14 +309,14 @@ class MultiTopTimer extends Script {
         } else {
             threadsPer = threadsAvail / numParallel;
         }
-        
+
         if (options.ligAt1) {
             ranges1 = options.ligAt1.tokenize(".");
         }
         if (options.ligAt2) {
             ranges2 = options.ligAt2.tokenize(".");
         }
-        
+
         boolean gradient = true;
         if (options.gradString) {
             gradient = Boolean.parseBoolean(options.gradString);
@@ -337,18 +337,11 @@ class MultiTopTimer extends Script {
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
         if (nArgs >= 2) {
-            // Condensed phase polarization is evaluated over the entire range.
-            System.setProperty("polarization-lambda-start","0.0");
-            // Polarization energy is not scaled individually by lambda, but
-            // along with the overall potential energy of a topology.
-            System.setProperty("polarization-lambda-exponent","0.0");
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
             System.setProperty("ligand-vapor-elec","false");
-            // Condensed phase polarization, without the ligand present, is unecessary.
-            System.setProperty("no-ligand-condensed-scf","false");
         }
-        
+
         if (!arguments || arguments.isEmpty()) {
             MolecularAssembly mola = aFuncts.getActiveAssembly();
             if (mola == null) {
@@ -356,7 +349,7 @@ class MultiTopTimer extends Script {
             }
             arguments = new ArrayList<>();
             arguments.add(mola.getFile().getName());
-            
+
             processFile(mola);
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs));
@@ -364,9 +357,9 @@ class MultiTopTimer extends Script {
                 openFile(options, arguments.get(i), i);
             }
         }
-        
+
         Potential potential;
-        
+
         UnivariateSwitchingFunction sf;
         if (options.lambdaFunction) {
             String lf = options.lambdaFunction.toUpperCase();
@@ -393,13 +386,13 @@ class MultiTopTimer extends Script {
         } else {
             sf = new PowerSwitch(1.0, options.lamExp);
         }
-        
+
         List<Integer> uniqueA;
         List<Integer> uniqueB;
         if (nArgs >= 4) {
             uniqueA = new ArrayList<>();
             uniqueB = new ArrayList<>();
-            
+
             if (options.unsharedA) {
                 def ra = [] as Set;
                 String[] toksA = options.unsharedA.tokenize(".");
@@ -489,7 +482,7 @@ class MultiTopTimer extends Script {
                 }
             }
         }
-        
+
         StringBuilder sb = new StringBuilder("\n Timing energies ");
         if (gradient) {
             sb.append("and gradients ");
@@ -512,7 +505,7 @@ class MultiTopTimer extends Script {
                             Atom ai = atoms[i - 1];
                             ai.setActive(true);
                         }
-                    } 
+                    }
                }
                 break;
             case 2:
@@ -525,7 +518,7 @@ class MultiTopTimer extends Script {
                 break;
             case 4:
                 sb.append("quad topology ");
-                
+
                 DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
                 DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
                 QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
@@ -540,15 +533,15 @@ class MultiTopTimer extends Script {
                 break;
             case 8:
                 sb.append("oct-topology ");
-                
+
                 DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
                 DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
                 QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
-                
+
                 DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
                 DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
                 QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
-                
+
                 OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
                 if (numParallel >= 2) {
                     ote.setParallel(true);
@@ -571,9 +564,9 @@ class MultiTopTimer extends Script {
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
         logger.info(sb.toString());
-        
+
         LambdaInterface linter = (LambdaInterface) potential;
-        
+
         // Turn on computation of lambda derivatives if l >= 0 or > 1 argument
         if (options.initialLambda >= 0.0 || nArgs > 1) {
             double lamToUse = options.initialLambda;
@@ -583,12 +576,12 @@ class MultiTopTimer extends Script {
             }
             linter.setLambda(lamToUse);
         }
-        
+
         boolean print = true;
         if (options.verboseString) {
             print = Boolean.parseBoolean(options.verboseString);
         }
-        
+
         long minTime = Long.MAX_VALUE;
         double sumTime2 = 0.0;
         int halfnEvals = (options.nEvals % 2 == 1) ? (options.nEvals/2) : (options.nEvals/2) - 1; // Halfway point
@@ -597,7 +590,7 @@ class MultiTopTimer extends Script {
         potential.getCoordinates(x);
         double[] g = gradient ? new double[nVars] : null;
         def eCall = gradient ? { potential.energyAndGradient(x, g, print) } : { potential.energy(x, print) };
-        
+
         for (int i=0; i<options.nEvals; i++) {
             long time = -System.nanoTime();
             //energy.energy(gradient, print);
@@ -609,7 +602,7 @@ class MultiTopTimer extends Script {
                 sumTime2 += (time2*time2);
             }
         }
-        
+
         ++halfnEvals;
         double rmsTime = Math.sqrt(sumTime2/halfnEvals);
         logger.info(String.format(" Minimum time: %14.5f (sec)", minTime * 1.0E-9));

@@ -747,16 +747,9 @@ class TTosrw extends Script {
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
         if (nArgs >= 2) {
-            // Condensed phase polarization is evaluated over the entire range.
-            System.setProperty("polarization-lambda-start","0.0");
-            // Polarization energy is not scaled individually by lambda, but
-            // along with the overall potential energy of a topology.
-            System.setProperty("polarization-lambda-exponent","0.0");
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
             System.setProperty("ligand-vapor-elec","false");
-            // Condensed phase polarization, without the ligand present, is unecessary.
-            System.setProperty("no-ligand-condensed-scf","false");
         }
 
         double lambda = options.lambda;
@@ -997,7 +990,7 @@ class TTosrw extends Script {
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
         logger.info(sb.toString());
-        
+
         logger.info(" Starting energy (before .dyn restart loaded):");
         boolean updatesDisabled = topologies[0].getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
         if (updatesDisabled) {
@@ -1007,7 +1000,7 @@ class TTosrw extends Script {
         potential.getCoordinates(x);
         LambdaInterface linter = (LambdaInterface) potential;
         linter.setLambda(lambda);
-        
+
         potential.energy(x, true);
 
 
