@@ -73,6 +73,18 @@ public abstract class ParticleMeshEwald {
     protected int nAtoms;
 
     /**
+     * Axis defining atoms.
+     */
+    protected int axisAtom[][];
+
+    /**
+     * Polarization covalent lists
+     */
+    protected int ip11[][];
+    protected int ip12[][];
+    protected int ip13[][];
+
+    /**
      * Polarization modes include "direct", in which induced dipoles do not
      * interact, and "mutual" that converges the self-consistent field to a
      * tolerance specified by the "polar-eps" keyword.
@@ -81,6 +93,7 @@ public abstract class ParticleMeshEwald {
 
         MUTUAL, DIRECT, NONE
     }
+
     protected Polarization polarization;
 
     public enum ELEC_FORM {
@@ -125,6 +138,26 @@ public abstract class ParticleMeshEwald {
     protected static final int tensorCount = MultipoleTensor.tensorCount(3);
     protected static final double oneThird = 1.0 / 3.0;
 
+    /**
+     * PME real space cut-off.
+     */
+    protected double off;
+
+    /**
+     * Ewald coefficient.
+     */
+    protected double aewald;
+
+    /**
+     * SCF convergence criteria.
+     */
+    protected double poleps;
+
+    /**
+     * Reciprocal Space
+     */
+    protected ReciprocalSpace reciprocalSpace;
+
     public class EnergyForceTorque {
 
         public double energy;
@@ -134,16 +167,18 @@ public abstract class ParticleMeshEwald {
         public double[] permTk = new double[3];
         public double dPermdZ;
     }
-    
+
     public class LambdaFactors {
+
         public double sc1 = 0.0;
         public double dsc1dL = 0.0;
         public double d2sc1dL2 = 0.0;
         public double sc2 = 1.0;
         public double dsc2dL = 0.0;
         public double d2sc2dL2 = 0.0;
+
         public LambdaFactors(double sc1, double dsc1dL, double d2sc1dL2,
-                             double sc2, double dsc2dL, double d2sc2dL2) {
+                double sc2, double dsc2dL, double d2sc2dL2) {
             this.sc1 = sc1;
             this.dsc1dL = dsc1dL;
             this.d2sc1dL2 = d2sc1dL2;
@@ -153,7 +188,41 @@ public abstract class ParticleMeshEwald {
         }
     }
 
-    public abstract double getEwaldCutoff();
+    public int[][] getAxisAtoms() {
+        return axisAtom;
+    }
+
+    public double getEwaldCutoff() {
+        return off;
+    }
+
+    public double getEwaldCoefficient() {
+        return aewald;
+    }
+
+    public ReciprocalSpace getReciprocalSpace() {
+        return reciprocalSpace;
+    }
+
+    public Polarization getPolarizationType() {
+        return polarization;
+    }
+
+    public double getPolarEps() {
+        return poleps;
+    }
+
+    public int[][] getPolarization11() {
+        return ip11;
+    }
+
+    public int[][] getPolarization12() {
+        return ip12;
+    }
+
+    public int[][] getPolarization13() {
+        return ip13;
+    }
 
     /**
      * <p>
@@ -182,11 +251,11 @@ public abstract class ParticleMeshEwald {
     public abstract double energy(boolean gradient, boolean print);
 
     public abstract double getPermanentEnergy();
-    
+
     public abstract double getPermanentRealSpaceEnergy();
-    
+
     public abstract double getPermanentReciprocalEnergy();
-    
+
     public abstract String getDecomposition();
 
     public abstract double getPolarizationEnergy();

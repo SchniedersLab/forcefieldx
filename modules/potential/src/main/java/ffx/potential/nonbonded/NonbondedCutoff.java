@@ -65,23 +65,23 @@ public class NonbondedCutoff {
     /**
      * At the distance "cut", a multiplicative switch begins to be applied.
      */
-    protected final double cut;
+    public final double cut;
     /**
      * The distance cut squared.
      */
-    protected final double cut2;
+    public final double cut2;
     /**
      * All vdW interactions are 0 at the distance "off".
      */
-    protected final double off;
+    public final double off;
     /**
      * The distance off squared.
      */
-    protected final double off2;
+    public final double off2;
     /**
      * A buffer added to the cut-off distance <code>off</code> to define
      * neighbors included when collecting Verlet lists.
      */
-    protected final double buff;
+    public final double buff;
 
 }

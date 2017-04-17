@@ -803,6 +803,19 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
+     * Get the reduction index.
+     *
+     * @return
+     */
+    public int[] getReductionIndex() {
+        return reductionIndex;
+    }
+
+    public VanDerWaalsForm getVDWForm() {
+        return vdwForm;
+    }
+
+    /**
      * Get the buffer size.
      *
      * @return The buffer.
@@ -895,6 +908,15 @@ public class VanDerWaals implements MaskingInterface,
      */
     public int[][][] getNeighborLists() {
         return neighborLists;
+    }
+
+    /**
+     * Get details of the non-bonded cutoff.
+     * 
+     * @return
+     */
+    public NonbondedCutoff getNonbondedCutoff() {
+        return nonbondedCutoff;
     }
 
     /**
