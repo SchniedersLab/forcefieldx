@@ -46,16 +46,33 @@ import com.sun.jna.ptr.PointerByReference;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType;
 import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes;
-import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_NonbondedMethod;
-import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType;
 import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
 import simtk.openmm.OpenMMLibrary.OpenMM_Boolean;
 import simtk.openmm.OpenMM_Vec3;
 
 import static simtk.openmm.OpenMMAmoebaLibrary.*;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent12;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent13;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent14;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent15;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent11;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent12;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent13;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent14;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_Bisector;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_NoAxisType;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ThreeFold;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZBisect;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZOnly;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZThenX;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_NonbondedMethod.OpenMM_AmoebaMultipoleForce_NoCutoff;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_NonbondedMethod.OpenMM_AmoebaMultipoleForce_PME;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Direct;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Mutual;
 import static simtk.openmm.OpenMMLibrary.*;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.*;
 
 import ffx.crystal.Crystal;
@@ -65,6 +82,7 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
+import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
@@ -180,7 +198,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         // Reference: https://github.com/jayponder/tinker/blob/release/openmm/ommstuff.cpp
         // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommsetuff.cpp
 
-        // Add Urey-Bradley Forces: to do by Hernan - see setupAmoebaUreyBradleyForce line 2115 of openmm-stuff.cpp
+        // Add Urey-Bradley force.
         addUreyBradleys();
 
         // Add vdW force.
@@ -188,9 +206,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         // Add multipole forces.
         addMultipoleForce();
-
-        // Add the Generalized Kirkwood force.
-        addGKForce();
 
         // Set periodic box vectors.
         setDefaultPeriodicBoxVectors();
@@ -244,10 +259,16 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     private void addBonds() {
-        PointerByReference amoebaBondForce = OpenMM_AmoebaBondForce_create();
-        double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
         Bond bonds[] = ffxForceFieldEnergy.getBonds();
         int nBonds = bonds.length;
+
+        if (nBonds < 1) {
+            return;
+        }
+
+        PointerByReference amoebaBondForce = OpenMM_AmoebaBondForce_create();
+        double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+
         for (int i = 0; i < nBonds; i++) {
             Bond bond = bonds[i];
             int i1 = bond.getAtom(0).getXyzIndex() - 1;
@@ -268,12 +289,15 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     private void addUreyBradleys() {
-        PointerByReference amoebaBondForce = OpenMM_AmoebaBondForce_create();
         UreyBradley ureyBradleys[] = ffxForceFieldEnergy.getUreyBradleys();
+        if (ureyBradleys == null || ureyBradleys.length < 1) {
+            return;
+        }
 
+        PointerByReference amoebaBondForce = OpenMM_AmoebaBondForce_create();
         double kParameterConversion = UreyBradleyType.units * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
-        int nUreys = ureyBradleys.length;
 
+        int nUreys = ureyBradleys.length;
         for (int i = 0; i < nUreys; i++) {
             UreyBradley ureyBradley = ureyBradleys[i];
             int i1 = ureyBradley.getAtom(0).getXyzIndex() - 1;
@@ -360,6 +384,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_IntArray_resize(exclusions, 0);
         }
         OpenMM_IntArray_destroy(exclusions);
+        logger.log(Level.INFO, " Added van der Waals force.");
     }
 
     private void addMultipoleForce() {
@@ -390,22 +415,22 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             /**
              * Define the frame definition.
              */
-            int axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_NoAxisType;
+            int axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
             switch (multipoleType.frameDefinition) {
                 case ZONLY:
-                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZOnly;
+                    axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
                     break;
                 case ZTHENX:
-                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZThenX;
+                    axisType = OpenMM_AmoebaMultipoleForce_ZThenX;
                     break;
                 case BISECTOR:
-                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_Bisector;
+                    axisType = OpenMM_AmoebaMultipoleForce_Bisector;
                     break;
                 case ZTHENBISECTOR:
-                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ZBisect;
+                    axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
                     break;
                 case TRISECTOR:
-                    axisType = OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes.OpenMM_AmoebaMultipoleForce_ThreeFold;
+                    axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
                     break;
                 default:
                     break;
@@ -455,8 +480,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         Crystal crystal = ffxForceFieldEnergy.getCrystal();
         if (!crystal.aperiodic()) {
             double ewaldTolerance = 1.0e-04;
-            OpenMM_AmoebaMultipoleForce_setNonbondedMethod(amoebaMultipoleForce,
-                    OpenMM_AmoebaMultipoleForce_NonbondedMethod.OpenMM_AmoebaMultipoleForce_PME);
+            OpenMM_AmoebaMultipoleForce_setNonbondedMethod(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_PME);
             OpenMM_AmoebaMultipoleForce_setCutoffDistance(amoebaMultipoleForce,
                     pme.getEwaldCutoff() * OpenMM_NmPerAngstrom);
             OpenMM_AmoebaMultipoleForce_setAEwald(amoebaMultipoleForce,
@@ -472,16 +496,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_AmoebaMultipoleForce_setEwaldErrorTolerance(amoebaMultipoleForce, ewaldTolerance);
             OpenMM_IntArray_destroy(gridDimensions);
         } else {
-            OpenMM_AmoebaMultipoleForce_setNonbondedMethod(amoebaMultipoleForce,
-                    OpenMM_AmoebaMultipoleForce_NonbondedMethod.OpenMM_AmoebaMultipoleForce_NoCutoff);
+            OpenMM_AmoebaMultipoleForce_setNonbondedMethod(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_NoCutoff);
         }
 
         if (pme.getPolarizationType() == Polarization.DIRECT) {
-            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce,
-                    OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Direct);
+            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Direct);
         } else {
-            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce,
-                    OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Mutual);
+            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Mutual);
         }
 
         OpenMM_AmoebaMultipoleForce_setMutualInducedMaxIterations(amoebaMultipoleForce, 500);
@@ -499,8 +520,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 OpenMM_IntArray_append(covalentMap, index);
             }
             OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
-                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent12,
-                    covalentMap);
+                    OpenMM_AmoebaMultipoleForce_Covalent12, covalentMap);
             OpenMM_IntArray_resize(covalentMap, 0);
 
             for (Angle angle : ai.getAngles()) {
@@ -511,8 +531,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 }
             }
             OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
-                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent13,
-                    covalentMap);
+                    OpenMM_AmoebaMultipoleForce_Covalent13, covalentMap);
             OpenMM_IntArray_resize(covalentMap, 0);
 
             for (Torsion torsion : ai.getTorsions()) {
@@ -523,8 +542,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 }
             }
             OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
-                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent14,
-                    covalentMap);
+                    OpenMM_AmoebaMultipoleForce_Covalent14, covalentMap);
             OpenMM_IntArray_resize(covalentMap, 0);
 
             for (Atom ak : ai.get1_5s()) {
@@ -533,64 +551,52 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
 
             OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
-                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent15,
-                    covalentMap);
+                    OpenMM_AmoebaMultipoleForce_Covalent15, covalentMap);
             OpenMM_IntArray_resize(covalentMap, 0);
 
             for (int j = 0; j < ip11[i].length; j++) {
                 OpenMM_IntArray_append(covalentMap, ip11[i][j]);
             }
             OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
-                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent11,
-                    covalentMap);
+                    OpenMM_AmoebaMultipoleForce_PolarizationCovalent11, covalentMap);
             OpenMM_IntArray_resize(covalentMap, 0);
 
             for (int j = 0; j < ip12[i].length; j++) {
                 OpenMM_IntArray_append(covalentMap, ip12[i][j]);
             }
             OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
-                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent12,
-                    covalentMap);
+                    OpenMM_AmoebaMultipoleForce_PolarizationCovalent12, covalentMap);
             OpenMM_IntArray_resize(covalentMap, 0);
 
             for (int j = 0; j < ip13[i].length; j++) {
                 OpenMM_IntArray_append(covalentMap, ip13[i][j]);
             }
             OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
-                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent13,
-                    covalentMap);
+                    OpenMM_AmoebaMultipoleForce_PolarizationCovalent13, covalentMap);
             OpenMM_IntArray_resize(covalentMap, 0);
 
             OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
-                    OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_PolarizationCovalent14,
-                    covalentMap);
+                    OpenMM_AmoebaMultipoleForce_PolarizationCovalent14, covalentMap);
         }
 
         OpenMM_IntArray_destroy(covalentMap);
+        logger.log(Level.INFO, " Added polarizable multipole force.");
+
+        GeneralizedKirkwood gk = ffxForceFieldEnergy.getGK();
+        if (gk != null) {
+            addGKForce();
+        }
+
     }
 
     private void addGKForce() {
 
         GeneralizedKirkwood gk = ffxForceFieldEnergy.getGK();
 
-        if (gk == null) {
-            return;
-        }
-
         PointerByReference amoebaGeneralizedKirkwoodForce = OpenMM_AmoebaGeneralizedKirkwoodForce_create();
         OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric(amoebaGeneralizedKirkwoodForce, 78.3);
         OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(amoebaGeneralizedKirkwoodForce, 1.0);
-        OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(amoebaGeneralizedKirkwoodForce, OpenMM_Boolean.OpenMM_False);
 
-        // OpenMM_AmoebaGeneralizedGeneralizedKirkwoodForce_setDielectricOffset
-        //                     (amoebaGeneralizedGeneralizedKirkwoodForce,
-        //                      solute__.doffset*OpenMM_NmPerAngstrom);
-        // OpenMM_AmoebaGeneralizedGeneralizedKirkwoodForce_setProbeRadius
-        //                     (OpenMM_AmoebaGeneralizedGeneralizedKirkwoodForce,
-        //                      0.14);
-        // OpenMM_AmoebaGeneralizedGeneralizedKirkwoodForce_setSurfaceAreaFactor
-        //                     (amoebaGeneralizedGeneralizedKirkwoodForce,
-        //                      surfaceAreaFactor);
         double overlapScale[] = gk.getOverlapScale();
         double baseRadii[] = gk.getBaseRadii();
         Atom[] atoms = molecularAssembly.getAtomArray();
@@ -600,10 +606,94 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle(amoebaGeneralizedKirkwoodForce,
                     multipoleType.charge,
                     OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i]);
-
         }
 
+        OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(amoebaGeneralizedKirkwoodForce, 0.0);
+
+        NonPolar nonpolar = gk.getNonPolarModel();
+        switch (nonpolar) {
+            case BORN_SOLV:
+            case BORN_CAV_DISP:
+            default:
+                // Configure a Born Radii based surface area term.
+                double surfaceTension = gk.getSurfaceTension() * OpenMM_KJPerKcal
+                        * OpenMM_AngstromsPerNm * OpenMM_AngstromsPerNm;
+                OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(amoebaGeneralizedKirkwoodForce, OpenMM_True);
+                OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor(amoebaGeneralizedKirkwoodForce, -surfaceTension);
+                break;
+            case CAV:
+            case CAV_DISP:
+            case HYDROPHOBIC_PMF:
+            case NONE:
+                // This NonPolar model does not use a Born Radii based surface area term.
+                OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(amoebaGeneralizedKirkwoodForce, OpenMM_False);
+                break;
+        }
         OpenMM_System_addForce(openMMSystem, amoebaGeneralizedKirkwoodForce);
+
+        switch (nonpolar) {
+            case CAV_DISP:
+            case BORN_CAV_DISP:
+                addWCAForce();
+                break;
+            case CAV:
+            case HYDROPHOBIC_PMF:
+            case BORN_SOLV:
+            case NONE:
+            default:
+            // WCA force is not being used.
+        }
+
+        logger.log(Level.INFO, " Added generalized Kirkwood force.");
+    }
+
+    private void addWCAForce() {
+
+        double epso = 0.1100;
+        double epsh = 0.0135;
+        double rmino = 1.7025;
+        double rminh = 1.3275;
+        double awater = 0.033428;
+        double slevy = 1.0;
+        double dispoff = 0.26;
+        double shctd = 0.81;
+
+        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+            radScale = 0.5;
+        }
+
+        PointerByReference amoebaWcaDispersionForce = OpenMM_AmoebaWcaDispersionForce_create();
+
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+
+        for (int i = 0; i < nAtoms; i++) {
+            // cdispTotal += nonpol__.cdisp[ii];
+            Atom atom = atoms[i];
+            VDWType vdwType = atom.getVDWType();
+            double radius = vdwType.radius;
+            double eps = vdwType.wellDepth;
+            OpenMM_AmoebaWcaDispersionForce_addParticle(amoebaWcaDispersionForce,
+                    OpenMM_NmPerAngstrom * radius * radScale,
+                    OpenMM_KJPerKcal * eps);
+        }
+
+        OpenMM_AmoebaWcaDispersionForce_setEpso(amoebaWcaDispersionForce, epso * OpenMM_KJPerKcal);
+        OpenMM_AmoebaWcaDispersionForce_setEpsh(amoebaWcaDispersionForce, epsh * OpenMM_KJPerKcal);
+        OpenMM_AmoebaWcaDispersionForce_setRmino(amoebaWcaDispersionForce, rmino * OpenMM_NmPerAngstrom);
+        OpenMM_AmoebaWcaDispersionForce_setRminh(amoebaWcaDispersionForce, rminh * OpenMM_NmPerAngstrom);
+        OpenMM_AmoebaWcaDispersionForce_setDispoff(amoebaWcaDispersionForce, dispoff * OpenMM_NmPerAngstrom);
+        OpenMM_AmoebaWcaDispersionForce_setAwater(amoebaWcaDispersionForce,
+                awater / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+        OpenMM_AmoebaWcaDispersionForce_setSlevy(amoebaWcaDispersionForce, slevy);
+        OpenMM_AmoebaWcaDispersionForce_setShctd(amoebaWcaDispersionForce, shctd);
+
+        OpenMM_System_addForce(openMMSystem, amoebaWcaDispersionForce);
+        logger.log(Level.INFO, " Added WCA dispersion force.");
+
     }
 
     private void loadPositions() {

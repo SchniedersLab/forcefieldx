@@ -88,6 +88,7 @@ import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 
+import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.ELECTRIC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
@@ -284,6 +285,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     public double[] getBaseRadii() {
         return baseRadiusWithBondi;
+    }
+
+    public double getSurfaceTension() {
+        return surfaceTension;
     }
 
     /**
@@ -485,6 +490,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         }
 
+    }
+
+    public NonPolar getNonPolarModel() {
+        return nonPolar;
     }
 
     public void setCutoff(double cutoff) {
@@ -1082,11 +1091,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     public static NonPolar getNonPolarModel(String nonpolarModel) {
         try {
-            return NonPolar.valueOf(nonpolarModel);
+            return NonPolar.valueOf(toEnumForm(nonpolarModel));
         } catch (IllegalArgumentException ex) {
-            logger.warning("Unrecognized nonpolar model requested; defaulting to NONE.");
+            logger.warning(" Unrecognized nonpolar model requested; defaulting to NONE.");
             return NonPolar.NONE;
-
         }
     }
 
