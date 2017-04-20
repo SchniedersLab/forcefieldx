@@ -278,6 +278,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
     }
 
+    public double[] getOverlapScale() {
+        return overlapScale;
+    }
+
+    public double[] getBaseRadii() {
+        return baseRadiusWithBondi;
+    }
+
     /**
      * <p>
      * Constructor for GeneralizedKirkwood.</p>

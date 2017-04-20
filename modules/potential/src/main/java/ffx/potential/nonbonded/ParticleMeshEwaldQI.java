@@ -1947,6 +1947,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         return gkInteractions;
     }
 
+    public GeneralizedKirkwood getGK() {
+        return generalizedKirkwood;
+    }
+
     public void getGradients(double grad[][]) {
         if (grad == null) {
             grad = new double[3][nAtoms];

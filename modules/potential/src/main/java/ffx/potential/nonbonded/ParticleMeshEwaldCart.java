@@ -1873,6 +1873,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return polarizationEnergy;
     }
 
+
+    public GeneralizedKirkwood getGK() {
+        return generalizedKirkwood;
+    }
+
     /**
      * <p>
      * getGKEnergy</p>

@@ -264,6 +264,8 @@ public abstract class ParticleMeshEwald {
 
     public abstract double getGKEnergy();
 
+    public abstract GeneralizedKirkwood getGK();
+
     public abstract int getGKInteractions();
 
     public abstract void setLambda(double lambda);
