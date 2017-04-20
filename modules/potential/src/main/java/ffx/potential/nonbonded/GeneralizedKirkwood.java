@@ -165,6 +165,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private final double bornaiTerm;
     private final double probe;
+    private final double dOffset = 0.09;
     private boolean use[] = null;
     private final Polarization polarization;
     private Atom atoms[];
@@ -2089,17 +2090,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     switch (nonPolar) {
                         case BORN_SOLV:
                         case BORN_CAV_DISP:
-                            double e = baseRadiusWithBondi[i] + probe; // e = ri + probe
-                            e *= (e * bornaiTerm);// e = (ri + probe) * ((ri + probe) * 4 * pi * ai)
-                            double rirb = baseRadiusWithBondi[i] / born[i]; // ri/rb^6
-                            rirb *= rirb;
-                            rirb *= (rirb * rirb);
-                            e *= rirb; // e = consts * (ri/rb)^6
-                            gkEnergy += e;
+                            double r = baseRadiusWithBondi[i] + dOffset + probe;
+                            double ratio = (baseRadiusWithBondi[i] + dOffset) / born[i];
+                            ratio *= ratio;
+                            ratio *= (ratio * ratio);
+                            double saTerm = -surfaceTension * r * r * ratio;
+                            gkEnergy += saTerm / -6.0;
                             // Now calculate derivatives
-                            e *= (-6.0 / born[i]); // e = consts * -6*ri^6 / rb^-7
-                            // To get each derivative, would multiple
-                            gb_local[i] += e;
+                            gb_local[i] += saTerm / born[i];
                             break;
                         default:
                             break;
