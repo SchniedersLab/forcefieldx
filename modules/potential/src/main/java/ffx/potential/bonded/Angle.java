@@ -218,6 +218,10 @@ public class Angle extends BondedTerm implements BondedEnergy {
     public Atom getCentralAtom() {
         return atoms[1];
     }
+    
+    public AngleMode getAngleMode() {
+        return angleMode;
+    }
 
     /**
      * Finds the common bond between <b>this</b> angle and another

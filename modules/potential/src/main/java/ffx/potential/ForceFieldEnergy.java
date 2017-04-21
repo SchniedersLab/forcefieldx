@@ -2629,6 +2629,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return bonds;
     }
 
+    public Angle[] getAngles() {
+        return angles;
+    }
+    
     public UreyBradley[] getUreyBradleys(){
         return ureyBradleys;
     }
