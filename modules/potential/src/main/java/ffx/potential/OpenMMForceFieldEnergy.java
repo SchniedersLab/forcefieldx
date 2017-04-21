@@ -681,7 +681,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i]);
         }
 
-        OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(amoebaGeneralizedKirkwoodForce, 0.0);
+        OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(amoebaGeneralizedKirkwoodForce, 1.4 * OpenMM_NmPerAngstrom);
 
         NonPolar nonpolar = gk.getNonPolarModel();
         switch (nonpolar) {
