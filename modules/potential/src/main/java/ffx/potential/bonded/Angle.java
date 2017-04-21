@@ -151,6 +151,10 @@ public class Angle extends BondedTerm implements BondedEnergy {
         atom4 = a4;
     }
 
+    public Atom getAtom4() {
+        return atom4;
+    }
+
     /**
      * Set a reference to the force field parameters for <b>this</b> Angle.
      *
@@ -218,7 +222,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
     public Atom getCentralAtom() {
         return atoms[1];
     }
-    
+
     public AngleMode getAngleMode() {
         return angleMode;
     }

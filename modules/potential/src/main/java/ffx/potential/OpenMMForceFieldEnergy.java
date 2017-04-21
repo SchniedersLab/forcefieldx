@@ -37,7 +37,9 @@
  */
 package ffx.potential;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,7 +48,6 @@ import com.sun.jna.ptr.PointerByReference;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_MultipoleAxisTypes;
 import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
 import simtk.openmm.OpenMMLibrary.OpenMM_Boolean;
 import simtk.openmm.OpenMM_Vec3;
@@ -97,8 +98,6 @@ import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 
 import static ffx.potential.parameters.ForceField.toPropertyForm;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -196,31 +195,23 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         addCCOMRemover();
 
         // Add Bond Forces.
-        addBonds();
-
+        // addBonds();
         // Reference: https://github.com/jayponder/tinker/blob/release/openmm/ommstuff.cpp
         // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommstuff.cpp
         addAngles();
-        
+
         addInPlaneAngles();
 
         // Add Urey-Bradley force.
-        addUreyBradleys();
-
+        // addUreyBradleys();
         // TODO Out-of-Plane Bend
-
         // TODO Torsional Angle
-
         // TODO Pi-Orbital Torsion
-
         // TODO Torsion-Torsion
-
         // Add vdW force.
-        addVDWForce();
-
+        // addVDWForce();
         // Add multipole forces.
-        addMultipoleForce();
-
+        // addMultipoleForce();
         // Set periodic box vectors.
         setDefaultPeriodicBoxVectors();
 
@@ -301,73 +292,76 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_System_addForce(openMMSystem, amoebaBondForce);
         logger.log(Level.INFO, " Added bonds ({0})", nBonds);
     }
-    
+
     private void addAngles() {
         Angle angles[] = ffxForceFieldEnergy.getAngles();
         if (angles == null || angles.length < 1) {
             return;
-        }  
-        
+        }
+
         int nAngles = angles.length;
-         List<Angle> normalAngles = new ArrayList<>();
-        //Sort all normal angles from in-plane angles
+        List<Angle> normalAngles = new ArrayList<>();
+        // Sort all normal angles from in-plane angles
         for (int i = 0; i < nAngles; i++) {
-            if (angles[i].getAngleMode() == Angle.AngleMode.NORMAL){
-            normalAngles.add(angles[i]);
+            if (angles[i].getAngleMode() == Angle.AngleMode.NORMAL) {
+                normalAngles.add(angles[i]);
             }
         }
-         nAngles = normalAngles.size();
+
+        nAngles = normalAngles.size();
         PointerByReference amoebaAngleForce = OpenMM_AmoebaAngleForce_create();
-        OpenMM_System_addForce(openMMSystem, amoebaAngleForce);
-        logger.log(Level.INFO, " Added angles ({0})", nAngles);
-        
+
         for (int i = 0; i < nAngles; i++) {
             Angle angle = normalAngles.get(i);
             int i1 = angle.getAtom(0).getXyzIndex() - 1;
             int i2 = angle.getAtom(1).getXyzIndex() - 1;
             int i3 = angle.getAtom(2).getXyzIndex() - 1;
-        
-            OpenMM_AmoebaAngleForce_addAngle (amoebaAngleForce, i1, i2, i3, angle.angleType.angle[0], OpenMM_KJPerKcal*AngleType.units*angle.angleType.forceConstant);
+
+            OpenMM_AmoebaAngleForce_addAngle(amoebaAngleForce, i1, i2, i3,
+                    angle.angleType.angle[0], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
         }
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleCubic (amoebaAngleForce, AngleType.cubic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleQuartic (amoebaAngleForce, AngleType.quartic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAnglePentic (amoebaAngleForce, AngleType.quintic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic (amoebaAngleForce, AngleType.sextic);
+        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleCubic(amoebaAngleForce, AngleType.cubic);
+        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleQuartic(amoebaAngleForce, AngleType.quartic);
+        OpenMM_AmoebaAngleForce_setAmoebaGlobalAnglePentic(amoebaAngleForce, AngleType.quintic);
+        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic(amoebaAngleForce, AngleType.sextic);
+
+        OpenMM_System_addForce(openMMSystem, amoebaAngleForce);
+        logger.log(Level.INFO, " Added angles ({0})", nAngles);
     }
-    
+
     private void addInPlaneAngles() {
         Angle angles[] = ffxForceFieldEnergy.getAngles();
         if (angles == null || angles.length < 1) {
             return;
-        } 
-        
+        }
+
         int nAngles = angles.length;
         List<Angle> inPlaneAngles = new ArrayList<>();
         //Sort all in-plane angles from normal angles
         for (int i = 0; i < nAngles; i++) {
-            if (angles[i].getAngleMode() == Angle.AngleMode.IN_PLANE){
-            inPlaneAngles.add(angles[i]);
+            if (angles[i].getAngleMode() == Angle.AngleMode.IN_PLANE) {
+                inPlaneAngles.add(angles[i]);
             }
         }
-        
         nAngles = inPlaneAngles.size();
         PointerByReference amoebaInPlaneAngleForce = OpenMM_AmoebaInPlaneAngleForce_create();
-        OpenMM_System_addForce(openMMSystem, amoebaInPlaneAngleForce);
-        logger.log(Level.INFO, " Added in-plane angles ({0})", nAngles);
-        
         for (int i = 0; i < nAngles; i++) {
             Angle angle = inPlaneAngles.get(i);
             int i1 = angle.getAtom(0).getXyzIndex() - 1;
             int i2 = angle.getAtom(1).getXyzIndex() - 1;
             int i3 = angle.getAtom(2).getXyzIndex() - 1;
-        
-            OpenMM_AmoebaAngleForce_addAngle (amoebaInPlaneAngleForce, i1, i2, i3, angle.angleType.angle[0], OpenMM_KJPerKcal*AngleType.units*angle.angleType.forceConstant);
+            int i4 = angle.getAtom4().getXyzIndex() - 1;
+            OpenMM_AmoebaInPlaneAngleForce_addAngle(amoebaInPlaneAngleForce, i1, i2, i3, i4,
+                    angle.angleType.angle[0], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
         }
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleCubic (amoebaInPlaneAngleForce, AngleType.cubic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleQuartic (amoebaInPlaneAngleForce, AngleType.quartic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAnglePentic (amoebaInPlaneAngleForce, AngleType.quintic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic (amoebaInPlaneAngleForce, AngleType.sextic);   
-    } 
+        OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleCubic(amoebaInPlaneAngleForce, AngleType.cubic);
+        OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleQuartic(amoebaInPlaneAngleForce, AngleType.quartic);
+        OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAnglePentic(amoebaInPlaneAngleForce, AngleType.quintic);
+        OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleSextic(amoebaInPlaneAngleForce, AngleType.sextic);
+
+        OpenMM_System_addForce(openMMSystem, amoebaInPlaneAngleForce);
+        logger.log(Level.INFO, " Added in-plane angles ({0})", nAngles);
+    }
 
     private void addUreyBradleys() {
         UreyBradley ureyBradleys[] = ffxForceFieldEnergy.getUreyBradleys();
