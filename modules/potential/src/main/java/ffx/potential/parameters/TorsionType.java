@@ -126,7 +126,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
     }
 
     public void setScaleFactor(double scale) {
-        for (int i=0; i<amplitude.length; i++) {
+        for (int i = 0; i < amplitude.length; i++) {
             amplitude[i] *= scale;
         }
     }

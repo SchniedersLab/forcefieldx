@@ -547,6 +547,48 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 torsions[1].value, energy);
     }
 
+    public Atom getChiralAtom() {
+        Atom atom = null;
+        ArrayList<Bond> bnds = atoms[2].getBonds();
+        /**
+         * To be chiral, the central atom must have 4 bonds.
+         */
+        if (bnds.size() == 4) {
+            /**
+             * Find the two atoms that are not part of the dihedral.
+             */
+            Atom atom1 = null;
+            Atom atom2 = null;
+            for (Bond b : bnds) {
+                Atom a = b.get1_2(atoms[2]);
+                if (a != atoms[1] && a != atoms[3]) {
+                    if (atom1 == null) {
+                        atom1 = a;
+                    } else {
+                        atom2 = a;
+                    }
+                }
+            }
+            /**
+             * Choose atom1 or atom2 to use for the chiral check, depending on
+             * their atom types and atomic number.
+             */
+            if (atom1.getType() > atom2.getType()) {
+                atom = atom1;
+            }
+            if (atom2.getType() > atom1.getType()) {
+                atom = atom2;
+            }
+            if (atom1.getAtomicNumber() > atom2.getAtomicNumber()) {
+                atom = atom1;
+            }
+            if (atom2.getAtomicNumber() > atom1.getAtomicNumber()) {
+                atom = atom2;
+            }
+        }
+        return atom;
+    }
+
     /**
      * Check for inversion of the central atom if it is chiral.
      *
