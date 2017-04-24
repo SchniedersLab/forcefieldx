@@ -2452,7 +2452,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     // TODO refactor to protect hierarchy; too bad package-private doesn't allow sub-packages
     public VanDerWaals getVdwNode() {
         if (vanderWaals == null) {
-            logger.warning("FFE passed null VdW object.");
+            logger.warning(" FFX passed null vdW object.");
         }
         return vanderWaals;
     }
@@ -2463,10 +2463,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @return
      */
-    // TODO refactor, as getVdwNode()
     public ParticleMeshEwald getPmeNode() {
         if (particleMeshEwald == null) {
-            logger.warning("FFE passed null PME object.");
+            logger.warning(" FFX passed null PME object.");
         }
         return particleMeshEwald;
     }
@@ -2632,9 +2631,21 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public Angle[] getAngles() {
         return angles;
     }
-    
-    public UreyBradley[] getUreyBradleys(){
+
+    public UreyBradley[] getUreyBradleys() {
         return ureyBradleys;
+    }
+
+    public Torsion[] getTorsions() {
+        return torsions;
+    }
+
+    public PiOrbitalTorsion[] getPiOrbitalTorsions() {
+        return piOrbitalTorsions;
+    }
+
+    public TorsionTorsion[] getTorsionTorsions() {
+        return torsionTorsions;
     }
 
     private class BondedRegion extends ParallelRegion {

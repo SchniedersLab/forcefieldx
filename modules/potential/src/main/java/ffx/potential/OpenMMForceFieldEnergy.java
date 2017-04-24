@@ -39,6 +39,7 @@ package ffx.potential;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -80,7 +81,9 @@ import ffx.crystal.Crystal;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.bonded.Torsion;
+import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
@@ -93,7 +96,10 @@ import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.PiTorsionType;
 import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.TorsionTorsionType;
+import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 
@@ -195,23 +201,32 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         addCCOMRemover();
 
         // Add Bond Forces.
-        // addBonds();
-        // Reference: https://github.com/jayponder/tinker/blob/release/openmm/ommstuff.cpp
-        // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommstuff.cpp
-        addAngles();
+        addBonds();
 
+        // Add Angle Forces.
+        addAngles();
         addInPlaneAngles();
 
         // Add Urey-Bradley force.
-        // addUreyBradleys();
+        addUreyBradleys();
+
         // TODO Out-of-Plane Bend
-        // TODO Torsional Angle
-        // TODO Pi-Orbital Torsion
+
+        // Add Torsional Angles.
+        addTorsions();
+
+        // Add Pi-Orbital Torsions.
+        addPiTorsions();
+
         // TODO Torsion-Torsion
+        addTorsionTorsions();
+
         // Add vdW force.
-        // addVDWForce();
+        addVDWForce();
+
         // Add multipole forces.
-        // addMultipoleForce();
+        addMultipoleForce();
+
         // Set periodic box vectors.
         setDefaultPeriodicBoxVectors();
 
@@ -393,12 +408,173 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     }
 
+    private void addTorsions() {
+        Torsion torsions[] = ffxForceFieldEnergy.getTorsions();
+        if (torsions == null || torsions.length < 1) {
+            return;
+        }
+        int nTorsions = torsions.length;
+        PointerByReference amoebaTorsionForce = OpenMM_PeriodicTorsionForce_create();
+        for (int i = 0; i < nTorsions; i++) {
+            Torsion torsion = torsions[i];
+            int a1 = torsion.getAtom(0).getXyzIndex() - 1;
+            int a2 = torsion.getAtom(1).getXyzIndex() - 1;
+            int a3 = torsion.getAtom(2).getXyzIndex() - 1;
+            int a4 = torsion.getAtom(3).getXyzIndex() - 1;
+            TorsionType torsionType = torsion.torsionType;
+            int nTerms = torsionType.phase.length;
+            for (int j = 0; j < nTerms; j++) {
+                OpenMM_PeriodicTorsionForce_addTorsion(amoebaTorsionForce,
+                        a1, a2, a3, a4, j + 1,
+                        torsionType.phase[j] * OpenMM_RadiansPerDegree,
+                        OpenMM_KJPerKcal * torsion.units * torsionType.amplitude[j]);
+            }
+        }
+
+        OpenMM_System_addForce(openMMSystem, amoebaTorsionForce);
+        logger.log(Level.INFO, " Added Torsions ({0})", nTorsions);
+    }
+
+    private void addPiTorsions() {
+        PiOrbitalTorsion piOrbitalTorsions[] = ffxForceFieldEnergy.getPiOrbitalTorsions();
+        if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+            return;
+        }
+        int nPiOrbitalTorsions = piOrbitalTorsions.length;
+        PointerByReference amoebaPiTorsionForce = OpenMM_AmoebaPiTorsionForce_create();
+        double units = PiTorsionType.units;
+        for (int i = 0; i < nPiOrbitalTorsions; i++) {
+            PiOrbitalTorsion piOrbitalTorsion = piOrbitalTorsions[i];
+            int a1 = piOrbitalTorsion.getAtom(0).getXyzIndex() - 1;
+            int a2 = piOrbitalTorsion.getAtom(1).getXyzIndex() - 1;
+            int a3 = piOrbitalTorsion.getAtom(2).getXyzIndex() - 1;
+            int a4 = piOrbitalTorsion.getAtom(3).getXyzIndex() - 1;
+            int a5 = piOrbitalTorsion.getAtom(4).getXyzIndex() - 1;
+            int a6 = piOrbitalTorsion.getAtom(5).getXyzIndex() - 1;
+            PiTorsionType type = piOrbitalTorsion.piTorsionType;
+            OpenMM_AmoebaPiTorsionForce_addPiTorsion(amoebaPiTorsionForce,
+                    a1, a2, a3, a4, a5, a6,
+                    OpenMM_KJPerKcal * type.forceConstant * units);
+        }
+        OpenMM_System_addForce(openMMSystem, amoebaPiTorsionForce);
+        logger.log(Level.INFO, " Added Pi-Orbital Torsions ({0})", nPiOrbitalTorsions);
+    }
+
+    private void addTorsionTorsions() {
+        TorsionTorsion torsionTorsions[] = ffxForceFieldEnergy.getTorsionTorsions();
+        if (torsionTorsions == null || torsionTorsions.length < 1) {
+            return;
+        }
+        /**
+         * Load the torsion-torsions.
+         */
+
+        int nTypes = 0;
+        LinkedHashMap<String, TorsionTorsionType> torTorTypes = new LinkedHashMap<>();
+
+        int nTorsionTorsions = torsionTorsions.length;
+        PointerByReference amoebaTorsionTorsionForce = OpenMM_AmoebaTorsionTorsionForce_create();
+        for (int i = 0; i < nTorsionTorsions; i++) {
+            TorsionTorsion torsionTorsion = torsionTorsions[i];
+            int ia = torsionTorsion.getAtom(0).getXyzIndex() - 1;
+            int ib = torsionTorsion.getAtom(1).getXyzIndex() - 1;
+            int ic = torsionTorsion.getAtom(2).getXyzIndex() - 1;
+            int id = torsionTorsion.getAtom(3).getXyzIndex() - 1;
+            int ie = torsionTorsion.getAtom(4).getXyzIndex() - 1;
+
+
+            TorsionTorsionType torsionTorsionType = torsionTorsion.torsionTorsionType;
+            String key = torsionTorsionType.getKey();
+            /**
+             * Check if the TorTor parameters have already been added to the
+             * Hash.
+             */
+            int gridIndex = 0;
+            if (torTorTypes.containsKey(key)) {
+                /**
+                 * If the TorTor has been added, get its (ordered) index in the
+                 * Hash.
+                 */
+                int index = 0;
+                for (String entry : torTorTypes.keySet()) {
+                    if (entry.equalsIgnoreCase(key)) {
+                        gridIndex = index;
+                        break;
+                    } else {
+                        index++;
+                    }
+                }
+            } else {
+                /**
+                 * Add the new TorTor.
+                 */
+                torTorTypes.put(key, torsionTorsionType);
+                gridIndex = nTypes;
+                nTypes++;
+            }
+
+            Atom atom = torsionTorsion.getChiralAtom();
+            int iChiral = -1;
+            if (atom != null) {
+                iChiral = atom.getXyzIndex() - 1;
+            }
+            OpenMM_AmoebaTorsionTorsionForce_addTorsionTorsion(amoebaTorsionTorsionForce,
+                    ia, ib, ic, id, ie, iChiral, gridIndex);
+        }
+        /**
+         * Load the Torsion-Torsion parameters.
+         */
+        PointerByReference values = OpenMM_DoubleArray_create(6);
+        int gridIndex = 0;
+        for (String key : torTorTypes.keySet()) {
+            TorsionTorsionType torTorType = torTorTypes.get(key);
+            int nx = torTorType.nx;
+            int ny = torTorType.ny;
+            double tx[] = torTorType.tx;
+            double ty[] = torTorType.ty;
+            double f[] = torTorType.energy;
+            double dx[] = torTorType.dx;
+            double dy[] = torTorType.dy;
+            double dxy[] = torTorType.dxy;
+            /**
+             * Create the 3D grid.
+             */
+            PointerByReference grid3D = OpenMM_3D_DoubleArray_create(nx, ny, 6);
+            int xIndex = 0;
+            int yIndex = 0;
+            for (int j = 0; j < nx * ny; j++) {
+                int addIndex = 0;
+                OpenMM_DoubleArray_set(values, addIndex++, tx[xIndex]);
+                OpenMM_DoubleArray_set(values, addIndex++, ty[yIndex]);
+                OpenMM_DoubleArray_set(values, addIndex++, OpenMM_KJPerKcal * f[j]);
+                OpenMM_DoubleArray_set(values, addIndex++, OpenMM_KJPerKcal * dx[j]);
+                OpenMM_DoubleArray_set(values, addIndex++, OpenMM_KJPerKcal * dy[j]);
+                OpenMM_DoubleArray_set(values, addIndex++, OpenMM_KJPerKcal * dxy[j]);
+                OpenMM_3D_DoubleArray_set(grid3D, yIndex, xIndex, values);
+                xIndex++;
+                if (xIndex == nx) {
+                    xIndex = 0;
+                    yIndex++;
+                }
+            }
+            OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionGrid(amoebaTorsionTorsionForce, gridIndex++, grid3D);
+            OpenMM_3D_DoubleArray_destroy(grid3D);
+        }
+        OpenMM_DoubleArray_destroy(values);
+        OpenMM_System_addForce(openMMSystem, amoebaTorsionTorsionForce);
+        logger.log(Level.INFO, " Added Torsion-Torsions ({0})", nTorsionTorsions);
+    }
+
     private void addVDWForce() {
+        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
+        if (vdW == null) {
+            return;
+        }
+
         PointerByReference amoebaVdwForce = OpenMM_AmoebaVdwForce_create();
         OpenMM_System_addForce(openMMSystem, amoebaVdwForce);
         OpenMM_Force_setForceGroup(amoebaVdwForce, 1);
 
-        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
         VanDerWaalsForm vdwForm = vdW.getVDWForm();
         NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
         Crystal crystal = ffxForceFieldEnergy.getCrystal();
@@ -463,10 +639,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     private void addMultipoleForce() {
-
         ParticleMeshEwald pme = ffxForceFieldEnergy.getPmeNode();
+        if (pme == null) {
+            return;
+        }
         int axisAtom[][] = pme.getAxisAtoms();
-
         double dipoleConversion = OpenMM_NmPerAngstrom;
         double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
         double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom
