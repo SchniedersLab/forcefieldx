@@ -81,6 +81,7 @@ import ffx.crystal.Crystal;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
@@ -98,7 +99,8 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PiTorsionType;
 import ffx.potential.parameters.PolarizeType;
-import ffx.potential.parameters.StretchBendType;
+import ffx.potential.parameters.TorsionTorsionType;
+import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 
@@ -199,19 +201,32 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         // CCOM remover.
         addCCOMRemover();
 
-        // Add Bond Forces.
-        // addBonds();
-        // Reference: https://github.com/jayponder/tinker/blob/release/openmm/ommstuff.cpp
-        // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommsetuff.cpp
-        // Add Urey-Bradley Forces: to do by Hernan - see setupAmoebaUreyBradleyForce line 2115 of openmm-stuff.cpp
-        //addUreyBradleys();
-        
+        // Add Bond Force.
+        addBonds();
+
+        // Add Angle Force.
+        addAngles();
+        addInPlaneAngles();
+
+        // Add Urey-Bradley Force.
+        addUreyBradleys();
+
+        // Add Stretch-Bend Force.
         addStretchBendForce();
+
+        // Add Torsion Force.
+        addTorsions();
+
+        // Add Pi-Torsion Force.
+        addPiTorsions();
         
-        // Add vdW force.
+        // Add Torsion-Torsion Force.
+        addTorsionTorsions();
+
+        // Add vdW Force.
         addVDWForce();
 
-        // Add multipole forces.
+        // Add Multipole Force.
         addMultipoleForce();
 
         // Set periodic box vectors.
@@ -395,30 +410,30 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         logger.log(Level.INFO, " Added Urey-Bradleys ({0})", nUreys);
 
     }
-    
-    private void addStretchBendForce(){
+
+    private void addStretchBendForce() {
         PointerByReference amoebaStretchBendForce = OpenMM_AmoebaStretchBendForce_create();
         StretchBend stretchBends[] = ffxForceFieldEnergy.getStretchBends();
         int nStretchBends = stretchBends.length;
-        
-        for (int i = 0; i < nStretchBends; i ++){
+
+        for (int i = 0; i < nStretchBends; i++) {
             StretchBend stretchBend = stretchBends[i];
             int i1 = stretchBend.getAtom(0).getXyzIndex() - 1;
             int i2 = stretchBend.getAtom(1).getXyzIndex() - 1;
             int i3 = stretchBend.getAtom(2).getXyzIndex() - 1;
-            
+
             double angle = stretchBend.angleEq;
             double beq0 = stretchBend.bond0Eq;
             double beq1 = stretchBend.bond1Eq;
             double fc0 = stretchBend.force0;
             double fc1 = stretchBend.force1;
-            
+
             //StretchBendType stretchBendType = stretchBend.stretchBendType;
-            OpenMM_AmoebaStretchBendForce_addStretchBend(amoebaStretchBendForce, i1, i2, i3, beq0*OpenMM_NmPerAngstrom, beq1*OpenMM_NmPerAngstrom, 
-                    OpenMM_RadiansPerDegree * angle, (OpenMM_KJPerKcal/OpenMM_NmPerAngstrom)* fc0, (OpenMM_KJPerKcal/OpenMM_NmPerAngstrom) * fc1);
-            
+            OpenMM_AmoebaStretchBendForce_addStretchBend(amoebaStretchBendForce, i1, i2, i3, beq0 * OpenMM_NmPerAngstrom, beq1 * OpenMM_NmPerAngstrom,
+                    OpenMM_RadiansPerDegree * angle, (OpenMM_KJPerKcal / OpenMM_NmPerAngstrom) * fc0, (OpenMM_KJPerKcal / OpenMM_NmPerAngstrom) * fc1);
+
         }
-        
+
         OpenMM_System_addForce(openMMSystem, amoebaStretchBendForce);
         logger.log(Level.INFO, " Added Stretch Bends ({0})", nStretchBends);
     }
@@ -496,7 +511,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             int ic = torsionTorsion.getAtom(2).getXyzIndex() - 1;
             int id = torsionTorsion.getAtom(3).getXyzIndex() - 1;
             int ie = torsionTorsion.getAtom(4).getXyzIndex() - 1;
-
 
             TorsionTorsionType torsionTorsionType = torsionTorsion.torsionTorsionType;
             String key = torsionTorsionType.getKey();
