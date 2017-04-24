@@ -81,6 +81,8 @@ import ffx.crystal.Crystal;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.OutOfPlaneBend;
+import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.bonded.StretchBend;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
@@ -103,6 +105,9 @@ import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 
 import static ffx.potential.parameters.ForceField.toPropertyForm;
+import ffx.potential.parameters.OutOfPlaneBendType;
+import ffx.potential.parameters.TorsionTorsionType;
+import ffx.potential.parameters.TorsionType;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -200,18 +205,20 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         addCCOMRemover();
 
         // Add Bond Forces.
-        // addBonds();
+         addBonds();
         // Reference: https://github.com/jayponder/tinker/blob/release/openmm/ommstuff.cpp
         // Add Angle Forces: to do by Mallory - see setupAmoebaAngleForce line 1952 of ommsetuff.cpp
         // Add Urey-Bradley Forces: to do by Hernan - see setupAmoebaUreyBradleyForce line 2115 of openmm-stuff.cpp
-        //addUreyBradleys();
+        addUreyBradleys();
         
         addStretchBendForce();
+        
+        addOutOfPlaneBendForce();
         
         // Add vdW force.
         addVDWForce();
 
-        // Add multipole forces.
+        //Add multipole forces.
         addMultipoleForce();
 
         // Set periodic box vectors.
@@ -394,6 +401,31 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_System_addForce(openMMSystem, amoebaBondForce);
         logger.log(Level.INFO, " Added Urey-Bradleys ({0})", nUreys);
 
+    }
+    
+    private void addOutOfPlaneBendForce(){
+        PointerByReference amoebaOutOfPlaneBendForce = OpenMM_AmoebaOutOfPlaneBendForce_create();
+        OutOfPlaneBend outOfPlaneBends[] = ffxForceFieldEnergy.getOutOfPlaneBends();
+        int nOutOfPlaneBends = outOfPlaneBends.length;
+        
+        for (int i = 0; i < nOutOfPlaneBends; i++){
+            OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
+            int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
+            int i2 = outOfPlaneBend.getAtom(1).getXyzIndex() - 1;
+            int i3 = outOfPlaneBend.getAtom(2).getXyzIndex() - 1;
+            int i4 = outOfPlaneBend.getAtom(3).getXyzIndex() - 1;
+            OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
+            
+            OpenMM_AmoebaOutOfPlaneBendForce_addOutOfPlaneBend(amoebaOutOfPlaneBendForce, i1, i2, i3, i4,
+                    OpenMM_KJPerKcal*outOfPlaneBend.outOfPlaneBendType.forceConstant*OutOfPlaneBendType.units);
+        }
+        OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendCubic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.cubic);
+        OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendQuartic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quartic);
+        OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quintic);
+        OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.sextic);
+        
+        OpenMM_System_addForce(openMMSystem, amoebaOutOfPlaneBendForce);
+        logger.log(Level.INFO, " Added Out Of Plane Bends ({0})", nOutOfPlaneBends);
     }
     
     private void addStretchBendForce(){
