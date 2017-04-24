@@ -166,7 +166,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             Pointer platformPtr = OpenMM_StringArray_get(platforms, i);
             String platform = platformPtr.getString(0);
             logger.log(Level.INFO, " Plugin Library :{0}", platform);
-            if (platform.toLowerCase().contains("AmoebaCUDA")) {
+            if (platform.toUpperCase().contains("AMOEBACUDA")) {
                 cuda = true;
             }
         }
