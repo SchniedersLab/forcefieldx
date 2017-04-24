@@ -160,10 +160,15 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
         int numPlatforms = OpenMM_Platform_getNumPlatforms();
+        boolean cuda = false;
         logger.log(Level.INFO, " Number of OpenMM Plugins: {0}", numPlatforms);
         for (int i = 0; i < numPlatforms; i++) {
             Pointer platformPtr = OpenMM_StringArray_get(platforms, i);
-            logger.log(Level.INFO, " Plugin Library :{0}", platformPtr.getString(0));
+            String platform = platformPtr.getString(0);
+            logger.log(Level.INFO, " Plugin Library :{0}", platform);
+            if (platform.toLowerCase().contains("AmoebaCUDA")) {
+                cuda = true;
+            }
         }
         OpenMM_StringArray_destroy(platforms);
 
@@ -187,12 +192,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
         logger.info(" Created OpenMM Integrator");
 
-        platform = OpenMM_Platform_getPlatformByName("Reference");
-
-        if (platform == null) {
-            logger.info(" OpenMM Plaform could not be created.");
+        if (cuda) {
+            platform = OpenMM_Platform_getPlatformByName("CUDA");
+            logger.info(" Created OpenMM AMOEBA CUDA Plaform");
         } else {
-            logger.info(" Created OpenMM Reference Plaform");
+            platform = OpenMM_Platform_getPlatformByName("Reference");
+            logger.info(" Created OpenMM AMOEBA Reference Plaform");
         }
 
         // Load atoms.
@@ -324,7 +329,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
         }
         nAngles = normalAngles.size();
-        if (nAngles < 1){
+        if (nAngles < 1) {
             return;
         }
         PointerByReference amoebaAngleForce = OpenMM_AmoebaAngleForce_create();
@@ -628,8 +633,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     vdwType.reductionFactor);
         }
 
-        OpenMM_AmoebaVdwForce_setSigmaCombiningRule(amoebaVdwForce, toPropertyForm(vdwForm.radiusRule.name()));
-        OpenMM_AmoebaVdwForce_setEpsilonCombiningRule(amoebaVdwForce, toPropertyForm(vdwForm.epsilonRule.name()));
+        // OpenMM_AmoebaVdwForce_setSigmaCombiningRule(amoebaVdwForce, toPropertyForm(vdwForm.radiusRule.name()));
+        // OpenMM_AmoebaVdwForce_setEpsilonCombiningRule(amoebaVdwForce, toPropertyForm(vdwForm.epsilonRule.name()));
         OpenMM_AmoebaVdwForce_setCutoffDistance(amoebaVdwForce, nonbondedCutoff.off * OpenMM_NmPerAngstrom);
         OpenMM_AmoebaVdwForce_setUseDispersionCorrection(amoebaVdwForce, OpenMM_Boolean.OpenMM_False);
 
