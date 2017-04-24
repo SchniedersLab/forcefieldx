@@ -331,9 +331,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             int i1 = angle.getAtom(0).getXyzIndex() - 1;
             int i2 = angle.getAtom(1).getXyzIndex() - 1;
             int i3 = angle.getAtom(2).getXyzIndex() - 1;
-
+            int nh = angle.nh;
             OpenMM_AmoebaAngleForce_addAngle(amoebaAngleForce, i1, i2, i3,
-                    angle.angleType.angle[0], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
+                    angle.angleType.angle[nh], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
         }
         OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleCubic(amoebaAngleForce, AngleType.cubic);
         OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleQuartic(amoebaAngleForce, AngleType.quartic);
@@ -366,8 +366,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             int i2 = angle.getAtom(1).getXyzIndex() - 1;
             int i3 = angle.getAtom(2).getXyzIndex() - 1;
             int i4 = angle.getAtom4().getXyzIndex() - 1;
+            int nh = angle.nh;
             OpenMM_AmoebaInPlaneAngleForce_addAngle(amoebaInPlaneAngleForce, i1, i2, i3, i4,
-                    angle.angleType.angle[0], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
+                    angle.angleType.angle[nh], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
         }
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleCubic(amoebaInPlaneAngleForce, AngleType.cubic);
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleQuartic(amoebaInPlaneAngleForce, AngleType.quartic);
