@@ -217,11 +217,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         addAngles();
         addInPlaneAngles();
 
+        // Add Stretch-Bend Force.
+        addStretchBendForce();
+
         // Add Urey-Bradley Force.
         addUreyBradleys();
 
-        // Add Stretch-Bend Force.
-        addStretchBendForce();
+        // Out-of Plane Bend Force.
+        addOutOfPlaneBendForce();
 
         // Add Torsion Force.
         addTorsions();
@@ -417,12 +420,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         logger.log(Level.INFO, " Added Urey-Bradleys ({0})", nUreys);
     }
 
-    private void addOutOfPlaneBendForce(){
-        PointerByReference amoebaOutOfPlaneBendForce = OpenMM_AmoebaOutOfPlaneBendForce_create();
+    private void addOutOfPlaneBendForce() {
         OutOfPlaneBend outOfPlaneBends[] = ffxForceFieldEnergy.getOutOfPlaneBends();
+        if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+            return;
+        }
+        PointerByReference amoebaOutOfPlaneBendForce = OpenMM_AmoebaOutOfPlaneBendForce_create();
         int nOutOfPlaneBends = outOfPlaneBends.length;
-
-        for (int i = 0; i < nOutOfPlaneBends; i++){
+        for (int i = 0; i < nOutOfPlaneBends; i++) {
             OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
             int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
             int i2 = outOfPlaneBend.getAtom(1).getXyzIndex() - 1;
@@ -431,18 +436,17 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
 
             OpenMM_AmoebaOutOfPlaneBendForce_addOutOfPlaneBend(amoebaOutOfPlaneBendForce, i1, i2, i3, i4,
-                    OpenMM_KJPerKcal*outOfPlaneBend.outOfPlaneBendType.forceConstant*OutOfPlaneBendType.units);
+                    OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * OutOfPlaneBendType.units);
         }
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendCubic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.cubic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendQuartic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quartic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quintic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.sextic);
-
         OpenMM_System_addForce(openMMSystem, amoebaOutOfPlaneBendForce);
-        logger.log(Level.INFO, " Added Out Of Plane Bends ({0})", nOutOfPlaneBends);
+        logger.log(Level.INFO, " Added Out of Plane Bends ({0})", nOutOfPlaneBends);
     }
 
-    private void addStretchBendForce(){
+    private void addStretchBendForce() {
         StretchBend stretchBends[] = ffxForceFieldEnergy.getStretchBends();
         if (stretchBends == null || stretchBends.length < 1) {
             return;
