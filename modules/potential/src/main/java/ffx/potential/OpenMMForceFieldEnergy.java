@@ -416,12 +416,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_System_addForce(openMMSystem, amoebaBondForce);
         logger.log(Level.INFO, " Added Urey-Bradleys ({0})", nUreys);
     }
-    
+
     private void addOutOfPlaneBendForce(){
         PointerByReference amoebaOutOfPlaneBendForce = OpenMM_AmoebaOutOfPlaneBendForce_create();
         OutOfPlaneBend outOfPlaneBends[] = ffxForceFieldEnergy.getOutOfPlaneBends();
         int nOutOfPlaneBends = outOfPlaneBends.length;
-        
+
         for (int i = 0; i < nOutOfPlaneBends; i++){
             OutOfPlaneBend outOfPlaneBend = outOfPlaneBends[i];
             int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
@@ -429,7 +429,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             int i3 = outOfPlaneBend.getAtom(2).getXyzIndex() - 1;
             int i4 = outOfPlaneBend.getAtom(3).getXyzIndex() - 1;
             OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
-            
+
             OpenMM_AmoebaOutOfPlaneBendForce_addOutOfPlaneBend(amoebaOutOfPlaneBendForce, i1, i2, i3, i4,
                     OpenMM_KJPerKcal*outOfPlaneBend.outOfPlaneBendType.forceConstant*OutOfPlaneBendType.units);
         }
@@ -437,13 +437,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendQuartic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quartic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quintic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.sextic);
-        
+
         OpenMM_System_addForce(openMMSystem, amoebaOutOfPlaneBendForce);
         logger.log(Level.INFO, " Added Out Of Plane Bends ({0})", nOutOfPlaneBends);
     }
-    
+
     private void addStretchBendForce(){
-        PointerByReference amoebaStretchBendForce = OpenMM_AmoebaStretchBendForce_create();
         StretchBend stretchBends[] = ffxForceFieldEnergy.getStretchBends();
         if (stretchBends == null || stretchBends.length < 1) {
             return;
