@@ -71,16 +71,16 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
     /**
      * Force field parameters to compute the Stretch-Bend energy.
      */
-    private StretchBendType stretchBendType = null;
+    public StretchBendType stretchBendType = null;
     private double rigidScale = 1.0;
     /**
      * Angle this Stretch-Bend is based on.
      */
     protected Angle angle = null;
-    private double force0, force1;
-    final private double angleEq;
-    final private double bond0Eq;
-    final private double bond1Eq;
+    public double force0, force1;
+    final public double angleEq;
+    final public double bond0Eq;
+    final public double bond1Eq;
 
     /**
      * <p>

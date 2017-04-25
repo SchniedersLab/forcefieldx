@@ -92,6 +92,7 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.COMRestraint;
 import ffx.potential.nonbonded.CoordRestraint;
+import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM;
@@ -2499,6 +2500,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return esvSystem;
     }
 
+    public GeneralizedKirkwood getGK() {
+        return particleMeshEwald.getGK();
+    }
+
     /**
      * Exposes the VdW object to ExtendedSystem; should otherwise not be used.
      * Enables VdW to contain explicit ESV handling.
@@ -2508,7 +2513,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     // TODO refactor to protect hierarchy; too bad package-private doesn't allow sub-packages
     public VanDerWaals getVdwNode() {
         if (vanderWaals == null) {
-            logger.warning("FFE passed null VdW object.");
+            logger.warning(" FFX passed null vdW object.");
         }
         return vanderWaals;
     }
@@ -2519,10 +2524,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @return
      */
-    // TODO refactor, as getVdwNode()
     public ParticleMeshEwald getPmeNode() {
         if (particleMeshEwald == null) {
-            logger.warning("FFE passed null PME object.");
+            logger.warning(" FFX passed null PME object.");
         }
         return particleMeshEwald;
     }
@@ -2684,9 +2688,33 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public Bond[] getBonds() {
         return bonds;
     }
-    
-    public UreyBradley[] getUreyBradleys(){
+
+    public Angle[] getAngles() {
+        return angles;
+    }
+
+    public UreyBradley[] getUreyBradleys() {
         return ureyBradleys;
+    }
+    
+    public OutOfPlaneBend[] getOutOfPlaneBends(){
+        return outOfPlaneBends;
+    }
+    
+    public StretchBend[] getStretchBends(){
+        return stretchBends;
+    }
+
+    public Torsion[] getTorsions() {
+        return torsions;
+    }
+
+    public PiOrbitalTorsion[] getPiOrbitalTorsions() {
+        return piOrbitalTorsions;
+    }
+
+    public TorsionTorsion[] getTorsionTorsions() {
+        return torsionTorsions;
     }
 
     private class BondedRegion extends ParallelRegion {

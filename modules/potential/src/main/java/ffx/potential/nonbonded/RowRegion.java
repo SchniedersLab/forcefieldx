@@ -51,7 +51,6 @@ import ffx.potential.bonded.Atom;
 
 import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 
-
 /**
  * The RowRegion class is used to parallelize placing onto a 3D grid
  *
@@ -177,7 +176,6 @@ public class RowRegion extends ParallelRegion {
         rebuildList = (rebuildList || rowLoop[0].checkList(zyAtListBuild, buff));
     }
 
-    
     @Override
     public void finish() {
         if (rebuildList) {
@@ -186,7 +184,6 @@ public class RowRegion extends ParallelRegion {
         rebuildList = false;
     }
 
-    
     @Override
     public void run() throws Exception {
         int threadIndex = getThreadIndex();

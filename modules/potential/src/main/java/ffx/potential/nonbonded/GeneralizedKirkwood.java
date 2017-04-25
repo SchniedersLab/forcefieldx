@@ -88,6 +88,7 @@ import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 
+import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.ELECTRIC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
@@ -164,6 +165,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private final double bornaiTerm;
     private final double probe;
+    private final double dOffset = 0.09;
     private boolean use[] = null;
     private final Polarization polarization;
     private Atom atoms[];
@@ -276,6 +278,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
         } else {
             GK_WARN_LEVEL = Level.WARNING;
         }
+    }
+
+    public double[] getOverlapScale() {
+        return overlapScale;
+    }
+
+    public double[] getBaseRadii() {
+        return baseRadiusWithBondi;
+    }
+
+    public double getSurfaceTension() {
+        return surfaceTension;
     }
 
     /**
@@ -477,6 +491,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         }
 
+    }
+
+    public NonPolar getNonPolarModel() {
+        return nonPolar;
     }
 
     public void setCutoff(double cutoff) {
@@ -1074,11 +1092,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     public static NonPolar getNonPolarModel(String nonpolarModel) {
         try {
-            return NonPolar.valueOf(nonpolarModel);
+            return NonPolar.valueOf(toEnumForm(nonpolarModel));
         } catch (IllegalArgumentException ex) {
-            logger.warning("Unrecognized nonpolar model requested; defaulting to NONE.");
+            logger.warning(" Unrecognized nonpolar model requested; defaulting to NONE.");
             return NonPolar.NONE;
-
         }
     }
 
@@ -2073,17 +2090,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     switch (nonPolar) {
                         case BORN_SOLV:
                         case BORN_CAV_DISP:
-                            double e = baseRadiusWithBondi[i] + probe; // e = ri + probe
-                            e *= (e * bornaiTerm);// e = (ri + probe) * ((ri + probe) * 4 * pi * ai)
-                            double rirb = baseRadiusWithBondi[i] / born[i]; // ri/rb^6
-                            rirb *= rirb;
-                            rirb *= (rirb * rirb);
-                            e *= rirb; // e = consts * (ri/rb)^6
-                            gkEnergy += e;
+                            double r = baseRadiusWithBondi[i] + dOffset + probe;
+                            double ratio = (baseRadiusWithBondi[i] + dOffset) / born[i];
+                            ratio *= ratio;
+                            ratio *= (ratio * ratio);
+                            double saTerm = -surfaceTension * r * r * ratio;
+                            gkEnergy += saTerm / -6.0;
                             // Now calculate derivatives
-                            e *= (-6.0 / born[i]); // e = consts * -6*ri^6 / rb^-7
-                            // To get each derivative, would multiple
-                            gb_local[i] += e;
+                            gb_local[i] += saTerm / born[i];
                             break;
                         default:
                             break;
