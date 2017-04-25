@@ -122,7 +122,7 @@ public class UIDataConverter implements FileOpener {
             conversionFilter.applyAtomProperties();
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
-            ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem, conversionFilter.getCoordRestraints());
+            ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(ffxSystem, conversionFilter.getCoordRestraints());
             ffxSystem.setPotential(energy);
             mainPanel.getHierarchy().setActive(ffxSystem);
 
@@ -161,7 +161,7 @@ public class UIDataConverter implements FileOpener {
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                         mainPanel.getHierarchy().addSystemNode(newSystem);
-                        energy = new ForceFieldEnergy(newSystem, biojFilter.getCoordRestraints());
+                        energy = ForceFieldEnergy.energyFactory(newSystem, biojFilter.getCoordRestraints());
                         newSystem.setPotential(energy);
                     }
                 }

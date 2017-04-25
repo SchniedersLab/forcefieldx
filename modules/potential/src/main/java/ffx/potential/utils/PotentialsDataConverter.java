@@ -172,7 +172,7 @@ public class PotentialsDataConverter implements FileOpener {
                 if (filter.convert()) {
                     filter.applyAtomProperties();
                     assembly.finalize(true, forceField);
-                    ForceFieldEnergy energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
+                    ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints());
                     assembly.setPotential(energy);
                     assemblies.add(assembly);
                     propertyList.add(properties);
@@ -208,7 +208,7 @@ public class PotentialsDataConverter implements FileOpener {
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                             filter.applyAtomProperties();
                             newAssembly.finalize(true, assembly.getForceField());
-                            energy = new ForceFieldEnergy(newAssembly, filter.getCoordRestraints());
+                            energy = ForceFieldEnergy.energyFactory(newAssembly, filter.getCoordRestraints());
                             newAssembly.setPotential(energy);
                             assemblies.add(newAssembly);
                             properties.addConfiguration(properties);

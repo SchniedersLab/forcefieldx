@@ -111,7 +111,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         this.molecularAssembly = molecularAssembly;
         this.algorithmListener = algorithmListener;
         if (molecularAssembly.getPotentialEnergy() == null) {
-            molecularAssembly.setPotential(new ForceFieldEnergy(molecularAssembly));
+            molecularAssembly.setPotential(ForceFieldEnergy.energyFactory(molecularAssembly));
         }
         potential = molecularAssembly.getPotentialEnergy();
         n = potential.getNumberOfVariables();
