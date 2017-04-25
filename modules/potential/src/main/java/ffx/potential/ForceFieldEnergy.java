@@ -723,6 +723,67 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
+     *
+     * @param assembly To create FFE over
+     * @return
+     */
+    public static ForceFieldEnergy energyFactory (MolecularAssembly assembly) {
+        return energyFactory(assembly, null);
+    }
+
+    /**
+     * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
+     *
+     * @param assembly To create FFE over
+     * @param restraints Harmonic restraints
+     * @return
+     */
+    public static ForceFieldEnergy energyFactory (MolecularAssembly assembly, List<CoordRestraint> restraints) {
+        return energyFactory(assembly, restraints, ParallelTeam.getDefaultThreadCount());
+    }
+
+    /**
+     * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
+     *
+     * @param assembly To create FFE over
+     * @param restraints Harmonic restraints
+     * @param numThreads Number of threads to use for FFX energy
+     * @return
+     */
+    public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints, int numThreads) {
+        ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+        ForceField ffield = assembly.getForceField();
+        String eImString = ffield.getString(ForceFieldString.ENERGY_IMPLEMENTATION, "FFX").toUpperCase().replaceAll("-", "_");
+
+        try {
+            EnergyImplementation eImpl = EnergyImplementation.valueOf(eImString);
+            switch (eImpl) {
+                case FFX:
+                    return ffxEnergy;
+                case OMM:
+                case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
+                case OMM_CUDA:
+                    try {
+                        OpenMMForceFieldEnergy oEnergy = new OpenMMForceFieldEnergy(assembly);
+                        return oEnergy;
+                    } catch (Exception ex) {
+                        logger.warning(String.format(" Exception in creating OpenMM wrapper over force field energy: %s", ex));
+                        return ffxEnergy;
+                    }
+                case OMM_OPENCL:
+                case OMM_OPTCPU:
+                default:
+                    logger.warning(String.format(" Energy implementation type %s not actually implemented at this time", eImpl));
+                    return ffxEnergy;
+            }
+        } catch (IllegalArgumentException | NullPointerException ex) {
+            logger.warning(String.format(" String %s did not match a known energy implementation", eImString));
+            return ffxEnergy;
+        }
+    }
+
+    /**
      * Overwrites current esvSystem if present. Multiple ExtendedSystems is
      * possible but unnecessary; add all ESVs to one system (per FFE, at least).
      *
@@ -3173,4 +3234,19 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * An EnergyImplementation describes a set of force field implementations; currently FFX for the pure Java reference
+     * implementation, and various OpenMM implementations, of which OMM_CUDA is preferred. Note that AMOEBA only runs
+     * under the FFX, OMM_CUDA, and OMM_REF implementations.
+     *
+     * FFX: reference FFX implementation
+     * OMM: Currently an alias for OMM_CUDA, may eventually become "try to find best OpenMM implementation"
+     * OMM_CUDA: OpenMM CUDA implementation
+     * OMM_REF: OpenMM reference implementation
+     * OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
+     * OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
+     */
+    public static enum EnergyImplementation {
+        FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL;
+    }
 }
