@@ -244,7 +244,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private long restraintBondTime, ncsTime, coordRestraintTime, comRestraintTime;
     private long totalTime;
     private double lambda = 1.0;
-    private double[] optimizationScaling = null;
+    protected double[] optimizationScaling = null;
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
     private boolean printOnFailure;
@@ -753,7 +753,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return
      */
     public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints, int numThreads) {
-        ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+
         ForceField ffield = assembly.getForceField();
         String eImString = ffield.getString(ForceFieldString.ENERGY_IMPLEMENTATION, "FFX").toUpperCase().replaceAll("-", "_");
 
@@ -761,6 +761,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             EnergyImplementation eImpl = EnergyImplementation.valueOf(eImString);
             switch (eImpl) {
                 case FFX:
+                    ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                     return ffxEnergy;
                 case OMM:
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
@@ -770,16 +771,19 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         return oEnergy;
                     } catch (Exception ex) {
                         logger.warning(String.format(" Exception in creating OpenMM wrapper over force field energy: %s", ex));
+                        ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                         return ffxEnergy;
                     }
                 case OMM_OPENCL:
                 case OMM_OPTCPU:
                 default:
                     logger.warning(String.format(" Energy implementation type %s not actually implemented at this time", eImpl));
+                    ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                     return ffxEnergy;
             }
         } catch (IllegalArgumentException | NullPointerException ex) {
             logger.warning(String.format(" String %s did not match a known energy implementation", eImString));
+            ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
             return ffxEnergy;
         }
     }
@@ -1937,7 +1941,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @param coords
      */
-    private void setCoordinates(double coords[]) {
+    protected void setCoordinates(double coords[]) {
         if (coords == null) {
             return;
         }
@@ -2510,11 +2514,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      *
      * @return
      */
-    // TODO refactor to protect hierarchy; too bad package-private doesn't allow sub-packages
     public VanDerWaals getVdwNode() {
-        if (vanderWaals == null) {
-            logger.warning(" FFX passed null vdW object.");
-        }
         return vanderWaals;
     }
 
@@ -2525,9 +2525,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return
      */
     public ParticleMeshEwald getPmeNode() {
-        if (particleMeshEwald == null) {
-            logger.warning(" FFX passed null PME object.");
-        }
         return particleMeshEwald;
     }
 
@@ -2696,11 +2693,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public UreyBradley[] getUreyBradleys() {
         return ureyBradleys;
     }
-    
+
     public OutOfPlaneBend[] getOutOfPlaneBends(){
         return outOfPlaneBends;
     }
-    
+
     public StretchBend[] getStretchBends(){
         return stretchBends;
     }
