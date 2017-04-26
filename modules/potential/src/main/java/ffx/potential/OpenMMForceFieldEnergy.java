@@ -100,18 +100,13 @@ import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.PiTorsionType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
-
-import static ffx.potential.parameters.ForceField.toPropertyForm;
-
-import ffx.potential.parameters.OutOfPlaneBendType;
-import ffx.potential.parameters.TorsionTorsionType;
-import ffx.potential.parameters.TorsionType;
 import ffx.potential.utils.EnergyException;
 
 /**
@@ -127,12 +122,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     private ForceFieldEnergy ffxForceFieldEnergy;
 
+    private static PointerByReference platform;
+
     private PointerByReference openMMSystem;
     private PointerByReference openMMIntegrator;
-    private PointerByReference platform;
     private PointerByReference context;
     private PointerByReference state;
-
     private PointerByReference initialPosInNm;
     private PointerByReference openMMForces;
 
@@ -149,49 +144,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         logger.info(" Initializing OpenMM\n");
 
-        // Print out the OpenMM Version.
-        Pointer version = OpenMM_Platform_getOpenMMVersion();
-        logger.log(Level.INFO, " OpenMM Version: {0}", version.getString(0));
-
-        // Print out the OpenMM plugin directory.
-        Pointer pluginDir = OpenMM_Platform_getDefaultPluginsDirectory();
-        logger.log(Level.INFO, " OpenMM Plugin Dir: {0}", pluginDir.getString(0));
-
-        /**
-         * Load plugins and print out plugins.
-         *
-         * Call the method twice to avoid a bug in OpenMM where not all
-         * platforms are list after the first call.
-         */
-        PointerByReference platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
-        OpenMM_StringArray_destroy(platforms);
-        platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
-
-        platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
-        int numPlatforms = OpenMM_Platform_getNumPlatforms();
-        boolean cuda = false;
-        logger.log(Level.INFO, " Number of OpenMM Plugins: {0}", numPlatforms);
-        for (int i = 0; i < numPlatforms; i++) {
-            Pointer platformPtr = OpenMM_StringArray_get(platforms, i);
-            String platform = platformPtr.getString(0);
-            logger.log(Level.INFO, " Plugin Library :{0}", platform);
-            if (platform.toUpperCase().contains("AMOEBACUDA")) {
-                cuda = true;
-            }
-        }
-        OpenMM_StringArray_destroy(platforms);
-
-        /**
-         * Extra logging to print out plugins that failed to load.
-         */
-        if (logger.isLoggable(Level.FINE)) {
-            PointerByReference pluginFailers = OpenMM_Platform_getPluginLoadFailures();
-            int numFailures = OpenMM_StringArray_getSize(pluginFailers);
-            for (int i = 0; i < numFailures; i++) {
-                Pointer message = OpenMM_StringArray_get(pluginFailers, i);
-                logger.log(Level.FINE, " Plugin load failure: {0}", message.getString(0));
-            }
-            OpenMM_StringArray_destroy(pluginFailers);
+        if (platform == null) {
+            loadPlatform();
         }
 
         // Create the OpenMM System
@@ -200,14 +154,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
         logger.info(" Created OpenMM Integrator");
-
-        if (cuda) {
-            platform = OpenMM_Platform_getPlatformByName("CUDA");
-            logger.info(" Created OpenMM AMOEBA CUDA Plaform");
-        } else {
-            platform = OpenMM_Platform_getPlatformByName("Reference");
-            logger.info(" Created OpenMM AMOEBA Reference Plaform");
-        }
 
         // Load atoms.
         addAtoms();
@@ -265,6 +211,64 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         logger.log(Level.INFO, " OpenMM Energy: {0}", openMMPotentialEnergy);
         OpenMM_State_destroy(state);
+    }
+
+    /**
+     * Load an OpenMM Platform
+     */
+    private void loadPlatform() {
+        // Print out the OpenMM Version.
+        Pointer version = OpenMM_Platform_getOpenMMVersion();
+        logger.log(Level.INFO, " OpenMM Version: {0}", version.getString(0));
+
+        // Print out the OpenMM plugin directory.
+        Pointer pluginDir = OpenMM_Platform_getDefaultPluginsDirectory();
+        logger.log(Level.INFO, " OpenMM Plugin Dir: {0}", pluginDir.getString(0));
+
+        /**
+         * Load plugins and print out plugins.
+         *
+         * Call the method twice to avoid a bug in OpenMM where not all
+         * platforms are list after the first call.
+         */
+        PointerByReference platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
+        OpenMM_StringArray_destroy(platforms);
+        platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
+
+        platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
+        int numPlatforms = OpenMM_Platform_getNumPlatforms();
+        boolean cuda = false;
+        logger.log(Level.INFO, " Number of OpenMM Plugins: {0}", numPlatforms);
+        for (int i = 0; i < numPlatforms; i++) {
+            Pointer platformPtr = OpenMM_StringArray_get(platforms, i);
+            String platform = platformPtr.getString(0);
+            logger.log(Level.INFO, " Plugin Library :{0}", platform);
+            if (platform.toUpperCase().contains("AMOEBACUDA")) {
+                cuda = true;
+            }
+        }
+        OpenMM_StringArray_destroy(platforms);
+
+        /**
+         * Extra logging to print out plugins that failed to load.
+         */
+        if (logger.isLoggable(Level.FINE)) {
+            PointerByReference pluginFailers = OpenMM_Platform_getPluginLoadFailures();
+            int numFailures = OpenMM_StringArray_getSize(pluginFailers);
+            for (int i = 0; i < numFailures; i++) {
+                Pointer message = OpenMM_StringArray_get(pluginFailers, i);
+                logger.log(Level.FINE, " Plugin load failure: {0}", message.getString(0));
+            }
+            OpenMM_StringArray_destroy(pluginFailers);
+        }
+
+        if (cuda) {
+            platform = OpenMM_Platform_getPlatformByName("CUDA");
+            logger.info(" Created OpenMM AMOEBA CUDA Plaform");
+        } else {
+            platform = OpenMM_Platform_getPlatformByName("Reference");
+            logger.info(" Created OpenMM AMOEBA Reference Plaform");
+        }
     }
 
     @Override
@@ -1036,7 +1040,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         int infoMask = OpenMM_State_Energy;
         state = OpenMM_Context_getState(context, infoMask, 0);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
-        logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+
+        if (verbose) {
+            logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+        }
 
         /**
          * Rescale the coordinates.
@@ -1071,7 +1078,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         state = OpenMM_Context_getState(context, infoMask, 0);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
-        logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+
+        if (verbose) {
+            logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+        }
 
         openMMForces = OpenMM_State_getForces(state);
 
@@ -1111,7 +1121,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             if (a.isActive()) {
                 OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(openMMForces, i);
                 /**
-                 * Convert OpenMM Forces in KJ/Nm into an FFX gradient in Kcal/A.
+                 * Convert OpenMM Forces in KJ/Nm into an FFX gradient in
+                 * Kcal/A.
                  */
                 double gx = -posInNm.x * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
                 double gy = -posInNm.y * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
