@@ -166,7 +166,7 @@ public class Minimize_2 implements OptimizationListener, Terminatable {
         molecularAssembly.finalize(true, forceField);
         //algorithmListener = this;
         if (molecularAssembly.getPotentialEnergy() == null) {
-            molecularAssembly.setPotential(new ForceFieldEnergy(molecularAssembly, xyzFilter.getCoordRestraints()));
+            molecularAssembly.setPotential(ForceFieldEnergy.energyFactory(molecularAssembly, xyzFilter.getCoordRestraints()));
         }
         potential = molecularAssembly.getPotentialEnergy();
         n = potential.getNumberOfVariables();

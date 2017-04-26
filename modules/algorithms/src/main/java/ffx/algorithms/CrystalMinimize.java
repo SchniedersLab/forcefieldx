@@ -126,7 +126,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         this.molecularAssembly = molecularAssembly;
         this.algorithmListener = algorithmListener;
         if (molecularAssembly.getPotentialEnergy() == null) {
-            molecularAssembly.setPotential(new ForceFieldEnergy(molecularAssembly));
+            molecularAssembly.setPotential(ForceFieldEnergy.energyFactory(molecularAssembly));
         }
         potential = new XtalEnergy(molecularAssembly.getPotentialEnergy(), molecularAssembly);
         n = potential.getNumberOfVariables();

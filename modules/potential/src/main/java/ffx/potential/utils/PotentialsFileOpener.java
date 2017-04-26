@@ -267,12 +267,12 @@ public class PotentialsFileOpener implements FileOpener {
                 }
                 filter.applyAtomProperties();
                 assembly.finalize(true, forceField);
-                //ForceFieldEnergy energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
+                //ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints());
                 ForceFieldEnergy energy;
                 if (nThreads > 0) {
-                    energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints(), nThreads);
+                    energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints(), nThreads);
                 } else {
-                    energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
+                    energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints());
                 }
                 assembly.setPotential(energy);
                 assemblies.add(assembly);
@@ -311,11 +311,11 @@ public class PotentialsFileOpener implements FileOpener {
                             newAssembly.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                             filter.applyAtomProperties();
                             newAssembly.finalize(true, assembly.getForceField());
-                            //energy = new ForceFieldEnergy(newAssembly, filter.getCoordRestraints());
+                            //energy = ForceFieldEnergy.energyFactory(newAssembly, filter.getCoordRestraints());
                             if (nThreads > 0) {
-                                energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints(), nThreads);
+                                energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints(), nThreads);
                             } else {
-                                energy = new ForceFieldEnergy(assembly, filter.getCoordRestraints());
+                                energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints());
                             }
                             newAssembly.setPotential(energy);
                             assemblies.add(newAssembly);

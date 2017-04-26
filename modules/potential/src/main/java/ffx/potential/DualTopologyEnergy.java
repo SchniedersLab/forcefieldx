@@ -306,7 +306,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     private final int nActive2;
     private final Atom activeAtoms1[];
     private final Atom activeAtoms2[];
-    
+
     /**
      * Will default to a power-1 PowerSwitch function.
      */
@@ -321,7 +321,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             CrystalPotential topology2, Atom atoms2[], double lamExp) {
         this(topology1, atoms1, topology2, atoms2, new PowerSwitch(1.0, lamExp));
     }
-        
+
     public DualTopologyEnergy(CrystalPotential topology1, Atom atoms1[],
             CrystalPotential topology2, Atom atoms2[],
             UnivariateSwitchingFunction switchFunction) {
@@ -467,11 +467,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         this.switchFunction = switchFunction;
         logger.info(String.format(" Dual topology using switching function %s", switchFunction));
     }
-    
+
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2) {
         this(topology1, topology2, 1.0);
     }
-    
+
     public DualTopologyEnergy(MolecularAssembly topology1, MolecularAssembly topology2, double lamExp) {
         this(topology1, topology2, new PowerSwitch(1.0, lamExp));
     }
@@ -981,11 +981,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     public double getLambda() {
         return lambda;
     }
-    
+
     /**
-     * Returns the switching function used by this DualTopologyEnergy; presently,
-     * switching functions are immutable, and cannot be changed once a 
-     * DualTopologyEnergy is constructed.
+     * Returns the switching function used by this DualTopologyEnergy;
+     * presently, switching functions are immutable, and cannot be changed once
+     * a DualTopologyEnergy is constructed.
+     *
      * @return The switching function.
      */
     public UnivariateSwitchingFunction getSwitch() {

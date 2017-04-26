@@ -470,7 +470,7 @@ if(runOSRW){
         }
     }
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
     forceFieldEnergy.setLambda(lambda);
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
@@ -528,7 +528,7 @@ if (runSimulatedAnnealing) {
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
 
-    energy = new ForceFieldEnergy(active);
+    energy = ForceFieldEnergy.energyFactory(active);
     energy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active,
         active.getProperties(), active.getParallelTeam(),
@@ -574,7 +574,7 @@ if(!loopBuildError){
     System.setProperty("lambdaterm", "false");
     System.setProperty("lambda-torsions", "false");
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active,
         active.getProperties(), active.getParallelTeam(),
@@ -634,7 +634,7 @@ if (runRotamer){
         ai.setUse(true);
     }
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active,
         active.getProperties(), active.getParallelTeam(),
@@ -701,7 +701,7 @@ if (runRotamer){
         structureFile = bestStructureFile;
     }
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
     realSpaceData = new RealSpaceData(active,
         active.getProperties(), active.getParallelTeam(),

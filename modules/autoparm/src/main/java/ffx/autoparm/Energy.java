@@ -259,7 +259,7 @@ public class Energy {
      * @param print a boolean.
      */
     public void energy(boolean gradient, boolean print) {
-        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
+        ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(molecularAssembly);
         molecularAssembly.setPotential(energy);
 //        if(do_detail){
 //        	energy.tor_verbose = true;

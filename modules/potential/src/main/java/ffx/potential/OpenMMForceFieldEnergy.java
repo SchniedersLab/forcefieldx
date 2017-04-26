@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
@@ -98,17 +100,14 @@ import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.MultipoleType;
+import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.PiTorsionType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
-
-import static ffx.potential.parameters.ForceField.toPropertyForm;
-import ffx.potential.parameters.OutOfPlaneBendType;
-import ffx.potential.parameters.TorsionTorsionType;
-import ffx.potential.parameters.TorsionType;
+import ffx.potential.utils.EnergyException;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -123,12 +122,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     private ForceFieldEnergy ffxForceFieldEnergy;
 
+    private static PointerByReference platform;
+
     private PointerByReference openMMSystem;
     private PointerByReference openMMIntegrator;
-    private PointerByReference platform;
     private PointerByReference context;
     private PointerByReference state;
-
     private PointerByReference initialPosInNm;
     private PointerByReference openMMForces;
 
@@ -141,9 +140,83 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         super(molecularAssembly);
 
         ffxForceFieldEnergy = molecularAssembly.getPotentialEnergy();
+        ffxForceFieldEnergy.energy(false, true);
 
-        logger.info("\n\n Initializing OpenMM");
+        logger.info(" Initializing OpenMM\n");
 
+        if (platform == null) {
+            loadPlatform();
+        }
+
+        // Create the OpenMM System
+        openMMSystem = OpenMM_System_create();
+        logger.info(" Created OpenMM System");
+
+        openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
+        logger.info(" Created OpenMM Integrator");
+
+        // Load atoms.
+        addAtoms();
+
+        // CCOM remover.
+        addCCOMRemover();
+
+        // Add Bond Force.
+        addBonds();
+
+        // Add Angle Force.
+        addAngles();
+        addInPlaneAngles();
+
+        // Add Stretch-Bend Force.
+        addStretchBendForce();
+
+        // Add Urey-Bradley Force.
+        addUreyBradleys();
+
+        // Out-of Plane Bend Force.
+        addOutOfPlaneBendForce();
+
+        // Add Torsion Force.
+        addTorsions();
+
+        // Add Pi-Torsion Force.
+        addPiTorsions();
+
+        // Add Torsion-Torsion Force.
+        addTorsionTorsions();
+
+        // Add vdW Force.
+        addVDWForce();
+
+        // Add Multipole Force.
+        addMultipoleForce();
+
+        // Set periodic box vectors.
+        setDefaultPeriodicBoxVectors();
+
+        // Create a context.
+        context = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, platform);
+
+        // Set initial position.
+        loadOpenMMPositions();
+
+        int infoMask = OpenMM_State_Positions;
+        infoMask += OpenMM_State_Forces;
+        infoMask += OpenMM_State_Energy;
+
+        state = OpenMM_Context_getState(context, infoMask, 0);
+        openMMForces = OpenMM_State_getForces(state);
+        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+
+        logger.log(Level.INFO, " OpenMM Energy: {0}", openMMPotentialEnergy);
+        OpenMM_State_destroy(state);
+    }
+
+    /**
+     * Load an OpenMM Platform
+     */
+    private void loadPlatform() {
         // Print out the OpenMM Version.
         Pointer version = OpenMM_Platform_getOpenMMVersion();
         logger.log(Level.INFO, " OpenMM Version: {0}", version.getString(0));
@@ -189,13 +262,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_StringArray_destroy(pluginFailers);
         }
 
-        // Create the OpenMM System
-        openMMSystem = OpenMM_System_create();
-        logger.info(" Created OpenMM System");
-
-        openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
-        logger.info(" Created OpenMM Integrator");
-
         if (cuda) {
             platform = OpenMM_Platform_getPlatformByName("CUDA");
             logger.info(" Created OpenMM AMOEBA CUDA Plaform");
@@ -203,66 +269,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             platform = OpenMM_Platform_getPlatformByName("Reference");
             logger.info(" Created OpenMM AMOEBA Reference Plaform");
         }
+    }
 
-        // Load atoms.
-        addAtoms();
-
-        // CCOM remover.
-        addCCOMRemover();
-
-        // Add Bond Force.
-        addBonds();
-
-        // Add Angle Force.
-        addAngles();
-        addInPlaneAngles();
-
-        // Add Stretch-Bend Force.
-        addStretchBendForce();
-
-        // Add Urey-Bradley Force.
-        addUreyBradleys();
-
-        // Out-of Plane Bend Force.
-        addOutOfPlaneBendForce();
-
-        // Add Torsion Force.
-        addTorsions();
-
-        // Add Pi-Torsion Force.
-        addPiTorsions();
-
-        // Add Torsion-Torsion Force.
-        addTorsionTorsions();
-
-        // Add vdW Force.
-        addVDWForce();
-
-        // Add Multipole Force.
-        addMultipoleForce();
-
-        // Set periodic box vectors.
-        setDefaultPeriodicBoxVectors();
-
-        // Set initial position.
-        loadPositions();
-
-        // Create a context.
-        context = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, platform);
-
-        // Load positions into the context.
-        OpenMM_Context_setPositions(context, initialPosInNm);
-
-        int infoMask = OpenMM_State_Positions;
-        infoMask += OpenMM_State_Forces;
-        infoMask += OpenMM_State_Energy;
-
-        state = OpenMM_Context_getState(context, infoMask, 0);
-
-        openMMForces = OpenMM_State_getForces(state);
-        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
-
-        logger.log(Level.INFO, " OpenMM Energy: {0}", openMMPotentialEnergy);
+    @Override
+    public void finalize() throws Throwable {
+        super.finalize();
+        System.out.println(" OpenMMForceFieldEnergy instance is getting finalized.");
 
         // Free the OpenMM System.
         freeOpenMM();
@@ -1011,8 +1023,152 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     }
 
-    private void loadPositions() {
-        initialPosInNm = OpenMM_Vec3Array_create(0);
+    @Override
+    public double energy(double[] x) {
+        return energy(x, false);
+    }
+
+    @Override
+    public double energy(double[] x, boolean verbose) {
+
+        if (lambdaBondedTerms) {
+            return 0.0;
+        }
+
+        /**
+         * Unscale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+        setCoordinates(x);
+        loadOpenMMPositions();
+
+        int infoMask = OpenMM_State_Energy;
+        state = OpenMM_Context_getState(context, infoMask, 0);
+        double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+
+        if (verbose) {
+            logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+        }
+
+        /**
+         * Rescale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+            }
+        }
+
+        OpenMM_State_destroy(state);
+        return e;
+    }
+
+    @Override
+    public double energyAndGradient(double x[], double g[]) {
+        return energyAndGradient(x, g, false);
+    }
+
+    @Override
+    public double energyAndGradient(double x[], double g[], boolean verbose) {
+        if (lambdaBondedTerms) {
+            return 0.0;
+        }
+
+        /**
+         * Un-scale the coordinates.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] /= optimizationScaling[i];
+            }
+        }
+        setCoordinates(x);
+        loadOpenMMPositions();
+
+        int infoMask = OpenMM_State_Energy;
+        infoMask += OpenMM_State_Forces;
+
+        state = OpenMM_Context_getState(context, infoMask, 0);
+        double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+
+        if (verbose) {
+            logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+        }
+
+        openMMForces = OpenMM_State_getForces(state);
+
+        getGradients(g);
+        /**
+         * Scale the coordinates and gradients.
+         */
+        if (optimizationScaling != null) {
+            int len = x.length;
+            for (int i = 0; i < len; i++) {
+                x[i] *= optimizationScaling[i];
+                g[i] /= optimizationScaling[i];
+            }
+        }
+
+        OpenMM_State_destroy(state);
+        return e;
+    }
+
+    /**
+     * <p>
+     * getGradients</p>
+     *
+     * @param g an array of double.
+     */
+    public double[] getGradients(double g[]) {
+        assert (g != null);
+        int n = getNumberOfVariables();
+        if (g.length < n) {
+            g = new double[n];
+        }
+        int index = 0;
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.isActive()) {
+                OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(openMMForces, i);
+                /**
+                 * Convert OpenMM Forces in KJ/Nm into an FFX gradient in
+                 * Kcal/A.
+                 */
+                double gx = -posInNm.x * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+                double gy = -posInNm.y * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+                double gz = -posInNm.z * OpenMM_NmPerAngstrom * OpenMM_KcalPerKJ;
+                if (Double.isNaN(gx) || Double.isInfinite(gx)
+                        || Double.isNaN(gy) || Double.isInfinite(gy)
+                        || Double.isNaN(gz) || Double.isInfinite(gz)) {
+                    String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz);
+                    //logger.severe(message);
+                    throw new EnergyException(message);
+                }
+                a.setXYZGradient(gx, gy, gz);
+                g[index++] = gx;
+                g[index++] = gy;
+                g[index++] = gz;
+            }
+        }
+        return g;
+    }
+
+    private void loadOpenMMPositions() {
+        if (initialPosInNm == null) {
+            initialPosInNm = OpenMM_Vec3Array_create(0);
+        } else {
+            OpenMM_Vec3Array_resize(initialPosInNm, 0);
+        }
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         OpenMM_Vec3.ByValue posInNm = new OpenMM_Vec3.ByValue();
@@ -1023,6 +1179,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             posInNm.z = atom.getZ() * OpenMM_NmPerAngstrom;
             OpenMM_Vec3Array_append(initialPosInNm, posInNm);
         }
+
+        // Load positions into the context.
+        OpenMM_Context_setPositions(context, initialPosInNm);
     }
 
     private void setDefaultPeriodicBoxVectors() {

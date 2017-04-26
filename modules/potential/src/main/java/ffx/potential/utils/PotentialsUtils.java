@@ -518,7 +518,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             ForceFieldEnergy energy = assembly.getPotentialEnergy();
             if (energy == null) {
-                energy = new ForceFieldEnergy(assembly);
+                energy = ForceFieldEnergy.energyFactory(assembly);
                 assembly.setPotential(energy);
             }
             energy.energy(false, true);
@@ -541,7 +541,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             ForceFieldEnergy energy = assembly.getPotentialEnergy();
             if (energy == null) {
-                energy = new ForceFieldEnergy(assembly);
+                energy = ForceFieldEnergy.energyFactory(assembly);
                 assembly.setPotential(energy);
             }
             return energy.energy(false, true);

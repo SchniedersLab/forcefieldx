@@ -340,7 +340,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         for (MolecularAssembly molecularAssembly : molecularAssemblies) {
             ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
             if (forceFieldEnergy == null) {
-                forceFieldEnergy = new ForceFieldEnergy(molecularAssembly);
+                forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly);
                 molecularAssembly.setPotential(forceFieldEnergy);
             }
             forceFieldEnergy.setScaling(null);
