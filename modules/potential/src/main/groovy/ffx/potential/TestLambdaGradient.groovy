@@ -390,8 +390,14 @@ class TestLambdaGradient extends Script {
         }
         boolean debug = (System.getProperty("debug") != null);
 
-        // Turn on computation of lambda derivatives
-        System.setProperty("lambdaterm","true");
+        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
+        boolean lambdaTerm = options.ligAt1 || options.ligAt2 || (options.s1 > 0) || (options.s2 > 0) || nArgs == 1;
+        if (lambdaTerm) {
+            System.setProperty("lambdaterm","true");
+        }
+        if (options.initialLambda < 0.0 || options.initialLambda > 1.0) {
+            options.initialLambda = 0.0;
+        }
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
@@ -483,6 +489,7 @@ class TestLambdaGradient extends Script {
                         if (ai.applyLambda()) {
                             logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                         } else {
+                            logger.fine(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
                             for (int j = 0; j < 3; j++) {
                                 raAdj.add(new Integer(counter + j));
                             }
@@ -526,6 +533,7 @@ class TestLambdaGradient extends Script {
                         if (bi.applyLambda()) {
                             logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                         } else {
+                            logger.fine(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
                             for (int j = 0; j < 3; j++) {
                                 rbAdj.add(counter + j);
                             }

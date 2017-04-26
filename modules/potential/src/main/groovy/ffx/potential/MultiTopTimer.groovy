@@ -96,7 +96,7 @@ class MultiTopTimer extends Script {
         /**
          * -af or --activeFinal ends an active set of atoms for single-topology lambda gradients.
          */
-        @Option(shortName='af', longName='activeFinal', defaultValue='-1', description='Starting active atom (single-topology only).') int actFinal;
+        @Option(shortName='af', longName='activeFinal', defaultValue='-1', description='Final active atom (single-topology only).') int actFinal;
         /**
          * -l or --lambda sets the lambda value to minimize at.
          */
@@ -329,9 +329,13 @@ class MultiTopTimer extends Script {
             System.setProperty("polarization","NONE");
         }
 
-        // Turn on computation of lambda derivatives if l >= 0 or > 1 argument
-        if (options.initialLambda >= 0.0 || nArgs > 1) {
+        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology has lambda specified.
+        boolean lambdaTerm = options.ligAt1 || options.ligAt2 || (options.s1 > 0) || (options.s2 > 0) || (options.initialLambda >= 0.0 && nArgs == 1);
+        if (lambdaTerm) {
             System.setProperty("lambdaterm","true");
+        }
+        if (options.initialLambda < 0.0 || options.initialLambda > 1.0) {
+            options.initialLambda = 0.0;
         }
 
         // Relative free energies via the DualTopologyEnergy class require different
@@ -593,9 +597,9 @@ class MultiTopTimer extends Script {
 
         for (int i=0; i<options.nEvals; i++) {
             long time = -System.nanoTime();
-            //energy.energy(gradient, print);
-            eCall();
+            double theEnergy = eCall();
             time += System.nanoTime();
+            logger.fine(" Returned energy: ${theEnergy}");
             minTime = time < minTime ? time : minTime;
             if (i >= (int) (options.nEvals/2)) {
                 double time2 = time * 1.0E-9;

@@ -1043,9 +1043,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     public void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
-        this.lPow = lPow;
-        this.dlPow = dlPow;
-        this.dl2Pow = dl2Pow;
+        if (lambdaTerm) {
+            this.lPow = lPow;
+            this.dlPow = dlPow;
+            this.dl2Pow = dl2Pow;
+        } else {
+            /**
+             * If the lambdaTerm flag is false, lambda must be set to one.
+             */
+            this.lambda = 1.0;
+            lPow = 1.0;
+            dlPow = 0.0;
+            dl2Pow = 0.0;
+        }
     }
 
     /**

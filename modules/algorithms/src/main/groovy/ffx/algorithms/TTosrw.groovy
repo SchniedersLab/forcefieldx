@@ -741,8 +741,14 @@ class TTosrw extends Script {
             dyn = null;
         }
 
-        // Turn on computation of lambda derivatives.
-        System.setProperty("lambdaterm", "true");
+        // Turn on computation of lambda derivatives if softcore atoms exist or only a single topology.
+        boolean lambdaTerm = options.ligAt1 || options.ligAt2 || (options.s1 > 0) || (options.s2 > 0) || nArgs == 1;
+        if (lambdaTerm) {
+            System.setProperty("lambdaterm","true");
+        }
+        if (options.lambda < 0.0 || options.lambda > 1.0) {
+            options.lambda = 0.0;
+        }
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.

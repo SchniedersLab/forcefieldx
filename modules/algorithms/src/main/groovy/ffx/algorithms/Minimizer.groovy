@@ -324,14 +324,14 @@ class Minimizer extends Script {
             }
         }
 
-        boolean lambdaTerm = false;
-        if ((options.lambda >= 0.0 && options.lambda <= 1.0) || nArgs > 1) {
-            lambdaTerm = true;
-            System.setProperty("lambdaterm", 'true');
-            // Check that options.lambda is within the limit 0..1
-            if (options.lambda < 0.0 || options.lambda > 1.0) {
-                options.lambda = 0.0;
-            }
+
+        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology has lambda specified.
+        boolean lambdaTerm = options.ligAt1 || options.ligAt2 || (options.s1 > 0) || (options.s2 > 0) || (options.lambda >= 0.0 && nArgs == 1);
+        if (lambdaTerm) {
+            System.setProperty("lambdaterm","true");
+        }
+        if (options.lambda < 0.0 || options.lambda > 1.0) {
+            options.lambda = 0.0;
         }
         
         Potential potential;
