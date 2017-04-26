@@ -1024,7 +1024,17 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     @Override
+    public double energy(double[] x) {
+        return energy(x, false);
+    }
+
+    @Override
     public double energy(double[] x, boolean verbose) {
+
+        if (lambdaBondedTerms) {
+            return 0.0;
+        }
+
         /**
          * Unscale the coordinates.
          */
@@ -1060,7 +1070,16 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     @Override
+    public double energyAndGradient(double x[], double g[]) {
+        return energyAndGradient(x, g, false);
+    }
+
+    @Override
     public double energyAndGradient(double x[], double g[], boolean verbose) {
+        if (lambdaBondedTerms) {
+            return 0.0;
+        }
+
         /**
          * Un-scale the coordinates.
          */
