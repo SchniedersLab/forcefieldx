@@ -997,6 +997,7 @@ class TTosrw extends Script {
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
         logger.info(sb.toString());
 
+        logger.info(" Starting energy (before .dyn restart loaded):");
         boolean updatesDisabled = topologies[0].getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
@@ -1005,6 +1006,8 @@ class TTosrw extends Script {
         potential.getCoordinates(x);
         LambdaInterface linter = (LambdaInterface) potential;
         linter.setLambda(lambda);
+
+        potential.energy(x, true);
 
         if (distResidues) {
             logger.info(" Distributing walker conformations.");
