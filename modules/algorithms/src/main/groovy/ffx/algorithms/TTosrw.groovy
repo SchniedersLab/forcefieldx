@@ -746,9 +746,6 @@ class TTosrw extends Script {
         if (lambdaTerm) {
             System.setProperty("lambdaterm","true");
         }
-        if (options.lambda < 0.0 || options.lambda > 1.0) {
-            options.lambda = 0.0;
-        }
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
