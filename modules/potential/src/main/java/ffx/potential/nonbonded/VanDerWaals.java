@@ -912,7 +912,7 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * Get details of the non-bonded cutoff.
-     * 
+     *
      * @return
      */
     public NonbondedCutoff getNonbondedCutoff() {
@@ -979,8 +979,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * Only unshared atoms are treated as extended by VdW since heavy atom radii are assumed constant.
-     * Under AMOEBA'13, this assumption is violated only by Cys-SG, Asp-OD[12], and Glu-OD[12].
+     * Only unshared atoms are treated as extended by VdW since heavy atom radii
+     * are assumed constant. Under AMOEBA'13, this assumption is violated only
+     * by Cys-SG, Asp-OD[12], and Glu-OD[12].
      */
     public void updateEsvLambda() {
         if (!esvTerm) {
@@ -1014,17 +1015,16 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * The trick:
-     *  The setFactors(i,k) method is called every time through the inner VdW
-     *      loop, avoiding an "if (esv)" branch statement.
-     *  A plain OSRW run will have an object of type LambdaFactorsOSRW instead,
-     *      which contains an empty version of setFactors(i,k). The OSRW version
-     *      sets new factors only on lambda updates, in setLambda().
      * The trick: The setFactors(i,k) method is called every time through the
      * inner VdW loop, avoiding an "if (esv)" branch statement. A plain OSRW run
      * will have an object of type LambdaFactorsOSRW instead, which contains an
      * empty version of setFactors(i,k). The OSRW version sets new factors only
-     * on lambda updates, in setLambda().
+     * on lambda updates, in setLambda(). The trick: The setFactors(i,k) method
+     * is called every time through the inner VdW loop, avoiding an "if (esv)"
+     * branch statement. A plain OSRW run will have an object of type
+     * LambdaFactorsOSRW instead, which contains an empty version of
+     * setFactors(i,k). The OSRW version sets new factors only on lambda
+     * updates, in setLambda().
      */
     public class LambdaFactors {
 
@@ -1760,8 +1760,9 @@ public class VanDerWaals implements MaskingInterface,
                                     || esvi || esvk;
                             /**
                              * The setFactors(i,k) method is empty unless ESVs
-                             * are present. If OSRW lambda present, lambdaFactors
-                             * will already have been updated during setLambda().
+                             * are present. If OSRW lambda present,
+                             * lambdaFactors will already have been updated
+                             * during setLambda().
                              */
                             if (soft) {
                                 lambdaFactorsLocal.setFactors(i, k);

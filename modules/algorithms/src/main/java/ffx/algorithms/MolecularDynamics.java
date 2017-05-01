@@ -640,7 +640,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 logger.log(Level.WARNING, message, e);
             }
         }
-        logger.info("Done with an MD round.");
+        logger.info(" Done with an MD round.");
     }
 
     /**
