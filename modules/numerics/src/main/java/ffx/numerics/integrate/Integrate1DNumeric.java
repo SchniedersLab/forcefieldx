@@ -37,6 +37,7 @@
  */
 package ffx.numerics.integrate;
 
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 /**
@@ -52,6 +53,7 @@ import java.util.stream.IntStream;
  */
 public class Integrate1DNumeric {
 
+    private static final Logger logger = Logger.getLogger(Integrate1DNumeric.class.getName());
     private static final double ONE_THIRD = (1.0 / 3.0); // Used for Simpson's rule
     private static final double BOOLE_FACTOR = (2.0 / 45.0);
     
@@ -643,6 +645,140 @@ public class Integrate1DNumeric {
                 break;
         }
         return area;
+    }
+    
+    /**
+     * Generic caller for 1D integration schemes given an IntegrationType.
+     * @param data To integrate
+     * @param side Integrate from side
+     * @param type Scheme to use
+     * @return Numeric integral
+     */
+    public static double integrateData(DataSet data, IntegrationSide side, IntegrationType type) {
+        switch (type) {
+            case RECTANGULAR:
+                return rectangular(data, side);
+            case TRAPEZOIDAL:
+                return trapezoidal(data, side);
+            case SIMPSONS:
+                return simpsons(data, side);
+            case BOOLE:
+                return booles(data, side);
+            default:
+                logger.warning(String.format(" Integration type %s not recognized! Defaulting to Simpson's integration", type));
+                return simpsons(data, side);
+        }
+    }
+    
+    /**
+     * Returns the contribution of each bin to the overall integral as an array;
+     * will be most accurate at break-points for the integration type. Overall 
+     * integral is the sum of the array of doubles, plus or minus minor rounding
+     * errors.
+     * 
+     * If N is a breakpoint for Boole's rule:
+     * N+1 is a trapezoid from N to N+1.
+     * N+2 is Simpson's from N to N+2, minus the prior trapezoid (N+1).
+     * N+3 is 4-point integration from N to N+3, minus the N to N+2 parabola.
+     * N+4 is the full Boole's Rule from N to N+4, minus the N to N+3 4-point 
+     * integral.
+     * 
+     * @param data Data to integrate
+     * @param side Side to integrate from
+     * @param maxType Maximum rule to be used
+     * @return Per-bin contributions to integral.
+     */
+    public static double[] integrateByBins(DataSet data, IntegrationSide side, IntegrationType maxType) {
+        boolean halfWide = data.halfWidthEnds();
+        double[] fX = data.getAllFxPoints();
+        int numPoints = data.numPoints();
+        double width = data.binWidth();
+        double[] vals = new double[numPoints];
+        
+        int lb = halfWide ? 1 : 0;
+        int ub = halfWide ? numPoints - 2 : numPoints - 1;
+        
+        int increment = maxType.pointsNeeded() - 1;
+        increment = Math.max(1, increment); // Deal w/ rectangle integration.
+        
+        switch (side) {
+            case RIGHT:
+                vals[ub] = width * fX[ub]; // Begin with rectangle.
+                
+                /**
+                 * For each bin, its contribution to this sub-window's value is
+                 * the integral from (start to bin) minus the integral from 
+                 * (start to prior bin).
+                 */
+                for (int i = ub - 1; i >= lb; i--) {
+                    int fromUB = ub - i - 1;
+                    fromUB /= increment;
+                    fromUB *= increment;
+                    int lastBegin = ub - fromUB;
+                    
+                    double val = finishIntegration(data, side, i, lastBegin, maxType);
+                    val -= finishIntegration(data, side, i+1, lastBegin, maxType);
+                    vals[i] = val;
+                }
+                
+                vals[ub-1] -= vals[ub]; // Remove double-counting at start.
+                
+                if (halfWide) {
+                    switch(maxType) {
+                        case RECTANGULAR:
+                            vals[1] += 0.5 * width * fX[1];
+                            vals[numPoints-1] = (0.5 * width * fX[numPoints-1]);
+                            break;
+                        default:
+                            vals[0] = 0.25 * width * fX[0];
+                            vals[1] += 0.25 * width * fX[1];
+                            vals[numPoints-2] += (0.25 * width * fX[numPoints-2]);
+                            vals[numPoints-1] = (0.25 * width * fX[numPoints-1]);
+                            break;
+                    }
+                }
+                break;
+            case LEFT:
+            default:
+                int shift = halfWide ? 1 : 0;
+                vals[lb] = width * fX[lb]; // Begin with rectangle.
+                
+                /**
+                 * For each bin, its contribution to this sub-window's value is
+                 * the integral from (start to bin) minus the integral from 
+                 * (start to prior bin).
+                 */
+                for (int i = lb + 1; i <= ub; i++) {
+                    // Remove remainder via division-and-multiplication.
+                    int lastBegin = ((i-1-shift) / increment);
+                    lastBegin *= increment;
+                    lastBegin += shift;
+                    
+                    double val = finishIntegration(data, side, lastBegin, i, maxType);
+                    val -= finishIntegration(data, side, lastBegin, i-1, maxType);
+                    vals[i] = val;
+                }
+                
+                vals[lb + 1] -= vals[lb]; // Remove double-counting at start.
+                
+                if (halfWide) {
+                    switch(maxType) {
+                        case RECTANGULAR:
+                            vals[0] = 0.5 * width * fX[0];
+                            vals[numPoints-2] += (0.5 * width * fX[numPoints-2]);
+                            break;
+                        default:
+                            vals[0] = 0.25 * width * fX[0];
+                            vals[1] += 0.25 * width * fX[1];
+                            vals[numPoints-2] += (0.25 * width * fX[numPoints-2]);
+                            vals[numPoints-1] = (0.25 * width * fX[numPoints-1]);
+                            break;
+                    }
+                }
+                break;
+        }
+        
+        return vals;
     }
 
     /**
