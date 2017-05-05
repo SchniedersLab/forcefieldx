@@ -225,10 +225,10 @@ class TTosrw extends Script {
         @Option(shortName='x', longName='friction', defaultValue='1.0e-18',
             description='Lambda particle friction') double lamFric;
         /**
-         * -p or --npt enables use of a barostat.
+         * -p or --npt Specify use of a MC Barostat at the given pressure (default 1.0 atm).
          */
-        @Option(shortName='p', longName='npt', defaultValue='false',
-            description='Use NPT') boolean npt;
+        @Option(shortName='p', longName='npt', defaultValue='1.0',
+            description='Specify use of a MC Barostat at the given pressure (default 1.0 atm)') double pressure;
         /**
          * -sym or --symOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
          */
@@ -638,16 +638,6 @@ class TTosrw extends Script {
             threadsPer = threadsAvail / numParallel;
         }
 
-        boolean resetNumSteps = true;
-
-        if (options.resetStepsString) {
-            if (options.nEquil > 0) {
-                logger.warning(" Ignoring resetNumSteps input due to equilibration\n");
-            } else if (options.resetStepsString.equalsIgnoreCase("false")) {
-                resetNumSteps = false;
-            }
-        }
-
         if (options.ligAt1) {
             ranges1 = options.ligAt1.tokenize(".");
         }
@@ -696,7 +686,6 @@ class TTosrw extends Script {
         }
 
         String filename = arguments[0];
-        logger.info(filename);
         File structureFile = new File(FilenameUtils.normalize(filename));
         structureFile = new File(structureFile.getAbsolutePath());
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
@@ -992,6 +981,7 @@ class TTosrw extends Script {
             break;
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
+        sb.append("\n");
         logger.info(sb.toString());
 
         logger.info(" Starting energy (before .dyn restart loaded):");
@@ -1040,6 +1030,16 @@ class TTosrw extends Script {
                 break;
             }
         }
+
+        boolean resetNumSteps = true;
+        if (options.resetStepsString) {
+            if (options.nEquil > 0) {
+                logger.info(" Ignoring resetNumSteps input due to equilibration");
+            } else if (options.resetStepsString.equalsIgnoreCase("false")) {
+                resetNumSteps = false;
+            }
+        }
+
         osrw = new TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart,
             topologies[0].getProperties(), options.temp, options.dt, options.report,
             options.write, options.async, resetNumSteps, aFuncts.getDefaultListener());
@@ -1071,10 +1071,15 @@ class TTosrw extends Script {
             osrw.setBiasMagnitude(options.biasMag);
         }
 
-        // Create the MolecularDynamics instance.
-
-        if (options.npt) {
+        if (options.pressure) {
             Barostat barostat = new Barostat(topologies[0], osrw);
+            double p = 1.0;
+            try {
+                p = new Double(options.pressure);
+            } catch (Exception e) {
+                //
+            }
+            barostat.setPressure(p);
             barostat.setMaxDensity(options.maxDensity);
             barostat.setMinDensity(options.minDensity);
             double dens = barostat.density();
@@ -1089,6 +1094,7 @@ class TTosrw extends Script {
             potential = osrw;
         }
 
+        // Create the MolecularDynamics instance.
         MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
             topologies[0].getProperties(), null, options.tstat, options.integrator);
         for (int i = 1; i < topologies.size(); i++) {
@@ -1110,7 +1116,13 @@ class TTosrw extends Script {
                 fileType, restartInterval, dyn);
         } else {
             logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
-            if (!resetNumSteps) {
+            boolean resetSteps = true;
+            if (options.resetStepsString) {
+                if (options.resetStepsString.equalsIgnoreCase("false")) {
+                    resetSteps = false;
+                }
+            }
+            if (!resetSteps) {
                 int nEnergyCount = osrw.getEnergyCount();
                 if (nEnergyCount > 0) {
                     nSteps -= nEnergyCount;

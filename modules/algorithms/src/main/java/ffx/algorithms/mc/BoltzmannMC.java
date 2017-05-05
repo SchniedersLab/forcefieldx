@@ -41,31 +41,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
-import org.apache.commons.math3.util.FastMath;
+
+import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The BoltzmannMC abstract class is a skeleton for Boltzmann-weighted Metropolis
- * Monte Carlo simulations.
+ * The BoltzmannMC abstract class is a skeleton for Boltzmann-weighted
+ * Metropolis Monte Carlo simulations.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  */
-public abstract class BoltzmannMC  implements MetropolisMC {
+public abstract class BoltzmannMC implements MetropolisMC {
+
     private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
     public static final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
-    
+
     private double temperature = 298.15; // Room temperature (also SATP).
     private double kbTinv = -1.0 / (BOLTZMANN * temperature); // Constant factor for Monte Carlo moves (-1/kbT)
     private boolean print = true;
-    
+
     private double e1 = 0.0;
     private double e2 = 0.0;
     private double lastE = 0.0;
-    
+
     private boolean lastAccept = false;
-    
+
     /**
-     * Criterion for accept/reject a move; intended to be used mostly internally.
+     * Criterion for accept/reject a move; intended to be used mostly
+     * internally.
+     *
      * @param e1 Initial energy
      * @param e2 Final energy
      * @return If move accepted
@@ -76,11 +80,12 @@ public abstract class BoltzmannMC  implements MetropolisMC {
             return true;
         } else {
             // p(X) = exp(-U(X)/kb*T)
-            double prob = FastMath.exp(kbTinv * (e2 - e1));
-            
+            double prob = exp(kbTinv * (e2 - e1));
+
             assert (prob >= 0.0 && prob <= 1.0) : "Probability of a Monte Carlo move up in energy should be 0-1";
-            
+
             double trial = ThreadLocalRandom.current().nextDouble();
+
             return (trial <= prob);
         }
     }
@@ -90,39 +95,39 @@ public abstract class BoltzmannMC  implements MetropolisMC {
         temperature = temp;
         kbTinv = -1.0 / (BOLTZMANN * temperature);
     }
-    
+
     @Override
     public void setPrint(boolean print) {
         this.print = print;
     }
-    
+
     @Override
     public double getE1() {
         return e1;
     }
-    
+
     @Override
     public double getE2() {
         return e2;
     }
-    
+
     @Override
     public double lastEnergy() {
         return lastE;
     }
-    
+
     @Override
     public boolean mcStep(MCMove move) {
         return mcStep(move, currentEnergy());
     }
-    
+
     @Override
     public boolean mcStep(MCMove move, double en1) {
         List<MCMove> moveList = new ArrayList<>(1);
         moveList.add(move);
         return mcStep(moveList, en1);
     }
-    
+
     @Override
     public boolean mcStep(List<MCMove> moves) {
         return mcStep(moves, currentEnergy());
@@ -133,7 +138,7 @@ public abstract class BoltzmannMC  implements MetropolisMC {
      * moves and a defined starting energy. The list of MCMoves should be of a
      * type with O(1) element access, as the current implementation utilizes an
      * indexed for loop.
-     * 
+     *
      * @param moves Moves to try
      * @param en1 Starting energy
      * @return If step accepted
@@ -142,13 +147,13 @@ public abstract class BoltzmannMC  implements MetropolisMC {
     public boolean mcStep(List<MCMove> moves, double en1) {
         storeState();
         e1 = en1;
-        
+
         int nMoves = moves.size();
         for (int i = 0; i < nMoves; i++) {
             MCMove movei = moves.get(i);
             movei.move();
         }
-        
+
         lastE = currentEnergy(); // Is reset to e1 if move rejected.
         e2 = lastE;
         //++nTotal;
@@ -171,26 +176,27 @@ public abstract class BoltzmannMC  implements MetropolisMC {
             return false;
         }
     }
-    
+
     @Override
     public double getTemperature() {
         return temperature;
     }
-    
+
     @Override
     public boolean getAccept() {
         return lastAccept;
     }
-    
+
     /**
      * Must return the current energy of the system.
+     *
      * @return Current system energy
      */
     protected abstract double currentEnergy();
-    
+
     /**
-     * Store the state for reverting a move. Must be properly implemented for 
-     * revertStep() to function properly; otherwise, the implementation of 
+     * Store the state for reverting a move. Must be properly implemented for
+     * revertStep() to function properly; otherwise, the implementation of
      * revertStep() should throw an OperationNotSupportedException.
      */
     protected abstract void storeState();
