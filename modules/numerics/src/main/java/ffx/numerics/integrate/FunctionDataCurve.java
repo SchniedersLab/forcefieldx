@@ -75,7 +75,7 @@ public abstract class FunctionDataCurve implements DataSet {
      * @return Exact finite integral
      */
     public double analyticalIntegral() {
-        return anaylticalIntegral(lowerBound(), upperBound());
+        return analyticalIntegral(lowerBound(), upperBound());
     }
     
     /**
@@ -84,7 +84,7 @@ public abstract class FunctionDataCurve implements DataSet {
      * @param ub Upper integration bound
      * @return Exact finite integral of range
      */
-    public double anaylticalIntegral(double lb, double ub) {
+    public double analyticalIntegral(double lb, double ub) {
         return integralAt(ub) - integralAt(lb);
     }
     
