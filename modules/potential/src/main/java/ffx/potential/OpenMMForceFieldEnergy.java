@@ -134,6 +134,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private PointerByReference state;
     private PointerByReference initialPosInNm;
     private PointerByReference openMMForces;
+    private PointerByReference openMM_State_getPositions;
 
     /**
      * OpenMMForceFieldEnergy constructor.
@@ -1220,6 +1221,19 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         // Load positions into the context.
         OpenMM_Context_setPositions(context, initialPosInNm);
     }
+    
+    public void updateOpenMMPositions(PointerByReference state){
+        openMM_State_getPositions = OpenMM_State_getPositions(state);
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++){
+            OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(openMM_State_getPositions, i);
+            Atom atom = atoms[i];
+            atom.moveTo(posInNm.x * OpenMM_AngstromsPerNm, posInNm.y * OpenMM_AngstromsPerNm, posInNm.z * OpenMM_AngstromsPerNm);
+        }
+        
+        //OpenMM_Context_setPositions(context, openMM_State_getPositions);
+    }
 
     private void setDefaultPeriodicBoxVectors() {
 
@@ -1241,5 +1255,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             c.z = crystal.c * OpenMM_NmPerAngstrom;
             OpenMM_System_setDefaultPeriodicBoxVectors(openMMSystem, a, b, c);
         }
+    }
+    
+    public PointerByReference getIntegrator(){
+        return openMMIntegrator;
+    }
+    
+    public PointerByReference getContext(){
+        return context;
     }
 }

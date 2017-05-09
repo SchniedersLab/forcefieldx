@@ -37,7 +37,10 @@
  */
 package ffx.algorithms.mc;
 
-import ffx.potential.MolecularAssembly;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
+
 import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
@@ -45,24 +48,22 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Torsion;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Logger;
 
 /**
- * Represents a random chi[0] spin of the target residue.
- * For use with RosenbluthRotamerMC.
+ * Represents a random chi[0] spin of the target residue. For use with
+ * RosenbluthRotamerMC.
+ *
  * @author S. LuCore
  */
 public class RosenbluthChi0Move implements MCMove {
+
     private static final Logger logger = Logger.getLogger(RosenbluthChi0Move.class.getName());
-    
+
     private final Residue target;
     private final ResidueState origState;
     private final Rotamer newState;
     public final double theta;
-    
+
     public RosenbluthChi0Move(Residue target) {
         this.target = target;
         AminoAcid3 name = AminoAcid3.valueOf(target.getName());
@@ -73,23 +74,23 @@ public class RosenbluthChi0Move implements MCMove {
         // Need to add sigma values to construct a new Rotamer with these chis.
         double values[] = new double[chi.length * 2];
         for (int i = 0; i < chi.length; i++) {
-            int ii = 2*i;
+            int ii = 2 * i;
             values[ii] = chi[i];
-            values[ii+1] = 0.0;
+            values[ii + 1] = 0.0;
         }
         newState = new Rotamer(name, values);
     }
-    
+
     /**
-     * Performs the move associated with this MCMove.
-     * Also updates chi values in associated Torsion objects.
+     * Performs the move associated with this MCMove. Also updates chi values in
+     * associated Torsion objects.
      */
     @Override
     public void move() {
         RotamerLibrary.applyRotamer(target, newState);
         updateTorsions();
     }
-    
+
     /**
      * Reverts the last applied move() call.
      */
@@ -98,7 +99,7 @@ public class RosenbluthChi0Move implements MCMove {
         target.revertState(origState);
         updateTorsions();
     }
-    
+
     private void updateTorsions() {
         List<ROLS> torsions = target.getTorsionList();
         for (ROLS rols : torsions) {
@@ -111,5 +112,5 @@ public class RosenbluthChi0Move implements MCMove {
         return String.format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Theta: %3.2f",
                 target.toString(), theta);
     }
-    
+
 }
