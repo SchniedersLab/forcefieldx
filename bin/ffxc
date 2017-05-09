@@ -101,8 +101,8 @@ JLP=modules/numerics/src/main/java/ffx/numerics/fft
 #EXTRA_JVM_ARGUMENTS="-showversion -XX:+PrintCommandLineFlags -XX:+PrintFlagsFinal -server -XX:-LoopLimitCheck -XX:LoopUnrollLimit=100 -XX:LoopUnrollMin=2 -XX:+UseUnalignedLoadStores -XX:+UseLargePages -XX:+AlwaysPreTouch -XX:+TieredCompilation -XX:+UseStoreImmI16 -XX:+UseXmmI2D -XX:+UseXmmI2F -XX:UseSSE=3 -XX:+DoEscapeAnalysis -XX:+NUMAStats -XX:+ForceNUMA -XX:+UseNUMA -XX:+UseCompressedOops -XX:+OptimizeStringConcat -XX:+UseStringCache -XX:+AggressiveOpts -XX:+UseBiasedLocking -XX:+UseFastAccessorMethods -XX:+UseTLAB -XX:+UseThreadPriorities -Xms128M -Xmx2G -Xss1M -XX:MaxPermSize=256M"
 
 # OpenMM Environment variables
-export OPENMM_PLUGIN_DIR="/Applications/anaconda3/pkgs/openmm-7.1.0rc1-py36_0/lib/plugins"
-export JNA_LIBRARY_PATH="/Applications/anaconda3/pkgs/openmm-7.1.0rc1-py36_0/lib"
+export OPENMM_PLUGIN_DIR="/Users/hbernabe/anaconda/pkgs/openmm-7.1.0rc1-py36_0/lib/plugins"
+export JNA_LIBRARY_PATH="/Users/hbernabe/anaconda/pkgs/openmm-7.1.0rc1-py36_0/lib"
 
 EXTRA_JVM_ARGUMENTS="-Xms4G -Xmx4G -Xss1M -Djna.library.path=$JNA_LIBRARY_PATH"
 
@@ -117,8 +117,6 @@ if $cygwin; then
   echo " Classpath: $CLASSPATH"
   EXTRA_JVM_ARGUMENTS="-Xms2G -Xmx2G -Xss1M"
 fi
-
-export OPENMM_PLUGIN_DIR="/Applications/anaconda3/pkgs/openmm-7.1.0rc1-py36_0/lib/plugins"
 
 exec "$JAVACMD" $JAVA_OPTS \
   $EXTRA_JVM_ARGUMENTS \
