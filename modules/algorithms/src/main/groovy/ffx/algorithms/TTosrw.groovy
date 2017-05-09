@@ -227,8 +227,8 @@ class TTosrw extends Script {
         /**
          * -p or --npt Specify use of a MC Barostat at the given pressure (default 1.0 atm).
          */
-        @Option(shortName='p', longName='npt', defaultValue='1.0',
-            description='Specify use of a MC Barostat at the given pressure (default 1.0 atm)') double pressure;
+        @Option(shortName='p', longName='npt', defaultValue='0',
+            description='Specify use of a MC Barostat at the given pressure (default of 0 = disabled)') double pressure;
         /**
          * -sym or --symOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
          */
@@ -1073,13 +1073,13 @@ class TTosrw extends Script {
 
         if (options.pressure) {
             Barostat barostat = new Barostat(topologies[0], osrw);
-            double p = 1.0;
+            /*double p = 1.0;
             try {
                 p = new Double(options.pressure);
             } catch (Exception e) {
                 //
-            }
-            barostat.setPressure(p);
+            }*/
+            barostat.setPressure(options.pressure);
             barostat.setMaxDensity(options.maxDensity);
             barostat.setMinDensity(options.minDensity);
             double dens = barostat.density();
