@@ -82,7 +82,7 @@ class Biotype extends Script {
         MolecularAssembly activeAssembly = assemblies[0]
         functions.energy(activeAssembly)
 
-        String mol = FilenameUtils.getBaseName(xyzname);
+        String mol = FilenameUtils.getBaseName(modelFilename);
         List atoms = activeAssembly.getAtomList();
         int index = 1;
         for (Atom atom : atoms) {

@@ -38,7 +38,7 @@
 package ffx.algorithms.mc;
 
 /**
- * The MCMove interface defines the basic functionality of a Monte Carlo move; 
+ * The MCMove interface defines the basic functionality of a Monte Carlo move;
  * that it can apply its move and revert it.
  *
  * @author Michael J. Schnieders
@@ -47,12 +47,12 @@ package ffx.algorithms.mc;
  *
  */
 public interface MCMove {
-    
+
     /**
      * Performs the move associated with this MCMove.
      */
     public void move();
-    
+
     /**
      * Reverts the last applied move() call. Returns the same energy change as
      * described above (with the same sign).

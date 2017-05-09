@@ -83,6 +83,7 @@ import ffx.crystal.Crystal;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.ImproperTorsion;
 import ffx.potential.bonded.OutOfPlaneBend;
 import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.bonded.StretchBend;
@@ -98,7 +99,10 @@ import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsForm;
 import ffx.potential.parameters.AngleType;
+import ffx.potential.parameters.AngleType.AngleFunction;
 import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.BondType.BondFunction;
+import ffx.potential.parameters.ImproperTorsionType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.PiTorsionType;
@@ -180,6 +184,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         // Add Torsion Force.
         addTorsions();
+
+        // Add Improper Torsion Force.
+        addImpropers();
 
         // Add Pi-Torsion Force.
         addPiTorsions();
@@ -307,12 +314,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     private void addBonds() {
         Bond bonds[] = ffxForceFieldEnergy.getBonds();
-        int nBonds = bonds.length;
-
-        if (nBonds < 1) {
+        if (bonds == null || bonds.length < 1) {
             return;
         }
-
+        int nBonds = bonds.length;
         PointerByReference amoebaBondForce = OpenMM_AmoebaBondForce_create();
         double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
@@ -326,10 +331,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     kParameterConversion * bondType.forceConstant * BondType.units);
 
         }
-        OpenMM_AmoebaBondForce_setAmoebaGlobalBondCubic(amoebaBondForce,
-                BondType.cubic / OpenMM_NmPerAngstrom);
-        OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(amoebaBondForce,
-                BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+
+        if (bonds[0].bondType.bondFunction == BondFunction.QUARTIC) {
+            OpenMM_AmoebaBondForce_setAmoebaGlobalBondCubic(amoebaBondForce,
+                    BondType.cubic / OpenMM_NmPerAngstrom);
+            OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(amoebaBondForce,
+                    BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+        }
 
         OpenMM_System_addForce(openMMSystem, amoebaBondForce);
         logger.log(Level.INFO, " Added bonds ({0})", nBonds);
@@ -362,10 +370,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_AmoebaAngleForce_addAngle(amoebaAngleForce, i1, i2, i3,
                     angle.angleType.angle[nh], OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant);
         }
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleCubic(amoebaAngleForce, AngleType.cubic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleQuartic(amoebaAngleForce, AngleType.quartic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAnglePentic(amoebaAngleForce, AngleType.quintic);
-        OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic(amoebaAngleForce, AngleType.sextic);
+
+        if (angles[0].angleType.angleFunction == AngleFunction.SEXTIC) {
+            OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleCubic(amoebaAngleForce, AngleType.cubic);
+            OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleQuartic(amoebaAngleForce, AngleType.quartic);
+            OpenMM_AmoebaAngleForce_setAmoebaGlobalAnglePentic(amoebaAngleForce, AngleType.quintic);
+            OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic(amoebaAngleForce, AngleType.sextic);
+        }
+
         OpenMM_System_addForce(openMMSystem, amoebaAngleForce);
         logger.log(Level.INFO, " Added angles ({0})", nAngles);
     }
@@ -510,6 +522,31 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         OpenMM_System_addForce(openMMSystem, amoebaTorsionForce);
         logger.log(Level.INFO, " Added Torsions ({0})", nTorsions);
+    }
+
+    private void addImpropers() {
+        ImproperTorsion impropers[] = ffxForceFieldEnergy.getImproperTorsions();
+        if (impropers == null || impropers.length < 1) {
+            return;
+        }
+        int nImpropers = impropers.length;
+        PointerByReference amoebaTorsionForce = OpenMM_PeriodicTorsionForce_create();
+
+        for (int i = 0; i < nImpropers; i++) {
+            ImproperTorsion improperTorsion = impropers[i];
+            int a1 = improperTorsion.getAtom(0).getXyzIndex() - 1;
+            int a2 = improperTorsion.getAtom(1).getXyzIndex() - 1;
+            int a3 = improperTorsion.getAtom(2).getXyzIndex() - 1;
+            int a4 = improperTorsion.getAtom(3).getXyzIndex() - 1;
+            ImproperTorsionType improperTorsionType = improperTorsion.improperType;
+            OpenMM_PeriodicTorsionForce_addTorsion(amoebaTorsionForce,
+                    a1, a2, a3, a4, improperTorsionType.periodicity,
+                    improperTorsionType.phase * OpenMM_RadiansPerDegree,
+                    OpenMM_KJPerKcal * improperTorsion.units *
+                            improperTorsion.scaleFactor * improperTorsionType.k);
+        }
+        OpenMM_System_addForce(openMMSystem, amoebaTorsionForce);
+        logger.log(Level.INFO, " Added improper torsions ({0})", nImpropers);
     }
 
     private void addPiTorsions() {

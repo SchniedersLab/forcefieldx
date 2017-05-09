@@ -436,7 +436,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
          */
         if (!aperiodic) {
             this.crystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, cutOff2);
-            logger.info(format("\n Density:                              %6.3f (g/cc)", crystal.getDensity(molecularAssembly.getMass())));
+            logger.info(format("\n Density:                                %6.3f (g/cc)", crystal.getDensity(molecularAssembly.getMass())));
             logger.info(crystal.toString());
         } else {
             this.crystal = unitCell;
@@ -2688,6 +2688,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     public Angle[] getAngles() {
         return angles;
+    }
+
+    public ImproperTorsion[] getImproperTorsions() {
+        return improperTorsions;
     }
 
     public UreyBradley[] getUreyBradleys() {

@@ -3,23 +3,23 @@ package ffx.potential
 // SAVE AS XYZ
 
 // Apache Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils
+import org.apache.commons.configuration.CompositeConfiguration
 
 // Groovy Imports
 import groovy.cli.Option
-import groovy.util.CliBuilder;
+import groovy.util.CliBuilder
 import groovy.cli.Unparsed
 
 // FFX Imports
 import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
 import ffx.crystal.SymOp
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.ForceField;
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
+import ffx.potential.parameters.ForceField
 import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils;
+import ffx.potential.utils.PotentialsUtils
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file
@@ -40,32 +40,36 @@ class PrepareSpaceGroups extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help;
+        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
         /**
          * -r or --PDB only consider space groups ranked above the supplied cut-off in the Protein Databank.
          */
         @Option(longName='PDB', shortName='r', defaultValue='231',
-            description='Only consider space groups populated above the specified percentage in the CSD.') int rank;
+            description='Only consider space groups populated above the specified percentage in the Protein Databank.') int rank
         /**
          * -p or --CSD only consider space groups populated above the specified percentage in the CSD.
          */
         @Option(longName='CSD', shortName='p', defaultValue='0.0',
-            description='Only consider space groups populated above the specified percentage in the CSD.') double percent;
+            description='Only consider space groups populated above the specified percentage in the CSD.') double percent
         /**
          * -c or --chiral to create directories only for chiral space groups.
          */
         @Option(longName='chiral', shortName='c', defaultValue='false',
-            description='Only consider chiral space groups.') boolean chiral;
+            description='Only consider chiral space groups.') boolean chiral
         /**
-         * -sym or --symOp random Cartesian symmetry operator will use the specified translation range -X .. X (no default).
+         * -sym or --symOp random Cartesian symmetry operator will use the specified translation range -Arg .. Arg (default = 1.0 A).
          */
         @Option(shortName='rsym', longName='randomSymOp', defaultValue='1.0',
-            description='Random Cartesian symmetry operator with a random translation in the range -X .. X.') double symScalar
+            description='Random Cartesian sym op will choose a translation in the range -Arg .. Arg (default = 1.0A).') double symScalar
         /**
          * -d or --density random unit cell axes will be used achieve the specified density (g/cc).
          */
         @Option(shortName='d', longName='density', defaultValue='1.0',
-            description='Unit cell density the specified density (g/cc).') double density
+            description='Random unit cell axes will be used to achieve the specified density (default = 1.0 g/cc).') double density
+        /**
+         * -sg or --spacegroup prepare a directory for a single spacegroup (no default).
+         */
+        @Option(shortName='sg', longName='spacegroup', description='Prepare a directory for a single spacegroup.') String sg
         /**
          * The final argument(s) should be one or more filenames.
          */
@@ -134,6 +138,17 @@ class PrepareSpaceGroups extends Script {
 
         for (int num = 1; num <=230; num++) {
             SpaceGroup spacegroup = SpaceGroup.spaceGroupFactory(num)
+            if (options.sg) {
+                SpaceGroup spacegroup2 = SpaceGroup.spaceGroupFactory(options.sg);
+                if (spacegroup2 == null) {
+                    logger.info(String.format("\n Space group %s was not recognized.\n", sg));
+                    return;
+                }
+                if (spacegroup2.number != spacegroup.number) {
+                    continue;
+                }
+            }
+
             if (options.chiral && !spacegroup.isChiral()) {
                 continue
             }
@@ -146,7 +161,7 @@ class PrepareSpaceGroups extends Script {
                 continue
             }
 
-            logger.info(String.format("\n Preparing %s (%7.4f percent of the CSD, %d PDB Rank)",
+            logger.info(String.format("\n Preparing %s (CSD percent: %7.4f, PDB Rank: %d)",
                     spacegroup.shortName, spacegroup.csdPercent[num - 1], SpaceGroup.getPDBRank(spacegroup)));
 
             // Create the directory.
