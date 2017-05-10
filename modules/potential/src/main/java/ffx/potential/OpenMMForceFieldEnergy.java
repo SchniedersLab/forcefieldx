@@ -78,6 +78,9 @@ import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_Polar
 import static simtk.openmm.OpenMMLibrary.*;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_ParticlePair;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_ParticlePairNoExclusions;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_SingleParticle;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.*;
 
 import ffx.crystal.Crystal;
@@ -116,7 +119,6 @@ import ffx.potential.utils.EnergyException;
 
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
-import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.DIAMETER;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
@@ -702,10 +704,15 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         if (vdW == null) {
             return;
         }
+        /**
+         * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
+         * for epsilon is supported.
+         */
         VanDerWaalsForm vdwForm = vdW.getVDWForm();
         if (vdwForm.vdwType != LENNARD_JONES
                 || vdwForm.radiusRule != ARITHMETIC
                 || vdwForm.epsilonRule != GEOMETRIC) {
+            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
             return;
         }
 
@@ -746,7 +753,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
          * Define 1-4 scale factors.
          */
         double lj14Scale = vdwForm.getScale14();
-        double coulomb14Scale =  1.0 / 1.2;
+        double coulomb14Scale = 1.0 / 1.2;
 
         ParticleMeshEwald pme = ffxForceFieldEnergy.getPmeNode();
         Bond bonds[] = ffxForceFieldEnergy.getBonds();
@@ -771,11 +778,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         if (crystal.aperiodic()) {
             OpenMM_NonbondedForce_setNonbondedMethod(nonBondedForce,
                     OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_NoCutoff);
-            logger.log(Level.INFO, " Aperiodic nonbonded force.");
         } else {
             OpenMM_NonbondedForce_setNonbondedMethod(nonBondedForce,
                     OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_Ewald);
-            logger.log(Level.INFO, " Periodic nonbonded force.");
             if (pme != null) {
                 double aEwald = pme.getEwaldCoefficient();
                 int nx = pme.getReciprocalSpace().getXDim();
@@ -786,15 +791,85 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
 
         NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
-        // OpenMM_NonbondedForce_setCutoffDistance(nonBondedForce, 1000.0);
+        OpenMM_NonbondedForce_setCutoffDistance(nonBondedForce, nonbondedCutoff.off);
         // Turn off vdw switching
         OpenMM_NonbondedForce_setUseSwitchingFunction(nonBondedForce, OpenMM_False);
         OpenMM_NonbondedForce_setUseDispersionCorrection(nonBondedForce, OpenMM_False);
 
         OpenMM_Force_setForceGroup(nonBondedForce, 1);
         OpenMM_System_addForce(openMMSystem, nonBondedForce);
-        logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force (%5.3f, %5.3f, %5.3f).",
-                coulomb14Scale, lj14Scale, nonbondedCutoff.off));
+        logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force."));
+
+        GeneralizedKirkwood gk = ffxForceFieldEnergy.getGK();
+        if (gk != null) {
+            addGBForce();
+        }
+    }
+
+    private void addGBForce() {
+        GeneralizedKirkwood gk = ffxForceFieldEnergy.getGK();
+        if (gk == null) {
+            return;
+        }
+
+        PointerByReference customGBForce = OpenMM_CustomGBForce_create();
+        OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "q");
+        OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "radius");
+        OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "scale");
+        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "solventDielectric", 78.3);
+        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "soluteDielectric", 1.0);
+        OpenMM_CustomGBForce_addComputedValue(customGBForce, "I",
+                "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
+                + "U=r+sr2;"
+                + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
+                + "L=step(or1-D)*or1+(1-step(or1-D))*D;"
+                + "D=step(r-sr2)*(r-sr2)+(1-step(r-sr2))*(sr2-r);"
+                + "sr2 = scale2*or2;"
+                + "or1 = radius1-0.009; or2 = radius2-0.009",
+                OpenMM_CustomGBForce_ParticlePairNoExclusions);
+
+        OpenMM_CustomGBForce_addComputedValue(customGBForce, "B",
+                "1/(1/or-tanh(1*psi-0.8*psi^2+4.85*psi^3)/radius);"
+                + "psi=I*or; or=radius-0.009",
+                OpenMM_CustomGBForce_SingleParticle);
+
+        /**
+         * Single particle term is the Born self-energy plus a surface tension.
+         */
+        // String surfaceTension = "28.3919551";
+        String surfaceTension = "0.0";
+        OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
+                surfaceTension +
+                "*(radius+0.14)^2*(radius/B)^6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
+                OpenMM_CustomGBForce_SingleParticle);
+
+        /**
+         * Particle pair term is the generalized Born cross term.
+         */
+        OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
+                "-138.935456*(1/soluteDielectric-1/solventDielectric)*q1*q2/f;"
+                + "f=sqrt(r^2+B1*B2*exp(-r^2/(2.455*B1*B2)))",
+                OpenMM_CustomGBForce_ParticlePair);
+
+        double overlapScale[] = gk.getOverlapScale();
+        double baseRadii[] = gk.getBaseRadii();
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+
+        PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
+
+        for (int i = 0; i < nAtoms; i++) {
+            MultipoleType multipoleType = atoms[i].getMultipoleType();
+            OpenMM_DoubleArray_append(doubleArray, multipoleType.charge);
+            OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadii[i]);
+            OpenMM_DoubleArray_append(doubleArray, overlapScale[i]);
+            OpenMM_CustomGBForce_addParticle(customGBForce, doubleArray);
+            OpenMM_DoubleArray_resize(doubleArray, 0);
+        }
+        OpenMM_DoubleArray_destroy(doubleArray);
+
+        OpenMM_System_addForce(openMMSystem, customGBForce);
+        logger.log(Level.INFO, String.format(" Added generalized Born force."));
     }
 
     private void addAmoebaVDWForce() {
@@ -1348,10 +1423,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         for (int i = 0; i < nAtoms; i++) {
             OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(openMM_State_getPositions, i);
             Atom atom = atoms[i];
-            atom.moveTo(posInNm.x * OpenMM_AngstromsPerNm, posInNm.y * OpenMM_AngstromsPerNm, posInNm.z * OpenMM_AngstromsPerNm);
+            atom.moveTo(posInNm.x * OpenMM_AngstromsPerNm,
+                    posInNm.y * OpenMM_AngstromsPerNm,
+                    posInNm.z * OpenMM_AngstromsPerNm);
         }
-
-        //OpenMM_Context_setPositions(context, openMM_State_getPositions);
     }
 
     private void setDefaultPeriodicBoxVectors() {
