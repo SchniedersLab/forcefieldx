@@ -90,7 +90,6 @@ public class VanDerWaalsForm {
         GEOMETRIC, HHG
     }
 
-
     public VanDerWaalsForm(ForceField forceField) {
 
         /**
@@ -368,6 +367,10 @@ public class VanDerWaalsForm {
     protected double radEps[][];
     protected static final byte RADMIN = 0;
     protected static final byte EPS = 1;
+
+    public double getScale14() {
+        return scale14;
+    }
 
     private class VDWPowers {
 

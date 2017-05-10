@@ -224,6 +224,8 @@ public abstract class ParticleMeshEwald {
         return ip13;
     }
 
+    public abstract double getScale14();
+
     /**
      * <p>
      * Getter for the field <code>gradient</code>.</p>

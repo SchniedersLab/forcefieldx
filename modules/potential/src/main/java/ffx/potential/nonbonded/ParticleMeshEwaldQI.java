@@ -1274,6 +1274,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         }
     }
 
+    public double getScale14() {
+        return m14scale;
+    }
+
     public double energy() {
         double energy = energy(true, false);
         if (esvTerm) {

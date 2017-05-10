@@ -1825,6 +1825,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
     }
 
+    public double getScale14() {
+        return m14scale;
+    }
+
     /**
      * <p>
      * Getter for the field <code>interactions</code>.</p>

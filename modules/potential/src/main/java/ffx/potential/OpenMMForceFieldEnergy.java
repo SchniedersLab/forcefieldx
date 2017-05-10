@@ -53,6 +53,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
 import simtk.openmm.OpenMMLibrary.OpenMM_Boolean;
+import simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod;
 import simtk.openmm.OpenMM_Vec3;
 
 import static simtk.openmm.OpenMMAmoebaLibrary.*;
@@ -112,6 +113,13 @@ import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
+
+import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
+import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
+import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.DIAMETER;
+import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
+import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
+import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -194,11 +202,19 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         // Add Torsion-Torsion Force.
         addTorsionTorsions();
 
-        // Add vdW Force.
-        addVDWForce();
+        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
+        if (vdW != null) {
+            VanDerWaalsForm vdwForm = vdW.getVDWForm();
+            if (vdwForm.vdwType == LENNARD_JONES) {
+                addFixedChargeNonBonded();
+            } else {
+                // Add vdW Force.
+                addAmoebaVDWForce();
 
-        // Add Multipole Force.
-        addMultipoleForce();
+                // Add Multipole Force.
+                addAmoebaMultipoleForce();
+            }
+        }
 
         // Set periodic box vectors.
         setDefaultPeriodicBoxVectors();
@@ -542,8 +558,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_PeriodicTorsionForce_addTorsion(amoebaTorsionForce,
                     a1, a2, a3, a4, improperTorsionType.periodicity,
                     improperTorsionType.phase * OpenMM_RadiansPerDegree,
-                    OpenMM_KJPerKcal * improperTorsion.units *
-                            improperTorsion.scaleFactor * improperTorsionType.k);
+                    OpenMM_KJPerKcal * improperTorsion.units
+                    * improperTorsion.scaleFactor * improperTorsionType.k);
         }
         OpenMM_System_addForce(openMMSystem, amoebaTorsionForce);
         logger.log(Level.INFO, " Added improper torsions ({0})", nImpropers);
@@ -678,7 +694,110 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         logger.log(Level.INFO, " Added Torsion-Torsions ({0})", nTorsionTorsions);
     }
 
-    private void addVDWForce() {
+    /**
+     * Uses arithmetic mean to define sigma and geometric mean for epsilon.
+     */
+    private void addFixedChargeNonBonded() {
+        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
+        if (vdW == null) {
+            return;
+        }
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        if (vdwForm.vdwType != LENNARD_JONES
+                || vdwForm.radiusRule != ARITHMETIC
+                || vdwForm.epsilonRule != GEOMETRIC) {
+            return;
+        }
+
+        PointerByReference nonBondedForce = OpenMM_NonbondedForce_create();
+
+        /**
+         * OpenMM vdW force requires a diameter (i.e. not radius).
+         */
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == RADIUS) {
+            radScale = 2.0;
+        }
+        /**
+         * OpenMM vdw force requires atomic sigma values (i.e. not r-min).
+         */
+        if (vdwForm.radiusType == R_MIN) {
+            radScale /= 1.122462048309372981;
+        }
+
+        /**
+         * Add particles.
+         */
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            double charge = 0.0;
+            MultipoleType multipoleType = atom.getMultipoleType();
+            if (multipoleType != null) {
+                charge = multipoleType.charge;
+            }
+            VDWType vdwType = atom.getVDWType();
+            double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+            double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+            OpenMM_NonbondedForce_addParticle(nonBondedForce, charge, sigma, eps);
+        }
+        /**
+         * Define 1-4 scale factors.
+         */
+        double lj14Scale = vdwForm.getScale14();
+        double coulomb14Scale =  1.0 / 1.2;
+
+        ParticleMeshEwald pme = ffxForceFieldEnergy.getPmeNode();
+        Bond bonds[] = ffxForceFieldEnergy.getBonds();
+        if (bonds != null && bonds.length > 0) {
+            int nBonds = bonds.length;
+            PointerByReference bondArray;
+            bondArray = OpenMM_BondArray_create(0);
+            for (int i = 0; i < nBonds; i++) {
+                Bond bond = bonds[i];
+                int i1 = bond.getAtom(0).getXyzIndex() - 1;
+                int i2 = bond.getAtom(1).getXyzIndex() - 1;
+                OpenMM_BondArray_append(bondArray, i1, i2);
+            }
+            if (pme != null) {
+                coulomb14Scale = pme.getScale14();
+            }
+            OpenMM_NonbondedForce_createExceptionsFromBonds(nonBondedForce, bondArray, coulomb14Scale, lj14Scale);
+            OpenMM_BondArray_destroy(bondArray);
+        }
+
+        Crystal crystal = ffxForceFieldEnergy.getCrystal();
+        if (crystal.aperiodic()) {
+            OpenMM_NonbondedForce_setNonbondedMethod(nonBondedForce,
+                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_NoCutoff);
+            logger.log(Level.INFO, " Aperiodic nonbonded force.");
+        } else {
+            OpenMM_NonbondedForce_setNonbondedMethod(nonBondedForce,
+                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_Ewald);
+            logger.log(Level.INFO, " Periodic nonbonded force.");
+            if (pme != null) {
+                double aEwald = pme.getEwaldCoefficient();
+                int nx = pme.getReciprocalSpace().getXDim();
+                int ny = pme.getReciprocalSpace().getYDim();
+                int nz = pme.getReciprocalSpace().getZDim();
+                OpenMM_NonbondedForce_setPMEParameters(nonBondedForce, 10.0 * aEwald, nx, ny, nz);
+            }
+        }
+
+        NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
+        // OpenMM_NonbondedForce_setCutoffDistance(nonBondedForce, 1000.0);
+        // Turn off vdw switching
+        OpenMM_NonbondedForce_setUseSwitchingFunction(nonBondedForce, OpenMM_False);
+        OpenMM_NonbondedForce_setUseDispersionCorrection(nonBondedForce, OpenMM_False);
+
+        OpenMM_Force_setForceGroup(nonBondedForce, 1);
+        OpenMM_System_addForce(openMMSystem, nonBondedForce);
+        logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force (%5.3f, %5.3f, %5.3f).",
+                coulomb14Scale, lj14Scale, nonbondedCutoff.off));
+    }
+
+    private void addAmoebaVDWForce() {
         VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
         if (vdW == null) {
             return;
@@ -751,7 +870,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         logger.log(Level.INFO, " Added van der Waals force.");
     }
 
-    private void addMultipoleForce() {
+    private void addAmoebaMultipoleForce() {
         ParticleMeshEwald pme = ffxForceFieldEnergy.getPmeNode();
         if (pme == null) {
             return;
@@ -1221,17 +1340,17 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         // Load positions into the context.
         OpenMM_Context_setPositions(context, initialPosInNm);
     }
-    
-    public void updateOpenMMPositions(PointerByReference state){
+
+    public void updateOpenMMPositions(PointerByReference state) {
         openMM_State_getPositions = OpenMM_State_getPositions(state);
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++){
+        for (int i = 0; i < nAtoms; i++) {
             OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(openMM_State_getPositions, i);
             Atom atom = atoms[i];
             atom.moveTo(posInNm.x * OpenMM_AngstromsPerNm, posInNm.y * OpenMM_AngstromsPerNm, posInNm.z * OpenMM_AngstromsPerNm);
         }
-        
+
         //OpenMM_Context_setPositions(context, openMM_State_getPositions);
     }
 
@@ -1256,12 +1375,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_System_setDefaultPeriodicBoxVectors(openMMSystem, a, b, c);
         }
     }
-    
-    public PointerByReference getIntegrator(){
+
+    public PointerByReference getIntegrator() {
         return openMMIntegrator;
     }
-    
-    public PointerByReference getContext(){
+
+    public PointerByReference getContext() {
         return context;
     }
 }
