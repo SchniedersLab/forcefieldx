@@ -819,28 +819,39 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "solventDielectric", 78.3);
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "soluteDielectric", 1.0);
         OpenMM_CustomGBForce_addComputedValue(customGBForce, "I",
-                "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
+                // "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
+                // "step(r+sr2-or1)*0.5*((1/L^3-1/U^3)/3+(1/U^4-1/L^4)/8*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
+                "0.5*((1/L^3-1/U^3)/3.0+(1/U^4-1/L^4)/8.0*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
                 + "U=r+sr2;"
-                + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
-                + "L=step(or1-D)*or1+(1-step(or1-D))*D;"
-                + "D=step(r-sr2)*(r-sr2)+(1-step(r-sr2))*(sr2-r);"
-                + "sr2 = scale2*or2;"
-                + "or1 = radius1-0.009; or2 = radius2-0.009",
+                // + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
+                + "C=2/3*(1/or1^3-1/L^3)*step(sr2-r-or1);"
+                // + "L=step(or1-D)*or1 + (1-step(or1-D))*D;"
+                // + "D=step(r-sr2)*(r-sr2) + (1-step(r-sr2))*(sr2-r);"
+                + "L = step(sr2 - r1r)*sr2mr + (1 - step(sr2 - r1r))*L;"
+                + "sr2mr = sr2 - r;"
+                + "r1r = radius1 + r;"
+                + "L = step(r1sr2 - r)*radius1 + (1 - step(r1sr2 - r))*L;"
+                + "r1sr2 = radius1 + sr2;"
+                + "L = r - sr2;"
+                + "sr2 = scale2 * radius2;"
+                + "or1 = radius1; or2 = radius2",
                 OpenMM_CustomGBForce_ParticlePairNoExclusions);
 
         OpenMM_CustomGBForce_addComputedValue(customGBForce, "B",
-                "1/(1/or-tanh(1*psi-0.8*psi^2+4.85*psi^3)/radius);"
-                + "psi=I*or; or=radius-0.009",
+                // "1/(1/or-tanh(1*psi-0.8*psi^2+4.85*psi^3)/radius);"
+                // "psi=I*or; or=radius-0.009"
+                "step(BB-radius)*BB + (1 - step(BB-radius))*radius;"
+                + "BB = 1 / ( (3.0*III)^(1.0/3.0) );"
+                + "III = step(II)*II + (1 - step(II))*1.0e-9/3.0;"
+                + "II = maxI - I;"
+                + "maxI = 1/(3.0*radius^3)",
                 OpenMM_CustomGBForce_SingleParticle);
 
-        /**
-         * Single particle term is the Born self-energy plus a surface tension.
-         */
         // String surfaceTension = "28.3919551";
         String surfaceTension = "0.0";
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
-                surfaceTension +
-                "*(radius+0.14)^2*(radius/B)^6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
+                surfaceTension
+                + "*(radius+0.14)^2*(radius/B)^6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
                 OpenMM_CustomGBForce_SingleParticle);
 
         /**
@@ -851,13 +862,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 + "f=sqrt(r^2+B1*B2*exp(-r^2/(2.455*B1*B2)))",
                 OpenMM_CustomGBForce_ParticlePair);
 
-        double overlapScale[] = gk.getOverlapScale();
         double baseRadii[] = gk.getBaseRadii();
+        double overlapScale[] = gk.getOverlapScale();
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
-
         PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
-
         for (int i = 0; i < nAtoms; i++) {
             MultipoleType multipoleType = atoms[i].getMultipoleType();
             OpenMM_DoubleArray_append(doubleArray, multipoleType.charge);
@@ -868,8 +877,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
         OpenMM_DoubleArray_destroy(doubleArray);
 
+        double cut = gk.getCutoff();
+        OpenMM_CustomGBForce_setCutoffDistance(customGBForce, cut);
+        OpenMM_Force_setForceGroup(customGBForce, 1);
         OpenMM_System_addForce(openMMSystem, customGBForce);
-        logger.log(Level.INFO, String.format(" Added generalized Born force."));
+
+        logger.log(Level.INFO, " Added generalized Born force");
     }
 
     private void addAmoebaVDWForce() {

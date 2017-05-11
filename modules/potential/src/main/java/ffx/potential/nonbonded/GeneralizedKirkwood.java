@@ -502,6 +502,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
         this.cut2 = cutoff * cutoff;
     }
 
+    public double getCutoff() {
+        return cutoff;
+    }
+
     public void setCrystal(Crystal crystal) {
         this.crystal = crystal;
     }
@@ -1157,21 +1161,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 } else {
                     double sum = sharedBorn.get(i);
                     if (sum <= 0.0) {
-                        sum = PI4_3 / (baseRi * baseRi * baseRi);
+                        sum = PI4_3 * 1.0e-9;
+                        born[i] = 1.0 / pow(sum / PI4_3, THIRD);
+                        // logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
+                        continue;
                     }
-                    born[i] = pow(sum / PI4_3, THIRD);
-                    born[i] = 1.0 / born[i];
-                    if (born[i] < baseRi || Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
+                    born[i] = 1.0 / pow(sum / PI4_3, THIRD);
+                    if (born[i] < baseRi) {
+                        // logger.info(format(" Less than base radii; resetting to %d %12.6f", i, baseRi));
+                        born[i] = baseRi;
+                        continue;
+                    }
+                    if (Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
+                        // logger.info(format(" NaN / Infinite: Resetting Base Radii %d %12.6f", i, baseRi));
                         born[i] = baseRi;
                     }
                 }
-
-                /*
-                 if (i < 25) {
-                 logger.info(String.format(" %d Born radius:  %16.8f", i + 1, born[i]));
-                 }
-                 born[i] = baseRi;
-                 */
             }
         }
 
@@ -1250,8 +1255,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (baseRi + r < scaledRk) {
                                 final double lower = baseRi;
                                 final double upper = scaledRk - r;
-                                localBorn[i] += (PI4_3 * (1.0 / (upper * upper * upper)
-                                        - 1.0 / (lower * lower * lower)));
+                                localBorn[i] += (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
                             }
                             // Upper integration bound is always the same.
                             double upper = r + scaledRk;
@@ -1286,8 +1290,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (baseRk + r < scaledRi) {
                                 lower = baseRk;
                                 upper = scaledRi - r;
-                                localBorn[k] += (PI4_3 * (1.0 / (upper * upper * upper)
-                                        - 1.0 / (lower * lower * lower)));
+                                localBorn[k] += (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
                             }
                             // Upper integration bound is always the same.
                             upper = r + scaledRi;
