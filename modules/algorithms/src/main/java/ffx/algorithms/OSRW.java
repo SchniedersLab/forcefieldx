@@ -642,7 +642,14 @@ public class OSRW extends AbstractOSRW {
             }
         }
     }
+    
+    public int[][] getRecursionKernel(){
+        return recursionKernel;
+    }
 
+    public void setRecursionKernel(int[][] recursionKernel){
+        this.recursionKernel = recursionKernel;
+    }
     /**
      * If necessary, allocate more space.
      */
