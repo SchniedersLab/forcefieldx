@@ -501,6 +501,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
         this.propagateLambda = propagateLambda;
     }
 
+    public abstract void addBias(double dUdL, double freeEnergy);
+
     protected int binForLambda(double lambda) {
         int lambdaBin = (int) floor((lambda - minLambda) / dL);
         if (lambdaBin < 0) {
