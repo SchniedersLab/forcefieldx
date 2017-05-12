@@ -497,6 +497,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
         return nonPolar;
     }
 
+    /**
+     * Returns the dielectric offset (in Angstroms).
+     * @return Currently: 0.09 Angstroms.
+     */
+    public double getDielecOffset() {
+        return dOffset;
+    }
+
     public void setCutoff(double cutoff) {
         this.cutoff = cutoff;
         this.cut2 = cutoff * cutoff;
