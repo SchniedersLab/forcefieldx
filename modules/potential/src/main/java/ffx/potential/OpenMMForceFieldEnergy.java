@@ -782,20 +782,22 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_NoCutoff);
         } else {
             OpenMM_NonbondedForce_setNonbondedMethod(nonBondedForce,
-                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_Ewald);
+                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_PME);
             if (pme != null) {
-                double aEwald = pme.getEwaldCoefficient();
+                // Units of the Ewald coefficient are A^-1; Multiply by AngstromsPerNM to convert to (Nm^-1).
+                double aEwald =  OpenMM_AngstromsPerNm * pme.getEwaldCoefficient();
                 int nx = pme.getReciprocalSpace().getXDim();
                 int ny = pme.getReciprocalSpace().getYDim();
                 int nz = pme.getReciprocalSpace().getZDim();
-                OpenMM_NonbondedForce_setPMEParameters(nonBondedForce, 10.0 * aEwald, nx, ny, nz);
+                OpenMM_NonbondedForce_setPMEParameters(nonBondedForce, aEwald, nx, ny, nz);
             }
         }
 
         NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
-        OpenMM_NonbondedForce_setCutoffDistance(nonBondedForce, nonbondedCutoff.off);
-        // Turn off vdw switching
-        OpenMM_NonbondedForce_setUseSwitchingFunction(nonBondedForce, OpenMM_False);
+        OpenMM_NonbondedForce_setCutoffDistance(nonBondedForce, OpenMM_NmPerAngstrom * nonbondedCutoff.off);
+
+        OpenMM_NonbondedForce_setUseSwitchingFunction(nonBondedForce, OpenMM_True);
+        OpenMM_NonbondedForce_setSwitchingDistance(nonBondedForce, OpenMM_NmPerAngstrom * nonbondedCutoff.cut);
         OpenMM_NonbondedForce_setUseDispersionCorrection(nonBondedForce, OpenMM_False);
 
         OpenMM_Force_setForceGroup(nonBondedForce, 1);

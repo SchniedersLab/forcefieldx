@@ -724,28 +724,31 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
-     * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
+     * Static factory method to create a ForceFieldEnergy, possibly via FFX or
+     * OpenMM implementations.
      *
      * @param assembly To create FFE over
      * @return
      */
-    public static ForceFieldEnergy energyFactory (MolecularAssembly assembly) {
+    public static ForceFieldEnergy energyFactory(MolecularAssembly assembly) {
         return energyFactory(assembly, null);
     }
 
     /**
-     * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
+     * Static factory method to create a ForceFieldEnergy, possibly via FFX or
+     * OpenMM implementations.
      *
      * @param assembly To create FFE over
      * @param restraints Harmonic restraints
      * @return
      */
-    public static ForceFieldEnergy energyFactory (MolecularAssembly assembly, List<CoordRestraint> restraints) {
+    public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints) {
         return energyFactory(assembly, restraints, ParallelTeam.getDefaultThreadCount());
     }
 
     /**
-     * Static factory method to create a ForceFieldEnergy, possibly via FFX or OpenMM implementations.
+     * Static factory method to create a ForceFieldEnergy, possibly via FFX or
+     * OpenMM implementations.
      *
      * @param assembly To create FFE over
      * @param restraints Harmonic restraints
@@ -2505,7 +2508,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     public GeneralizedKirkwood getGK() {
-        return particleMeshEwald.getGK();
+        if (particleMeshEwald != null) {
+            return particleMeshEwald.getGK();
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -2698,11 +2705,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return ureyBradleys;
     }
 
-    public OutOfPlaneBend[] getOutOfPlaneBends(){
+    public OutOfPlaneBend[] getOutOfPlaneBends() {
         return outOfPlaneBends;
     }
 
-    public StretchBend[] getStretchBends(){
+    public StretchBend[] getStretchBends() {
         return stretchBends;
     }
 
@@ -3264,16 +3271,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
-     * An EnergyImplementation describes a set of force field implementations; currently FFX for the pure Java reference
-     * implementation, and various OpenMM implementations, of which OMM_CUDA is preferred. Note that AMOEBA only runs
-     * under the FFX, OMM_CUDA, and OMM_REF implementations.
+     * An EnergyImplementation describes a set of force field implementations;
+     * currently FFX for the pure Java reference implementation, and various
+     * OpenMM implementations, of which OMM_CUDA is preferred. Note that AMOEBA
+     * only runs under the FFX, OMM_CUDA, and OMM_REF implementations.
      *
-     * FFX: reference FFX implementation
-     * OMM: Currently an alias for OMM_CUDA, may eventually become "try to find best OpenMM implementation"
-     * OMM_CUDA: OpenMM CUDA implementation
-     * OMM_REF: OpenMM reference implementation
-     * OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
-     * OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
+     * FFX: reference FFX implementation OMM: Currently an alias for OMM_CUDA,
+     * may eventually become "try to find best OpenMM implementation" OMM_CUDA:
+     * OpenMM CUDA implementation OMM_REF: OpenMM reference implementation
+     * OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA) OMM_OPENCL:
+     * OpenMM OpenCL implementation (no AMOEBA)
      */
     public static enum EnergyImplementation {
         FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL;
