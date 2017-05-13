@@ -53,6 +53,7 @@ import com.sun.jna.ptr.PointerByReference;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
+import simtk.openmm.OpenMMLibrary;
 import simtk.openmm.OpenMMLibrary.OpenMM_Boolean;
 import simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod;
 import simtk.openmm.OpenMM_Vec3;
@@ -236,7 +237,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         openMMForces = OpenMM_State_getForces(state);
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
-        logger.log(Level.INFO, " OpenMM Energy: {0}", openMMPotentialEnergy);
+        //logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+        logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
         OpenMM_State_destroy(state);
     }
 
@@ -834,6 +836,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "scale");
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "solventDielectric", 78.3);
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "soluteDielectric", 1.0);
+        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "dOffset", gk.getDielecOffset() * OpenMMLibrary.OpenMM_NmPerAngstrom); // Factor of 0.1 for Ang to nm.
         OpenMM_CustomGBForce_addComputedValue(customGBForce, "I",
                 // "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
                 // "step(r+sr2-or1)*0.5*((1/L^3-1/U^3)/3+(1/U^4-1/L^4)/8*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
@@ -863,11 +866,16 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 + "maxI = 1/(3.0*radius^3)",
                 OpenMM_CustomGBForce_SingleParticle);
 
-        // String surfaceTension = "28.3919551";
-        String surfaceTension = "0.0";
+        double sTens = gk.getSurfaceTension();
+        logger.info(String.format(" FFX surface tension: %9.5g kcal/mol/Ang^2", sTens));
+        sTens *= OpenMMLibrary.OpenMM_KJPerKcal;
+        sTens *= 100.0; // 100 square Angstroms per square nanometer.
+        logger.info(String.format(" OpenMM surface tension: %9.5g kJ/mol/nm^2", sTens));
+        String surfaceTension = Double.toString(sTens);
+
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
                 surfaceTension
-                + "*(radius+0.14)^2*(radius/B)^6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
+                + "*(radius+0.14+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
                 OpenMM_CustomGBForce_SingleParticle);
 
         /**
@@ -1338,7 +1346,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
         if (verbose) {
-            logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+            //logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+            logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));
         }
 
         /**
@@ -1385,7 +1394,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
         if (verbose) {
-            logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+            //logger.log(Level.INFO, " OpenMM Energy: {0}", e);
+            logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));
         }
 
         openMMForces = OpenMM_State_getForces(state);
