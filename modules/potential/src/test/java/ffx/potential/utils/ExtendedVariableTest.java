@@ -147,7 +147,7 @@ public class ExtendedVariableTest {
 
 		setProp("use-charges",				yes);
 		setProp("use-dipoles",				yes);
-		setProp("use-quadrupoles",			false);	// SOURCE perm_recip n.l.d. err
+		setProp("use-quadrupoles",			yes);	// SOURCE perm_recip n.l.d. err
 
 		ExtendedSystemConfig esvConfig = new ExtendedSystemConfig();
 		// Alternatively,
@@ -188,7 +188,7 @@ public class ExtendedVariableTest {
 		}
 		return esvConfig;
 	}
-	
+
 	private static Properties originalSystemConfig;	// properties as they existed before class setup
 
 	private Interactions interactions;
@@ -209,7 +209,7 @@ public class ExtendedVariableTest {
 	private final String esvResidueIDs;
 	private final String[] stateFilenames;
 	private final double[] initialLambda;
-	
+
 	public ExtendedVariableTest(EsvTest test, Interactions interactions, CellType cell) {
 		origLevel = logMaster.getLevel();
 		this.test = test;
@@ -245,7 +245,7 @@ public class ExtendedVariableTest {
 				break;
 		}
 	}
-	
+
     /**
      * Set the system properties of which we are certain.
 	 * This happens once, prior to class construction; the resulting set defines revertSystemProperties().
@@ -254,13 +254,13 @@ public class ExtendedVariableTest {
     public static void setUpClass() {
 		// Save passed-in configuration so we can restore it at teardown (and not affect downstream tests).
 		originalSystemConfig = (Properties) System.getProperties().clone();
-        
+
 		// Potential Terms
         setProp("forcefield",		ForceFieldName.AMOEBA_PROTEIN_2013);
 		setProp(true,	"esvterm", "lambdaterm", "bondterm", "angleterm", "strbendterm", "ureyterm",
 					"opbendterm", "torsionterm", "pitorsterm", "tortorterm", "improperterm");
 		setProp(false,	"gkterm", "restrainterm", "comrestrainterm", "lambda-torsions");
-		
+
         // Potential Details
 		setProp(true,	"vdwterm", "esv.vanDerWaals", "mpoleterm", "esv.electrostatics", "pme.qi");
 		setProp(true,	"recipterm", "polarizeterm");
@@ -271,7 +271,7 @@ public class ExtendedVariableTest {
         setProp("ewald-cutoff",		10.0);
 		setProp("pme-order",		8);
 		setProp("pme-mesh-density", 2.0);
-		
+
         // Potential Settings
         setProp("permanent-lambda-alpha",		2.0);
         setProp("permanent-lambda-exponent",	3.0);
@@ -281,7 +281,7 @@ public class ExtendedVariableTest {
         setProp("no-ligand-condensed-scf",		false);	// don't need condensed phase polarization
         setProp("intramolecular-softcore",		false);
         setProp("intermolecular-softcore",		false);
-		
+
         // ESV Settings
 		// Include discr+pH biases; include bonded; hook up BG bonded to FG node; exclude BG atoms from potential.
 		setProp(true,	"esv.biasTerm", "esv.bonded");
@@ -291,13 +291,13 @@ public class ExtendedVariableTest {
 		setProp("esv.allowLambdaSwitch",	false);	// if false, Lswith == L && dLswitch == 1.0
 		setProp("esv.nonlinearMultipoles",	false);	// if false, disallow Lswitch for PME specifically
 		setProp("esv.cloneXyzIndices",		yes);	// background atoms receive foreground indexes
-		
+
         // System Settings
 		// Fold bonded into one line; print components of PME: {real,recip}*{self,perm,ind}
 		if (singleThreaded) setProp("pj.nt", 1);
         setProp(true, "ffe.combineBonded",	"ffe.decomposePme");
 	}
-    
+
     /**
      * Revert props to their state prior to construction.
      */
@@ -306,7 +306,7 @@ public class ExtendedVariableTest {
         System.getProperties().clear();
 		System.getProperties().putAll(originalSystemConfig);
 	}
-    
+
     public MolecularAssembly setup(String filename, boolean quietly) {
 		if (quietly || resultsOnly) logMaster.setLevel(Level.WARNING);
         MolecularAssembly mola = openResource(filename, quietly);
@@ -315,7 +315,7 @@ public class ExtendedVariableTest {
 		logMaster.setLevel(origLevel);
 		return mola;
     }
-	 
+
 	public MolecularAssembly setupWithExtended(String filename, boolean quietly, ExtendedSystemConfig esvConfig) {
 		if (quietly || resultsOnly) logMaster.setLevel(Level.WARNING);
 		setProp("pme.qi", true);
@@ -332,7 +332,7 @@ public class ExtendedVariableTest {
 		logMaster.setLevel(origLevel);
 		return mola;
 	}
-    
+
     /**
      * Locates files packed into the uberjar by Maven.
      */
@@ -354,11 +354,11 @@ public class ExtendedVariableTest {
     private MolecularAssembly openResourceQuietly(String filename) {
         return openResource(filename, true);
     }
-	
+
     private void assertEquals(String message, double expected, double actual, double delta) {
 		if (assertions) org.junit.Assert.assertEquals(message, expected, actual, delta);
 	}
-	
+
 	@org.junit.Test
 	public void testLauncher() {
 		switch (test) {
@@ -417,7 +417,7 @@ public class ExtendedVariableTest {
 		setProp("scf-algorithm",	SCFAlgorithm.SOR);
 		setProp("esv.scaleAlpha",		false);
 		testDerivatives();
-		
+
 		fill(initialLambda, 1.0);
 		SB.logfp("--Masking, DIRECT/SOR, --AlphaScaling");
 		setProp("esv.allowMaskPerm",	false);
@@ -428,7 +428,7 @@ public class ExtendedVariableTest {
 		setProp("esv.scaleAlpha",		false);
 		testDerivatives();
 	}
-	
+
     /**
      * Analytic Derivative vs Finite Difference: VdW,PermReal,PermRecip,Total
      */
@@ -440,7 +440,7 @@ public class ExtendedVariableTest {
 		if (resultsOnly) logMaster.setLevel(Level.WARNING);
 		final SBLogger SB = new SBLogger();
         final double step = 1e-6;
-		
+
 		for (int i = 0; i < esvSystem.size(); i++) {
 			String esvName = esvSystem.getEsv(i).getName();
 			if (!mola.getCrystal().aperiodic()) {
@@ -449,7 +449,7 @@ public class ExtendedVariableTest {
 				SB.logfn(" Finite Diff: %5.5s (Aprodc.)", esvName);
 			}
 			/********************************************/
-			
+
 			// Reset lambdas.
 			for (int k = 0; k < esvSystem.size(); k++) {
 				esvSystem.setLambda(k, initialLambda[k]);
@@ -468,7 +468,7 @@ public class ExtendedVariableTest {
 					high = center + step;
 				}
 				final double width = high - low;
-				
+
 				// Collect numeric derivative components.
 				esvSystem.setLambda(i, low);
 				ffe.energy(true, false);
@@ -482,7 +482,7 @@ public class ExtendedVariableTest {
 				final double indSelfLow   = ffe.getEnergyComponent(PotentialComponent.InducedSelf);
 				final double indRecipLow  = ffe.getEnergyComponent(PotentialComponent.InducedReciprocal);
 				final double totalLow     = ffe.getEnergyComponent(PotentialComponent.ForceFieldEnergy);
-				
+
 				esvSystem.setLambda(i, high);
 				ffe.energy(true, false);
 				final double vdwHigh      = ffe.getEnergyComponent(PotentialComponent.VanDerWaals);
@@ -510,27 +510,6 @@ public class ExtendedVariableTest {
 				final double indRecipAna  = esvSystem.getDerivativeComponent(PotentialComponent.InducedReciprocal, i);
 				final double totalAna     = esvSystem.getDerivativeComponent(PotentialComponent.ForceFieldEnergy, i);
 
-				if (benchmarkArrayReferencing) {
-					final int maxIters = 1000000;
-					ParticleMeshEwaldQI pmeqi = ffe.getPmeQiNode();
-					double[][] grad = new double[3][esvSystem.getExtendedAtoms().length];
-					long fast = -System.nanoTime();
-					for (int iter = 0; iter < maxIters; iter++) {
-						pmeqi.getGradients(grad);
-					}
-					fast += System.nanoTime();
-					long slow = -System.nanoTime();
-					for (int iter = 0; iter < maxIters; iter++) {
-						grad = pmeqi.getGradientsSlowly();
-					}
-					slow += System.nanoTime();
-					SB.nlogf(" getGradients(): %7.3fms per %,d = %.1g sec/call",
-							fast * 1.0e-6, maxIters, fast*1.0e-9/maxIters);
-					SB.nlogf(" getGradsSlow(): %7.3fms per %,d = %.1g sec/call",
-							slow * 1.0e-6, maxIters, slow*1.0e-9/maxIters);
-					SB.print();
-				}
-
 				// Calculate numeric derivatives and error.
 				final double vdwNum         = (vdwHigh - vdwLow) / (width);
 				final double vdwErr         = (vdwAna - vdwNum);
@@ -539,7 +518,7 @@ public class ExtendedVariableTest {
 				final double biasNum        = (biasHigh - biasLow) / (width);
 				final double biasErr        = (biasAna - biasNum);
 				final double permRealNum    = (permRealHigh - permRealLow) / (width);
-				final double permRealErr    = (permRealAna - permRealNum);            
+				final double permRealErr    = (permRealAna - permRealNum);
 				final double permSelfNum    = (permSelfHigh - permSelfLow) / (width);
 				final double permSelfErr    = (permSelfAna - permSelfNum);
 				final double permRecipNum   = (permRecipHigh - permRecipLow) / (width);
@@ -552,7 +531,7 @@ public class ExtendedVariableTest {
 				final double indRecipErr    = (indRecipAna - indRecipNum);
 				final double totalNum       = (totalHigh - totalLow) / (width);
 				final double totalErr       = (totalAna - totalNum);
-				
+
 				SB.logf(" %-28s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s",
 						StringUtils.repeat("*", 28),
 						"vdw ", "bonded", "bias", "permReal", "permSelf", "permRecip", "indReal", "indSelf", "indRecip", "total");
@@ -568,7 +547,7 @@ public class ExtendedVariableTest {
 						err(indRealAna,indRealNum), err(indSelfAna,indSelfNum), err(indRecipAna,indRecipNum), err(totalAna,totalNum));
 				logMaster.setLevel(origLevel);
 				SB.print();
-				
+
 				if (assertions) {
 					assertEquals("VanDerWaals Deriv Error", 0.0, vdwErr, tolerance);
 					assertEquals("Bonded Deriv Error", 0.0, bondedErr, tolerance);
@@ -584,7 +563,7 @@ public class ExtendedVariableTest {
 			}	// lambda loop
 		}	// ESV loop
     }	// testDerivatives method
-	
+
 	private static String err(double analytic, double numeric) {
 		return err(analytic,numeric,errorThreshold);
 	}
@@ -620,7 +599,7 @@ public class ExtendedVariableTest {
 		setProp("use-quadrupoles",			false);
 		return new ExtendedSystemConfig();
 	}
-	
+
     /**
      * Verify that a lys-lys system with two ESVs can exactly reproduce the energy
      * yielded by vanilla energy() calls on mutated PDB files.
@@ -658,7 +637,7 @@ public class ExtendedVariableTest {
 		ffe.energy(true, false);
 		directEsv[0] = ffe.getPolarizationEnergy();
 		ffe.getPmeNode().setPolarization(Polarization.MUTUAL);
-		
+
         esvSystem.setLambda('A', 0.0); esvSystem.setLambda('B', 1.0);
 		esvStateNames[1] = format("L=%1.0f,%1.0f", esvSystem.getLambda('A'), esvSystem.getLambda('B'));
 		ffe.energy(true, false);
@@ -676,7 +655,7 @@ public class ExtendedVariableTest {
 		ffe.energy(true, false);
 		directEsv[1] = ffe.getPolarizationEnergy();
 		ffe.getPmeNode().setPolarization(Polarization.MUTUAL);
-		
+
         esvSystem.setLambda('A', 1.0); esvSystem.setLambda('B', 0.0);
 		esvStateNames[2] = format("L=%1.0f,%1.0f", esvSystem.getLambda('A'), esvSystem.getLambda('B'));
 		ffe.energy(true, false);
@@ -694,7 +673,7 @@ public class ExtendedVariableTest {
 		ffe.energy(true, false);
 		directEsv[2] = ffe.getPolarizationEnergy();
 		ffe.getPmeNode().setPolarization(Polarization.MUTUAL);
-		
+
         esvSystem.setLambda('A', 1.0); esvSystem.setLambda('B', 1.0);
 		esvStateNames[3] = format("L=%1.0f,%1.0f", esvSystem.getLambda('A'), esvSystem.getLambda('B'));		ffe.energy(true, false);
         totalEsv[3] = ffe.getTotalEnergy() - esvSystem.getBiasEnergy();
@@ -772,7 +751,7 @@ public class ExtendedVariableTest {
 			cartPot.energy(true, false);
 			directCart[i] = cartPme.getPolarizationEnergy();
 			utils.close(cart);
-			
+
 			if (assertions) {
 				assertEquals("Total"+i, totalCart[i], totalEsv[i], tolerance);
 				assertEquals("VanDerWaals"+i, vdwCart[i], vdwEsv[i], tolerance);
@@ -818,9 +797,9 @@ public class ExtendedVariableTest {
 		logMaster.setLevel(origLevel);
 		SB.print();
     }
-    
+
     /**
-     * Numerically ensure that the energy and lambda derivatives are smooth all 
+     * Numerically ensure that the energy and lambda derivatives are smooth all
      * along both ESV coordinates in the dilysine system.
      */
     public void testSmoothness() {
@@ -870,7 +849,7 @@ public class ExtendedVariableTest {
 				}
 			}
         }
-        
+
         /* TODO: improve upon the following arbitrary definition of approximate smoothness. */
         final int testRow = 2;
         final double min = Arrays.stream(totalEnergies[testRow]).min().getAsDouble();
@@ -926,13 +905,13 @@ public class ExtendedVariableTest {
 		logMaster.setLevel(origLevel);
 		SB.print();
 	}
-        
+
     private SBLogger printAsTable(double[][] values, String title, SBLogger sb) {
         if (SB == null) {
             sb = new SBLogger();
         }
         if (title == null) title = "Title?";
-        sb.logf(" %8s %8.1f %8.1f %8.1f %8.1f %8s %8s %8s %8.1f %8.1f %8.1f %8.1f", 
+        sb.logf(" %8s %8.1f %8.1f %8.1f %8.1f %8s %8s %8s %8.1f %8.1f %8.1f %8.1f",
                 title, 0.0, 0.1, 0.2, 0.3, "<   ", " EvA  ", ">   ", 0.7, 0.8, 0.9, 1.0);
         for (int idxA = 0; idxA <= 10; idxA++) {
             double evA = idxA / 10.0;
