@@ -112,12 +112,12 @@ public class UIFileOpener implements FileOpener {
             systemFilter.applyAtomProperties();
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
-            //ForceFieldEnergy energy = new ForceFieldEnergy(ffxSystem, systemFilter.getCoordRestraints());
+            //ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(ffxSystem, systemFilter.getCoordRestraints());
             ForceFieldEnergy energy;
             if (nThreads > 0) {
-                energy = new ForceFieldEnergy(ffxSystem, systemFilter.getCoordRestraints(), nThreads);
+                energy = ForceFieldEnergy.energyFactory(ffxSystem, systemFilter.getCoordRestraints(), nThreads);
             } else {
-                energy = new ForceFieldEnergy(ffxSystem, systemFilter.getCoordRestraints());
+                energy = ForceFieldEnergy.energyFactory(ffxSystem, systemFilter.getCoordRestraints());
             }
             ffxSystem.setPotential(energy);
             mainPanel.getHierarchy().setActive(ffxSystem);
@@ -157,11 +157,11 @@ public class UIFileOpener implements FileOpener {
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                         mainPanel.getHierarchy().addSystemNode(newSystem);
-                        //energy = new ForceFieldEnergy(newSystem, pdbFilter.getCoordRestraints());
+                        //energy = ForceFieldEnergy.energyFactory(newSystem, pdbFilter.getCoordRestraints());
                         if (nThreads > 0) {
-                            energy = new ForceFieldEnergy(newSystem, systemFilter.getCoordRestraints(), nThreads);
+                            energy = ForceFieldEnergy.energyFactory(newSystem, systemFilter.getCoordRestraints(), nThreads);
                         } else {
-                            energy = new ForceFieldEnergy(newSystem, systemFilter.getCoordRestraints());
+                            energy = ForceFieldEnergy.energyFactory(newSystem, systemFilter.getCoordRestraints());
                         }
                         newSystem.setPotential(energy);
                     }

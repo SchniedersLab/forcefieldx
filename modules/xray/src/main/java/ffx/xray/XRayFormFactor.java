@@ -165,7 +165,7 @@ public final class XRayFormFactor implements FormFactor {
         String key = "" + atom.getAtomicNumber();
         int charge = 0;
         if (atom.getMultipoleType() != null) {
-            charge = (int) atom.getMultipoleType().charge;
+            charge = (int) atom.getMultipoleType().getCharge();
         }
 
         int atomindex = atom.getFormFactorIndex();

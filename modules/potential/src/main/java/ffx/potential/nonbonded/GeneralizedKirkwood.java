@@ -88,6 +88,7 @@ import ffx.potential.parameters.SolventRadii;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 
+import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.ELECTRIC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
@@ -164,6 +165,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private final double bornaiTerm;
     private final double probe;
+    private final double dOffset = 0.09;
     private boolean use[] = null;
     private final Polarization polarization;
     private Atom atoms[];
@@ -184,7 +186,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * thus to the size of the first category of arrays).
      */
     private int maxNumAtoms;
-    private final ParticleMeshEwald particleMeshEwald;
+    private final ParticleMeshEwaldCart particleMeshEwald;
     private final ParallelTeam parallelTeam;
     private Crystal crystal;
     private final BornRadiiRegion bornRadiiRegion;
@@ -278,6 +280,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
     }
 
+    public double[] getOverlapScale() {
+        return overlapScale;
+    }
+
+    public double[] getBaseRadii() {
+        return baseRadiusWithBondi;
+    }
+
+    public double getSurfaceTension() {
+        return surfaceTension;
+    }
+
     /**
      * <p>
      * Constructor for GeneralizedKirkwood.</p>
@@ -295,7 +309,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         this.forceField = forceField;
         this.atoms = atoms;
-        this.particleMeshEwald = particleMeshEwald;
+        this.particleMeshEwald = (ParticleMeshEwaldCart) particleMeshEwald;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         nAtoms = atoms.length;
@@ -479,9 +493,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     }
 
+    public NonPolar getNonPolarModel() {
+        return nonPolar;
+    }
+
     public void setCutoff(double cutoff) {
         this.cutoff = cutoff;
         this.cut2 = cutoff * cutoff;
+    }
+
+    public double getCutoff() {
+        return cutoff;
     }
 
     public void setCrystal(Crystal crystal) {
@@ -1025,9 +1047,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     public void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
-        this.lPow = lPow;
-        this.dlPow = dlPow;
-        this.dl2Pow = dl2Pow;
+        if (lambdaTerm) {
+            this.lPow = lPow;
+            this.dlPow = dlPow;
+            this.dl2Pow = dl2Pow;
+        } else {
+            /**
+             * If the lambdaTerm flag is false, lambda must be set to one.
+             */
+            this.lambda = 1.0;
+            lPow = 1.0;
+            dlPow = 0.0;
+            dl2Pow = 0.0;
+        }
     }
 
     /**
@@ -1074,11 +1106,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     public static NonPolar getNonPolarModel(String nonpolarModel) {
         try {
-            return NonPolar.valueOf(nonpolarModel);
+            return NonPolar.valueOf(toEnumForm(nonpolarModel));
         } catch (IllegalArgumentException ex) {
-            logger.warning("Unrecognized nonpolar model requested; defaulting to NONE.");
+            logger.warning(" Unrecognized nonpolar model requested; defaulting to NONE.");
             return NonPolar.NONE;
-
         }
     }
 
@@ -1130,21 +1161,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 } else {
                     double sum = sharedBorn.get(i);
                     if (sum <= 0.0) {
-                        sum = PI4_3 / (baseRi * baseRi * baseRi);
+                        sum = PI4_3 * 1.0e-9;
+                        born[i] = 1.0 / pow(sum / PI4_3, THIRD);
+                        // logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
+                        continue;
                     }
-                    born[i] = pow(sum / PI4_3, THIRD);
-                    born[i] = 1.0 / born[i];
-                    if (born[i] < baseRi || Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
+                    born[i] = 1.0 / pow(sum / PI4_3, THIRD);
+                    if (born[i] < baseRi) {
+                        // logger.info(format(" Less than base radii; resetting to %d %12.6f", i, baseRi));
+                        born[i] = baseRi;
+                        continue;
+                    }
+                    if (Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
+                        // logger.info(format(" NaN / Infinite: Resetting Base Radii %d %12.6f", i, baseRi));
                         born[i] = baseRi;
                     }
                 }
-
-                /*
-                 if (i < 25) {
-                 logger.info(String.format(" %d Born radius:  %16.8f", i + 1, born[i]));
-                 }
-                 born[i] = baseRi;
-                 */
             }
         }
 
@@ -1223,8 +1255,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (baseRi + r < scaledRk) {
                                 final double lower = baseRi;
                                 final double upper = scaledRk - r;
-                                localBorn[i] += (PI4_3 * (1.0 / (upper * upper * upper)
-                                        - 1.0 / (lower * lower * lower)));
+                                localBorn[i] += (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
                             }
                             // Upper integration bound is always the same.
                             double upper = r + scaledRk;
@@ -1259,8 +1290,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             if (baseRk + r < scaledRi) {
                                 lower = baseRk;
                                 upper = scaledRi - r;
-                                localBorn[k] += (PI4_3 * (1.0 / (upper * upper * upper)
-                                        - 1.0 / (lower * lower * lower)));
+                                localBorn[k] += (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
                             }
                             // Upper integration bound is always the same.
                             upper = r + scaledRi;
@@ -2073,17 +2103,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     switch (nonPolar) {
                         case BORN_SOLV:
                         case BORN_CAV_DISP:
-                            double e = baseRadiusWithBondi[i] + probe; // e = ri + probe
-                            e *= (e * bornaiTerm);// e = (ri + probe) * ((ri + probe) * 4 * pi * ai)
-                            double rirb = baseRadiusWithBondi[i] / born[i]; // ri/rb^6
-                            rirb *= rirb;
-                            rirb *= (rirb * rirb);
-                            e *= rirb; // e = consts * (ri/rb)^6
-                            gkEnergy += e;
+                            double r = baseRadiusWithBondi[i] + dOffset + probe;
+                            double ratio = (baseRadiusWithBondi[i] + dOffset) / born[i];
+                            ratio *= ratio;
+                            ratio *= (ratio * ratio);
+                            double saTerm = -surfaceTension * r * r * ratio;
+                            gkEnergy += saTerm / -6.0;
                             // Now calculate derivatives
-                            e *= (-6.0 / born[i]); // e = consts * -6*ri^6 / rb^-7
-                            // To get each derivative, would multiple
-                            gb_local[i] += e;
+                            gb_local[i] += saTerm / born[i];
                             break;
                         default:
                             break;

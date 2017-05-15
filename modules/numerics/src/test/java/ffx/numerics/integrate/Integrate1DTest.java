@@ -538,6 +538,120 @@ public class Integrate1DTest {
     }
     
     /**
+     * Ensures that the by-bin integration machinery matches an all-at-once integral.
+     */
+    @Test
+    public void testByBinIntegral() {
+        double[] pts = Integrate1DNumeric.generateXPoints(0, 1.0, 18, false);
+        FunctionDataCurve curve = new SinWave(pts, 1, 20.0);
+        
+        logger.info(" Testing by-bin integration with a sin wave (sum vs. overall result).");
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
+            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
+            double seqResult = Arrays.stream(sequentialPts).sum();
+            
+            double knownVal = knownResult.getValue();
+            assertToUlp(String.format(" Mismatch for result %s\n ", knownResult, knownVal, 
+                    seqResult), knownVal, 200.0, seqResult);
+        }
+        logger.info(" Testing match to analytical integrals.\n");
+        double[] leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
+        double[] rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
+        double maxDelta = 0.075;
+        for (int i = 0; i < pts.length; i++) {
+            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
+            if (i > 0) {
+                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i-1]);
+            }
+            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length-1]);
+            if (i < (pts.length - 1)) {
+                rightAnalytic -= curve.analyticalIntegral(pts[i+1], pts[pts.length - 1]);
+            }
+            
+            assertEquals(String.format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
+            assertEquals(String.format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
+        }
+        
+        logger.info(" Testing by-bin integration with a higher-frequency wave.");
+        curve = new CosineWave(pts, 1, 120.0);
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
+            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
+            double seqResult = Arrays.stream(sequentialPts).sum();
+            
+            double knownVal = knownResult.getValue();
+            assertToUlp(String.format(" Mismatch for result %s\n ", knownResult, knownVal, 
+                    seqResult), knownVal, 200.0, seqResult);
+        }
+        logger.info(" Testing match to analytical integrals.\n");
+        leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
+        rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
+        maxDelta = 0.075;
+        for (int i = 0; i < pts.length; i++) {
+            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
+            if (i > 0) {
+                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i-1]);
+            }
+            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length-1]);
+            if (i < (pts.length - 1)) {
+                rightAnalytic -= curve.analyticalIntegral(pts[i+1], pts[pts.length - 1]);
+            }
+            
+            assertEquals(String.format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
+            assertEquals(String.format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
+        }
+        
+        logger.info(" Testing by-bin integration with a higher-frequency wave with half-width ending bins.");
+        pts = Integrate1DNumeric.generateXPoints(0, 1.0, 19, true);
+        curve = new CosineWave(pts, true, 1, 120.0);
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
+            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
+            double seqResult = Arrays.stream(sequentialPts).sum();
+            
+            double knownVal = knownResult.getValue();
+            assertToUlp(String.format(" Mismatch for result %s\n Points %s\n ", knownResult, Arrays.toString(sequentialPts), knownVal, 
+                    seqResult), knownVal, 200.0, seqResult);
+        }
+        logger.info(" Testing match to analytical integrals.\n");
+        leftPts = Integrate1DNumeric.integrateByBins(curve, LEFT, IntegrationType.BOOLE);
+        rightPts = Integrate1DNumeric.integrateByBins(curve, RIGHT, IntegrationType.BOOLE);
+        maxDelta = 0.1;
+        for (int i = 0; i < pts.length; i++) {
+            double leftAnalytic = curve.analyticalIntegral(pts[0], pts[i]);
+            if (i > 0) {
+                leftAnalytic -= curve.analyticalIntegral(pts[0], pts[i-1]);
+            }
+            double rightAnalytic = curve.analyticalIntegral(pts[i], pts[pts.length-1]);
+            if (i < (pts.length - 1)) {
+                rightAnalytic -= curve.analyticalIntegral(pts[i+1], pts[pts.length - 1]);
+            }
+            
+            assertEquals(String.format(" Contribution of bin %d to left-hand integral of %s does not match analytic solution", i, curve), leftAnalytic, leftPts[i], maxDelta);
+            assertEquals(String.format(" Contribution of bin %d to right-hand integral of %s does not match analytic solution", i, curve), rightAnalytic, rightPts[i], maxDelta);
+        }
+        
+        logger.info(" Testing by-bin integration with a polynomial function.");
+        pts = Integrate1DNumeric.generateXPoints(0.0, 2.0, 5, false);
+        double[] fifthOrder = {-4.0, 10.0, -18.0, 8.0, -5.0, 8.0};
+        curve = new PolynomialCurve(pts, false, fifthOrder);
+        
+        for (int i = 0; i < NUM_INTEGRATION_TYPES; i++) {
+            IntegrationResult knownResult = new IntegrationResult(curve, i, false);
+            double[] sequentialPts = Integrate1DNumeric.integrateByBins(curve, knownResult.getSide(), knownResult.getType());
+            double seqResult = Arrays.stream(sequentialPts).sum();
+            
+            double knownVal = knownResult.getValue();
+            assertToUlp(String.format(" Mismatch for result %s\n ", knownResult, knownVal, 
+                    seqResult), knownVal, 200.0, seqResult);
+        }
+        // Skip testing to analytical integrals: the points done by rectangular & trapezoidal are simply too inaccurate.
+        
+        logger.info(" Completed testing of by-bin integration\n");
+    }
+    
+    /**
      * Assert that doubles are equal to within a multiplier of ulp (machine precision).
      * @param trueVal True answer
      * @param ulpMult Multiple of ulp to use

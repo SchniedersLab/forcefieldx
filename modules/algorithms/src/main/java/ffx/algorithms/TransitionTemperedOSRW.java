@@ -594,7 +594,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 }
             } catch (EnergyException ex) {
                 String message = ex.getMessage();
-                logger.info(format(" Energy exception minimizing coordinates at lambda=%d\n %s.", lambda, message));
+                logger.info(format(" Energy exception minimizing coordinates at lambda=%8.6f\n %s.", lambda, message));
                 logger.info(format(" TT-OSRW sampling will continue."));
             }
 
@@ -903,9 +903,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     public void setDeltaT(double temper) {
         temperingFactor = temper;
         if (temperingFactor > 0.0) {
-                deltaT = temperingFactor * R * temperature;
+            deltaT = temperingFactor * R * temperature;
         } else {
-                deltaT = Double.MAX_VALUE;
+            deltaT = Double.MAX_VALUE;
         }
     }
 

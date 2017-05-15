@@ -216,6 +216,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode contains(MSNode msNode) {
+		@SuppressWarnings("unchecked")
         List<TreeNode> list = Collections.list(depthFirstEnumeration());
         for (TreeNode node : list) {
             if (node.equals(msNode)) {

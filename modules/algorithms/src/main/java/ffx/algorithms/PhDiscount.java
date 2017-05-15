@@ -48,8 +48,6 @@ import static java.lang.String.format;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
-import static org.apache.commons.math3.util.FastMath.exp;
-
 import ffx.algorithms.MolecularDynamics.MonteCarloNotification;
 import ffx.potential.AssemblyState;
 import ffx.potential.ForceFieldEnergy;
@@ -65,9 +63,7 @@ import ffx.potential.bonded.Torsion;
 import ffx.potential.extended.ExtConstants;
 import ffx.potential.extended.ExtUtils;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.ExtendedSystem.EsvConfig;
-import ffx.potential.extended.ExtendedVariable;
-import ffx.potential.extended.TitrationUtils.ContinuousSeedDistribution;
+import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
 import ffx.potential.extended.TitrationUtils.Snapshots;
 import ffx.potential.extended.TitrationUtils.Titration;
 import ffx.potential.extended.TitrationUtils.TitrationConfig;
@@ -78,7 +74,6 @@ import ffx.potential.utils.SystemTemperatureException;
 import static ffx.potential.extended.ExtConstants.ns2sec;
 import static ffx.potential.extended.SBLogger.SB;
 import static ffx.potential.extended.TitrationUtils.propagateInactiveResidues;
-import static ffx.potential.extended.TitrationUtils.renumberAtoms;
 
 /**
  * @author S. LuCore
@@ -100,7 +95,7 @@ public class PhDiscount implements MonteCarloListener {
     
     /* Fractional Protonation Mode: Extended Variables */
     private final ExtendedSystem esvSystem;
-    private final EsvConfig esvConfig;
+    private final ExtendedSystemConfig esvConfig;
     private Atom[] extendedAtoms;
     private int nAtomsExt;
     private int numESVs;
@@ -115,7 +110,7 @@ public class PhDiscount implements MonteCarloListener {
     private final File dynLoader;
 
     /* Debug */
-    private static final String keyPrefixes[] = new String[]{"cphmd", "esv", "md", "ffe", "sys", "db", "sdl"};
+    private static final String keyPrefixes[] = new String[]{"phmd", "esv", "md", "ffe", "sys", "db", "sdl"};
 
     /**
      * Construct a "Discrete-Continuous" Monte-Carlo titration engine.
@@ -148,7 +143,7 @@ public class PhDiscount implements MonteCarloListener {
 		
         config.print();
 		ExtUtils.printConfigSet("All Config:", System.getProperties(), keyPrefixes);
-        SB.logfp(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", esvSystem.constantSystemPh);
+        SB.logfp(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", esvSystem.getConstantPh());
         ffe.reInit();
         molDyn.reInit();
 		molDyn.setMonteCarloListener(this, MonteCarloNotification.EACH_STEP);

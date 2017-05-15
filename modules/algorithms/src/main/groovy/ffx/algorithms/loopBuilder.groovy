@@ -422,7 +422,7 @@ if(runOSRW){
         }
     }
 
-    forceFieldEnergy= new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
     forceFieldEnergy.setLambda(lambda);
     energy();
@@ -479,7 +479,7 @@ if (runMCLoop){
     System.setProperty("polarization", "none");
     logger.info("\n Running molecular dynamics on " + baseFilename);
 
-    forceFieldEnergy= new ForceFieldEnergy(active);
+    forceFieldEnergy= ForceFieldEnergy.energyFactory(active);
     // create the MD object
     MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), null, thermostat, integrator);
 
@@ -496,7 +496,7 @@ if (runSimulatedAnnealing) {
     // Minimize with vdW.
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forcefieldEnergy.setPrintOnFailure(false, false);
     e = minimize(eps);
 
@@ -539,7 +539,7 @@ if(!loopBuildError){
     System.setProperty("lambdaterm", "false");
     System.setProperty("lambda-torsions", "false");
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forcefieldEnergy.setPrintOnFailure(false, false);
     e = minimize(eps);
     energy();
@@ -594,7 +594,7 @@ if (runRotamer){
         ai.setUse(true);
     }
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forcefieldEnergy.setPrintOnFailure(false, false);
     Polymer[] polymers = active.getChains();
     ArrayList<Residue> fullResidueList = polymers[0].getResidues();
@@ -656,7 +656,7 @@ if (runRotamer){
         structureFile = bestStructureFile;
     }
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forcefieldEnergy.setPrintOnFailure(false, false);
     boolean threeBodyTerm = false;
     RotamerOptimization rotamerOptimization;

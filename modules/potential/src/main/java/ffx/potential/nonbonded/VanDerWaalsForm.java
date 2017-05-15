@@ -312,34 +312,34 @@ public class VanDerWaalsForm {
     /**
      * van der Waals functional form.
      */
-    protected VDW_TYPE vdwType;
-    private EPSILON_RULE epsilonRule = EPSILON_RULE.HHG;
-    private RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
-    private RADIUS_SIZE radiusSize = RADIUS_SIZE.DIAMETER;
-    private RADIUS_TYPE radiusType = RADIUS_TYPE.R_MIN;
+    public VDW_TYPE vdwType;
+    public EPSILON_RULE epsilonRule = EPSILON_RULE.HHG;
+    public RADIUS_RULE radiusRule = RADIUS_RULE.CUBIC_MEAN;
+    public RADIUS_SIZE radiusSize = RADIUS_SIZE.DIAMETER;
+    public RADIUS_TYPE radiusType = RADIUS_TYPE.R_MIN;
 
     private final VDWPowers vdwPowers;
 
     /**
      * vdW Repulsive Power (e.g. 12).
      */
-    protected final int repulsivePower;
+    public final int repulsivePower;
     /**
      * vdW Dispersive Power (e.g. 6).
      */
-    protected final int dispersivePower;
+    public final int dispersivePower;
 
     /**
      * First constant suggested by Halgren for the Buffered-14-7 potential.
      */
-    protected final double gamma;
-    protected final double gamma1;
+    public final double gamma;
+    public final double gamma1;
 
     /**
      * Second constant suggested by Halgren for the Buffered-14-7 potential.
      */
-    protected final double delta;
-    protected final double delta1;
+    public final double delta;
+    public final double delta1;
 
     /**
      * Define some handy constants.
@@ -367,6 +367,10 @@ public class VanDerWaalsForm {
     protected double radEps[][];
     protected static final byte RADMIN = 0;
     protected static final byte EPS = 1;
+
+    public double getScale14() {
+        return scale14;
+    }
 
     private class VDWPowers {
 

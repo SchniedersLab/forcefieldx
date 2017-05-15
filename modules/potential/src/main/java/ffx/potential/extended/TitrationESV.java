@@ -62,7 +62,7 @@ public final class TitrationESV extends ExtendedVariable {
     
     public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
         super(esvSystem, multiRes, 1.0);
-        this.constPh = esvSystem.constantSystemPh;
+        this.constPh = esvSystem.getConstantPh();
         this.titrating = multiRes;
         Titration titration = Titration.lookup(titrating.getActive());
         this.referenceEnergy = titration.refEnergy;

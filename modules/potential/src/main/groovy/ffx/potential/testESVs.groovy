@@ -61,6 +61,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.extended.SBLogger.SB;
+import static ffx.potential.PotentialComponent.*;
 
 import static java.util.logging.Level.FINE;
 import static java.lang.String.format;
@@ -111,7 +112,7 @@ boolean useCrystal = (Boolean) !(options.nocryst);
 boolean testVdw = true;
 boolean testPermReal = true;
 boolean testReciprocal = useCrystal;
-boolean testPolarization = false;
+boolean testPolarization = true;
 
 if (options.ttf) {
     tablesToFile = true;
@@ -152,8 +153,8 @@ logger.info(format(" Loading Files: %s, %s", esvFilename, Arrays.toString(endSta
 
 /* Default Tests */
 boolean test1 = true;
-boolean test2 = true;
-boolean test3 = true;
+boolean test2 = false;
+boolean test3 = false;
 
 if (options.t1 || options.t2 || options.t3) {
     test1 = false; test2 = false; test3 = false;
@@ -222,6 +223,7 @@ if (testPolarization) {
 } else {
     System.setProperty("polarization", "NONE");
 }
+System.setProperty("polarization", "MUTUAL");
 
 // Inactive Potential
 System.setProperty("gkterm", "false");
@@ -269,8 +271,104 @@ try {
      * Analytic Derivative vs Finite Difference: VdW,PermReal,PermRecip,Total
     *******************************************************************************/
     if (test1) {
-        final double width = 2.0 * step;      // default step = 0.0001
         for (int iter = 0; iter < testOneIterations; iter++) {
+            for (int i = 0; i < numESVs; i++) {
+                for (int k = 0; k < numESVs; k++) {
+                    esvSystem.setLambda(k, lambda);
+                }
+
+                esvSystem.setLambda(i, lambda - step);
+                ffe.energy(true, false);
+                final double vdwLow       = ffe.getEnergyComponent(VanDerWaals);
+                final double bondedLow    = ffe.getEnergyComponent(Bonded);
+                final double biasLow      = ffe.getEnergyComponent(Bias);
+                final double permRealLow  = ffe.getEnergyComponent(PermanentRealSpace);
+                final double permSelfLow  = ffe.getEnergyComponent(PermanentSelf);
+                final double permRecipLow = ffe.getEnergyComponent(PermanentReciprocal);
+                final double indRealLow   = ffe.getEnergyComponent(InducedRealSpace);
+                final double indSelfLow   = ffe.getEnergyComponent(InducedSelf);
+                final double indRecipLow  = ffe.getEnergyComponent(InducedReciprocal);
+                final double totalLow     = ffe.getEnergyComponent(Topology);
+
+                esvSystem.setLambda(i, lambda + step);
+                ffe.energy(true, false);
+                final double vdwHigh      = ffe.getEnergyComponent(VanDerWaals);
+                final double bondedHigh   = ffe.getEnergyComponent(Bonded);
+                final double biasHigh     = ffe.getEnergyComponent(Bias);
+                final double permRealHigh = ffe.getEnergyComponent(PermanentRealSpace);
+                final double permSelfHigh = ffe.getEnergyComponent(PermanentSelf);
+                final double permRecipHigh= ffe.getEnergyComponent(PermanentReciprocal);
+                final double indRealHigh  = ffe.getEnergyComponent(InducedRealSpace);
+                final double indSelfHigh  = ffe.getEnergyComponent(InducedSelf);
+                final double indRecipHigh = ffe.getEnergyComponent(InducedReciprocal);
+                final double totalHigh    = ffe.getEnergyComponent(Topology);
+
+                // Get analytic derivatives from the center.
+                esvSystem.setLambda(i, lambda);
+                ffe.energy(true, false);
+                final double vdwAna       = esvSystem.getDerivativeComponent(VanDerWaals, i);
+                final double bondedAna    = esvSystem.getDerivativeComponent(Bonded, i);
+                final double biasAna      = esvSystem.getDerivativeComponent(Bias, i);
+                final double permRealAna  = esvSystem.getDerivativeComponent(PermanentRealSpace, i);
+                final double permSelfAna  = esvSystem.getDerivativeComponent(PermanentSelf, i);
+                final double permRecipAna = esvSystem.getDerivativeComponent(PermanentReciprocal, i);
+                final double indRealAna   = esvSystem.getDerivativeComponent(InducedRealSpace, i);
+                final double indSelfAna   = esvSystem.getDerivativeComponent(InducedSelf, i);
+                final double indRecipAna  = esvSystem.getDerivativeComponent(InducedReciprocal, i);
+                final double totalAna     = esvSystem.getDerivativeComponent(Topology, i);
+
+                // Calculate numeric derivatives and error.
+                final double vdwNum         = (vdwHigh - vdwLow) / (2 * step);
+                final double vdwErr         = Math.abs(vdwNum - vdwAna);
+                final double bondedNum      = (bondedHigh - bondedLow) / (2 * step);
+                final double bondedErr      = Math.abs(bondedNum - bondedAna);
+                final double biasNum        = (biasHigh - biasLow) / (2 * step);
+                final double biasErr        = Math.abs(biasNum - biasAna);
+                final double permRealNum    = (permRealHigh - permRealLow) / (2 * step);
+                final double permRealErr    = Math.abs(permRealNum - permRealAna);            
+                final double permSelfNum    = (permSelfHigh - permSelfLow) / (2 * step);
+                final double permSelfErr    = Math.abs(permSelfNum - permSelfAna);            
+                final double permRecipNum   = (permRecipHigh - permRecipLow) / (2 * step);
+                final double permRecipErr   = Math.abs(permRecipNum - permRecipAna);
+                final double indRealNum     = (indRealHigh - indRealLow) / (2 * step);
+                final double indRealErr     = Math.abs(indRealNum - indRealAna);
+                final double indSelfNum     = (indSelfHigh - indSelfLow) / (2 * step);
+                final double indSelfErr     = Math.abs(indSelfNum - indSelfAna);
+                final double indRecipNum    = (indRecipHigh - indRecipLow) / (2 * step);
+                final double indRecipErr    = Math.abs(indRecipNum - indRecipAna);
+                final double totalNum       = (totalHigh - totalLow) / (2 * step);
+                final double totalErr       = Math.abs(totalNum - totalAna);
+
+                String esvName = esvSystem.getEsv(i).getName();
+                final int columns = 10;
+                final String headFormat = " %9s";
+                final String dataFormat = " %+9.4f";
+                SB.nlogf(" %-31s", format(" Finite Difference Test: %s", esvName));
+                SB.nlogf(" %-31s %s",
+                    StringUtils.repeat("*", esvName.length() + 26),
+                    format(new String(new char[columns]).replace('\0',headFormat),
+                    "vdw ", "bonded", "bias", "permReal", "permSelf", "permRecip", "indReal", "indSelf", "indRecip", "total"));
+                SB.nlogf(" %-31s %s",
+                    format("Numeric  Derivatives (@L %4.2f):", lambda),
+                    format(new String(new char[columns]).replace('\0',dataFormat),
+                    vdwNum, bondedNum, biasNum, permRealNum, permSelfNum, permRecipNum, indRealNum, indSelfNum, indRecipNum, totalNum));
+                SB.nlogf(" %-31s %s",
+                    format("Analytic Derivatives (@L %4.2f):", lambda),
+                    format(new String(new char[columns]).replace('\0',dataFormat),
+                    vdwAna, bondedAna, biasAna, permRealAna, permSelfAna, permRecipAna, indRealAna, indSelfAna, indRecipAna, totalAna));
+                SB.nlogf(" %-31s %s",
+                    "Error:",
+                    format(new String(new char[columns]).replace('\0',dataFormat),
+                    vdwErr, bondedErr, biasErr, permRealErr, permSelfErr, permRecipErr, indRealErr, indSelfErr, indRecipErr, totalErr));
+                SB.force();
+
+            }
+            
+        }
+            
+        boolean oldWay = false;
+        if (oldWay) {
+            /*
             for (int i = 0; i < numESVs; i++) {
                 esvSystem.setLambda(i, lambda);
             }
@@ -285,37 +383,43 @@ try {
                 esvSystem.setLambda(i, lambda - step);
                 final double totalLow = ffe.energy(true, false);
                 final double vdwLow = ffe.getVanDerWaalsEnergy();
-                final double realLow = ffe.getPermanentRealSpaceEnergy();
-                final double selfLow = ffe.getPermanentReciprocalSelfEnergy();
-                final double recipLow = ffe.getPermanentReciprocalMpoleEnergy();
+                final double realLow = ffe.getElectrostaticEnergyComponent(PermanentRealSpace);
+                final double selfLow = ffe.getElectrostaticEnergyComponent(PermanentSelf);
+                final double recipLow = ffe.getElectrostaticEnergyComponent(PermanentReciprocal);
+                final double indRealLow = ffe.getElectrostaticEnergyComponent(InducedRealSpace);
 
                 esvSystem.setLambda(i, lambda + step);
                 final double totalHigh = ffe.energy(true, false);
                 final double vdwHigh = ffe.getVanDerWaalsEnergy();
-                final double realHigh = ffe.getPermanentRealSpaceEnergy();
-                final double selfHigh = ffe.getPermanentReciprocalSelfEnergy();
-                final double recipHigh = ffe.getPermanentReciprocalMpoleEnergy();
+                final double realHigh = ffe.getElectrostaticEnergyComponent(PermanentRealSpace);
+                final double selfHigh = ffe.getElectrostaticEnergyComponent(PermanentSelf);
+                final double recipHigh = ffe.getElectrostaticEnergyComponent(PermanentReciprocal);
+                final double indRealHigh = ffe.getElectrostaticEnergyComponent(InducedRealSpace);
 
                 esvSystem.setLambda(i, lambda);
                 final double totalCenter = ffe.energy(true, true);
                 final double vdwCenter = ffe.getVanDerWaalsEnergy();
-                final double realCenter = ffe.getPermanentRealSpaceEnergy();
-                final double selfCenter = ffe.getPermanentReciprocalSelfEnergy();
-                final double recipCenter = ffe.getPermanentReciprocalMpoleEnergy();
+                final double realCenter = ffe.getElectrostaticEnergyComponent(PermanentRealSpace);
+                final double selfCenter = ffe.getElectrostaticEnergyComponent(PermanentSelf);
+                final double recipCenter = ffe.getElectrostaticEnergyComponent(PermanentReciprocal);
+                final double indRealCenter = ffe.getElectrostaticEnergyComponent(InducedRealSpace);
 
-                final double vdwAnalytic = esvSystem.getdVdwdL(i);
+                final double vdwAnalytic = esvSystem.getEsvDerivative(VanDerWaals, i);
                 final double vdwNumeric = (vdwHigh - vdwLow).div(2 * step);
                 final double vdwError = Math.abs(vdwNumeric - vdwAnalytic);
-                final double realAnalytic = esvSystem.getdPermRealdL(i);
+                final double realAnalytic = esvSystem.getEsvDerivative(PermanentRealSpace, i);
                 final double realNumeric = (realHigh - realLow).div(2 * step);
                 final double realError = Math.abs(realNumeric - realAnalytic);
-                final double selfAnalytic = esvSystem.getdPermRecipSelf_dL(i);
+                final double selfAnalytic = esvSystem.getEsvDerivative(PermanentSelf, i);
                 final double selfNumeric = (selfHigh - selfLow).div(2 * step);
                 final double selfError = Math.abs(selfNumeric - selfAnalytic);
-                final double recipAnalytic = esvSystem.getdPermRecipMpole_dL(i);
+                final double recipAnalytic = esvSystem.getEsvDerivative(PermanentReciprocal, i);
                 final double recipNumeric = (recipHigh - recipLow).div(2 * step);
                 final double recipError = Math.abs(recipNumeric - recipAnalytic);
-                final double totalAnalytic = esvSystem.getdEdL(i, true);
+                final double indRealAnalytic = esvSystem.getEsvDerivative(InducedRealSpace, i);
+                final double indRealNumeric = (indRealHigh - indRealLow).div(2 * step);
+                final double indRealError = Math.abs(indRealNumeric - indRealAnalytic);
+                final double totalAnalytic = esvSystem.getEsvDerivative(Topology, i);
                 final double totalNumeric = (totalHigh - totalLow).div(2 * step);
                 final double totalError = Math.abs(totalNumeric - totalAnalytic);
 
@@ -323,15 +427,15 @@ try {
                 sb.append(format("\n  Finite Difference Test: %s", esvName));
                 sb.append(format("\n *************************"));
                 sb.append(format(StringUtils.repeat("*", esvName.length()))).append("*");
-                sb.append(format("   %10s   %10s    %10s    %10s    %10s\n", "vdw", "permReal", "permSelf", "permRecip", "total"));
-                sb.append(format(" Numeric  Derivatives (@lambda %4.2f): %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f\n",
-                        lambda, vdwNumeric, realNumeric, selfNumeric, recipNumeric, totalNumeric));
-                sb.append(format(" Analytic Derivatives (@lambda %4.2f): %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f\n",
-                        lambda, vdwAnalytic, realAnalytic, selfAnalytic, recipAnalytic, totalAnalytic));
-                sb.append(format(" Error:                               %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f\n",
-                        vdwError, realError, selfError, recipError, totalError));
+                sb.append(format("   %10s   %10s    %10s    %10s    %10s   %10s\n", "vdw", "permReal", "permSelf", "permRecip", "indReal", "total"));
+                sb.append(format(" Numeric  Derivatives (@lambda %4.2f): %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f\n",
+                        lambda, vdwNumeric, realNumeric, selfNumeric, recipNumeric, indRealNumeric, totalNumeric));
+                sb.append(format(" Analytic Derivatives (@lambda %4.2f): %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f\n",
+                        lambda, vdwAnalytic, realAnalytic, selfAnalytic, recipAnalytic, indRealAnalytic, totalAnalytic));
+                sb.append(format(" Error:                               %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f\n",
+                        vdwError, realError, selfError, recipError, indRealError, totalError));
                 ffxlog.info(sb.toString());
-            }
+            }   */
         }
     }
 

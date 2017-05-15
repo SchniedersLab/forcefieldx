@@ -42,8 +42,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
@@ -55,19 +53,19 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.pj.reduction.SharedDouble;
 
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom.Descriptions;
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
-import ffx.potential.extended.ExtendedSystem.EsvConfig;
+import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
 import ffx.potential.nonbonded.MultiplicativeSwitch;
-import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 
 import static ffx.potential.extended.ExtConstants.RNG;
-import static ffx.potential.extended.ExtUtils.DebugHandler.VERBOSE;
-import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 import static ffx.potential.extended.SBLogger.SB;
+import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
+import static ffx.potential.parameters.MultipoleType.zeroM;
 
 /**
  * A generalized extended system variable.
@@ -86,6 +84,7 @@ public abstract class ExtendedVariable {
     private double lambda = 1.0;                    // ESVs travel on {0,1}
     private double theta;                           // Propagates lambda particle via "lambda=sin(theta)^2"
     private double halfThetaVelocity = 0.0;         // from OSRW, start theta with zero velocity
+	private double scaledPolarizability;
     /**
      * Magnitude of the discretization bias in kcal/mol.
      */
@@ -121,7 +120,7 @@ public abstract class ExtendedVariable {
     private final HashMap<Class<? extends BondedTerm>,SharedDouble> fgBondedDerivDecomp;    // foreground dUdL by term
     private final HashMap<Class<? extends BondedTerm>,SharedDouble> bgBondedDerivDecomp;    // background dUdL by term
     private final HashMap<Atom,Atom> fg2bg = new HashMap<>();       // maps multipole end points of this ESV's lambda path
-    private final EsvConfig config;
+    private final ExtendedSystemConfig config;
     
     /**
      * Prefer ExtendedSystem::populate to manual ESV creation.
@@ -134,7 +133,7 @@ public abstract class ExtendedVariable {
     public ExtendedVariable(ExtendedSystem esvSystem, MultiResidue multiRes, double initialLambda) {
         this.esvIndex = esvSystem.requestIndexing();
         this.config = esvSystem.config;
-        this.discrBiasMag = config.discretizeBiasMagnitude;
+        this.discrBiasMag = config.discrBias;
         this.switchingFunction = new MultiplicativeSwitch(0.0, 1.0);
         setInitialLambda(lambda);
 		
@@ -149,7 +148,7 @@ public abstract class ExtendedVariable {
         atomsShared = new ArrayList<>();
         atomsUnshared = new ArrayList<>();
         
-        if (config.esvDecomposeBonded) {
+        if (config.decomposeBonded) {
             fgBondedDerivDecomp = new HashMap<>();
             bgBondedDerivDecomp = new HashMap<>();
         } else {
@@ -206,7 +205,7 @@ public abstract class ExtendedVariable {
         // Fill bonded term list and set all esvLambda values.
         bondedFg = residueForeground.getDescendants(BondedTerm.class);
         bondedBg = residueBackground.getDescendants(BondedTerm.class);
-        if (config.esvBonded) {
+        if (config.bonded) {
             MSNode extendedTermNode = new MSNode(format("Extended (%d)", bondedBg.size()));
             for (MSNode node : residueBackground.getTermNode().getChildList()) {
                 extendedTermNode.add(node);
@@ -217,14 +216,11 @@ public abstract class ExtendedVariable {
         
         /* Background atoms don't get automatically typed by PME since they're
          * disconnected from the molecular assembly; must be done manually. */
-        if (config.esvElectrostatics) {
+        if (config.electrostatics) {
             esvSystem.initializeBackgroundMultipoles(atomsBackground);
             updateMultipoleTypes();
         }
         
-        for (Atom atom : ExtUtils.joinedListView(atomsForeground, atomsBackground)) {
-            atom.setESV(this);
-        }
         describe();
     }
 	
@@ -244,7 +240,7 @@ public abstract class ExtendedVariable {
      * direct access for array resizing, etc.
      */
     protected void propagate(double dEdEsv, double dt, double setTemperature) {
-        if (!config.esvAllowPropagation) {
+        if (!config.propagation) {
             return;
         }
         double rt2 = 2.0 * ExtConstants.Boltzmann * setTemperature * config.thetaFriction / dt;
@@ -274,8 +270,8 @@ public abstract class ExtendedVariable {
     }
     private void setLambda(double lambda, boolean updateComponents) {
         this.lambda = lambda;
-        this.lSwitch = switchingFunction.taper(lambda);
-        this.dlSwitch = switchingFunction.dtaper(lambda);
+        this.lSwitch = (config.allowLambdaSwitch) ? switchingFunction.taper(lambda) : lambda;
+        this.dlSwitch = (config.allowLambdaSwitch) ? switchingFunction.dtaper(lambda) : 1.0;
         theta = Math.asin(Math.sqrt(lambda));
         discrBias = discrBiasMag - 4*discrBiasMag*(lambda-0.5)*(lambda-0.5);
         dDiscrBiasdL = -8*discrBiasMag*(lambda-0.5);
@@ -292,22 +288,20 @@ public abstract class ExtendedVariable {
      * Invoked by ExtendedSystem after lambda changes and by PME after multipole rotation.
      */
     protected final void updateMultipoleTypes() {
-		if (!config.esvElectrostatics) {
+		if (!config.electrostatics) {
 			return;
 		}
-        List<Atom> iterate = (config.esvScaleUnshared)
-                ? ExtUtils.joinedListView(atomsShared, atomsUnshared)
-                : atomsShared;
+		/* If not softcoring unshared atoms, then scale them as well
+		 * (with an implied zero-multipole background atom).	  */
+        List<Atom> iterate = ExtUtils.joinedListView(atomsShared, atomsUnshared);
         for (Atom fg : iterate) {
 //            MultipoleType Ptype, Utype;
             Atom bg = fg2bg.get(fg);
-            MultipoleType Ptype = fg.getMultipoleType();
-            MultipoleType Utype;
+            final MultipoleType Ptype = fg.getMultipoleType();
+            final MultipoleType Utype;
             if (bg == null) {
                 if (atomsUnshared.contains(fg)) {
-                    Utype = new MultipoleType(0.0, new double[]{0.0,0.0,0.0},
-                            new double[][]{{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}},
-                            Ptype.frameAtomTypes, Ptype.frameDefinition, false);
+                    Utype = new MultipoleType(zeroM, Ptype.frameAtomTypes, Ptype.frameDefinition, false);
                 } else {
                     SB.warning("Error @ESV.updateMultipoles: bg null && !unshared.");
                     Utype = null;
@@ -317,18 +311,13 @@ public abstract class ExtendedVariable {
             }
             MultipoleType types[] = new MultipoleType[]{Ptype, Utype};
             double mWeights[], mdotWeights[];
-            if (config.nonlinearMultipoles) {
-                double lSwitch = getLambdaSwitch();
-                double dlSwitch = getSwitchDeriv();
+            if (config.allowLambdaSwitch && config.nonlinearMultipoles) {
                 mWeights = new double[]{lSwitch, 1.0 - lSwitch};
                 mdotWeights = new double[]{dlSwitch, -dlSwitch};
             } else {
-                double lambda = getLambda();
                 mWeights = new double[]{lambda, 1.0 - lambda};
                 mdotWeights = new double[]{1.0, -1.0};
             }
-            MultipoleType multipoleM;
-            MultipoleType multipoleMdot;
             if (Ptype == null) {
                 // Multipoles not yet defined.
                 continue;
@@ -344,30 +333,33 @@ public abstract class ExtendedVariable {
                 SB.warning();
                 continue;
             }
-            int frameTypes[] = Ptype.frameAtomTypes;
-            multipoleM = MultipoleType.scale(types, mWeights, frameTypes);
-            multipoleMdot = MultipoleType.scale(types, mdotWeights, frameTypes);
-            if (multipoleM == null || multipoleMdot == null) {
+			final double[] esvMultipole;
+			final double[] esvMultipoleDot;
+			final MultipoleType esvType;
+			final MultipoleType esvDotType;
+			try {
+				esvType = MultipoleType.weightMultipoleTypes(types, mWeights, Ptype.frameAtomTypes);
+				esvDotType = MultipoleType.weightMultipoleTypes(types, mdotWeights, Ptype.frameAtomTypes);
+			} catch (IllegalArgumentException ex) {
+				SB.warning("Multipole scaling failed for fg,bg atoms: %s %s",
+						fg.describe(Descriptions.Trim), bg.describe(Descriptions.Trim));
+				throw ex;
+			}
+            if (esvType == null || esvDotType == null) {
                 logger.severe("Error @ESV.updateMultipoleTypes: M or Mdot null.");
             }
-            if (lambda == 1.0) {
-                for (int i = 0; i < 10; i++) {
-                    if (multipoleM.packedMultipole[i] != fg.getMultipoleType().packedMultipole[i]) {
-                        SB.warning(" Lambda == 1.0!\n oldType: %s\n newType: %s",
-                                Arrays.toString(fg.getMultipoleType().packedMultipole),
-                                Arrays.toString(multipoleM.packedMultipole));
-                        throw new IllegalStateException();
-                    }
-                }
-            }
-            fg.setEsvMultipoleM(multipoleM);
-            fg.setEsvMultipoleMdot(multipoleMdot);
-            SB.logf(" Assigning ESV MultipoleTypes for atom %s", fg.describe(Atom.Descriptions.RESNUM_NAME));
+			if (isTitratableHydrogen(fg)) {
+				final double scaledAlpha = fg.getPolarizeType().polarizability * getLambda();
+				fg.setEsv(this, esvType, esvDotType, scaledAlpha);
+			} else {
+				fg.setEsv(this, esvType, esvDotType);
+			}
+            SB.logf(" Assigning ESV MultipoleTypes for atom %s", fg.describe(Atom.Descriptions.Resnum_Name));
             SB.nlogf("  U: %.2f*%s", lambda, Ptype.toCompactBohrString());
             SB.nlogf("  P: %.2f*%s", 1.0 - lambda, Utype.toCompactBohrString());
-            SB.nlogf("  M:      %s", multipoleM.toCompactBohrString());
-            SB.nlogf("  Mdot:   %s", multipoleMdot.toCompactBohrString());
-            SB.printIf(VERBOSE());
+            SB.nlogf("  M:      %s", fg.getEsvMultipole().toCompactBohrString());
+            SB.nlogf("  Mdot:   %s", fg.getEsvMultipoleDot().toCompactBohrString());
+            SB.printIf(ExtUtils.verbose);
         }
     }
 
@@ -375,17 +367,17 @@ public abstract class ExtendedVariable {
      * The unswitched lambda value, ie input to S(L).
      */
     public final double getLambda() {
-        return lambda;      // L
+        return lambda;
     }
 
     protected final double getLambdaSwitch() {
-        return lSwitch;     // S(L)
+        return (config.allowLambdaSwitch) ? lSwitch : lambda;	// S(L)
     }
 
     protected final double getSwitchDeriv() {
-        return dlSwitch;    // dS(L)dL
+        return (config.allowLambdaSwitch) ? dlSwitch : 1.0;		// dS(L)dL
     }
-
+	
     public final int getEsvIndex() {
         return esvIndex;
     }
@@ -428,8 +420,8 @@ public abstract class ExtendedVariable {
         for (int i = 0; i < atomsShared.size(); i++) {
             Atom ai = atomsShared.get(i);
             SB.logfn("     %-50s %-50s",
-                    ai.describe(Atom.Descriptions.DEFAULT).trim(),
-                    fg2bg.get(ai).describe(Atom.Descriptions.TRIM));
+                    ai.describe(Atom.Descriptions.Default).trim(),
+                    fg2bg.get(ai).describe(Atom.Descriptions.Trim));
         }
         SB.logfn("   Unshared Atoms");
         for (Atom atom : atomsUnshared) {
@@ -466,14 +458,14 @@ public abstract class ExtendedVariable {
     }
 
     private void updateBondedLambdas() {
-        if (!config.esvBonded) {
+        if (!config.bonded) {
             return;
         }
         bondedDeriv.set(0.0);
         double Sl = getLambdaSwitch();
         double dSldL = getSwitchDeriv();
         for (BondedTerm bt1 : bondedFg) {
-            if (config.esvDecomposeBonded) {
+            if (config.decomposeBonded) {
                 bt1.attachExtendedVariable(Sl, dSldL, bondedDeriv, fgBondedDerivDecomp);
                 fgBondedDerivDecomp.clear();
             } else {
@@ -481,7 +473,7 @@ public abstract class ExtendedVariable {
             }
         }
         for (BondedTerm bt0 : bondedBg) {
-            if (config.esvDecomposeBonded) {
+            if (config.decomposeBonded) {
                 bt0.attachExtendedVariable(1.0 - Sl, -dSldL, bondedDeriv, bgBondedDerivDecomp);
                 bgBondedDerivDecomp.clear();
             } else {

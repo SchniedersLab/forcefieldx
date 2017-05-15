@@ -279,11 +279,11 @@ public final class Utilities {
             if (beta == null) {
                 return null;
             }
-            List betabonds = beta.getBonds();
+            List<Bond> betabonds = beta.getBonds();
             Atom gamma;
             int carboncount = 0;
-            for (ListIterator li = betabonds.listIterator(); li.hasNext();) {
-                abond = (Bond) li.next();
+            for (ListIterator<Bond> li = betabonds.listIterator(); li.hasNext();) {
+                abond = li.next();
                 gamma = abond.get1_2(beta);
                 if (gamma.getAtomicNumber() == 6) {
                     carboncount++;
@@ -779,6 +779,15 @@ public final class Utilities {
         }
         return true;
     }
+	
+	public static void printStackTrace(Throwable ex) {
+		StringBuilder sb = new StringBuilder();
+		StackTraceElement[] trace = ex.getStackTrace();
+		for (StackTraceElement elem : trace) {
+			sb.append(String.format("%s\n", elem.toString()));
+		}
+		logger.info(sb.toString());
+	}
 
     /**
      * Returns a carbon that is bonded to the atom a, a carbonyl group, and a

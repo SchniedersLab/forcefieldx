@@ -64,7 +64,6 @@ import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 
-import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.SBLogger.SB;
 
 
@@ -93,6 +92,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private int saveSnapshotFrequency = 1000;
     private int removeCOMMotionFrequency = 100;
     private boolean initVelocities = true;
+    private boolean constantPressure = false;
     private boolean loadRestart = false;
     private boolean initialized = false;
     private boolean done = true;
@@ -119,7 +119,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private DynamicsState dynamicsState;
     private double totalSimTime = 0.0;
     
-    private final boolean reinitRemovesCOM = prop("md-reinitRemovesCOM", true);
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
     public enum MonteCarloNotification {
         NEVER, EACH_STEP, AFTER_DYNAMICS;
@@ -150,6 +149,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         assemblies.add(new AssemblyInfo(assembly));
         this.algorithmListener = listener;
         this.potential = potentialEnergy;
+        if (potentialEnergy instanceof Barostat) {
+            constantPressure = true;
+        }
 
         assemblies.get(0).props = properties;
         mass = potentialEnergy.getMass();
@@ -255,7 +257,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Reinitialize the MD engine after a chemical change.
      */
     public void reInit() {
-        final boolean removeCenterOfMassMotion = reinitRemovesCOM;
         numberOfVariables = potential.getNumberOfVariables();
         mass = potential.getMass();
         x = new double[numberOfVariables];
@@ -271,7 +272,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             grad = ((ForceFieldEnergy) potential).getGradients(grad);
         }
         thermostat.setNumberOfVariables(numberOfVariables, x, v, mass,
-                potential.getVariableTypes(), removeCenterOfMassMotion);
+                potential.getVariableTypes(), true);
         integrator.setNumberOfVariables(numberOfVariables, x, v, a, aPrevious, mass);
     }
 
@@ -343,7 +344,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     public List<File> getArchiveFiles() {
         ArrayList<File> aFiles = new ArrayList<>();
-        assemblies.forEach((ai) -> { aFiles.add(ai.archiveFile); });
+        assemblies.forEach((ai) -> {
+            aFiles.add(ai.archiveFile);
+        });
         return aFiles;
         // Below may be more thread-safe and less prone to side effects.
         // Would definitely be safer than stream().forEach(add to external list).
@@ -361,8 +364,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Finds and removes an assembly, searching by reference equality.
-     * Removes all instances of the assembly.
+     * Finds and removes an assembly, searching by reference equality. Removes
+     * all instances of the assembly.
+     *
      * @param mola Assembly to remove.
      * @return Number of times found and removed.
      */
@@ -476,6 +480,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 archFile = new File(filename + ".arc");
                 ainfo.archiveFile = XYZFilter.version(archFile);
             }
+            if (ainfo.pdbFile == null) {
+                String extName = FilenameUtils.getExtension(file.getName());
+                if (extName.toLowerCase().startsWith("pdb")) {
+                    ainfo.pdbFile = file;
+                } else {
+                    ainfo.pdbFile = new File(filename + ".pdb");
+                }
+            }
             if (ainfo.xyzFilter == null) {
                 ainfo.xyzFilter = new XYZFilter(file, mola, mola.getForceField(), aprops);
             }
@@ -523,6 +535,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     private boolean skipIntro = false;
+
     public void redynamic(final int nSteps, final double temperature) {
         skipIntro = true;
 
@@ -588,7 +601,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public void dynamic(final int nSteps, final double timeStep, final double printInterval,
             final double saveInterval, final double temperature, final boolean initVelocities,
             final File dyn) {
-       /**
+        /**
          * Return if already running; Could happen if two threads call dynamic
          * on the same MolecularDynamics instance.
          */
@@ -598,11 +611,23 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         if (integrator instanceof Stochastic) {
-            logger.info(format("\n Stochastic dynamics in the NVT ensemble\n"));
+            if (constantPressure) {
+                logger.info(format("\n Stochastic dynamics in the NPT ensemble\n"));
+            } else {
+                logger.info(format("\n Stochastic dynamics in the NVT ensemble\n"));
+            }
         } else if (!(thermostat instanceof Adiabatic)) {
-            logger.info(format("\n Molecular dynamics in the NVT ensemble\n"));
+            if (constantPressure) {
+                logger.info(format("\n Molecular dynamics in the NPT ensemble\n"));
+            } else {
+                logger.info(format("\n Molecular dynamics in the NVT ensemble\n"));
+            }
         } else {
-            logger.info(format("\n Molecular dynamics in the NVE ensemble\n"));
+            if (constantPressure) {
+                logger.severe(format("\n NPT Molecular dynamics requires a thermostat.\n"));
+            } else {
+                logger.info(format("\n Molecular dynamics in the NVE ensemble\n"));
+            }
         }
 
         init(nSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency,
@@ -636,7 +661,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 logger.log(Level.WARNING, message, e);
             }
         }
-        logger.info("Done with an MD round.");
+        logger.info(" Done with an MD round.");
     }
 
     /**
@@ -981,13 +1006,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * A simple container class to hold all the infrastructure associated with
-     * a MolecularAssembly for MolecularDynamics; assembly, properties, archive
+     * A simple container class to hold all the infrastructure associated with a
+     * MolecularAssembly for MolecularDynamics; assembly, properties, archive
      * and PDB files, PDB and XYZ filters. Direct access to package-private
      * members breaks encapsulation a bit, but the private inner class shouldn't
      * be used externally anyways.
      */
     private class AssemblyInfo {
+
         private final MolecularAssembly mola;
         CompositeConfiguration props = null;
         File archiveFile = null;
@@ -1019,11 +1045,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     private final boolean verboseDynamicsState = System.getProperty("md-verbose") != null;
+
     public class DynamicsState {
+
         double[] xBak, vBak, aBak;
         double[] aPreviousBak, massBak, gradBak;
         double currentKineticEnergyBak, currentPotentialEnergyBak, currentTotalEnergyBak;
         double currentTemperatureBak;
+
         public DynamicsState() {
             xBak = x.clone();
             vBak = v.clone();
@@ -1039,26 +1068,28 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 describe(" Storing State:");
             }
         }
+
         public void describe(String title) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(format(title));
-                sb.append(format("\nx: "));
-                Arrays.stream(x).forEach(val -> sb.append(format("%.2g, ", val)));
-                sb.append(format("\nv: "));
-                Arrays.stream(v).forEach(val -> sb.append(format("%.2g, ", val)));
-                sb.append(format("\na: "));
-                Arrays.stream(a).forEach(val -> sb.append(format("%.2g, ", val)));
-                sb.append(format("\naP: "));
-                Arrays.stream(aPrevious).forEach(val -> sb.append(format("%.2g, ", val)));
-                sb.append(format("\nm: "));
-                Arrays.stream(mass).forEach(val -> sb.append(format("%.2g, ", val)));
-                sb.append(format("\ng: "));
-                Arrays.stream(grad).forEach(val -> sb.append(format("%.2g, ", val)));
-                sb.append(format("\nK,U,E,T: %g %g %g %g\n",
-                        currentKineticEnergy, currentPotentialEnergy,
-                        currentTotalEnergy, currentTemperature));
-                logger.info(sb.toString());
+            StringBuilder sb = new StringBuilder();
+            sb.append(format(title));
+            sb.append(format("\nx: "));
+            Arrays.stream(x).forEach(val -> sb.append(format("%.2g, ", val)));
+            sb.append(format("\nv: "));
+            Arrays.stream(v).forEach(val -> sb.append(format("%.2g, ", val)));
+            sb.append(format("\na: "));
+            Arrays.stream(a).forEach(val -> sb.append(format("%.2g, ", val)));
+            sb.append(format("\naP: "));
+            Arrays.stream(aPrevious).forEach(val -> sb.append(format("%.2g, ", val)));
+            sb.append(format("\nm: "));
+            Arrays.stream(mass).forEach(val -> sb.append(format("%.2g, ", val)));
+            sb.append(format("\ng: "));
+            Arrays.stream(grad).forEach(val -> sb.append(format("%.2g, ", val)));
+            sb.append(format("\nK,U,E,T: %g %g %g %g\n",
+                    currentKineticEnergy, currentPotentialEnergy,
+                    currentTotalEnergy, currentTemperature));
+            logger.info(sb.toString());
         }
+
         public void restore() {
             if (verboseDynamicsState) {
                 describe(" Reverting State (From):");

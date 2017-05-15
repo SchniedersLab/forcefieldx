@@ -37,38 +37,35 @@
  */
 package ffx.algorithms.mc;
 
-import ffx.algorithms.MonteCarloListener;
-import ffx.algorithms.Thermostat;
-import ffx.algorithms.mc.MCMove;
-import ffx.algorithms.mc.RosenbluthChi0Move;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.ROLS;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueState;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Torsion;
-import ffx.potential.parsers.PDBFilter;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
+
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.math3.util.FastMath;
+
+import ffx.algorithms.MonteCarloListener;
+import ffx.algorithms.Thermostat;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.parsers.PDBFilter;
+
 import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
 
 /**
- * Conformational Biased Monte Carlo (applied to ALL torsions of a peptide side-chain).
- * As described by Frenkel/Smit in "Understanding Molecular Simulation" Chapters 13.2,13.3
- * This uses the "conformational biasing" method to select whole rotamer transformations that are frequently accepted.
+ * Conformational Biased Monte Carlo (applied to ALL torsions of a peptide
+ * side-chain). As described by Frenkel/Smit in "Understanding Molecular
+ * Simulation" Chapters 13.2,13.3 This uses the "conformational biasing" method
+ * to select whole rotamer transformations that are frequently accepted.
+ *
  * @author S. LuCore
  */
 public class RosenbluthCBMC implements MonteCarloListener {
+
     private static final Logger logger = Logger.getLogger(RosenbluthCBMC.class.getName());
-    
+
     private final MolecularAssembly mola;
     private final ForceFieldEnergy ffe;
     private final Thermostat thermostat;
@@ -97,14 +94,15 @@ public class RosenbluthCBMC implements MonteCarloListener {
      * Writes PDBs of each trial set and original/proposed configurations.
      */
     private boolean writeSnapshots = false;
-    
+
     /**
      * RRMC constructor.
+     *
      * @param targets Residues to undergo RRMC.
      * @param mcFrequency Number of MD steps between RRMC proposals.
      * @param trialSetSize Larger values cost more but increase acceptance.
      */
-    public RosenbluthCBMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat, 
+    public RosenbluthCBMC(MolecularAssembly mola, ForceFieldEnergy ffe, Thermostat thermostat,
             List<Residue> targets, int mcFrequency, int trialSetSize, boolean writeSnapshots) {
         this.targets = targets;
         this.mcFrequency = mcFrequency;
@@ -126,7 +124,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
             logger.severe("Empty target list for CMBC.");
         }
     }
-    
+
     @Override
     public boolean mcUpdate(double temperature) {
         steps++;
@@ -135,7 +133,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
         }
         return false;
     }
-    
+
     public boolean cbmcStep() {
         numMovesProposed++;
         boolean accepted;
@@ -146,7 +144,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
             temperature = 298.15;
         }
         double beta = 1.0 / (BOLTZMANN * temperature);
-        
+
         // Select a target residue.
         int which = ThreadLocalRandom.current().nextInt(targets.size());
         Residue target = targets.get(which);
@@ -174,11 +172,12 @@ public class RosenbluthCBMC implements MonteCarloListener {
             logger.info(String.format(" Denied.\n"));
             accepted = false;
         }
-        
+
         return accepted;
     }
 
     private PDBFilter writer;
+
     private void write() {
         if (writer == null) {
             writer = new PDBFilter(mola.getFile(), mola, null, null);
@@ -191,7 +190,7 @@ public class RosenbluthCBMC implements MonteCarloListener {
         File file = new File(filename);
         writer.writeFile(file, false);
     }
-    
+
     public boolean controlStep() {
         double temperature;
         if (thermostat != null) {
@@ -207,5 +206,5 @@ public class RosenbluthCBMC implements MonteCarloListener {
                 false, numMovesProposed, true);
         return cbmcMove.wasAccepted();
     }
-    
+
 }

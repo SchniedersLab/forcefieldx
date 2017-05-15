@@ -382,7 +382,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         if (active != null) {
             ForceFieldEnergy energy = active.getPotentialEnergy();
             if (energy == null) {
-                energy = new ForceFieldEnergy(active);
+                energy = ForceFieldEnergy.energyFactory(active);
                 active.setPotential(energy);
             }
             energy.energy(false, true);
@@ -411,7 +411,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         if (active != null) {
             ForceFieldEnergy energy = active.getPotentialEnergy();
             if (energy == null) {
-                energy = new ForceFieldEnergy(active);
+                energy = ForceFieldEnergy.energyFactory(active);
                 active.setPotential(energy);
             }
             return energy.energy(false, true);

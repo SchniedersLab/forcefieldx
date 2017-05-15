@@ -435,7 +435,7 @@ public abstract class Thermostat {
         linearMomentum[2] /= totalMass;
 
         if (print) {
-            StringBuilder sb = new StringBuilder(format("\n Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
+            StringBuilder sb = new StringBuilder(format(" Center of Mass   (%12.3f,%12.3f,%12.3f)\n",
                     centerOfMass[0], centerOfMass[1], centerOfMass[2]));
             sb.append(format(" Linear Momentum  (%12.3f,%12.3f,%12.3f)\n",
                     linearMomentum[0], linearMomentum[1], linearMomentum[2]));
@@ -542,7 +542,7 @@ public abstract class Thermostat {
                 v[index++] += (-ox * yi + oy * xi);
             }
         } */
-        
+
         if (print) {
             logger.info(" Center of mass motion removed.");
         }

@@ -778,7 +778,8 @@ public class Poledit {
                 }
             }
             //Set up stuff. Charge, Dipole, Quadrupole, FrameTypes, FrameDef
-            MultipoleType m = new MultipoleType(charge, dipole.clone(), quadrupole.clone(), multipoleFrameTypes.clone(), frameDefinition);
+            MultipoleType m = new MultipoleType(charge, dipole.clone(), quadrupole.clone(),
+					multipoleFrameTypes.clone(), frameDefinition, false);
             a.setMultipoleType(m);
         }
     }

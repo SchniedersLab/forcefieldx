@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
-import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.numerics.Potential;
@@ -22,11 +21,9 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.Keyword;
 
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.SBLogger.SB;
@@ -44,35 +41,32 @@ public class TitrationUtils {
      */
     public static class TitrationConfig {
         public final ContinuousSeedDistribution seedDistribution
-                                                        = prop(ContinuousSeedDistribution.class, "cphmd-seedMode", ContinuousSeedDistribution.FLAT);
-        public MCOverride mcOverride                    = prop(MCOverride.class, "cphmd-override", MCOverride.NONE);
-        public final Snapshots snapshots                = prop(Snapshots.class, "cphmd-snapshots", Snapshots.NONE);
-        public final HistidineMode histidineMode        = prop(HistidineMode.class, "cphmd-histidineMode", HistidineMode.HIE_ONLY);
-        public final OptionalDouble referenceOverride   = prop("cphmd-referenceOverride", OptionalDouble.empty());
-        public final double meltdownTemperature         = prop("cphmd-meltdownTemp", 6000.0);
-        public final double warningTemperature          = prop("cphmd-warningTemp", 1000.0);
-        public final boolean logTimings                 = prop("cphmd-logTimings", false);
-        public final boolean titrateTermini             = prop("cphmd-termini", false);             // TODO Finish termini support.
-        public final boolean zeroReferences             = prop("cphmd-zeroReferences", true);
-        public final int debugLogLevel                  = prop("cphmd-debugLog", 0);
-        public final boolean useConformationalBias      = prop("cphmd-cbmcRotamerMoves", false);    // untested
-        public final boolean inactivateBackground       = prop("cphmd-inactivateBackground", false);
+                                                        = prop("phmd-seedMode", ContinuousSeedDistribution.class, ContinuousSeedDistribution.FLAT);
+        public MCOverride mcOverride                    = prop("phmd-override", MCOverride.class, MCOverride.NONE);
+        public final Snapshots snapshots                = prop("phmd-snapshots", Snapshots.class, Snapshots.NONE);
+        public final HistidineMode histidineMode        = prop("phmd-histidineMode", HistidineMode.class, HistidineMode.HIE_ONLY);
+        public final OptionalDouble referenceOverride   = prop("phmd-referenceOverride", OptionalDouble.empty());
+        public final double meltdownTemperature         = prop("phmd-meltdownTemp", 6000.0);
+        public final double warningTemperature          = prop("phmd-warningTemp", 1000.0);
+        public final boolean logTimings                 = prop("phmd-logTimings", false);
+        public final boolean titrateTermini             = prop("phmd-termini", false);
+        public final boolean zeroReferences             = prop("phmd-zeroReferences", true);
+        public final int debugLogLevel                  = prop("phmd-debugLog", 0);
+        public final boolean useConformationalBias      = prop("phmd-cbmcRotamerMoves", false);
+        public final boolean inactivateBackground       = prop("phmd-inactivateBackground", false);
         public final boolean zeroReferenceEnergies =
-                prop("cphmd-zeroReferences", false, "Zeroing all reference energies!");
+                prop("phmd-zeroReferences", false, "Zeroing all reference energies!");
         public final OptionalDouble refOverride = 
-                prop("cphmd-refOverride", OptionalDouble.empty(), "Reference protonation energies overridden!");
+                prop("phmd-refOverride", OptionalDouble.empty(), "Reference protonation energies overridden!");
         
         public void print() {
-			ExtUtils.printConfigSet("Titration Config:", System.getProperties(), "cphmd");
+			ExtUtils.printConfigSet("Titration Config:", System.getProperties(), "phmd");
         }
     }
-    
-    /*
-     * Properties of the TitrationUtils class itself; must be set at JVM launch.
-     */
-    public static final boolean heavyStrandedDynamics      = prop("cphmd-heavyStrandedDynamics", true);
-    public static final boolean threeStateHistidines       = prop("cphmd-threeState", false);   // not yet implemented
-    public static final boolean threeStateCarboxylics      = prop("cphmd-threeState", false);   // not yet implemented
+	
+    public static final boolean heavyStrandedDynamics      = prop("phmd-heavyStrandedDynamics", false);
+    public static final boolean threeStateHistidines       = prop("phmd-threeState", false);   // not yet implemented
+    public static final boolean threeStateCarboxylics      = prop("phmd-threeState", false);   // not yet implemented
     
     /**
      * How DISCOUNT initializes lambda values at outset of continuous dynamics.
@@ -114,17 +108,6 @@ public class TitrationUtils {
      */
     public static void initDiscountPreloadProperties(Double cutoffs) {
         initEsvPreloadProperties(cutoffs);
-        /* Available options: Key  */
-        System.getProperty("cphmd-seedMode");
-        System.getProperty("cphmd-override");
-        System.getProperty("cphmd-snapshotsType");
-        System.getProperty("cphmd-histidineMode");
-        System.getProperty("cphmd-debugLog");
-        System.getProperty("cphmd-referenceOverride");
-        System.getProperty("cphmd-tempMonitor");
-        System.getProperty("cphmd-logTimings");
-        System.getProperty("cphmd-termini");
-        System.getProperty("cphmd-zeroReferences");
     }
     public static void initDiscountPreloadProperties() {
         initDiscountPreloadProperties(null);
@@ -151,10 +134,10 @@ public class TitrationUtils {
 
         // Optional Potential
         System.setProperty("vdwterm", "true");         // van der Waals
-        System.setProperty("esv-vdw", "true");
+        System.setProperty("esv.vdw", "true");
         System.setProperty("mpoleterm", "true");       // permanent real space
         System.setProperty("pme-qi", "true");
-        System.setProperty("esv-pme", "true");
+        System.setProperty("esv.pme", "true");
         System.setProperty("recipterm", "true");       // permanent reciprocal space
 
         // Inactive Potential
@@ -178,12 +161,13 @@ public class TitrationUtils {
             System.setProperty("vdw-cutoff", String.valueOf(cutoffs));
             System.setProperty("ewald-cutoff", String.valueOf(cutoffs));
         }
+		System.setProperty("polar-eps", "1e-12");
 
         // ESV Settings
-        System.setProperty("esv-biasTerm", "true");             // include discretization and pH biases
-        System.setProperty("esv-scaleBonded", "true");          // include effects on bonded terms
-        System.setProperty("esv-backgroundBonded", "true");     // hook up BG bonded terms to FG node
-        System.setProperty("esv-scaleUnshared", "true");        // use multipole scaling in all cases (eliminates softcoring)
+//        System.setProperty("esv.biasTerm", "true");             // include discretization and pH biases
+//        System.setProperty("esv.scaleBonded", "true");          // include effects on bonded terms
+//        System.setProperty("esv.backgroundBonded", "true");     // hook up BG bonded terms to FG node
+//        System.setProperty("esv.scaleUnshared", "true");        // use multipole scaling in all cases (eliminates softcoring)
     }
     public static void initEsvPreloadProperties() {
         initEsvPreloadProperties(null);
@@ -709,7 +693,7 @@ public class TitrationUtils {
                 } else {
                     // PREVIOUSLY: draw vel from maxwell and set accel to zero
                     a.setXYZGradient(0, 0, 0);
-                    a.setVelocity(ExtUtils.singleRoomtempMaxwell(a.getMass()));
+                    a.setVelocity(ExtUtils.maxwellVelocity(a.getMass(), ExtConstants.roomTemperature));
                     a.setAcceleration(new double[]{0, 0, 0});
                     a.setPreviousAcceleration(new double[]{0, 0, 0});
                 }

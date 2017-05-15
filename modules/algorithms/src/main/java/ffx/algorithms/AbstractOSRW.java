@@ -280,10 +280,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected double osrwOptimum = Double.MAX_VALUE;
 
     /**
-     * Interval between how often the free energy is updated from the count
-     * matrix.
+     * Interval between how often the 1D histogram is printed to screen versus
+     * silently updated in background.
      */
-    protected final int fLambdaPrintInterval = 10;
+    protected final int fLambdaPrintInterval = 25;
     protected int fLambdaUpdates = 0;
     /**
      * Interval between writing an OSRW restart file in steps.

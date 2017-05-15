@@ -140,11 +140,11 @@ class TTosrw extends Script {
         /**
          * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
          */
-        @Option(shortName='r', longName='report', defaultValue='0.1', description='Interfal to report thermodynamics (psec).') double report;
+        @Option(shortName='r', longName='report', defaultValue='0.25', description='Interfal to report thermodynamics (psec).') double report;
         /**
          * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
          */
-        @Option(shortName='w', longName='write', defaultValue='1.0', description='Interval to write out coordinates (psec).') double write;
+        @Option(shortName='w', longName='write', defaultValue='10.0', description='Interval to write out coordinates (psec).') double write;
         /**
          * -t or --temperature sets the simulation temperature (Kelvin).
          */
@@ -225,10 +225,10 @@ class TTosrw extends Script {
         @Option(shortName='x', longName='friction', defaultValue='1.0e-18',
             description='Lambda particle friction') double lamFric;
         /**
-         * -p or --npt enables use of a barostat.
+         * -p or --npt Specify use of a MC Barostat at the given pressure (default 1.0 atm).
          */
-        @Option(shortName='p', longName='npt', defaultValue='false',
-            description='Use NPT') boolean npt;
+        @Option(shortName='p', longName='npt', defaultValue='0',
+            description='Specify use of a MC Barostat at the given pressure (default of 0 = disabled)') double pressure;
         /**
          * -sym or --symOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
          */
@@ -638,16 +638,6 @@ class TTosrw extends Script {
             threadsPer = threadsAvail / numParallel;
         }
 
-        boolean resetNumSteps = true;
-
-        if (options.resetStepsString) {
-            if (options.nEquil > 0) {
-                logger.warning(" Ignoring resetNumSteps input due to equilibration\n");
-            } else if (options.resetStepsString.equalsIgnoreCase("false")) {
-                resetNumSteps = false;
-            }
-        }
-
         if (options.ligAt1) {
             ranges1 = options.ligAt1.tokenize(".");
         }
@@ -696,7 +686,6 @@ class TTosrw extends Script {
         }
 
         String filename = arguments[0];
-        logger.info(filename);
         File structureFile = new File(FilenameUtils.normalize(filename));
         structureFile = new File(structureFile.getAbsolutePath());
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
@@ -741,22 +730,18 @@ class TTosrw extends Script {
             dyn = null;
         }
 
-        // Turn on computation of lambda derivatives.
-        System.setProperty("lambdaterm", "true");
+        // Turn on computation of lambda derivatives if softcore atoms exist or only a single topology.
+        boolean lambdaTerm = options.ligAt1 || options.ligAt2 || (options.s1 > 0) || (options.s2 > 0) || nArgs == 1;
+        if (lambdaTerm) {
+            System.setProperty("lambdaterm","true");
+        }
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
         if (nArgs >= 2) {
-            // Condensed phase polarization is evaluated over the entire range.
-            System.setProperty("polarization-lambda-start","0.0");
-            // Polarization energy is not scaled individually by lambda, but
-            // along with the overall potential energy of a topology.
-            System.setProperty("polarization-lambda-exponent","0.0");
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
             System.setProperty("ligand-vapor-elec","false");
-            // Condensed phase polarization, without the ligand present, is unecessary.
-            System.setProperty("no-ligand-condensed-scf","false");
         }
 
         double lambda = options.lambda;
@@ -996,8 +981,9 @@ class TTosrw extends Script {
             break;
         }
         sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
+        sb.append("\n");
         logger.info(sb.toString());
-        
+
         logger.info(" Starting energy (before .dyn restart loaded):");
         boolean updatesDisabled = topologies[0].getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
         if (updatesDisabled) {
@@ -1007,9 +993,8 @@ class TTosrw extends Script {
         potential.getCoordinates(x);
         LambdaInterface linter = (LambdaInterface) potential;
         linter.setLambda(lambda);
-        
-        potential.energy(x, true);
 
+        potential.energy(x, true);
 
         if (distResidues) {
             logger.info(" Distributing walker conformations.");
@@ -1045,6 +1030,16 @@ class TTosrw extends Script {
                 break;
             }
         }
+
+        boolean resetNumSteps = true;
+        if (options.resetStepsString) {
+            if (options.nEquil > 0) {
+                logger.info(" Ignoring resetNumSteps input due to equilibration");
+            } else if (options.resetStepsString.equalsIgnoreCase("false")) {
+                resetNumSteps = false;
+            }
+        }
+
         osrw = new TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart,
             topologies[0].getProperties(), options.temp, options.dt, options.report,
             options.write, options.async, resetNumSteps, aFuncts.getDefaultListener());
@@ -1076,10 +1071,9 @@ class TTosrw extends Script {
             osrw.setBiasMagnitude(options.biasMag);
         }
 
-        // Create the MolecularDynamics instance.
-
-        if (options.npt) {
+        if (options.pressure) {
             Barostat barostat = new Barostat(topologies[0], osrw);
+            barostat.setPressure(options.pressure);
             barostat.setMaxDensity(options.maxDensity);
             barostat.setMinDensity(options.minDensity);
             double dens = barostat.density();
@@ -1094,6 +1088,7 @@ class TTosrw extends Script {
             potential = osrw;
         }
 
+        // Create the MolecularDynamics instance.
         MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
             topologies[0].getProperties(), null, options.tstat, options.integrator);
         for (int i = 1; i < topologies.size(); i++) {
@@ -1115,7 +1110,13 @@ class TTosrw extends Script {
                 fileType, restartInterval, dyn);
         } else {
             logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
-            if (!resetNumSteps) {
+            boolean resetSteps = true;
+            if (options.resetStepsString) {
+                if (options.resetStepsString.equalsIgnoreCase("false")) {
+                    resetSteps = false;
+                }
+            }
+            if (!resetSteps) {
                 int nEnergyCount = osrw.getEnergyCount();
                 if (nEnergyCount > 0) {
                     nSteps -= nEnergyCount;

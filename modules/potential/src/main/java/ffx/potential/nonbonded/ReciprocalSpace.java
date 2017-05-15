@@ -66,6 +66,7 @@ import ffx.numerics.fft.Complex3DOpenCL;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.fft.Real3DParallel;
 import ffx.potential.bonded.Atom;
+import ffx.potential.extended.ExtUtils;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
@@ -231,6 +232,15 @@ public class ReciprocalSpace {
     private final RowPermanentLoop rowPermanentLoops[];
     private final RowInducedLoop rowInducedLoops[];
 
+	/**
+	 * ExtendedSystem variables
+	 */
+	private final boolean esvTerm = ExtUtils.prop("esvterm", false);
+	private double unscaledFracDipole[][][];
+	private double unscaledFracDipoleCR[][][];
+	private double unscaledFracDipolePhi[][];
+	private double unscaledFracDipolePhiCR[][];
+
     /**
      * Number of atoms for a given symmetry operator that a given thread is
      * responsible for applying to the FFT grid. gridAtomCount[nSymm][nThread]
@@ -303,7 +313,7 @@ public class ReciprocalSpace {
         this.fftTeam = fftTeam;
         this.parallelTeam = parallelTeam;
 
-        coordinates = particleMeshEwald.coordinates;
+        coordinates = particleMeshEwald.getCoordinates();
         threadCount = parallelTeam.getThreadCount();
         nSymm = this.crystal.spaceGroup.getNumberOfSymOps();
 
@@ -422,7 +432,7 @@ public class ReciprocalSpace {
     public void setAtoms(Atom atoms[]) {
         this.atoms = atoms;
         nAtoms = atoms.length;
-        coordinates = particleMeshEwald.coordinates;
+        coordinates = particleMeshEwald.getCoordinates();
         initAtomArrays();
         switch (gridMethod) {
             case SPATIAL:
@@ -453,6 +463,12 @@ public class ReciprocalSpace {
             fracMultipolePhi = new double[nAtoms][tensorCount];
             fracInducedDipolePhi = new double[nAtoms][tensorCount];
             fracInducedDipolePhiCR = new double[nAtoms][tensorCount];
+			if (esvTerm) {
+				unscaledFracDipole = new double[nSymm][nAtoms][3];
+				unscaledFracDipoleCR = new double[nSymm][nAtoms][3];
+				unscaledFracDipolePhi = new double[nAtoms][tensorCount];
+				unscaledFracDipolePhiCR = new double[nAtoms][tensorCount];
+			}
         }
     }
 
@@ -466,7 +482,7 @@ public class ReciprocalSpace {
             logger.info(crystal.toString());
             logger.severe(" The reciprocal space class does not currently allow changes in the number of symmetry operators.");
         }
-        this.coordinates = particleMeshEwald.coordinates;
+        this.coordinates = particleMeshEwald.getCoordinates();
         initConvolution();
     }
 
@@ -1000,6 +1016,23 @@ public class ReciprocalSpace {
         }
     }
 
+	public void cartToFracUnscaledDipoles(double[][][] unscaledDipole, double[][][] unscaledDipoleCR) {
+        for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+            for (int i = 0; i < nAtoms; i++) {
+				double in[] = unscaledDipole[iSymm][i];
+				double out[] = unscaledFracDipole[iSymm][i];
+				out[0] = a[0][0] * in[0] + a[0][1] * in[1] + a[0][2] * in[2];
+				out[1] = a[1][0] * in[0] + a[1][1] * in[1] + a[1][2] * in[2];
+				out[2] = a[2][0] * in[0] + a[2][1] * in[1] + a[2][2] * in[2];
+				in = unscaledDipoleCR[iSymm][i];
+				out = unscaledFracDipole[iSymm][i];
+				out[0] = a[0][0] * in[0] + a[0][1] * in[1] + a[0][2] * in[2];
+				out[1] = a[1][0] * in[0] + a[1][1] * in[1] + a[1][2] * in[2];
+				out[2] = a[2][0] * in[0] + a[2][1] * in[1] + a[2][2] * in[2];
+            }
+        }
+	}
+
     /**
      * <p>
      * Getter for the field <code>fracMultipolePhi</code>.</p>
@@ -1060,13 +1093,26 @@ public class ReciprocalSpace {
         return fracInducedDipoleCR[0];
     }
 
+	public double[][] getUnscaledFracDipoles() {
+		return unscaledFracDipole[0];
+	}
+	public double[][] getUnscaledFracDipolePhi() {
+		return unscaledFracDipolePhi;
+	}
+	public double[][] getUnscaledFradDipolesCR() {
+		return unscaledFracDipoleCR[0];
+	}
+	public double[][] getUnscaledFracDipolePhiCR() {
+		return unscaledFracDipolePhiCR;
+	}
+
     /**
      * <p>
      * getXDim</p>
      *
      * @return a double.
      */
-    public double getXDim() {
+    public int getXDim() {
         return fftX;
     }
 
@@ -1076,7 +1122,7 @@ public class ReciprocalSpace {
      *
      * @return a double.
      */
-    public double getYDim() {
+    public int getYDim() {
         return fftY;
     }
 
@@ -1086,7 +1132,7 @@ public class ReciprocalSpace {
      *
      * @return a double.
      */
-    public double getZDim() {
+    public int getZDim() {
         return fftZ;
     }
 
@@ -2869,6 +2915,44 @@ public class ReciprocalSpace {
             }
         }
     }
+
+	public double[] globalToFracDipole(double[] globalDipole) {
+		final double[] fracDipole = new double[3];
+		// Dipole
+		for (int j = 0; j < 3; j++) {
+			fracDipole[j] = 0.0;
+			for (int k = 0; k < 3; k++) {
+				fracDipole[j] = fracDipole[j] + transformMultipoleMatrix[j+1][k+1] * globalDipole[k];
+			}
+		}
+		return fracDipole;
+	}
+
+	public double[] globalToFracMultipole(double[] globalMultipole) {
+		double[] fracMultipole = new double[10];
+		// Charge
+		fracMultipole[0] = globalMultipole[0];
+		// Dipole
+		for (int j = 1; j < 4; j++) {
+			fracMultipole[j] = 0.0;
+			for (int k = 1; k < 4; k++) {
+				fracMultipole[j] = fracMultipole[j] + transformMultipoleMatrix[j][k] * globalMultipole[k];
+			}
+		}
+		// Quadrupole
+		for (int j = 4; j < 10; j++) {
+			fracMultipole[j] = 0.0;
+			for (int k = 4; k < 7; k++) {
+				fracMultipole[j] = fracMultipole[j] + transformMultipoleMatrix[j][k] * globalMultipole[k];
+			}
+			for (int k = 7; k < 10; k++) {
+				fracMultipole[j] = fracMultipole[j] + transformMultipoleMatrix[j][k] * 2.0 * globalMultipole[k];
+			}
+			// Apply the oneThird factor for quadrupole components.
+			fracMultipole[j] = fracMultipole[j] / 3.0;
+		}
+		return fracMultipole;
+	}
 
     /**
      * Computes the modulus of the discrete Fourier Transform of "bsarray" and

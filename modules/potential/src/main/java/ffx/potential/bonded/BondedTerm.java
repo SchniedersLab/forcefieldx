@@ -421,7 +421,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      */
     public final void setID_Key(boolean reverse) {
         if (atoms == null) {
-            return;
+			return;
         }
         // Reuse the string buffers
         idtemp.delete(0, idtemp.length());
@@ -430,7 +430,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             if (i != 0) {
                 idtemp.append("  ");
             }
-            idtemp.append(a.describe(Atom.Descriptions.INDEX_NAME));
+            idtemp.append(a.describe(Atom.Descriptions.XyzIndex_Name));
         }
         id = idtemp.toString().intern();
     }

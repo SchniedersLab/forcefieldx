@@ -159,7 +159,7 @@ public class ForceField {
         bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
         chargeTypes = new TreeMap<>(new ChargeType(0, 0));
         iSolvRadTypes = new TreeMap<>(new ISolvRadType(0, 0.0));
-        multipoleTypes = new TreeMap<>(new MultipoleType(0, new double[3], new double[3][3], null, null));
+        multipoleTypes = new TreeMap<>(new MultipoleType(new double[10], null, null, false));
         outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
         piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
         polarizeTypes = new TreeMap<>(new PolarizeType(0, 0, 0, new int[1]));
@@ -1476,7 +1476,8 @@ public class ForceField {
         VDWTYPE,
         VDW_SCHEDULE,
         GK_RADIIOVERRIDE,
-        GK_RADIIBYNUMBER
+        GK_RADIIBYNUMBER,
+		ENERGY_IMPLEMENTATION;
     }
 
     public enum ForceFieldDouble {
@@ -1491,7 +1492,7 @@ public class ForceField {
         POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
         CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
         /* Polarization masking rules */
-        POLAR_12_SCALE, POLAR_13_SCALE, DIRECT_11_SCALE, RIGID_SCALE,
+        POLAR_12_SCALE, POLAR_13_SCALE, POLAR_41_SCALE_INTRA, DIRECT_11_SCALE, RIGID_SCALE,
         /* Electrostatics parameters */
         EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY,
         /* Electrostatics masking rules */
@@ -1562,11 +1563,4 @@ public class ForceField {
         RELATIVESOLV
     }
 
-    /**
-     * 1) Read in protein with HETATM side-chain. 2) Read in side-chain analog
-     * patch and add to ForceField. 3) Define HETATM precedence via 1) existing
-     * side-chain or 2) patch. 4) Create needed parameters via averaging. A)
-     * Create a map between patch atoms and forcefield atoms. B) Loop over all
-     * patch terms and create averaged ones if there is mixed precedence.
-     */
 }

@@ -37,16 +37,17 @@
  */
 package ffx.algorithms.mc;
 
+import java.util.logging.Logger;
+
 import ffx.numerics.Potential;
 import ffx.potential.AssemblyState;
 import ffx.potential.MolecularAssembly;
-import java.util.logging.Logger;
 
 /**
  * The MolecularMC class is a framework to take Monte Carlo steps on a molecular
- * system. It does not implement an MC algorithm, nor does it implement move sets;
- * it is used to evaluate a single MC step with movements defined by implementations
- * of MCMove.
+ * system. It does not implement an MC algorithm, nor does it implement move
+ * sets; it is used to evaluate a single MC step with movements defined by
+ * implementations of MCMove.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -54,6 +55,7 @@ import java.util.logging.Logger;
  *
  */
 public class MolecularMC extends BoltzmannMC {
+
     private static final Logger logger = Logger.getLogger(MolecularMC.class.getName());
     private final MolecularAssembly mola;
     private final Potential potential;
@@ -61,18 +63,20 @@ public class MolecularMC extends BoltzmannMC {
     private AssemblyState initialState;
 
     /**
-     * Constructs a DefaultMC instance with a molecular assembly and its 
-     * PotentialEnergy. Fancy footwork will be required if we ever need to use 
+     * Constructs a DefaultMC instance with a molecular assembly and its
+     * PotentialEnergy. Fancy footwork will be required if we ever need to use
      * multiple assemblies at once.
+     *
      * @param ma MolecularAssembly to operate on.
      */
     public MolecularMC(MolecularAssembly ma) {
         this(ma, ma.getPotentialEnergy());
     }
-    
+
     /**
      * Constructs a DefaultMC instance with a molecular assembly and a specific
      * Potential.
+     *
      * @param ma MolecularAssembly to operate on.
      * @param potential
      */
@@ -80,31 +84,33 @@ public class MolecularMC extends BoltzmannMC {
         mola = ma;
         this.potential = potential;
     }
-    
+
     /**
      * Returns the associated MolecularAssembly.
+     *
      * @return MolecularAssembly
      */
     public MolecularAssembly getMolecularAssembly() {
         return mola;
     }
-    
+
     /**
      * Returns the associated Potential.
+     *
      * @return Potential.
      */
     public Potential getPotential() {
         return potential;
     }
-    
+
     @Override
     public void revertStep() {
         initialState.revertState();
     }
 
     /**
-     * Calculates the energy at the current state; identical to RotamerOptimization
-     * method of same name.
+     * Calculates the energy at the current state; identical to
+     * RotamerOptimization method of same name.
      *
      * @return Energy of the current state, or 1e100 if an ArithmeticException
      * occurred during calculation.
@@ -123,7 +129,7 @@ public class MolecularMC extends BoltzmannMC {
             return 1e100;
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Default Metropolis Monte Carlo implementation\nTemperature: ");

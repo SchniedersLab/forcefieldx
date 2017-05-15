@@ -56,7 +56,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.algorithms.MolecularDynamics.MonteCarloNotification;
 import ffx.algorithms.mc.RosenbluthCBMC;
-import ffx.potential.AssemblyState;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Angle;
@@ -76,7 +75,6 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
 import ffx.potential.extended.TitrationUtils;
-import ffx.potential.extended.TitrationUtils.ContinuousSeedDistribution;
 import ffx.potential.extended.TitrationUtils.HistidineMode;
 import ffx.potential.extended.TitrationUtils.MCOverride;
 import ffx.potential.extended.TitrationUtils.Snapshots;
@@ -91,7 +89,6 @@ import static ffx.potential.extended.TitrationUtils.findResiduePolymer;
 import static ffx.potential.extended.TitrationUtils.inactivateResidue;
 import static ffx.potential.extended.TitrationUtils.performTitration;
 import static ffx.potential.extended.TitrationUtils.propagateInactiveResidues;
-import static ffx.potential.extended.TitrationUtils.renumberAtoms;
 
 /**
  * @author S. LuCore
@@ -252,7 +249,8 @@ public class PhMD implements MonteCarloListener {
         
         /* Create containers for titratables: MultiResidues for discrete, ExtendedVariables for continuous. */
         if (distribution == Distribution.CONTINUOUS) {
-            esvSystem = new ExtendedSystem(mola, pH);
+            esvSystem = new ExtendedSystem(mola);
+			esvSystem.setConstantPh(pH);
             for (Residue res : chosenResidues) {
                 MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(mola, res);
                 TitrationESV esv = new TitrationESV(esvSystem, multi);
@@ -403,7 +401,7 @@ public class PhMD implements MonteCarloListener {
             double[] velocity = new double[3];
             for (Atom atom : atoms) {
                 atom.getVelocity(velocity);
-                SB.logfn(" %s: %s", atom.describe(Atom.Descriptions.TRIM), Arrays.toString(velocity));
+                SB.logfn(" %s: %s", atom.describe(Atom.Descriptions.Trim), Arrays.toString(velocity));
             }
             SB.print();
         }

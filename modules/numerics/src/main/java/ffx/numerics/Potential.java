@@ -74,19 +74,19 @@ public interface Potential {
      * @since 1.0
      */
     public abstract double energyAndGradient(double x[], double g[]);
-    
+
     /**
-     * This method is called repeatedly to compute the function energy. The 
+     * This method is called repeatedly to compute the function energy. The
      * verbose flag may not be used by all implementations.
-     * 
+     *
      * @param x Input parameters.
      * @param verbose Display extra information.
-     * @return  Function value at <code>x</code>
+     * @return Function value at <code>x</code>
      */
     default public double energy(double[] x, boolean verbose) {
         return energy(x);
     }
-    
+
     /**
      * This method is called repeatedly to compute the function energy and
      * gradient. The verbose flag may not be used by all implementations.
@@ -189,7 +189,7 @@ public interface Potential {
 
     /**
      * Get the Potential Energy terms that is active.
-     * 
+     *
      * @return the STATE
      */
     public abstract STATE getEnergyTermState();

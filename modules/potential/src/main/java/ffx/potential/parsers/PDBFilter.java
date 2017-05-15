@@ -1195,7 +1195,10 @@ public final class PDBFilter extends SystemFilter {
     }
     public boolean writeFileWithHeader(File saveFile, String header) {
         return writeFileWithHeader(saveFile, header, true);
-    }
+    }	
+	public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
+		return writeFileWithHeader(saveFile, header.toString());
+	}
 
     /**
      * <p>

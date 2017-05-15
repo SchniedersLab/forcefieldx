@@ -180,7 +180,7 @@ public class MultiTerminus extends Residue {
                 bond.setBondType(newType);
                 if (newType.distance < 0.9*oldType.distance || newType.distance > 1.1*oldType.distance) {
                     logger.info(String.format(" Large bond distance change: %s %s,  %.2f --> %.2f ", 
-                            bond.atoms[0].describe(Atom.Descriptions.INDEX_NAME), bond.atoms[1].describe(Atom.Descriptions.INDEX_NAME),
+                            bond.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), bond.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
                             oldType.distance, newType.distance));
                 }
             }
@@ -191,9 +191,9 @@ public class MultiTerminus extends Residue {
             AngleType oldType = angle.angleType;
             if (DEBUG) {
                 logger.info(String.format(" %d ( %s %s %s ) ( %d %d %d )", i,
-                        angle.atoms[0].describe(Atom.Descriptions.INDEX_NAME),
-                        angle.atoms[1].describe(Atom.Descriptions.INDEX_NAME),
-                        angle.atoms[2].describe(Atom.Descriptions.INDEX_NAME),
+                        angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name),
+                        angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
+                        angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name),
                         angle.atoms[0].getAtomType().atomClass,
                         angle.atoms[1].getAtomType().atomClass,
                         angle.atoms[2].getAtomType().atomClass));
@@ -205,7 +205,7 @@ public class MultiTerminus extends Residue {
                 angle.setAngleType(dummy.angleType);
                 if (newType.angle[0] < 0.9*oldType.angle[0] || newType.angle[0] > 1.1*oldType.angle[0]) {
                     logger.info(String.format(" Large angle change: %s %s %s,  %.2f --> %.2f ", 
-                            angle.atoms[0].describe(Atom.Descriptions.INDEX_NAME), angle.atoms[1].describe(Atom.Descriptions.INDEX_NAME), angle.atoms[2].describe(Atom.Descriptions.INDEX_NAME), 
+                            angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name), 
                             oldType.angle[0], newType.angle[0]));
                 }
             }
@@ -522,8 +522,8 @@ public class MultiTerminus extends Residue {
                         this.getAtomNode().contains(H3) != null, H3.getParent() == this.getAtomNode(),
                         this.getBondList().contains(bondH3)));
                 logger.info(String.format(" Bonds from H3: %s %s",
-                        H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.INDEX_NAME), 
-                        H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).describe(Atom.Descriptions.INDEX_NAME)));
+                        H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.XyzIndex_Name), 
+                        H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).describe(Atom.Descriptions.XyzIndex_Name)));
             }
         } else if (end == END.CTERM) {
             if (isCharged) {

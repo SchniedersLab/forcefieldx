@@ -259,7 +259,7 @@ public class Energy {
      * @param print a boolean.
      */
     public void energy(boolean gradient, boolean print) {
-        ForceFieldEnergy energy = new ForceFieldEnergy(molecularAssembly);
+        ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(molecularAssembly);
         molecularAssembly.setPotential(energy);
 //        if(do_detail){
 //        	energy.tor_verbose = true;
@@ -308,7 +308,7 @@ public class Energy {
         addInducedToGlobal();
         double netchg = 0, xdpl = 0, ydpl = 0, zdpl = 0, xxqdp = 0, xyqdp = 0, xzqdp = 0, yxqdp = 0, yyqdp = 0, yzqdp = 0, zxqdp = 0, zyqdp = 0, zzqdp = 0;
         for (int i = 0; i < nAtoms; i++) {
-            double charge = atoms[i].getMultipoleType().charge;
+            double charge = atoms[i].getMultipoleType().getCharge();
             double[] dipole = {pme2.globalMultipole[0][i][1], pme2.globalMultipole[0][i][2], pme2.globalMultipole[0][i][3]};
             //double[] dipole = atoms[i].getMultipoleType().dipole;
             netchg = netchg + charge;

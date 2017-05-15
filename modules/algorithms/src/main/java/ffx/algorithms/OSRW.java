@@ -222,6 +222,9 @@ public class OSRW extends AbstractOSRW {
 
     }
 
+	/**
+	 * Called by Molecular Dynamics.
+	 */
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
@@ -643,7 +646,14 @@ public class OSRW extends AbstractOSRW {
             }
         }
     }
+    
+    public int[][] getRecursionKernel(){
+        return recursionKernel;
+    }
 
+    public void setRecursionKernel(int[][] recursionKernel){
+        this.recursionKernel = recursionKernel;
+    }
     /**
      * If necessary, allocate more space.
      */

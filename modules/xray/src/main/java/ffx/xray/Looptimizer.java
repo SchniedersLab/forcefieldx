@@ -855,7 +855,7 @@ public class Looptimizer implements Potential {
                         lambdaZeroFilter.setListMode(true);
                     }
                     lambdaZeroFilter.clearListOutput();
-                    lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d,", lambda, totalCounts)));
+                    lambdaZeroFilter.writeFileWithHeader(lambdaFile, String.format("%.4f,%d,", lambda, totalCounts));
                     traversalInHand = lambdaZeroFilter.getListOutput();
                     traversalSnapshotTarget = 0;
                 } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
@@ -865,7 +865,7 @@ public class Looptimizer implements Potential {
                         lambdaOneFilter.setListMode(true);
                     }
                     lambdaOneFilter.clearListOutput();
-                    lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d,", lambda, totalCounts)));
+                    lambdaOneFilter.writeFileWithHeader(lambdaFile, String.format("%.4f,%d,", lambda, totalCounts));
                     traversalInHand = lambdaOneFilter.getListOutput();
                     traversalSnapshotTarget = 1;
                 }

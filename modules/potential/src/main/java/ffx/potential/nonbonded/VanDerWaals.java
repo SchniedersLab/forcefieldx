@@ -404,7 +404,7 @@ public class VanDerWaals implements MaskingInterface,
         double buff = 2.0;
         double vdwcut;
         if (!crystal.aperiodic()) {
-            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
+            vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 12.0);
         } else {
             vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - (buff + 1.0));
             // If aperiodic, set the vdW cutoff to cover everything.
@@ -803,6 +803,19 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
+     * Get the reduction index.
+     *
+     * @return
+     */
+    public int[] getReductionIndex() {
+        return reductionIndex;
+    }
+
+    public VanDerWaalsForm getVDWForm() {
+        return vdwForm;
+    }
+
+    /**
      * Get the buffer size.
      *
      * @return The buffer.
@@ -898,6 +911,15 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
+     * Get details of the non-bonded cutoff.
+     *
+     * @return
+     */
+    public NonbondedCutoff getNonbondedCutoff() {
+        return nonbondedCutoff;
+    }
+
+    /**
      * Log the van der Waals interaction.
      *
      * @param i Atom i.
@@ -957,8 +979,9 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * Only unshared atoms are treated as extended by VdW since heavy atom radii are assumed constant.
-     * Under AMOEBA'13, this assumption is violated only by Cys-SG, Asp-OD[12], and Glu-OD[12].
+     * Only unshared atoms are treated as extended by VdW since heavy atom radii
+     * are assumed constant. Under AMOEBA'13, this assumption is violated only
+     * by Cys-SG, Asp-OD[12], and Glu-OD[12].
      */
     public void updateEsvLambda() {
         if (!esvTerm) {
@@ -979,7 +1002,7 @@ public class VanDerWaals implements MaskingInterface,
                 esvLambda[i] = esvSystem.getLambda(i);
                 esvLambdaSwitch[i] = esvSystem.getLambdaSwitch(i);
                 esvSwitchDeriv[i] = esvSystem.getSwitchDeriv(i);
-                atomEsvID[i] = esvSystem.getEsvIdForAtom(i);
+                atomEsvID[i] = esvSystem.getEsvIndex(i);
             }
         }
         if (esvDeriv == null || esvDeriv.length < numESVs) {
@@ -992,17 +1015,16 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     /**
-     * The trick:
-     *  The setFactors(i,k) method is called every time through the inner VdW
-     *      loop, avoiding an "if (esv)" branch statement.
-     *  A plain OSRW run will have an object of type LambdaFactorsOSRW instead,
-     *      which contains an empty version of setFactors(i,k). The OSRW version
-     *      sets new factors only on lambda updates, in setLambda().
      * The trick: The setFactors(i,k) method is called every time through the
      * inner VdW loop, avoiding an "if (esv)" branch statement. A plain OSRW run
      * will have an object of type LambdaFactorsOSRW instead, which contains an
      * empty version of setFactors(i,k). The OSRW version sets new factors only
-     * on lambda updates, in setLambda().
+     * on lambda updates, in setLambda(). The trick: The setFactors(i,k) method
+     * is called every time through the inner VdW loop, avoiding an "if (esv)"
+     * branch statement. A plain OSRW run will have an object of type
+     * LambdaFactorsOSRW instead, which contains an empty version of
+     * setFactors(i,k). The OSRW version sets new factors only on lambda
+     * updates, in setLambda().
      */
     public class LambdaFactors {
 
@@ -1161,7 +1183,11 @@ public class VanDerWaals implements MaskingInterface,
         return shareddEdL.get();
     }
 
-    public double[] getdEdEsv() {
+    public double getEsvDerivative(int esvID) {
+        return esvDeriv[esvID].get();
+    }
+	
+    public double[] getEsvDerivatives() {
         if (!esvTerm) {
             throw new IllegalStateException();
         }
@@ -1170,10 +1196,6 @@ public class VanDerWaals implements MaskingInterface,
             dEdEsv[i] = esvDeriv[i].get();
         }
         return dEdEsv;
-    }
-
-    public double getdEdEsv(int esvID) {
-        return esvDeriv[esvID].get();
     }
 
     /**
@@ -1738,8 +1760,9 @@ public class VanDerWaals implements MaskingInterface,
                                     || esvi || esvk;
                             /**
                              * The setFactors(i,k) method is empty unless ESVs
-                             * are present. If OSRW lambda present, lambdaFactors
-                             * will already have been updated during setLambda().
+                             * are present. If OSRW lambda present,
+                             * lambdaFactors will already have been updated
+                             * during setLambda().
                              */
                             if (soft) {
                                 lambdaFactorsLocal.setFactors(i, k);

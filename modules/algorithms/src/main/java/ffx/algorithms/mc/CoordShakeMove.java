@@ -37,14 +37,15 @@
  */
 package ffx.algorithms.mc;
 
+import org.apache.commons.math3.distribution.NormalDistribution;
+
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.ResidueState;
-import org.apache.commons.math3.distribution.NormalDistribution;
 
 /**
- * The CoordShakeMove class implements a simplistic atomic coordinate shake. 
- * At present, simply adds a random number from a normal distribution to each
+ * The CoordShakeMove class implements a simplistic atomic coordinate shake. At
+ * present, simply adds a random number from a normal distribution to each
  * Cartesian coordinate; in the future, will use a move in polar coordinates.
  *
  * @author Michael J. Schnieders
@@ -53,16 +54,16 @@ import org.apache.commons.math3.distribution.NormalDistribution;
  *
  */
 public class CoordShakeMove implements MCMove {
+
     private Atom[] atoms;
     private double[][] originalCoords;
     private double sigma = 0.001;
     private NormalDistribution dist;
-    
-    
+
     public CoordShakeMove(MolecularAssembly assembly) {
         this(assembly.getAtomArray());
     }
-    
+
     public CoordShakeMove(Atom[] atoms) {
         int nAtoms = atoms.length;
         this.atoms = new Atom[nAtoms];
@@ -70,12 +71,12 @@ public class CoordShakeMove implements MCMove {
         originalCoords = ResidueState.storeAtomicCoordinates(this.atoms);
         dist = new NormalDistribution(0, sigma);
     }
-    
+
     public void setSigma(double sigma) {
         this.sigma = sigma;
         dist = new NormalDistribution(0, sigma);
     }
-    
+
     public void setAtoms(Atom[] atoms) {
         int nAtoms = atoms.length;
         this.atoms = new Atom[nAtoms];
@@ -104,7 +105,7 @@ public class CoordShakeMove implements MCMove {
     public void revertMove() {
         ResidueState.revertAtomicCoordinates(atoms, originalCoords);
     }
-    
+
     @Override
     public String toString() {
         return String.format("Coordinate randomization: normal distribution with sigma %10.6f", sigma);

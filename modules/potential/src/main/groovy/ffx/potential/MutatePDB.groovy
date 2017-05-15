@@ -158,7 +158,7 @@ class MutatePDB extends Script {
 
         if (repack) {
             logger.info("\n Repacking... \n");
-            ForceFieldEnergy forceFieldEnergy = new ForceFieldEnergy(molecularAssembly);
+            ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly);
             forcefieldEnergy.setPrintOnFailure(false, false);
             molecularAssembly.setPotential(forceFieldEnergy);
 

@@ -312,7 +312,7 @@ public abstract class SystemFilter {
      * All MolecularAssembly instances defined. More than one MolecularAssembly
      * should be defined for PDB entries with alternate locations.
      */
-    protected Vector<MolecularAssembly> systems = new Vector<>();
+    protected List<MolecularAssembly> systems = new Vector<>();
     /**
      * File currently being read.
      */
@@ -421,8 +421,8 @@ public abstract class SystemFilter {
             files.add(file);
         }
         this.currentFile = file;
-        this.systems = new Vector(molecularAssemblies);
-        this.activeMolecularAssembly = systems.firstElement();
+        this.systems = new ArrayList<>(molecularAssemblies);
+        this.activeMolecularAssembly = systems.get(0);
         this.forceField = forceField;
         this.properties = properties;
 

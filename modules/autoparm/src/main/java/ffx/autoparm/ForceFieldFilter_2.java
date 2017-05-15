@@ -622,7 +622,7 @@ public class ForceFieldFilter_2 {
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
             MultipoleType multipoleType = new MultipoleType(c, dipole,
-                    quadrupole, atomTypes, frameDefinition);
+                    quadrupole, atomTypes, frameDefinition, true);
             forceField.addForceFieldType(multipoleType);
         } catch (Exception e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
@@ -679,7 +679,7 @@ public class ForceFieldFilter_2 {
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
             MultipoleType multipoleType = new MultipoleType(c, dipole,
-                    quadrupole, atomTypes, frameDefinition);
+                    quadrupole, atomTypes, frameDefinition, true);
             forceField.addForceFieldType(multipoleType);
         } catch (Exception e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";

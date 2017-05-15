@@ -456,7 +456,7 @@ if(runOSRW){
         }
     }
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
     forceFieldEnergy.setLambda(lambda);
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
@@ -516,7 +516,7 @@ if (runSimulatedAnnealing) {
     System.setProperty("vdwterm", "true");
     System.setProperty("mpoleterm", "false");
 
-    energy = new ForceFieldEnergy(active);
+    energy = ForceFieldEnergy.energyFactory(active);
     energy.setPrintOnFailure(false, false);
 
     diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
@@ -564,7 +564,7 @@ if(!loopBuildError){
     System.setProperty("lambdaterm", "false");
     System.setProperty("lambda-torsions", "false");
 
-    forceFieldEnergy = new ForceFieldEnergy(active);
+    forceFieldEnergy = ForceFieldEnergy.energyFactory(active);
     forceFieldEnergy.setPrintOnFailure(false, false);
     diffractionData = new DiffractionData(systems, systems[0].getProperties(), SolventModel.POLYNOMIAL, diffractionFile);
     diffractionData.scaleBulkFit();

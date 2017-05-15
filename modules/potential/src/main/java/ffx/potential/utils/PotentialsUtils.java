@@ -167,11 +167,11 @@ public class PotentialsUtils implements PotentialsFunctions {
      * @return
      */
     public MolecularAssembly openQuietly(String filename) {
-        Logger ffxLog = Logger.getLogger("ffx");
-        Level prevLev = ffxLog.getLevel();
+		Logger ffxLog = Logger.getLogger("ffx");
+		Level was = ffxLog.getLevel();
         ffxLog.setLevel(Level.WARNING);
         MolecularAssembly mola = open(filename);
-        ffxLog.setLevel(prevLev);
+        ffxLog.setLevel(was);
         return mola;
     }
 
@@ -535,7 +535,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             ForceFieldEnergy energy = assembly.getPotentialEnergy();
             if (energy == null) {
-                energy = new ForceFieldEnergy(assembly);
+                energy = ForceFieldEnergy.energyFactory(assembly);
                 assembly.setPotential(energy);
             }
             energy.energy(false, true);
@@ -558,7 +558,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         } else {
             ForceFieldEnergy energy = assembly.getPotentialEnergy();
             if (energy == null) {
-                energy = new ForceFieldEnergy(assembly);
+                energy = ForceFieldEnergy.energyFactory(assembly);
                 assembly.setPotential(energy);
             }
             return energy.energy(false, true);
@@ -582,7 +582,7 @@ public class PotentialsUtils implements PotentialsFunctions {
         Atom atoms[] = mola.getAtomArray();
         for (int i = 0; i < atoms.length; i++) {
             String resName = atoms[i].getResidueName();
-            String atomName = atoms[i].describe(Atom.Descriptions.TRIM);
+            String atomName = atoms[i].describe(Atom.Descriptions.Trim);
             AtomType atomType = atoms[i].getAtomType();
             int typeNum = atomType.type;
             int classNum = atomType.atomClass;
