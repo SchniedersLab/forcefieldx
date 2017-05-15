@@ -490,6 +490,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * that are 1-3 is scaled by p13scale.
      */
     private final double p13scale;
+    private final double p14scale;
+    private final double p15scale;
+    private final double intra14Scale;
+
     private double ipdamp[];
     private double thole[];
     private double polarizability[];
@@ -733,9 +737,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, mpole14);
             m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 1.0);
         }
+        intra14Scale = forceField.getDouble(ForceFieldDouble.POLAR_14_INTRA, 0.5);
         d11scale = forceField.getDouble(ForceFieldDouble.DIRECT_11_SCALE, 0.0);
         p12scale = forceField.getDouble(ForceFieldDouble.POLAR_12_SCALE, 0.0);
         p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
+        p14scale = forceField.getDouble(ForceFieldDouble.POLAR_14_SCALE, 1.0);
+        p15scale = forceField.getDouble(ForceFieldDouble.POLAR_15_SCALE, 1.0);
         useCharges = forceField.getBoolean(ForceFieldBoolean.USE_CHARGES, true);
         useDipoles = forceField.getBoolean(ForceFieldBoolean.USE_DIPOLES, true);
         useQuadrupoles = forceField.getBoolean(ForceFieldBoolean.USE_QUADRUPOLES, true);
@@ -1340,6 +1347,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         this.gradient = gradient;
 
+        /**
+         * for (int i=0; i<nAtoms; i++) { StringBuffer sb = new
+         * StringBuffer(format(" ip11 %6d", i)); for (int j=0; j<ip11[i].length;
+         * j++) { sb.append(format(" %6d", ip11[i][j])); }
+         * logger.info(sb.toString()); }
+         */
         /**
          * Initialize energy variables.
          */
@@ -2516,9 +2529,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
+                                maskp_local[index] = p14scale;
                                 for (int k : ip11[i]) {
                                     if (k == index) {
-                                        maskp_local[index] = 0.5;
+                                        maskp_local[index] = intra14Scale * p14scale;
                                     }
                                 }
                             }
@@ -2534,6 +2548,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             int index = bond.get1_2(ai).getIndex() - 1;
                             maskp_local[index] = p12scale;
                         }
+                        /**
+                         * for (Atom ak : ai.get1_5s()) {
+                         * maskp_local[ak.getIndex() - 1] = p15scale; }
+                         */
                         /**
                          * Apply group based polarization masking rule.
                          */
@@ -2689,13 +2707,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                 fZCR[i] += (fimz - fipz);
                             }
                         }
+                        for (Atom ak : ai.get1_5s()) {
+                            maskp_local[ak.getIndex() - 1] = 1.0;
+                        }
                         for (Torsion torsion : ai.getTorsions()) {
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
-                                if (index < 0) {
-                                    ak.print();
-                                }
                                 maskp_local[index] = 1.0;
                             }
                         }
@@ -3921,9 +3939,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
                                 masking_local[index] = m14scale;
+                                maskingp_local[index] = p14scale;
                                 for (int j : ip11[i]) {
                                     if (j == index) {
-                                        maskingp_local[index] = 0.5;
+                                        maskingp_local[index] = intra14Scale * p14scale;
                                     }
                                 }
                             }
@@ -3932,14 +3951,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             Atom ak = angle.get1_3(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
-                                masking_local[index] = m13scale;
                                 maskingp_local[index] = p13scale;
+                                masking_local[index] = m13scale;
                             }
                         }
                         for (Bond bond : ai.getBonds()) {
                             int index = bond.get1_2(ai).getIndex() - 1;
-                            masking_local[index] = m12scale;
                             maskingp_local[index] = p12scale;
+                            masking_local[index] = m12scale;
                         }
                         for (int j : ip11[i]) {
                             maskingd_local[j] = d11scale;
@@ -4183,12 +4202,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         for (Atom ak : ai.get1_5s()) {
                             int index = ak.getIndex() - 1;
                             masking_local[index] = 1.0;
+                            maskingp_local[index] = 1.0;
                         }
                         for (Torsion torsion : ai.getTorsions()) {
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
                                 masking_local[index] = 1.0;
+                                maskingp_local[index] = 1.0;
                                 for (int j : ip11[i]) {
                                     if (j == index) {
                                         maskingp_local[index] = 1.0;
@@ -6394,6 +6415,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         List<Integer> group = new ArrayList<>();
         List<Integer> polarizationGroup = new ArrayList<>();
         //int g11 = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.getIndex() - 1 != i) {
+                logger.severe(" Atom indexing is not consistent in PME.");
+            }
+        }
+
         for (Atom ai : atoms) {
             group.clear();
             polarizationGroup.clear();
@@ -7080,6 +7108,23 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             sb.append(format(" Total:                   %7.4f",
                     startTime * TO_SECONDS));
             logger.info(sb.toString());
+
+            /**
+            for (int i = 0; i < nAtoms; i++) {
+                double dx = MultipoleType.DEBYE * inducedDipole[0][i][0];
+                double dy = MultipoleType.DEBYE * inducedDipole[0][i][1];
+                double dz = MultipoleType.DEBYE * inducedDipole[0][i][2];
+                double norm = sqrt(dx * dx + dy * dy + dz * dz);
+                logger.info(format("ind %d %16.6f %16.6f %16.6f %16.6f", i + 1,
+                        dx, dy, dz, norm));
+                dx = MultipoleType.DEBYE * inducedDipoleCR[0][i][0];
+                dy = MultipoleType.DEBYE * inducedDipoleCR[0][i][1];
+                dz = MultipoleType.DEBYE * inducedDipoleCR[0][i][2];
+                norm = sqrt(dx * dx + dy * dy + dz * dz);
+                logger.info(format("inp %d %16.6f %16.6f %16.6f %16.6f", i + 1,
+                        dx, dy, dz, norm));
+            } */
+
         }
 
         /**
@@ -8504,6 +8549,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 "ELEC", atoms[i].getIndex(), atoms[i].getAtomType().name,
                 atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
     }
+
     /**
      * Number of unique tensors for given order.
      */

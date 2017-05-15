@@ -450,20 +450,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
              * Metadynamics grid counts (every 'countInterval' steps).
              */
             if (energyCount % countInterval == 0) {
-                if (jobBackend != null) {
-                    if (world.size() > 1) {
-                        jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f] at %7.3e psec",
-                                totalFreeEnergy, totalWeight * dt * countInterval, lambda, dEdU, -freeEnergy, energyCount * dt));
-                    } else {
-                        jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f]",
-                                totalFreeEnergy, totalWeight * dt * countInterval, lambda, dEdU, -freeEnergy));
-                    }
-                }
-                if (asynchronous) {
-                    asynchronousSend(lambda, dEdU);
-                } else {
-                    synchronousSend(lambda, dEdU);
-                }
+                addBias(dEdU, freeEnergy);
             }
         }
 
@@ -485,6 +472,24 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         totalEnergy = e + biasEnergy;
 
         return totalEnergy;
+    }
+
+    @Override
+    public void addBias(double dEdU, double freeEnergy) {
+        if (jobBackend != null) {
+            if (world.size() > 1) {
+                jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f] at %7.3e psec",
+                        totalFreeEnergy, totalWeight * dt * countInterval, lambda, dEdU, -freeEnergy, energyCount * dt));
+            } else {
+                jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f]",
+                        totalFreeEnergy, totalWeight * dt * countInterval, lambda, dEdU, -freeEnergy));
+            }
+        }
+        if (asynchronous) {
+            asynchronousSend(lambda, dEdU);
+        } else {
+            synchronousSend(lambda, dEdU);
+        }
     }
 
     private void writeTraversal() {

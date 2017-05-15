@@ -1449,6 +1449,8 @@ public class ForceField {
         AMOEBA_BIO_2009,
         AMOEBA_BIO_2009_ORIG,
         AMOEBA_PROTEIN_2013,
+        AMOEBA_DIRECT_2013,
+        AMOEBA_FIXED_2013,
         IAMOEBA_WATER,
         OPLS_AAL
     }
@@ -1492,7 +1494,7 @@ public class ForceField {
         POLAR_DAMP, POLAR_SOR, POLAR_EPS, POLAR_EPS_PRECISE,
         CG_PRECONDITIONER_CUTOFF, CG_PRECONDITIONER_EWALD, CG_PRECONDITIONER_SOR,
         /* Polarization masking rules */
-        POLAR_12_SCALE, POLAR_13_SCALE, POLAR_41_SCALE_INTRA, DIRECT_11_SCALE, RIGID_SCALE,
+        POLAR_12_SCALE, POLAR_13_SCALE, POLAR_14_SCALE, POLAR_14_INTRA, POLAR_15_SCALE, DIRECT_11_SCALE,
         /* Electrostatics parameters */
         EWALD_CUTOFF, EWALD_ALPHA, EWALD_PRECISION, PME_MESH_DENSITY,
         /* Electrostatics masking rules */
@@ -1509,7 +1511,7 @@ public class ForceField {
         /* Generalized Kirkwood dielectric and debugging */
         GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE,
         /* Miscellaneous */
-        RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE
+        RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE
     }
 
     public enum ForceFieldInteger {

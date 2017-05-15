@@ -37,17 +37,21 @@
  */
 package ffx.algorithms.mc;
 
-import ffx.potential.bonded.LambdaInterface;
 import org.apache.commons.math3.distribution.NormalDistribution;
+
 import static org.apache.commons.math3.util.FastMath.asin;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.potential.bonded.LambdaInterface;
+
 /**
+ * Define an MC move to update lambda.
  *
- * @author mrtollefson
+ * @author Mallory R. Tollefson
  */
 public class LambdaMove implements MCMove {
+
     private final double originalLambda;
     private final double originalTheta;
     private double newTheta;
@@ -55,7 +59,7 @@ public class LambdaMove implements MCMove {
     private final double sigma = 0.2;
     private final LambdaInterface linter;
     private final NormalDistribution dist;
-    
+
     public LambdaMove(double currentLambda, LambdaInterface linter) {
         this.originalLambda = currentLambda;
         this.originalTheta = asin(sqrt(currentLambda));
@@ -66,7 +70,7 @@ public class LambdaMove implements MCMove {
     @Override
     public void move() {
         newTheta = dist.sample();
-        newLambda = sin(newTheta*newTheta);
+        newLambda = sin(newTheta * newTheta);
         linter.setLambda(newLambda);
     }
 
@@ -74,6 +78,5 @@ public class LambdaMove implements MCMove {
     public void revertMove() {
         this.newLambda = this.originalLambda;
         linter.setLambda(originalLambda);
-    }  
+    }
 }
-

@@ -980,7 +980,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Get the total system energy.
+     * Get the total system energy (kinetic plus potential).
      *
      * @return total energy.
      */

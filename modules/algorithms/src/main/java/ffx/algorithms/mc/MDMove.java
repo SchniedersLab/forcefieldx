@@ -37,31 +37,33 @@
  */
 package ffx.algorithms.mc;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
+ * Use MD as a coordinate based MC move.
  *
- * @author mrtollefson
+ * @author Mallory R. Tollefson
  */
 public class MDMove implements MCMove {
+
     private int mdSteps;
     private double timeStep;
     private double printInterval;
     private double temperature;
     private final MolecularDynamics molecularDynamics;
-    
-    
-    public MDMove(MolecularAssembly assembly, Potential potentialEnergy, 
-            CompositeConfiguration properties, AlgorithmListener listener, 
+
+    public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
+            CompositeConfiguration properties, AlgorithmListener listener,
             Thermostats requestedThermostat, Integrators requestedIntegrator) {
-        
-        molecularDynamics = new MolecularDynamics(assembly, 
+
+        molecularDynamics = new MolecularDynamics(assembly,
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
     }
 
@@ -70,15 +72,15 @@ public class MDMove implements MCMove {
         mdSteps = 100;
         timeStep = 1.0;
         printInterval = 0.01;
-        temperature = 310;
+        temperature = 298.15;
+        boolean initVelocities = true;
         molecularDynamics.storeState();
-        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 10.0, temperature, true, null);
+        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 10.0, temperature,  initVelocities, null);
     }
 
     @Override
     public void revertMove() {
         molecularDynamics.revertState();
     }
-    
-}
 
+}

@@ -707,7 +707,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
         d11scale = forceField.getDouble(ForceFieldDouble.DIRECT_11_SCALE, 0.0);
         p12scale = forceField.getDouble(ForceFieldDouble.POLAR_12_SCALE, 0.0);
         p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
-		p41scale = forceField.getDouble(ForceFieldDouble.POLAR_41_SCALE_INTRA, 0.5);
+		p41scale = forceField.getDouble(ForceFieldDouble.POLAR_14_SCALE, 0.5);
         useCharges = forceField.getBoolean(ForceFieldBoolean.USE_CHARGES, true);
         useDipoles = forceField.getBoolean(ForceFieldBoolean.USE_DIPOLES, true);
         useQuadrupoles = forceField.getBoolean(ForceFieldBoolean.USE_QUADRUPOLES, true);
