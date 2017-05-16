@@ -183,7 +183,7 @@ public class Stitch {
                 parent.addForceFieldType(fragMultipoleType);
             } else {
                 // Stitch (or average)
-                MultipoleType averageMultipoleType = MultipoleType.average(fragMultipoleType, parentMultipoleType, multipoleFrameTypes);
+                MultipoleType averageMultipoleType = MultipoleType.averageTypes(fragMultipoleType, parentMultipoleType, multipoleFrameTypes);
                 parent.addForceFieldType(averageMultipoleType);
             }
 

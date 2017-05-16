@@ -156,9 +156,9 @@ public class MultipoleTensorTest {
     public void multipoleTensorTest() {
         MultipoleTensor multipoleTensor = new MultipoleTensor(
                 operator, COORDINATES.GLOBAL, order, beta);
-
-        multipoleTensor.setTholeDamping(damp, aiak);
-        /**
+		multipoleTensor.setTholeDamping(damp, aiak);
+		
+		/**
          * Check Cartesian Tensors in the Global frame.
          */
         multipoleTensor.noStorageRecursion(r, noStorageTensor);
@@ -186,8 +186,8 @@ public class MultipoleTensorTest {
         fill(noStorageTensor, 0.0);
         fill(tensor, 0.0);
         fill(fastTensor, 0.0);
-        multipoleTensor.noStorageRecursionQI(r, noStorageTensor);
-        multipoleTensor.recursionQI(r, tensor);
+        multipoleTensor.noStorageRecursion(r, noStorageTensor);
+        multipoleTensor.recursion(r, tensor);
         multipoleTensor.setTensor(fastTensor);
         multipoleTensor.generateTensor();
         multipoleTensor.getTensor(fastTensor);
@@ -261,21 +261,21 @@ public class MultipoleTensorTest {
         r[0] = 0.0;
         r[1] = 0.0;
 
-        multipoleTensor.noStorageRecursionQI(r, tensor);
+        multipoleTensor.noStorageRecursion(r, tensor);
         double tensorsPz[] = new double[tensorCount];
         double tensorsNz[] = new double[tensorCount];
         double delta = 1.0e-5;
         double delta2 = delta * 2;
 
         r[2] += delta;
-        multipoleTensor.noStorageRecursionQI(r, tensorsPz);
+        multipoleTensor.noStorageRecursion(r, tensorsPz);
         r[2] -= delta2;
-        multipoleTensor.noStorageRecursionQI(r, tensorsNz);
+        multipoleTensor.noStorageRecursion(r, tensorsNz);
         r[2] += delta;
 
         tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
 
-        multipoleTensor.recursionQI(r, tensor);
+        multipoleTensor.recursion(r, tensor);
         tensorFiniteDifferenceQI(multipoleTensor, delta2, tensorsPz, tensorsNz);
 
         multipoleTensor.generateTensor();

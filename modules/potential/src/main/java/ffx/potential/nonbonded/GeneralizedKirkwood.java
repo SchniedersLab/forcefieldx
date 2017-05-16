@@ -186,7 +186,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * thus to the size of the first category of arrays).
      */
     private int maxNumAtoms;
-    private final ParticleMeshEwald particleMeshEwald;
+    private final ParticleMeshEwaldCart particleMeshEwald;
     private final ParallelTeam parallelTeam;
     private Crystal crystal;
     private final BornRadiiRegion bornRadiiRegion;
@@ -309,7 +309,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         this.forceField = forceField;
         this.atoms = atoms;
-        this.particleMeshEwald = particleMeshEwald;
+        this.particleMeshEwald = (ParticleMeshEwaldCart) particleMeshEwald;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         nAtoms = atoms.length;
@@ -495,6 +495,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     public NonPolar getNonPolarModel() {
         return nonPolar;
+    }
+
+    /**
+     * Returns the dielectric offset (in Angstroms).
+     * @return Currently: 0.09 Angstroms.
+     */
+    public double getDielecOffset() {
+        return dOffset;
     }
 
     public void setCutoff(double cutoff) {

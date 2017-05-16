@@ -695,17 +695,14 @@ public class ForceFieldFilter {
             return;
         }
         try {
-            int[] atomTypes = new int[3];
-            atomTypes[0] = Integer.parseInt(tokens[1]);
-            atomTypes[1] = 0;
-            atomTypes[2] = 0;
+            int[] atomTypes = new int[]{Integer.parseInt(tokens[1]), 0, 0};
             double partialCharge = Double.parseDouble(tokens[2]);
             double[] dipole = new double[3];
             double[][] quadrupole = new double[3][3];
             MultipoleType.MultipoleFrameDefinition frameDefinition
                     = MultipoleType.MultipoleFrameDefinition.ZTHENX;
             MultipoleType multipoleType = new MultipoleType(partialCharge, dipole,
-                    quadrupole, atomTypes, frameDefinition);
+                    quadrupole, atomTypes, frameDefinition, true);
             forceField.addForceFieldType(multipoleType);
         } catch (NumberFormatException e) {
             String message = "Exception parsing CHARGE type:\n" + input + "\n";
@@ -779,7 +776,7 @@ public class ForceFieldFilter {
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
             MultipoleType multipoleType = new MultipoleType(c, dipole,
-                    quadrupole, atomTypes, frameDefinition);
+                    quadrupole, atomTypes, frameDefinition, true);
             forceField.addForceFieldType(multipoleType);
         } catch (NumberFormatException | IOException e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";
@@ -836,7 +833,7 @@ public class ForceFieldFilter {
             quadrupole[0][2] = quadrupole[2][0];
             quadrupole[1][2] = quadrupole[2][1];
             MultipoleType multipoleType = new MultipoleType(c, dipole,
-                    quadrupole, atomTypes, frameDefinition);
+                    quadrupole, atomTypes, frameDefinition, true);
             forceField.addForceFieldType(multipoleType);
         } catch (NumberFormatException e) {
             String message = "Exception parsing MULTIPOLE type:\n" + input + "\n";

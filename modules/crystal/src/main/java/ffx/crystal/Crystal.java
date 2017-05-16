@@ -1092,7 +1092,7 @@ public class Crystal {
      * @param out output coordinates.
      * @param matrix multiply by the transpose of this matrix.
      */
-    public void applyMatrixTranspose(double in[], double out[], double matrix[][]) {
+    public static void applyMatrixTranspose(double in[], double out[], double matrix[][]) {
         double xc = in[0];
         double yc = in[1];
         double zc = in[2];

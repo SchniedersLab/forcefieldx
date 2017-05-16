@@ -1,552 +1,831 @@
+/**
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
+ */
 package ffx.potential.utils;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Optional;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 
 import org.apache.commons.lang.StringUtils;
-import org.junit.After;
+import org.apache.commons.lang.math.IntRange;
 import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.assertEquals;
-
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.extended.ExtUtils.SB;
+import ffx.potential.PotentialComponent;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationUtils;
+import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
+import ffx.potential.extended.SBLogger;
+import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
+import ffx.potential.nonbonded.ParticleMeshEwaldCart;
+import ffx.potential.nonbonded.ParticleMeshEwaldQI;
+import ffx.potential.parameters.ForceField.ForceFieldName;
+
+import static ffx.potential.extended.ExtUtils.setProp;
+import static ffx.potential.extended.SBLogger.SB;
 
 /**
- *
+ * Test ExtendedSystem and its variables to verify that
+ *	(1) Analytic derivatives match finite difference approximation to appropriate epsilon.
+ *	(2) End state energies are consistent with manually titrated input files.
+ *	(3) Lambda paths and gradients are sufficiently smooth.
  * @author slucore
  */
 @RunWith(Parameterized.class)
 public class ExtendedVariableTest {
-    
-    private static final Logger logger = Logger.getLogger(ExtendedVariableTest.class.getName());
-    private final PotentialsUtils utils = new PotentialsUtils();
-    
+
+    private static final Logger logMaster = Logger.getLogger("ffx");
+	private static final PotentialsUtils utils = new PotentialsUtils();
+
+	private static final String	  dilysine			= "lys-lys.pdb";
+	private static final String[] dilysStates		= {"lyd-lyd.pdb","lyd-lys.pdb",
+													   "lys-lyd.pdb","lys-lys.pdb"};
+	private static final String	  dilysineCryst		= "lys-lys-cryst.pdb";
+	private static final String[] dilysStatesCryst	= {"lyd-lyd-cryst.pdb","lyd-lys-cryst.pdb",
+													   "lys-lyd-cryst.pdb","lys-lys-cryst.pdb"};
+	private static double[] lambdaValuesToTest = {0.25, 0.5, 0.75};
+
+	private static final boolean yes	= true;
+	private static final int lys2_nz	= 16;
+	private static final int ala3_c		= 30;
+	private static final int lys4_nz	= 48;
+	private static final int[] allAtoms = (new IntRange(0,67)).toArray();
+
+	private static boolean		resultsOnly		= false;
+	private static final double tolerance		= 1e-6;
+	private static final double errorThreshold	= 1e-9;
+	private static final String resourcePrefix	= "ffx/potential/structures/";
+
+	private static final boolean includeManualQiEndStates	= false;
+	private static final boolean oneSidedFiniteAtExtremes	= false;	// TODO analyze bonded behavior
+	private static final boolean smoothnessDecomposition	= false;
+	private static final boolean singleThreaded				= false;
+	private static final boolean benchmarkArrayReferencing	= false;
+	private static final boolean assertions					= false;	// TODO enable
+
+	/** Arguments to the class constructor.
+	 * EsvTest.END_STATES requires two ESVs and that 4x states + energies be defined.
+	 * EsvTest.DERIVATIVES can take any system; use derivativeLambdas to control FD points.
+	 * EsvTest.SMOOTHNESS is ad-hoc; TODO: use d2U_dL2 from FD to assess smoothness instead.
+	 */
     @Parameters
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-            /* Arguments to the class constructor. */
-            {"A2", "A4", 1.0e-5, 
-             "lyd-lyd-cryst.pdb", 65.3397,
-             "lyd-lys-cryst.pdb", 78.7910,
-             "lys-lyd-cryst.pdb", 76.9447,
-             "lys-lys-cryst.pdb", 97.0408}
-        });
-    }
-    
-    private static final boolean testVdw = true;
-    private static final boolean testPermReal = true;
-    private static final boolean testReciprocal = true;
-    private static final boolean testPolarization = false;
-    private static final double cutoff = 5.0;
-    private static final boolean verbose = false;
-    private static String resourcePrefix = "ffx/potential/structures/";
-    
-    private final String residA, residB;
-    private final String filename00;
-    private final double energy00;
-    private final String filename01;
-    private final double energy01;
-    private final String filename10;
-    private final double energy10;
-    private final String filename11;
-    private final double energy11;
-    private final double tolerance;
-    
-    private final double lambda = 0.28;
-    private final double step = 0.0001;
-    private final double biasMag = 1.0;
-    private final double pH = 7.4;
-    private final int numESVs = 2;
-    
-    private MolecularAssembly mola;
-    private ExtendedSystem esvSystem;
-    private ForceFieldEnergy ffe;
-    
-    public ExtendedVariableTest(
-            String residA, String residB, double tolerance,
-            String filename1, double energy1,
-            String filename2, double energy2,
-            String filename3, double energy3,
-            String filename4, double energy4) {
-        this.tolerance = tolerance;
-        this.residA = residA;
-        this.residB = residB;
-        this.filename00 = filename1;
-        this.filename01 = filename2;
-        this.filename10 = filename3;
-        this.filename11 = filename4;
-        this.energy00 = energy1;
-        this.energy01 = energy2;
-        this.energy10 = energy3;
-        this.energy11 = energy4;
-    }
-    
+        return Arrays.asList(new Object[][] {
+//			{EsvTest.Deriv_OneEsv,	Interactions.All,	CellType.Aperiodic},
+			{EsvTest.Deriv_OneEsv,	Interactions.All,	CellType.Crystal},
+//			{EsvTest.Deriv_TwoEsvs,	Interactions.All,	CellType.Aperiodic},
+//			{EsvTest.Deriv_TwoEsvs,	Interactions.All,	CellType.Crystal},
+//			{EsvTest.Deriv_Meta,	Interactions.All,	CellType.Crystal},
+//			{EsvTest.EndStates,		Interactions.All,	CellType.Aperiodic},
+			{EsvTest.EndStates,		Interactions.All,	CellType.Crystal},
+//			{EsvTest.Smoothness,	Interactions.All,	CellType.Aperiodic},
+//			{EsvTest.Smoothness,	Interactions.All,	CellType.Crystal},
+		});
+	}
+
+	// Setup control of PME lambda derivative calculation.
+	private ExtendedSystemConfig derivativeDebugParameters() {
+		setProp("rotate-multipoles",		yes);	// global frame
+		setProp("esv.allowMaskPerm",		yes);	// permanent energy masking
+		setProp("esv.allowMaskPolarD",		yes);	// group-based masking
+		setProp("esv.allowMaskPolarP",		yes);	// induced energy masking
+		setProp("esv.allowSymOps",			yes);	// symmetry operators
+		setProp("esv.allowScreening",		yes);	// SCREENED_COULOMB tensors
+		setProp("esv.allowTholeDamping",	yes);	// THOLE_FIELD tensors
+		setProp("esv.recipFieldEffects",	yes);	// reciprocal space contributions to field
+
+		setProp("esv.scaleAlpha",			false);	// polarizability scaling and associated derivative term
+		setProp("polarization",		Polarization.DIRECT);
+		setProp("scf-algorithm",	SCFAlgorithm.SOR);
+		setProp("esv.cdqScales",	Arrays.asList(1.0, 1.0, 1.0));	// scale charges, dipoles, quads
+
+		setProp("use-charges",				yes);
+		setProp("use-dipoles",				yes);
+		setProp("use-quadrupoles",			yes);	// SOURCE perm_recip n.l.d. err
+
+		ExtendedSystemConfig esvConfig = new ExtendedSystemConfig();
+		// Alternatively,
+		// activateAll();
+
+		switch (interactions) {
+			default:
+			case All:
+				esvConfig.setPermanentWhitelist(null);
+				esvConfig.setInducedWhitelist(  null);
+				esvConfig.useWhitelists = false;
+				break;
+			case OnePermOneInd:
+				esvConfig.setPermanentWhitelist(new int[]{lys2_nz});
+				esvConfig.setInducedWhitelist(	new int[]{ala3_c});
+				esvConfig.useWhitelists = true;
+				break;
+			case TwoPermOneInd:
+				esvConfig.setPermanentWhitelist(new int[]{lys2_nz, lys4_nz});
+				esvConfig.setInducedWhitelist(	new int[]{ala3_c});
+				esvConfig.useWhitelists = true;
+				break;
+			case OnePermTwoInd:
+				esvConfig.setPermanentWhitelist(new int[]{lys2_nz});
+				esvConfig.setInducedWhitelist(  new int[]{ala3_c, lys4_nz});
+				esvConfig.useWhitelists = true;
+				break;
+			case OnePermAllInd:
+				esvConfig.setPermanentWhitelist(new int[]{lys2_nz});
+				esvConfig.setInducedWhitelist(	allAtoms);
+				esvConfig.useWhitelists = true;
+				break;
+			case AllPermOneInd:
+				esvConfig.setPermanentWhitelist(allAtoms);
+				esvConfig.setInducedWhitelist(	new int[]{ala3_c});
+				esvConfig.useWhitelists = true;
+				break;
+		}
+		return esvConfig;
+	}
+
+	private static Properties originalSystemConfig;	// properties as they existed before class setup
+
+	private Interactions interactions;
+	public enum Interactions {
+		All, OnePermOneInd, TwoPermOneInd, OnePermTwoInd, OnePermAllInd, AllPermOneInd;
+	}
+	private final EsvTest test;
+	public enum EsvTest {
+		EndStates, Derivatives, Smoothness, All,
+		Deriv_OneEsv, Deriv_TwoEsvs, Deriv_Meta;
+	}
+	public enum CellType {
+		Aperiodic, Crystal, TightCrystal;
+	}
+
+	private final Level origLevel;
+	private final String esvFilename;
+	private final String esvResidueIDs;
+	private final String[] stateFilenames;
+	private final double[] initialLambda;
+
+	public ExtendedVariableTest(EsvTest test, Interactions interactions, CellType cell) {
+		origLevel = logMaster.getLevel();
+		this.test = test;
+		this.interactions = interactions;
+		switch (cell) {
+			default:
+			case Aperiodic:
+				esvFilename = dilysine;
+				stateFilenames = dilysStates;
+				break;
+			case Crystal:
+				esvFilename = dilysineCryst;
+				stateFilenames = dilysStatesCryst;
+				break;
+			case TightCrystal:
+				esvFilename = "lys-lys-tight.pdb";
+				stateFilenames = null;
+				break;
+		}
+		switch (test) {
+			case Deriv_OneEsv:
+			case Deriv_Meta:
+				esvResidueIDs = "A2";
+				initialLambda = new double[]{1.0};
+				break;
+			default:
+			case Deriv_TwoEsvs:
+			case EndStates:
+			case Smoothness:
+			case All:
+				esvResidueIDs = "A2,A4";
+				initialLambda = new double[]{0.5, 0.5};
+				break;
+		}
+	}
+
     /**
-     * Set system properties prior to class construction.
+     * Set the system properties of which we are certain.
+	 * This happens once, prior to class construction; the resulting set defines revertSystemProperties().
      */
-    @BeforeClass
+	@BeforeClass
     public static void setUpClass() {
-        // Active Potential
-        System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
-        System.setProperty("esvterm", "true");
-        System.setProperty("lambdaterm", "true");
-        System.setProperty("bondterm", "true");
-        System.setProperty("angleterm", "true");
-        System.setProperty("strbndterm", "true");
-        System.setProperty("ureyterm", "true");
-        System.setProperty("opbendterm", "true");
-        System.setProperty("torsionterm", "true");
-        System.setProperty("pitorsterm", "true");
-        System.setProperty("tortorterm", "true");
-        System.setProperty("improperterm", "true");
+		// Save passed-in configuration so we can restore it at teardown (and not affect downstream tests).
+		originalSystemConfig = (Properties) System.getProperties().clone();
 
-        // Optional Potential
-        System.setProperty("vdwterm", String.valueOf(testVdw));                 // van der Waals
-        System.setProperty("esv-useVdw", String.valueOf(testVdw));
-        System.setProperty("mpoleterm", String.valueOf(testPermReal));          // permanent real space
-        System.setProperty("pme-qi", String.valueOf(testPermReal));
-        System.setProperty("esv-usePme", String.valueOf(testPermReal));
-        System.setProperty("recipterm", String.valueOf(testReciprocal));         // permanent reciprocal space
-        System.setProperty("polarizeterm", String.valueOf(testPolarization));   // polarization
-        if (testPolarization) {
-            System.setProperty("polarization", "DIRECT");
-        } else {
-            System.setProperty("polarization", "NONE");
-        }
+		// Potential Terms
+        setProp("forcefield",		ForceFieldName.AMOEBA_PROTEIN_2013);
+		setProp(true,	"esvterm", "lambdaterm", "bondterm", "angleterm", "strbendterm", "ureyterm",
+					"opbendterm", "torsionterm", "pitorsterm", "tortorterm", "improperterm");
+		setProp(false,	"gkterm", "restrainterm", "comrestrainterm", "lambda-torsions");
 
-        // Inactive Potential
-        System.setProperty("gkterm", "false");
-        System.setProperty("restrainterm", "false");
-        System.setProperty("comrestrainterm", "false");
-        System.setProperty("lambda_torsions", "false");
+        // Potential Details
+		setProp(true,	"vdwterm", "esv.vanDerWaals", "mpoleterm", "esv.electrostatics", "pme.qi");
+		setProp(true,	"recipterm", "polarizeterm");
+		setProp("polarization",		Polarization.MUTUAL);
+		setProp("scf-algorithm",	SCFAlgorithm.SOR);
+		setProp("polar-eps",		1e-12);
+        setProp("vdw-cutoff",		10.0);
+        setProp("ewald-cutoff",		10.0);
+		setProp("pme-order",		8);
+		setProp("pme-mesh-density", 2.0);
 
         // Potential Settings
-        System.setProperty("permanent-lambda-alpha","2.0");
-        System.setProperty("permanent-lambda-exponent","3.0");
-        System.setProperty("polarization-lambda-start","0.0");      // polarize on the whole range [0,1]
-        System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
-        System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
-        System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
-        System.setProperty("intramolecular-softcore", "true");
-        System.setProperty("intermolecular-softcore", "true");
-        System.setProperty("vdw-cutoff", String.valueOf(cutoff));
-        System.setProperty("ewald-cutoff", String.valueOf(cutoff));
+        setProp("permanent-lambda-alpha",		2.0);
+        setProp("permanent-lambda-exponent",	3.0);
+        setProp("polarization-lambda-start",	0.0);	// polarize on the whole range [0,1]
+        setProp("polarization-lambda-exponent", 0.0);	// polarization not softcored, only prefactored
+        setProp("ligand-vapor-elec",			false);	// cancels when reference is solution phase
+        setProp("no-ligand-condensed-scf",		false);	// don't need condensed phase polarization
+        setProp("intramolecular-softcore",		false);
+        setProp("intermolecular-softcore",		false);
 
         // ESV Settings
-        System.setProperty("esv-propagation", "false");         // don't allow ESV particle to undergo dynamics
-        System.setProperty("esv-biasTerm", "true");             // include discretization and pH biases
-        System.setProperty("esv-scaleBonded", "true");          // include effects on bonded terms
-        System.setProperty("esv-backgroundBonded", "true");     // hook up BG bonded terms to FG node
-        System.setProperty("esv-scaleUnshared", "true");        // use multipole scaling in all cases (eliminates softcoring)
+		// Include discr+pH biases; include bonded; hook up BG bonded to FG node; exclude BG atoms from potential.
+		setProp(true,	"esv.biasTerm", "esv.bonded");
+		// Use multipole scaling in all cases; don't allow ESV particle dynamics.
+		setProp(false,	"esv.propagation");
+		setProp("esv.verbose",				false);
+		setProp("esv.allowLambdaSwitch",	false);	// if false, Lswith == L && dLswitch == 1.0
+		setProp("esv.nonlinearMultipoles",	false);	// if false, disallow Lswitch for PME specifically
+		setProp("esv.cloneXyzIndices",		yes);	// background atoms receive foreground indexes
 
-        // Logging Settings
-        System.setProperty("ffe-combineBonded", "true");        // fold all bonded contributions into a single line
-        System.setProperty("ffe-decomposePme", "true");         // print the six components of PME: {real,recip}*{self,perm,ind}    
-    }
-    
+        // System Settings
+		// Fold bonded into one line; print components of PME: {real,recip}*{self,perm,ind}
+		if (singleThreaded) setProp("pj.nt", 1);
+        setProp(true, "ffe.combineBonded",	"ffe.decomposePme");
+	}
+
     /**
-     * Unset all modified system properties.
+     * Revert props to their state prior to construction.
      */
     @AfterClass
     public static void tearDownClass() {
-        // Active Potential
-        System.clearProperty("forcefield");
-        System.clearProperty("esvterm");
-        System.clearProperty("lambdaterm");
-        System.clearProperty("bondterm");
-        System.clearProperty("angleterm");
-        System.clearProperty("strbndterm");
-        System.clearProperty("ureyterm");
-        System.clearProperty("opbendterm");
-        System.clearProperty("torsionterm");
-        System.clearProperty("pitorsterm");
-        System.clearProperty("tortorterm");
-        System.clearProperty("improperterm");
+        System.getProperties().clear();
+		System.getProperties().putAll(originalSystemConfig);
+	}
 
-        // Optional Potential
-        System.clearProperty("vdwterm");
-        System.clearProperty("esv-useVdw");
-        System.clearProperty("mpoleterm");
-        System.clearProperty("pme-qi");
-        System.clearProperty("esv-usePme");
-        System.clearProperty("recipterm");
-        System.clearProperty("polarizeterm");
-        System.clearProperty("polarization");
-
-        // Inactive Potential
-        System.clearProperty("gkterm");
-        System.clearProperty("restrainterm");
-        System.clearProperty("comrestrainterm");
-        System.clearProperty("lambda_torsions");
-
-        // Potential Settings
-        System.clearProperty("permanent-lambda-alpha");
-        System.clearProperty("permanent-lambda-exponent");
-        System.clearProperty("polarization-lambda-start");
-        System.clearProperty("polarization-lambda-exponent");
-        System.clearProperty("ligand-vapor-elec");
-        System.clearProperty("no-ligand-condensed-scf");
-        System.clearProperty("intramolecular-softcore");
-        System.clearProperty("intermolecular-softcore");
-        System.clearProperty("vdw-cutoff");
-        System.clearProperty("ewald-cutoff");
-
-        // ESV Settings
-        System.clearProperty("esv-propagation");
-        System.clearProperty("esv-biasTerm");
-        System.clearProperty("esv-scaleBonded");
-        System.clearProperty("esv-backgroundBonded");
-        System.clearProperty("esv-scaleUnshared");
-
-        // Logging Settings
-        System.clearProperty("ffe-combineBonded");
-        System.clearProperty("ffe-decomposePme");
+    public MolecularAssembly setup(String filename, boolean quietly) {
+		if (quietly || resultsOnly) logMaster.setLevel(Level.WARNING);
+        MolecularAssembly mola = openResource(filename, quietly);
+        // Turn off checks for overlapping atoms, which is expected for lambda=0.
+        mola.getPotentialEnergy().getCrystal().setSpecialPositionCutoff(0.0);
+		logMaster.setLevel(origLevel);
+		return mola;
     }
-    
-    @Before
-    public void setUp() {}
-    
-    @After
-    public void tearDown() {}
 
+	public MolecularAssembly setupWithExtended(String filename, boolean quietly, ExtendedSystemConfig esvConfig) {
+		if (quietly || resultsOnly) logMaster.setLevel(Level.WARNING);
+		setProp("pme.qi", true);
+        MolecularAssembly mola = openResource(filename, quietly);
+        // Turn off checks for overlapping atoms, which is expected for lambda=0.
+        mola.getPotentialEnergy().getCrystal().setSpecialPositionCutoff(0.0);
+		// Create extended variables; add to system; hook up to assembly.
+        ExtendedSystem esvSystem = (esvConfig != null)
+				? new ExtendedSystem(mola, esvConfig) : new ExtendedSystem(mola);
+		esvSystem.setConstantPh(7.4);
+        esvSystem.populate(esvResidueIDs);
+		mola.getPotentialEnergy().attachExtendedSystem(esvSystem);
+		ExtendedSystemConfig.print(esvSystem.config);
+		logMaster.setLevel(origLevel);
+		return mola;
+	}
+
+    /**
+     * Locates files packed into the uberjar by Maven.
+     */
+    private MolecularAssembly openResource(String filename, boolean quietly) {
+		MolecularAssembly mola;
+		try {
+			ClassLoader cl = this.getClass().getClassLoader();
+			File structure = new File(cl.getResource(resourcePrefix + filename).getPath());
+			mola = (quietly) ? utils.openQuietly(structure) : utils.open(structure);
+		} catch (RuntimeException ex) {
+			File structure = new File("examples//" + filename);
+			mola = (quietly) ? utils.openQuietly(structure) : utils.open(structure);
+		}
+		return mola;
+    }
     private MolecularAssembly openResource(String filename) {
         return openResource(filename, false);
     }
-    
-    private MolecularAssembly openResource(String filename, boolean quietly) {
-        ClassLoader cl = this.getClass().getClassLoader();
-        File structure = new File(cl.getResource(resourcePrefix + filename).getPath());
-        return (quietly) ? utils.openQuietly(structure) : utils.open(structure);
+    private MolecularAssembly openResourceQuietly(String filename) {
+        return openResource(filename, true);
     }
-    
-    @Test
-    public void test() {
-        mola = openResource(filename11, false);
-        ffe = mola.getPotentialEnergy();
-        esvSystem = new ExtendedSystem(mola);
-        
-        Polymer[] polymers = mola.getChains();
-        String[] rlTokens = {residA, residB};
-        double temperature = 298.15;
-        for (int i = 0; i < numESVs; i++) {
-            Character chainID = rlTokens[i].charAt(0);
-            int resNum = Integer.parseInt(rlTokens[i].substring(1));
-            Optional<Residue> target = Optional.empty();
-            for (Polymer p : polymers) {
-                if (p.getChainID().equals(chainID)) {
-                    target = p.getResidues().stream()
-                            .filter((Residue res) -> res.getResidueNumber() == resNum)
-                            .findFirst();
-                    break;
-                }
-            }
-            if (!target.isPresent()) {
-                logger.log(Level.SEVERE, "Couldn't find target residue {0}", rlTokens[i]);
-            }
 
-            SB.logfp("Residue: %s", target.get());
-            MultiResidue titrating = TitrationUtils.titrationFactory(mola, target.get());
-            
-            TitrationESV esv = new TitrationESV(esvSystem.getConfig(), titrating, pH, biasMag);
-            esvSystem.addVariable(esv);
-        }
-        
-        // Attach populated esvSystem to the potential.
-        ffe.attachExtendedSystem(esvSystem);
-        // Turn off checks for overlapping atoms, which is expected for lambda=0.
-        ffe.getCrystal().setSpecialPositionCutoff(0.0);
-        
-        testDerivatives();
-        testEndStates();
-        testSmoothness();
-    }
-    
+    private void assertEquals(String message, double expected, double actual, double delta) {
+		if (assertions) org.junit.Assert.assertEquals(message, expected, actual, delta);
+	}
+
+	@org.junit.Test
+	public void testLauncher() {
+		switch (test) {
+			case EndStates:
+				testEndStates();
+				break;
+			case Derivatives:
+				testDerivatives();
+			case Deriv_OneEsv:
+			case Deriv_TwoEsvs:
+				derivativeDebugParameters();
+				testDerivatives();
+				break;
+			case Deriv_Meta:
+				testDerivativesMeta();
+				break;
+			case Smoothness:
+				testSmoothness();
+				break;
+			default:
+			case All:
+				testEndStates();
+				testDerivatives();
+				testSmoothness();
+		}
+	}
+
+	public void testDerivativesMeta() {
+		resultsOnly = true;
+		fill(initialLambda, 0.5);
+		lambdaValuesToTest = new double[]{0.1,0.5,0.9};
+		SB.logfp("++Masking, MUTUAL/CG, ++AlphaScaling");
+		setProp("esv.allowMaskPerm",	yes);
+		setProp("esv.allowMaskPolarD",	yes);
+		setProp("esv.allowMaskPolarP",	yes);
+		setProp("polarization",		Polarization.MUTUAL);
+		setProp("scf-algorithm",	SCFAlgorithm.CG);
+		setProp("esv.scaleAlpha",		yes);
+		testDerivatives();
+
+		SB.logfp("++Masking, DIRECT/SOR, --AlphaScaling");
+		setProp("esv.allowMaskPerm",	yes);
+		setProp("esv.allowMaskPolarD",	yes);
+		setProp("esv.allowMaskPolarP",	yes);
+		setProp("polarization",		Polarization.DIRECT);
+		setProp("scf-algorithm",	SCFAlgorithm.SOR);
+		setProp("esv.scaleAlpha",		false);
+		testDerivatives();
+
+		fill(initialLambda, 0.0);
+		SB.logfp("--Masking, DIRECT/SOR, --AlphaScaling");
+		setProp("esv.allowMaskPerm",	false);
+		setProp("esv.allowMaskPolarD",	false);
+		setProp("esv.allowMaskPolarP",	false);
+		setProp("polarization",		Polarization.DIRECT);
+		setProp("scf-algorithm",	SCFAlgorithm.SOR);
+		setProp("esv.scaleAlpha",		false);
+		testDerivatives();
+
+		fill(initialLambda, 1.0);
+		SB.logfp("--Masking, DIRECT/SOR, --AlphaScaling");
+		setProp("esv.allowMaskPerm",	false);
+		setProp("esv.allowMaskPolarD",	false);
+		setProp("esv.allowMaskPolarP",	false);
+		setProp("polarization",		Polarization.DIRECT);
+		setProp("scf-algorithm",	SCFAlgorithm.SOR);
+		setProp("esv.scaleAlpha",		false);
+		testDerivatives();
+	}
+
     /**
      * Analytic Derivative vs Finite Difference: VdW,PermReal,PermRecip,Total
      */
-    private void testDerivatives() {
-        for (int i = 0; i < numESVs; i++) {
-            esvSystem.setLambda(i, lambda);
-        }
-        for (int i = 0; i < numESVs; i++) {
-            esvSystem.setLambda(i, 0.0);
-            final double e0 = ffe.energy(true, false);
-            esvSystem.setLambda(i, 1.0);
-            final double e1 = ffe.energy(true, false);
-            SB.logfn(" ESV%d> E(1),E(0),diff:  %14.6f - %14.6f = %14.6f", i, e1, e0, e1-e0);
+    public void testDerivatives() {
+		ExtendedSystemConfig esvConfig = derivativeDebugParameters();
+		MolecularAssembly mola = setupWithExtended(esvFilename, false, esvConfig);
+		ForceFieldEnergy ffe = mola.getPotentialEnergy();
+		ExtendedSystem esvSystem = ffe.getExtendedSystem();
+		if (resultsOnly) logMaster.setLevel(Level.WARNING);
+		final SBLogger SB = new SBLogger();
+        final double step = 1e-6;
 
-            esvSystem.setLambda(i, lambda - step);
-            final double totalLow = ffe.energy(true, false);
-            final double vdwLow = ffe.getVanDerWaalsEnergy();
-            final double realLow = ffe.getPermanentRealSpaceEnergy();
-            final double selfLow = ffe.getPermanentReciprocalSelfEnergy();
-            final double recipLow = ffe.getPermanentReciprocalMpoleEnergy();
+		for (int i = 0; i < esvSystem.size(); i++) {
+			String esvName = esvSystem.getEsv(i).getName();
+			if (!mola.getCrystal().aperiodic()) {
+				SB.logfn(" Finite Diff: %5.5s (Crystal)", esvName);
+			} else {
+				SB.logfn(" Finite Diff: %5.5s (Aprodc.)", esvName);
+			}
+			/********************************************/
 
-            esvSystem.setLambda(i, lambda + step);
-            final double totalHigh = ffe.energy(true, false);
-            final double vdwHigh = ffe.getVanDerWaalsEnergy();
-            final double realHigh = ffe.getPermanentRealSpaceEnergy();
-            final double selfHigh = ffe.getPermanentReciprocalSelfEnergy();
-            final double recipHigh = ffe.getPermanentReciprocalMpoleEnergy();
+			// Reset lambdas.
+			for (int k = 0; k < esvSystem.size(); k++) {
+				esvSystem.setLambda(k, initialLambda[k]);
+			}
+			for (int l = 0; l < lambdaValuesToTest.length; l++) {
+				final double center, low, high;
+				if (oneSidedFiniteAtExtremes) {
+					center = lambdaValuesToTest[l];
+					low =  (center - step >= 0.0) ? center - step : center;
+					high = (center + step <= 1.0) ? center + step : center;
+				} else {
+					center = (lambdaValuesToTest[l] == 0.0) ? lambdaValuesToTest[l] + step
+										: (lambdaValuesToTest[l] == 1.0) ? lambdaValuesToTest[l] - step
+										:  lambdaValuesToTest[l];
+					low = center - step;
+					high = center + step;
+				}
+				final double width = high - low;
 
-            esvSystem.setLambda(i, lambda);
-            final double totalCenter = ffe.energy(true, true);
-            final double vdwCenter = ffe.getVanDerWaalsEnergy();
-            final double realCenter = ffe.getPermanentRealSpaceEnergy();
-            final double selfCenter = ffe.getPermanentReciprocalSelfEnergy();
-            final double recipCenter = ffe.getPermanentReciprocalMpoleEnergy();
+				// Collect numeric derivative components.
+				esvSystem.setLambda(i, low);
+				ffe.energy(true, false);
+				final double vdwLow       = ffe.getEnergyComponent(PotentialComponent.VanDerWaals);
+				final double bondedLow    = ffe.getEnergyComponent(PotentialComponent.Bonded);
+				final double biasLow      = ffe.getEnergyComponent(PotentialComponent.Bias);
+				final double permRealLow  = ffe.getEnergyComponent(PotentialComponent.PermanentRealSpace);
+				final double permSelfLow  = ffe.getEnergyComponent(PotentialComponent.PermanentSelf);
+				final double permRecipLow = ffe.getEnergyComponent(PotentialComponent.PermanentReciprocal);
+				final double indRealLow   = ffe.getEnergyComponent(PotentialComponent.InducedRealSpace);
+				final double indSelfLow   = ffe.getEnergyComponent(PotentialComponent.InducedSelf);
+				final double indRecipLow  = ffe.getEnergyComponent(PotentialComponent.InducedReciprocal);
+				final double totalLow     = ffe.getEnergyComponent(PotentialComponent.ForceFieldEnergy);
 
-            final double vdwAnalytic = esvSystem.getdVdwdL(i);
-            final double vdwNumeric = (vdwHigh - vdwLow) / (2 * step);
-            final double vdwError = Math.abs(vdwNumeric - vdwAnalytic);
-            final double realAnalytic = esvSystem.getdPermRealdL(i);
-            final double realNumeric = (realHigh - realLow) / (2 * step);
-            final double realError = Math.abs(realNumeric - realAnalytic);
-            final double selfAnalytic = esvSystem.getdPermRecipSelf_dL(i);
-            final double selfNumeric = (selfHigh - selfLow) / (2 * step);
-            final double selfError = Math.abs(selfNumeric - selfAnalytic);
-            final double recipAnalytic = esvSystem.getdPermRecipMpole_dL(i);
-            final double recipNumeric = (recipHigh - recipLow) / (2 * step);
-            final double recipError = Math.abs(recipNumeric - recipAnalytic);
-            final double totalAnalytic = esvSystem.getdEdL(i, true);
-            final double totalNumeric = (totalHigh - totalLow) / (2 * step);
-            final double totalError = Math.abs(totalNumeric - totalAnalytic);
+				esvSystem.setLambda(i, high);
+				ffe.energy(true, false);
+				final double vdwHigh      = ffe.getEnergyComponent(PotentialComponent.VanDerWaals);
+				final double bondedHigh   = ffe.getEnergyComponent(PotentialComponent.Bonded);
+				final double biasHigh     = ffe.getEnergyComponent(PotentialComponent.Bias);
+				final double permRealHigh = ffe.getEnergyComponent(PotentialComponent.PermanentRealSpace);
+				final double permSelfHigh = ffe.getEnergyComponent(PotentialComponent.PermanentSelf);
+				final double permRecipHigh= ffe.getEnergyComponent(PotentialComponent.PermanentReciprocal);
+				final double indRealHigh  = ffe.getEnergyComponent(PotentialComponent.InducedRealSpace);
+				final double indSelfHigh  = ffe.getEnergyComponent(PotentialComponent.InducedSelf);
+				final double indRecipHigh = ffe.getEnergyComponent(PotentialComponent.InducedReciprocal);
+				final double totalHigh    = ffe.getEnergyComponent(PotentialComponent.ForceFieldEnergy);
 
-            String esvName = esvSystem.getEsv(i).getName();
-            SB.nlogf("  Finite Difference Test: %s", esvName);
-            SB.nlogf(" *************************");
-            SB.logf(StringUtils.repeat("*", esvName.length() + 1));
-            SB.logfn("   %10s   %10s    %10s    %10s    %10s", "vdw", "permReal", "permSelf", "permRecip", "total");
-            SB.logfn(" Numeric  Derivatives (@lambda %4.2f): %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f",
-                    lambda, vdwNumeric, realNumeric, selfNumeric, recipNumeric, totalNumeric);
-            SB.logfn(" Analytic Derivatives (@lambda %4.2f): %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f",
-                    lambda, vdwAnalytic, realAnalytic, selfAnalytic, recipAnalytic, totalAnalytic);
-            SB.logfn(" Error:                               %+12.6f  %+12.6f  %+12.6f  %+12.6f  %+12.6f",
-                    vdwError, realError, selfError, recipError, totalError);
-            SB.print();
-            
-            assertEquals("VdW Deriv", 0.0, vdwError, tolerance);
-            assertEquals("PermReal Deriv", 0.0, realError, tolerance);
-            assertEquals("PermSelf Deriv", 0.0, selfError, tolerance);
-            assertEquals("PermMpole Deriv", 0.0, recipError, tolerance);
-            assertEquals("Total Deriv", 0.0, totalError, tolerance);
-        }
-    }
-    
+				// Get analytic derivatives from the center.
+				esvSystem.setLambda(i, center);
+				ffe.energy(true, false);
+				final double vdwAna       = esvSystem.getDerivativeComponent(PotentialComponent.VanDerWaals, i);
+				final double bondedAna    = esvSystem.getDerivativeComponent(PotentialComponent.Bonded, i);
+				final double biasAna      = esvSystem.getDerivativeComponent(PotentialComponent.Bias, i);
+				final double permRealAna  = esvSystem.getDerivativeComponent(PotentialComponent.PermanentRealSpace, i);
+				final double permSelfAna  = esvSystem.getDerivativeComponent(PotentialComponent.PermanentSelf, i);
+				final double permRecipAna = esvSystem.getDerivativeComponent(PotentialComponent.PermanentReciprocal, i);
+				final double indRealAna   = esvSystem.getDerivativeComponent(PotentialComponent.InducedRealSpace, i);
+				final double indSelfAna   = esvSystem.getDerivativeComponent(PotentialComponent.InducedSelf, i);
+				final double indRecipAna  = esvSystem.getDerivativeComponent(PotentialComponent.InducedReciprocal, i);
+				final double totalAna     = esvSystem.getDerivativeComponent(PotentialComponent.ForceFieldEnergy, i);
+
+				// Calculate numeric derivatives and error.
+				final double vdwNum         = (vdwHigh - vdwLow) / (width);
+				final double vdwErr         = (vdwAna - vdwNum);
+				final double bondedNum      = (bondedHigh - bondedLow) / (width);
+				final double bondedErr      = (bondedAna - bondedNum);
+				final double biasNum        = (biasHigh - biasLow) / (width);
+				final double biasErr        = (biasAna - biasNum);
+				final double permRealNum    = (permRealHigh - permRealLow) / (width);
+				final double permRealErr    = (permRealAna - permRealNum);
+				final double permSelfNum    = (permSelfHigh - permSelfLow) / (width);
+				final double permSelfErr    = (permSelfAna - permSelfNum);
+				final double permRecipNum   = (permRecipHigh - permRecipLow) / (width);
+				final double permRecipErr   = (permRecipAna - permRecipNum);
+				final double indRealNum     = (indRealHigh - indRealLow) / (width);
+				final double indRealErr     = (indRealAna - indRealNum);
+				final double indSelfNum     = (indSelfHigh - indSelfLow) / (width);
+				final double indSelfErr     = (indSelfAna - indSelfNum);
+				final double indRecipNum    = (indRecipHigh - indRecipLow) / (width);
+				final double indRecipErr    = (indRecipAna - indRecipNum);
+				final double totalNum       = (totalHigh - totalLow) / (width);
+				final double totalErr       = (totalAna - totalNum);
+
+				SB.logf(" %-28s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s",
+						StringUtils.repeat("*", 28),
+						"vdw ", "bonded", "bias", "permReal", "permSelf", "permRecip", "indReal", "indSelf", "indRecip", "total");
+				SB.nlogf(" %-28s %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g",
+						format("Numeric  @L=%s", esvSystem.getLambdaList()),
+						vdwNum, bondedNum, biasNum, permRealNum, permSelfNum, permRecipNum, indRealNum, indSelfNum, indRecipNum, totalNum);
+				SB.nlogf(" %-28s %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g",
+						format("Analytic @L=%s", esvSystem.getLambdaList()),
+						vdwAna, bondedAna, biasAna, permRealAna, permSelfAna, permRecipAna, indRealAna, indSelfAna, indRecipAna, totalAna);
+				SB.nlogf(" %-28s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s",
+						"Error:", err(vdwAna,vdwNum), err(bondedAna,bondedNum), err(biasAna,biasNum),
+						err(permRealAna,permRealNum), err(permSelfAna,permSelfNum), err(permRecipAna,permRecipNum),
+						err(indRealAna,indRealNum), err(indSelfAna,indSelfNum), err(indRecipAna,indRecipNum), err(totalAna,totalNum));
+				logMaster.setLevel(origLevel);
+				SB.print();
+
+				if (assertions) {
+					assertEquals("VanDerWaals Deriv Error", 0.0, vdwErr, tolerance);
+					assertEquals("Bonded Deriv Error", 0.0, bondedErr, tolerance);
+					assertEquals("Bias Deriv Error", 0.0, biasErr, tolerance);
+					assertEquals("PermReal Deriv Error", 0.0, permRealErr, tolerance);
+					assertEquals("PermSelf Deriv Error", 0.0, permSelfErr, tolerance);
+					assertEquals("PermRecip Deriv Error", 0.0, permRecipErr, tolerance);
+					assertEquals("IndReal Deriv Error", 0.0, indRealErr, tolerance);
+					assertEquals("IndSelf Deriv Error", 0.0, indSelfErr, tolerance);
+					assertEquals("IndRecip Deriv Error", 0.0, indRecipErr, tolerance);
+					assertEquals("Total Deriv Error", 0.0, totalErr, tolerance);
+				}
+			}	// lambda loop
+		}	// ESV loop
+    }	// testDerivatives method
+
+	private static String err(double analytic, double numeric) {
+		return err(analytic,numeric,errorThreshold);
+	}
+	private static String err(double analytic, double numeric, double threshold) {
+		double error = analytic - numeric;
+		double absError = Math.abs(error);
+		double percentError = Math.abs(error) / Math.abs(numeric) * 100;
+		return (absError <= threshold && (percentError < 1.0 || numeric == 0.0)) ? "nil"
+				: (absError < 1e-4) ? format("%12.1e", error) : format("%12.4f", error);
+	}
+
+	private static ExtendedSystemConfig activateAll() {
+		setProp("esv.allowMaskPerm",		yes);
+		setProp("esv.allowMaskPolarD",		yes);
+		setProp("esv.allowMaskPolarP",		yes);
+
+		setProp("polarization",		Polarization.MUTUAL);
+		setProp("scf-algorithm",	SCFAlgorithm.SOR);
+		setProp("esv.scaleAlpha",			yes);	// scale polarizability of titrating H+
+		setProp("rotate-multipoles",		yes);	// global frame
+		setProp("esv.allowSymOps",			yes);	// symmetry operators
+		setProp("esv.allowScreening",		yes);	// SCREENED_COULOMB tensors
+		setProp("esv.allowTholeDamping",	yes);	// THOLE_FIELD tensors
+		setProp("esv.recipFieldEffects",	yes);	// reciprocal space contributions to field
+
+		setProp("esv.cdqScales",	Arrays.asList(1.0, 1.0, 1.0));
+		setProp("esv.verbose",				false);
+		setProp("esv.allowLambdaSwitch",	false);
+		setProp("esv.nonlinearMultipoles",	false);
+		setProp("esv.cloneXyzIndices",		yes);
+		setProp("use-charges",				yes);
+		setProp("use-dipoles",				yes);
+		setProp("use-quadrupoles",			false);
+		return new ExtendedSystemConfig();
+	}
+
     /**
      * Verify that a lys-lys system with two ESVs can exactly reproduce the energy
      * yielded by vanilla energy() calls on mutated PDB files.
      */
-    private void testEndStates() {
-        esvSystem.setLambda("A", 0.0);
-        esvSystem.setLambda("B", 0.0);
-        ffe.energy(true, false);
-        final double esvVdw00 = ffe.getVanDerWaalsEnergy();
-        final double esvPme00 = ffe.getPermanentRealSpaceEnergy();
-        final double esvRcp00 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
+    public void testEndStates() {
+		ExtendedSystemConfig esvConfig = activateAll();
+		MolecularAssembly mola = setupWithExtended(esvFilename, true, esvConfig);
+		ForceFieldEnergy ffe = mola.getPotentialEnergy();
+		ExtendedSystem esvSystem = ffe.getExtendedSystem();
+		if (resultsOnly) logMaster.setLevel(Level.WARNING);
+		ParticleMeshEwaldQI esvPme = ffe.getPmeQiNode();
+		final double[] totalEsv = new double[4];
+		final double[] vdwEsv = new double[4];
+		final double[] permEsv = new double[4],
+				permRealEsv = new double[4], permSelfEsv = new double[4], permRecipEsv = new double[4];
+		final double[] directEsv = new double[4];
+		final double[] mutualEsv = new double[4],
+				indRealEsv = new double[4], indSelfEsv = new double[4], indRecipEsv = new double[4];
+		final String[] esvStateNames = new String[4];
+		esvSystem.setLambda('A', 0.0); esvSystem.setLambda('B', 0.0);
+		esvStateNames[0] = format("L=%1.0f,%1.0f", esvSystem.getLambda('A'), esvSystem.getLambda('B'));
+		esvPme.setPolarization(Polarization.MUTUAL);
+		ffe.energy(true, false);
+        totalEsv[0] = ffe.getTotalEnergy() - esvSystem.getBiasEnergy();
+        vdwEsv[0] = ffe.getVanDerWaalsEnergy();
+        permEsv[0] = esvPme.getPermanentEnergy();
+//		permRealEsv[0] = esvPme.getPermRealEnergy();
+//		permSelfEsv[0] = esvPme.getPermSelfEnergy();
+//		permRecipEsv[0] = esvPme.getPermRecipEnergy();
+        mutualEsv[0] = esvPme.getPolarizationEnergy();
+//		indRealEsv[0] = esvPme.getIndRealEnergy();
+//		indSelfEsv[0] = esvPme.getIndSelfEnergy();
+//		indRecipEsv[0] = esvPme.getIndRecipEnergy();
+		ffe.getPmeNode().setPolarization(Polarization.DIRECT);
+		ffe.energy(true, false);
+		directEsv[0] = ffe.getPolarizationEnergy();
+		ffe.getPmeNode().setPolarization(Polarization.MUTUAL);
 
-        esvSystem.setLambda("A", 0.0);
-        esvSystem.setLambda("B", 1.0);
-        ffe.energy(true, false);
-        final double esvVdw01 = ffe.getVanDerWaalsEnergy();
-        final double esvPme01 = ffe.getPermanentRealSpaceEnergy();
-        final double esvRcp01 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
+        esvSystem.setLambda('A', 0.0); esvSystem.setLambda('B', 1.0);
+		esvStateNames[1] = format("L=%1.0f,%1.0f", esvSystem.getLambda('A'), esvSystem.getLambda('B'));
+		ffe.energy(true, false);
+        totalEsv[1] = ffe.getTotalEnergy() - esvSystem.getBiasEnergy();
+        vdwEsv[1] = ffe.getVanDerWaalsEnergy();
+        permEsv[1] = esvPme.getPermanentEnergy();
+//		permRealEsv[1] = esvPme.getPermRealEnergy();
+//		permSelfEsv[1] = esvPme.getPermSelfEnergy();
+//		permRecipEsv[1] = esvPme.getPermRecipEnergy();
+        mutualEsv[1] = esvPme.getPolarizationEnergy();
+//		indRealEsv[1] = esvPme.getIndRealEnergy();
+//		indSelfEsv[1] = esvPme.getIndSelfEnergy();
+//		indRecipEsv[1] = esvPme.getIndRecipEnergy();
+		ffe.getPmeNode().setPolarization(Polarization.DIRECT);
+		ffe.energy(true, false);
+		directEsv[1] = ffe.getPolarizationEnergy();
+		ffe.getPmeNode().setPolarization(Polarization.MUTUAL);
 
-        esvSystem.setLambda("A", 1.0);
-        esvSystem.setLambda("B", 0.0);
-        ffe.energy(true, false);
-        final double esvVdw10 = ffe.getVanDerWaalsEnergy();
-        final double esvPme10 = ffe.getPermanentRealSpaceEnergy();
-        final double esvRcp10 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
+        esvSystem.setLambda('A', 1.0); esvSystem.setLambda('B', 0.0);
+		esvStateNames[2] = format("L=%1.0f,%1.0f", esvSystem.getLambda('A'), esvSystem.getLambda('B'));
+		ffe.energy(true, false);
+        totalEsv[2] = ffe.getTotalEnergy() - esvSystem.getBiasEnergy();
+        vdwEsv[2] = ffe.getVanDerWaalsEnergy();
+        permEsv[2] = esvPme.getPermanentEnergy();
+//		permRealEsv[2] = esvPme.getPermRealEnergy();
+//		permSelfEsv[2] = esvPme.getPermSelfEnergy();
+//		permRecipEsv[2] = esvPme.getPermRecipEnergy();
+        mutualEsv[2] = esvPme.getPolarizationEnergy();
+//		indRealEsv[2] = esvPme.getIndRealEnergy();
+//		indSelfEsv[2] = esvPme.getIndSelfEnergy();
+//		indRecipEsv[2] = esvPme.getIndRecipEnergy();
+		ffe.getPmeNode().setPolarization(Polarization.DIRECT);
+		ffe.energy(true, false);
+		directEsv[2] = ffe.getPolarizationEnergy();
+		ffe.getPmeNode().setPolarization(Polarization.MUTUAL);
 
-        esvSystem.setLambda("A", 1.0);
-        esvSystem.setLambda("B", 1.0);
-        ffe.energy(true, false);
-        final double esvVdw11 = ffe.getVanDerWaalsEnergy();
-        final double esvPme11 = ffe.getPermanentRealSpaceEnergy();
-        final double esvRcp11 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
-
-        StringBuilder ext = new StringBuilder();
-        if (testVdw) {
-            ext.append(format("%-9s %-7s %10.5f\n", "VanWaals", "0-0", esvVdw00));
-            ext.append(format("%-9s %-7s %10.5f\n", "VanWaals", "0-1", esvVdw01));
-            ext.append(format("%-9s %-7s %10.5f\n", "VanWaals", "1-0", esvVdw10));
-            ext.append(format("%-9s %-7s %10.5f\n", "VanWaals", "1-1", esvVdw11));
-        }
-        if (testPermReal) {
-            ext.append(format("%-9s %-7s %10.5f\n", "PermReal", "0-0", esvPme00));
-            ext.append(format("%-9s %-7s %10.5f\n", "PermReal", "0-1", esvPme01));
-            ext.append(format("%-9s %-7s %10.5f\n", "PermReal", "1-0", esvPme10));
-            ext.append(format("%-9s %-7s %10.5f\n", "PermReal", "1-1", esvPme11));
-        }
-        if (testReciprocal) {
-            ext.append(format("%-9s %-7s %10.5f\n", "PermRecip", "0-0", esvRcp00));
-            ext.append(format("%-9s %-7s %10.5f\n", "PermRecip", "0-1", esvRcp01));
-            ext.append(format("%-9s %-7s %10.5f\n", "PermRecip", "1-0", esvRcp10));
-            ext.append(format("%-9s %-7s %10.5f\n", "PermRecip", "1-1", esvRcp11));
-        }
-
-        StringBuilder vdw = new StringBuilder();
-        StringBuilder pme = new StringBuilder();
-        StringBuilder rcp = new StringBuilder();
+        esvSystem.setLambda('A', 1.0); esvSystem.setLambda('B', 1.0);
+		esvStateNames[3] = format("L=%1.0f,%1.0f", esvSystem.getLambda('A'), esvSystem.getLambda('B'));		ffe.energy(true, false);
+        totalEsv[3] = ffe.getTotalEnergy() - esvSystem.getBiasEnergy();
+        vdwEsv[3] = ffe.getVanDerWaalsEnergy();
+        permEsv[3] = esvPme.getPermanentEnergy();
+//		permRealEsv[3] = esvPme.getPermRealEnergy();
+//		permSelfEsv[3] = esvPme.getPermSelfEnergy();
+//		permRecipEsv[3] = esvPme.getPermRecipEnergy();
+        mutualEsv[3] = esvPme.getPolarizationEnergy();
+//		indRealEsv[3] = esvPme.getIndRealEnergy();
+//		indSelfEsv[3] = esvPme.getIndSelfEnergy();
+//		indRecipEsv[3] = esvPme.getIndRecipEnergy();
+		ffe.getPmeNode().setPolarization(Polarization.DIRECT);
+		ffe.energy(true, false);
+		directEsv[3] = ffe.getPolarizationEnergy();
+		ffe.getPmeNode().setPolarization(Polarization.MUTUAL);
 
         /* Open vanilla end states. */
-        MolecularAssembly vanilla;
-        ForceFieldEnergy vanillaFFE;
-        String state;
-        
-        /* lyd-lyd */
-        vanilla = openResource(filename00, true);
-        vanillaFFE = vanilla.getPotentialEnergy();
-        state = filename00;
-        vanillaFFE.energy(true, false);
-        if (testVdw) {
-            final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
-            assertEquals("vdw00", vanWaals, esvVdw00, tolerance);
-            vdw.append(format("%-9s %-7.7s %10.5f\n", "VanWaals", state, vanWaals));
-        }
-        if (testPermReal) {
-            final double permReal = vanillaFFE.getPermanentRealSpaceEnergy();
-            assertEquals("permReal00", permReal, esvPme00, tolerance);
-            pme.append(format("%-9s %-7s %10.5f\n", "PermReal", state, permReal));
-        }
-        if (testReciprocal) {
-            final double permRecip = vanillaFFE.getPermanentReciprocalSelfEnergy() + vanillaFFE.getPermanentReciprocalMpoleEnergy();
-            assertEquals("permRecip00", permRecip, esvRcp00, tolerance);
-            rcp.append(format("%-9s %-7s %10.5f\n", "PermRecip", state, permRecip));
-        }
-        utils.close(vanilla);
-        
-        /* lyd-lys */
-        vanilla = openResource(filename01, true);
-        vanillaFFE = vanilla.getPotentialEnergy();
-        state = filename01;
-        vanillaFFE.energy(true, false);
-        if (testVdw) {
-            final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
-            assertEquals("vdw01", vanWaals, esvVdw01, tolerance);
-            vdw.append(format("%-9s %-7.7s %10.5f\n", "VanWaals", state, vanWaals));
-        }
-        if (testPermReal) {
-            final double permReal = vanillaFFE.getPermanentRealSpaceEnergy();
-            assertEquals("permReal01", permReal, esvPme01, tolerance);
-            pme.append(format("%-9s %-7s %10.5f\n", "PermReal", state, permReal));
-        }
-        if (testReciprocal) {
-            final double permRecip = vanillaFFE.getPermanentReciprocalSelfEnergy() + vanillaFFE.getPermanentReciprocalMpoleEnergy();
-            assertEquals("permRecip01", permRecip, esvRcp01, tolerance);
-            rcp.append(format("%-9s %-7s %10.5f\n", "PermRecip", state, permRecip));
-        }
-        utils.close(vanilla);
-        
-        /* lys-lyd */
-        vanilla = openResource(filename10, true);
-        vanillaFFE = vanilla.getPotentialEnergy();
-        state = filename10;
-        vanillaFFE.energy(true, false);
-        if (testVdw) {
-            final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
-            assertEquals("vdw10", vanWaals, esvVdw10, tolerance);
-            vdw.append(format("%-9s %-7.7s %10.5f\n", "VanWaals", state, vanWaals));
-        }
-        if (testPermReal) {
-            final double permReal = vanillaFFE.getPermanentRealSpaceEnergy();
-            assertEquals("permReal10", permReal, esvPme10, tolerance);
-            pme.append(format("%-9s %-7s %10.5f\n", "PermReal", state, permReal));
-        }
-        if (testReciprocal) {
-            final double permRecip = vanillaFFE.getPermanentReciprocalSelfEnergy() + vanillaFFE.getPermanentReciprocalMpoleEnergy();
-            assertEquals("permRecip10", permRecip, esvRcp10, tolerance);
-            rcp.append(format("%-9s %-7s %10.5f\n", "PermRecip", state, permRecip));
-        }
-        utils.close(vanilla);
-        
-        /* lys-lys */
-        vanilla = openResource(filename11, true);
-        vanillaFFE = vanilla.getPotentialEnergy();
-        state = filename11;
-        vanillaFFE.energy(true, false);
-        if (testVdw) {
-            final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
-            assertEquals("vdw11", vanWaals, esvVdw11, tolerance);
-            vdw.append(format("%-9s %-7.7s %10.5f\n", "VanWaals", state, vanWaals));
-        }
-        if (testPermReal) {
-            final double permReal = vanillaFFE.getPermanentRealSpaceEnergy();
-            assertEquals("permReal11", permReal, esvPme11, tolerance);
-            pme.append(format("%-9s %-7s %10.5f\n", "PermReal", state, permReal));
-        }
-        if (testReciprocal) {
-            final double permRecip = vanillaFFE.getPermanentReciprocalSelfEnergy() + vanillaFFE.getPermanentReciprocalMpoleEnergy();
-            assertEquals("permRecip11", permRecip, esvRcp11, tolerance);
-            rcp.append(format("%-9s %-7s %10.5f\n", "PermRecip", state, permRecip));
-        }
-        utils.close(vanilla);
+        MolecularAssembly qi, cart;
+        ForceFieldEnergy qiPot, cartPot;
+		final int numStates = stateFilenames.length;
+		final double[] totalQi	= new double[numStates], totalCart	= new double[numStates];
+		final double[] vdwQi	= new double[numStates], vdwCart	= new double[numStates];
+		final double[] permQi	= new double[numStates], permCart	= new double[numStates];
+		final double[] permRealQi = new double[numStates], permRealCart = new double[numStates];
+		final double[] permSelfQi = new double[numStates], permSelfCart = new double[numStates];
+		final double[] permRecipQi = new double[numStates], permRecipCart = new double[numStates];
+		final double[] mutualQi = new double[numStates], mutualCart = new double[numStates];
+		final double[] directQi = new double[numStates], directCart = new double[numStates];
+		final double[] indRealQi = new double[numStates], indRealCart = new double[numStates];
+		final double[] indSelfQi = new double[numStates], indSelfCart = new double[numStates];
+		final double[] indRecipQi = new double[numStates], indRecipCart = new double[numStates];
 
-        StringBuilder van = new StringBuilder();
-        if (testVdw) van.append(vdw.toString());
-        if (testPermReal) van.append(pme.toString());
-        if (testReciprocal) van.append(rcp.toString());
-        String[] vanLines = van.toString().split("\\n");
-        String[] extLines = ext.toString().split("\\n");
-        StringBuilder sb = new StringBuilder();
-        sb.append(format("\n  Two-site End State Analysis \n"));
-        sb.append(format(" ***************************** \n"));
-        sb.append(format(" %-30s     %-30s\n","Extended System (1 Assembly)","Mutated Files (4 Assemblies)"));
-        for (int i = 0; i < extLines.length; i++) {
-            sb.append(format(" %-30s     %-30s\n", extLines[i], vanLines[i]));
-        }
-        logger.info(sb.toString());
+		// Get manual (no ESVs) end state energy components from both vanilla-qi and cartesian PME.
+		for (int i = 0; i < stateFilenames.length; i++) {
+			String state = stateFilenames[i];
+			setProp("pme.qi",true);
+			qi = openResource(stateFilenames[i], true);
+			qiPot = qi.getPotentialEnergy();
+			ParticleMeshEwaldQI qiPme = qiPot.getPmeQiNode();
+
+			qiPot.energy(true, false);
+			totalQi[i] = qiPot.getTotalEnergy();
+			vdwQi[i] = qiPot.getVanDerWaalsEnergy();
+			permQi[i] = qiPme.getPermanentEnergy();
+//			permRealQi[i] = qiPme.getPermRealEnergy();
+//			permSelfQi[i] = qiPme.getPermSelfEnergy();
+//			permRecipQi[i] = qiPme.getPermRecipEnergy();
+			mutualQi[i] = qiPme.getPolarizationEnergy();
+//			indRealQi[i] = qiPme.getIndRealEnergy();
+//			indSelfQi[i] = qiPme.getIndSelfEnergy();
+//			indRecipQi[i] = qiPme.getIndRecipEnergy();
+			qiPme.setPolarization(Polarization.DIRECT);
+			qiPot.energy(true, false);
+			directQi[i] = qiPme.getPolarizationEnergy();
+			utils.close(qi);
+
+			setProp("pme.qi",false);
+			cart = openResource(stateFilenames[i], true);
+			cartPot = cart.getPotentialEnergy();
+			ParticleMeshEwaldCart cartPme = (ParticleMeshEwaldCart) cartPot.getPmeNode();
+
+			cartPot.energy(true, false);
+			totalCart[i] = cartPot.getTotalEnergy();
+			vdwCart[i] = cartPot.getVanDerWaalsEnergy();
+			permCart[i] = cartPme.getPermanentEnergy();
+//			permRealCart[i] = cartPme.getPermRealEnergy();
+//			permSelfCart[i] = cartPme.getPermSelfEnergy();
+//			permRecipCart[i] = cartPme.getPermRecipEnergy();
+			mutualCart[i] = cartPme.getPolarizationEnergy();
+//			indRealCart[i] = cartPme.getIndRealEnergy();
+//			indSelfCart[i] = cartPme.getIndSelfEnergy();
+//			indRecipCart[i] = cartPme.getIndRecipEnergy();
+			cartPme.setPolarization(Polarization.DIRECT);
+			cartPot.energy(true, false);
+			directCart[i] = cartPme.getPolarizationEnergy();
+			utils.close(cart);
+
+			if (assertions) {
+				assertEquals("Total"+i, totalCart[i], totalEsv[i], tolerance);
+				assertEquals("VanDerWaals"+i, vdwCart[i], vdwEsv[i], tolerance);
+				assertEquals("Permanent"+i, permCart[i], permEsv[i], tolerance);
+				assertEquals("Ind.Direct"+i, directCart[i], directEsv[i], tolerance);
+				assertEquals("Ind.Mutual"+i, mutualCart[i], mutualEsv[i], tolerance);
+			}
+		}
+
+        SB.nlogfn("  Two-site End State Analysis ");
+        SB.logfn(" ***************************** ");
+		if (includeManualQiEndStates)
+			 SB.logfn(" %-27s    %-22s    %-22s    %-22s",
+					  "Extended System (1 File, QI)",
+					  "Manual (4 Files, QI)",
+					  "Manual (4 Files, Cart)",
+					  "Error (Cart-ESV)");
+		else SB.logfn(" %-27s    %-22s    %-22s",
+					  "Extended System (1 File, QI)",
+					  "Manual (4 Files, Cart)",
+					  "Error (Cart-ESV)");
+		double[][] esvResult	= new double[][]{totalEsv, vdwEsv,
+												 permEsv, directEsv, mutualEsv};
+		double[][] qiResult		= new double[][]{totalQi, vdwQi,
+												 permQi, directQi, mutualQi};
+		double[][] cartResult	= new double[][]{totalCart, vdwCart,
+												 permCart, directCart, mutualCart};
+		String[] names			= new String[]{"Total", "VanWaals",
+											   "Permanent", "Direct", "Mutual"};
+        for (int component = 0; component < names.length; component++) {
+			for (int state = 0; state < numStates; state++) {
+				String name = (state == 0) ? names[component] : "";
+				SB.logf(" %-27s", format("%-9s %-7.7s %10.5f", name, esvStateNames[state], esvResult[component][state]));
+				if (includeManualQiEndStates)
+					SB.logf("    %-22s", format("%-7.7s   %12.6f", stateFilenames[state], qiResult[component][state]));
+				SB.logf("    %-22s", format("%-7.7s   %12.6f", stateFilenames[state], cartResult[component][state]));
+				final double error = Math.abs(cartResult[component][state] - esvResult[component][state]);
+				final String errorStr = (error < errorThreshold)
+						? format("< %.1e", errorThreshold) : format("%+g", error);
+				SB.logfn("    %16s", errorStr);
+			}
+		}
+		logMaster.setLevel(origLevel);
+		SB.print();
     }
-    
+
     /**
-     * Numerically ensure that the energy and lambda derivatives are smooth all 
+     * Numerically ensure that the energy and lambda derivatives are smooth all
      * along both ESV coordinates in the dilysine system.
      */
-    private void testSmoothness() {
+    public void testSmoothness() {
+		ExtendedSystemConfig esvConfig = activateAll();
+		MolecularAssembly mola = setupWithExtended(esvFilename, true, esvConfig);
+		ForceFieldEnergy ffe = mola.getPotentialEnergy();
+		ExtendedSystem esvSystem = ffe.getExtendedSystem();
+		if (resultsOnly) logMaster.setLevel(Level.WARNING);
         double[][] totalEnergies, totalDerivsA, totalDerivsB;
         double[][] vdwEnergies, vdwDerivsA, vdwDerivsB;
-        double[][] permRealEnergies, permRealDerivsA, permRealDerivsB;
-        double[][] permRecipEnergies, permRecipDerivsA, permRecipDerivsB;
+        double[][] permanentEnergies, permanentDerivsA, permanentDerivsB;
+        double[][] inducedEnergies, inducedDerivsA, inducedDerivsB;
         totalEnergies = new double[11][11];
         totalDerivsA = new double[11][11];
         totalDerivsB = new double[11][11];
-        if (testVdw) {
-            vdwEnergies = new double[11][11];
-            vdwDerivsA = new double[11][11];
-            vdwDerivsB = new double[11][11];
-        }
-        if (testPermReal) {
-            permRealEnergies = new double[11][11];
-            permRealDerivsA = new double[11][11];
-            permRealDerivsB = new double[11][11];
-        }
-        if (testReciprocal) {
-            permRecipEnergies = new double[11][11];
-            permRecipDerivsA = new double[11][11];
-            permRecipDerivsB = new double[11][11];
-        }
+		if (smoothnessDecomposition) {
+			vdwEnergies = new double[11][11];
+			vdwDerivsA = new double[11][11];
+			vdwDerivsB = new double[11][11];
+			permanentEnergies = new double[11][11];
+			permanentDerivsA = new double[11][11];
+			permanentDerivsB = new double[11][11];
+			inducedEnergies = new double[11][11];
+			inducedDerivsA = new double[11][11];
+			inducedDerivsB = new double[11][11];
+		}
         for (int idxA = 0; idxA <= 10; idxA++) {
             double evA = idxA / 10.0;
             for (int idxB = 0; idxB <= 10; idxB++) {
@@ -554,42 +833,29 @@ public class ExtendedVariableTest {
                 esvSystem.setLambda('A', evA);
                 esvSystem.setLambda('B', evB);
                 final double totalEnergy = ffe.energy(true, false);
-                totalEnergies[idxA][idxB] = totalEnergy;
-                totalDerivsA[idxA][idxB] = esvSystem.getdEdL(0);
-                totalDerivsB[idxA][idxB] = esvSystem.getdEdL(1);
-                if (testVdw) {
-                    vdwEnergies[idxA][idxB] = ffe.getVanDerWaalsEnergy();
-                    vdwDerivsA[idxA][idxB] = esvSystem.getdVdwdL(0);
-                    vdwDerivsB[idxA][idxB] = esvSystem.getdVdwdL(1);
-                }
-                if (testPermReal) {
-                    permRealEnergies[idxA][idxB] = ffe.getPermanentRealSpaceEnergy();
-                    permRealDerivsA[idxA][idxB] = esvSystem.getdPermRealdL(0);
-                    permRealDerivsB[idxA][idxB] = esvSystem.getdPermRealdL(1);
-                }
-                if (testReciprocal) {
-                    permRecipEnergies[idxA][idxB] = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
-                    permRecipDerivsA[idxA][idxB] = esvSystem.getdPermRecipSelf_dL(0) + esvSystem.getdPermRecipMpole_dL(0);
-                    permRecipDerivsB[idxA][idxB] = esvSystem.getdPermRecipSelf_dL(1) + esvSystem.getdPermRecipMpole_dL(1);
-                }
-            }
+                totalEnergies[idxA][idxB] = ffe.getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+                totalDerivsA[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.ForceFieldEnergy, 0);
+                totalDerivsB[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.ForceFieldEnergy, 1);
+				if (smoothnessDecomposition) {
+					vdwEnergies[idxA][idxB] = ffe.getEnergyComponent(PotentialComponent.VanDerWaals);
+					vdwDerivsA[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.VanDerWaals, 0);
+					vdwDerivsB[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.VanDerWaals, 1);
+					permanentEnergies[idxA][idxB] = ffe.getEnergyComponent(PotentialComponent.Permanent);
+					permanentDerivsA[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.Permanent, 0);
+					permanentDerivsB[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.Permanent, 1);
+					inducedEnergies[idxA][idxB] = ffe.getEnergyComponent(PotentialComponent.Induced);
+					inducedDerivsA[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.Induced, 0);
+					inducedDerivsB[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.Induced, 1);
+				}
+			}
         }
-        
-        /* Printing loop */
-        StringBuilder sb = new StringBuilder();
-        sb.append(format("\n  Smoothness Verification: Total \n"));
-        sb.append(format(" ******************************** \n"));
-        printAsTable(totalEnergies, "U_Total", sb);
-        printAsTable(totalDerivsA, "dU_dEsvA", sb);
-        printAsTable(totalDerivsB, "dU_dEsvB", sb);
-        logger.info(sb.toString());
-        
+
         /* TODO: improve upon the following arbitrary definition of approximate smoothness. */
         final int testRow = 2;
         final double min = Arrays.stream(totalEnergies[testRow]).min().getAsDouble();
         final double max = Arrays.stream(totalEnergies[testRow]).max().getAsDouble();
         final double maxChange = (max - min) * 0.5;
-        final double maxDirectionSignChanges = 2;
+        final int maxDirectionSignChanges = 2;
         int directionSignChanges = 0;
         for (int idxB = 0; idxB < 10; idxB++) {
             final double here = totalEnergies[testRow][idxB];
@@ -601,80 +867,75 @@ public class ExtendedVariableTest {
                     directionSignChanges++;
                 }
             }
-            if (absChange > maxChange) {
-                Assert.fail(format("Failed max_change smoothness criterion: %g > %g. (change:%g->%g, range:{%g,%g})",
+            if (absChange > maxChange && assertions) {
+                org.junit.Assert.fail(format("Failed max_change smoothness criterion: %g > %g. (change:%g->%g, range:{%g,%g})",
                         absChange, maxChange, min, max,
                         totalEnergies[testRow][idxB], totalEnergies[testRow][idxB+1]));
             }
         }
-        if (directionSignChanges > maxDirectionSignChanges) {
-            Assert.fail(format("Failed direction_changes smoothness criterion: %d > %d.",
+        if (directionSignChanges > maxDirectionSignChanges && assertions) {
+            org.junit.Assert.fail(format("Failed direction_changes smoothness criterion: %d > %d.",
                     directionSignChanges, maxDirectionSignChanges));
         }
-        
-        if (testVdw && verbose) {
-            sb = new StringBuilder();
-            sb.append(format("\n  Smoothness Verification: VdW "));
-            sb.append(format(" ****************************** "));
-            printAsTable(vdwEnergies, "vanWaals", sb);
-            printAsTable(vdwDerivsA, "dVdw_dA", sb);
-            printAsTable(vdwDerivsB, "dVdw_dB", sb);
-            logger.info(sb.toString());
-        }
-        if (testPermReal && verbose) {
-            sb = new StringBuilder();
-            sb.append(format("\n  Smoothness Verification: PermReal "));
-            sb.append(format(" *********************************** "));
-            printAsTable(permRealEnergies, "permReal", sb);
-            printAsTable(permRealDerivsA, "dPRealdA", sb);
-            printAsTable(permRealDerivsB, "dPRealdB", sb);
-            logger.info(sb.toString());
-        }
-        if (testReciprocal && verbose) {
-            sb = new StringBuilder();
-            sb.append(format("\n  Smoothness Verification: PermRecip "));
-            sb.append(format(" ************************************ "));
-            printAsTable(permRecipEnergies, "permRcp", sb);
-            printAsTable(permRecipDerivsA, "dPRcp_dA", sb);
-            printAsTable(permRecipDerivsB, "dPRcp_dB", sb);
-            logger.info(sb.toString());
-        }
-    }
-    
-    private void printAsTable(double[][] values, String title) {
-        printAsTable(values, title, null);
-    }
-    
-    private StringBuilder printAsTable(double[][] values, String title, StringBuilder sb) {
-        if (sb == null) {
-            sb = new StringBuilder();
+
+        SB.nlogfn("  Smoothness Verification: Total ");
+        SB.logfn(" ******************************** ");
+        printAsTable(totalEnergies, "U_Total", SB);
+        printAsTable(totalDerivsA, "dU_dEsvA", SB);
+        printAsTable(totalDerivsB, "dU_dEsvB", SB);
+        if (smoothnessDecomposition) {
+			SB.nlogfn("  Smoothness Verification: VdW ");
+			SB.logfn(" ****************************** ");
+			printAsTable(vdwEnergies, "vanWaals", SB);
+			printAsTable(vdwDerivsA, "dVdw_dA", SB);
+			printAsTable(vdwDerivsB, "dVdw_dB", SB);
+			SB.force();
+			SB.nlogfn("  Smoothness Verification: PermReal ");
+			SB.logfn(" *********************************** ");
+			printAsTable(permanentEnergies, "permReal", SB);
+			printAsTable(permanentDerivsA, "dPRealdA", SB);
+			printAsTable(permanentDerivsB, "dPRealdB", SB);
+			SB.force();
+			SB.nlogfn("  Smoothness Verification: PermRecip ");
+			SB.logfn(" ************************************ ");
+			printAsTable(inducedEnergies, "permRcp", SB);
+			printAsTable(inducedDerivsA, "dPRcp_dA", SB);
+			printAsTable(inducedDerivsB, "dPRcp_dB", SB);
+		}
+		logMaster.setLevel(origLevel);
+		SB.print();
+	}
+
+    private SBLogger printAsTable(double[][] values, String title, SBLogger sb) {
+        if (SB == null) {
+            sb = new SBLogger();
         }
         if (title == null) title = "Title?";
-        sb.append(format(" %8s %8.1f %8.1f %8.1f %8.1f %8s %8s %8s %8.1f %8.1f %8.1f %8.1f", 
-                title, 0.0, 0.1, 0.2, 0.3, "<   ", " EvA  ", ">   ", 0.7, 0.8, 0.9, 1.0));
+        sb.logf(" %8s %8.1f %8.1f %8.1f %8.1f %8s %8s %8s %8.1f %8.1f %8.1f %8.1f",
+                title, 0.0, 0.1, 0.2, 0.3, "<   ", " EvA  ", ">   ", 0.7, 0.8, 0.9, 1.0);
         for (int idxA = 0; idxA <= 10; idxA++) {
             double evA = idxA / 10.0;
             switch (idxA) {
                 case 4:
-                    sb.append(format("\n %8s", " ^ "));
+                    sb.nlogf(" %8s", " ^ ");
                     break;
                 case 5:
-                    sb.append(format("\n %8s", "EvB"));
+                    sb.nlogf(" %8s", "EvB");
                     break;
                 case 6:
-                    sb.append(format("\n %8s", " v "));
+                    sb.nlogf(" %8s", " v ");
                     break;
                 default:
-                    sb.append(format("\n %8.1f", evA));
+                    sb.nlogf(" %8.1f", evA);
             }
             for (int idxB = 0; idxB <= 10; idxB++) {
                 double evB = idxB / 10.0;
                 String value = format("%8.4f", values[idxA][idxB]);
                 int max = (value.length() < 8) ? value.length() : 8;
-                sb.append(format(" %8s", value.substring(0,max)));
+                sb.logf(" %8s", value.substring(0,max));
             }
         }
-        sb.append(format("\n"));
+        sb.nl();
         return sb;
     }
 }

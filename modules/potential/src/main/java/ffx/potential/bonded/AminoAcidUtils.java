@@ -51,7 +51,6 @@ import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.Residue.AA3;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 
@@ -69,6 +68,7 @@ import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 import static ffx.potential.bonded.ResidueEnumerations.aminoAcidHeavyAtoms;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
+import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * Utilities for creating Amino Acid residues.
@@ -76,7 +76,8 @@ import static ffx.potential.bonded.ResidueEnumerations.getAminoAcidNumber;
  * @author Michael Schnieders
  */
 public class AminoAcidUtils {
-
+    
+    private AminoAcidUtils() {}
     private static final Logger logger = Logger.getLogger(AminoAcidUtils.class.getName());
 
     /**

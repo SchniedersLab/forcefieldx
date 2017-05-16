@@ -37,101 +37,146 @@
  */
 package ffx.potential.extended;
 
-import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.IllegalFormatException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Level;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
 import javax.swing.tree.TreeNode;
 
+import org.apache.commons.configuration.AbstractConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.configuration.ConfigurationRuntimeException;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.IntRange;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Residue;
-import ffx.potential.extended.ExtUtils.SB;
-import ffx.potential.extended.TitrationUtils.Titr;
-import ffx.potential.nonbonded.Multipole;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.PDBFilter;
-import ffx.utilities.Keyword;
+import ffx.potential.parameters.MultipoleType;
 
+import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.ExtConstants.kB;
-import static ffx.potential.extended.ExtConstants.roomTemperature;
-import static ffx.potential.extended.ExtUtils.DebugHandler.debugFormat;
+import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * 
  * @author slucore
  */
 public final class ExtUtils {
-
-    // Private constructor implies static class.
     private ExtUtils() {}   // static class
-    
     private static final Logger logger = Logger.getLogger(ExtUtils.class.getName());
-    private static final Random rng = ThreadLocalRandom.current();
-    private static final CallerID cid = new CallerID();
-    private static final Configuration esvConfig = new CompositeConfiguration();
-    
-    public static MolecularAssembly openFullyProtonated(File structure) {
-        String name = format("%s-prot", FilenameUtils.removeExtension(structure.getName()));
-        MolecularAssembly mola = new MolecularAssembly(name);
-        mola.setFile(structure);
 
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
-        mola.setForceField(forceField);
+	public static <T> void setProp(String key, T set) {
+		if (key.startsWith("esv.")) {
+			if (Arrays.asList(ExtendedSystem.ExtendedSystemConfig.class.getDeclaredFields())
+					.stream().noneMatch((Field f) -> key.substring(4).equalsIgnoreCase(f.getName()))) {
+				SB.warning("Setting an unused property: %s", key);
+			}
+		}
+		System.setProperty(key, String.valueOf(set));
+	}
+	public static void setProp(boolean set, String... keys) {
+		for (String key : keys)
+			setProp(key, set);
+	}
 
-        PDBFilter pdbFilter = new PDBFilter(structure, mola, forceField, properties);
+	public static final boolean debug = prop("dbg.debug", false);
+	public static final boolean verbose = prop("dbg.verbose", false);
+	public static final String doubleFormat = prop("dbg.debugFormat", "%.3f");
 
-        List<Residue> residues = mola.getResidueList();
-        for (Residue res : residues) {
-            Character chain = res.getChainID();
-            int resID = res.getResidueNumber();
-            Titr titr = TitrationUtils.titrationLookup(res);
-            if (res.getAminoAcid3() != titr.protForm) {
-                String protName = titr.protForm.name();
-                pdbFilter.mutate(chain,resID,protName);
-            }
-        }
-        pdbFilter.readFile();
-        pdbFilter.applyAtomProperties();
-        return mola;
-    }
+	/**
+	 * Print the Properties defined by the given key prefixes.
+	 */
+	public static void printConfigSet(String header, Properties properties, String[] keyPrefixes) {
+		properties.keySet().stream()
+				.filter(k -> {
+					String key = k.toString().toLowerCase();
+					for (String prefix : keyPrefixes) {
+						if (key.startsWith(prefix)) {
+							return true;
+						}
+					}
+					return false;
+				})
+				.forEach(key -> SB.logfn("   %-30s %s",
+						key.toString() + ":", System.getProperty(key.toString())));
+		if (!SB.isEmpty()) {
+			if (header != null) {
+				SB.headern(" %s", header);
+			}
+			SB.print();
+		}
+	}
+	public static void printConfigSet(String header, Properties properties, String prefix) {
+		printConfigSet(header, properties, new String[]{prefix});
+	}
+	
+	public static int[] primitivizeIntegers(List<Integer> list) {
+		return list.stream().mapToInt((Integer i) -> i).toArray();
+	}
+	public static double[] primitivizeDoubles(List<Double> list) {
+		return list.stream().mapToDouble((Double i) -> i).toArray();
+	}
     
     public static void initializeBackgroundMultipoles(List<Atom> backgroundAtoms, ForceField ff) {
         for (int i = 0; i < backgroundAtoms.size(); i++) {
             Atom bg = backgroundAtoms.get(i);
-            Multipole multipole = Multipole.buildMultipole(bg, ff);
-            if (multipole == null) {
+            MultipoleType type = MultipoleType.multipoleTypeFactory(bg, ff);
+            if (type == null) {
                 logger.severe(format("No multipole could be assigned to atom %s of type %s.",
                         bg.toString(), bg.getAtomType()));
             }
         }
     }
+		
+	@SafeVarargs @SuppressWarnings("serial")
+	private static <T> Collection<T> join(Collection<? extends T>... add) {
+		return (new ArrayList<T>() {{ for (Collection<? extends T> c : add) addAll(c); }});
+	}
+	@SafeVarargs @SuppressWarnings("serial")
+	public static <T> List<T> join(List<? extends T>... add) {
+		return (new ArrayList<T>() {{ for (Collection<? extends T> c : add) addAll(c); }});
+	}
+	public static List<Integer> intRange(int start, int end) {
+		return Arrays.asList(ArrayUtils.toObject(new IntRange(start, end).toArray()));
+	}
+	public static List<Integer> intRange(int single) {
+		return intRange(single,single);
+	}
+	public static <T> Collection<T> view(Collection<? extends T> c) {
+		return (c != null) ? Collections.unmodifiableCollection(c) : null;
+	}
+	public static <T> List<T> view(List<? extends T> c) {
+		return (c != null) ? Collections.unmodifiableList(c) : null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T[] arrayCopy(T[] from) {
+		List<T> to = new ArrayList<>();
+		to.addAll(Arrays.asList(from));
+		return (T[]) to.toArray();
+	}
     
+	public static String frmt(double[] x) {
+		return formatArray(x);
+	}
+	
     /**
      * Helper method for logging distance and multipole arrays.
      */
@@ -139,7 +184,7 @@ public final class ExtUtils {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (int i = 0; i < x.length; i++) {
-            sb.append(format(debugFormat(), x[i]));
+            sb.append(format(doubleFormat, x[i]));
             if (i + 1 < x.length) {
                 sb.append(", ");
             }
@@ -157,7 +202,7 @@ public final class ExtUtils {
         for (int i = 0; i < x.length; i++) {
             sb.append("[");
             for (int j = 0; j < x[i].length; j++) {
-                sb.append(format(debugFormat(), x[i][j]));
+                sb.append(format(doubleFormat, x[i][j]));
                 if (j + 1 < x[i].length) {
                     sb.append(", ");
                 }
@@ -172,68 +217,112 @@ public final class ExtUtils {
     }
     
     /**
-     * Parse system properties of type String, Boolean, Integer, Double, OptionalInt, and OptionalDouble.
-     * Default value determines the return type. Provides case-insensitivity in property keys.
-     * TODO: adapt this to use a CompositeConfiguration object rather than the unsafe System.getProperties().
+     * Parse configuration properties of type String, Boolean, Integer, Double, OptionalInt, OptionalDouble,
+	 * and any list or array type. Default value determines the return type. Provides case-insensitivity in property keys.
      */
-    @SuppressWarnings("unchecked")
-    public static final <T> T prop(String key, T defaultVal)
+    @SuppressWarnings({"unchecked"})
+    public static final <T> T prop(String key, final T defaultVal, final AbstractConfiguration properties)
             throws NoSuchElementException, NumberFormatException {
-        if (defaultVal == null) {
-            throw new IllegalArgumentException();
-        }
-        T parsed = null;
+		Objects.requireNonNull(key);
+        Objects.requireNonNull(defaultVal);
+		Objects.requireNonNull(properties);
         try {
-            if (System.getProperty(key) == null) {
-                if (System.getProperty(key.toLowerCase()) != null) {
-                    key = key.toLowerCase();
-                } else if (System.getProperty(key.toUpperCase()) != null) {
+			// Determine whether the property exists in any valid form.
+            if (!properties.containsKey(key)) {
+				key = key.toLowerCase();
+				if (properties.containsKey(key.replaceAll("_", "-"))) {
+					key = key.replaceAll("_", "-");
+				} else if (properties.containsKey(key.replaceAll("_",".").replaceAll("-","."))) {
+                    key = key.replaceAll("_",".").replaceAll("-",".");
+                } else if (properties.containsKey(key.toUpperCase())) {
                     key = key.toUpperCase();
                 } else {
                     boolean found = false;
-                    for (Object search : System.getProperties().keySet()) {
-                        if (search instanceof String && ((String) search).equalsIgnoreCase(key)) {
-                            key = (String) search;
-                        }
-                    }
+					Iterator<String> keys = properties.getKeys();
+					while (keys.hasNext()) {
+						String search = keys.next();
+						if (search.equalsIgnoreCase(key)) {
+							key = search;
+							found = true;
+							break;
+						}
+					}
                     if (!found) {
                         return defaultVal;
                     }
                 }
             }
+			if (properties.getString(key) == null) {
+				return defaultVal;
+			}
+			// The property exists and is non-null.
             if (defaultVal instanceof String) {
-                parsed = (System.getProperty(key) != null)
-                        ? (T) System.getProperty(key) : defaultVal;
+				return (T) properties.getString(key, (String) defaultVal);
             } else if (defaultVal instanceof Integer) {
-                return (System.getProperty(key) != null)
-                        ? (T) Integer.valueOf(System.getProperty(key)) : defaultVal;
+				return (T) properties.getInteger(key, (Integer) defaultVal);
             } else if (defaultVal instanceof OptionalInt) {
-                parsed = (System.getProperty(key) != null)
-                        ? (T) OptionalInt.of(Integer.parseInt(System.getProperty(key))) : defaultVal;
+				return (T) OptionalInt.of(properties.getInt(key, (Integer) defaultVal));
             } else if (defaultVal instanceof Double) {
-                parsed = (System.getProperty(key) != null)
-                        ? (T) Double.valueOf(System.getProperty(key)) : defaultVal;
+				return (T) properties.getDouble(key, (Double) defaultVal);
             } else if (defaultVal instanceof OptionalDouble) {
-                parsed = (System.getProperty(key) != null)
-                        ? (T) OptionalDouble.of(Double.parseDouble(System.getProperty(key))) : defaultVal;
+				return (T) OptionalDouble.of(properties.getDouble(key, (Double) defaultVal));
             } else if (defaultVal instanceof Boolean) {
-                if (System.getProperty(key) != null) {
-                    if (System.getProperty(key).isEmpty()) {
-                        System.setProperty(key,"true");
-                    }
-                    parsed = (T) Boolean.valueOf(System.getProperty(key));
-                }
-            } else {
-                throw new IllegalArgumentException();
-            }
-        } catch (IllegalArgumentException ex) {
-            String value = (System.getProperty(key) != null) ? System.getProperty(key) : "null";
+				// Infer true for (only) explicitly set boolean properties, eg. -Dgkterm.
+				if (properties.getString(key).isEmpty()) {
+					properties.setProperty(key, "true");
+				}
+				return (T) properties.getBoolean(key, (Boolean) defaultVal);
+			} else if (defaultVal instanceof List<?>) {
+				List<?> defaultVals = (List<?>) defaultVal;
+				List<Object> objs = properties.getList(key, defaultVals);
+				if (defaultVals.get(0) instanceof Double) {
+					List<Double> ret = new ArrayList<>();
+					for (Object obj : objs) {
+						ret.add(Double.parseDouble(obj.toString().replaceAll("[\\[\\],]","")));
+					}
+					return (T) ret;
+				} else if (defaultVals.get(0) instanceof Integer) {
+					List<Integer> ret = new ArrayList<>();
+					for (Object obj : objs) {
+						ret.add(Integer.parseInt(obj.toString().replaceAll("[\\[\\],]","")));
+					}
+					return (T) ret;
+				}
+				throw new IllegalArgumentException();
+			} else if (defaultVal.getClass().isArray()) {
+				return (T) properties.getList(key, Arrays.asList(defaultVal)).toArray(new Object[0]);
+			} else {
+				throw new IllegalArgumentException();
+			}
+        } catch (RuntimeException ex) {
             logger.warning(String.format("Error parsing property %s with value %s; the default is %s.",
-                    key, value, defaultVal.toString()));
+                    key, properties.getString(key, "null"), defaultVal.toString()));
             throw ex;
         }
-        if (key.startsWith("esv-")) {
-            esvConfig.setProperty(key, parsed);
+    }
+    
+	private static AbstractConfiguration systemCache;
+	/**
+	 * If no Configuration is supplied, default to a converted and cached copy of System.getProperties().
+	 */
+	public static final <T> T prop(String key, T defaultVal) {
+		if (systemCache == null) {
+			systemCache = new CompositeConfiguration();
+		}
+		AbstractConfiguration systemCache = new CompositeConfiguration();
+		for (Object sysKey : System.getProperties().keySet()) {
+			systemCache.addProperty((String) sysKey, System.getProperty((String) sysKey));
+		}
+		return prop(key, defaultVal, systemCache);
+	}
+	
+    /**
+     * Parse property but warn if the default is not retured.
+     */
+    public static final <T> T prop(String key, T defaultVal, String warning) {
+        T parsed = prop(key, defaultVal);
+        if (!parsed.equals(defaultVal) && warning != null) {
+            SB.warning(warning);
         }
         return parsed;
     }
@@ -249,9 +338,6 @@ public final class ExtUtils {
         }
         try {
             T parsed = T.valueOf(type, value);
-            if (key.startsWith("esv-")) {
-                esvConfig.setProperty(key, parsed);
-            }
             return parsed;
         } catch (IllegalArgumentException ex) {
             SB.nlogfn("Invalid property definition: %s = %s for type %s.", key, value, type.getName());
@@ -261,41 +347,19 @@ public final class ExtUtils {
             return def;
         }
     }
-
-    public static void printEsvConfig() {
-        Iterator<String> it = esvConfig.getKeys();
-        SB.logfn("\n Extended Configuration ");
-        while (it.hasNext()) {
-            String key = it.next();
-            SB.logfn("   %-20s : %5s", key, esvConfig.getProperty(key).toString());
-        }
-        SB.nl();
-        SB.print();
-    }
-    
-    public static Configuration getEsvConfig() {
-        return esvConfig;
-    }
-    
-    /**
-     * Return room-temperature velocities from a Maxwell-Boltzmann distribution of momenta.
-     */
-    public static double[] singleRoomtempMaxwell(double mass) {
-        double vv[] = new double[3];
-        for (int i = 0; i < 3; i++) {
-            vv[i] = rng.nextGaussian() * sqrt(kB * roomTemperature / mass);
-        }
-        return vv;
-    }
+	
+	public static final <T extends Enum<T>> T prop(String key, Class<T> type, T def) {
+		return prop(type, key, def);
+	}
 
     /**
      * Return velocities from a Maxwell-Boltzmann distribution of momenta.
      * The variance of each independent momentum component is kT * mass.
      */
-    public static double[] singleMaxwell(double mass, double temperature) {
+    public static double[] maxwellVelocity(double mass, double temperature) {
         double vv[] = new double[3];
         for (int i = 0; i < 3; i++) {
-            vv[i] = rng.nextGaussian() * sqrt(kB * temperature / mass);
+            vv[i] = RNG.nextGaussian() * sqrt(kB * temperature / mass);
         }
         return vv;
     }
@@ -368,207 +432,6 @@ public final class ExtUtils {
         return termSum;
     }
     
-    /**
-     * The SB utility:
-     *  1) relieves arthritis from typing ".append(.format(" ad nauseum,
-     *  2) handles newlines succinctly,
-     *  3) cuts memory allocation,
-     *  4) and prints through the logger of the calling class.
-     * Use print() to send messages to the console when ready.
-     * Stop wasting your life away with Logger and switch to SB today!
-     */
-    public static class SB {
-        private SB() { /* utility singleton */ }
-        private static final int initialCapacity = 500;
-        private static final StringBuilder sb = new StringBuilder(initialCapacity);
-        /**
-         * (log) with (f)ormat
-         */
-        public static void logf(String msg, Object... args) {
-            sb.append(format(msg, args));
-        }
-        /**
-         * (log) with (f)ormat, (n)ewline
-         */
-        public static void logfn(String msg, Object... args) {
-            sb.append(format(msg, args)).append("\n");
-        }
-        /**
-         * (n)ewline, (log) with (f)ormat
-         */
-        public static void nlogf(String msg, Object... args) {
-            sb.append("\n").append(format(msg, args));
-        }
-        /**
-         * (n)ewline, (log) with (f)ormat, (n)ewline
-         */
-        public static void nlogfn(String msg, Object... args) {
-            sb.append("\n").append(format(msg, args)).append("\n");
-        }
-        /**
-         * (log) with (f)ormat, (p)rint
-         */
-        public static void logfp(String msg, Object... args) {
-            synchronized (SB.class) {
-                sb.append(format(msg, args));
-                print();
-            }
-        }
-        /**
-         * (n)ew(l)ine
-         */
-        public static void nl() {
-            sb.append("\n");
-        }
-        /**
-         * Send to calling logger.
-         */
-        public static void print() {
-            cid.getCallingLogger().log(Level.INFO, sb.toString());
-            clear();
-        }
-        /**
-         * Send to calling logger as a warning.
-         */
-        public static void warning(String msg, Object... args) {
-            sb.insert(0, format(msg, args));
-            warning();
-        }
-        /**
-         * Send to calling logger as a warning.
-         */
-        public static void warning() {
-            cid.getCallingLogger().log(Level.WARNING, sb.toString());
-            clear();
-        }
-        /**
-         * Insert a formatted string preceding current message; newline included.
-         */
-        public static void headern(String msg, Object... args) {
-            sb.insert(0, format(msg, args) + format("\n"));
-        }
-        /**
-         * Send to calling logger or discard message.
-         */
-        public static void printIf(boolean print) {
-            if (print) {
-                print();
-            } else {
-                clear();
-            }
-        }
-        /**
-         * Discard message.
-         */
-        public static void clear() {
-            sb.replace(0, sb.capacity(), "");
-        }
-        /**
-         * Attempt to automatically coerce toString() requirements.
-         */
-        private static String format(String msg, Object... args) {
-            try {
-                return String.format(msg, args);
-            } catch (IllegalFormatException ex) {
-                // NR: search for indexes of %s rather than replacing all
-                return String.format(msg, arrayToStrings(args));
-            }
-        }
-    }
-    
-    public class SB_Instance {
-        public SB_Instance() {}
-        private static final int initialCapacity = 500;
-        private final StringBuilder sb = new StringBuilder(initialCapacity);
-        /**
-         * (log) with (f)ormat
-         */
-        public void logf(String msg, Object... args) {
-            sb.append(format(msg, args));
-        }
-        /**
-         * (log) with (f)ormat, (n)ewline
-         */
-        public void logfn(String msg, Object... args) {
-            sb.append(format(msg, args)).append("\n");
-        }
-        /**
-         * (n)ewline, (log) with (f)ormat
-         */
-        public void nlogf(String msg, Object... args) {
-            sb.append("\n").append(format(msg, args));
-        }
-        /**
-         * (n)ewline, (log) with (f)ormat, (n)ewline
-         */
-        public void nlogfn(String msg, Object... args) {
-            sb.append("\n").append(format(msg, args)).append("\n");
-        }
-        /**
-         * (log) with (f)ormat, (p)rint
-         */
-        public void logfp(String msg, Object... args) {
-            synchronized (SB.class) {
-                sb.append(format(msg, args));
-                print();
-            }
-        }
-        /**
-         * (n)ew(l)ine
-         */
-        public void nl() {
-            sb.append("\n");
-        }
-        /**
-         * Send to calling logger.
-         */
-        public void print() {
-            cid.getCallingLogger().log(Level.INFO, sb.toString());
-            clear();
-        }
-        /**
-         * Send to calling logger as a warning.
-         */
-        public void warning(String msg, Object... args) {
-            sb.append(format(msg, args));
-            warning();
-        }
-        /**
-         * Send to calling logger as a warning.
-         */
-        public void warning() {
-            cid.getCallingLogger().log(Level.WARNING, sb.toString());
-            clear();
-        }
-        /**
-         * Send to calling logger or discard message.
-         */
-        public void printIf(boolean print) {
-            if (print) {
-                print();
-            } else {
-                clear();
-            }
-        }
-        /**
-         * Discard message.
-         */
-        public void clear() {
-            sb.replace(0, sb.capacity(), "");
-        }
-        /**
-         * Attempt to automatically coerce toString() requirements.
-         */
-        private String format(String msg, Object... args) {
-            try {
-                return String.format(msg, args);
-            } catch (IllegalFormatException ex) {
-                // NR: search for indexes of %s rather than replacing all
-                return String.format(msg, arrayToStrings(args));
-            }
-        }
-    }
-    
     public static StringBuilder removeFinalNewline(StringBuilder sb) {
         if (sb.lastIndexOf("\n") + 1 == sb.length()) {
             sb.replace(sb.length() - 1, sb.length(), "");
@@ -588,41 +451,6 @@ public final class ExtUtils {
      */
     public static Object[] arrayToStrings(Object[] args) {
         return Arrays.stream(args).map(Object::toString).toArray();
-    }
-    
-    /**
-     * Consolidates debugging flags/variables and logging.
-     * Call buglog() to write statements that go unprinted unless DEBUG
-     *  is set or explicit class/hierarchy/method sources are requested.
-     */
-    public static class DebugHandler {
-        private DebugHandler() {}   // utility class
-        public static boolean DEBUG() { return DEBUG; }
-        public static boolean VERBOSE() { return VERBOSE; }
-        public static String debugFormat() { return debugFormat; }
-        public static OptionalInt debugIntI() { return debugIntI; }
-        public static OptionalInt debugIntK() { return debugIntK; }
-
-        private static final boolean DEBUG = prop("esv-debug", false);
-        private static final boolean VERBOSE = prop("esv-verbose", false);
-        private static final String debugFormat = prop("esv-debugFormat", "%.4g");
-        private static final OptionalInt debugIntI = prop("esv-debugIntI", OptionalInt.empty());
-        private static final OptionalInt debugIntK = prop("esv-debugIntK", OptionalInt.empty());
-    }
-
-    private static class CallerID extends SecurityManager {
-        public Class<?> getCallingClass() {
-            Class<?>[] callStack = getClassContext();
-            for (Class<?> caller : callStack) {
-                if (!caller.getName().contains("ExtUtils")) {
-                    return caller;
-                }
-            }
-            return ExtUtils.class;  // fallback
-        }
-        public Logger getCallingLogger() {
-            return Logger.getLogger(getCallingClass().getName());
-        }
     }
     
     /**

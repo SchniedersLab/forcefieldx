@@ -2344,11 +2344,11 @@ public final class MainPanel extends JPanel implements ActionListener,
             if (saveFile.exists()) {
                 logger.warning(String.format(" Could not successfully version file "
                         + "%s: appending to file %s", saveFileName, saveFile.getName()));
-                if (!pdbFilter.writeFileWithHeader(saveFile, symSb, true)) {
+                if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), true)) {
                     logger.log(Level.INFO, " Save failed for: {0}", system);
                 }
             } else {
-                if (!pdbFilter.writeFileWithHeader(saveFile, symSb, false)) {
+                if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), false)) {
                     logger.log(Level.INFO, " Save failed for: {0}", system);
                 }
             }

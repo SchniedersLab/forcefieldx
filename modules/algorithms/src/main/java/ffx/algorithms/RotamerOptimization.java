@@ -2202,113 +2202,6 @@ public class RotamerOptimization implements Terminatable {
         return new ArrayList<>(residueList);
     }
 
-    /**
-     * Identify titratable residues and choose them all.
-     */
-    public void titrationSetResidues(ArrayList<Residue> residueList) {
-        String histidineModeProp = System.getProperty("histidineMode");
-        Protonate.HistidineMode histidineMode = Protonate.HistidineMode.ALL;
-        if (histidineModeProp != null) {
-            if (histidineModeProp.equalsIgnoreCase("HIE_ONLY")) {
-                histidineMode = Protonate.HistidineMode.HIE_ONLY;
-            } else if (histidineModeProp.equalsIgnoreCase("HID_ONLY")) {
-                histidineMode = Protonate.HistidineMode.HID_ONLY;
-            }
-        }
-
-        ArrayList<Residue> titratables = new ArrayList<>();
-        for (Residue res : residueList) {
-            ResidueEnumerations.AminoAcid3 source = ResidueEnumerations.AminoAcid3.valueOf(res.getName());
-            List<Protonate.Titration> avail = new ArrayList<>();
-            for (Protonate.Titration titr : Protonate.Titration.values()) {
-                // Allow manual override of Histidine treatment.
-                if ((titr.target == ResidueEnumerations.AminoAcid3.HID && histidineMode == Protonate.HistidineMode.HIE_ONLY)
-                        || (titr.target == ResidueEnumerations.AminoAcid3.HIE && histidineMode == Protonate.HistidineMode.HID_ONLY)) {
-                    continue;
-                }
-                if (titr.source == source) {
-                    avail.add(titr);
-                }
-            }
-            if (avail.size() > 0) {
-                titratables.add(res);
-                // logger.info(String.format(" Titratable: %s", residues.get(j)));
-            }
-        }
-
-        Polymer polymers[] = molecularAssembly.getChains();
-        for (Residue res : titratables) {
-            MultiResidue multiRes = new MultiResidue(res, molecularAssembly.getForceField(), molecularAssembly.getPotentialEnergy());
-            Polymer polymer = null;
-            for (Polymer p : polymers) {
-                if (p.getChainID().equals(res.getChainID())) {
-                    polymer = p;
-                    break;
-                }
-            }
-            if (polymer == null) {
-                logger.warning("Couldn't find parent chain while building MultiResidue for res: " + res);
-            }
-            polymer.addMultiResidue(multiRes);
-            titrationRecursiveBuild(res, multiRes, histidineMode);
-
-            // Switch back to the original form and ready the ForceFieldEnergy.
-            multiRes.setActiveResidue(res);
-            molecularAssembly.getPotentialEnergy().reInit();
-            this.residueList.remove(res);
-            this.residueList.add(multiRes);
-            logger.info(String.format(" Titrating: %s", multiRes));
-        }
-    }
-
-    /**
-     * Recursively maps Titration events and adds target Residues to a
-     * MultiResidue object.
-     *
-     * @param member
-     * @param multiRes
-     */
-    private void titrationRecursiveBuild(Residue member, MultiResidue multiRes,
-            Protonate.HistidineMode histidineMode) {
-        // Map titrations for this member.
-        ResidueEnumerations.AminoAcid3 source = ResidueEnumerations.AminoAcid3.valueOf(member.getName());
-        List<Protonate.Titration> avail = new ArrayList<>();
-        for (Protonate.Titration titr : Protonate.Titration.values()) {
-            // Allow manual override of Histidine treatment.
-            if ((titr.target == ResidueEnumerations.AminoAcid3.HID && histidineMode == Protonate.HistidineMode.HIE_ONLY)
-                    || (titr.target == ResidueEnumerations.AminoAcid3.HIE && histidineMode == Protonate.HistidineMode.HID_ONLY)) {
-                continue;
-            }
-            if (titr.source == source) {
-                avail.add(titr);
-            }
-        }
-
-        // For each titration, check whether it needs added as a MultiResidue option.
-        for (Protonate.Titration titr : avail) {
-            // Allow manual override of Histidine treatment.
-            if ((titr.target == ResidueEnumerations.AminoAcid3.HID && histidineMode == Protonate.HistidineMode.HIE_ONLY)
-                    || (titr.target == ResidueEnumerations.AminoAcid3.HIE && histidineMode == Protonate.HistidineMode.HID_ONLY)) {
-                continue;
-            }
-            // Find all the choices currently available to this MultiResidue.
-            List<String> choices = new ArrayList<>();
-            for (Residue choice : multiRes.getConsideredResidues()) {
-                choices.add(choice.getName());
-            }
-            // If this Titration target is not a choice for the MultiResidue, then add it.
-            String targetName = titr.target.toString();
-            if (!choices.contains(targetName)) {
-                int resNumber = member.getResidueNumber();
-                Residue.ResidueType resType = member.getResidueType();
-                Residue newChoice = new Residue(targetName, resNumber, resType);
-                multiRes.addResidue(newChoice);
-                // Recursively call this method on each added choice.
-                titrationRecursiveBuild(newChoice, multiRes, histidineMode);
-            }
-        }
-    }
-
     public double optimize() {
         boolean ignoreNA = false;
         String ignoreNAProp = System.getProperty("ignoreNA");
@@ -8575,7 +8468,6 @@ public class RotamerOptimization implements Terminatable {
                     int rj = job[3];
                     int k = job[4];
                     int rk = job[5];
-//                    System.out.format(" DEBUG: job = %d %d, %d %d, %d %d\n", i, ri, j, rj, k, rk);
                     if (!(useOrigCoordsRot && ri == 0 && rj == 0 && rk == 0)
                             && pruneClashes && (check(i, ri) || check(j, rj) || check(k, rk) || check(i, ri, j, rj) || check(i, ri, k, rk) || check(j, rj, k, rk))) {
                         continue;

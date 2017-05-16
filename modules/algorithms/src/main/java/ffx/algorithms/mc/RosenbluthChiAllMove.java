@@ -429,10 +429,10 @@ public class RosenbluthChiAllMove implements MCMove {
         sb.append("\n");
         for (int k = 0; k < origChi.length; k++) {
             Torsion tors = allTors.get(k);
-            AtomType type1 = tors.atoms[0].getAtomType();
-            AtomType type2 = tors.atoms[1].getAtomType();
-            AtomType type3 = tors.atoms[2].getAtomType();
-            AtomType type4 = tors.atoms[3].getAtomType();
+            AtomType type1 = tors.getAtomArray()[0].getAtomType();
+            AtomType type2 = tors.getAtomArray()[1].getAtomType();
+            AtomType type3 = tors.getAtomArray()[2].getAtomType();
+            AtomType type4 = tors.getAtomArray()[3].getAtomType();
             sb.append(String.format("   %d:    \"(%3d %3d %3s)  (%3d %3d %3s)  (%3d %3d %3s)  (%3d %3d %3s)\"\n", k,
                     type1.type, type1.atomClass, type1.name, type2.type, type2.atomClass, type2.name,
                     type3.type, type3.atomClass, type3.name, type4.type, type4.atomClass, type4.name));

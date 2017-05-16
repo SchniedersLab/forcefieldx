@@ -191,7 +191,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = nCommon; i < nVarG; i++) {
             uniqueGSet.add(i);
         }
-        uniqueGList = new ArrayList(uniqueGSet);
+        uniqueGList = new ArrayList<>(uniqueGSet);
         uniqueG = uniqueGList.size();
         int[] uniquesG = new int[uniqueG];
         for (int i = 0; i < uniqueG; i++) {
@@ -215,7 +215,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = nCommon; i < nVarD; i++) {
             uniqueDSet.add(i);
         }
-        uniqueDList = new ArrayList(uniqueDSet);
+        uniqueDList = new ArrayList<>(uniqueDSet);
         uniqueD = uniqueDList.size();
         int[] uniquesD = new int[uniqueD];
         for (int i = 0; i < uniqueD; i++) {

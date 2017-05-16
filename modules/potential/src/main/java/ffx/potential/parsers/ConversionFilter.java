@@ -89,7 +89,7 @@ public abstract class ConversionFilter {
      * All MolecularAssembly instances defined. More than one MolecularAssembly
      * should be defined for PDB entries with alternate locations.
      */
-    protected Vector<MolecularAssembly> systems = new Vector<MolecularAssembly>();
+    protected List<MolecularAssembly> systems = new Vector<MolecularAssembly>();
     /**
      * Structure currently being converted.
      */
@@ -175,8 +175,8 @@ public abstract class ConversionFilter {
         if (structure != null) {
             structures.add(structure);
         }
-        this.systems = new Vector(molecularAssemblies);
-        this.activeMolecularAssembly = systems.firstElement();
+        this.systems = new ArrayList<>(molecularAssemblies);
+        this.activeMolecularAssembly = systems.get(0);
         this.forceField = forcefield;
         this.properties = properties;
 

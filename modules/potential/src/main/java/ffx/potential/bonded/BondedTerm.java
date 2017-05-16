@@ -75,8 +75,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     private static StringBuilder idtemp = new StringBuilder();
 
     protected String id;
-    public Atom atoms[]; // Atoms that are used to form this term
-    public Bond bonds[]; // Bonds that are used to form this term
+    protected Atom atoms[]; // Atoms that are used to form this term
+    protected Bond bonds[]; // Bonds that are used to form this term
     protected double value; // Value of the term
     protected double energy; // Energy of the term
     
@@ -95,6 +95,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * Target for extended variable derivatives.
      */
     protected double esvDerivLocal = 0.0;
+    /**
+     * Reference to the ESV derivative reduction variable.
+     */
     private SharedDouble esvDerivShared = null;
     /**
      * If set, derivative components are filed by source type.
@@ -239,6 +242,10 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             }
         }
         return true;
+    }
+    
+    public boolean isExtendedSystemMember() {
+        return esvTerm;
     }
 
     /**
@@ -414,7 +421,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      */
     public final void setID_Key(boolean reverse) {
         if (atoms == null) {
-            return;
+			return;
         }
         // Reuse the string buffers
         idtemp.delete(0, idtemp.length());
@@ -423,7 +430,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             if (i != 0) {
                 idtemp.append("  ");
             }
-            idtemp.append(a.toShortString());
+            idtemp.append(a.describe(Atom.Descriptions.XyzIndex_Name));
         }
         id = idtemp.toString().intern();
     }
@@ -486,7 +493,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      */
     @Override
     public String toString() {
-        return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
+        return String.format("%-s  (%7.2f,%7.2f)", id, value, energy);
     }
     
     /**

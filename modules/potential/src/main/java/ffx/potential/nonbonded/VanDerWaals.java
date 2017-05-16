@@ -1002,7 +1002,7 @@ public class VanDerWaals implements MaskingInterface,
                 esvLambda[i] = esvSystem.getLambda(i);
                 esvLambdaSwitch[i] = esvSystem.getLambdaSwitch(i);
                 esvSwitchDeriv[i] = esvSystem.getSwitchDeriv(i);
-                atomEsvID[i] = esvSystem.getEsvIdForAtom(i);
+                atomEsvID[i] = esvSystem.getEsvIndex(i);
             }
         }
         if (esvDeriv == null || esvDeriv.length < numESVs) {
@@ -1183,7 +1183,11 @@ public class VanDerWaals implements MaskingInterface,
         return shareddEdL.get();
     }
 
-    public double[] getdEdEsv() {
+    public double getEsvDerivative(int esvID) {
+        return esvDeriv[esvID].get();
+    }
+	
+    public double[] getEsvDerivatives() {
         if (!esvTerm) {
             throw new IllegalStateException();
         }
@@ -1192,10 +1196,6 @@ public class VanDerWaals implements MaskingInterface,
             dEdEsv[i] = esvDeriv[i].get();
         }
         return dEdEsv;
-    }
-
-    public double getdEdEsv(int esvID) {
-        return esvDeriv[esvID].get();
     }
 
     /**

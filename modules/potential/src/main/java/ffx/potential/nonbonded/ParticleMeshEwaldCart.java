@@ -167,6 +167,22 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     /**
+     * An ordered array of atoms in the system.
+     */
+    private Atom atoms[];
+    /**
+     * The number of atoms in the system.
+     */
+    private int nAtoms;
+    /**
+     * Unit cell and spacegroup information.
+     */
+    private Crystal crystal;
+	/**
+	 * Number of symmetry operators.
+	 */
+	private int nSymm;
+    /**
      * Flag to indicate use of generalized Kirkwood.
      */
     private boolean generalizedKirkwoodTerm;
@@ -209,16 +225,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Permanent multipole energy (kcal/mol).
      */
     private double permanentMultipoleEnergy;
-    /**
-     * Not implemented in Cart. Permanent multipole energy (kcal/mol) due to
-     * real-space interactions only.
-     */
-    private double permanentRealSpaceEnergy = 0.0;
+    private double permanentRealSpaceEnergy;
+	private double permanentSelfEnergy;
     private double permanentReciprocalEnergy;
     /**
      * Polarization energy (kcal/mol).
      */
     private double polarizationEnergy;
+	private double inducedRealSpaceEnergy;
+	private double inducedSelfEnergy;
+	private double inducedReciprocalEnergy;
+	private double totalMultipoleEnergy;
     /**
      * Generalized Kirkwood energy.
      */
@@ -227,7 +244,26 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Reference to the force field being used.
      */
     private final ForceField forceField;
+    /**
+     * Dimensions of [nsymm][xyz][nAtoms].
+     */
+    public double coordinates[][][];
+    /**
+     * Neighbor lists, including atoms beyond the real space cutoff.
+     * [nsymm][nAtoms][nAllNeighbors]
+     */
+    public int neighborLists[][][];
 
+    /**
+     * Dimensions of [nsymm][nAtoms][10]
+     */
+    public double globalMultipole[][][];
+
+    /**
+     * Dimensions of [nsymm][nAtoms][3]
+     */
+    public double inducedDipole[][][];
+    public double inducedDipoleCR[][][];
     /**
      * Neighbor lists, without atoms beyond the real space cutoff.
      * [nSymm][nAtoms][nIncludedNeighbors]
@@ -263,10 +299,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * *************************************************************************
      * Lambda state variables.
      */
-    private enum LambdaMode {
-
-        OFF, CONDENSED, CONDENSED_NO_LIGAND, VAPOR
-    };
     private LambdaMode lambdaMode = LambdaMode.OFF;
     /**
      * Current state.
@@ -418,6 +450,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private double localMultipole[][];
     private MultipoleType.MultipoleFrameDefinition frame[];
+    private int axisAtom[][];
 
     private double cartMultipolePhi[][];
     /**
@@ -441,6 +474,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Induced dipole variables.
      */
     private final double polsor;
+    private final double poleps;
     /**
      * Direct polarization field due to permanent multipoles at polarizable
      * sites within their group are scaled. The scaling is 0.0 in AMOEBA.
@@ -456,14 +490,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * that are 1-3 is scaled by p13scale.
      */
     private final double p13scale;
+    private final double p14scale;
+    private final double p15scale;
+    private final double intra14Scale;
+
     private double ipdamp[];
     private double thole[];
     private double polarizability[];
 
-    public enum SCFPredictor {
-
-        NONE, LS, POLY, ASPC
-    }
     /**
      * Specify an SCF predictor algorithm.
      */
@@ -491,10 +525,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private LeastSquaresPredictor leastSquaresPredictor;
     private LevenbergMarquardtOptimizer leastSquaresOptimizer;
 
-    public enum SCFAlgorithm {
-
-        SOR, CG
-    }
     private SCFAlgorithm scfAlgorithm = SCFAlgorithm.CG;
     /**
      * Direct induced dipoles.
@@ -503,10 +533,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private double directDipoleCR[][];
     private double cartesianDipolePhi[][];
     private double cartesianDipolePhiCR[][];
+    private int ip11[][];
+    private int ip12[][];
+    private int ip13[][];
     /**
      * *************************************************************************
      * Mutable Particle Mesh Ewald constants.
      */
+    private double aewald;
     private double alsq2;
     private double an0;
     private double an1;
@@ -516,6 +550,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private double an5;
     private double piEwald;
     private double aewald3;
+    private double off;
     private double off2;
 
     /**
@@ -637,6 +672,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final PCGIterRegion2 pcgIterRegion2;
 
     private final boolean reciprocalSpaceTerm;
+    private final ReciprocalSpace reciprocalSpace;
     private final ReciprocalEnergyRegion reciprocalEnergyRegion;
     private final RealSpaceEnergyRegion realSpaceEnergyRegion;
     private final ReduceRegion reduceRegion;
@@ -701,9 +737,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             m14scale = forceField.getDouble(ForceFieldDouble.MPOLE_14_SCALE, mpole14);
             m15scale = forceField.getDouble(ForceFieldDouble.MPOLE_15_SCALE, 1.0);
         }
+        intra14Scale = forceField.getDouble(ForceFieldDouble.POLAR_14_INTRA, 0.5);
         d11scale = forceField.getDouble(ForceFieldDouble.DIRECT_11_SCALE, 0.0);
         p12scale = forceField.getDouble(ForceFieldDouble.POLAR_12_SCALE, 0.0);
         p13scale = forceField.getDouble(ForceFieldDouble.POLAR_13_SCALE, 0.0);
+        p14scale = forceField.getDouble(ForceFieldDouble.POLAR_14_SCALE, 1.0);
+        p15scale = forceField.getDouble(ForceFieldDouble.POLAR_15_SCALE, 1.0);
         useCharges = forceField.getBoolean(ForceFieldBoolean.USE_CHARGES, true);
         useDipoles = forceField.getBoolean(ForceFieldBoolean.USE_DIPOLES, true);
         useQuadrupoles = forceField.getBoolean(ForceFieldBoolean.USE_QUADRUPOLES, true);
@@ -820,10 +859,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * the beginning of the polarization schedule. Choosing a power of 3
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              *
-             * For DualForceField resolution switching, the Polarization energy
-             * will be changed at the DualForceField level, and not interpolated
-             * within ForceFieldEnergy / PME. Thus, we set the exponent to 0.0
-             * in this case.
+             * For DualForceField resolution switching, the Polarization energy will be changed at the
+             * DualForceField level, and not interpolated within ForceFieldEnergy / PME. Thus, we
+             * set the exponent to 0.0 in this case.
              */
             polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
             if (polLambdaExponent < 0.0) {
@@ -1148,7 +1186,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             if (ai.getResolution() == Resolution.FIXEDCHARGE) {
                 int index = ai.getIndex() - 1;
                 polarizability[index] = 0.0;
-                localMultipole[index][t000] = ai.getMultipoleType().charge;
+                localMultipole[index][t000] = ai.getMultipoleType().getCharge();
                 localMultipole[index][t100] = 0.0;
                 localMultipole[index][t010] = 0.0;
                 localMultipole[index][t001] = 0.0;
@@ -1310,6 +1348,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         this.gradient = gradient;
 
         /**
+         * for (int i=0; i<nAtoms; i++) { StringBuffer sb = new
+         * StringBuffer(format(" ip11 %6d", i)); for (int j=0; j<ip11[i].length;
+         * j++) { sb.append(format(" %6d", ip11[i][j])); }
+         * logger.info(sb.toString()); }
+         */
+        /**
          * Initialize energy variables.
          */
         permanentMultipoleEnergy = 0.0;
@@ -1374,7 +1418,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             lambdaMode = LambdaMode.CONDENSED;
             energy = condensedEnergy();
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format(" Condensed energy: %20.8f", energy));
+                logger.fine(String.format(" Solvated energy: %20.8f", energy));
             }
             /**
              * Condensed phase SCF without ligand atoms.
@@ -1802,8 +1846,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         /**
          * Collect energy terms.
          */
+		permanentRealSpaceEnergy = ereal;
+		inducedRealSpaceEnergy = ereali;
+		permanentSelfEnergy = eself;
+		inducedSelfEnergy = eselfi;
+		permanentReciprocalEnergy = erecip;
+		inducedReciprocalEnergy = erecipi;
         permanentMultipoleEnergy += eself + erecip + ereal;
         polarizationEnergy += eselfi + erecipi + ereali;
+		totalMultipoleEnergy = permanentMultipoleEnergy + polarizationEnergy;
 
         /**
          * Log some info.
@@ -1825,10 +1876,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
     }
 
-    public double getScale14() {
-        return m14scale;
-    }
-
     /**
      * <p>
      * Getter for the field <code>interactions</code>.</p>
@@ -1840,30 +1887,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return interactions;
     }
 
-    /**
-     * <p>
-     * getPermanentEnergy</p>
-     *
-     * @return a double.
-     */
-    @Override
     public double getPermanentEnergy() {
         return permanentMultipoleEnergy;
     }
-
-    @Override
+    
     public double getPermanentRealSpaceEnergy() {
         return permanentRealSpaceEnergy;
     }
-
-    @Override
+    
     public double getPermanentReciprocalEnergy() {
         return permanentReciprocalEnergy;
-    }
-
-    @Override
-    public String getDecomposition() {
-        return "";
     }
 
     /**
@@ -1875,10 +1908,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     @Override
     public double getPolarizationEnergy() {
         return polarizationEnergy;
-    }
-
-    public GeneralizedKirkwood getGK() {
-        return generalizedKirkwood;
     }
 
     /**
@@ -2137,7 +2166,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 if (sb != null) {
                     logger.warning(sb.toString());
                 }
-                String message = format(" Fatal SCF convergence failure: RMS Debye increased at iteration %d: (%10.5f > %10.5f)\n", completedSCFCycles, eps, previousEps);
+                String message = format(" SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
                 throw new EnergyException(message, false);
             }
             /**
@@ -2500,9 +2529,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
+                                maskp_local[index] = p14scale;
                                 for (int k : ip11[i]) {
                                     if (k == index) {
-                                        maskp_local[index] = 0.5;
+                                        maskp_local[index] = intra14Scale * p14scale;
                                     }
                                 }
                             }
@@ -2518,6 +2548,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             int index = bond.get1_2(ai).getIndex() - 1;
                             maskp_local[index] = p12scale;
                         }
+                        /**
+                         * for (Atom ak : ai.get1_5s()) {
+                         * maskp_local[ak.getIndex() - 1] = p15scale; }
+                         */
                         /**
                          * Apply group based polarization masking rule.
                          */
@@ -2673,13 +2707,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                 fZCR[i] += (fimz - fipz);
                             }
                         }
+                        for (Atom ak : ai.get1_5s()) {
+                            maskp_local[ak.getIndex() - 1] = 1.0;
+                        }
                         for (Torsion torsion : ai.getTorsions()) {
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
-                                if (index < 0) {
-                                    ak.print();
-                                }
                                 maskp_local[index] = 1.0;
                             }
                         }
@@ -3482,6 +3516,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     sorLoop[ti] = new SORLoop();
                 }
                 execute(0, nAtoms - 1, sorLoop[ti]);
+			} catch (RuntimeException ex) {
+				logger.warning("Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex());
+				throw ex;
             } catch (Exception e) {
                 String message = "Fatal exception computing the mutual induced dipoles in thread " + getThreadIndex() + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -3902,9 +3939,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
                                 masking_local[index] = m14scale;
+                                maskingp_local[index] = p14scale;
                                 for (int j : ip11[i]) {
                                     if (j == index) {
-                                        maskingp_local[index] = 0.5;
+                                        maskingp_local[index] = intra14Scale * p14scale;
                                     }
                                 }
                             }
@@ -3913,14 +3951,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             Atom ak = angle.get1_3(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
-                                masking_local[index] = m13scale;
                                 maskingp_local[index] = p13scale;
+                                masking_local[index] = m13scale;
                             }
                         }
                         for (Bond bond : ai.getBonds()) {
                             int index = bond.get1_2(ai).getIndex() - 1;
-                            masking_local[index] = m12scale;
                             maskingp_local[index] = p12scale;
+                            masking_local[index] = m12scale;
                         }
                         for (int j : ip11[i]) {
                             maskingd_local[j] = d11scale;
@@ -4164,12 +4202,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         for (Atom ak : ai.get1_5s()) {
                             int index = ak.getIndex() - 1;
                             masking_local[index] = 1.0;
+                            maskingp_local[index] = 1.0;
                         }
                         for (Torsion torsion : ai.getTorsions()) {
                             Atom ak = torsion.get1_4(ai);
                             if (ak != null) {
                                 int index = ak.getIndex() - 1;
                                 masking_local[index] = 1.0;
+                                maskingp_local[index] = 1.0;
                                 for (int j : ip11[i]) {
                                     if (j == index) {
                                         maskingp_local[index] = 1.0;
@@ -6055,6 +6095,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return cutoff;
     }
 
+    @Override
+    public double getEwaldCutoff() {
+        return off;
+    }
+
     /**
      * Given an array of atoms (with atom types), assign multipole types and
      * reference sites.
@@ -6140,17 +6185,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         key = atomType.getKey() + " 0 0";
         MultipoleType multipoleType = forceField.getMultipoleType(key);
         if (multipoleType != null) {
-            atom.setMultipoleType(multipoleType, null);
-            localMultipole[i][t000] = multipoleType.charge;
-            localMultipole[i][t100] = multipoleType.dipole[0];
-            localMultipole[i][t010] = multipoleType.dipole[1];
-            localMultipole[i][t001] = multipoleType.dipole[2];
-            localMultipole[i][t200] = multipoleType.quadrupole[0][0];
-            localMultipole[i][t020] = multipoleType.quadrupole[1][1];
-            localMultipole[i][t002] = multipoleType.quadrupole[2][2];
-            localMultipole[i][t110] = multipoleType.quadrupole[0][1];
-            localMultipole[i][t101] = multipoleType.quadrupole[0][2];
-            localMultipole[i][t011] = multipoleType.quadrupole[1][2];
+            atom.setMultipoleType(multipoleType);
+            localMultipole[i][t000] = multipoleType.getCharge();
+            localMultipole[i][t100] = multipoleType.getDipole()[0];
+            localMultipole[i][t010] = multipoleType.getDipole()[1];
+            localMultipole[i][t001] = multipoleType.getDipole()[2];
+            localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
+            localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
+            localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
+            localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
+            localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
+            localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
             axisAtom[i] = null;
             frame[i] = multipoleType.frameDefinition;
             return true;
@@ -6171,17 +6216,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             if (multipoleType != null) {
                 int multipoleReferenceAtoms[] = new int[1];
                 multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
-                atom.setMultipoleType(multipoleType, null);
-                localMultipole[i][0] = multipoleType.charge;
-                localMultipole[i][1] = multipoleType.dipole[0];
-                localMultipole[i][2] = multipoleType.dipole[1];
-                localMultipole[i][3] = multipoleType.dipole[2];
-                localMultipole[i][4] = multipoleType.quadrupole[0][0];
-                localMultipole[i][5] = multipoleType.quadrupole[1][1];
-                localMultipole[i][6] = multipoleType.quadrupole[2][2];
-                localMultipole[i][7] = multipoleType.quadrupole[0][1];
-                localMultipole[i][8] = multipoleType.quadrupole[0][2];
-                localMultipole[i][9] = multipoleType.quadrupole[1][2];
+				atom.setMultipoleType(multipoleType);
+				localMultipole[i][t000] = multipoleType.getCharge();
+				localMultipole[i][t100] = multipoleType.getDipole()[0];
+				localMultipole[i][t010] = multipoleType.getDipole()[1];
+				localMultipole[i][t001] = multipoleType.getDipole()[2];
+				localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
+				localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
+				localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
+				localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
+				localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
+				localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
                 axisAtom[i] = multipoleReferenceAtoms;
                 frame[i] = multipoleType.frameDefinition;
                 return true;
@@ -6204,17 +6249,18 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     int multipoleReferenceAtoms[] = new int[2];
                     multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                     multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
-                    atom.setMultipoleType(multipoleType, null);
-                    localMultipole[i][0] = multipoleType.charge;
-                    localMultipole[i][1] = multipoleType.dipole[0];
-                    localMultipole[i][2] = multipoleType.dipole[1];
-                    localMultipole[i][3] = multipoleType.dipole[2];
-                    localMultipole[i][4] = multipoleType.quadrupole[0][0];
-                    localMultipole[i][5] = multipoleType.quadrupole[1][1];
-                    localMultipole[i][6] = multipoleType.quadrupole[2][2];
-                    localMultipole[i][7] = multipoleType.quadrupole[0][1];
-                    localMultipole[i][8] = multipoleType.quadrupole[0][2];
-                    localMultipole[i][9] = multipoleType.quadrupole[1][2];
+                    atom.setMultipoleType(multipoleType);
+					atom.setMultipoleType(multipoleType);
+					localMultipole[i][t000] = multipoleType.getCharge();
+					localMultipole[i][t100] = multipoleType.getDipole()[0];
+					localMultipole[i][t010] = multipoleType.getDipole()[1];
+					localMultipole[i][t001] = multipoleType.getDipole()[2];
+					localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
+					localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
+					localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
+					localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
+					localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
+					localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
                     axisAtom[i] = multipoleReferenceAtoms;
                     frame[i] = multipoleType.frameDefinition;
                     return true;
@@ -6247,17 +6293,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                         multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                         multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
-                        atom.setMultipoleType(multipoleType, null);
-                        localMultipole[i][0] = multipoleType.charge;
-                        localMultipole[i][1] = multipoleType.dipole[0];
-                        localMultipole[i][2] = multipoleType.dipole[1];
-                        localMultipole[i][3] = multipoleType.dipole[2];
-                        localMultipole[i][4] = multipoleType.quadrupole[0][0];
-                        localMultipole[i][5] = multipoleType.quadrupole[1][1];
-                        localMultipole[i][6] = multipoleType.quadrupole[2][2];
-                        localMultipole[i][7] = multipoleType.quadrupole[0][1];
-                        localMultipole[i][8] = multipoleType.quadrupole[0][2];
-                        localMultipole[i][9] = multipoleType.quadrupole[1][2];
+						atom.setMultipoleType(multipoleType);
+						localMultipole[i][t000] = multipoleType.getCharge();
+						localMultipole[i][t100] = multipoleType.getDipole()[0];
+						localMultipole[i][t010] = multipoleType.getDipole()[1];
+						localMultipole[i][t001] = multipoleType.getDipole()[2];
+						localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
+						localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
+						localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
+						localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
+						localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
+						localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
                         axisAtom[i] = multipoleReferenceAtoms;
                         frame[i] = multipoleType.frameDefinition;
                         return true;
@@ -6275,17 +6321,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                             multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                             multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
-                            atom.setMultipoleType(multipoleType, null);
-                            localMultipole[i][0] = multipoleType.charge;
-                            localMultipole[i][1] = multipoleType.dipole[0];
-                            localMultipole[i][2] = multipoleType.dipole[1];
-                            localMultipole[i][3] = multipoleType.dipole[2];
-                            localMultipole[i][4] = multipoleType.quadrupole[0][0];
-                            localMultipole[i][5] = multipoleType.quadrupole[1][1];
-                            localMultipole[i][6] = multipoleType.quadrupole[2][2];
-                            localMultipole[i][7] = multipoleType.quadrupole[0][1];
-                            localMultipole[i][8] = multipoleType.quadrupole[0][2];
-                            localMultipole[i][9] = multipoleType.quadrupole[1][2];
+							atom.setMultipoleType(multipoleType);
+							localMultipole[i][t000] = multipoleType.getCharge();
+							localMultipole[i][t100] = multipoleType.getDipole()[0];
+							localMultipole[i][t010] = multipoleType.getDipole()[1];
+							localMultipole[i][t001] = multipoleType.getDipole()[2];
+							localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
+							localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
+							localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
+							localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
+							localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
+							localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
                             axisAtom[i] = multipoleReferenceAtoms;
                             frame[i] = multipoleType.frameDefinition;
                             return true;
@@ -6313,17 +6359,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         int multipoleReferenceAtoms[] = new int[2];
                         multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                         multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
-                        atom.setMultipoleType(multipoleType, null);
-                        localMultipole[i][0] = multipoleType.charge;
-                        localMultipole[i][1] = multipoleType.dipole[0];
-                        localMultipole[i][2] = multipoleType.dipole[1];
-                        localMultipole[i][3] = multipoleType.dipole[2];
-                        localMultipole[i][4] = multipoleType.quadrupole[0][0];
-                        localMultipole[i][5] = multipoleType.quadrupole[1][1];
-                        localMultipole[i][6] = multipoleType.quadrupole[2][2];
-                        localMultipole[i][7] = multipoleType.quadrupole[0][1];
-                        localMultipole[i][8] = multipoleType.quadrupole[0][2];
-                        localMultipole[i][9] = multipoleType.quadrupole[1][2];
+						atom.setMultipoleType(multipoleType);
+						localMultipole[i][t000] = multipoleType.getCharge();
+						localMultipole[i][t100] = multipoleType.getDipole()[0];
+						localMultipole[i][t010] = multipoleType.getDipole()[1];
+						localMultipole[i][t001] = multipoleType.getDipole()[2];
+						localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
+						localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
+						localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
+						localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
+						localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
+						localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
                         axisAtom[i] = multipoleReferenceAtoms;
                         frame[i] = multipoleType.frameDefinition;
                         return true;
@@ -6339,17 +6385,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                 multipoleReferenceAtoms[0] = atom2.getIndex() - 1;
                                 multipoleReferenceAtoms[1] = atom3.getIndex() - 1;
                                 multipoleReferenceAtoms[2] = atom4.getIndex() - 1;
-                                atom.setMultipoleType(multipoleType, null);
-                                localMultipole[i][0] = multipoleType.charge;
-                                localMultipole[i][1] = multipoleType.dipole[0];
-                                localMultipole[i][2] = multipoleType.dipole[1];
-                                localMultipole[i][3] = multipoleType.dipole[2];
-                                localMultipole[i][4] = multipoleType.quadrupole[0][0];
-                                localMultipole[i][5] = multipoleType.quadrupole[1][1];
-                                localMultipole[i][6] = multipoleType.quadrupole[2][2];
-                                localMultipole[i][7] = multipoleType.quadrupole[0][1];
-                                localMultipole[i][8] = multipoleType.quadrupole[0][2];
-                                localMultipole[i][9] = multipoleType.quadrupole[1][2];
+								atom.setMultipoleType(multipoleType);
+								localMultipole[i][t000] = multipoleType.getCharge();
+								localMultipole[i][t100] = multipoleType.getDipole()[0];
+								localMultipole[i][t010] = multipoleType.getDipole()[1];
+								localMultipole[i][t001] = multipoleType.getDipole()[2];
+								localMultipole[i][t200] = multipoleType.getQuadrupole()[0][0];
+								localMultipole[i][t020] = multipoleType.getQuadrupole()[1][1];
+								localMultipole[i][t002] = multipoleType.getQuadrupole()[2][2];
+								localMultipole[i][t110] = multipoleType.getQuadrupole()[0][1];
+								localMultipole[i][t101] = multipoleType.getQuadrupole()[0][2];
+								localMultipole[i][t011] = multipoleType.getQuadrupole()[1][2];
                                 axisAtom[i] = multipoleReferenceAtoms;
                                 frame[i] = multipoleType.frameDefinition;
                                 return true;
@@ -6369,6 +6415,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         List<Integer> group = new ArrayList<>();
         List<Integer> polarizationGroup = new ArrayList<>();
         //int g11 = 0;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.getIndex() - 1 != i) {
+                logger.severe(" Atom indexing is not consistent in PME.");
+            }
+        }
+
         for (Atom ai : atoms) {
             group.clear();
             polarizationGroup.clear();
@@ -6864,11 +6917,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
     }
 
-    @Override
-    public double[] getdEdEsv() {
-        throw new UnsupportedOperationException();
-    }
-
     private void computeInduceDipoleField() {
         try {
             if (nSymm > 1) {
@@ -7032,7 +7080,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 if (sb != null) {
                     logger.warning(sb.toString());
                 }
-                String message = format(" Fatal SCF convergence failure: RMS Debye increased at iteration %d: (%10.5f > %10.5f)\n", completedSCFCycles, eps, previousEps);
+                String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
                 throw new EnergyException(message, false);
             }
             /**
@@ -7060,6 +7108,23 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             sb.append(format(" Total:                   %7.4f",
                     startTime * TO_SECONDS));
             logger.info(sb.toString());
+
+            /**
+            for (int i = 0; i < nAtoms; i++) {
+                double dx = MultipoleType.DEBYE * inducedDipole[0][i][0];
+                double dy = MultipoleType.DEBYE * inducedDipole[0][i][1];
+                double dz = MultipoleType.DEBYE * inducedDipole[0][i][2];
+                double norm = sqrt(dx * dx + dy * dy + dz * dz);
+                logger.info(format("ind %d %16.6f %16.6f %16.6f %16.6f", i + 1,
+                        dx, dy, dz, norm));
+                dx = MultipoleType.DEBYE * inducedDipoleCR[0][i][0];
+                dy = MultipoleType.DEBYE * inducedDipoleCR[0][i][1];
+                dz = MultipoleType.DEBYE * inducedDipoleCR[0][i][2];
+                norm = sqrt(dx * dx + dy * dy + dz * dz);
+                logger.info(format("inp %d %16.6f %16.6f %16.6f %16.6f", i + 1,
+                        dx, dy, dz, norm));
+            } */
+
         }
 
         /**
@@ -8484,10 +8549,78 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 "ELEC", atoms[i].getIndex(), atoms[i].getAtomType().name,
                 atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
     }
+
     /**
      * Number of unique tensors for given order.
      */
     private static final int tensorCount = MultipoleTensor.tensorCount(3);
     private static final double oneThird = 1.0 / 3.0;
+
+	@Override
+	public double getTotalMultipoleEnergy() {
+		return permanentMultipoleEnergy + polarizationEnergy;
+	}
+	@Override
+	public double getPermRealEnergy() {
+		return permanentRealSpaceEnergy;
+	}
+	@Override
+	public double getPermSelfEnergy() {
+		return permanentSelfEnergy;
+	}
+	@Override
+	public double getPermRecipEnergy() {
+		return permanentReciprocalEnergy;
+	}
+	@Override
+	public double getIndRealEnergy() {
+		return inducedRealSpaceEnergy;
+	}
+	@Override
+	public double getIndSelfEnergy() {
+		return inducedSelfEnergy;
+	}
+	@Override
+	public double getIndRecipEnergy() {
+		return inducedReciprocalEnergy;
+	}
+	@Override
+	public GeneralizedKirkwood getGK() {
+		return generalizedKirkwood;
+	}
+
+	/********************************
+	 * Access methods for OpenMM.
+	 *******************************/
+	public double[][][] getCoordinates() {
+		return coordinates;
+	}
+	public double getPolarEps() {
+		return poleps;
+	}
+	public int[][] getPolarization11() {
+		return ip11;
+	}
+	public int[][] getPolarization12() {
+		return ip12;
+	}
+	public int[][] getPolarization13() {
+		return ip13;
+	}
+	public Polarization getPolarizationType() {
+		return polarization;
+	}
+	public int[][] getAxisAtoms() {
+		return axisAtom;
+	}
+	public double getScale14() {
+		return m14scale;
+	}
+	public double getEwaldCoefficient() {
+		return aewald;
+	}
+	public ReciprocalSpace getReciprocalSpace() {
+		return reciprocalSpace;
+	}
 
 }

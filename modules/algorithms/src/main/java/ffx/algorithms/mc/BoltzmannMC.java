@@ -53,7 +53,7 @@ import static org.apache.commons.math3.util.FastMath.exp;
  */
 public abstract class BoltzmannMC implements MetropolisMC {
 
-    private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
+    public static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
     public static final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
 
     private double temperature = 298.15; // Room temperature (also SATP).

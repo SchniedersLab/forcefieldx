@@ -121,7 +121,7 @@ public class MolecularAssembly extends MSGroup {
     public static final double KCAL_TO_KJ = 4.184;
     private static double[] a = new double[3];
     
-    public static final Indexing atomIndexing = prop(Indexing.class, "sys-atomIndexing", Indexing.XYZ);
+    public static final Indexing atomIndexing = prop(Indexing.class, "sys.atomIndexing", Indexing.XYZ);
     /**
      * Persistent index parallel to xyzIndex.
      */
@@ -1300,7 +1300,7 @@ public class MolecularAssembly extends MSGroup {
             double charge = 0;
             boolean isNonstandard = false;
             for (Atom atom : node.getAtomList()) {
-                charge += atom.getMultipoleType().charge;
+                charge += atom.getMultipoleType().getCharge();
                 if (atom.isModRes()) {
                     isNonstandard = true;
                 }
@@ -1393,45 +1393,36 @@ public class MolecularAssembly extends MSGroup {
             Shape3D s3d = (Shape3D) node;
             PickTool.setCapabilities(s3d, PickTool.INTERSECT_COORD);
             return;
-
         } else if (node instanceof SharedGroup) {
             SharedGroup sg = (SharedGroup) node;
-            for (Enumeration e = sg.getAllChildren(); e.hasMoreElements();) {
-                recurseVRML((Node) e.nextElement());
+            for (Enumeration<Node> e = sg.getAllChildren(); e.hasMoreElements();) {
+                recurseVRML(e.nextElement());
             }
-
             return;
         } else if (node instanceof BranchGroup) {
             BranchGroup bg = (BranchGroup) node;
-            for (Enumeration e = bg.getAllChildren(); e.hasMoreElements();) {
-                recurseVRML((Node) e.nextElement());
+            for (Enumeration<Node> e = bg.getAllChildren(); e.hasMoreElements();) {
+                recurseVRML(e.nextElement());
             }
-
             return;
         } else if (node instanceof TransformGroup) {
             TransformGroup vrmlTG1 = (TransformGroup) node;
-            for (Enumeration e = vrmlTG1.getAllChildren(); e.hasMoreElements();) {
-                node = (Node) e.nextElement();
+            for (Enumeration<Node> e = vrmlTG1.getAllChildren(); e.hasMoreElements();) {
+                node = e.nextElement();
                 recurseVRML(node);
             }
-
             return;
         } else if (node instanceof Link) {
             Link link = (Link) node;
             recurseVRML(link.getSharedGroup());
             return;
-
         } else if (node instanceof Group) {
             Group group = (Group) node;
             for (Enumeration<Node> e = group.getAllChildren(); e.hasMoreElements();) {
                 Node n = e.nextElement();
                 recurseVRML(n);
             }
-
-        } else {
-            return;
         }
-
     }
 
     /**

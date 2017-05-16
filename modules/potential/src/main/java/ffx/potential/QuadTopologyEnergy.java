@@ -181,7 +181,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = nCommon; i < nVarA; i++) {
             uniqueASet.add(i);
         }
-        uniqueAList = new ArrayList(uniqueASet);
+        uniqueAList = new ArrayList<>(uniqueASet);
         uniqueA = uniqueAList.size();
         int[] uniquesA = new int[uniqueA];
         for (int i = 0; i < uniqueA; i++) {
@@ -205,7 +205,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = nCommon; i < nVarB; i++) {
             uniqueBSet.add(i);
         }
-        uniqueBList = new ArrayList(uniqueBSet);
+        uniqueBList = new ArrayList<>(uniqueBSet);
         uniqueB = uniqueBList.size();
         int[] uniquesB = new int[uniqueB];
         for (int i = 0; i < uniqueB; i++) {

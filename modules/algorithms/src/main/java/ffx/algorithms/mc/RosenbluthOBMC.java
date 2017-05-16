@@ -137,7 +137,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
     }
 
     @Override
-    public boolean mcUpdate(MolecularAssembly mola) {
+    public boolean mcUpdate(double temperature) {
         steps++;
         if (steps % mcFrequency == 0) {
             return mcStep();
