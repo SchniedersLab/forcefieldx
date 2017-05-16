@@ -132,8 +132,8 @@ public class ExtendedVariableTest {
 	private ExtendedSystemConfig derivativeDebugParameters() {
 		setProp("rotate-multipoles",		yes);	// global frame
 		setProp("esv.allowMaskPerm",		yes);	// permanent energy masking
-		setProp("esv.allowMaskPolarD",		false);	// group-based masking
-		setProp("esv.allowMaskPolarP",		false);	// induced energy masking
+		setProp("esv.allowMaskPolarD",		yes);	// group-based masking
+		setProp("esv.allowMaskPolarP",		yes);	// induced energy masking
 		setProp("esv.allowSymOps",			yes);	// symmetry operators
 		setProp("esv.allowScreening",		yes);	// SCREENED_COULOMB tensors
 		setProp("esv.allowTholeDamping",	yes);	// THOLE_FIELD tensors
@@ -146,7 +146,7 @@ public class ExtendedVariableTest {
 
 		setProp("use-charges",				yes);
 		setProp("use-dipoles",				yes);
-		setProp("use-quadrupoles",			false);
+		setProp("use-quadrupoles",			yes);
 
 		ExtendedSystemConfig esvConfig = new ExtendedSystemConfig();
 		// Alternatively,
