@@ -44,13 +44,16 @@ double temperature = 298.15;
 Thermostats thermostat = null;
 
 // Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET]
-Integrators integrator = null;
+//Integrators integrator = null;
+String integrator = null;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
 
 // Interval to write out restart file (psec)
-double restartFrequency = 1000;
+double restartFrequency = 500;
+
+double frictionCoeff = 1.0;
 
 // File type of snapshots.
 String fileType = "PDB";
@@ -60,7 +63,7 @@ def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
+cli.i(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Brownian / Langevin / Verlet / Custom / Compound]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
@@ -68,7 +71,71 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
+cli.cf(longOpt:'Coefficient of friction', args:1, argName:'1.0', 'Coefficient of friction to be used with Langevin and Brownian integrators')
 def options = cli.parse(args);
+
+if (options.h) {
+    return cli.usage();
+}
+
+// Load the number of molecular dynamics steps.
+if (options.n) {
+    nSteps = Integer.parseInt(options.n);
+}
+
+// Write dyn interval in picoseconds
+if (options.s) {
+    restartFrequency = Double.parseDouble(options.s);
+}
+
+//
+if (options.f) {
+    fileType = options.f.toUpperCase();
+}
+// Load the time steps in femtoseconds.
+if (options.d) {
+    timeStep = Double.parseDouble(options.d);
+}
+
+// Report interval in picoseconds.
+if (options.l) {
+    printInterval = Double.parseDouble(options.l);
+}
+
+// Write snapshot interval in picoseconds.
+if (options.w) {
+    saveInterval = Double.parseDouble(options.w);
+}
+
+// Temperature in degrees Kelvin.
+if (options.t) {
+    temperature = Double.parseDouble(options.t);
+}
+
+if (options.p) {
+    System.setProperty("polarization", options.p);
+}
+
+// Thermostat.
+if (options.b) {
+    try {
+        thermostat = Thermostats.valueOf(options.b.toUpperCase());
+    } catch (Exception e) {
+        thermostat = null;
+    }
+}
+
+// Integrator.
+if (options.i) {
+    integrator = options.i.toUpperCase();
+}
+
+// Coefficient of friction to be used with Langevin and Brownian integrators
+if (options.cf) {
+    frictionCoeff = Double.parseDouble(options.cf);
+}
+
+
 
 List<String> arguments = options.arguments();
 String modelfilename = null;
@@ -103,5 +170,6 @@ if (!dyn.exists()) {
 
 OpenMMForceFieldEnergy openMMForceFieldEnergy = new OpenMMForceFieldEnergy(active);
 
-OpenMMMolecularDynamics openMMMolecularDynamics = new OpenMMMolecularDynamics(active, openMMForceFieldEnergy, active.getProperties(), temperature, saveInterval);
+OpenMMMolecularDynamics openMMMolecularDynamics = new OpenMMMolecularDynamics(active, openMMForceFieldEnergy, active.getProperties(), temperature, saveInterval, 
+    restartFrequency, integrator, timeStep, frictionCoeff);
 openMMMolecularDynamics.start(nSteps, intervalSteps);
