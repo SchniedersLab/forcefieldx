@@ -152,7 +152,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 		public final boolean verbose				= prop("esv.verbose",			false);
         public final boolean decomposeBonded		= prop("esv.decomposeBonded",	false);
 		public final boolean decomposeDeriv			= prop("esv.decomposeDeriv",	false);
-		
+
 		// electrostatics options
 		public final boolean allowLambdaSwitch		= prop("esv.allowLambdaSwitch",		false);	// else lswitch = L, dlswitch = 1.0
 		public final boolean nonlinearMultipoles	= prop("esv.nonlinearMultipoles",	false);	// sigmoid lambda Mpole switch
@@ -177,13 +177,19 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 				String key = fields.get(i).getName() + ":";
 				try {
 					Object obj = fields.get(i).get(config);
-					SB.logf("%-30s %7.7s%10s", key, obj, "");
+					SB.logf(" %-30s %7.7s          ", key, obj);
 				} catch (IllegalAccessException ignored) {}
 			}
-			SB.nlogf("%-30s %7.7s%10s%-30s %7.7s%10s%-30s %7.7s",
-					"polarization",	 System.getProperty("polarization"), "",
-					"scf-algorithm", System.getProperty("scf-algorithm"), "",
-					"polar-eps",	 System.getProperty("polar-eps"));
+			SB.nlogf(   " %-30s %7.7s          %-30s %7.7s          %-30s %7.7s"
+					+ "\n %-30s %7.7s          %-30s %7.7s          %-30s %7.7s"
+					+ "\n %-30s %7.7s",
+					"polarization",	 System.getProperty("polarization"),
+					"scf-algorithm", System.getProperty("scf-algorithm"),
+					"polar-eps",	 System.getProperty("polar-eps"),
+					"use-charges",	 System.getProperty("use-charges"),
+					"use-dipoles",	 System.getProperty("use-dipoles"),
+					"use-quadrupoles",System.getProperty("use-quadrupoles"),
+					"grid-method",	 System.getProperty("grid-method"));
 			SB.logfp("\n");
         }
     }

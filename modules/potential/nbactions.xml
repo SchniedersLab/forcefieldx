@@ -12,6 +12,8 @@
             <properties>
                 <test>${packageClassName}</test>
                 <skipTests>false</skipTests>
+                <trimStackTrace>false</trimStackTrace>
+                <java.util.logging.SimpleFormatter.format>%5$s%n</java.util.logging.SimpleFormatter.format>
             </properties>
         </action>
     </actions>

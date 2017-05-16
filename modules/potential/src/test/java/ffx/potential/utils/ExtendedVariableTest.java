@@ -82,6 +82,7 @@ public class ExtendedVariableTest {
 
     private static final Logger logMaster = Logger.getLogger("ffx");
 	private static final PotentialsUtils utils = new PotentialsUtils();
+	private static final SBLogger SB = new SBLogger();
 
 	private static final String	  dilysine			= "lys-lys.pdb";
 	private static final String[] dilysStates		= {"lyd-lyd.pdb","lyd-lys.pdb",
@@ -89,8 +90,6 @@ public class ExtendedVariableTest {
 	private static final String	  dilysineCryst		= "lys-lys-cryst.pdb";
 	private static final String[] dilysStatesCryst	= {"lyd-lyd-cryst.pdb","lyd-lys-cryst.pdb",
 													   "lys-lyd-cryst.pdb","lys-lys-cryst.pdb"};
-	private static double[] lambdaValuesToTest = {0.25, 0.5, 0.75};
-
 	private static final boolean yes	= true;
 	private static final int lys2_nz	= 16;
 	private static final int ala3_c		= 30;
@@ -106,8 +105,8 @@ public class ExtendedVariableTest {
 	private static final boolean oneSidedFiniteAtExtremes	= false;	// TODO analyze bonded behavior
 	private static final boolean smoothnessDecomposition	= false;
 	private static final boolean singleThreaded				= false;
-	private static final boolean benchmarkArrayReferencing	= false;
 	private static final boolean assertions					= false;	// TODO enable
+	private static double[] lambdaValuesToTest = {0.0, 0.25, 0.5, 0.75, 1.0};
 
 	/** Arguments to the class constructor.
 	 * EsvTest.END_STATES requires two ESVs and that 4x states + energies be defined.
@@ -133,21 +132,21 @@ public class ExtendedVariableTest {
 	private ExtendedSystemConfig derivativeDebugParameters() {
 		setProp("rotate-multipoles",		yes);	// global frame
 		setProp("esv.allowMaskPerm",		yes);	// permanent energy masking
-		setProp("esv.allowMaskPolarD",		yes);	// group-based masking
-		setProp("esv.allowMaskPolarP",		yes);	// induced energy masking
+		setProp("esv.allowMaskPolarD",		false);	// group-based masking
+		setProp("esv.allowMaskPolarP",		false);	// induced energy masking
 		setProp("esv.allowSymOps",			yes);	// symmetry operators
 		setProp("esv.allowScreening",		yes);	// SCREENED_COULOMB tensors
 		setProp("esv.allowTholeDamping",	yes);	// THOLE_FIELD tensors
 		setProp("esv.recipFieldEffects",	yes);	// reciprocal space contributions to field
 
-		setProp("esv.scaleAlpha",			false);	// polarizability scaling and associated derivative term
-		setProp("polarization",		Polarization.DIRECT);
-		setProp("scf-algorithm",	SCFAlgorithm.SOR);
+		setProp("esv.scaleAlpha",			yes);	// polarizability scaling and associated derivative term
+		setProp("polarization",		Polarization.MUTUAL);
+		setProp("scf-algorithm",	SCFAlgorithm.CG);
 		setProp("esv.cdqScales",	Arrays.asList(1.0, 1.0, 1.0));	// scale charges, dipoles, quads
 
 		setProp("use-charges",				yes);
 		setProp("use-dipoles",				yes);
-		setProp("use-quadrupoles",			yes);	// SOURCE perm_recip n.l.d. err
+		setProp("use-quadrupoles",			false);
 
 		ExtendedSystemConfig esvConfig = new ExtendedSystemConfig();
 		// Alternatively,
@@ -236,6 +235,7 @@ public class ExtendedVariableTest {
 				initialLambda = new double[]{1.0};
 				break;
 			default:
+			
 			case Deriv_TwoEsvs:
 			case EndStates:
 			case Smoothness:
@@ -255,6 +255,8 @@ public class ExtendedVariableTest {
 		// Save passed-in configuration so we can restore it at teardown (and not affect downstream tests).
 		originalSystemConfig = (Properties) System.getProperties().clone();
 
+		// Single-line test output without frills.
+		System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
 		// Potential Terms
         setProp("forcefield",		ForceFieldName.AMOEBA_PROTEIN_2013);
 		setProp(true,	"esvterm", "lambdaterm", "bondterm", "angleterm", "strbendterm", "ureyterm",
@@ -387,69 +389,74 @@ public class ExtendedVariableTest {
 	}
 
 	public void testDerivativesMeta() {
+		setProp("use-charge",				yes);
+		setProp("use-dipoles",				yes);
+		setProp("use-quadrupoles",			yes);
 		resultsOnly = true;
-		fill(initialLambda, 0.5);
-		lambdaValuesToTest = new double[]{0.1,0.5,0.9};
-		SB.logfp("++Masking, MUTUAL/CG, ++AlphaScaling");
-		setProp("esv.allowMaskPerm",	yes);
-		setProp("esv.allowMaskPolarD",	yes);
-		setProp("esv.allowMaskPolarP",	yes);
-		setProp("polarization",		Polarization.MUTUAL);
-		setProp("scf-algorithm",	SCFAlgorithm.CG);
-		setProp("esv.scaleAlpha",		yes);
-		testDerivatives();
-
-		SB.logfp("++Masking, DIRECT/SOR, --AlphaScaling");
-		setProp("esv.allowMaskPerm",	yes);
-		setProp("esv.allowMaskPolarD",	yes);
-		setProp("esv.allowMaskPolarP",	yes);
-		setProp("polarization",		Polarization.DIRECT);
-		setProp("scf-algorithm",	SCFAlgorithm.SOR);
-		setProp("esv.scaleAlpha",		false);
-		testDerivatives();
-
-		fill(initialLambda, 0.0);
-		SB.logfp("--Masking, DIRECT/SOR, --AlphaScaling");
-		setProp("esv.allowMaskPerm",	false);
-		setProp("esv.allowMaskPolarD",	false);
-		setProp("esv.allowMaskPolarP",	false);
-		setProp("polarization",		Polarization.DIRECT);
-		setProp("scf-algorithm",	SCFAlgorithm.SOR);
-		setProp("esv.scaleAlpha",		false);
-		testDerivatives();
-
 		fill(initialLambda, 1.0);
-		SB.logfp("--Masking, DIRECT/SOR, --AlphaScaling");
-		setProp("esv.allowMaskPerm",	false);
-		setProp("esv.allowMaskPolarD",	false);
-		setProp("esv.allowMaskPolarP",	false);
-		setProp("polarization",		Polarization.DIRECT);
-		setProp("scf-algorithm",	SCFAlgorithm.SOR);
-		setProp("esv.scaleAlpha",		false);
-		testDerivatives();
+		lambdaValuesToTest = new double[]{0.0,0.25,0.5,0.75,1.0};
+
+		SB.logf(" DIRECT/CG, --masking, --scaleAlpha");
+		setProp("esv.allowMaskPerm",			false);
+		setProp("esv.allowMaskPolarD",			false);
+		setProp("esv.allowMaskPolarP",			false);
+		setProp("polarization",			Polarization.DIRECT);
+		setProp("scf-algorithm",		SCFAlgorithm.CG);
+		setProp("esv.scaleAlpha",				false);
+		testDerivatives(new ExtendedSystemConfig());
+
+		SB.logf(" DIRECT/CG, --masking, ++scaleAlpha");
+		setProp("esv.allowMaskPerm",			false);
+		setProp("esv.allowMaskPolarD",			false);
+		setProp("esv.allowMaskPolarP",			false);
+		setProp("polarization",			Polarization.DIRECT);
+		setProp("scf-algorithm",		SCFAlgorithm.CG);
+		setProp("esv.scaleAlpha",				yes);
+		testDerivatives(new ExtendedSystemConfig());
+
+		SB.nlogfn(" DIRECT/CG, ++masking, --scaleAlpha");
+		setProp("esv.allowMaskPerm",			yes);
+		setProp("esv.allowMaskPolarD",			yes);
+		setProp("esv.allowMaskPolarP",			yes);
+		setProp("polarization",			Polarization.DIRECT);
+		setProp("scf-algorithm",		SCFAlgorithm.CG);
+		setProp("esv.scaleAlpha",				false);
+		testDerivatives(new ExtendedSystemConfig());
+
+		SB.nlogfn(" MUTUAL/CG, ++masking, ++scaleAlpha");
+		setProp("esv.allowMaskPerm",			yes);
+		setProp("esv.allowMaskPolarD",			yes);
+		setProp("esv.allowMaskPolarP",			yes);
+		setProp("polarization",			Polarization.MUTUAL);
+		setProp("scf-algorithm",		SCFAlgorithm.CG);
+		setProp("esv.scaleAlpha",				yes);
+		testDerivatives(new ExtendedSystemConfig());
+	}
+
+	public void testDerivatives() {
+		testDerivatives(null);
 	}
 
     /**
      * Analytic Derivative vs Finite Difference: VdW,PermReal,PermRecip,Total
      */
-    public void testDerivatives() {
-		ExtendedSystemConfig esvConfig = derivativeDebugParameters();
+    public void testDerivatives(ExtendedSystemConfig esvConfig) {
+		if (esvConfig == null) {
+			esvConfig = derivativeDebugParameters();
+		}
 		MolecularAssembly mola = setupWithExtended(esvFilename, false, esvConfig);
 		ForceFieldEnergy ffe = mola.getPotentialEnergy();
 		ExtendedSystem esvSystem = ffe.getExtendedSystem();
 		if (resultsOnly) logMaster.setLevel(Level.WARNING);
-		final SBLogger SB = new SBLogger();
         final double step = 1e-6;
 
 		for (int i = 0; i < esvSystem.size(); i++) {
-			String esvName = esvSystem.getEsv(i).getName();
+			final String esvName = esvSystem.getEsv(i).getName();
 			if (!mola.getCrystal().aperiodic()) {
 				SB.logfn(" Finite Diff: %5.5s (Crystal)", esvName);
 			} else {
 				SB.logfn(" Finite Diff: %5.5s (Aprodc.)", esvName);
 			}
-			/********************************************/
-
 			// Reset lambdas.
 			for (int k = 0; k < esvSystem.size(); k++) {
 				esvSystem.setLambda(k, initialLambda[k]);
@@ -581,7 +588,7 @@ public class ExtendedVariableTest {
 		setProp("esv.allowMaskPolarP",		yes);
 
 		setProp("polarization",		Polarization.MUTUAL);
-		setProp("scf-algorithm",	SCFAlgorithm.SOR);
+		setProp("scf-algorithm",	SCFAlgorithm.CG);
 		setProp("esv.scaleAlpha",			yes);	// scale polarizability of titrating H+
 		setProp("rotate-multipoles",		yes);	// global frame
 		setProp("esv.allowSymOps",			yes);	// symmetry operators
@@ -596,7 +603,7 @@ public class ExtendedVariableTest {
 		setProp("esv.cloneXyzIndices",		yes);
 		setProp("use-charges",				yes);
 		setProp("use-dipoles",				yes);
-		setProp("use-quadrupoles",			false);
+		setProp("use-quadrupoles",			yes);
 		return new ExtendedSystemConfig();
 	}
 

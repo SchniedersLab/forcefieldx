@@ -240,6 +240,7 @@ public class ReciprocalSpace {
 	private double unscaledFracDipoleCR[][][];
 	private double unscaledFracDipolePhi[][];
 	private double unscaledFracDipolePhiCR[][];
+	private double fracMultipoleDotPhi[][];
 
     /**
      * Number of atoms for a given symmetry operator that a given thread is
@@ -254,7 +255,9 @@ public class ReciprocalSpace {
     private final int gridAtomList[][][];
 
     private final PermanentPhiRegion permanentPhiRegion;
+	private final PermanentPhiRegion permanentPhiDotRegion;
     private final InducedPhiRegion polarizationPhiRegion;
+	private final InducedPhiRegion polarUnscaledPhiRegion;
     private final IntegerSchedule recipSchedule;
 
     /**
@@ -417,6 +420,13 @@ public class ReciprocalSpace {
         }
         permanentPhiRegion = new PermanentPhiRegion(bSplineRegion);
         polarizationPhiRegion = new InducedPhiRegion(bSplineRegion);
+		if (esvTerm) {
+			permanentPhiDotRegion = new PermanentPhiRegion(bSplineRegion);
+			polarUnscaledPhiRegion = new InducedPhiRegion(bSplineRegion);
+		} else {
+			permanentPhiDotRegion = null;
+			polarUnscaledPhiRegion = null;
+		}
 
         /**
          * Initialize timing variables.
@@ -464,6 +474,7 @@ public class ReciprocalSpace {
             fracInducedDipolePhi = new double[nAtoms][tensorCount];
             fracInducedDipolePhiCR = new double[nAtoms][tensorCount];
 			if (esvTerm) {
+				fracMultipoleDotPhi = new double[nAtoms][tensorCount];
 				unscaledFracDipole = new double[nSymm][nAtoms][3];
 				unscaledFracDipoleCR = new double[nSymm][nAtoms][3];
 				unscaledFracDipolePhi = new double[nAtoms][tensorCount];
@@ -870,6 +881,19 @@ public class ReciprocalSpace {
         permanentPhiTotal += System.nanoTime();
     }
 
+	public void computePermanentDotPhi(double cartPermanentDotPhi[][]) {
+		if (!esvTerm) throw new UnsupportedOperationException();
+        permanentPhiTotal -= System.nanoTime();
+        try {
+			permanentPhiDotRegion.setCartPermanentDotPhi(cartPermanentDotPhi);
+			parallelTeam.execute(permanentPhiDotRegion);
+        } catch (Exception e) {
+            String message = " Fatal exception evaluating permanent reciprocal space potential.";
+            logger.log(Level.SEVERE, message, e);
+        }
+        permanentPhiTotal += System.nanoTime();
+	}
+
     /**
      * Place the induced dipoles onto the FFT grid for the atoms in use.
      *
@@ -981,14 +1005,38 @@ public class ReciprocalSpace {
             double cartInducedDipoleCRPhi[][]) {
         inducedPhiTotal -= System.nanoTime();
         try {
-            polarizationPhiRegion.setCartInducedDipolePhi(cartInducedDipolePhi,
-                    cartInducedDipoleCRPhi);
+            polarizationPhiRegion.setCartInducedDipolePhi(
+					cartInducedDipolePhi, cartInducedDipoleCRPhi);
             parallelTeam.execute(polarizationPhiRegion);
         } catch (Exception e) {
             String message = "Fatal exception evaluating induced reciprocal space potential.";
             logger.log(Level.SEVERE, message, e);
         }
         inducedPhiTotal += System.nanoTime();
+    }
+
+    public void computeInducedPhi(
+			double cartInducedDipolePhi[][], double cartInducedDipoleCRPhi[][],
+			double[][] cartUnscaledDipolePhi, double[][] cartUnscaledDipolePhiCR) {
+        try {
+            polarizationPhiRegion.setCartInducedDipolePhi(
+					cartInducedDipolePhi, cartInducedDipoleCRPhi);
+            parallelTeam.execute(polarizationPhiRegion);
+			if (esvTerm) {
+				if (cartUnscaledDipolePhi == null) {
+					logger.warning("EsvTerm is true, so ReciprocalSpace::computeInducedPhi"
+							+ " needs polarizability-unscaled dipole as well.");
+				}
+				polarUnscaledPhiRegion.setCartInducedDipolePhi(
+						cartUnscaledDipolePhi, cartUnscaledDipolePhiCR);
+				parallelTeam.execute(polarUnscaledPhiRegion);
+			}
+        } catch (RuntimeException ex) {
+			logger.warning("Fatal exception evaluating induced reciprocal space potential.");
+			throw ex;
+        } catch (Exception ex) {
+			logger.log(Level.SEVERE, "Fatal exception evaluating induced reciprocal space potential.", ex);
+		}
     }
 
     /**
@@ -1104,6 +1152,9 @@ public class ReciprocalSpace {
 	}
 	public double[][] getUnscaledFracDipolePhiCR() {
 		return unscaledFracDipolePhiCR;
+	}
+	public double[][] getFracMultipoleDotPhi() {
+		return fracMultipoleDotPhi;
 	}
 
     /**
@@ -2243,7 +2294,8 @@ public class ReciprocalSpace {
         public final PermanentPhiLoop permanentPhiLoop[];
 
         private final BSplineRegion bSplineRegion;
-        private double cartPermanentPhi[][];
+        private double[][] cartPermPhiIn;
+		private double[][] fracPermPhiOut;
 
         public PermanentPhiRegion(BSplineRegion bSplineRegion) {
             this.bSplineRegion = bSplineRegion;
@@ -2254,8 +2306,13 @@ public class ReciprocalSpace {
         }
 
         public void setCartPermanentPhi(double cartPermanentPhi[][]) {
-            this.cartPermanentPhi = cartPermanentPhi;
+            this.cartPermPhiIn = cartPermanentPhi;
+			this.fracPermPhiOut = fracMultipolePhi;
         }
+		public void setCartPermanentDotPhi(double cartPermanentDotPhi[][]) {
+			this.cartPermPhiIn = cartPermanentDotPhi;
+			this.fracPermPhiOut = fracMultipoleDotPhi;
+		}
 
         @Override
         public void run() {
@@ -2389,7 +2446,7 @@ public class ReciprocalSpace {
                         tuv012 += tu01 * v2;
                         tuv111 += tu11 * v1;
                     }
-                    double out[] = fracMultipolePhi[n];
+                    double out[] = fracPermPhiOut[n];
                     out[t000] = tuv000;
                     out[t100] = tuv100;
                     out[t010] = tuv010;
@@ -2411,7 +2468,7 @@ public class ReciprocalSpace {
                     out[t012] = tuv012;
                     out[t111] = tuv111;
                     double in[] = out;
-                    out = cartPermanentPhi[n];
+                    out = cartPermPhiIn[n];
                     out[0] = transformFieldMatrix[0][0] * in[0];
                     for (int j = 1; j < 4; j++) {
                         out[j] = 0.0;

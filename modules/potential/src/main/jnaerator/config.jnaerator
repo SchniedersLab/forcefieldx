@@ -7,7 +7,7 @@
 
 -jar openmm-7.1.jar
 
--libFile /usr/local/openmm/lib/libOpenMM.dylib
+-libFile /c/sdl/Utility/Miniconda3/pkgs/openmm-7.1.0rc1-py35_0/include/libOpenMM.dylib
 
 -package simtk.openmm
 
@@ -15,9 +15,9 @@
 
 -package simtk.openmm
 
--I/usr/local/openmm/include
+-I/c/sdl/Utility/Miniconda3/pkgs/openmm-7.1.0rc1-py35_0/include/
 
-/usr/local/openmm/include/OpenMMCWrapper.h
-/usr/local/openmm/include/AmoebaOpenMMCWrapper.h
+/c/sdl/Utility/Miniconda3/pkgs/openmm-7.1.0rc1-py35_0/include/OpenMMCWrapper.h
+/c/sdl/Utility/Miniconda3/pkgs/openmm-7.1.0rc1-py35_0/include/AmoebaOpenMMCWrapper.h
 
 

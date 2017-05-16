@@ -2652,14 +2652,17 @@ public class MultipoleTensor {
         	 + qxzi * pxk * R201
         	 + qyzi * pyk * R021;
 	}
-	
-	public double uDotv(double[] u, double[] v) {
-		return dxk * -u[0] * R200
-			 + dyk * -u[1] * R020
-			 + dzk * -u[2] * R002
-			 - dxi *  v[0] * R200
-			 - dyi *  v[1] * R020
-			 - dzi *  v[2] * R002;
+
+	public double uiDotvk() {
+		return dxi * -pxk * R200
+			   + dyi * -pyk * R020
+			   + dzi * -pzk * R002;
+	}
+
+	public double ukDotvi() {
+		return dxk * -pxi * R200
+			   + dyk * -pyi * R020
+			   + dzk * -pzi * R002;
 	}
 
 	public double polarizationDerivativeQI(double scalep) {
