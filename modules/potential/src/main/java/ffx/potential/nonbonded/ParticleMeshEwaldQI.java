@@ -4213,6 +4213,12 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     = new MultipoleTensor(COULOMB, COORDINATES.QI, 5, aewald);
             private MultipoleTensor tholeTensor
                     = new MultipoleTensor(THOLE_FIELD, COORDINATES.QI, 4, aewald);
+			private MultipoleTensor scrnTensorPolar
+                    = new MultipoleTensor(SCREENED_COULOMB, COORDINATES.QI, 5, aewald);
+            private MultipoleTensor coulTensorPolar
+                    = new MultipoleTensor(COULOMB, COORDINATES.QI, 5, aewald);
+            private MultipoleTensor tholeTensorPolar
+                    = new MultipoleTensor(THOLE_FIELD, COORDINATES.QI, 4, aewald);
 
             // Force and torque contributions for a single interaction.
             private final double[] permFi = new double[3], permTi = new double[3], permTk = new double[3];
@@ -4516,13 +4522,13 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                 final double prefactor = (0.5 * ELECTRIC * polarizationScale * selfScale);
 
 				OPERATOR scrnOp = (screened) ? SCREENED_COULOMB : COULOMB;
-				scrnTensor.setOperator(scrnOp);
-				scrnTensor.generateTensor(dx_local, Qi, Qk, ui, vi, uk, vk);
-				double energy = scrnTensor.polarizationEnergy(1.0, 1.0, mutualScale, polFi, polTi, polTk);
+				scrnTensorPolar.setOperator(scrnOp);
+				scrnTensorPolar.generateTensor(dx_local, Qi, Qk, ui, vi, uk, vk);
+				double energy = scrnTensorPolar.polarizationEnergy(1.0, 1.0, mutualScale, polFi, polTi, polTk);
 				if (screened) {
                     /* Subtract away masked Coulomb interactions included in PME. */
-                    coulTensor.generateTensor(dx_local, Qi, Qk, ui, vi, uk, vk);
-                    energy -= coulTensor.polarizationEnergy(1.0 - scaleD, 1.0 - scaleP, 0.0, FiC, TiC, TkC);
+                    coulTensorPolar.generateTensor(dx_local, Qi, Qk, ui, vi, uk, vk);
+                    energy -= coulTensorPolar.polarizationEnergy(1.0 - scaleD, 1.0 - scaleP, 0.0, FiC, TiC, TkC);
                     polFi[0] -= FiC[0];
                     polFi[1] -= FiC[1];
                     polFi[2] -= FiC[2];
@@ -4534,8 +4540,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     polTk[2] -= TkC[2];
                 }
                 if (damped) {
-                    tholeTensor.generateTensor(dx_local, Qi, Qk, ui, vi, uk, vk, pgamma, aiak);
-                    energy -= tholeTensor.polarizationEnergy(scaleD, scaleP, mutualScale, FiT, TiT, TkT);
+                    tholeTensorPolar.generateTensor(dx_local, Qi, Qk, ui, vi, uk, vk, pgamma, aiak);
+                    energy -= tholeTensorPolar.polarizationEnergy(scaleD, scaleP, mutualScale, FiT, TiT, TkT);
                     polFi[0] -= FiT[0];
                     polFi[1] -= FiT[1];
                     polFi[2] -= FiT[2];
@@ -4588,30 +4594,30 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
                     final double[] Qkdot = esvMultipoleDot[iSymm][k];
                     // Collect influence on dipoles due to permanent scaling of atom i.
                     if (esvAtomsScaled[i]) {
-						scrnTensor.generateTensor(dx_local, Qidot, zeroM, zeroD, zeroD, uk, vk);
+						scrnTensorPolar.generateTensor(dx_local, Qidot, zeroM, zeroD, zeroD, uk, vk);
 						double dUdLi = scrnTensor.indkFieldsDotI(1.0, 1.0);
 						if (screened) {
-                            coulTensor.generateTensor(dx_local, Qidot, zeroM, zeroD, zeroD, uk, vk);
+                            coulTensorPolar.generateTensor(dx_local, Qidot, zeroM, zeroD, zeroD, uk, vk);
 							dUdLi -= coulTensor.indkFieldsDotI(1.0 - crScale, 1.0 - regScale);
                         }
                         if (damped) {
-                            tholeTensor.generateTensor(dx_local, Qidot, zeroM, zeroD, zeroD, uk, vk, pgamma, aiak);
+                            tholeTensorPolar.generateTensor(dx_local, Qidot, zeroM, zeroD, zeroD, uk, vk, pgamma, aiak);
                             dUdLi -= tholeTensor.indkFieldsDotI(crScale, regScale);
                         }
                         esvInducedRealDeriv_local[esvIndex[i]] += dUdLi * prefactor;
                     }
                     // Collect influence on dipoles due to permanent scaling of atom k.
                     if (esvAtomsScaled[k]) {
-						scrnTensor.generateTensor(dx_local, zeroM, Qkdot, ui, vi, zeroD, zeroD);
-						double dUdLk = scrnTensor.indiFieldsDotK(1.0, 1.0);
+						scrnTensorPolar.generateTensor(dx_local, zeroM, Qkdot, ui, vi, zeroD, zeroD);
+						double dUdLk = scrnTensorPolar.indiFieldsDotK(1.0, 1.0);
 						if (screened) {
-                            coulTensor.generateTensor(dx_local, zeroM, Qkdot, ui, vi, zeroD, zeroD);
-							dUdLk -= coulTensor.indiFieldsDotK(1.0 - crScale, 1.0 - regScale);
+                            coulTensorPolar.generateTensor(dx_local, zeroM, Qkdot, ui, vi, zeroD, zeroD);
+							dUdLk -= coulTensorPolar.indiFieldsDotK(1.0 - crScale, 1.0 - regScale);
                         }
                         if (damped) {
-							tholeTensor.setTholeDamping(pgamma, aiak);
-                            tholeTensor.generateTensor(dx_local, zeroM, Qkdot, ui, vi, zeroD, zeroD, pgamma, aiak);
-                            dUdLk -= tholeTensor.indiFieldsDotK(crScale, regScale);
+							tholeTensorPolar.setTholeDamping(pgamma, aiak);
+                            tholeTensorPolar.generateTensor(dx_local, zeroM, Qkdot, ui, vi, zeroD, zeroD, pgamma, aiak);
+                            dUdLk -= tholeTensorPolar.indiFieldsDotK(crScale, regScale);
                         }
                         esvInducedRealDeriv_local[esvIndex[k]] += dUdLk * prefactor;
                     }
@@ -4631,25 +4637,25 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald implements LambdaInte
 
 						double ui_unsDotvk = 0.0, uk_unsDotvi = 0.0;
                         if (!screened) {
-                            coulTensor.generateTensor(dx_local, Qi, Qk,
+                            coulTensorPolar.generateTensor(dx_local, Qi, Qk,
                                     ui_uns, vi, uk_uns, vk);
-                            ui_unsDotvk = coulTensor.uiDotvk();
-                            uk_unsDotvi = coulTensor.ukDotvi();
+                            ui_unsDotvk = coulTensorPolar.uiDotvk();
+                            uk_unsDotvi = coulTensorPolar.ukDotvi();
                         } else {
-							scrnTensor.generateTensor(dx_local, Qi, Qk,
+							scrnTensorPolar.generateTensor(dx_local, Qi, Qk,
                                 ui_uns, vi, uk_uns, vk);
-							ui_unsDotvk = scrnTensor.uiDotvk();
-							uk_unsDotvi = scrnTensor.ukDotvi();
-                            coulTensor.generateTensor(dx_local, Qi, Qk,
+							ui_unsDotvk = scrnTensorPolar.uiDotvk();
+							uk_unsDotvi = scrnTensorPolar.ukDotvi();
+                            coulTensorPolar.generateTensor(dx_local, Qi, Qk,
                                     ui_uns, vi, uk_uns, vk);
-                            ui_unsDotvk -= (1.0 - scaleP) * coulTensor.uiDotvk();
-                            uk_unsDotvi -= (1.0 - scaleP) * coulTensor.ukDotvi();
+                            ui_unsDotvk -= (1.0 - scaleP) * coulTensorPolar.uiDotvk();
+                            uk_unsDotvi -= (1.0 - scaleP) * coulTensorPolar.ukDotvi();
 						}
                         if (damped) {
-                            tholeTensor.generateTensor(dx_local, Qi, Qk,
+                            tholeTensorPolar.generateTensor(dx_local, Qi, Qk,
                                     ui_uns, vi, uk_uns, vk, pgamma, aiak);
-                            ui_unsDotvk -= scaleP * tholeTensor.uiDotvk();
-                            uk_unsDotvi -= scaleP * tholeTensor.ukDotvi();
+                            ui_unsDotvk -= scaleP * tholeTensorPolar.uiDotvk();
+                            uk_unsDotvi -= scaleP * tholeTensorPolar.ukDotvi();
                         }
 
 						if (titrHi && titrHk) {

@@ -117,7 +117,7 @@ public class ExtendedVariableTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
 //			{EsvTest.Deriv_OneEsv,	Interactions.All,	CellType.Aperiodic},
-			{EsvTest.Deriv_OneEsv,	Interactions.All,	CellType.Crystal},
+			{EsvTest.Deriv_OneEsv,	Interactions.OnePermOneInd,	CellType.Crystal},
 //			{EsvTest.Deriv_TwoEsvs,	Interactions.All,	CellType.Aperiodic},
 //			{EsvTest.Deriv_TwoEsvs,	Interactions.All,	CellType.Crystal},
 //			{EsvTest.Deriv_Meta,	Interactions.All,	CellType.Crystal},
