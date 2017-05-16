@@ -1518,6 +1518,28 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     public PointerByReference getIntegrator() {
         return openMMIntegrator;
     }
+    
+    public void setIntegrator(String integrator, double timeStep, double frictionCoeff, double temperature){
+        double dt = timeStep * 1.0e-3;
+        switch(integrator){
+            case "LANGEVIN":
+                openMMIntegrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
+                break;
+            case "BROWNIAN":
+                openMMIntegrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
+                break;
+            case "CUSTOM":
+                openMMIntegrator = OpenMM_CustomIntegrator_create(dt);
+                break;
+            case "COMPOUND":
+                openMMIntegrator = OpenMM_CompoundIntegrator_create();
+                break;
+            case "VERLET":
+            default:
+                openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
+        }
+        logger.info(String.format(" Created %s OpenMM Integrator", integrator));
+    }
 
     public PointerByReference getContext() {
         return context;

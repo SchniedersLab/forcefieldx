@@ -17,6 +17,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
+import java.util.Random;
+import ffx.potential.parsers.DYNFilter;
 
 
 //import static simtk.openmm.OpenMMAmoebaLibrary.*;
@@ -36,24 +38,55 @@ public class OpenMMMolecularDynamics {
     private static final Logger logger = Logger.getLogger(OpenMMMolecularDynamics.class.getName());
     private double temperature;
     private double saveInterval;
+    private double restartFrequency;
     private final List<AssemblyInfo> assemblies;
     private final MolecularAssembly molecularAssembly;
     private boolean saveSnapshotAsPDB = true;
     private long time;
     private int initialStep = 0;
     private int finalSteps;
+    private String integrator;
+    private double timeStep;
+    private double frictionCoeff;
+    private double lambda;
+    private PointerByReference context;
+    private Random random;
+    private int randomNumber;
+    private File restartFile = null;
+    private int numberOfVariables;
+    private double[] x;
+    private double[] v;
+    private double[] a;
+    private double[] aPrevious;
+    private double[] grad;
+    private double[] mass;
+    private DYNFilter dynFilter = null;
     
     
-    public OpenMMMolecularDynamics(MolecularAssembly assembly, OpenMMForceFieldEnergy openMMForceFieldEnergy, CompositeConfiguration properties, double temperature, double saveInterval){
+    public OpenMMMolecularDynamics(MolecularAssembly assembly, OpenMMForceFieldEnergy openMMForceFieldEnergy, CompositeConfiguration properties, double temperature, 
+            double saveInterval, double restartFrequency, String integrator, double timeStep, double frictionCoeff){
         
         this.openMMForceFieldEnergy = openMMForceFieldEnergy;
         this.temperature = temperature;
         this.saveInterval = saveInterval;
+        this.restartFrequency = restartFrequency;
         this.molecularAssembly = assembly;
+        this.integrator = integrator;
+        this.timeStep = timeStep;
+        this.frictionCoeff = frictionCoeff;
         assemblies = new ArrayList<>();
         assemblies.add(new AssemblyInfo(assembly));
         
         assemblies.get(0).props = properties;
+        random = new Random();
+        randomNumber = random.nextInt();
+        mass = openMMForceFieldEnergy.getMass();
+        numberOfVariables = openMMForceFieldEnergy.getNumberOfVariables();
+        x = new double [numberOfVariables];
+        v = new double [numberOfVariables];
+        a = new double [numberOfVariables];
+        aPrevious = new double [numberOfVariables];
+        grad = new double [numberOfVariables];
     }
     
     public void takeSteps(OpenMMForceFieldEnergy openMMForceFieldEnergy, int numSteps){
@@ -62,7 +95,7 @@ public class OpenMMMolecularDynamics {
         OpenMM_Integrator_step(integrator, numSteps);
         double took = (double) ((System.nanoTime() - time)* 1.0e-9);
         //logger.log(Level.INFO, "Total time elapsed : {0} (sec) per 100 steps", took);
-        logger.info(String.format("Total time elapsed : %1.3f (sec) per 100 steps", took));
+        //logger.info(String.format(" Total time elapsed : %1.3f (sec) per 100 steps", took));
         
     }
     
@@ -78,10 +111,10 @@ public class OpenMMMolecularDynamics {
         
         
         
-        PointerByReference context = openMMForceFieldEnergy.getContext();
+        context = openMMForceFieldEnergy.getContext();
         infoMask = OpenMM_State_Positions + OpenMM_State_Velocities + OpenMM_State_Forces + OpenMM_State_Energy;
         
-        PointerByReference state = OpenMM_Context_getState(context, infoMask, 0);
+        PointerByReference state = OpenMM_Context_getState(context, infoMask, 0);                
         
         //positionConvert = 1.0/OpenMM_NmPerAngstrom;
         //velocityConvert = 1.0/OpenMM_NmPerAngstrom;
@@ -92,8 +125,9 @@ public class OpenMMMolecularDynamics {
         potentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
         kineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
         totalEnergy = potentialEnergy + kineticEnergy;
+        
         if (initialStep == 0){
-            logger.log(Level.INFO, "Initial energy levels");
+            logger.log(Level.INFO, " Initial energy levels");
             logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
             logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
             logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", kineticEnergy, potentialEnergy, totalEnergy, temperature));
@@ -113,7 +147,13 @@ public class OpenMMMolecularDynamics {
         if(i != 0){
             openMMForceFieldEnergy.updateOpenMMPositions(state);
         }
-        if (saveInterval > 0 && i % saveInterval == 0 && i !=- 0){
+        /*
+        openMMForceFieldEnergy.getCoordinates(x);
+        openMMForceFieldEnergy.setVelocity(v);
+        openMMForceFieldEnergy.setAcceleration(a);
+        openMMForceFieldEnergy.setPreviousAcceleration(aPrevious);
+        */
+        if (saveInterval > 0 && i % saveInterval == 0 && i != 0){
             //logger.info(String.format(" Wrote PDB file to %s", openMMForceFieldEnergy.molecularAssembly.pdbFile.getName()));
             for (AssemblyInfo ai : assemblies) {
                     if (ai.archiveFile != null && !saveSnapshotAsPDB) {
@@ -131,6 +171,17 @@ public class OpenMMMolecularDynamics {
                     }
                 }
         }
+        
+          /**
+             * Write out restart files every saveRestartFileFrequency steps.
+             */
+            /*if (restartFrequency > 0 && i % restartFrequency == 0 && i != 0) {
+                if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
+                    logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
+                } else {
+                    logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+                }
+            }*/
     }
     
     public void start(int numSteps, int intervalSteps){
@@ -160,6 +211,16 @@ public class OpenMMMolecularDynamics {
                 ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
             }
         });
+        //openMMForceFieldEnergy.setIntegrator(integrator, timeStep, frictionCoeff, temperature);
+        
+        context = openMMForceFieldEnergy.getContext();
+        
+        OpenMM_Context_setVelocitiesToTemperature(context, temperature, randomNumber);
+        
+        String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
+        
+        this.restartFile = new File(firstFileName + ".dyn");
+
         //openMM_Update(openMMForceFieldEnergy, i);
         //int finalSteps = 0;
         //long time = System.nanoTime();
@@ -200,6 +261,10 @@ public class OpenMMMolecularDynamics {
         public MolecularAssembly getAssembly() {
             return mola;
         }
+    }
+    
+    public void setLambda(double newLambda){
+        lambda = newLambda;
     }
     
     
