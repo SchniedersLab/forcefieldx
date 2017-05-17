@@ -1445,10 +1445,20 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 if (Double.isNaN(gx) || Double.isInfinite(gx)
                         || Double.isNaN(gy) || Double.isInfinite(gy)
                         || Double.isNaN(gz) || Double.isInfinite(gz)) {
-                    String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                            a.toString(), gx, gy, gz);
+                    /*String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz);*/
+                    StringBuilder sb = new StringBuilder(format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz));
+                    double[] vals = new double[3];
+                    a.getVelocity(vals);
+                    sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getAcceleration(vals);
+                    sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getPreviousAcceleration(vals);
+                    sb.append(format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+
                     //logger.severe(message);
-                    throw new EnergyException(message);
+                    throw new EnergyException(sb.toString());
                 }
                 a.setXYZGradient(gx, gy, gz);
                 g[index++] = gx;
