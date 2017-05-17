@@ -122,6 +122,9 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
+import java.util.stream.Collectors;
+import org.apache.commons.collections.bidimap.DualHashBidiMap;
+import simtk.openmm.OpenMMAmoebaLibrary;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -145,6 +148,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private PointerByReference initialPosInNm;
     private PointerByReference openMMForces;
     private PointerByReference openMM_State_getPositions;
+    
+    private DualHashBidiMap<Atom,Integer> ffxToOpenMM;
 
     /**
      * OpenMMForceFieldEnergy constructor.
@@ -318,7 +323,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            OpenMM_System_addParticle(openMMSystem, atom.getMass());
+            int openMMindex = OpenMM_System_addParticle(openMMSystem, atom.getMass());
+            ffxToOpenMM.put(atom, openMMindex);
         }
         logger.log(Level.INFO, " Added particles ({0})", nAtoms);
     }
@@ -1275,6 +1281,43 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     @Override
     public double energy(double[] x, boolean verbose) {
+        
+        if (Boolean.parseBoolean(System.getProperty("turn-atoms-off"))) 
+        {
+            //Jacob's streaming and lambda expression example
+            //List<Atom> unusedAtomList = Arrays.stream(molecularAssembly.getAtomArray()).filter((Atom a) -> {return !a.getUse();}).collect(Collectors.toList());
+           
+            List<Atom> unusedAtomList = new ArrayList<>();
+            for (Atom atom : molecularAssembly.getAtomArray()) {
+                if (!atom.getUse()) {
+                    unusedAtomList.add(atom);
+                }
+            }
+            
+            for (Atom atom: unusedAtomList){
+                //void setParticleParameters(int particleIndex, int parentIndex, double sigma, double epsilon, double reductionFactor)
+                //public static native void OpenMM_AmoebaVdwForce_setParticleParameters(PointerByReference target, int particleIndex, int parentIndex, double sigma, double epsilon, double reductionFactor);
+                Integer openMMindex = ffxToOpenMM.get(atom);
+                
+                //set up empty buffers
+                //figure out the pointerByReference to the vdw object
+                
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_getParticleParameters(state, openMMindex, parentIndex, sigma, epsilon, reductionFactor);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setParticleParameters(, openMMindex, 0, 0, 0, 0);
+                
+                //Other terms should be set off too.
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaBondForce_setBondParameters(state, OpenMM_True, OpenMM_False, OpenMM_False, OpenMM_PsPerFs, OpenMM_PsPerFs);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaAngleForce_setAngleParameters(state, OpenMM_True, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_PsPerFs, OpenMM_PsPerFs);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(state, OpenMM_True, OpenMM_PsPerFs, OpenMM_PsPerFs, OpenMM_FsPerPs);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaInPlaneAngleForce_setAngleParameters(state, OpenMM_True, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_PsPerFs, OpenMM_PsPerFs);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_setPMEParameters(state, OpenMM_PsPerFs, OpenMM_True, OpenMM_True, OpenMM_True);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaOutOfPlaneBendForce_setOutOfPlaneBendParameters(state, OpenMM_True, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_PsPerFs);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaStretchBendForce_setStretchBendParameters(state, OpenMM_True, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_PsPerFs, OpenMM_PsPerFs, OpenMM_PsPerFs, OpenMM_PsPerFs, OpenMM_PsPerFs);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaTorsionTorsionForce_setTorsionTorsionParameters(state, OpenMM_True, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_True);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaPiTorsionForce_setPiTorsionParameters(state, OpenMM_True, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_False, OpenMM_PsPerFs);
+                //OpenMMAmoebaLibrary.OpenMM_AmoebaWcaDispersionForce_setParticleParameters(state, OpenMM_False, OpenMM_PsPerFs, OpenMM_PsPerFs);
+            }
+        }
 
         if (lambdaBondedTerms) {
             return 0.0;
