@@ -94,7 +94,6 @@ public class MultipoleTensor {
 
     private OPERATOR operator;
     private COORDINATES coordinates;
-    private final COORDINATES bufferCoordinates = COORDINATES.GLOBAL;
 
     private final int order;
     /**
@@ -112,11 +111,11 @@ public class MultipoleTensor {
      */
     private final double beta;
     /**
-     * Thole damping parameters.
+     * Thole damping parameter (= min(pti,ptk)).
      */
-    private double damp;
+    private double pgamma;
     /**
-     * 1/(alphai*alphak)^6 where alpha is polarizability.
+     * 1/(alphai^6*alphak^6) where alpha is polarizability.
      */
     private double aiak;
     /**
@@ -136,7 +135,7 @@ public class MultipoleTensor {
      */
     private double y;
     /**
-     * Yk - Yi.
+     * Zk - Zi.
      */
     private double z;
     private final int o1;
@@ -163,9 +162,9 @@ public class MultipoleTensor {
      *
      * @param operator The tensor operator.
      * @param order The order of the tensor.
-     * @param beta The screening parameter.
+     * @param aewald The screening parameter.
      */
-    public MultipoleTensor(OPERATOR operator, COORDINATES coordinates, int order, double beta) {
+    public MultipoleTensor(OPERATOR operator, COORDINATES coordinates, int order, double aewald) {
         assert (order > 0);
         o1 = order + 1;
         il = o1;
@@ -177,8 +176,8 @@ public class MultipoleTensor {
         this.order = order;
         this.operator = operator;
         this.coordinates = coordinates;
-        this.beta = beta;
-        if (operator == OPERATOR.SCREENED_COULOMB && beta == 0.0) {
+        this.beta = aewald;
+        if (operator == OPERATOR.SCREENED_COULOMB && aewald == 0.0) {
             // logger.warning("Tried beta of zero for screened coulomb tensor.");
             // Switch to the Coulomb operator.
             operator = OPERATOR.COULOMB;
@@ -197,8 +196,8 @@ public class MultipoleTensor {
 
         // Auxillary terms for screened Coulomb (Sagui et al. Eq. 2.28)
         screened = new double[o1];
-        double prefactor = 2.0 * beta / sqrtPI;
-        double twoBeta2 = -2.0 * beta * beta;
+        double prefactor = 2.0 * aewald / sqrtPI;
+        double twoBeta2 = -2.0 * aewald * aewald;
         for (int n = 0; n <= order; n++) {
             screened[n] = prefactor * pow(twoBeta2, n);
         }
@@ -300,6 +299,14 @@ public class MultipoleTensor {
     }
 
     /**
+     * A Thole-damped polarization tensor.
+     */
+    public MultipoleTensor(COORDINATES coordinates, double beta, double pgamma, double aiak) {
+        this(OPERATOR.THOLE_FIELD, coordinates, 4, beta);
+        setTholeDamping(pgamma, aiak);
+    }
+
+    /**
      * Set the Operator.
      *
      * @param operator
@@ -369,28 +376,34 @@ public class MultipoleTensor {
     /**
      * Set the Thole damping parameters.
      *
-     * @param damp
-     * @param aiak 1/(alphai*alphak)^6 where alpha is polarizability
+     * @param pgamma
+     * @param aiak 1/(alphai^6*alphak^6) where alpha is polarizability
      */
-    public void setTholeDamping(double damp, double aiak) {
-        this.damp = damp;   // == PME's pgamma
-        this.aiak = aiak;   // == 1/(alphai*alphak)^6 where alpha is polarizability
+    public void setTholeDamping(double pgamma, double aiak) {
+        this.pgamma = pgamma;
+        this.aiak = aiak;		// == 1/(alphai*alphak)^6 where alpha is polarizability
     }
 
-    public boolean applyDamping() {
-        double rdamp = R * aiak;
-        double test = -damp * rdamp * rdamp * rdamp;
-        if (test > -50.0) {
-            return true;
-        }
-        return false;
+    public boolean checkDampingCriterion() {
+        return checkDampingCriterion(R, pgamma, aiak);
     }
-    
+
+    public static boolean checkDampingCriterion(double[] dx_local, double pgamma, double aiak) {
+        return checkDampingCriterion(r(dx_local), pgamma, aiak);
+    }
+
+    public static boolean checkDampingCriterion(double R, double pgamma, double aiak) {
+        return (-pgamma * (R * aiak) * (R * aiak) * (R * aiak) > -50.0);
+    }
+
     /**
-     * Prepare this tensor with the given parameters; lambdaFunction necessary only
-     * for softcored interactions, dipoles needed only for polarizable interactions.
+     * Prepare this tensor with the given parameters; lambdaFunction necessary
+     * only for softcored interactions, dipoles needed only for polarizable
+     * interactions.
+     *
      * @param r interatomic distance
-     * @param lambdaFunction add additional atomic distance to account for softcoring
+     * @param lambdaFunction add additional atomic distance to account for
+     * softcoring
      * @param Qi multipole of first atom: (q,dx,dy,dz,Qxx,Qyy,Qzz,Qxy,Qxz,Qyz)
      * @param Qk multipole of second atom: (q,dx,dy,dz,Qxx,Qyy,Qzz,Qxy,Qxz,Qyz)
      * @param Ui dipole of first atom
@@ -405,29 +418,53 @@ public class MultipoleTensor {
         setDipoles(Ui, UiCR, Uk, UkCR);
         generateTensor();
     }
-    
+
     /**
-     * @see MultipoleTensor#generateTensor(double, double, double[],double[], double[], double[], double[], double[])
+     * @see MultipoleTensor#generateTensor(double, double, double[],double[],
+     * double[], double[], double[], double[])
      */
     public void generateTensor(double r[], double[] Qi, double[] Qk,
-            double Ui[], double UiCR[], double Uk[], double UkCR[]) {
+            double ui[], double uiCR[], double uk[], double ukCR[]) {
         setR(r);
         setMultipoles(Qi, Qk);
-        setDipoles(Ui, UiCR, Uk, UkCR);
+        setDipoles(ui, uiCR, uk, ukCR);
         generateTensor();
     }
-    
+
+    public void generateTensor(double[] r, double[] Qi, double[] Qk,
+            double[] ui, double[] uiCR, double[] uk, double[] ukCR, double damp, double aiak) {
+        setTholeDamping(damp, aiak);
+        setR(r);
+        setMultipoles(Qi, Qk);
+        setDipoles(ui, uiCR, uk, ukCR);
+        generateTensor();
+    }
+
     /**
-     * @see MultipoleTensor#generateTensor(double, double, double[], double[], double[], double[], double[], double[])
+     * @see MultipoleTensor#generateTensor
+     */
+    public void generateTensor(double[] r, double lambdaFunction, double[] Qi, double[] Qk,
+            double[] ui, double[] uiCR, double[] uk, double[] ukCR, double damp, double aiak) {
+        setTholeDamping(damp, aiak);
+        setR(r, lambdaFunction);
+        setMultipoles(Qi, Qk);
+        setDipoles(ui, uiCR, uk, ukCR);
+        generateTensor();
+    }
+
+    /**
+     * @see MultipoleTensor#generateTensor(double, double, double[], double[],
+     * double[], double[], double[], double[])
      */
     public void generateTensor(double r[], double[] Qi, double[] Qk) {
         setR(r);
         setMultipoles(Qi, Qk);
         generateTensor();
     }
-    
+
     /**
-     * @see MultipoleTensor#generateTensor(double, double, double[], double[], double[], double[], double[], double[])
+     * @see MultipoleTensor#generateTensor(double, double, double[], double[],
+     * double[], double[], double[], double[])
      */
     public void generateTensor(double r[], double lambdaFunction, double[] Qi, double[] Qk) {
         setR(r, lambdaFunction);
@@ -438,10 +475,7 @@ public class MultipoleTensor {
     void setR(double r[]) {
         switch (coordinates) {
             case QI:
-                x = 0.0;
-                y = 0.0;
-                z = r(r);
-                setQIRotationMatrix(r[0], r[1], r[2]);
+                setR_QI(r);
                 break;
             default:
             case GLOBAL:
@@ -449,9 +483,6 @@ public class MultipoleTensor {
                 y = r[1];
                 z = r[2];
                 r2 = (x * x + y * y + z * z);
-                if (r2 == 0.0) {
-                    throw new ArithmeticException();
-                }
                 R = sqrt(r2);
         }
     }
@@ -461,14 +492,12 @@ public class MultipoleTensor {
             case QI:
                 setR_QI(r, lambdaFunction);
                 break;
+            default:
             case GLOBAL:
                 x = r[0];
                 y = r[1];
                 z = r[2] + lambdaFunction;
                 r2 = (x * x + y * y + z * z);
-                if (r2 == 0.0) {
-                    throw new ArithmeticException();
-                }
                 R = sqrt(r2);
         }
     }
@@ -477,9 +506,6 @@ public class MultipoleTensor {
         x = 0.0;
         y = 0.0;
         r2 = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
-        if (r2 == 0.0) {
-            throw new ArithmeticException();
-        }
         z = sqrt(r2);
         R = z;
         setQIRotationMatrix(r[0], r[1], r[2]);
@@ -490,9 +516,6 @@ public class MultipoleTensor {
         y = 0.0;
         double zl = r[2] + lambdaFunction;
         r2 = r[0] * r[0] + r[1] * r[1] + zl * zl;
-        if (r2 == 0.0) {
-            throw new ArithmeticException();
-        }
         z = sqrt(r2);
         R = z;
         setQIRotationMatrix(r[0], r[1], r[2] + lambdaFunction);
@@ -539,8 +562,6 @@ public class MultipoleTensor {
         switch (op) {
             case SCREENED_COULOMB:
                 // Sagui et al. Eq. 2.22
-                // "beta" here == "aewald" from PME which is *NOT* "beta" from PME
-                // (What PME calls "beta" (now "lambdaBufferDist") is the lambda buffer, which stays out of this class.)
                 double betaR = beta * R;
                 double betaR2 = betaR * betaR;
                 double iBetaR2 = 1.0 / (2.0 * betaR2);
@@ -568,7 +589,7 @@ public class MultipoleTensor {
                  * Add the Thole damping terms: edamp = exp(-damp*u^3).
                  */
                 double u = R * aiak;
-                double u3 = damp * u * u * u;
+                double u3 = pgamma * u * u * u;
                 double u6 = u3 * u3;
                 double u9 = u6 * u3;
                 double expU3 = exp(-u3);
@@ -584,14 +605,10 @@ public class MultipoleTensor {
                 // == (1/r) * (1/r^3) * (1/r^5) * (1/r^7) * ...
                 ir = 1.0 / R;
                 ir2 = ir * ir;
-                StringBuilder sb = new StringBuilder();
-                sb.append(format("Coulomb shit for R,ir = %g,%g: 000(j),001(j),...\n", R, ir));
                 for (int n = 0; n < o1; n++) {
                     T000[n] = T000j[n] * ir;
-                    sb.append(format("     %g (%g)\n", T000[n], T000j[n]));
                     ir *= ir2;
                 }
-//                logger.info(sb.toString());
         }
     }
     private static final double threeFifths = 3.0 / 5.0;
@@ -715,33 +732,22 @@ public class MultipoleTensor {
     }
 
     /**
-     * The index is based on the idea of filling tetrahedron.
-     * <p>
-     * 1/r has an index of 0
-     * <br>
-     * derivatives of x are first; indeces from 1..o for d/dx..(d/dx)^o
-     * <br>
-     * derivatives of x and y are second; base triangle of size (o+1)(o+2)/2
-     * <br>
-     * derivatives of x, y and z are last; total size (o+1)*(o+2)*(o+3)/6
-     * <br>
-     * <p>
-     * This function is useful to set up masking constants:
-     * <br>
-     * static int Tlmn = ti(l,m,n,order)
-     * <br>
-     * For example the (d/dy)^2 (1/R) storage location: <br> static int T020 =
-     * ti(0,2,0,order)
-     * <p>
-     *
-     * @param dx int The number of d/dx operations.
-     * @param dy int The number of d/dy operations.
-     * @param dz int The number of d/dz operations.
-     *
-     * @return int in the range (0..binomial(order + 3, 3) - 1)
+     * @see {@code MultipoleTensor::ti(intdx, int dy, int dz)}
      */
     int ti(int dx, int dy, int dz) {
         return ti(dx, dy, dz, order);
+    }
+
+    void noStorageRecursion(double[] r, double tensor[]) {
+        switch (coordinates) {
+            default:
+            case QI:
+                noStorageRecursion_QI(r, tensor);
+                break;
+            case GLOBAL:
+                noStorageRecursion_Global(r, tensor);
+                break;
+        }
     }
 
     /**
@@ -755,7 +761,7 @@ public class MultipoleTensor {
      * @param r double[] vector between two sites.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
      */
-    void noStorageRecursion(double r[], double tensor[]) {
+    private void noStorageRecursion_Global(double r[], double tensor[]) {
         setR(r);
         source(T000);
         // 1/r
@@ -791,7 +797,7 @@ public class MultipoleTensor {
      * @param r double[] vector between two sites. r[0] and r[1] must equal 0.0.
      * @param tensor double[] length must be at least binomial(order + 3, 3).
      */
-    void noStorageRecursionQI(double r[], double tensor[]) {
+    private void noStorageRecursion_QI(double r[], double tensor[]) {
         assert (r[0] == 0.0 && r[1] == 0.0);
         setR_QI(r);
         source(T000);
@@ -933,6 +939,21 @@ public class MultipoleTensor {
      * @since 1.0
      */
     void recursion(final double r[], final double tensor[]) {
+        switch (coordinates) {
+            default:
+            case GLOBAL:
+                recursion_Global(r, tensor);
+                break;
+            case QI:
+                recursion_QI(r, tensor);
+                break;
+        }
+    }
+
+    /**
+     * @see {@code MultipoleTensor#recursion(double[],double[])
+     */
+    private void recursion_Global(final double r[], final double tensor[]) {
         setR(r);
         source(work);
         tensor[0] = work[0];
@@ -1032,29 +1053,9 @@ public class MultipoleTensor {
     }
 
     /**
-     * This function is a driver to collect elements of the Cartesian multipole
-     * tensor for Quasi-Internal coordinate evaluation.
-     *
-     * Thus, we assume r[0] and r[1] (i.e. dx and dy) are zero.
-     *
-     * Collecting all tensors scales better than O(order^4).
-     * <p>
-     * For a multipole expansion truncated at quadrupole order, for example, up
-     * to order 5 is needed for energy gradients. The number of terms this
-     * requires is binomial(5 + 3, 3) or 8! / (5! * 3!), which is 56.
-     * <p>
-     * The packing of the tensor elements for order = 1<br> tensor[0] = 1/|r|
-     * <br>
-     * tensor[1] = -x/|r|^3 <br>
-     * tensor[2] = -y/|r|^3 <br>
-     * tensor[3] = -z/|r|^3 <br>
-     * <p>
-     *
-     * @param r double[] vector between two sites (assumes r[0] and r[1] = 0.0).
-     * @param tensor double[] length must be at least binomial(order + 3, 3).
-     * @since 1.0
+     * @see {@code MultipoleTensor#recursion(double[],double[])
      */
-    void recursionQI(final double r[], final double tensor[]) {
+    private void recursion_QI(final double r[], final double tensor[]) {
         setR_QI(r);
         assert (x == 0.0 && y == 0.0);
         source(work);
@@ -1746,7 +1747,7 @@ public class MultipoleTensor {
         double T[] = new double[tensorCount(5)];
         assert (r[0] == 0.0 && r[1] == 0.0);
 
-        recursionQI(r, T);
+        recursion(r, T);
         setMultipoleI(Qi);
         setMultipoleK(Qk);
 
@@ -2429,6 +2430,19 @@ public class MultipoleTensor {
     }
 
     /**
+     * Just the energy portion of multipoleEnergyQI().
+     */
+    public double mpoleIFieldDotKqi() {
+        multipoleIFieldQI();
+        return dotMultipoleK();
+    }
+
+    public double mpoleKFieldDotIqi() {
+        multipoleKFieldQI();
+        return dotMultipoleI();
+    }
+
+    /**
      * Re-use Qi and Qk from a previous call.
      *
      * @param Fi Output force on i.
@@ -2459,38 +2473,19 @@ public class MultipoleTensor {
         Fi[1] = -dotMultipoleK();
         multipoleIdZQI();
         Fi[2] = -dotMultipoleK();
-        
-        if (bufferCoordinates == COORDINATES.QI) {
-            dEdZ = -Fi[2];
-            if (order > 5) {
-                multipoleIdZ2QI();
-                d2EdZ2 = dotMultipoleK();
-            }
+
+        dEdZ = -Fi[2];
+        if (order > 5) {
+            multipoleIdZ2QI();
+            d2EdZ2 = dotMultipoleK();
         }
-        
+
         // Rotate the force and torques from the QI frame into the Global frame.
         qiToGlobal(Fi, Ti, Tk);
 
-        if (bufferCoordinates == COORDINATES.GLOBAL) {
-            // dEdL = dEdF = -Fi[2]
-            dEdZ = -Fi[2];
-            if (order > 5) {
-                multipoleIdZ2QI();
-                d2EdZ2 = dotMultipoleK();
-            }
-        }
-
         return energy;
     }
-    
-    /**
-     * It is possible to construct the buffer in the QI frame, but one must first
-     * implement the appropriate chain term associated therewith. (It's like -2*alpha.)
-     */
-//    private void setBufferCoordinates(COORDINATES coord) {
-//        this.bufferCoordinates = coord;
-//    }
-    
+
     public double getdEdZbuff() {
         return dEdZ;
     }
@@ -2561,6 +2556,54 @@ public class MultipoleTensor {
         return energy;
     }
 
+    /**
+     * inducedIField_qi + inducedIFieldCR_qi -> dotMultipoleK
+     */
+    public double indiFieldsDotK(double scaleDipoleCR, double scaleDipole) {
+        if (coordinates != COORDINATES.QI) {
+            throw new UnsupportedOperationException();
+        }
+        return qk * -(uzi * scaleDipole + pzi * scaleDipoleCR) * R001
+                + dxk * -(uxi * scaleDipole + pxi * scaleDipoleCR) * R200
+                + dyk * -(uyi * scaleDipole + pyi * scaleDipoleCR) * R020
+                + dzk * -(uzi * scaleDipole + pzi * scaleDipoleCR) * R002
+                + qxxk * -(uzi * scaleDipole + pzi * scaleDipoleCR) * R201
+                + qyyk * -(uzi * scaleDipole + pzi * scaleDipoleCR) * R021
+                + qzzk * -(uzi * scaleDipole + pzi * scaleDipoleCR) * R003
+                + qxzk * -(uxi * scaleDipole + pxi * scaleDipoleCR) * R201
+                + qyzk * -(uyi * scaleDipole + pyi * scaleDipoleCR) * R021;
+    }
+
+    /**
+     * inducedKField_qi + inducedKFieldCR_qi -> dotMultipoleI
+     */
+    public double indkFieldsDotI(double scaleDipoleCR, double scaleDipole) {
+        if (coordinates != COORDINATES.QI) {
+            throw new UnsupportedOperationException();
+        }
+        return qi * (uzk * scaleDipole + pzk * scaleDipoleCR) * R001
+                - dxi * (uxk * scaleDipole + pxk * scaleDipoleCR) * R200
+                - dyi * (uyk * scaleDipole + pyk * scaleDipoleCR) * R020
+                - dzi * (uzk * scaleDipole + pzk * scaleDipoleCR) * R002
+                + qxxi * (uzk * scaleDipole + pzk * scaleDipoleCR) * R201
+                + qyyi * (uzk * scaleDipole + pzk * scaleDipoleCR) * R021
+                + qzzi * (uzk * scaleDipole + pzk * scaleDipoleCR) * R003
+                + qxzi * (uxk * scaleDipole + pxk * scaleDipoleCR) * R201
+                + qyzi * (uyk * scaleDipole + pyk * scaleDipoleCR) * R021;
+    }
+
+	public double uiDotvk() {
+		return dxi * -pxk * R200
+			   + dyi * -pyk * R020
+			   + dzi * -pzk * R002;
+	}
+
+	public double ukDotvi() {
+		return dxk * -pxi * R200
+			   + dyk * -pyi * R020
+			   + dzk * -pzi * R002;
+	}
+
     private double polarizationEnergyQI(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
 
@@ -2596,12 +2639,12 @@ public class MultipoleTensor {
         scaleInduced(scaleField, scaleEnergy);
 
         // Find the potential, field, etc at k due to (ind + indCR) at i.
-        inducedIFieldCRQI();
+        inducedIFieldForTorqueQI();
         // Torque on multipole k.
         multipoleKTorque(Tk);
 
         // Find the potential, field, etc at i due to (ind + indCR) at k.
-        inducedKFieldCRQI();
+        inducedKFieldForTorqueQI();
         // Torque on multipole i.
         multipoleITorque(Ti);
 
@@ -4013,6 +4056,32 @@ public class MultipoleTensor {
     }
 
     private void inducedIFieldCRQI() {
+        E000 = -pzi * R001;
+        E100 = -pxi * R200;
+        E010 = -pyi * R020;
+        E001 = -pzi * R002;
+        E200 = -pzi * R201;
+        E020 = -pzi * R021;
+        E002 = -pzi * R003;
+        E110 = 0.0;
+        E101 = -pxi * R201;
+        E011 = -pyi * R021;
+    }
+
+    private void inducedKFieldCRQI() {
+        E000 = pzk * R001;
+        E100 = pxk * R200;
+        E010 = pyk * R020;
+        E001 = pzk * R002;
+        E200 = pzk * R201;
+        E020 = pzk * R021;
+        E002 = pzk * R003;
+        E110 = 0.0;
+        E101 = pxk * R201;
+        E011 = pyk * R021;
+    }
+
+    private void inducedIFieldForTorqueQI() {
         E000 = -szi * R001;
         E100 = -sxi * R200;
         E010 = -syi * R020;
@@ -4025,7 +4094,7 @@ public class MultipoleTensor {
         E011 = -syi * R021;
     }
 
-    private void inducedKFieldCRQI() {
+    private void inducedKFieldForTorqueQI() {
         E000 = szk * R001;
         E100 = sxk * R200;
         E010 = syk * R020;
@@ -4182,6 +4251,7 @@ public class MultipoleTensor {
         return total;
     }
 
+//	private double dotMultipoleI() {
     private void validate(boolean print) {
         double[] qiVals = new double[]{qi, dxi, dyi, dzi, qxxi, qyyi, qzzi, qxyi, qxzi, qyzi};
         double[] qkVals = new double[]{qk, dxk, dyk, dzk, qxxk, qyyk, qzzk, qxyk, qxzk, qyzk};
@@ -4215,11 +4285,11 @@ public class MultipoleTensor {
         if (args == null || args.length < 4) {
             logger.info(" Usage: java ffx.numerics.MultipoleTensor order dx dy dz");
         }
-        
+
         boolean testTimings = false;
         boolean testValues = true;
         boolean testDeriv = true;
-        
+
         int order;
         double dx, dy, dz;
         try {
@@ -4252,7 +4322,7 @@ public class MultipoleTensor {
         double[] Qk = new double[]{0.11,
             0.21, 0.31, 0.41,
             -0.51, -0.61, 1.12, 0.70, 0.81, 0.91};
-        
+
         if (testTimings) {
             logger.info(format(" Timings "));
             for (int j = 0; j < cycles; j++) {
@@ -4283,7 +4353,7 @@ public class MultipoleTensor {
                     r[0] = Math.random();
                     r[1] = Math.random();
                     r[2] = Math.random();
-                    multipoleTensor.setR_QI(r);
+                    multipoleTensor.setR(r);
                     multipoleTensor.order6QI();
                 }
                 timeQIT += System.nanoTime();
@@ -4293,7 +4363,7 @@ public class MultipoleTensor {
                     r[0] = 0.0;
                     r[1] = 0.0;
                     r[2] = Math.random();
-                    multipoleTensor.setR_QI(r);
+                    multipoleTensor.setR(r);
                     multipoleTensor.setMultipoles(Qi, Qk);
                     double e = multipoleTensor.multipoleEnergy(Fi, Ti, Tk);
                 }
@@ -4303,7 +4373,7 @@ public class MultipoleTensor {
                         timeGlobalT * 1.0e-9, timeGlobal * 1.0e-9, timeQIT * 1.0e-9, timeQI * 1.0e-9));
             }
         }
-        
+
         if (testValues) {
             int iters = 10;
             logger.info(format(" Values "));
@@ -4329,14 +4399,14 @@ public class MultipoleTensor {
                         eGlob, deGlob, eQI, deQI));
             }
         }
-        
+
         if (testDeriv) {
             r[0] = Math.random();
             r[1] = Math.random();
             r[2] = Math.random();
             double buffer = 4.0;
             double step = 1e-6;
-            
+
             logger.info(" Testing Global Deriv: ");
             MultipoleTensor tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, COORDINATES.GLOBAL, order, 1e-6);
             tensor.setR(r, buffer);
@@ -4344,18 +4414,18 @@ public class MultipoleTensor {
             tensor.order5QI();
             double eGB = tensor.multipoleEnergy(Fi, Ti, Tk);
             double deGB = tensor.getdEdZbuff();
-            
+
             tensor.setR(r, buffer + step);
             tensor.order5QI();
             double eGBplus = tensor.multipoleEnergy(Fi, Ti, Tk);
             tensor.setR(r, buffer - step);
             tensor.order5QI();
             double eGBminus = tensor.multipoleEnergy(Fi, Ti, Tk);
-            
-            double GBnumeric = (eGBplus - eGBminus) / (2*step);
+
+            double GBnumeric = (eGBplus - eGBminus) / (2 * step);
             double GBanalytic = deGB;
             logger.info(format("\n Numeric:  %10.8f\n Analytic: %10.8f", GBnumeric, GBanalytic));
-            
+
             logger.info(" Testing QI Deriv: ");
             tensor = new MultipoleTensor(OPERATOR.SCREENED_COULOMB, COORDINATES.QI, order, 1e-6);
             tensor.setR(r, buffer);
@@ -4363,18 +4433,18 @@ public class MultipoleTensor {
             tensor.order5QI();
             double eQI = tensor.multipoleEnergy(Fi, Ti, Tk);
             double deQI = tensor.getdEdZbuff();
-            
+
             tensor.setR(r, buffer + step);
             tensor.setMultipoles(Qi, Qk);
             tensor.order5QI();
             double eQIplus = tensor.multipoleEnergy(Fi, Ti, Tk);
-            
+
             tensor.setR(r, buffer - step);
             tensor.setMultipoles(Qi, Qk);
             tensor.order5QI();
             double eQIminus = tensor.multipoleEnergy(Fi, Ti, Tk);
-            
-            double QInumeric = (eQIplus - eQIminus) / (2*step);
+
+            double QInumeric = (eQIplus - eQIminus) / (2 * step);
             double QIanalytic = deQI;
             logger.info(format("\n Numeric:  %10.8f\n Analytic: %10.8f", QInumeric, QIanalytic));
         }
@@ -4607,7 +4677,13 @@ public class MultipoleTensor {
     private void setQIRotationMatrix(double dx, double dy, double dz) {
 
         double zAxis[] = {dx, dy, dz};
-        double xAxis[] = {dx + 1.0, dy, dz};
+        double xAxis[] = {dx, dy, dz};
+        if (dy != 0.0 || dz != 0.0) {
+            xAxis[0] += 1.0;
+        } else {
+            xAxis[1] += 1.0;
+        }
+
         norm(zAxis, zAxis);
         ir02 = zAxis[0];
         ir12 = zAxis[1];
@@ -4691,7 +4767,7 @@ public class MultipoleTensor {
         pzk = UkCR[2];
     }
 
-    private void scaleInduced(double scaleField, double scaleEnergy) {
+    public void scaleInduced(double scaleField, double scaleEnergy) {
         uxi *= scaleEnergy;
         uyi *= scaleEnergy;
         uzi *= scaleEnergy;

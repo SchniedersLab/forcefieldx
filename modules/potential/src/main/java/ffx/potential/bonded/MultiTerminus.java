@@ -47,31 +47,44 @@ import javax.vecmath.Color3f;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
+
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHydrogenAtom;
 import static ffx.potential.bonded.BondedUtils.intxyz;
+
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.Residue.origAtEnd;
+
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.utils.PotentialsUtils;
+
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 import static ffx.utilities.HashCodeUtil.hash;
+
 import java.util.logging.Level;
+
 import static ffx.utilities.HashCodeUtil.hash;
 import static ffx.utilities.HashCodeUtil.hash;
+
 import java.util.concurrent.ThreadLocalRandom;
+
 import javax.swing.tree.MutableTreeNode;
+
 import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import ffx.potential.extended.TitrationUtils.TitrationType;
 
 /**
  * The MultiResidue class allows switching between residues for uses such as
@@ -167,7 +180,7 @@ public class MultiTerminus extends Residue {
                 bond.setBondType(newType);
                 if (newType.distance < 0.9*oldType.distance || newType.distance > 1.1*oldType.distance) {
                     logger.info(String.format(" Large bond distance change: %s %s,  %.2f --> %.2f ", 
-                            bond.atoms[0].toShortString(), bond.atoms[1].toShortString(),
+                            bond.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), bond.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
                             oldType.distance, newType.distance));
                 }
             }
@@ -178,9 +191,9 @@ public class MultiTerminus extends Residue {
             AngleType oldType = angle.angleType;
             if (DEBUG) {
                 logger.info(String.format(" %d ( %s %s %s ) ( %d %d %d )", i,
-                        angle.atoms[0].toShortString(),
-                        angle.atoms[1].toShortString(),
-                        angle.atoms[2].toShortString(),
+                        angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name),
+                        angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name),
+                        angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name),
                         angle.atoms[0].getAtomType().atomClass,
                         angle.atoms[1].getAtomType().atomClass,
                         angle.atoms[2].getAtomType().atomClass));
@@ -192,7 +205,7 @@ public class MultiTerminus extends Residue {
                 angle.setAngleType(dummy.angleType);
                 if (newType.angle[0] < 0.9*oldType.angle[0] || newType.angle[0] > 1.1*oldType.angle[0]) {
                     logger.info(String.format(" Large angle change: %s %s %s,  %.2f --> %.2f ", 
-                            angle.atoms[0].toShortString(), angle.atoms[1].toShortString(), angle.atoms[2].toShortString(), 
+                            angle.atoms[0].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[1].describe(Atom.Descriptions.XyzIndex_Name), angle.atoms[2].describe(Atom.Descriptions.XyzIndex_Name), 
                             oldType.angle[0], newType.angle[0]));
                 }
             }
@@ -224,7 +237,7 @@ public class MultiTerminus extends Residue {
      * Changes the charge state of this MultiTerminus.
      * Keep existing Atom objects but updates types, bonded terms, and builds new proton if necessary.
      */
-    public void titrateTerminus_v1(double temperature) {
+    public TitrationType titrateTerminus_v1(double temperature) {
         logger.info(String.format(" Titrating residue %s (currently %d).", this.toString(), (isCharged ? 1 : 0)));
 //        StringBuilder sb = new StringBuilder();
 //        sb.append(" Contents of children: ");
@@ -235,6 +248,7 @@ public class MultiTerminus extends Residue {
         /**
          * Get references to the backbone atoms.
          */
+        TitrationType titrationType = (isCharged) ? TitrationType.DEPROT : TitrationType.PROT;
         Atom N = getBBAtom("N");
         Atom CA = getBBAtom("CA");
         Atom C = getBBAtom("C");
@@ -323,8 +337,8 @@ public class MultiTerminus extends Residue {
 //                        this.getAtomNode().contains(H3) != null, H3.getParent() == this.getAtomNode(),
 //                        this.getBondList().contains(bondH3)));
 //                logger.info(String.format(" Bonds from H3: %s %s",
-//                        H3.getBonds().get(0).get1_2(H3).toShortString(), 
-//                        H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).toShortString()));
+//                        H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.INDEX_NAME), 
+//                        H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).describe(Atom.Descriptions.INDEX_NAME)));
             }
         } else if (end == END.CTERM) {
             if (isCharged) {
@@ -409,6 +423,7 @@ public class MultiTerminus extends Residue {
         if (DEBUG) {
             printBonds();
         }
+        return titrationType;
     }
     
     private void printBonds() {
@@ -507,8 +522,8 @@ public class MultiTerminus extends Residue {
                         this.getAtomNode().contains(H3) != null, H3.getParent() == this.getAtomNode(),
                         this.getBondList().contains(bondH3)));
                 logger.info(String.format(" Bonds from H3: %s %s",
-                        H3.getBonds().get(0).get1_2(H3).toShortString(), 
-                        H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).toShortString()));
+                        H3.getBonds().get(0).get1_2(H3).describe(Atom.Descriptions.XyzIndex_Name), 
+                        H3.getBonds().get(0).get1_2(H3).getBonds().get(0).get1_2(H3.getBonds().get(0).get1_2(H3)).describe(Atom.Descriptions.XyzIndex_Name)));
             }
         } else if (end == END.CTERM) {
             if (isCharged) {

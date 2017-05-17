@@ -323,7 +323,7 @@ class MultiTopTimer extends Script {
         }
 
         if (options.qi) {
-            System.setProperty("pme-qi","true");
+            System.setProperty("pme.qi","true");
             System.setProperty("no-ligand-condensed-scf","false");
             System.setProperty("ligand-vapor-elec","false");
             System.setProperty("polarization","NONE");

@@ -79,6 +79,8 @@ import static ffx.xray.RefinementMinimize.RefinementMode.OCCUPANCIES;
 
 import org.apache.commons.io.FilenameUtils;
 
+import ffx.potential.bonded.Atom.Descriptions;
+
 /**
  * Combine the X-ray target and chemical potential energy using the
  * {@link Potential} interface
@@ -277,7 +279,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                             }
                             if (a.getAnisou(null) == null) {
                                 if (diffractionData.isAddAnisou()) {
-                                    logger.info(format(" Adding ANISOU to %s.", a.toShortString()));
+                                    logger.info(format(" Adding ANISOU to %s.", a.describe(Descriptions.Resnum_Name)));
                                     double anisou[] = new double[6];
                                     double u = b2u(a.getTempFactor());
                                     anisou[0] = anisou[1] = anisou[2] = u;

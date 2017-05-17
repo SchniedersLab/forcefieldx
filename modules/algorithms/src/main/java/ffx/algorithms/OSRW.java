@@ -51,6 +51,7 @@ import java.io.Writer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -221,6 +222,9 @@ public class OSRW extends AbstractOSRW {
 
     }
 
+	/**
+	 * Called by Molecular Dynamics.
+	 */
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
@@ -558,7 +562,7 @@ public class OSRW extends AbstractOSRW {
                 lambdaZeroFilter.setListMode(true);
             }
             lambdaZeroFilter.clearListOutput();
-            lambdaZeroFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d,", lambda, totalCounts)));
+            lambdaZeroFilter.writeFileWithHeader(lambdaFile, format("%.4f,%d,", lambda, totalCounts));
             traversalInHand = lambdaZeroFilter.getListOutput();
             traversalSnapshotTarget = 0;
         } else if (((lambda > 0.9 && traversalInHand.isEmpty()) || (lambda > heldTraversalLambda + 0.025 && !traversalInHand.isEmpty()))
@@ -568,7 +572,7 @@ public class OSRW extends AbstractOSRW {
                 lambdaOneFilter.setListMode(true);
             }
             lambdaOneFilter.clearListOutput();
-            lambdaOneFilter.writeFileWithHeader(lambdaFile, new StringBuilder(String.format("%.4f,%d,", lambda, totalCounts)));
+            lambdaOneFilter.writeFileWithHeader(lambdaFile, format("%.4f,%d,", lambda, totalCounts));
             traversalInHand = lambdaOneFilter.getListOutput();
             traversalSnapshotTarget = 1;
         }

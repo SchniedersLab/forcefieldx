@@ -256,9 +256,9 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         }
         double thole = (polarizeType1.thole + polarizeType2.thole) / 2.0;
         double polarizability = (polarizeType1.polarizability + polarizeType2.polarizability) / 2.0;
-        return new PolarizeType(atomType, thole, polarizability, polarizationGroup);
+        return new PolarizeType(atomType, polarizability, thole, polarizationGroup);
     }
-
+	
     public static void assignPolarizationGroups(Atom atoms[], int ip11[][], int ip12[][], int ip13[][]) {
         /**
          * Find directly connected group members for each atom.

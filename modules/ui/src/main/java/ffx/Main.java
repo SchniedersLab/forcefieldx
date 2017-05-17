@@ -70,6 +70,8 @@ import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.OSXAdapter;
 
+import static ffx.potential.extended.ExtUtils.prop;
+
 /**
  * The Main class is the entry point to the graphical user interface version of
  * Force Field X.
@@ -83,6 +85,7 @@ public final class Main extends JFrame {
     private static final Logger logger = Logger.getLogger(Main.class.getName());
     private static Level level;
     private static LogHandler logHandler;
+	private static final boolean noHeader = prop("sys.noHeader", false);
 
     /**
      * Process any "-D" command line flags.
@@ -309,22 +312,7 @@ public final class Main extends JFrame {
          */
         startParallelJava(args);
 
-        /**
-         * Run the pKa input GUI if requested. Halts execution until GUI exits.
-         */
-        /**
-         * if (System.getProperty("pKaCalc") != null) { if
-         * (System.getProperty("pKaCalc").equals("true")) { ffx.pka.pKaRun
-         * runnable = new ffx.pka.pKaRun(); Thread t = new Thread(runnable,"pKa
-         * Thread"); t.start(); t.join(); final int NUM_PKA_ARGS = 25; String[]
-         * newArgs = new String[NUM_PKA_ARGS]; int currentArg = 0; for (int i=0;
-         * i < newArgs.length; i++) { newArgs[currentArg] = runnable.getArg(i);
-         * if (runnable.getArg(i) == null) { String temp = runnable.getArg(i -
-         * 1); if (temp.startsWith("-s") || temp.startsWith("-f")) {
-         * currentArg--; } } else { currentArg++; } } args = newArgs; } }
-         */
         // Print the header.
-        // Moved this here so I could see the args being supplied by pKaRun.
         header(args);
 
         /**

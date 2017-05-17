@@ -37,13 +37,15 @@
  */
 package ffx.ui;
 
-import ffx.utilities.LoggerSevereError;
 import java.awt.GraphicsEnvironment;
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+
+import ffx.utilities.LoggerSevereError;
+
+import static ffx.potential.extended.ExtUtils.prop;
 
 /**
  * The default ConsoleHanlder publishes logging to System.err. This class
@@ -57,18 +59,9 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 public class LogHandler extends Handler {
 
     private static final boolean headless = GraphicsEnvironment.isHeadless();
-    private static final boolean tryCatchSevere;
+    private static final boolean tryCatchSevere = prop("tryCatchSevere", false);
     private MainPanel mainPanel = null;
     private boolean fatal = false;
-
-    static {
-        String tryCatchSevereStr = System.getProperty("tryCatchSevere");
-        if (tryCatchSevereStr != null) {
-            tryCatchSevere = Boolean.parseBoolean(tryCatchSevereStr);
-        } else {
-            tryCatchSevere = false;
-        }
-    }
 
     /**
      * A reference to the Force Field X MainPanel container to shut down if we

@@ -40,8 +40,9 @@ package ffx.potential.nonbonded;
 import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.MultipoleTensor;
 import ffx.potential.bonded.Atom;
+
+import static ffx.potential.extended.ExtUtils.formatArray;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -55,127 +56,91 @@ import ffx.potential.bonded.Atom;
 public abstract class ParticleMeshEwald {
 
     protected final Logger logger = Logger.getLogger(this.getClass().getName());
-    /**
-     * Unit cell and spacegroup information.
-     */
-    protected Crystal crystal;
-    /**
-     * Number of symmetry operators.
-     */
-    protected int nSymm;
-    /**
-     * An ordered array of atoms in the system.
-     */
-    protected Atom atoms[];
-    /**
-     * The number of atoms in the system.
-     */
-    protected int nAtoms;
-
-    /**
-     * Axis defining atoms.
-     */
-    protected int axisAtom[][];
-
-    /**
-     * Polarization covalent lists
-     */
-    protected int ip11[][];
-    protected int ip12[][];
-    protected int ip13[][];
 
     /**
      * Polarization modes include "direct", in which induced dipoles do not
      * interact, and "mutual" that converges the self-consistent field to a
      * tolerance specified by the "polar-eps" keyword.
      */
-    public enum Polarization {
-
-        MUTUAL, DIRECT, NONE
-    }
-
-    protected Polarization polarization;
-
-    public enum ELEC_FORM {
-
-        PAM, FIXED_CHARGE
-    }
-
-    protected enum LambdaMode {
-        OFF, CONDENSED, CONDENSED_NO_LIGAND, VAPOR
-    }
-    protected LambdaMode lambdaMode = LambdaMode.OFF;
+    public Polarization polarization;
 
     /**
-     * Optionally predict induced dipoles prior to the SCF calculation.
+     * Dimensions of [nsymm][xyz][nAtoms].
      */
-    protected ScfPredictor scfPredictor = null;
-    /**
-     * Dimensions of [nsymm][3][nAtoms].
-     */
-    protected double coordinates[][][];
+    public double coordinates[][][];
     /**
      * Neighbor lists, including atoms beyond the real space cutoff.
      * [nsymm][nAtoms][nAllNeighbors]
      */
-    protected int neighborLists[][][];
+    public int neighborLists[][][];
 
     /**
      * Dimensions of [nsymm][nAtoms][10]
      */
-    protected double globalMultipole[][][];
-    protected double globalMultipoleDot[][][];
+    public double globalMultipole[][][];
 
     /**
      * Dimensions of [nsymm][nAtoms][3]
      */
-    protected double inducedDipole[][][];
-    protected double inducedDipoleCR[][][];
+    public double inducedDipole[][][];
+    public double inducedDipoleCR[][][];
 
-    /**
-     * Number of unique tensors for given order.
-     */
-    protected static final int tensorCount = MultipoleTensor.tensorCount(3);
-    protected static final double oneThird = 1.0 / 3.0;
-
-    /**
-     * PME real space cut-off.
-     */
-    protected double off;
-
-    /**
-     * Ewald coefficient.
-     */
-    protected double aewald;
-
-    /**
-     * SCF convergence criteria.
-     */
-    protected double poleps;
-
-    /**
-     * Reciprocal Space
-     */
-    protected ReciprocalSpace reciprocalSpace;
-
-    public class EnergyForceTorque {
-
-        public double energy;
-        public double[] permFi = new double[3];
-        public double[] permTi = new double[3];
-        public double[] permFk = new double[3];
-        public double[] permTk = new double[3];
-        public double dPermdZ;
+    public enum Polarization {
+        MUTUAL, DIRECT, NONE
     }
 
-    public class LambdaFactors {
+    public void setPolarization(Polarization set) {
+        this.polarization = set;
+    }
 
-        public double sc1 = 0.0;
-        public double dsc1dL = 0.0;
-        public double d2sc1dL2 = 0.0;
-        public double sc2 = 1.0;
-        public double dsc2dL = 0.0;
-        public double d2sc2dL2 = 0.0;
+    public enum ELEC_FORM {
+        PAM, FIXED_CHARGE
+    }
+
+    public enum LambdaMode {
+        OFF, CONDENSED, CONDENSED_NO_LIGAND, VAPOR
+    }
+
+    public enum SCFAlgorithm {
+        SOR, CG
+    }
+
+    public enum SCFPredictor {
+        NONE, LS, POLY, ASPC
+    }
+
+    public abstract double getTotalMultipoleEnergy();
+
+    public abstract double getPermanentEnergy();
+
+    public abstract double getPermRealEnergy();
+
+    public abstract double getPermSelfEnergy();
+
+    public abstract double getPermRecipEnergy();
+
+    public abstract double getPolarizationEnergy();
+
+    public abstract double getIndRealEnergy();
+
+    public abstract double getIndSelfEnergy();
+
+    public abstract double getIndRecipEnergy();
+
+    public abstract double getGKEnergy();
+
+    public abstract GeneralizedKirkwood getGK();
+
+    public static class LambdaFactors {
+
+        public final double sc1;
+        public final double dsc1dL;
+        public final double d2sc1dL2;
+        public final double sc2;
+        public final double dsc2dL;
+        public final double d2sc2dL2;
+        public static final LambdaFactors Defaults
+                = new LambdaFactors(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
 
         public LambdaFactors(double sc1, double dsc1dL, double d2sc1dL2,
                 double sc2, double dsc2dL, double d2sc2dL2) {
@@ -186,60 +151,17 @@ public abstract class ParticleMeshEwald {
             this.dsc2dL = dsc2dL;
             this.d2sc2dL2 = d2sc2dL2;
         }
+
+        @Override
+        public String toString() {
+            return formatArray(new double[]{sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2});
+        }
     }
 
-    public int[][] getAxisAtoms() {
-        return axisAtom;
-    }
+    public abstract double getEwaldCutoff();
 
-    public double getEwaldCutoff() {
-        return off;
-    }
-
-    public double getEwaldCoefficient() {
-        return aewald;
-    }
-
-    public ReciprocalSpace getReciprocalSpace() {
-        return reciprocalSpace;
-    }
-
-    public Polarization getPolarizationType() {
-        return polarization;
-    }
-
-    public double getPolarEps() {
-        return poleps;
-    }
-
-    public int[][] getPolarization11() {
-        return ip11;
-    }
-
-    public int[][] getPolarization12() {
-        return ip12;
-    }
-
-    public int[][] getPolarization13() {
-        return ip13;
-    }
-
-    public abstract double getScale14();
-
-    /**
-     * <p>
-     * Getter for the field <code>gradient</code>.</p>
-     *
-     * @return an array of double.
-     */
     protected abstract double[][][] getGradient();
 
-    /**
-     * <p>
-     * Getter for the field <code>torque</code>.</p>
-     *
-     * @return an array of double.
-     */
     protected abstract double[][][] getTorque();
 
     protected abstract double[][][] getLambdaGradient();
@@ -252,21 +174,7 @@ public abstract class ParticleMeshEwald {
 
     public abstract double energy(boolean gradient, boolean print);
 
-    public abstract double getPermanentEnergy();
-
-    public abstract double getPermanentRealSpaceEnergy();
-
-    public abstract double getPermanentReciprocalEnergy();
-
-    public abstract String getDecomposition();
-
-    public abstract double getPolarizationEnergy();
-
     public abstract int getInteractions();
-
-    public abstract double getGKEnergy();
-
-    public abstract GeneralizedKirkwood getGK();
 
     public abstract int getGKInteractions();
 
@@ -278,8 +186,6 @@ public abstract class ParticleMeshEwald {
 
     public abstract double getd2EdL2();
 
-    public abstract double[] getdEdEsv();
-
     public abstract void destroy() throws Exception;
 
     public abstract void setCrystal(Crystal crystal);
@@ -288,21 +194,23 @@ public abstract class ParticleMeshEwald {
 
     public abstract double getDispersionEnergy(boolean throwError);
 
-    private void log(int i, int k, double r, double eij) {
-        log("ELEC", i, k, r, eij);
-    }
+    public abstract double[][][] getCoordinates();
 
-    /**
-     * Log the real space electrostatics interaction.
-     *
-     * @param i Atom i.
-     * @param k Atom j.
-     * @param r The distance rij.
-     * @param eij The interaction energy.
-     */
-    private void log(String type, int i, int k, double r, double eij) {
-        logger.info(String.format("%s %6d-%s %6d-%s %10.4f  %10.4f",
-                type, atoms[i].getIndex(), atoms[i].getAtomType().name, atoms[k].getIndex(), atoms[k].getAtomType().name, r, eij));
-    }
+    public abstract double getPolarEps();
 
+    public abstract int[][] getPolarization11();
+
+    public abstract int[][] getPolarization12();
+
+    public abstract int[][] getPolarization13();
+
+    public abstract Polarization getPolarizationType();
+
+    public abstract int[][] getAxisAtoms();
+
+    public abstract double getScale14();
+
+    public abstract double getEwaldCoefficient();
+
+    public abstract ReciprocalSpace getReciprocalSpace();
 }

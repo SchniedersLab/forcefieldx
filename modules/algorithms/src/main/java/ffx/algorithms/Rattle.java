@@ -120,8 +120,8 @@ public class Rattle {
 
         //initialize a list of all bonds in the system 
         for (i = 0; i < nrat; i++) {
-            bondAtmNum[i][0] = molAss.getBond(i).atoms[0].getIndex();
-            bondAtmNum[i][1] = molAss.getBond(i).atoms[1].getIndex();
+            bondAtmNum[i][0] = molAss.getBond(i).getAtomArray()[0].getIndex();
+            bondAtmNum[i][1] = molAss.getBond(i).getAtomArray()[1].getIndex();
             krat[i] = molAss.getBond(i).bondType.distance; // equilibrium distance
 
         }
@@ -266,8 +266,8 @@ public class Rattle {
         //initialize a list of all bonds in the system 
         nrat = molAss.getBondList().size();
         for (i = 0; i < nrat; i++) {
-            bondAtmNum[i][0] = molAss.getBond(i).atoms[0].getIndex();
-            bondAtmNum[i][1] = molAss.getBond(i).atoms[1].getIndex();
+            bondAtmNum[i][0] = molAss.getBond(i).getAtomArray()[0].getIndex();
+            bondAtmNum[i][1] = molAss.getBond(i).getAtomArray()[1].getIndex();
             krat[i] = molAss.getBond(i).bondType.distance; // equilibrium distance
 
         }

@@ -44,4 +44,52 @@
             <goal>deploy</goal>
         </goals>
     </action>
+    <action>
+            <actionName>test.single</actionName>
+            <packagings>
+                <packaging>*</packaging>
+            </packagings>
+            <goals>
+                <goal>test-compile</goal>
+                <goal>surefire:test</goal>
+            </goals>
+            <properties>
+                <test>${packageClassName}</test>
+                <skipTests>false</skipTests>
+                <trimStackTrace>false</trimStackTrace>
+                <java.util.logging.SimpleFormatter.format>%5$s%n</java.util.logging.SimpleFormatter.format>
+            </properties>
+        </action>
+    <action>
+            <actionName>test</actionName>
+            <packagings>
+                <packaging>*</packaging>
+            </packagings>
+            <goals>
+                <goal>test</goal>
+            </goals>
+            <properties>
+                <skipTests>false</skipTests>
+                <trimStackTrace>false</trimStackTrace>
+                <java.util.logging.SimpleFormatter.format>%5$s%n</java.util.logging.SimpleFormatter.format>
+            </properties>
+        </action>
+    <action>
+            <actionName>debug.test.single</actionName>
+            <packagings>
+                <packaging>*</packaging>
+            </packagings>
+            <goals>
+                <goal>test-compile</goal>
+                <goal>surefire:test</goal>
+            </goals>
+            <properties>
+                <test>${packageClassName}</test>
+                <forkMode>once</forkMode>
+                <maven.surefire.debug>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address}</maven.surefire.debug>
+                <jpda.listen>true</jpda.listen>
+                <skipTests>false</skipTests>
+                <trimStackTrace>false</trimStackTrace>
+            </properties>
+        </action>
 </actions>

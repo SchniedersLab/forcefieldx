@@ -1,9 +1,15 @@
 package ffx.potential.extended;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.IntStream;
+import java.util.OptionalDouble;
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
@@ -14,18 +20,275 @@ import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.extended.ExtUtils.SB;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.PDBFilter.Mutation;
+import ffx.potential.utils.PotentialsUtils;
+
+import static ffx.potential.extended.ExtUtils.prop;
+import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * Helper methods to define titration-specific phenomena.
  */
+@SuppressWarnings("serial")
 public class TitrationUtils {
     private TitrationUtils() {} // utility class
-    private static final boolean threeStateHistidines = false; // not yet implemented
+    private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
+    
+    /**
+     * Advanced options to both DiscreteMCMD and DiscountPh.
+     */
+    public static class TitrationConfig {
+        public final ContinuousSeedDistribution seedDistribution
+                                                        = prop("phmd-seedMode", ContinuousSeedDistribution.class, ContinuousSeedDistribution.FLAT);
+        public MCOverride mcOverride                    = prop("phmd-override", MCOverride.class, MCOverride.NONE);
+        public final Snapshots snapshots                = prop("phmd-snapshots", Snapshots.class, Snapshots.NONE);
+        public final HistidineMode histidineMode        = prop("phmd-histidineMode", HistidineMode.class, HistidineMode.HIE_ONLY);
+        public final OptionalDouble referenceOverride   = prop("phmd-referenceOverride", OptionalDouble.empty());
+        public final double meltdownTemperature         = prop("phmd-meltdownTemp", 6000.0);
+        public final double warningTemperature          = prop("phmd-warningTemp", 1000.0);
+        public final boolean logTimings                 = prop("phmd-logTimings", false);
+        public final boolean titrateTermini             = prop("phmd-termini", false);
+        public final boolean zeroReferences             = prop("phmd-zeroReferences", true);
+        public final int debugLogLevel                  = prop("phmd-debugLog", 0);
+        public final boolean useConformationalBias      = prop("phmd-cbmcRotamerMoves", false);
+        public final boolean inactivateBackground       = prop("phmd-inactivateBackground", false);
+        public final boolean zeroReferenceEnergies =
+                prop("phmd-zeroReferences", false, "Zeroing all reference energies!");
+        public final OptionalDouble refOverride = 
+                prop("phmd-refOverride", OptionalDouble.empty(), "Reference protonation energies overridden!");
+        
+        public void print() {
+			ExtUtils.printConfigSet("Titration Config:", System.getProperties(), "phmd");
+        }
+    }
+	
+    public static final boolean heavyStrandedDynamics      = prop("phmd-heavyStrandedDynamics", false);
+    public static final boolean threeStateHistidines       = prop("phmd-threeState", false);   // not yet implemented
+    public static final boolean threeStateCarboxylics      = prop("phmd-threeState", false);   // not yet implemented
+    
+    /**
+     * How DISCOUNT initializes lambda values at outset of continuous dynamics.
+     */
+    public enum ContinuousSeedDistribution {
+        FLAT, BETA, BOLTZMANN, DIRAC_CURRENT, DIRAC_POINTFIVE;
+    }
+    
+    /**
+     * Global override of MC acceptance criteria.
+     */
+    public enum MCOverride {
+        NONE, ACCEPT, REJECT, ONCE;
+    }
 
-    public static MultiResidue titrationFactory(MolecularAssembly mola, Residue res) {
-        // Get reference to FFE.
+    /**
+     * Writes .s-[num] and .f-[num] files representing before/after MC move
+     * structures. Note: The 'after' snapshot represents the change that was
+     * PROPOSED, regardless of accept/reject.
+     */
+    public enum Snapshots {
+        INTERLEAVED, SEPARATE, NONE;
+    }
+
+    public enum HistidineMode {
+        HIE_ONLY, HID_ONLY, SINGLE, DOUBLE;
+    }
+    
+    public static void renumberAtoms(MolecularAssembly mola) {
+        Atom[] atoms = mola.getAtomArray();
+        int setter = 0;
+        for (Atom atom : atoms) {
+            atom.setXyzIndex(setter++);
+        }
+    }
+    
+    /**
+     * @see TitrationUtils::initEsvPreloadProperties
+     */
+    public static void initDiscountPreloadProperties(Double cutoffs) {
+        initEsvPreloadProperties(cutoffs);
+    }
+    public static void initDiscountPreloadProperties() {
+        initDiscountPreloadProperties(null);
+    }
+    
+    /**
+     * Note that this must (generally) be called before loading the input file
+     * or instantiating titration classes.
+     */
+    public static void initEsvPreloadProperties(Double cutoffs) {
+        // Active Potential
+        System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
+        System.setProperty("esvterm", "true");
+        System.setProperty("lambdaterm", "true");
+        System.setProperty("bondterm", "true");
+        System.setProperty("angleterm", "true");
+        System.setProperty("strbndterm", "true");
+        System.setProperty("ureyterm", "true");
+        System.setProperty("opbendterm", "true");
+        System.setProperty("torsionterm", "true");
+        System.setProperty("pitorsterm", "true");
+        System.setProperty("tortorterm", "true");
+        System.setProperty("improperterm", "true");
+
+        // Optional Potential
+        System.setProperty("vdwterm", "true");         // van der Waals
+        System.setProperty("esv.vdw", "true");
+        System.setProperty("mpoleterm", "true");       // permanent real space
+        System.setProperty("pme-qi", "true");
+        System.setProperty("esv.pme", "true");
+        System.setProperty("recipterm", "true");       // permanent reciprocal space
+
+        // Inactive Potential
+        System.setProperty("polarizeterm", "false");   // polarization
+        System.setProperty("polarization", "NONE");
+        System.setProperty("gkterm", "false");
+        System.setProperty("restrainterm", "false");
+        System.setProperty("comrestrainterm", "false");
+        System.setProperty("lambda_torsions", "false");
+
+        // Potential Settings
+        System.setProperty("permanent-lambda-alpha","2.0");
+        System.setProperty("permanent-lambda-exponent","3.0");
+        System.setProperty("polarization-lambda-start","0.0");      // polarize on the whole range [0,1]
+        System.setProperty("polarization-lambda-exponent","0.0");   // polarization not softcored, only prefactored
+        System.setProperty("ligand-vapor-elec", "false");           // cancels when reference is solution phase
+        System.setProperty("no-ligand-condensed-scf", "false");     // don't need condensed phase polarization
+        System.setProperty("intramolecular-softcore", "true");
+        System.setProperty("intermolecular-softcore", "true");
+        if (cutoffs != null) {
+            System.setProperty("vdw-cutoff", String.valueOf(cutoffs));
+            System.setProperty("ewald-cutoff", String.valueOf(cutoffs));
+        }
+		System.setProperty("polar-eps", "1e-12");
+
+        // ESV Settings
+//        System.setProperty("esv.biasTerm", "true");             // include discretization and pH biases
+//        System.setProperty("esv.scaleBonded", "true");          // include effects on bonded terms
+//        System.setProperty("esv.backgroundBonded", "true");     // hook up BG bonded terms to FG node
+//        System.setProperty("esv.scaleUnshared", "true");        // use multipole scaling in all cases (eliminates softcoring)
+    }
+    public static void initEsvPreloadProperties() {
+        initEsvPreloadProperties(null);
+    }
+    
+    public static void activateResidue(Residue addDoF) {
+        List<Atom> atomList = addDoF.getAtomList();
+        for (Atom atom : atomList) {
+            atom.setActive(true);
+        }
+    }
+    
+    public static void inactivateResidue(Residue killDoF) {
+        List<Atom> atomList = killDoF.getAtomList();
+        for (Atom atom : atomList) {
+            atom.setActive(false);
+        }
+    }
+    
+    /**
+     * Perform the requested titration on the given MultiResidue.
+     * Remember to call reInit() on affected ForceFieldEnergy and MolecularDynamics objects!
+     *
+     * @param multiRes
+     * @param titration
+     */
+    public static TitrationType performTitration(MultiResidue multiRes, Titration titration, boolean inactivateBackground) {
+        AminoAcid3 current = multiRes.getActive().getAminoAcid3();
+        final TitrationType type;
+        final AminoAcid3 target;
+        if (current == titration.protForm) {
+            type = TitrationType.DEPROT;
+            target = titration.deprotForm;
+        } else if (current == titration.deprotForm) {
+            type = TitrationType.PROT;
+            target = titration.protForm;
+        } else {
+            throw new IllegalStateException();
+        }
+        boolean success = multiRes.requestSetActiveResidue(target);
+        if (!success) {
+            logger.severe(String.format("Couldn't perform requested titration for MultiRes: %s", multiRes.toString()));
+        }
+        
+        List<Atom> oldAtoms = multiRes.getActive().getAtomList();
+        List<Atom> newAtoms = multiRes.getActive().getAtomList();
+
+        // identify which atoms were actually inserted/removed
+        List<Atom> removedAtoms = new ArrayList<>();
+        List<Atom> insertedAtoms = new ArrayList<>();
+        for (Atom oldAtom : oldAtoms) {
+            boolean found = false;
+            for (Atom newAtom : newAtoms) {
+                if (newAtom == oldAtom ||
+                        (newAtom.getResidueNumber() == oldAtom.getResidueNumber()
+                        && newAtom.getName().equals(oldAtom.getName()))) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                removedAtoms.add(oldAtom);
+            }
+        }
+        for (Atom newAtom : newAtoms) {
+            boolean found = false;
+            for (Atom oldAtom : oldAtoms) {
+                if (newAtom == oldAtom ||
+                        (newAtom.getResidueNumber() == oldAtom.getResidueNumber()
+                        && newAtom.getName().equals(oldAtom.getName()))) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                insertedAtoms.add(newAtom);
+            }
+        }
+        if (insertedAtoms.size() + removedAtoms.size() > 1) {
+            logger.warning("Protonate: removed + inserted atom count > 1.");
+        }
+        
+        if (inactivateBackground) {
+            activateResidue(multiRes.getActive());
+            for (Residue res : multiRes.getInactive()) {
+                inactivateResidue(res);
+            }
+        }
+        
+        return type;
+    }
+    
+    public static MolecularAssembly openFullyProtonated(File structure) {
+        String name = format("%s-prot", FilenameUtils.removeExtension(structure.getName()));
+        MolecularAssembly mola = new MolecularAssembly(name);
+        mola.setFile(structure);
+
+        List<Mutation> mutations = new ArrayList<>();
+        List<Residue> residues = mola.getResidueList();
+        for (Residue res : residues) {
+            char chain = res.getChainID();
+            int resID = res.getResidueNumber();
+            Titration titration = Titration.lookup(res);
+            if (res.getAminoAcid3() != titration.protForm) {
+                String protName = titration.protForm.name();
+                mutations.add(new PDBFilter.Mutation(chain, resID, protName));
+            }
+        }
+        
+        PotentialsUtils utils = new PotentialsUtils();
+        return utils.openWithMutations(structure, mutations);
+    }
+    public static MolecularAssembly openFullyProtonated(String filename) {
+        return openFullyProtonated(new File(filename));
+    }
+    
+    /**
+     * Create a MultiResidue from the given Residue by adding its alternated protonation
+     * state(s) as alternate possibilities.
+     */
+    public static MultiResidue titratingMultiresidueFactory(MolecularAssembly mola, Residue res) {
         ForceField ff = mola.getForceField();
         Potential potential = mola.getPotentialEnergy();
         if (!(potential instanceof ForceFieldEnergy)) {
@@ -33,69 +296,188 @@ public class TitrationUtils {
             throw new IllegalStateException();
         }
         ForceFieldEnergy ffe = (ForceFieldEnergy) potential;
-        // Create new titration state.
-        Titr t = TitrationUtils.titrationLookup(res);
-        String targetName = (t.protForm != res.getAminoAcid3())
-                ? t.protForm.toString() : t.deprotForm.toString();
+		
+        /* Create new titration state. */
+        Titration titration = Titration.lookup(res);
+        String targetName = (titration.protForm != res.getAminoAcid3())
+                ? titration.protForm.toString() : titration.deprotForm.toString();
         int resNumber = res.getResidueNumber();
         Residue.ResidueType resType = res.getResidueType();
         Residue newRes = new Residue(targetName, resNumber, resType);
-        // Wrap both states in a MultiResidue.
+		
+        /* Wrap both states in a MultiResidue. */
         MultiResidue multiRes = new MultiResidue(res, ff, ffe);
         Polymer polymer = findResiduePolymer(res, mola);
         polymer.addMultiResidue(multiRes);
         multiRes.addResidue(newRes);
-        multiRes.setActiveResidue(res);
-//        setMultiResXYZIndices(mola, multiRes);
+		
+		/* Begin in protonated state by default. */
+		multiRes.setActiveResidue(titration.protForm);
         propagateInactiveResidues(multiRes, false);
         ffe.reInit();
-        multiRes.getActive().getBondList();
         return multiRes;
     }
-
-    private static void setMultiResXYZIndices(MolecularAssembly mola, MultiResidue multi) {
-        for (Residue res : multi.getConsideredResidues()) {
-            for (Atom atom : res.getAtomList()) {
-                if (atom.getIndex() < 1) {
-//                    atom.setXyzIndex(MolecularAssembly.atomIndexer++);
+	
+    /**
+     * Locate to which Polymer in a MolecularAssembly the given Residue belongs.
+     */
+    public static Polymer findResiduePolymer(Residue residue, MolecularAssembly mola) {
+        if (residue.getChainID() == null) {
+            logger.severe("No chain ID for residue " + residue);
+        }
+        Polymer polymers[] = mola.getChains();
+        Polymer location = null;
+        for (Polymer p : polymers) {
+            if (p.getChainID().equals(residue.getChainID())) {
+                location = p;
+            }
+        }
+        if (location == null) {
+            logger.severe("Couldn't find polymer for residue " + residue);
+        }
+        return location;
+    }
+    
+    /**
+     * Identify titratable residues and choose them all.
+     */
+    public static List<Residue> chooseTitratables(MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        Polymer polymers[] = searchMe.getChains();
+        for (int i = 0; i < polymers.length; i++) {
+            ArrayList<Residue> residues = polymers[i].getResidues();
+            for (int j = 0; j < residues.size(); j++) {
+                Residue res = residues.get(j);
+                Titration[] avail = Titration.multiLookup(res);
+                if (avail != null) {
+                    chosen.add(residues.get(j));
                 }
             }
         }
+        return chosen;
     }
-
+	
     /**
-     * Find Titr object for given res; start here for tri-histidine implementation.
+     * Choose titratables with intrinsic pKa inside (pH-window,pH+window).
+     *
+     * @param pH
+     * @param window
      */
-    public static Titr titrationLookup(Residue res) {
-        AminoAcid3 source = AminoAcid3.valueOf(res.getName());
-        if (source == AminoAcid3.HIS || source == AminoAcid3.HID || source == AminoAcid3.HIE) {
-            return threeStateHistidines ? Titr.ZtoH : Titr.UtoH;
-        }
-        for (Titr titr : Titr.values()) {
-            if (titr.deprotForm == source || titr.protForm == source) {
-                return titr;
+    public static List<Residue> chooseTitratables(double pH, double window, MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        Polymer polymers[] = searchMe.getChains();
+        for (int i = 0; i < polymers.length; i++) {
+            ArrayList<Residue> residues = polymers[i].getResidues();
+            for (int j = 0; j < residues.size(); j++) {
+                Residue res = residues.get(j);
+                Titration[] avail = Titration.multiLookup(res);
+                for (Titration titration : avail) {
+                    double pKa = titration.pKa;
+                    if (pKa >= pH - window && pKa <= pH + window) {
+                        chosen.add(residues.get(j));
+                    }
+                }
             }
         }
-        SB.warning("No titration lookup found for residue %s", res);
-        return null;
+        return chosen;
     }
+	
+    public static List<Residue> chooseTitratables(String residueIDs, MolecularAssembly searchMe) {
+        String[] tokens =
+                  (residueIDs.split(".").length > 1) ? residueIDs.split(".")
+                : (residueIDs.split(",").length > 1) ? residueIDs.split(",")
+                : new String[]{residueIDs};
+        return chooseTitratables(Arrays.asList(tokens), searchMe);
 
-    private static Polymer findResiduePolymer(Residue residue, MolecularAssembly mola) {
-        Polymer[] polymers = mola.getChains();
-        Optional<Polymer> polymer = IntStream.range(0, polymers.length).parallel().mapToObj((i) -> polymers[i]).filter((p) -> p.getChainID().compareTo(residue.getChainID()) == 0).findAny();
-        if (!polymer.isPresent()) {
-            SB.warning(" Polymer not found for residue %s", residue);
-            throw new IllegalStateException();
+    }
+    
+    /**
+     * Select titrating residues by amino acid.
+     */
+    public static List<Residue> chooseTitratables(AminoAcid3 aa, MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        Polymer polymers[] = searchMe.getChains();
+        for (Polymer polymer : polymers) {
+            ArrayList<Residue> residues = polymer.getResidues();
+            for (Residue res : residues) {
+                if (res.getAminoAcid3() == aa) {
+                    Titration[] avail = Titration.multiLookup(res);
+                    if (avail != null) {
+                        chosen.add(res);
+                    }
+                }
+            }
         }
-        return polymer.get();
+        return chosen;
     }
-
+	
+    public static List<Residue> chooseTitratables(List<String> crIDs, MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        for (String crID : crIDs) {
+            char chain = crID.charAt(0);
+            int num = Integer.parseInt(crID.substring(1));
+            boolean found = false;
+            List<Residue> allRes = searchMe.getResidueList();
+            for (Residue res : allRes) {
+                if (res.getChainID() == chain && res.getResidueNumber() == num) {
+                    chosen.add(res);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                logger.severe(format("Couldn't find residue for crID %c,%d.", chain, num));
+            }
+        }
+        return chosen;
+    }
+	
+    public static List<Residue> chooseTitratables(char chain, int resID, MolecularAssembly searchMe) {
+        List<Residue> chosen = new ArrayList<>();
+        Polymer polymers[] = searchMe.getChains();
+        for (Polymer polymer : polymers) {
+            if (polymer.getChainID() == chain) {
+                ArrayList<Residue> residues = polymer.getResidues();
+                for (Residue residue : residues) {
+                    if (residue.getResidueNumber() == resID) {
+                        chosen.add(residue);
+                        logger.info(String.format(" Chosen: %s", residue));
+                    }
+                }
+            }
+        }
+        return chosen;
+    }
+    
+    /**
+     * @see TitrationUtils::propagateInactiveResidues(MultiResidue, boolean)
+     */
+    public static void propagateInactiveResidues(List<MultiResidue> multiResidues, boolean propagateDynamics) {
+        for (MultiResidue multiRes : multiResidues) {
+            propagateInactiveResidues(multiRes, propagateDynamics);
+        }
+    }
+    /**
+     * @see TitrationUtils::propagateInactiveResidues(MultiResidue, boolean)
+     */
+    public static void propagateInactiveResidues(List<MultiResidue> multiResidues) {
+        for (MultiResidue multiRes : multiResidues) {
+            propagateInactiveResidues(multiRes, true);
+        }
+    }
+    /**
+     * @see TitrationUtils::propagateInactiveResidues(MultiResidue, boolean)
+     */
+    public static void propagateInactiveResidues(MultiResidue multiResidue) {
+        propagateInactiveResidues(multiResidue, true);
+    }    
+    
     /**
      * Copies atomic coordinates from each active residue to its inactive
      * counterparts. Inactive hydrogen coordinates are updated by geometry
      * with the propagated heavies.
      */
-    private static void propagateInactiveResidues(MultiResidue multiRes, boolean propagateDynamics) {
+    public static void propagateInactiveResidues(MultiResidue multiRes, boolean propagateDynamics) {
         // Propagate all atom coordinates from active residues to their inactive counterparts.
         Residue active = multiRes.getActive();
         String activeResName = active.getName();
@@ -295,39 +677,102 @@ public class TitrationUtils {
                 default:
             }
             for (Atom a : resetMe) {
-                a.setXYZGradient(0, 0, 0);
-                a.setVelocity(ExtUtils.singleRoomtempMaxwell(a.getMass()));
-                a.setAcceleration(new double[]{0, 0, 0});
-                a.setPreviousAcceleration(new double[]{0, 0, 0});
+                if (heavyStrandedDynamics) {
+                    // Use of heavy atom dynamics properties is in testing.
+                    a.setXYZGradient(0, 0, 0);
+                    double[] heavyVelocity = new double[3];
+                    double[] heavyAccel = new double[3];
+                    double[] heavyPrevAccel = new double[3];
+                    Atom heavy = a.getBonds().get(0).get1_2(a);
+                    heavy.getVelocity(heavyVelocity);
+                    heavy.getAcceleration(heavyAccel);
+                    heavy.getPreviousAcceleration(heavyPrevAccel);
+                    a.setVelocity(heavyVelocity);
+                    a.setAcceleration(heavyAccel);
+                    a.setPreviousAcceleration(heavyPrevAccel);
+                } else {
+                    // PREVIOUSLY: draw vel from maxwell and set accel to zero
+                    a.setXYZGradient(0, 0, 0);
+                    a.setVelocity(ExtUtils.maxwellVelocity(a.getMass(), ExtConstants.roomTemperature));
+                    a.setAcceleration(new double[]{0, 0, 0});
+                    a.setPreviousAcceleration(new double[]{0, 0, 0});
+                }
             }
         }
     }
+    
 
     /**
-     * All described as protonation reactions.
+     * Amino acid protonation reactions.
+     * Constructors below specify intrinsic pKa and reference free energy of protonation,
+     * obtained via (OSRW) metadynamics on capped monomers.
      */
-    public enum Titr {
-        ctoC(8.18, +60.168, AminoAcid3.CYD, AminoAcid3.CYS),
-        Dtod(3.90, +53.188, AminoAcid3.ASP, AminoAcid3.ASH),
-        Etoe(4.25, +59.390, AminoAcid3.GLU, AminoAcid3.GLH),
-        ktoK(10.53, -50.440, AminoAcid3.LYD, AminoAcid3.LYS),
-        ytoY(10.07, +34.961, AminoAcid3.TYD, AminoAcid3.TYR),
-        UtoH(6.00, -42.923, AminoAcid3.HID, AminoAcid3.HIS),
-        ZtoH(6.00, +00.000, AminoAcid3.HIE, AminoAcid3.HIS),
-        TerminusNH3toNH2(8.23, +00.00, AminoAcid3.UNK, AminoAcid3.UNK),
-        TerminusCOOHtoCOO(3.55, +00.00, AminoAcid3.UNK, AminoAcid3.UNK);
+    public enum Titration {
+        ctoC(   8.18,  60.168, AminoAcid3.CYD, AminoAcid3.CYS),
+        Dtod(   3.90,  53.188, AminoAcid3.ASP, AminoAcid3.ASH),
+        Etoe(   4.25,  59.390, AminoAcid3.GLU, AminoAcid3.GLH),
+        ktoK(  10.53, -50.440, AminoAcid3.LYD, AminoAcid3.LYS),
+        ytoY(  10.07,  34.961, AminoAcid3.TYD, AminoAcid3.TYR),
+        UtoH(   6.00, -42.923, AminoAcid3.HID, AminoAcid3.HIS),
+        ZtoH(   6.00,  00.000, AminoAcid3.HIE, AminoAcid3.HIS),
+        TerminalNH3toNH2(   8.23,  00.00, AminoAcid3.UNK, AminoAcid3.UNK),
+        TerminalCOOHtoCOO(  3.55,  00.00, AminoAcid3.UNK, AminoAcid3.UNK);
         
         public final double pKa;
         public final double refEnergy;
-        public final AminoAcid3 deprotForm;
         public final AminoAcid3 protForm;
+        public final AminoAcid3 deprotForm;
 
-        Titr(double pKa, double refEnergy, AminoAcid3 source, AminoAcid3 target) {
+        /**
+         * Invoked by Enum; use the factory method to obtain instances.
+         */
+        private Titration(double pKa, double refEnergy, AminoAcid3 deprotForm, AminoAcid3 protForm) {
             this.pKa = pKa;
             this.refEnergy = refEnergy;
-            this.deprotForm = source;
-            this.protForm = target;
+            this.deprotForm = deprotForm;
+            this.protForm = protForm;
         }
+        
+        public static Titration lookup(Residue res) {
+            Titration[] titrations = multiLookup(res);
+            if (titrations.length > 1) {
+                SB.warning("Titration::lookup returned more results than expected. Did you mean to invoke multi-state?");
+            }
+            return (titrations != null) ? titrations[0] : null;
+        }
+        
+        /**
+         * Return a Titration object for the given Residue.
+         * TODO: Add support for multi-state titrations (HIS,ASP,GLU).
+         */
+        public static Titration[] multiLookup(Residue res) {
+            List<Titration> titrations = new ArrayList<>();
+            AminoAcid3 current = AminoAcid3.valueOf(res.getName());
+            if (threeStateHistidines) {
+                if (current == AminoAcid3.HIS || current == AminoAcid3.HID || current == AminoAcid3.HIE) {
+                    return new Titration[]{ZtoH, UtoH};
+                }
+            }
+            if (threeStateCarboxylics) {
+                if (current == AminoAcid3.ASP || current == AminoAcid3.ASH) {
+//                    return new Titration[]{Dtod, Dtod2};
+                }
+                if (current == AminoAcid3.GLU || current == AminoAcid3.GLH) {
+//                    return new Titration[]{Etoe, Etoe2};
+                }
+            }
+            for (Titration titration : Titration.values()) {
+                if (current == titration.protForm || current == titration.deprotForm) {
+                    return new Titration[]{titration};
+                }
+            }
+            SB.warning("No titration lookup found for residue %s", res);
+            return null;
+        }
+    }
+    
+    public enum TitrationType {
+        PROT, DEPROT;
     }
 
 }

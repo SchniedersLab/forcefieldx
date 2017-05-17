@@ -60,6 +60,8 @@ import groovy.util.CliBuilder;
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction;
 
+import static ffx.potential.extended.ExtUtils.prop;
+
 // PJ Imports
 import edu.rit.pj.Comm
 // Java Imports
@@ -756,27 +758,9 @@ if (decomposeOriginal) {
         if (quadsProp != null && quadsProp.equalsIgnoreCase("true")) {
             Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
 
-            String quadsCutoffProp = System.getProperty("quadCutoff");
-            double quadsCutoff = 5.0;
-            if (quadsCutoffProp != null) {
-                try {
-                    quadsCutoff = Double.parseDouble(quadsCutoffProp);
-                } catch (Exception ex) {
-                    logger.warning(String.format(" Exception in parsing quads cutoff: %s", ex));
-                }
-                quadsCutoff = quadsCutoff <= 0 ? 5.0 : quadsCutoff;
-            }
-
-            String quadsEvalProperty = System.getProperty("numQuads");
-            int numQuads = 1000000;
-            if (quadsEvalProperty != null) {
-                try {
-                    numQuads = Integer.parseInt(System.getProperty("numQuads"));
-                } catch (Exception ex) {
-                    logger.warning(String.format(" Exception in parsing number of quads to evaluate: %s", ex));
-                }
-                numQuads = numQuads <= 0 ? 1000000 : numQuads;
-            }
+            int numQuadsNew = prop("ro.numQuads", 0);
+            boolean quadsPropNew = (numQuadsNew > 0);
+            double quadsCutoffNew = prop("ro.quadCutoff", 5.0);
 
             rotamerOptimization.decomposeOriginalQuads(quadsCutoff, numQuads);
         }

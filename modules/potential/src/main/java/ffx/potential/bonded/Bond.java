@@ -720,7 +720,7 @@ public class Bond extends BondedTerm {
      * Log details for this Bond energy term.
      */
     public void log() {
-        logger.info(String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
+        logger.info(String.format(" %-8s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f",
                 "Bond", atoms[0].getIndex(), atoms[0].getAtomType().name,
                 atoms[1].getIndex(), atoms[1].getAtomType().name,
                 bondType.distance, value, energy));

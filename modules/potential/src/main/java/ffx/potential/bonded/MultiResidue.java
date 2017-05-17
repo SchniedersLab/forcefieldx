@@ -53,6 +53,7 @@ import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
+import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 
@@ -86,6 +87,8 @@ public class MultiResidue extends Residue {
     ForceFieldEnergy forceFieldEnergy;
     private Rotamer[] rotamers;
     private Rotamer originalRotamer;
+	
+	private final static boolean automaticReinitialization = prop("mr-autoReinit", true);
 
     public MultiResidue(Residue residue, ForceField forceField, ForceFieldEnergy forceFieldEnergy) {
         super("MultiResidue", residue.getResidueNumber(), residue.residueType,
@@ -638,7 +641,9 @@ public class MultiResidue extends Residue {
         }
         if (resAdded) {
             setActiveResidue(currentRes);
-            forceFieldEnergy.reInit();
+			if (automaticReinitialization) {
+				forceFieldEnergy.reInit();
+			}
         }
     }
 
@@ -834,8 +839,10 @@ public class MultiResidue extends Residue {
         activeResidue = residue;
         setName(activeResidue.getName());
         add(activeResidue);
-
-        forceFieldEnergy.reInit();
+		
+		if (automaticReinitialization) {
+			forceFieldEnergy.reInit();
+		}
         if (isFirst) {
             for (MultiResidue mres : linkedMultiRes) {
                 if (!mres.setActiveResidue(residue.getAminoAcid3(), false)) {

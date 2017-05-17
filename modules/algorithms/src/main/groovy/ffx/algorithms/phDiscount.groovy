@@ -39,27 +39,18 @@
 // MOLECULAR & STOCHASTIC DYNAMICS
 
 // Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import ffx.algorithms.PhDiscount
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.Thermostat
+import ffx.algorithms.Thermostat.Thermostats
+import ffx.potential.MolecularAssembly
+import ffx.potential.extended.ExtendedSystem
+import ffx.potential.extended.TitrationUtils
+import org.apache.commons.io.FilenameUtils
 
 // Groovy Imports
-import groovy.util.CliBuilder;
-
 // Force Field X Imports
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.DiscountPh;
-import ffx.algorithms.Protonate.DynamicsLauncher;
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.ExtendedVariable;
-import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationESV.TitrationUtils;
-
 // Number of molecular dynamics steps
 int nSteps = 1000000;
 
@@ -76,7 +67,7 @@ double saveInterval = 0.1;
 double temperature = 298.15;
 
 // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = null;
+Thermostat thermostat = null;
 
 // Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET]
 Integrators integrator = null;
@@ -91,15 +82,16 @@ double restartFrequency = 1000;
 String fileType = "PDB";
 
 // Monte-Carlo step frequencies for titration and rotamer moves.
-int titrationFrequency = 10;
-int titrationDuration = 1000;
+int moveFrequency = 10;
+int stepsPerMove = 100;
 int rotamerMoveRatio = 0;
 
 // Simulation pH
-double pH = 7.4;
+Double pH;
 
 // Titrating residue list.
 List<String> rlTokens = new ArrayList<>();
+double cutoffs = 10.0;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -107,9 +99,7 @@ List<String> rlTokens = new ArrayList<>();
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc discount [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
-//cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-//cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
@@ -117,15 +107,18 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-//cli.ra(longOpt:'resAll', 'Titrate all residues.');
 cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
-//cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
-//cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
 cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
 cli.mc(longOpt:'titrationFrequency', args:1, argName:'100', 'Number of steps between Monte-Carlo proton attempts.')
 cli.mcd(longOpt:'titrationDuration', args:1, argName:'100', 'Number of steps for which to run continuous proton dynamics during MC move.');
 cli.mcr(longOpt:'rotamerMoveRatio', args:1, argName:'0', 'Number of steps between Monte-Carlo rotamer attempts.')
+cli.cut(longOpt:'cutoff', args:1, argName:'1000', 'Value of vdw-cutoff and pme-cutoff.');
+
+//cli.ra(longOpt:'resAll', 'Titrate all residues.');
+//cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
+//cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
 //cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
+
 def options = cli.parse(args);
 
 if (options.h) {
@@ -143,10 +136,14 @@ if (!options.rl) {
     }
 }
 
+if (options.cut) {
+    cutoffs = Double.parseDouble(options.cut);
+}
+
 // Suggested Options
 if (!options.pH) {
-    logger.warning("No solution pH specified; 7.4 assumed.");
-    pH = 7.4;
+    /* DISCOUNT interprets null as 7.4, then issues a warning (in a more readable location). */
+    pH = null;
 } else {
     pH = Double.parseDouble(options.pH);
 }
@@ -156,165 +153,79 @@ if (options.rw) {
 }
 
 if (options.mc) {
-    titrationFrequency = Integer.parseInt(options.mc);
+    moveFrequency = Integer.parseInt(options.mc);
 }
-
 if (options.mcd) {
-    titrationDuration = Integer.parseInt(options.mcd);
+    stepsPerMove = Integer.parseInt(options.mcd);
 }
-
-if (options.mcr) {
-    rotamerMoveRatio = Integer.parseInt(options.mcr);
-}
-
-// Load the number of molecular dynamics steps.
 if (options.n) {
     nSteps = Integer.parseInt(options.n);
 }
-
-// Write dyn interval in picoseconds
 if (options.s) {
     restartFrequency = Double.parseDouble(options.s);
 }
-
-//
 if (options.f) {
     fileType = options.f.toUpperCase();
 }
-// Load the time steps in femtoseconds.
 if (options.d) {
     dt = Double.parseDouble(options.d);
 }
-
-// Report interval in picoseconds.
 if (options.l) {
     printInterval = Double.parseDouble(options.l);
 }
-
-// Write snapshot interval in picoseconds.
 if (options.w) {
     saveInterval = Double.parseDouble(options.w);
 }
-
-// Temperature in degrees Kelvin.
 if (options.t) {
     temperature = Double.parseDouble(options.t);
 }
-
 if (options.p) {
     System.setProperty("polarization", options.p);
 }
-
-// Thermostat.
 if (options.b) {
     try {
         thermostat = Thermostats.valueOf(options.b.toUpperCase());
-    } catch (Exception e) {
+    } catch (Exception ignored) {
         thermostat = null;
     }
 }
-
 if (options.mcmd) {
     mcRunTime = Integer.parseInt(options.mcmd);
 }
-
-// Integrator.
 if (options.i) {
     try {
         integrator = Integrators.valueOf(options.i.toUpperCase());
-    } catch (Exception e) {
+    } catch (Exception ignored) {
         integrator = null;
     }
 }
 
-System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
-System.setProperty("pme-qi","true");
-System.setProperty("polarization", "NONE");
-System.setProperty("ligand-vapor-elec","false");
-System.setProperty("no-ligand-condensed-scf","false");
-System.setProperty("mpoleterm","false");
-//System.setProperty("mpoleterm","true");
-
-/*  Available options:  Key                         Values (default first)
-    System.getProperty("cphmd-seedMode")            CURRENT_VALUES|RANDOM|HALF_LAMBDA
-    System.getProperty("cphmd-override")            NONE|ACCEPT|REJECT
-    System.getProperty("cphmd-snapshotsType")       SEPARATE|INTERLEAVED|NONE
-    System.getProperty("cphmd-histidineMode")       HIE_ONLY|HID_ONLY|SINGLE|DOUBLE
-    System.getProperty("cphmd-debugLog")            int     ()
-    System.getProperty("cphmd-referenceOverride")   double  ()
-    System.getProperty("cphmd-tempMonitor")         double  (6000.0)
-    System.getProperty("cphmd-logTimings")          boolean
-    System.getProperty("cphmd-termini")             boolean
-    System.getProperty("cphmd-zeroReferences")      boolean
-*/
-
 List<String> arguments = options.arguments();
-String modelfilename = null;
-if (arguments != null && arguments.size() > 0) {
-    // Read in command line.
-    modelfilename = arguments.get(0);
-    open(modelfilename);
-} else if (active == null) {
-    return cli.usage();
-} else {
-    modelfilename = active.getFile();
+if (arguments == null || arguments.size() != 1) {
+    logger.warning("No input file supplied.");
+    return;
 }
-
-logger.info("\n Running molecular dynamics on " + modelfilename);
-
-// Restart File
-File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
+String filename = arguments.get(0);
+File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
 if (!dyn.exists()) {
     dyn = null;
 }
 
-// Create the ExtendedSystem.
-MolecularAssembly mola = (MolecularAssembly) active;
-ExtendedSystem esvSystem = new ExtendedSystem(mola);
+TitrationUtils.initDiscountPreloadProperties(cutoffs);
+MolecularAssembly mola = TitrationUtils.openFullyProtonated(filename);
 
-// Find the requested residues and create TitrationESVs from them.
-List<ExtendedVariable> esvList = new ArrayList<>();
-Polymer[] polymers = active.getChains();
-for (String token : rlTokens) {    
-    char chainID = token.charAt(0);
-    int resNum = Integer.parseInt(token.substring(1));    
-    Residue target = null;
-    for (Polymer p : polymers) {
-        char pid = p.getChainID().charValue();
-        if (pid == chainID) {
-            for (Residue res : p.getResidues()) {
-                if (res.getResidueNumber() == resNum) {
-                    target = res;
-                    break;
-                }
-            }
-            if (target != null) {
-                break;
-            }
-        }
-    }
-    if (target == null) {
-        logger.severe("Couldn't find target residue " + token);
-    }
-    
-    MultiResidue titrating = TitrationUtils.titrationFactory(mola, target);
-    TitrationESV esv = new TitrationESV(titrating, pH, biasMag);
-    esvSystem.addVariable(esv);
-}
-
-// Attach populated esvSystem to the potential.
-ForceFieldEnergy ffe = mola.getPotentialEnergy();
-ffe.attachExtendedSystem(esvSystem);
+ExtendedSystem esvSystem = new ExtendedSystem(mola, pH);
+esvSystem.populate(options.rl);
 
 // Create the MolecularDynamics.
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
+MolecularDynamics molDyn = new MolecularDynamics(mola, mola.getPotentialEnergy(), mola.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
 // Create the DISCOuNT object, linking it to the MD.
-DiscountPh cphmd = new DiscountPh(mola, esvSystem, molDyn,
-    dt, printInterval, saveInterval, initVelocities, 
+PhDiscount phmd = new PhDiscount(mola, esvSystem, molDyn,
+    dt, printInterval, saveInterval, initVelocities,
     fileType, restartFrequency, dyn);
 
 // Launch dynamics through the DISCOuNT controller.
-cphmd.dynamic(nSteps, pH, temperature, titrationFrequency, titrationDuration, rotamerMoveRatio);
+phmd.dynamic(nSteps, pH, temperature, moveFrequency, stepsPerMove);
