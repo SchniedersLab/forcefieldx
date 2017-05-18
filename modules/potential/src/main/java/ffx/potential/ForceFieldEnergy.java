@@ -767,12 +767,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         ForceField ffield = assembly.getForceField();
         String eImString = ffield.getString(ForceFieldString.ENERGY_IMPLEMENTATION, "FFX").toUpperCase().replaceAll("-", "_");
+        ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+        assembly.setPotential(ffxEnergy);
 
         try {
             EnergyImplementation eImpl = EnergyImplementation.valueOf(eImString);
             switch (eImpl) {
                 case FFX:
-                    ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                     return ffxEnergy;
                 case OMM:
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
@@ -782,19 +783,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         return oEnergy;
                     } catch (Exception ex) {
                         logger.warning(String.format(" Exception in creating OpenMM wrapper over force field energy: %s", ex));
+                        ex.printStackTrace();
                         ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                         return ffxEnergy;
                     }
                 case OMM_OPENCL:
                 case OMM_OPTCPU:
                 default:
-                    logger.warning(String.format(" Energy implementation type %s not actually implemented at this time", eImpl));
-                    ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+                    logger.warning(String.format(" Energy implementation type %s not actually implemented at this time; defaulting to FFX", eImpl));
                     return ffxEnergy;
             }
         } catch (IllegalArgumentException | NullPointerException ex) {
             logger.warning(String.format(" String %s did not match a known energy implementation", eImString));
-            ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
             return ffxEnergy;
         }
     }
@@ -1954,10 +1954,20 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 if (Double.isNaN(gx) || Double.isInfinite(gx)
                         || Double.isNaN(gy) || Double.isInfinite(gy)
                         || Double.isNaN(gz) || Double.isInfinite(gz)) {
-                    String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                            a.toString(), gx, gy, gz);
+                    /*String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz);*/
+                    StringBuilder sb = new StringBuilder(format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz));
+                    double[] vals = new double[3];
+                    a.getVelocity(vals);
+                    sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getAcceleration(vals);
+                    sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getPreviousAcceleration(vals);
+                    sb.append(format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+
                     //logger.severe(message);
-                    throw new EnergyException(message);
+                    throw new EnergyException(sb.toString());
                 }
                 g[index++] = gx;
                 g[index++] = gy;
@@ -2620,6 +2630,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             throw new IllegalStateException();
         }
         return (ParticleMeshEwaldQI) particleMeshEwald;
+    }
+
+    public List<CoordRestraint> getCoordRestraints() {
+        return new ArrayList<>(coordRestraints);
     }
 
     public int getSolvationInteractions() {

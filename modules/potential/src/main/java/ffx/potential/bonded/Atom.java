@@ -2776,6 +2776,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
      }
 
     /**
+     * Replaced by describe(Descriptions.XyzIndex_Name. Formats with XYZ index followed by atom name.
+     * @return A short string representation of this.
+     */
+    @Deprecated
+    public String toShortString() {
+        return describe(Descriptions.XyzIndex_Name);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

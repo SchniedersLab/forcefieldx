@@ -187,6 +187,10 @@ if (options.sO) {
     }
 }
 
+// This property is accessed in the OpenMMForceFieldEnergy.java script to allow 
+// for the turning on and off of atoms during RotamerOptimization.
+System.setProperty("turn-atoms-off", "true");
+
 List<String> titrationOptimizationList = new ArrayList<>();
 if (options.tO) {
     def tok = (options.tO).tokenize('.');
