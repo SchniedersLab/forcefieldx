@@ -154,7 +154,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private final VanDerWaals vanderWaals;
     private final ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
-    private final List<CoordRestraint> coordRestraints;
+    protected final List<CoordRestraint> coordRestraints;
     private final CoordRestraint autoCoordRestraint;
     private final COMRestraint comRestraint;
     private int nAtoms;
@@ -187,7 +187,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean polarizationTerm;
     private boolean generalizedKirkwoodTerm;
     private boolean ncsTerm;
-    private boolean restrainTerm;
+    protected boolean restrainTerm;
     private boolean restrainWithLambda;
     private boolean comTerm;
     private boolean esvTerm;
