@@ -43,10 +43,6 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.LUDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
-
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential.VARIABLE_TYPE;
@@ -485,28 +481,22 @@ public abstract class Thermostat {
         }
 
         /**
-        RealMatrix inertia = new Array2DRowRealMatrix(3, 3);
-        inertia.setEntry(0, 0, yy + zz);
-        inertia.setEntry(1, 0, -xy);
-        inertia.setEntry(2, 0, -xz);
-        inertia.setEntry(0, 1, -xy);
-        inertia.setEntry(1, 1, xx + zz);
-        inertia.setEntry(2, 1, -yz);
-        inertia.setEntry(0, 2, -xz);
-        inertia.setEntry(1, 2, -yz);
-        inertia.setEntry(2, 2, xx + yy);
-        inertia = new LUDecomposition(inertia).getSolver().getInverse();
-        xx = inertia.getEntry(0, 0);
-        yy = inertia.getEntry(1, 1);
-        zz = inertia.getEntry(2, 2);
-        xy = inertia.getEntry(0, 1);
-        xz = inertia.getEntry(0, 2);
-        yz = inertia.getEntry(1, 2);
-        double ox = angularMomentum[0] * xx + angularMomentum[1] * xy + angularMomentum[2] * xz;
-        double oy = angularMomentum[0] * xy + angularMomentum[1] * yy + angularMomentum[2] * yz;
-        double oz = angularMomentum[0] * xz + angularMomentum[1] * yz + angularMomentum[2] * zz;
-        */
-
+         * RealMatrix inertia = new Array2DRowRealMatrix(3, 3);
+         * inertia.setEntry(0, 0, yy + zz); inertia.setEntry(1, 0, -xy);
+         * inertia.setEntry(2, 0, -xz); inertia.setEntry(0, 1, -xy);
+         * inertia.setEntry(1, 1, xx + zz); inertia.setEntry(2, 1, -yz);
+         * inertia.setEntry(0, 2, -xz); inertia.setEntry(1, 2, -yz);
+         * inertia.setEntry(2, 2, xx + yy); inertia = new
+         * LUDecomposition(inertia).getSolver().getInverse(); xx =
+         * inertia.getEntry(0, 0); yy = inertia.getEntry(1, 1); zz =
+         * inertia.getEntry(2, 2); xy = inertia.getEntry(0, 1); xz =
+         * inertia.getEntry(0, 2); yz = inertia.getEntry(1, 2); double ox =
+         * angularMomentum[0] * xx + angularMomentum[1] * xy +
+         * angularMomentum[2] * xz; double oy = angularMomentum[0] * xy +
+         * angularMomentum[1] * yy + angularMomentum[2] * yz; double oz =
+         * angularMomentum[0] * xz + angularMomentum[1] * yz +
+         * angularMomentum[2] * zz;
+         */
         /**
          * Remove center of mass translational momentum.
          */
@@ -526,23 +516,13 @@ public abstract class Thermostat {
          * systems.
          */
         /**
-        if (false) {
-            index = 0;
-            while (index < nVariables) {
-                if (type[index] == VARIABLE_TYPE.OTHER) {
-                    index++;
-                    continue;
-                }
-                double xi = x[index++] - centerOfMass[0];
-                double yi = x[index++] - centerOfMass[1];
-                double zi = x[index] - centerOfMass[2];
-                index -= 2;
-                v[index++] += (-oy * zi + oz * yi);
-                v[index++] += (-oz * xi + ox * zi);
-                v[index++] += (-ox * yi + oy * xi);
-            }
-        } */
-
+         * if (false) { index = 0; while (index < nVariables) { if (type[index]
+         * == VARIABLE_TYPE.OTHER) { index++; continue; } double xi = x[index++]
+         * - centerOfMass[0]; double yi = x[index++] - centerOfMass[1]; double
+         * zi = x[index] - centerOfMass[2]; index -= 2; v[index++] += (-oy * zi
+         * + oz * yi); v[index++] += (-oz * xi + ox * zi); v[index++] += (-ox *
+         * yi + oy * xi); } }
+         */
         if (print) {
             logger.info(" Center of mass motion removed.");
         }

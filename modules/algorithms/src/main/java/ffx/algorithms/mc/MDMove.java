@@ -75,7 +75,7 @@ public class MDMove implements MCMove {
         temperature = 298.15;
         boolean initVelocities = true;
         molecularDynamics.storeState();
-        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 10.0, temperature,  initVelocities, null);
+        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 10.0, temperature, initVelocities, null);
     }
 
     @Override

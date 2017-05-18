@@ -115,6 +115,10 @@ class TTosrw extends Script {
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
+         * -mc or --monteCarlo to use the experimental MC-TTOSRW
+         */
+        @Option(shortName='mc', longName='monteCarlo', defaultValue='false', description='Use experimental MC-TTOSRW sampling') boolean mc;
+        /**
          * -a or --async sets asynchronous walker communication (recommended)
          */
         @Option(shortName='a', defaultValue='false', description='Walker communication is asynchronous.') boolean async;
@@ -1088,47 +1092,53 @@ class TTosrw extends Script {
             potential = osrw;
         }
 
-        // Create the MolecularDynamics instance.
-        MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
-            topologies[0].getProperties(), null, options.tstat, options.integrator);
-        for (int i = 1; i < topologies.size(); i++) {
-            molDyn.addAssembly(topologies.get(i), properties.get(i));
-        }
-
-        boolean initVelocities = true;
-        double restartInterval = 0.1;
-        String fileType = "XYZ";
-        int nSteps = options.steps;
-        // Start sampling.
-        if (options.nEquil > 0) {
-            logger.info(" Beginning equilibration");
-            osrw.setPropagateLambda(false);
-            molDyn.dynamic(options.nEquil, options.dt, options.report, options.write, options.temp, initVelocities, dyn);
-            logger.info(" Beginning Transition-Tempered OSRW sampling");
-            osrw.setPropagateLambda(true);
-            molDyn.dynamic(nSteps, options.dt, options.report, options.write, options.temp, false,
-                fileType, restartInterval, dyn);
+        if (options.mc) {
+            MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
+                topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.VELOCITYVERLET);
+            mcOSRW.sample();
         } else {
-            logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
-            boolean resetSteps = true;
-            if (options.resetStepsString) {
-                if (options.resetStepsString.equalsIgnoreCase("false")) {
-                    resetSteps = false;
-                }
+            // Create the MolecularDynamics instance.
+            MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
+                topologies[0].getProperties(), null, options.tstat, options.integrator);
+            for (int i = 1; i < topologies.size(); i++) {
+                molDyn.addAssembly(topologies.get(i), properties.get(i));
             }
-            if (!resetSteps) {
-                int nEnergyCount = osrw.getEnergyCount();
-                if (nEnergyCount > 0) {
-                    nSteps -= nEnergyCount;
-                    logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
-                    initVelocities = false;
-                }
-            }
-            if (nSteps > 0) {
-                molDyn.dynamic(nSteps, options.dt, options.report, options.write, options.temp, initVelocities,
+
+            boolean initVelocities = true;
+            double restartInterval = 0.1;
+            String fileType = "XYZ";
+            int nSteps = options.steps;
+            // Start sampling.
+            if (options.nEquil > 0) {
+                logger.info(" Beginning equilibration");
+                osrw.setPropagateLambda(false);
+                molDyn.dynamic(options.nEquil, options.dt, options.report, options.write, options.temp, initVelocities, dyn);
+                logger.info(" Beginning Transition-Tempered OSRW sampling");
+                osrw.setPropagateLambda(true);
+                molDyn.dynamic(nSteps, options.dt, options.report, options.write, options.temp, false,
                     fileType, restartInterval, dyn);
             } else {
-                logger.info(" No steps remaining for this process!");
+                logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
+                boolean resetSteps = true;
+                if (options.resetStepsString) {
+                    if (options.resetStepsString.equalsIgnoreCase("false")) {
+                        resetSteps = false;
+                    }
+                }
+                if (!resetSteps) {
+                    int nEnergyCount = osrw.getEnergyCount();
+                    if (nEnergyCount > 0) {
+                        nSteps -= nEnergyCount;
+                        logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
+                        initVelocities = false;
+                    }
+                }
+                if (nSteps > 0) {
+                    molDyn.dynamic(nSteps, options.dt, options.report, options.write, options.temp, initVelocities,
+                        fileType, restartInterval, dyn);
+                } else {
+                    logger.info(" No steps remaining for this process!");
+                }
             }
         }
     }

@@ -45,153 +45,178 @@ import static ffx.potential.extended.ExtUtils.arrayToStrings;
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**
- * The SB utility:
- *  1) relieves ".append(.format(" fatigue,
- *  2) handles newlines succinctly,
- *  3) cuts memory allocation,
- *  4) and prints through the logger of the calling class.
-
- * Usage:
- *      import static SB.SB;    // That's all the setup you need!
- *      SB.logfn("format", foo, ...);
- *      SB.print();
- * 
+ * The SB utility: 1) relieves ".append(.format(" fatigue, 2) handles newlines
+ * succinctly, 3) cuts memory allocation, 4) and prints through the logger of
+ * the calling class.
+ *
+ * Usage: import static SB.SB; // That's all the setup you need!
+ * SB.logfn("format", foo, ...); SB.print();
+ *
  * Of course, you can create your own instances if you need to inter-weave
- * creation of distinct log messages (or need a threaded context).
- * Stop wasting your life away with Logger and switch to SB today!
+ * creation of distinct log messages (or need a threaded context). Stop wasting
+ * your life away with Logger and switch to SB today!
  */
 public final class SBLogger {
+
     /**
      * A singleton-like shared instantiation.
      */
     public static final SBLogger SB = DefaultInstance.SB;
+
     private static class DefaultInstance {
-        private DefaultInstance() {}
+
+        private DefaultInstance() {
+        }
         private static final SBLogger SB = new SBLogger();
     }
-	public SBLogger() {}
-	private static final Logger fallback = Logger.getLogger(SBLogger.class.getName());
+
+    public SBLogger() {
+    }
+    private static final Logger fallback = Logger.getLogger(SBLogger.class.getName());
     /**
      * Allows avoidance of resizing.
      */
     private static final int initialCapacity = prop("sys.sbCapacity", 500000);
     /**
-     * Identifies the class of method calls so that original loggers can
-     * be used whenever possible.
+     * Identifies the class of method calls so that original loggers can be used
+     * whenever possible.
      */
     private static final CallerID cid = new CallerID();
     private StringBuffer sb = new StringBuffer(initialCapacity);
+
     /**
      * (log) with (f)ormat
      */
     public synchronized void logf(String msg, Object... args) {
         sb.append(format(msg, args));
     }
+
     /**
      * (log) with (f)ormat, (n)ewline
      */
     public synchronized void logfn(String msg, Object... args) {
         sb.append(format(msg, args)).append("\n");
     }
+
     /**
      * (n)ewline, (log) with (f)ormat
      */
     public synchronized void nlogf(String msg, Object... args) {
         sb.append("\n").append(format(msg, args));
     }
+
     /**
      * (n)ewline, (log) with (f)ormat, (n)ewline
      */
     public synchronized void nlogfn(String msg, Object... args) {
         sb.append("\n").append(format(msg, args)).append("\n");
     }
+
     /**
      * (log) with (f)ormat, (p)rint
      */
     public synchronized void logfp(String msg, Object... args) {
-		sb.append(format(msg, args));
-		write(Level.INFO);
+        sb.append(format(msg, args));
+        write(Level.INFO);
     }
+
     /**
      * (n)ew(l)ine
      */
     public synchronized void nl() {
         sb.append("\n");
     }
+
     /**
      * Send to calling logger.
      */
     public synchronized void print() {
-		write(Level.INFO);
+        write(Level.INFO);
     }
+
     /**
      * Kick it old school to thwart Levels, Filters, Handlers, LogManagers,
      * ResourceBundles, and other such travesties of the modern age.
      */
     public synchronized void force() {
-		Logger.getAnonymousLogger().log(Level.INFO, sb.toString());
+        Logger.getAnonymousLogger().log(Level.INFO, sb.toString());
     }
+
     /**
      * @see SBLogger::forceToConsole
      */
     public synchronized void force(String msg, Object... args) {
-		sb.append(format(msg, args));
-		force();
+        sb.append(format(msg, args));
+        force();
     }
+
     /**
      * Send to calling logger as warning.
      */
     public synchronized void warning() {
-		write(Level.WARNING);
+        write(Level.WARNING);
     }
+
     /**
      * @see SBLogger::warning
      */
     public synchronized void warning(String msg, Object... args) {
-		headern(msg, args);
-		write(Level.WARNING);
-	}
+        headern(msg, args);
+        write(Level.WARNING);
+    }
+
     /**
-     * Send to calling logger as severe.
-	 * Ensures termination in the event of caught exceptions via System call.
+     * Send to calling logger as severe. Ensures termination in the event of
+     * caught exceptions via System call.
      */
     public synchronized void crash() {
-		try		{ write(Level.SEVERE);	}
-		finally { System.exit(1);		}
+        try {
+            write(Level.SEVERE);
+        } finally {
+            System.exit(1);
+        }
     }
-	private final boolean synchronous		 = true;
-	private final boolean suppressTrailingNL = true;
-	private final boolean useCallerID		 = true;
-	private synchronized void write(Level level) {
-		String msg = sb.toString();
-		if (!msg.isEmpty()) {
-			if (suppressTrailingNL && msg.endsWith("\n"))
-				msg = msg.substring(0, msg.length());
-			if (useCallerID)
-				 cid.getCallingLogger().log(level, msg);
-			else fallback.log(level, msg);
-		}
-		clear();
-	}
+    private final boolean synchronous = true;
+    private final boolean suppressTrailingNL = true;
+    private final boolean useCallerID = true;
+
+    private synchronized void write(Level level) {
+        String msg = sb.toString();
+        if (!msg.isEmpty()) {
+            if (suppressTrailingNL && msg.endsWith("\n")) {
+                msg = msg.substring(0, msg.length());
+            }
+            if (useCallerID) {
+                cid.getCallingLogger().log(level, msg);
+            } else {
+                fallback.log(level, msg);
+            }
+        }
+        clear();
+    }
+
     /**
      * @see SBLogger::crash
      */
     public synchronized void crash(String msg, Object... args) {
-		headern(msg, args);
-		crash();
+        headern(msg, args);
+        crash();
     }
-	/**
-	 * Insert a formatted string preceding current message.
-	 */
-	public synchronized void header(String msg, Object... args) {
-		sb.insert(0, format(msg, args));
-	}
+
+    /**
+     * Insert a formatted string preceding current message.
+     */
+    public synchronized void header(String msg, Object... args) {
+        sb.insert(0, format(msg, args));
+    }
+
     /**
      * Insert a formatted string preceding current message; newline included.
      */
     public synchronized void headern(String msg, Object... args) {
         sb.insert(0, format(msg, args) + format("\n"));
     }
+
     /**
      * Send to calling logger or discard message.
      */
@@ -202,19 +227,22 @@ public final class SBLogger {
             clear();
         }
     }
-	public synchronized boolean isEmpty() {
-		return sb.toString().isEmpty();
-	}
+
+    public synchronized boolean isEmpty() {
+        return sb.toString().isEmpty();
+    }
+
     /**
      * Discard message.
      */
     public synchronized void clear() {
-		sb = new StringBuffer();
+        sb = new StringBuffer();
     }
+
     /**
      * Attempt to automatically coerce toString() requirements.
      */
-    private  synchronized static String format(String msg, Object... args) {
+    private synchronized static String format(String msg, Object... args) {
         try {
             return String.format(msg, args);
         } catch (IllegalFormatException ex) {
@@ -222,8 +250,9 @@ public final class SBLogger {
             return String.format(msg, arrayToStrings(args));
         }
     }
-    
+
     private static class CallerID extends SecurityManager {
+
         public synchronized Class<?> getCallingClass() {
             Class<?>[] callStack = getClassContext();
             for (Class<?> caller : callStack) {
@@ -233,6 +262,7 @@ public final class SBLogger {
             }
             return getClass();      // fallback
         }
+
         public synchronized Logger getCallingLogger() {
             return Logger.getLogger(getCallingClass().getName());
         }

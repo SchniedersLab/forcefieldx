@@ -68,7 +68,6 @@ import ffx.potential.bonded.LambdaInterface;
  */
 public class MonteCarloOSRW extends BoltzmannMC {
 
-    private final MolecularDynamics molecularDynamics;
     private final Potential potential;
     private final AbstractOSRW osrw;
     private final MolecularAssembly molecularAssembly;
@@ -85,8 +84,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private final double temperature = 310.0;
 
     /**
-     *
-     * @param molecularDynamics
      * @param potentialEnergy
      * @param osrw
      * @param molecularAssembly
@@ -95,11 +92,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * @param requestedThermostat
      * @param requestedIntegrator
      */
-    public MonteCarloOSRW(MolecularDynamics molecularDynamics, Potential potentialEnergy,
+    public MonteCarloOSRW(Potential potentialEnergy,
             AbstractOSRW osrw, MolecularAssembly molecularAssembly, CompositeConfiguration properties,
             AlgorithmListener listener, Thermostats requestedThermostat, Integrators requestedIntegrator) {
-        this.molecularDynamics = molecularDynamics;
         this.potential = potentialEnergy;
+        this.linter = (LambdaInterface) potentialEnergy;
         this.osrw = osrw;
         this.molecularAssembly = molecularAssembly;
         this.properties = properties;
@@ -107,13 +104,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
         this.requestedThermostat = requestedThermostat;
         this.requestedIntegrator = requestedIntegrator;
 
-
         /**
          * Changing the value of lambda will be handled by this class, as well
          * as adding the time dependent bias.
          */
         osrw.setPropagateLambda(false);
-
 
     }
 
@@ -131,17 +126,20 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * state (lambda) along the thermodynamic path.
      *
      * 1.) At a fixed lambda, run a defined length MD trajectory to "move"
-     * coordinates and dU/dL. 2.) Accept / Reject the MD move using the OSRW
-     * energy.
+     * coordinates and dU/dL.
      *
-     * 3.) Randomly change the value of Lambda. 4.) Accept / Reject the Lambda
-     * move using the OSRW energy.
+     * 2.) Accept / Reject the MD move using the OSRW energy.
      *
-     * 5.) Add
+     * 3.) Randomly change the value of Lambda.
+     *
+     * 4.) Accept / Reject the Lambda move using the OSRW energy.
+     *
+     * 5.) Add to the bias.
      */
     public void sample() {
-        double[] coordinates = null;
-        double[] gradient = null;
+        int n = potential.getNumberOfVariables();
+        double[] coordinates = new double[n];
+        double[] gradient = new double[n];
 
         int numMoves = totalMDSteps / mdSteps;
 
@@ -153,7 +151,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
         for (int imove = 0; imove < numMoves; imove++) {
 
-            double Flambda = 0.0;
             int lambdaBin = osrw.binForLambda(lambda);
             potential.getCoordinates(coordinates);
             osrw.energyAndGradient(coordinates, gradient);
@@ -182,7 +179,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
             currentEnergy = osrw.energyAndGradient(coordinates, gradient);
             currentdUdL = linter.getdEdL();
             lambdaMove.move();
-            double proposedLambda = linter.getLambda();
             proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
             proposeddUdL = linter.getdEdL();
             if (evaluateMove(currentEnergy, proposedEnergy)) {
@@ -191,6 +187,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             } else {
                 lambdaMove.revertMove();
             }
+            lambda = linter.getLambda();
 
             /**
              * Update time dependent bias.

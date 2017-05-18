@@ -604,10 +604,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             ArrayList<ROLS> torsion = molecularAssembly.getTorsionList();
             nTorsions = torsion.size();
             torsions = torsion.toArray(new Torsion[nTorsions]);
-            if (nTorsions > 0 && torsionScale == 1.0) {
-                logger.info(format("  Torsions:                          %10d", nTorsions));
-            } else {
-                logger.info(format("  Torsions (%5.2f):                  %10d", torsionScale, nTorsions));
+            if (nTorsions > 0) {
+                if (torsionScale == 1.0) {
+                    logger.info(format("  Torsions:                          %10d", nTorsions));
+                } else {
+                    logger.info(format("  Torsions (%5.2f):                  %10d", torsionScale, nTorsions));
+                }
             }
         } else {
             nTorsions = 0;
@@ -619,10 +621,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             ArrayList<ROLS> piOrbitalTorsion = molecularAssembly.getPiOrbitalTorsionList();
             nPiOrbitalTorsions = piOrbitalTorsion.size();
             piOrbitalTorsions = piOrbitalTorsion.toArray(new PiOrbitalTorsion[nPiOrbitalTorsions]);
-            if (nPiOrbitalTorsions > 0 && torsionScale == 1.0) {
-                logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
-            } else {
-                logger.info(format("  Pi-Orbital Torsions (%5.2f):       %10d", torsionScale, nPiOrbitalTorsions));
+            if (nPiOrbitalTorsions > 0) {
+                if (torsionScale == 1.0) {
+                    logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
+                } else {
+                    logger.info(format("  Pi-Orbital Torsions (%5.2f):       %10d", torsionScale, nPiOrbitalTorsions));
+                }
             }
         } else {
             nPiOrbitalTorsions = 0;

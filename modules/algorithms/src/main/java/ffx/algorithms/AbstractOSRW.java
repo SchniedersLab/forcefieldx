@@ -55,6 +55,7 @@ import edu.rit.pj.cluster.JobBackend;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
+import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
@@ -526,6 +527,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     public double getTotaldEdLambda() {
         return dEdLambda;
+    }
+
+    public Potential getPotentialEnergy() {
+        return potential;
     }
 
     protected double currentFreeEnergy() {
