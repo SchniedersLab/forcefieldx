@@ -2802,10 +2802,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
                 xyz[0], xyz[1], xyz[2], segID);
     }
 
-    public String toShortString() {
-        return this.describe(Descriptions.XyzIndex_Name);
-    }
-
     /**
      * {@inheritDoc}
      *
