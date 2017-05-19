@@ -62,7 +62,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 
 import static ffx.numerics.VectorMath.binomial;
-import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * Predict Mutual Induced Dipoles based on previous steps.
@@ -395,12 +394,12 @@ public class ScfPredictor {
                     function, targetVector, start, checker, maxEval, maxIter);
 
             LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
-            SB.nlogfn(" LS Optimization parameters:"
+            if (true)
+                logger.info(String.format(" LS Optimization parameters:"
                     + "  %s %s\n"
                     + "  %s %s\n"
                     + "  %d %d", function, targetVector.toString(),
-                    start.toString(), checker.toString(), maxIter, maxEval);
-            SB.printIf(true);
+                    start.toString(), checker.toString(), maxIter, maxEval));
             return optimum;
         }
 

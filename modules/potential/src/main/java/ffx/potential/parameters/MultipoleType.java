@@ -60,7 +60,6 @@ import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.norm;
 import static ffx.numerics.VectorMath.scalar;
 import static ffx.numerics.VectorMath.sum;
-import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * The MultipoleType class defines a multipole in its local frame.
@@ -905,9 +904,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         }
         for (MultipoleType type : types) {
             if (type.frameDefinition != types[0].frameDefinition) {
-                SB.warning("Multipole frame definition mismatch during weighting:\n\t%s->%s,\n\t%s->%s",
+                logger.warning(String.format("Multipole frame definition mismatch during weighting:\n\t%s->%s,\n\t%s->%s",
 						types[0].toString(), types[0].frameDefinition.toString(),
-						type.toString(), type.frameDefinition.toString());
+						type.toString(), type.frameDefinition.toString()));
 				throw new IllegalArgumentException();
             }
         }

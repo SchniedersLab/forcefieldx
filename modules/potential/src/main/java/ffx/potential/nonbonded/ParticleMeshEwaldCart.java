@@ -8645,4 +8645,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return elecForm;
     }
 
+    @Override
+    public String getName() {
+        return "Cartesian";
+    }
 }

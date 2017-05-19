@@ -73,7 +73,6 @@ import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.VDWType;
 
-import static ffx.potential.extended.SBLogger.SB;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 
@@ -948,7 +947,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
     public final void setEsv(ExtendedVariable esv, MultipoleType type, MultipoleType dotType, Double scaledAlpha) {
         if (esv == null || (esvTerm && esv != this.esv)) {
-            SB.crash(format("Error attaching ESV to atom (multiples not supported): %s %s %s\n", this, this.esv, esv));
+            logger.severe(format("Error attaching ESV to atom (multiples not supported): %s %s %s\n", this, this.esv, esv));
         }
         this.esv = esv;
         esvMultipole = type;

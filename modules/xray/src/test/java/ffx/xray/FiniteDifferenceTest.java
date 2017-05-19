@@ -76,7 +76,7 @@ public class FiniteDifferenceTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {false,
+            {true,
                 "ala met anisou",
                 NONE,
                 new int[]{91, 105, 119},
