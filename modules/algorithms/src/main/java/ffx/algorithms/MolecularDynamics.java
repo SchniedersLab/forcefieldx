@@ -64,8 +64,6 @@ import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 
-import static ffx.potential.extended.SBLogger.SB;
-
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -846,12 +844,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
             
             /* DEBUG; REMOVE */
             if (currentTemperature > 600.0) {
-                SB.logfn("AtomVelocityDump=%d,DoF=%d:", snap, numberOfVariables);
+                logger.info(format("AtomVelocityDump=%d,DoF=%d:", snap, numberOfVariables));
                 for (int i = 0; i < v.length; i++) {
-                    SB.logf(" %8.4f", v[i]);
+                    logger.info(format(" %8.4f", v[i]));
                 }
-                SB.nlogf("------------");
-                SB.printIf(true);
+                logger.info(format("------------"));
             }
 
             /**

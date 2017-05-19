@@ -84,7 +84,6 @@ import ffx.potential.extended.TitrationUtils.TitrationType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 
-import static ffx.potential.extended.SBLogger.SB;
 import static ffx.potential.extended.TitrationUtils.findResiduePolymer;
 import static ffx.potential.extended.TitrationUtils.inactivateResidue;
 import static ffx.potential.extended.TitrationUtils.performTitration;
@@ -261,7 +260,7 @@ public class PhMD implements MonteCarloListener {
                 esvSystem.addVariable(esv);
             }
             ffe.attachExtendedSystem(esvSystem);
-            SB.logfp(" Continuous pHMD readied with %d residues.", titratingESVs.size());
+            logger.info(format(" Continuous pHMD readied with %d residues.", titratingESVs.size()));
         } else {
             for (Residue res : chosenResidues) {
                 // Create MultiResidue objects to wrap titratables.
@@ -276,7 +275,7 @@ public class PhMD implements MonteCarloListener {
                titratingMultis.add(multiRes);
                logger.info(String.format(" Titrating: %s", multiRes));
             }
-            SB.logfp(" Discrete MCMD readied with %d residues.", titratingMultis.size());
+            logger.info(format(" Discrete MCMD readied with %d residues.", titratingMultis.size()));
         }
         
         switch (distribution) {
@@ -397,13 +396,12 @@ public class PhMD implements MonteCarloListener {
         
         if (thermostat.getCurrentTemperature() > config.warningTemperature) {
             Atom[] atoms = mola.getAtomArray();
-            SB.logfn(" System heating! Dumping atomic velocities for %d D.o.F.:", ffe.getNumberOfVariables());
+            logger.info(format(" System heating! Dumping atomic velocities for %d D.o.F.:", ffe.getNumberOfVariables()));
             double[] velocity = new double[3];
             for (Atom atom : atoms) {
                 atom.getVelocity(velocity);
-                SB.logfn(" %s: %s", atom.describe(Atom.Descriptions.Trim), Arrays.toString(velocity));
+                logger.info(format(" %s: %s", atom.describe(Atom.Descriptions.Trim), Arrays.toString(velocity)));
             }
-            SB.print();
         }
 		esvSystem.setTemperature(temperature);
         
@@ -427,7 +425,7 @@ public class PhMD implements MonteCarloListener {
             return false;
         }
 
-        SB.logfp("TitratingMultis: %d", titratingMultis.size());
+        logger.info(format("TitratingMultis: %d", titratingMultis.size()));
 
         // Randomly choose a target titratable residue to attempt protonation switch.
         int random = (config.titrateTermini)
@@ -537,9 +535,9 @@ public class PhMD implements MonteCarloListener {
             }
             titrationType = targetTerm.titrateTerminus_v1(thermostat.getCurrentTemperature());
         } else {
-            SB.logfp("targetMulti:  %s", targetMulti.toString());
-            SB.logfp("getActive:    %s", targetMulti.getActive().toString());
-            SB.logfp("titrationMap: %s", Arrays.toString(titrationMap.get(targetMulti.getActive()).toArray()));
+            logger.info(format("targetMulti:  %s", targetMulti.toString()));
+            logger.info(format("getActive:    %s", targetMulti.getActive().toString()));
+            logger.info(format("titrationMap: %s", Arrays.toString(titrationMap.get(targetMulti.getActive()).toArray())));
             // Choose from the list of available titrations for the active residue.
             List<Titration> avail = titrationMap.get(targetMulti.getActive());
             titration = avail.get(rng.nextInt(avail.size()));
