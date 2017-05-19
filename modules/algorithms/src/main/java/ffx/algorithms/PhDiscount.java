@@ -72,7 +72,6 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.SystemTemperatureException;
 
 import static ffx.potential.extended.ExtConstants.ns2sec;
-import static ffx.potential.extended.SBLogger.SB;
 import static ffx.potential.extended.TitrationUtils.propagateInactiveResidues;
 
 /**
@@ -143,7 +142,7 @@ public class PhDiscount implements MonteCarloListener {
 		
         config.print();
 		ExtUtils.printConfigSet("All Config:", System.getProperties(), keyPrefixes);
-        SB.logfp(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", esvSystem.getConstantPh());
+        logger.info(format(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", esvSystem.getConstantPh()));
         ffe.reInit();
         molDyn.reInit();
 		molDyn.setMonteCarloListener(this, MonteCarloNotification.EACH_STEP);
@@ -171,9 +170,9 @@ public class PhDiscount implements MonteCarloListener {
                 initVelocities, fileType, writeRestartInterval, dynLoader);
         
         /* Launch first round of MD with traditional call to dynamic(). */
-        SB.logfp(" Launching DISCOUNT pHMD for %d physical steps.", physicalSteps);
-        SB.logfp(" (Round %d) Launching fixed-protonation dynamics for %d steps.",
-                movesAttempted+1, attemptFrequency);
+        logger.info(format(" Launching DISCOUNT pHMD for %d physical steps.", physicalSteps));
+        logger.info(format(" (Round %d) Launching fixed-protonation dynamics for %d steps.",
+                movesAttempted+1, attemptFrequency));
 		
 //        molDyn.dynamic(attemptFrequency, dt, printInterval, saveInterval,
 //                temperature, initVelocities, fileType, writeRestartInterval, dynLoader);
@@ -182,15 +181,15 @@ public class PhDiscount implements MonteCarloListener {
 		
         while (stepsTaken < physicalSteps) {
             /* Attempt Monte-Carlo through fractional-protonation dynamics. */
-            SB.logfp(" (Attempt %d) Launching fractional-protonation dynamics for %d steps.",
-                    ++movesAttempted, attemptFrequency);
+            logger.info(format(" (Attempt %d) Launching fractional-protonation dynamics for %d steps.",
+                    ++movesAttempted, attemptFrequency));
 			if (tryContinuousTitrationMove(stepsPerMove, temperature)) {
 				movesAccepted++;
 			}
 			
             /* Return to fixed-protonation MD with redynamic() to avoid initialization. */
-            SB.logfp(" (Round %d) Launching fixed-protonation dynamics for %d steps.",
-                    movesAttempted+1, attemptFrequency);
+            logger.info(format(" (Round %d) Launching fixed-protonation dynamics for %d steps.",
+                    movesAttempted+1, attemptFrequency));
             if (stepsTaken + attemptFrequency < physicalSteps) {
                 molDyn.redynamic(attemptFrequency, temperature);
                 stepsTaken += attemptFrequency;
@@ -201,8 +200,8 @@ public class PhDiscount implements MonteCarloListener {
         }
 		
         /* Profit{!,?,.} */
-        SB.logfp(" (Summary) DISCOUNT pHMD completed %d physical steps and %d moves, of which %d were accepted.",
-                physicalSteps, movesAttempted, movesAccepted);
+        logger.info(format(" (Summary) DISCOUNT pHMD completed %d physical steps and %d moves, of which %d were accepted.",
+                physicalSteps, movesAttempted, movesAccepted));
     }
     
     /**
@@ -307,8 +306,8 @@ public class PhDiscount implements MonteCarloListener {
         ffe.attachExtendedSystem(esvSystem);
         molDyn.attachExtendedSystem(esvSystem, 10);
 		final double Uo_prime = currentTotalEnergy();
-		SB.logfn(" %-40s %-s", "Trying continuous titration move.",
-				format("Uo,Uo': %16.8f, %16.8f", Uo, Uo_prime));
+		logger.info(format(" %-40s %-s", "Trying continuous titration move.",
+				format("Uo,Uo': %16.8f, %16.8f", Uo, Uo_prime)));
         
         molDyn.redynamic(titrationDuration, targetTemperature);
 		final double Un_prime = currentTotalEnergy();
@@ -318,8 +317,8 @@ public class PhDiscount implements MonteCarloListener {
         molDyn.detachExtendedSystem();
         ffe.detachExtendedSystem();
         final double Un = currentTotalEnergy();
-		SB.logfn(" %-40s %-30s", "Move finished; detaching esvSystem.",
-				format("Un',Un: %16.8f, %16.8f", Un_prime, Un));
+		logger.info(format(" %-40s %-30s", "Move finished; detaching esvSystem.",
+				format("Un',Un: %16.8f, %16.8f", Un_prime, Un)));
 		
 		/* Calculate acceptance probability from detailed balance equation. */
         final double beta = 1 / (ExtConstants.Boltzmann * thermostat.getCurrentTemperature());
@@ -327,17 +326,17 @@ public class PhDiscount implements MonteCarloListener {
 		final double dgContinuous = Un_prime - Uo_prime;
 		final double crit = FastMath.exp(-beta * (dgDiscrete - dgContinuous));
         final double rand = rng.nextDouble();
-        SB.logfn("   Un,Un',Uo',Uo:   %10.5f %10.5f %10.5f %10.5f", Un, Un_prime, Uo_prime, Uo);
-        SB.logfn("   Crit,Rng:        %10.5f %10.5f", crit, rand);
+        logger.info(format("   Un,Un',Uo',Uo:   %10.5f %10.5f %10.5f %10.5f", Un, Un_prime, Uo_prime, Uo));
+        logger.info(format("   Crit,Rng:        %10.5f %10.5f", crit, rand));
         long took = System.nanoTime() - startTime;
         if (rand <= crit) {
-            SB.logfp(" %-40s %-s", "Monte-Carlo accepted.",
-                    format("Wallclock: %8.3f sec", took * ns2sec));
+            logger.info(format(" %-40s %-s", "Monte-Carlo accepted.",
+                    format("Wallclock: %8.3f sec", took * ns2sec)));
             writeSnapshot(".post-acpt");
             return true;
         } else {
-            SB.logfp(" %-40s %-s", "Monte-Carlo denied; reverting state.",
-                    format("Wallclock: %8.3f sec", took * ns2sec));
+            logger.info(format(" %-40s %-s", "Monte-Carlo denied; reverting state.",
+                    format("Wallclock: %8.3f sec", took * ns2sec)));
             writeSnapshot(".post-deny");
             assemblyState.revertState();
             ffe.reInit();
