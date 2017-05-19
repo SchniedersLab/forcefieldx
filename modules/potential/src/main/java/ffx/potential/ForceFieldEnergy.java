@@ -764,12 +764,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         ForceField ffield = assembly.getForceField();
         String eImString = ffield.getString(ForceFieldString.ENERGY_IMPLEMENTATION, "FFX").toUpperCase().replaceAll("-", "_");
+        ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+        assembly.setPotential(ffxEnergy);
 
         try {
             EnergyImplementation eImpl = EnergyImplementation.valueOf(eImString);
             switch (eImpl) {
                 case FFX:
-                    ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                     return ffxEnergy;
                 case OMM:
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
@@ -779,19 +780,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         return oEnergy;
                     } catch (Exception ex) {
                         logger.warning(String.format(" Exception in creating OpenMM wrapper over force field energy: %s", ex));
+                        ex.printStackTrace();
                         ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                         return ffxEnergy;
                     }
                 case OMM_OPENCL:
                 case OMM_OPTCPU:
                 default:
-                    logger.warning(String.format(" Energy implementation type %s not actually implemented at this time", eImpl));
-                    ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+                    logger.warning(String.format(" Energy implementation type %s not actually implemented at this time; defaulting to FFX", eImpl));
                     return ffxEnergy;
             }
         } catch (IllegalArgumentException | NullPointerException ex) {
             logger.warning(String.format(" String %s did not match a known energy implementation", eImString));
-            ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
             return ffxEnergy;
         }
     }
@@ -2630,6 +2630,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             throw new IllegalStateException();
         }
         return (ParticleMeshEwaldQI) particleMeshEwald;
+    }
+
+    public List<CoordRestraint> getCoordRestraints() {
+        return new ArrayList<>(coordRestraints);
     }
 
     public int getSolvationInteractions() {
