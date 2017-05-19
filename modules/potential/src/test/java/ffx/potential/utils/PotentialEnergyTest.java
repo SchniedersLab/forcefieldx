@@ -40,10 +40,13 @@ package ffx.potential.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import org.junit.Test;
+import static java.lang.String.format;
+
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -53,7 +56,10 @@ import static org.junit.Assert.assertEquals;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.parameters.ForceField;
+
+import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * Test the PotentialEnergy class.
@@ -69,8 +75,7 @@ public final class PotentialEnergyTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {
-                false,
+            {TestType.Energy,
                 "Ubiquitin Benchmark",
                 "ffx/potential/structures/ubiquitin.xyz",
                 2673.37683484, 6908,
@@ -86,8 +91,8 @@ public final class PotentialEnergyTest {
                 -33012.66179952, 623490,
                 -13041.30955459, 623490,
                 0.0, 0,
-                1.0e-2, 1.0e-2},
-            {false,
+                1.0e-2, 1.0e-2, false},
+            {TestType.All,
                 "OPLS-AA/L Peptide",
                 "ffx/potential/structures/peptide-oplsaal.xyz",
                 39.69175722, 333,
@@ -103,8 +108,8 @@ public final class PotentialEnergyTest {
                 -671.66812023, 53628,
                 0.0, 53628,
                 0.0, 0,
-                1.0e-2, 1.0e-2},
-            {false,
+                1.0e-2, 1.0e-2, false},
+            {TestType.All,
                 "Amber99sb Peptide",
                 "ffx/potential/structures/peptide-amber99sb.xyz",
                 41.19699756, 333,
@@ -120,8 +125,8 @@ public final class PotentialEnergyTest {
                 -413.54328593, 53628,
                 0.0, 53628,
                 0.0, 0,
-                1.0e-2, 1.0e-2},
-            {false,
+                1.0e-2, 1.0e-2, false},
+            {TestType.All,
                 "AMOEBA Protein 2013 GK Capped DMHD",
                 "ffx/potential/structures/dmhd-amoebapro13.xyz",
                 4.00030221, 71,
@@ -137,8 +142,8 @@ public final class PotentialEnergyTest {
                 -169.24655738, 2485,
                 -11.36055094, 2485,
                 -160.55923508, 2556,
-                1.0e-2, 1.0e-2},
-            {false,
+                1.0e-2, 1.0e-2, true},
+            {TestType.All,
                 "AMBER99SB GB (no dispersion) Capped DMHD",
                 "ffx/potential/structures/dmhd-amber99sb.xyz",
                 1.56331971, 71,
@@ -154,8 +159,8 @@ public final class PotentialEnergyTest {
                 -71.00737570, 2485,
                 0.0, 2485,
                 -147.04162801, 2556,
-                1.0e-2, 1.0e-2},
-            {true,
+                1.0e-2, 1.0e-2, true},
+            {TestType.All_CiOnly,
                 "DHFR Benchmark",
                 "ffx/potential/structures/dhfr.xyz",
                 6423.84579926, 16569,
@@ -171,8 +176,8 @@ public final class PotentialEnergyTest {
                 -79396.71166429, 1463353,
                 -32141.39930772, 1463353,
                 0.0, 0,
-                1.0e-2, 1.0e-2},
-            {true,
+                1.0e-2, 1.0e-2, false},
+            {TestType.All_CiOnly,
                 "SNARE P1",
                 "ffx/potential/structures/1n7s.P1.xyz",
                 1405.28569930, 20160,
@@ -188,8 +193,8 @@ public final class PotentialEnergyTest {
                 -49215.72628076, 1328456,
                 -11245.82734685, 1328456,
                 0.0, 0,
-                1.0e-2, 1.0e-2},
-            {true,
+                1.0e-2, 1.0e-2, false},
+            {TestType.All_CiOnly,
                 "SNARE P212121",
                 "ffx/potential/structures/1n7s.P212121.xyz",
                 351.32142483, 5040,
@@ -205,11 +210,9 @@ public final class PotentialEnergyTest {
                 -12303.93157019, 332114,
                 -2811.45683671, 332114,
                 0.0, 0,
-                1.0e-2, 1.0e-2}});
+                1.0e-2, 1.0e-2, false}});
     }
     private final String info;
-    private final File structure;
-    private final MolecularAssembly molecularAssembly;
     private final int nBonds;
     private final int nAngles;
     private final int nStretchBends;
@@ -238,14 +241,22 @@ public final class PotentialEnergyTest {
     private final double solvationEnergy;
     private final double tolerance;
     private final double gradientTolerance;
-    private final boolean ci;
-    private final boolean ciOnly;
-    private boolean mpoleTerm;
-    private boolean solvTerm;
-    private final ForceFieldEnergy forceFieldEnergy;
+    private final boolean ciEnabled;
+
+    private File structure;
+    private MolecularAssembly molecularAssembly;
+    private ForceFieldEnergy forceFieldEnergy;
+    private boolean mpoleTerm, generalizedKirkwood, pmeqi;
+    private String filename, pmeName;
+
+    private final TestType testType;
+    private enum TestType {
+        Energy, Grad, Softcore, All,
+        Energy_CiOnly, Grad_CiOnly, Softcore_CiOnly, All_CiOnly;
+    }
 
     public PotentialEnergyTest(
-            boolean ciOnly,
+            TestType testType,
             String info, String filename,
             double bondEnergy, int nBonds,
             double angleEnergy, int nAngles,
@@ -260,8 +271,10 @@ public final class PotentialEnergyTest {
             double permanentEnergy, int nPermanent,
             double polarizationEnergy, int nPolar,
             double solvationEnergy, int nSolv,
-            double tolerance, double gradTolerance) {
-        this.ciOnly = ciOnly;
+            double tolerance, double gradTolerance,
+            boolean generalizedKirkwood) {
+        this.testType = testType;
+        this.filename = filename;
         this.info = info;
         this.bondEnergy = bondEnergy;
         this.nBonds = nBonds;
@@ -291,48 +304,100 @@ public final class PotentialEnergyTest {
         this.nSolvation = nSolv;
         this.tolerance = tolerance;
         this.gradientTolerance = gradTolerance;
+        this.generalizedKirkwood = generalizedKirkwood;
+        this.ciEnabled = Boolean.valueOf(System.getProperty("ffx.ci","false"));
+    }
 
-        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
-        if (!ci && ciOnly) {
-            structure = null;
-            molecularAssembly = null;
-            forceFieldEnergy = null;
-            return;
-        }
+    private static Properties initialSystemConfig;
+    /**
+     * Backup system properties for restoration.
+     */
+    @org.junit.BeforeClass
+    public static void setUpClass() {
+        initialSystemConfig = (Properties) System.getProperties().clone();
+    }
 
+    public void load() {
         /**
          * Load the test system.
          */
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
         PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
+        molecularAssembly = potentialUtils.openQuietly(structure.getAbsolutePath());
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
-        solvTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.GKTERM, false);
+        generalizedKirkwood = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.GKTERM, false);
+        pmeName = (forceFieldEnergy.getPmeNode() instanceof ParticleMeshEwaldQI) ? "Quasi-internal" : "Cartesian";
+    }
 
-         if (ci) {
-            testGradient();
-            testSoftCore();
-         }
+    @SuppressWarnings("fallthrough")
+    public void testRunner() {
+        final boolean skipReal = Boolean.valueOf(System.getProperty("pme.skipReal","false"));
+        final boolean skipRecip = Boolean.valueOf(System.getProperty("pme.skipRecip","false"));
+
+        // This switch intentionally falls though for Ci tests.
+        switch (testType) {
+            case Energy_CiOnly:
+                if (!ciEnabled) return;
+            case Energy:
+                 // Energy test will fail if either real or reciprocal regions are skipped.
+                if (!skipReal && !skipRecip) {
+                    load();
+                    testEnergy();
+                }
+                break;
+
+            case Grad_CiOnly:
+                if (!ciEnabled) return;
+            case Grad:
+                load();
+                testGradient();
+                break;
+
+            case Softcore_CiOnly:
+                if (!ciEnabled) return;
+            case Softcore:
+                load();
+                testSoftCore();
+                break;
+
+            case All_CiOnly:
+                if (!ciEnabled) return;
+            case All:
+                load();
+                if (!skipReal && !skipRecip) testEnergy();
+                testGradient();
+                testSoftCore();
+        }
+    }
+
+    @org.junit.Test
+    public void testLauncherCart() {
+        System.setProperty("pme.qi", "false");
+        load();
+        testRunner();
+        System.clearProperty("pme.qi");
+    }
+
+    @org.junit.Test
+    public void testLauncherQi() {
+        if (generalizedKirkwood) return;
+        System.setProperty("pme.qi", "true");
+        System.setProperty("esvterm", "true");
+        testRunner();
+        System.clearProperty("pme.qi");
+        System.clearProperty("esvterm");
     }
 
     /**
      * Test of energy method, of class PotentialEnergy.
      */
-    @Test
     public void testEnergy() {
-
-        /**
-         * Skip expensive tests for normal builds.
-         */
-        if (!ci && ciOnly) {
-            return;
-        }
-
+        logger.info(format(" %s potential energy test on %s ", pmeName, structure.getName()));
         boolean gradient = false;
         boolean print = true;
-        double total = forceFieldEnergy.energy(gradient, print);
+        forceFieldEnergy.energy(gradient, print);
         // Bond Energy
         assertEquals(info + " Bond Energy", bondEnergy, forceFieldEnergy.getBondEnergy(), tolerance);
         assertEquals(info + " Bond Count", nBonds, forceFieldEnergy.getNumberofBonds());
@@ -374,7 +439,7 @@ public final class PotentialEnergyTest {
         assertEquals(info + " Polarization Energy", polarizationEnergy, forceFieldEnergy.getPolarizationEnergy(), tolerance);
         assertEquals(info + " Polarization Count", nPolar, forceFieldEnergy.getPermanentInteractions());
 
-        if (solvTerm) {
+        if (generalizedKirkwood) {
             assertEquals(info + " Solvation", solvationEnergy,
                     forceFieldEnergy.getSolvationEnergy(), tolerance);
             assertEquals(info + " Solvation Count", nSolvation, forceFieldEnergy.getSolvationInteractions());
@@ -385,11 +450,9 @@ public final class PotentialEnergyTest {
      * Test of energy gradient, of class PotentialEnergy.
      */
     public void testGradient() {
+        logger.info(format(" %s gradient test on %s", pmeName, structure.getName()));
         boolean gradient = true;
-        boolean print = true;
-        forceFieldEnergy.energy(gradient, print);
-        gradient = false;
-        print = false;
+        boolean print = false;
         double step = 0.00001;
         double analytic[] = new double[3];
         double numeric[] = new double[3];
@@ -397,61 +460,67 @@ public final class PotentialEnergyTest {
 
         Atom[] atoms = molecularAssembly.getAtomArray();
         int n = atoms.length;
-        Random random = new Random();
-        int i = random.nextInt(n);
-        Atom a0 = atoms[i];
-
-        a0.getXYZGradient(analytic);
-        a0.getXYZ(xyz);
-        // Find numeric dX
-        xyz[0] += step;
-        a0.moveTo(xyz);
-        double e = forceFieldEnergy.energy(gradient, print);
-        xyz[0] -= 2.0 * step;
-        a0.moveTo(xyz);
-        e -= forceFieldEnergy.energy(gradient, print);
-        numeric[0] = e / (2.0 * step);
-        xyz[0] += step;
-        // Find numeric dY
-        xyz[1] += step;
-        a0.moveTo(xyz);
-        e = forceFieldEnergy.energy(gradient, print);
-        xyz[1] -= 2.0 * step;
-        a0.moveTo(xyz);
-        e -= forceFieldEnergy.energy(gradient, print);
-        numeric[1] = e / (2.0 * step);
-        xyz[1] += step;
-        // Find numeric dZ
-        xyz[2] += step;
-        a0.moveTo(xyz);
-        e = forceFieldEnergy.energy(gradient, print);
-        xyz[2] -= 2.0 * step;
-        a0.moveTo(xyz);
-        e -= forceFieldEnergy.energy(gradient, print);
-        numeric[2] = e / (2.0 * step);
-        xyz[2] += step;
-        a0.moveTo(xyz);
-        double dx = analytic[0] - numeric[0];
-        double dy = analytic[1] - numeric[1];
-        double dz = analytic[2] - numeric[2];
-        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len > gradientTolerance) {
-            logger.severe("\n" + a0.toString() + String.format(" failed: %10.6f.", len) + String.format(
-                    "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
-                    analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                            numeric[0], numeric[1], numeric[2]));
-        } else {
-            logger.info("\n" + a0.toString() + String.format(" passed: %10.6f.", len) + String.format(
-                    "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
-                    analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
-                            numeric[0], numeric[1], numeric[2]));
+        List<Integer> testers = Arrays.asList(0, n/2, n-1);
+        
+        for (int i : testers) {
+            Atom a0 = atoms[i];
+            // Get analytic dX,dY,dZ
+            gradient = true;
+            forceFieldEnergy.energy(gradient, print);
+            a0.getXYZGradient(analytic);
+            a0.getXYZ(xyz);
+            gradient = false;
+            // Find numeric dX
+            xyz[0] += step;
+            a0.moveTo(xyz);
+            double e = forceFieldEnergy.energy(gradient, print);
+            xyz[0] -= 2.0 * step;
+            a0.moveTo(xyz);
+            e -= forceFieldEnergy.energy(gradient, print);
+            numeric[0] = e / (2.0 * step);
+            xyz[0] += step;
+            // Find numeric dY
+            xyz[1] += step;
+            a0.moveTo(xyz);
+            e = forceFieldEnergy.energy(gradient, print);
+            xyz[1] -= 2.0 * step;
+            a0.moveTo(xyz);
+            e -= forceFieldEnergy.energy(gradient, print);
+            numeric[1] = e / (2.0 * step);
+            xyz[1] += step;
+            // Find numeric dZ
+            xyz[2] += step;
+            a0.moveTo(xyz);
+            e = forceFieldEnergy.energy(gradient, print);
+            xyz[2] -= 2.0 * step;
+            a0.moveTo(xyz);
+            e -= forceFieldEnergy.energy(gradient, print);
+            numeric[2] = e / (2.0 * step);
+            xyz[2] += step;
+            a0.moveTo(xyz);
+            double dx = analytic[0] - numeric[0];
+            double dy = analytic[1] - numeric[1];
+            double dz = analytic[2] - numeric[2];
+            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (len > gradientTolerance) {
+                logger.severe("\n" + a0.toString() + String.format(" failed: %10.6f.", len) + String.format(
+                        "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
+                        analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
+                                numeric[0], numeric[1], numeric[2]));
+            } else {
+                logger.info("\n" + a0.toString() + String.format(" passed: %10.6f.", len) + String.format(
+                        "\nAnalytic: (%12.4f, %12.4f, %12.4f)\n",
+                        analytic[0], analytic[1], analytic[2]) + String.format("Numeric:  (%12.4f, %12.4f, %12.4f)\n",
+                                numeric[0], numeric[1], numeric[2]));
+            }
+            assertEquals(a0.toString(), 0.0, len, gradientTolerance);
         }
-        assertEquals(a0.toString(), 0.0, len, gradientTolerance);
     }
 
     public void testSoftCore() {
+        logger.info(format(" %s softcore unity test on %s", pmeName, structure.getName()));
         boolean gradient = false;
-        boolean print = true;
+        boolean print = false;
         double e = forceFieldEnergy.energy(gradient, print);
         Atom atoms[] = molecularAssembly.getAtomArray();
         int n = atoms.length;
@@ -464,6 +533,7 @@ public final class PotentialEnergyTest {
         double lambda = 1.0;
         forceFieldEnergy.setLambda(lambda);
         double e2 = forceFieldEnergy.energy(gradient, print);
-        assertEquals(e, e2, tolerance);
+        String msg = String.format("Lambda Unity Test: %g == %g", e, e2);
+        assertEquals(msg, e, e2, tolerance);
     }
 }

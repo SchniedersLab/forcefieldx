@@ -2435,6 +2435,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
+    public void addToXYZGradient(int axis, double value) {
+        if (active) {
+            xyzGradient[axis] += value;
+        }
+    }
+
     /**
      * <p>
      * addToLambdaXYZGradient</p>
@@ -2785,6 +2791,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         return String.format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f) %s", getIndex(), getName(), resName, resSeq,
                 xyz[0], xyz[1], xyz[2], segID);
+    }
+
+    public String toShortString() {
+        return this.describe(Descriptions.XyzIndex_Name);
     }
 
     /**

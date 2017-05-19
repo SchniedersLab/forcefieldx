@@ -40,9 +40,11 @@ package ffx.potential.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -102,7 +104,7 @@ public class CrystalEnergyTest {
                 -45.55012417320137, 5012,
                 -3.97079858673400, 5012},
             {
-                false,
+                true,
                 "Methylparaben Benchmark",
                 "ffx/potential/structures/methylparaben.xyz",
                 0.42501694, 19,
@@ -118,7 +120,7 @@ public class CrystalEnergyTest {
                 -26.558577471708134, 2314,
                 -2.35904592, 2314},
             {
-                false,
+                true,
                 "Paracetamol Benchmark",
                 "ffx/potential/structures/paracetamol.xyz",
                 0.55316710, 20,
@@ -134,7 +136,7 @@ public class CrystalEnergyTest {
                 -32.02011297249507, 2357,
                  -4.96649992387851, 2357},
             {
-                false,
+                true,
                 "Phenacetin Benchmark",
                 "ffx/potential/structures/phenacetin.xyz",
                 0.56492623, 26,
@@ -180,13 +182,15 @@ public class CrystalEnergyTest {
     private final double polarizationEnergy;
     private final double tolerance = 1.0e-2;
     private final double gradientTolerance = 1.0e-2;
-    private final boolean ci;
-    private final boolean ciOnly;
-    private boolean mpoleTerm;
+    private final boolean ciEnabled;
+    private final boolean ciStruct;
+    private final boolean mpoleTerm;
     private final ForceFieldEnergy forceFieldEnergy;
+    private final boolean pmeqi;
+    private final boolean solvTerm;
 
     public CrystalEnergyTest(
-            boolean ciOnly,
+            boolean ciStruct,
             String info, String filename,
             double bondEnergy, int nBonds,
             double angleEnergy, int nAngles,
@@ -200,7 +204,7 @@ public class CrystalEnergyTest {
             double vanDerWaalsEnergy, int nVanDerWaals,
             double permanentEnergy, int nPermanent,
             double polarizationEnergy, int nPolar) {
-        this.ciOnly = ciOnly;
+        this.ciStruct = ciStruct;
         this.info = info;
         this.bondEnergy = bondEnergy;
         this.nBonds = nBonds;
@@ -226,48 +230,80 @@ public class CrystalEnergyTest {
         this.nPermanent = nPermanent;
         this.polarizationEnergy = polarizationEnergy;
         this.nPolar = nPolar;
+        this.pmeqi = Boolean.valueOf(System.getProperty("pme.qi","false"));
+        this.solvTerm = Boolean.valueOf(System.getProperty("gkterm","false"));
 
-        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
-        if (!ci && ciOnly) {
+        ciEnabled = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
+        if (!ciEnabled && ciStruct) {
+            /**
+             * Skip expensive tests for normal builds.
+             */
             structure = null;
             molecularAssembly = null;
             forceFieldEnergy = null;
+            mpoleTerm = false;
+        } else {
+            /**
+             * Load the test system.
+             */
+            System.setProperty("vdw-cutoff","8.0");
+            System.setProperty("ewald-cutoff","8.0");
+            ClassLoader cl = this.getClass().getClassLoader();
+            structure = new File(cl.getResource(filename).getPath());
+            PotentialsUtils potentialUtils = new PotentialsUtils();
+            molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
+            forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+            mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
+        }
+    }
+
+    private static Properties initialSystemConfig;
+    /**
+     * Backup system properties for restoration.
+     */
+    @org.junit.BeforeClass
+    public static void setUpClass() {
+        initialSystemConfig = (Properties) System.getProperties().clone();
+    }
+    /**
+     * Reset persistent system keys to their state prior to entering the class.
+     */
+    @After
+    public void tearDown() {
+        System.getProperties().clear();
+        System.getProperties().putAll(initialSystemConfig);
+    }
+
+    private void setDebugParams() {
+        System.setProperty("pme.qi","true");
+        System.setProperty("pj.nt","1");
+        System.setProperty("pme.skipRecip", "true");
+    }
+
+    @Test
+    public void testLauncher() {
+        /**
+         * Skip expensive tests for normal builds.
+         * Also skip tests using generalized Kirkwood if QI is enabled (for now).
+         */
+        if ((!ciEnabled && ciStruct) || (solvTerm && pmeqi)) {
             return;
         }
-
-        System.setProperty("vdw-cutoff","8.0");
-        System.setProperty("ewald-cutoff","8.0");
-
-        /**
-         * Load the test system.
-         */
-        ClassLoader cl = this.getClass().getClassLoader();
-        structure = new File(cl.getResource(filename).getPath());
-        PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
-
-        forceFieldEnergy = molecularAssembly.getPotentialEnergy();
-        mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
-
-        if (ci) {
-            testGradient();
-            testSoftCore();
+        setDebugParams();
+        final boolean skipReal = Boolean.valueOf(System.getProperty("pme.skipReal","false"));
+        final boolean skipRecip = Boolean.valueOf(System.getProperty("pme.skipRecip","false"));
+        if (!skipReal && !skipRecip) {
+            testEnergy();
         }
+        testGradient();
+        testSoftCore();
+//        testLambdaOsrwDeriv();
     }
 
     /**
      * Test of energy method, of class PotentialEnergy.
      */
-    @Test
     public void testEnergy() {
-
-        /**
-         * Skip expensive tests for normal builds.
-         */
-        if (!ci && ciOnly) {
-            return;
-        }
-
         boolean gradient = false;
         boolean print = true;
         double total = forceFieldEnergy.energy(gradient, print);

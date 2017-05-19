@@ -1384,6 +1384,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
          */
         try {
             parallelTeam.execute(initializationRegion);
+        } catch (RuntimeException e) {
+            String message = "Fatal exception expanding coordinates and rotating multipoles.\n";
+            logger.log(Level.WARNING, message, e);
+            throw e;
         } catch (Exception e) {
             String message = "Fatal exception expanding coordinates and rotating multipoles.\n";
             logger.log(Level.SEVERE, message, e);
@@ -1748,6 +1752,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             if (reciprocalSpaceTerm && aewald > 0.0) {
                 reciprocalSpace.computePermanentPhi(cartMultipolePhi);
             }
+        } catch (RuntimeException e) {
+            String message = "Fatal exception computing the permanent multipole field..\n";
+            logger.log(Level.WARNING, message, e);
+            throw e;
         } catch (Exception e) {
             String message = "Fatal exception computing the permanent multipole field.\n";
             logger.log(Level.SEVERE, message, e);
@@ -1774,6 +1782,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                         reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
                         sectionTeam.execute(inducedDipoleFieldRegion);
                         reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
+                    } catch (RuntimeException e) {
+                        String message = "Runtime exception computing the induced reciprocal space field.\n";
+                        logger.log(Level.WARNING, message, e);
+                        throw e;
                     } catch (Exception ex) {
                         String message = "Fatal exception computing the induced reciprocal space field.\n";
                         logger.log(Level.SEVERE, message, ex);
@@ -2224,6 +2236,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         public void run() {
             try {
                 execute(permanentRealSpaceFieldSection, permanentReciprocalSection);
+            } catch (RuntimeException e) {
+                String message = "Runtime exception computing the permanent multipole field.\n";
+                logger.log(Level.WARNING, message, e);
+                throw e;
             } catch (Exception e) {
                 String message = "Fatal exception computing the permanent multipole field.\n";
                 logger.log(Level.SEVERE, message, e);
@@ -2250,6 +2266,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     realSpacePermTotal -= System.nanoTime();
                     parallelTeam.execute(permanentRealSpaceFieldRegion);
                     realSpacePermTotal += System.nanoTime();
+                } catch (RuntimeException e) {
+                    String message = "Fatal exception computing the real space field.\n";
+                    logger.log(Level.WARNING, message, e);
                 } catch (Exception e) {
                     String message = "Fatal exception computing the real space field.\n";
                     logger.log(Level.SEVERE, message, e);
@@ -2301,6 +2320,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 try {
                     execute(0, nAtoms - 1, initializationLoop[threadIndex]);
                     execute(0, nAtoms - 1, permanentRealSpaceFieldLoop[threadIndex]);
+                } catch (RuntimeException e) {
+                    String message = "Runtime exception computing the real space field.\n";
+                    logger.log(Level.WARNING, message, e);
+                    throw e;
                 } catch (Exception e) {
                     String message = "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
                     logger.log(Level.SEVERE, message, e);
@@ -8615,6 +8638,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     public ReciprocalSpace getReciprocalSpace() {
         return reciprocalSpace;
+    }
+
+    @Override
+    public ELEC_FORM getElecForm() {
+        return elecForm;
     }
 
 }

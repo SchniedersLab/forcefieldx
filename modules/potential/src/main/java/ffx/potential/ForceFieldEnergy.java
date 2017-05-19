@@ -55,6 +55,7 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
@@ -152,7 +153,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private RestraintBond restraintBonds[];
     private RelativeSolvation relativeSolvation;
     private final VanDerWaals vanderWaals;
-    private final ParticleMeshEwald particleMeshEwald;
+    private ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
     private final List<CoordRestraint> coordRestraints;
     private final CoordRestraint autoCoordRestraint;
@@ -1317,9 +1318,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             try {
                 bondedRegion.setGradient(gradient);
                 parallelTeam.execute(bondedRegion);
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe(e.toString());
+            } catch (RuntimeException ex) {
+                logger.warning("Runtime exception during bonded term calculation.");
+                throw ex;
+            } catch (Exception ex) {
+                Utilities.printStackTrace(ex);
+                logger.severe(ex.toString());
             }
 
             if (!lambdaBondedTerms) {
@@ -3267,6 +3271,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         private class GradInitLoop extends IntegerForLoop {
 
             @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
+            
+            @Override
             public void run(int first, int last) throws Exception {
                 int threadID = getThreadIndex();
                 if (gradient) {
@@ -3283,7 +3292,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         private class GradReduceLoop extends IntegerForLoop {
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
 
+            
             @Override
             public void run(int first, int last) throws Exception {
                 if (gradient) {
