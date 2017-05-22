@@ -216,4 +216,6 @@ public abstract class ParticleMeshEwald {
 
     public abstract ELEC_FORM getElecForm();
 
+    public abstract String getName();
+
 }

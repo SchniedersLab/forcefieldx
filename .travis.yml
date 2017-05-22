@@ -15,4 +15,11 @@ cache:
   directories:
   - $HOME/.m2
 
+notifications:
+  email:
+    recipients:
+      jacob-litman@uiowa.edu
+    on_success: change
+    on_failure: always
+
 script: mvn test -B -DskipTests=false -Dpj.nt=2

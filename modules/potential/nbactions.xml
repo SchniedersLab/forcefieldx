@@ -16,4 +16,18 @@
                 <java.util.logging.SimpleFormatter.format>%5$s%n</java.util.logging.SimpleFormatter.format>
             </properties>
         </action>
+        <action>
+            <actionName>test</actionName>
+            <packagings>
+                <packaging>*</packaging>
+            </packagings>
+            <goals>
+                <goal>test</goal>
+            </goals>
+            <properties>
+                <skipTests>false</skipTests>
+                <trimStackTrace>true</trimStackTrace>
+                <java.util.logging.SimpleFormatter.format>%5$s%n</java.util.logging.SimpleFormatter.format>
+            </properties>
+        </action>
     </actions>

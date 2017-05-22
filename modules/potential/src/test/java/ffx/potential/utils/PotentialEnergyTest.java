@@ -59,7 +59,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.parameters.ForceField;
 
-import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * Test the PotentialEnergy class.

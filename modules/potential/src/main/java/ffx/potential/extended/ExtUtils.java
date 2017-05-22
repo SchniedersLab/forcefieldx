@@ -72,7 +72,6 @@ import ffx.potential.parameters.MultipoleType;
 
 import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.ExtConstants.kB;
-import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * 
@@ -86,7 +85,7 @@ public final class ExtUtils {
 		if (key.startsWith("esv.")) {
 			if (Arrays.asList(ExtendedSystem.ExtendedSystemConfig.class.getDeclaredFields())
 					.stream().noneMatch((Field f) -> key.substring(4).equalsIgnoreCase(f.getName()))) {
-				SB.warning("Setting an unused property: %s", key);
+				logger.warning(format("Setting an unused property: %s", key));
 			}
 		}
 		System.setProperty(key, String.valueOf(set));
@@ -104,6 +103,7 @@ public final class ExtUtils {
 	 * Print the Properties defined by the given key prefixes.
 	 */
 	public static void printConfigSet(String header, Properties properties, String[] keyPrefixes) {
+        StringBuilder SB = new StringBuilder();
 		properties.keySet().stream()
 				.filter(k -> {
 					String key = k.toString().toLowerCase();
@@ -114,13 +114,13 @@ public final class ExtUtils {
 					}
 					return false;
 				})
-				.forEach(key -> SB.logfn("   %-30s %s",
-						key.toString() + ":", System.getProperty(key.toString())));
-		if (!SB.isEmpty()) {
+				.forEach(key -> SB.append(String.format("   %-30s %s",
+						key.toString() + ":", System.getProperty(key.toString()))));
+		if (!SB.toString().isEmpty()) {
 			if (header != null) {
-				SB.headern(" %s", header);
+				SB.insert(0, format(" %s", header));
 			}
-			SB.print();
+			logger.info(SB.toString());
 		}
 	}
 	public static void printConfigSet(String header, Properties properties, String prefix) {
@@ -322,7 +322,7 @@ public final class ExtUtils {
     public static final <T> T prop(String key, T defaultVal, String warning) {
         T parsed = prop(key, defaultVal);
         if (!parsed.equals(defaultVal) && warning != null) {
-            SB.warning(warning);
+            logger.warning(warning);
         }
         return parsed;
     }
@@ -340,10 +340,11 @@ public final class ExtUtils {
             T parsed = T.valueOf(type, value);
             return parsed;
         } catch (IllegalArgumentException ex) {
-            SB.nlogfn("Invalid property definition: %s = %s for type %s.", key, value, type.getName());
-            SB.logfn( "  Allowable values:  %s", Arrays.toString(type.getEnumConstants()));
-            SB.logf(  "  Returning default: %s", def.toString());
-            SB.warning();
+            StringBuilder sb = new StringBuilder();
+            sb.append(format("Invalid property definition: %s = %s for type %s.", key, value, type.getName()));
+            sb.append(format("  Allowable values:  %s", Arrays.toString(type.getEnumConstants())));
+            sb.append(format("  Returning default: %s", def.toString()));
+            logger.warning(sb.toString());
             return def;
         }
     }

@@ -40,6 +40,7 @@ package ffx.potential.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,7 +61,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
-import ffx.potential.extended.SBLogger;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart;
@@ -81,7 +81,7 @@ public class ExtendedVariableTest {
 
     private static final Logger logMaster = Logger.getLogger("ffx");
 	private static final PotentialsUtils utils = new PotentialsUtils();
-	private static final SBLogger SB = new SBLogger();
+	private static final StringBuilder sb = new StringBuilder();
 
 	private static final String	  dilysine			= "lys-lys.pdb";
 	private static final String[] dilysStates		= {"lyd-lyd.pdb","lyd-lys.pdb",
@@ -106,7 +106,7 @@ public class ExtendedVariableTest {
 	private static final boolean smoothnessDecomposition	= false;
 	private static final boolean singleThreaded				= false;
 	private static final boolean assertions					= false;	// TODO enable
-	private static double[] lambdaValuesToTest = {0.0, 0.25, 0.5, 0.75, 1.0};
+	private List<Double> lambdaValuesToTest;
 
 	/** Arguments to the class constructor.
 	 * EsvTest.END_STATES requires two ESVs and that 4x states + energies be defined.
@@ -117,7 +117,7 @@ public class ExtendedVariableTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
 //			{EsvTest.Deriv_OneEsv,	Interactions.All,	CellType.Aperiodic},
-			{EsvTest.Deriv_OneEsv,	Interactions.OnePermOneInd,	CellType.Crystal},
+			{EsvTest.Deriv_OneEsv,	Interactions.All,	CellType.Crystal},
 //			{EsvTest.Deriv_TwoEsvs,	Interactions.All,	CellType.Aperiodic},
 //			{EsvTest.Deriv_TwoEsvs,	Interactions.All,	CellType.Crystal},
 //			{EsvTest.Deriv_Meta,	Interactions.All,	CellType.Crystal},
@@ -356,11 +356,14 @@ public class ExtendedVariableTest {
 
 	@org.junit.Test
 	public void testLauncher() {
+        lambdaValuesToTest = (!ci) ? Arrays.asList(0.25, 0.5, 1.0)
+                                   : Arrays.asList(0.0, 0.25, 0.5, 0.75, 1.0);
 		switch (test) {
 			case EndStates:
 				testEndStates();
 				break;
 			case Derivatives:
+
 				testDerivatives(setDebugParameters());
 			case Deriv_OneEsv:
 			case Deriv_TwoEsvs:
@@ -386,9 +389,8 @@ public class ExtendedVariableTest {
 		setProp("use-quadrupoles",			yes);
 		resultsOnly = true;
 		fill(initialLambda, 1.0);
-		lambdaValuesToTest = new double[]{0.0,0.25,0.5,0.75,1.0};
 
-		SB.logf(" DIRECT/CG, --masking, --scaleAlpha");
+		sb.append(format(" DIRECT/CG, --masking, --scaleAlpha"));
 		setProp("esv.allowMaskPerm",			false);
 		setProp("esv.allowMaskPolarD",			false);
 		setProp("esv.allowMaskPolarP",			false);
@@ -397,7 +399,7 @@ public class ExtendedVariableTest {
 		setProp("esv.scaleAlpha",				false);
 		testDerivatives(new ExtendedSystemConfig());
 
-		SB.logf(" DIRECT/CG, --masking, ++scaleAlpha");
+		sb.append(format(" DIRECT/CG, --masking, ++scaleAlpha"));
 		setProp("esv.allowMaskPerm",			false);
 		setProp("esv.allowMaskPolarD",			false);
 		setProp("esv.allowMaskPolarP",			false);
@@ -406,7 +408,7 @@ public class ExtendedVariableTest {
 		setProp("esv.scaleAlpha",				yes);
 		testDerivatives(new ExtendedSystemConfig());
 
-		SB.nlogfn(" DIRECT/CG, ++masking, --scaleAlpha");
+		sb.append(format(" DIRECT/CG, ++masking, --scaleAlpha"));
 		setProp("esv.allowMaskPerm",			yes);
 		setProp("esv.allowMaskPolarD",			yes);
 		setProp("esv.allowMaskPolarP",			yes);
@@ -415,7 +417,7 @@ public class ExtendedVariableTest {
 		setProp("esv.scaleAlpha",				false);
 		testDerivatives(new ExtendedSystemConfig());
 
-		SB.nlogfn(" MUTUAL/CG, ++masking, ++scaleAlpha");
+		sb.append(format(" MUTUAL/CG, ++masking, ++scaleAlpha"));
 		setProp("esv.allowMaskPerm",			yes);
 		setProp("esv.allowMaskPolarD",			yes);
 		setProp("esv.allowMaskPolarP",			yes);
@@ -445,24 +447,24 @@ public class ExtendedVariableTest {
 		for (int i = 0; i < esvSystem.size(); i++) {
 			final String esvName = esvSystem.getEsv(i).getName();
 			if (!mola.getCrystal().aperiodic()) {
-				SB.logfn(" Finite Diff: %5.5s (Crystal)", esvName);
+				sb.append(format(" Finite Diff: %5.5s (Crystal)", esvName));
 			} else {
-				SB.logfn(" Finite Diff: %5.5s (Aprodc.)", esvName);
+				sb.append(format(" Finite Diff: %5.5s (Aprodc.)", esvName));
 			}
 			// Reset lambdas.
 			for (int k = 0; k < esvSystem.size(); k++) {
 				esvSystem.setLambda(k, initialLambda[k]);
 			}
-			for (int l = 0; l < lambdaValuesToTest.length; l++) {
+			for (double lambda : lambdaValuesToTest) {
 				final double center, low, high;
 				if (oneSidedFiniteAtExtremes) {
-					center = lambdaValuesToTest[l];
+					center = lambda;
 					low =  (center - step >= 0.0) ? center - step : center;
 					high = (center + step <= 1.0) ? center + step : center;
 				} else {
-					center = (lambdaValuesToTest[l] == 0.0) ? lambdaValuesToTest[l] + step
-										: (lambdaValuesToTest[l] == 1.0) ? lambdaValuesToTest[l] - step
-										:  lambdaValuesToTest[l];
+					center = (lambda == 0.0) ? lambda + step
+                                             : lambda == 1.0 ? lambda - step
+                                                             : lambda;
 					low = center - step;
 					high = center + step;
 				}
@@ -531,21 +533,21 @@ public class ExtendedVariableTest {
 				final double totalNum       = (totalHigh - totalLow) / (width);
 				final double totalErr       = (totalAna - totalNum);
 
-				SB.logf(" %-28s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s",
+				sb.append(format(" %-28s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s",
 						StringUtils.repeat("*", 28),
-						"vdw ", "bonded", "bias", "permReal", "permSelf", "permRecip", "indReal", "indSelf", "indRecip", "total");
-				SB.nlogf(" %-28s %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g",
+						"vdw ", "bonded", "bias", "permReal", "permSelf", "permRecip", "indReal", "indSelf", "indRecip", "total"));
+				sb.append(format(" %-28s %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g",
 						format("Numeric  @L=%s", esvSystem.getLambdaList()),
-						vdwNum, bondedNum, biasNum, permRealNum, permSelfNum, permRecipNum, indRealNum, indSelfNum, indRecipNum, totalNum);
-				SB.nlogf(" %-28s %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g",
+						vdwNum, bondedNum, biasNum, permRealNum, permSelfNum, permRecipNum, indRealNum, indSelfNum, indRecipNum, totalNum));
+				sb.append(format(" %-28s %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g %+12.6g",
 						format("Analytic @L=%s", esvSystem.getLambdaList()),
-						vdwAna, bondedAna, biasAna, permRealAna, permSelfAna, permRecipAna, indRealAna, indSelfAna, indRecipAna, totalAna);
-				SB.nlogf(" %-28s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s",
+						vdwAna, bondedAna, biasAna, permRealAna, permSelfAna, permRecipAna, indRealAna, indSelfAna, indRecipAna, totalAna));
+				sb.append(format(" %-28s %12s %12s %12s %12s %12s %12s %12s %12s %12s %12s",
 						"Error:", err(vdwAna,vdwNum), err(bondedAna,bondedNum), err(biasAna,biasNum),
 						err(permRealAna,permRealNum), err(permSelfAna,permSelfNum), err(permRecipAna,permRecipNum),
-						err(indRealAna,indRealNum), err(indSelfAna,indSelfNum), err(indRecipAna,indRecipNum), err(totalAna,totalNum));
+						err(indRealAna,indRealNum), err(indSelfAna,indSelfNum), err(indRecipAna,indRecipNum), err(totalAna,totalNum)));
 				logMaster.setLevel(origLevel);
-				SB.print();
+				;
 
 				if (assertions) {
 					assertEquals("VanDerWaals Deriv Error", 0.0, vdwErr, tolerance);
@@ -760,18 +762,19 @@ public class ExtendedVariableTest {
 			}
 		}
 
-        SB.nlogfn("  Two-site End State Analysis ");
-        SB.logfn(" ***************************** ");
+        sb.append(format("  Two-site End State Analysis "));
+        sb.append(format(" ***************************** "));
 		if (includeManualQiEndStates)
-			 SB.logfn(" %-27s    %-22s    %-22s    %-22s",
+			 sb.append(format(" %-27s    %-22s    %-22s    %-22s",
 					  "Extended System (1 File, QI)",
 					  "Manual (4 Files, QI)",
 					  "Manual (4 Files, Cart)",
-					  "Error (Cart-ESV)");
-		else SB.logfn(" %-27s    %-22s    %-22s",
+					  "Error (Cart-ESV)"));
+		else
+            sb.append(format(" %-27s    %-22s    %-22s",
 					  "Extended System (1 File, QI)",
 					  "Manual (4 Files, Cart)",
-					  "Error (Cart-ESV)");
+					  "Error (Cart-ESV)"));
 		double[][] esvResult	= new double[][]{totalEsv, vdwEsv,
 												 permEsv, directEsv, mutualEsv};
 		double[][] qiResult		= new double[][]{totalQi, vdwQi,
@@ -783,18 +786,17 @@ public class ExtendedVariableTest {
         for (int component = 0; component < names.length; component++) {
 			for (int state = 0; state < numStates; state++) {
 				String name = (state == 0) ? names[component] : "";
-				SB.logf(" %-27s", format("%-9s %-7.7s %10.5f", name, esvStateNames[state], esvResult[component][state]));
+				sb.append(format(" %-27s", format("%-9s %-7.7s %10.5f", name, esvStateNames[state], esvResult[component][state])));
 				if (includeManualQiEndStates)
-					SB.logf("    %-22s", format("%-7.7s   %12.6f", stateFilenames[state], qiResult[component][state]));
-				SB.logf("    %-22s", format("%-7.7s   %12.6f", stateFilenames[state], cartResult[component][state]));
+					sb.append(format("    %-22s", format("%-7.7s   %12.6f", stateFilenames[state], qiResult[component][state])));
+				sb.append(format("    %-22s", format("%-7.7s   %12.6f", stateFilenames[state], cartResult[component][state])));
 				final double error = Math.abs(cartResult[component][state] - esvResult[component][state]);
 				final String errorStr = (error < errorThreshold)
 						? format("< %.1e", errorThreshold) : format("%+g", error);
-				SB.logfn("    %16s", errorStr);
+				sb.append(format("    %16s", errorStr));
 			}
 		}
 		logMaster.setLevel(origLevel);
-		SB.print();
     }
 
     /**
@@ -877,64 +879,64 @@ public class ExtendedVariableTest {
                     directionSignChanges, maxDirectionSignChanges));
         }
 
-        SB.nlogfn("  Smoothness Verification: Total ");
-        SB.logfn(" ******************************** ");
-        printAsTable(totalEnergies, "U_Total", SB);
-        printAsTable(totalDerivsA, "dU_dEsvA", SB);
-        printAsTable(totalDerivsB, "dU_dEsvB", SB);
+        sb.append(format("  Smoothness Verification: Total "));
+        sb.append(format(" ******************************** "));
+        printAsTable(totalEnergies, "U_Total", sb);
+        printAsTable(totalDerivsA, "dU_dEsvA", sb);
+        printAsTable(totalDerivsB, "dU_dEsvB", sb);
         if (smoothnessDecomposition) {
-			SB.nlogfn("  Smoothness Verification: VdW ");
-			SB.logfn(" ****************************** ");
-			printAsTable(vdwEnergies, "vanWaals", SB);
-			printAsTable(vdwDerivsA, "dVdw_dA", SB);
-			printAsTable(vdwDerivsB, "dVdw_dB", SB);
-			SB.force();
-			SB.nlogfn("  Smoothness Verification: PermReal ");
-			SB.logfn(" *********************************** ");
-			printAsTable(permanentEnergies, "permReal", SB);
-			printAsTable(permanentDerivsA, "dPRealdA", SB);
-			printAsTable(permanentDerivsB, "dPRealdB", SB);
-			SB.force();
-			SB.nlogfn("  Smoothness Verification: PermRecip ");
-			SB.logfn(" ************************************ ");
-			printAsTable(inducedEnergies, "permRcp", SB);
-			printAsTable(inducedDerivsA, "dPRcp_dA", SB);
-			printAsTable(inducedDerivsB, "dPRcp_dB", SB);
+			sb.append(format("  Smoothness Verification: VdW "));
+			sb.append(format(" ****************************** "));
+			printAsTable(vdwEnergies, "vanWaals", sb);
+			printAsTable(vdwDerivsA, "dVdw_dA", sb);
+			printAsTable(vdwDerivsB, "dVdw_dB", sb);
+			
+			sb.append(format("  Smoothness Verification: PermReal "));
+			sb.append(format(" *********************************** "));
+			printAsTable(permanentEnergies, "permReal", sb);
+			printAsTable(permanentDerivsA, "dPRealdA", sb);
+			printAsTable(permanentDerivsB, "dPRealdB", sb);
+			
+			sb.append(format("  Smoothness Verification: PermRecip "));
+			sb.append(format(" ************************************ "));
+			printAsTable(inducedEnergies, "permRcp", sb);
+			printAsTable(inducedDerivsA, "dPRcp_dA", sb);
+			printAsTable(inducedDerivsB, "dPRcp_dB", sb);
 		}
 		logMaster.setLevel(origLevel);
-		SB.print();
+		;
 	}
 
-    private SBLogger printAsTable(double[][] values, String title, SBLogger sb) {
-        if (SB == null) {
-            sb = new SBLogger();
+    private StringBuilder printAsTable(double[][] values, String title, StringBuilder sb) {
+        if (sb == null) {
+            sb = new StringBuilder();
         }
         if (title == null) title = "Title?";
-        sb.logf(" %8s %8.1f %8.1f %8.1f %8.1f %8s %8s %8s %8.1f %8.1f %8.1f %8.1f",
-                title, 0.0, 0.1, 0.2, 0.3, "<   ", " EvA  ", ">   ", 0.7, 0.8, 0.9, 1.0);
+        sb.append(String.format(" %8s %8.1f %8.1f %8.1f %8.1f %8s %8s %8s %8.1f %8.1f %8.1f %8.1f",
+                title, 0.0, 0.1, 0.2, 0.3, "<   ", " EvA  ", ">   ", 0.7, 0.8, 0.9, 1.0));
         for (int idxA = 0; idxA <= 10; idxA++) {
             double evA = idxA / 10.0;
             switch (idxA) {
                 case 4:
-                    sb.nlogf(" %8s", " ^ ");
+                    sb.append(format(" %8s", " ^ "));
                     break;
                 case 5:
-                    sb.nlogf(" %8s", "EvB");
+                    sb.append(format(" %8s", "EvB"));
                     break;
                 case 6:
-                    sb.nlogf(" %8s", " v ");
+                    sb.append(format(" %8s", " v "));
                     break;
                 default:
-                    sb.nlogf(" %8.1f", evA);
+                    sb.append(format(" %8.1f", evA));
             }
             for (int idxB = 0; idxB <= 10; idxB++) {
                 double evB = idxB / 10.0;
                 String value = format("%8.4f", values[idxA][idxB]);
                 int max = (value.length() < 8) ? value.length() : 8;
-                sb.logf(" %8s", value.substring(0,max));
+                sb.append(String.format(" %8s", value.substring(0,max)));
             }
         }
-        sb.nl();
+        sb.append(format("\n"));
         return sb;
     }
 }

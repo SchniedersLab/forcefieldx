@@ -194,6 +194,13 @@ public class CoordRestraint implements LambdaInterface {
         return nAtoms;
     }
 
+    /**
+     * Calculates energy and gradients for this coordinate restraint.
+     *
+     * @param gradient Calculate gradients
+     * @param print Unused
+     * @return Energy in the coordinate restraint
+     */
     public double residual(boolean gradient, boolean print) {
 
         /**
