@@ -24,7 +24,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 
 // Number of molecular dynamics steps
-int nSteps = 1000;
+int nSteps = 1500;
 
 // Time step in femtoseconds.
 double timeStep = 1.0;
@@ -35,7 +35,7 @@ int intervalSteps = 100;
 double printInterval = 0.025;
 
 // Frequency to save out coordinates in picoseconds.
-double saveInterval = 500.0;
+double saveInterval = 1500.0;
 
 // Temperature in degrees Kelvin.
 double temperature = 298.15;
@@ -51,7 +51,7 @@ String integrator = null;
 boolean initVelocities = true;
 
 // Interval to write out restart file (psec)
-double restartFrequency = 500;
+double restartFrequency = 1500;
 
 double frictionCoeff = 1.0;
 
@@ -171,5 +171,5 @@ if (!dyn.exists()) {
 OpenMMForceFieldEnergy openMMForceFieldEnergy = new OpenMMForceFieldEnergy(active);
 
 OpenMMMolecularDynamics openMMMolecularDynamics = new OpenMMMolecularDynamics(active, openMMForceFieldEnergy, active.getProperties(), temperature, saveInterval, 
-    restartFrequency, integrator, timeStep, frictionCoeff);
+    restartFrequency, integrator, timeStep, frictionCoeff, dyn, initVelocities);
 openMMMolecularDynamics.start(nSteps, intervalSteps);
