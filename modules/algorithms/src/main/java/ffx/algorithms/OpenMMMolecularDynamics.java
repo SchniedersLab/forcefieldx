@@ -31,8 +31,9 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velo
 
 
 /**
- *
- * @author hbernabe
+ * Runs Molecular Dynamics using OpenMM implementation
+ * 
+ * @author Hernan V. Bernabe
  */
 public class OpenMMMolecularDynamics {
     private OpenMMForceFieldEnergy openMMForceFieldEnergy;

@@ -40,7 +40,7 @@ double saveInterval = 1500.0;
 // Temperature in degrees Kelvin.
 double temperature = 298.15;
 
-// Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
+// Thermostats [ ANDERSON ]
 Thermostats thermostat = null;
 
 // Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET]
@@ -61,7 +61,7 @@ String fileType = "PDB";
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
-cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
+cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Anderson]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
 cli.i(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Brownian / Langevin / Verlet / Custom / Compound]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
