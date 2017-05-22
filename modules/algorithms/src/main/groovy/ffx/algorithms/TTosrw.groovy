@@ -881,24 +881,6 @@ class TTosrw extends Script {
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ");
         switch (nArgs) {
         case 1:
-            if (options.f1 > 0) {
-                Atom[] atoms = topologies[0].getAtomArray();
-                // Apply active atom selection
-                int nAtoms1 = (energies[0].getNumberOfVariables()) / 3;
-                if (options.f1 > options.s1 && options.s1 > 0 && options.f1 <= nAtoms1) {
-                    // Make all atoms inactive.
-                    for (int i = 0; i <= nAtoms1; i++) {
-                        Atom ai = atoms[i - 1];
-                        ai.setActive(false);
-                    }
-                    // Make requested atoms active.
-                    for (int i = options.s1; i <= options.f1; i++) {
-                        Atom ai = atoms[i - 1];
-                        ai.setActive(true);
-                    }
-                }
-            }
-
             if (options.symScalar > 0.0) {
                 SymOp symOp = SymOp.randomSymOpFactory(options.symScalar);
                 logger.info(String.format("\n Applying random Cartesian SymOp:\n%s", symOp.toString()));
@@ -1094,7 +1076,7 @@ class TTosrw extends Script {
 
         if (options.mc) {
             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-                topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.VELOCITYVERLET);
+                topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.STOCHASTIC);
             mcOSRW.sample();
         } else {
             // Create the MolecularDynamics instance.

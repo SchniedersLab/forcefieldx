@@ -87,7 +87,7 @@ public class XRayMinimizeTest {
                     25.448314839595,
                     0.8939361241370969,
                     0.14949033848514287},
-                {false,
+                {true,
                     "SNARE complex",
                     "ffx/xray/structures/1N7S.pdb",
                     "ffx/xray/structures/1N7S.mtz",
@@ -108,7 +108,7 @@ public class XRayMinimizeTest {
                     25.448314839595,
                     0.8921390108139,
                     0.1526816244814},
-                {false,
+                {true,
                     "SNARE complex",
                     "ffx/xray/structures/1N7S.pdb",
                     "ffx/xray/structures/1N7S.mtz",
@@ -225,6 +225,14 @@ public class XRayMinimizeTest {
     }
 
     @Test
+    public void testLauncher() {
+        if (!ci && ciOnly) return;
+        testCrystalStats();
+        testScaleBulk();
+        testSigmaA();
+        testSpline();
+    }
+
     public void testCrystalStats() {
         if (!ci && ciOnly) {
             return;
@@ -245,7 +253,6 @@ public class XRayMinimizeTest {
                 sigmaW, crystalStats.getSigmaW(), 0.001);
     }
 
-    @Test
     public void testScaleBulk() {
         ScaleBulkMinimize scaleBulkMinimize
                 = new ScaleBulkMinimize(reflectionList, refinementData,
@@ -272,7 +279,6 @@ public class XRayMinimizeTest {
         }
     }
 
-    @Test
     public void testSigmaA() {
         SigmaAMinimize sigmaAMinimize = new SigmaAMinimize(reflectionList,
                 refinementData, parallelTeam);
@@ -298,7 +304,6 @@ public class XRayMinimizeTest {
         }
     }
 
-    @Test
     public void testSpline() {
         SplineMinimize splineMinimize = new SplineMinimize(reflectionList,
                 refinementData, refinementData.spline, SplineEnergy.Type.FOFC);

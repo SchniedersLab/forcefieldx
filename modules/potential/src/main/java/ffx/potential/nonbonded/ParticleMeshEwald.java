@@ -213,4 +213,7 @@ public abstract class ParticleMeshEwald {
     public abstract double getEwaldCoefficient();
 
     public abstract ReciprocalSpace getReciprocalSpace();
+
+    public abstract ELEC_FORM getElecForm();
+
 }

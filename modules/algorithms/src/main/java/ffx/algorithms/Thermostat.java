@@ -185,6 +185,11 @@ public abstract class Thermostat {
          */
         removeCenterOfMassMotion = true;
         dof = nVariables - 3;
+
+        /**
+         * Update the kinetic energy.
+         */
+        kineticEnergy();
     }
 
     /**
@@ -531,7 +536,7 @@ public abstract class Thermostat {
     /**
      * Compute the current temperature and kinetic energy of the system.
      */
-    protected void kineticEnergy() {
+    protected final void kineticEnergy() {
         double e = 0.0;
         for (int i = 0; i < nVariables; i++) {
             double velocity = v[i];

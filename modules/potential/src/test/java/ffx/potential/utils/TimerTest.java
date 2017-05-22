@@ -45,9 +45,6 @@ import org.junit.Test;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 
-/**
- * @author Stephen D. LuCore
- */
 public final class TimerTest {
 
     private static final Logger logger = Logger.getLogger(TimerTest.class.getName());
@@ -73,6 +70,7 @@ public final class TimerTest {
         ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
 
         long minTime = Long.MAX_VALUE;
+        long maxTime = Long.MIN_VALUE;
         double sumTime2 = 0.0;
         int halfnEvals = (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1; // Halfway point
         for (int i = 0; i < nEvals; i++) {
@@ -81,6 +79,7 @@ public final class TimerTest {
             time += System.nanoTime();
             minTime = time < minTime ? time : minTime;
             if (i >= (int) (nEvals / 2)) {
+                maxTime = time > maxTime ? time : maxTime;
                 double time2 = time * 1.0E-9;
                 sumTime2 += (time2 * time2);
             }
@@ -88,6 +87,7 @@ public final class TimerTest {
         ++halfnEvals;
         double rmsTime = Math.sqrt(sumTime2 / halfnEvals);
         logger.info(String.format(" Minimum time: %14.5f (sec)", minTime * 1.0E-9));
+        logger.info(String.format(" Max time (latter half): %14.5f (sec)", maxTime * 1.0E-9));
         logger.info(String.format(" RMS time (latter half): %14.5f (sec)", rmsTime));
     }
 }

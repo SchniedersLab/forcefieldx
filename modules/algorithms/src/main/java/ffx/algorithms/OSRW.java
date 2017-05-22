@@ -222,9 +222,9 @@ public class OSRW extends AbstractOSRW {
 
     }
 
-	/**
-	 * Called by Molecular Dynamics.
-	 */
+    /**
+     * Called by Molecular Dynamics.
+     */
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
@@ -247,6 +247,7 @@ public class OSRW extends AbstractOSRW {
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dEdLambda);
         double dEdU = dEdLambda;
+        forcefielddEdL = dEdU;
 
         if (propagateLambda) {
             energyCount++;
@@ -297,6 +298,7 @@ public class OSRW extends AbstractOSRW {
                 dGdFLambda -= deltaFL / FLs2 * bias;
             }
         }
+        gLdUdL = biasEnergy;
 
         /**
          * Lambda gradient due to recursion kernel G(L, F_L).

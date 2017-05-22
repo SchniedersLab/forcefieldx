@@ -114,17 +114,12 @@ class TestGradient extends Script {
 
         // Upper bound for typical gradient sizes (expected gradient)
         double expGrad = 1000.0;
-
-
         double gradientTolerance = 1.0e-3;
         double width = 2.0 * step;
         double[] x = new double[n*3];
-        double[] analytic = new double[3*n];
+        double[] analytic = new double[3];
         double[] numeric = new double[3];
-
-        energy.getCoordinates(x);
-        energy.energyAndGradient(x,analytic);
-
+		
         double avLen = 0.0;
         int nFailures = 0;
         double avGrad = 0.0;
@@ -135,6 +130,9 @@ class TestGradient extends Script {
             int i0 = i3 + 0;
             int i1 = i3 + 1;
             int i2 = i3 + 2;
+			energy.energy(true, true);
+			a0.getXYZGradient(analytic);
+			energy.getCoordinates(x);
 
             // Find numeric dX
             double orig = x[i0];
@@ -169,25 +167,25 @@ class TestGradient extends Script {
             x[i2] = orig;
             numeric[2] = e / width;
 
-            double dx = analytic[i0] - numeric[0];
-            double dy = analytic[i1] - numeric[1];
-            double dz = analytic[i2] - numeric[2];
+            double dx = analytic[0] - numeric[0];
+            double dy = analytic[1] - numeric[1];
+            double dz = analytic[2] - numeric[2];
             double len = dx * dx + dy * dy + dz * dz;
             avLen += len;
             len = Math.sqrt(len);
 
-            double grad2 = analytic[i0] * analytic[i0] + analytic[i1] * analytic[i1] + analytic[i2] * analytic[i2];
+            double grad2 = analytic[0] * analytic[0] + analytic[1] * analytic[1] + analytic[2] * analytic[2];
             avGrad += grad2;
 
             if (len > gradientTolerance) {
                 logger.info(" " + a0.toShortString() + String.format(" failed: %10.6f.", len)
-                    + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
+                    + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
                     + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
                 ++nFailures;
                 //return;
             } else {
                 logger.info(" " + a0.toShortString() + String.format(" passed: %10.6f.", len)
-                    + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
+                    + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
                     + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
             }
 

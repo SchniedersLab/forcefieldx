@@ -182,6 +182,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     private double grad[] = null;
     /**
+     * Partial derivative of the force field energy w.r.t. lambda.
+     */
+    protected double forcefielddEdL;
+    /**
      * Total partial derivative of the potential being sampled w.r.t. lambda.
      */
     protected double dEdLambda;
@@ -192,6 +196,9 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected double dUdXdL[] = null;
     protected double biasMag = 0.002;
     protected final double FLambda[];
+
+    protected double gLdUdL = 0.0;
+
     /**
      * Gas constant (in Kcal/mole/Kelvin).
      */
@@ -525,12 +532,20 @@ public abstract class AbstractOSRW implements CrystalPotential {
         return FLambdaBin;
     }
 
+    public double getForceFielddEdL() {
+        return forcefielddEdL;
+    }
+
     public double getTotaldEdLambda() {
         return dEdLambda;
     }
 
     public Potential getPotentialEnergy() {
         return potential;
+    }
+
+    public double getGofLdUdL() {
+        return gLdUdL;
     }
 
     protected double currentFreeEnergy() {
@@ -622,6 +637,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
         lambdaInterface.setLambda(lambda);
         this.lambda = lambda;
         theta = Math.asin(Math.sqrt(lambda));
+    }
+
+    public double getLambda() {
+        return lambda;
     }
 
     public LambdaInterface getLambdaInterface() {

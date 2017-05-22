@@ -275,12 +275,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             return e;
         }
 
-        double biasEnergy = 0.0;
+        gLdUdL = 0.0;
         dEdLambda = lambdaInterface.getdEdL();
         d2EdLambda2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dEdLambda);
         double dEdU = dEdLambda;
+        forcefielddEdL = dEdU;
 
         if (propagateLambda) {
             energyCount++;
@@ -332,7 +333,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
-                biasEnergy += bias;
+                gLdUdL += bias;
                 dGdLambda -= deltaL / ls2 * bias;
                 dGdFLambda -= deltaFL / FLs2 * bias;
             }
@@ -424,7 +425,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
          * interpolation.
          */
         double freeEnergy = currentFreeEnergy();
-        biasEnergy += freeEnergy;
+        double biasEnergy = freeEnergy + gLdUdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
@@ -727,6 +728,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 }
             }
         }
+
         return sum;
     }
 

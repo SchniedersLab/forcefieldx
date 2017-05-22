@@ -66,6 +66,15 @@ import ffx.utilities.Keyword;
  */
 public class CrystalReciprocalSpaceTest {
 
+    @Test
+    public void testLauncher() {
+        boolean ci = Boolean.valueOf(System.getProperty("ffx.ci", "false"));
+        test1N7SPermanent();
+        if (ci) {
+            test1NSFPermanent();
+        }
+    }
+
     /**
      * Test of permanent method, of class CrystalReciprocalSpace.
      */

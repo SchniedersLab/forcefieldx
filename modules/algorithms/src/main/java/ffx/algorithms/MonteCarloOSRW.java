@@ -37,6 +37,10 @@
  */
 package ffx.algorithms;
 
+import java.util.logging.Logger;
+
+import static java.lang.String.format;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.algorithms.Integrator.Integrators;
@@ -68,6 +72,8 @@ import ffx.potential.bonded.LambdaInterface;
  */
 public class MonteCarloOSRW extends BoltzmannMC {
 
+    private static final Logger logger = Logger.getLogger(MonteCarloOSRW.class.getName());
+
     private final Potential potential;
     private final AbstractOSRW osrw;
     private final MolecularAssembly molecularAssembly;
@@ -75,13 +81,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private final AlgorithmListener listener;
     private final Thermostats requestedThermostat;
     private final Integrators requestedIntegrator;
-    private LambdaInterface linter;
+    //private LambdaInterface linter;
     private double lambda = 0.0;
     private int totalMDSteps = 10000000;
     private final int mdSteps = 100;
-    private final double timeStep = 1.0;
-    private final double printInterval = 0.01;
-    private final double temperature = 310.0;
+    private int lambdaAccept = 0;
+    private int dUdLAccept = 0;
 
     /**
      * @param potentialEnergy
@@ -92,11 +97,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * @param requestedThermostat
      * @param requestedIntegrator
      */
-    public MonteCarloOSRW(Potential potentialEnergy,
-            AbstractOSRW osrw, MolecularAssembly molecularAssembly, CompositeConfiguration properties,
+    public MonteCarloOSRW(Potential potentialEnergy, AbstractOSRW osrw,
+            MolecularAssembly molecularAssembly, CompositeConfiguration properties,
             AlgorithmListener listener, Thermostats requestedThermostat, Integrators requestedIntegrator) {
         this.potential = potentialEnergy;
-        this.linter = (LambdaInterface) potentialEnergy;
         this.osrw = osrw;
         this.molecularAssembly = molecularAssembly;
         this.properties = properties;
@@ -114,7 +118,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
     public void setLambda(double lambda) {
         this.lambda = lambda;
-        linter.setLambda(lambda);
+        osrw.setLambda(lambda);
     }
 
     public double getLambda() {
@@ -140,35 +144,41 @@ public class MonteCarloOSRW extends BoltzmannMC {
         int n = potential.getNumberOfVariables();
         double[] coordinates = new double[n];
         double[] gradient = new double[n];
-
         int numMoves = totalMDSteps / mdSteps;
 
         /**
          * Initialize MC move instances.
          */
         MDMove mdMove = new MDMove(molecularAssembly, potential, properties, listener, requestedThermostat, requestedIntegrator);
-        LambdaMove lambdaMove = new LambdaMove(lambda, linter);
+        LambdaMove lambdaMove = new LambdaMove(lambda, osrw);
 
         for (int imove = 0; imove < numMoves; imove++) {
 
-            int lambdaBin = osrw.binForLambda(lambda);
             potential.getCoordinates(coordinates);
-            osrw.energyAndGradient(coordinates, gradient);
-            double currentdUdL = linter.getdEdL();
-            double currentEnergy = osrw.evaluateKernel(lambdaBin, osrw.binForFLambda(currentdUdL));
+            double currentEnergy = osrw.energyAndGradient(coordinates, gradient);
+            double currentdUdL = osrw.getForceFielddEdL();
+            currentEnergy += mdMove.getKineticEnergy();
+
             /**
              * Run MD.
              */
             mdMove.move();
             potential.getCoordinates(coordinates);
-            osrw.energyAndGradient(coordinates, gradient);
-            double proposeddUdL = linter.getdEdL();
-            double proposedEnergy = osrw.evaluateKernel(lambdaBin, osrw.binForFLambda(proposeddUdL));
+            double proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
+            double proposeddUdL = osrw.getForceFielddEdL();
+            proposedEnergy += mdMove.getKineticEnergy();
+
             if (evaluateMove(currentEnergy, proposedEnergy)) {
-                logger.info(String.format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", currentEnergy, proposedEnergy));
+                dUdLAccept++;
+                double percent = (dUdLAccept * 100.0) / (imove + 1);
+                logger.info(String.format(" X,dU/dL MC step accepted: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                        currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 currentEnergy = proposedEnergy;
                 //Accept MD move using OSRW energy
             } else {
+                double percent = (dUdLAccept * 100.0) / (imove + 1);
+                logger.info(String.format(" X,dU/dL MC step rejected: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                        currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 mdMove.revertMove();
             }
 
@@ -177,23 +187,34 @@ public class MonteCarloOSRW extends BoltzmannMC {
              */
             potential.getCoordinates(coordinates);
             currentEnergy = osrw.energyAndGradient(coordinates, gradient);
-            currentdUdL = linter.getdEdL();
+            currentdUdL = osrw.getForceFielddEdL();
+            double currentLambda = osrw.getLambda();
             lambdaMove.move();
             proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
-            proposeddUdL = linter.getdEdL();
+            proposeddUdL = osrw.getForceFielddEdL();
+            double proposedLambda = osrw.getLambda();
+
             if (evaluateMove(currentEnergy, proposedEnergy)) {
-                logger.info(String.format(" Monte Carlo step accepted: e1 -> e2 %10.6f -> %10.6f", currentEnergy, proposedEnergy));
+                lambdaAccept++;
+                double percent = (lambdaAccept * 100.0) / (imove + 1);
+                logger.info(String.format(" Lambda MC step accepted: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                        currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 currentdUdL = proposeddUdL;
             } else {
+                double percent = (lambdaAccept * 100.0) / (imove + 1);
+                logger.info(String.format(" Lambda MC step rejected: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                        currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 lambdaMove.revertMove();
             }
-            lambda = linter.getLambda();
+            lambda = osrw.getLambda();
 
             /**
              * Update time dependent bias.
              */
-            double freeEnergy = osrw.updateFLambda(false);
+            double freeEnergy = osrw.updateFLambda(true);
             osrw.addBias(currentdUdL, freeEnergy);
+
+            logger.info(String.format(" MC free energy %10.6f", freeEnergy));
         }
     }
 

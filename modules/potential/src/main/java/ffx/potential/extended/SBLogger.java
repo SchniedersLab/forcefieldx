@@ -183,8 +183,8 @@ public final class SBLogger {
     private synchronized void write(Level level) {
         String msg = sb.toString();
         if (!msg.isEmpty()) {
-            if (suppressTrailingNL && msg.endsWith("\n")) {
-                msg = msg.substring(0, msg.length());
+            if (suppressTrailingNL && msg.endsWith("%n")) {
+                msg = msg.substring(0, msg.length() - 1);
             }
             if (useCallerID) {
                 cid.getCallingLogger().log(level, msg);

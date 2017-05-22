@@ -68,7 +68,6 @@ import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.parameters.ForceField.ForceFieldName;
 
 import static ffx.potential.extended.ExtUtils.setProp;
-import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * Test ExtendedSystem and its variables to verify that
@@ -96,6 +95,7 @@ public class ExtendedVariableTest {
 	private static final int lys4_nz	= 48;
 	private static final int[] allAtoms = (new IntRange(0,67)).toArray();
 
+    private final boolean ci = Boolean.valueOf(System.getProperty("ffx.ci", "false"));
 	private static boolean		resultsOnly		= false;
 	private static final double tolerance		= 1e-6;
 	private static final double errorThreshold	= 1e-9;
@@ -129,20 +129,13 @@ public class ExtendedVariableTest {
 	}
 
 	// Setup control of PME lambda derivative calculation.
-	private ExtendedSystemConfig derivativeDebugParameters() {
-		setProp("rotate-multipoles",		yes);	// global frame
-		setProp("esv.allowMaskPerm",		yes);	// permanent energy masking
-		setProp("esv.allowMaskPolarD",		yes);	// group-based masking
-		setProp("esv.allowMaskPolarP",		yes);	// induced energy masking
+	private ExtendedSystemConfig setDebugParameters() {
 		setProp("esv.allowSymOps",			yes);	// symmetry operators
-		setProp("esv.allowScreening",		yes);	// SCREENED_COULOMB tensors
-		setProp("esv.allowTholeDamping",	yes);	// THOLE_FIELD tensors
 		setProp("esv.recipFieldEffects",	yes);	// reciprocal space contributions to field
 
 		setProp("esv.scaleAlpha",			yes);	// polarizability scaling and associated derivative term
 		setProp("polarization",		Polarization.MUTUAL);
 		setProp("scf-algorithm",	SCFAlgorithm.CG);
-		setProp("esv.cdqScales",	Arrays.asList(1.0, 1.0, 1.0));	// scale charges, dipoles, quads
 
 		setProp("use-charges",				yes);
 		setProp("use-dipoles",				yes);
@@ -368,23 +361,22 @@ public class ExtendedVariableTest {
 				testEndStates();
 				break;
 			case Derivatives:
-				testDerivatives();
+				testDerivatives(setDebugParameters());
 			case Deriv_OneEsv:
 			case Deriv_TwoEsvs:
-				derivativeDebugParameters();
-				testDerivatives();
+				testDerivatives(setDebugParameters());
 				break;
 			case Deriv_Meta:
 				testDerivativesMeta();
 				break;
 			case Smoothness:
-				testSmoothness();
+                if (ci) testSmoothness();
 				break;
 			default:
 			case All:
 				testEndStates();
 				testDerivatives();
-				testSmoothness();
+				if (ci) testSmoothness();
 		}
 	}
 
@@ -442,7 +434,7 @@ public class ExtendedVariableTest {
      */
     public void testDerivatives(ExtendedSystemConfig esvConfig) {
 		if (esvConfig == null) {
-			esvConfig = derivativeDebugParameters();
+			esvConfig = setDebugParameters();
 		}
 		MolecularAssembly mola = setupWithExtended(esvFilename, false, esvConfig);
 		ForceFieldEnergy ffe = mola.getPotentialEnergy();

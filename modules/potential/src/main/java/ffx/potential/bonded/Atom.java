@@ -2435,6 +2435,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
+    public void addToXYZGradient(int axis, double value) {
+        if (active) {
+            xyzGradient[axis] += value;
+        }
+    }
+
     /**
      * <p>
      * addToLambdaXYZGradient</p>

@@ -46,6 +46,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import javax.swing.undo.CannotUndoException;
@@ -63,9 +64,6 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
-
-import static ffx.potential.extended.SBLogger.SB;
-
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -118,8 +116,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private ExtendedSystem esvSystem;
     private DynamicsState dynamicsState;
     private double totalSimTime = 0.0;
-    
+
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
+
     public enum MonteCarloNotification {
         NEVER, EACH_STEP, AFTER_DYNAMICS;
     }
@@ -392,14 +391,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
         esvSystem = system;
         printEsvFrequency = printFrequency;
-		logger.info(format(" Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
-		reInit();
+        logger.info(format(" Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
+        reInit();
     }
 
     public void detachExtendedSystem() {
-		logger.info(format(" Detached extended system (%s) from molecular dynamics.", esvSystem.toString()));
+        logger.info(format(" Detached extended system (%s) from molecular dynamics.", esvSystem.toString()));
         esvSystem = null;
-		reInit();
+        reInit();
     }
 
     /**
@@ -512,6 +511,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         this.targetTemperature = temperature;
         this.initVelocities = initVelocities;
+
+
     }
 
     /**
@@ -700,9 +701,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             thermostat.setRemoveCenterOfMassMotion(false);
         }
     }
-    
-    private int snap = 0;
-    
+
     /**
      * {@inheritDoc}
      */
@@ -787,7 +786,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     a[i] = -Thermostat.convert * grad[i] / mass[i];
                 }
                 if (aPrevious != null) {
-                    System.arraycopy(a, 0, aPrevious, 0, numberOfVariables);
+                    arraycopy(a, 0, aPrevious, 0, numberOfVariables);
                 }
             }
             initialized = true;
@@ -799,6 +798,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
             logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
                     "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
         }
+
+        /**
+         * Store the initialized state.
+         */
+        storeState();
 
         /**
          * Integrate Newton's equations of motion for the requested number of
@@ -843,16 +847,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Compute the full-step kinetic energy.
              */
             thermostat.kineticEnergy();
-            
-            /* DEBUG; REMOVE */
-            if (currentTemperature > 600.0) {
-                SB.logfn("AtomVelocityDump=%d,DoF=%d:", snap, numberOfVariables);
-                for (int i = 0; i < v.length; i++) {
-                    SB.logf(" %8.4f", v[i]);
-                }
-                SB.nlogf("------------");
-                SB.printIf(true);
-            }
 
             /**
              * Do the full-step thermostat operation.
@@ -890,7 +884,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
              * Update extended system variables if present.
              */
             if (esvSystem != null) {
-                esvSystem.propagateESVs(currentTemperature, dt, step*dt);
+                esvSystem.propagateESVs(currentTemperature, dt, step * dt);
             }
 
             /**
@@ -909,7 +903,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
 
             /**
-             * Write out snapshots in selected format every saveSnapshotFrequency steps.
+             * Write out snapshots in selected format every
+             * saveSnapshotFrequency steps.
              */
             if (saveSnapshotFrequency > 0 && step % saveSnapshotFrequency == 0) {
                 for (AssemblyInfo ai : assemblies) {
@@ -973,7 +968,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         done = true;
         terminate = false;
-        
+
         if (monteCarloListener != null && mcNotification == MonteCarloNotification.AFTER_DYNAMICS) {
             monteCarloListener.mcUpdate(thermostat.getCurrentTemperature());
         }
@@ -986,6 +981,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     public double getTotalEnergy() {
         return currentTotalEnergy;
+    }
+
+    public double getKineticEnergy(){
+        return currentKineticEnergy;
     }
 
     /**
@@ -1034,14 +1033,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     public void storeState() {
-        dynamicsState = new DynamicsState();
+        if (dynamicsState == null) {
+            dynamicsState = new DynamicsState();
+        }
+        dynamicsState.storeState();
     }
 
     public void revertState() {
         if (dynamicsState == null) {
             throw new CannotUndoException();
         }
-        dynamicsState.restore();
+        dynamicsState.revertState();
     }
 
     private final boolean verboseDynamicsState = System.getProperty("md-verbose") != null;
@@ -1054,16 +1056,25 @@ public class MolecularDynamics implements Runnable, Terminatable {
         double currentTemperatureBak;
 
         public DynamicsState() {
-            xBak = x.clone();
-            vBak = v.clone();
-            aBak = a.clone();
-            aPreviousBak = aPrevious.clone();
-            massBak = mass.clone();
-            gradBak = grad.clone();
+            xBak = new double[numberOfVariables];
+            vBak = new double[numberOfVariables];
+            aBak = new double[numberOfVariables];
+            aPreviousBak = new double[numberOfVariables];
+            massBak = new double[numberOfVariables];
+            gradBak = new double[numberOfVariables];
+        }
+
+        public void storeState() {
             currentKineticEnergyBak = currentKineticEnergy;
             currentPotentialEnergyBak = currentPotentialEnergy;
             currentTotalEnergyBak = currentTotalEnergy;
             currentTemperatureBak = currentTemperature;
+            arraycopy(x, 0, xBak, 0, numberOfVariables);
+            arraycopy(v, 0, vBak, 0, numberOfVariables);
+            arraycopy(a, 0, aBak, 0, numberOfVariables);
+            arraycopy(aPrevious, 0, aPreviousBak, 0, numberOfVariables);
+            arraycopy(mass, 0, massBak, 0, numberOfVariables);
+            arraycopy(grad, 0, gradBak, 0, numberOfVariables);
             if (verboseDynamicsState) {
                 describe(" Storing State:");
             }
@@ -1090,20 +1101,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
             logger.info(sb.toString());
         }
 
-        public void restore() {
+        public void revertState() {
             if (verboseDynamicsState) {
                 describe(" Reverting State (From):");
             }
-            x = xBak;
-            v = vBak;
-            a = aBak;
-            aPrevious = aPreviousBak;
-            mass = massBak;
-            grad = gradBak;
             currentKineticEnergy = currentKineticEnergyBak;
             currentPotentialEnergy = currentPotentialEnergyBak;
             currentTotalEnergy = currentTotalEnergyBak;
             currentTemperature = currentTemperatureBak;
+            arraycopy(xBak, 0, x, 0, numberOfVariables);
+            arraycopy(vBak, 0, v, 0, numberOfVariables);
+            arraycopy(aBak, 0, a, 0, numberOfVariables);
+            arraycopy(aPreviousBak, 0, aPrevious, 0, numberOfVariables);
+            arraycopy(massBak, 0, mass, 0, numberOfVariables);
+            arraycopy(gradBak, 0, grad, 0, numberOfVariables);
             if (verboseDynamicsState) {
                 describe(" Reverting State (To):");
             }

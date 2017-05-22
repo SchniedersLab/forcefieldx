@@ -37,13 +37,11 @@
  */
 package ffx.algorithms.mc;
 
+import static java.lang.Math.abs;
+
 import org.apache.commons.math3.distribution.NormalDistribution;
 
-import static org.apache.commons.math3.util.FastMath.asin;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import ffx.potential.bonded.LambdaInterface;
+import ffx.algorithms.AbstractOSRW;
 
 /**
  * Define an MC move to update lambda.
@@ -52,31 +50,36 @@ import ffx.potential.bonded.LambdaInterface;
  */
 public class LambdaMove implements MCMove {
 
-    private final double originalLambda;
-    private final double originalTheta;
-    private double newTheta;
-    private double newLambda;
-    private final double sigma = 0.2;
-    private final LambdaInterface linter;
+    private final double sigma = 0.1;
+    private double currentLambda = 0.0;
+    private final AbstractOSRW osrw;
     private final NormalDistribution dist;
 
-    public LambdaMove(double currentLambda, LambdaInterface linter) {
-        this.originalLambda = currentLambda;
-        this.originalTheta = asin(sqrt(currentLambda));
-        this.linter = linter;
-        dist = new NormalDistribution(originalTheta, sigma);
+    public LambdaMove(double currentLambda, AbstractOSRW osrw) {
+        this.osrw = osrw;
+        currentLambda = osrw.getLambda();
+        dist = new NormalDistribution(0.0, sigma);
     }
 
     @Override
     public void move() {
-        newTheta = dist.sample();
-        newLambda = sin(newTheta * newTheta);
-        linter.setLambda(newLambda);
+        currentLambda = osrw.getLambda();
+
+        // Draw a trial move from the distribution.
+        double dL = dist.sample();
+        double newLambda = currentLambda + dL;
+
+        // Map values into the range 0.0 .. 1.0.
+        if (newLambda > 1.0) {
+            newLambda = (2.0 - newLambda);
+        } else if (newLambda < 0.0) {
+            newLambda = abs(newLambda);
+        }
+        osrw.setLambda(newLambda);
     }
 
     @Override
     public void revertMove() {
-        this.newLambda = this.originalLambda;
-        linter.setLambda(originalLambda);
+        osrw.setLambda(currentLambda);
     }
 }
