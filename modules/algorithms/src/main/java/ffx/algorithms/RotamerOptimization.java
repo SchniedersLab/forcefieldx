@@ -417,9 +417,9 @@ public class RotamerOptimization implements Terminatable {
     private boolean mcUseAll = false;
     // Skips brute force enumeration in favor of pure Monte Carlo. Recommended only for testing.
     private boolean mcNoEnum = false;
-    
+
     /**
-     * Sets whether files should be printed; true for standalone applications, 
+     * Sets whether files should be printed; true for standalone applications,
      * false for some applications which use rotamer optimization as part of a
      * larger process.
      */
@@ -429,7 +429,7 @@ public class RotamerOptimization implements Terminatable {
      */
     private List<ObjectPair<ResidueState[], Double>> ensembleStates;
     protected RotamerLibrary library = RotamerLibrary.getDefaultLibrary();
-    
+
     /**
      * Represents the method called to obtain the directory corresponding to
      * the current energy; will be a simple return null for potential energy
@@ -686,7 +686,7 @@ public class RotamerOptimization implements Terminatable {
         this(molecularAssembly, potential, algorithmListener);
         this.algorithm = algorithm;
     }
-    
+
     public void addAdditionalAssembly(MolecularAssembly assembly) {
         this.allAssemblies.add(assembly);
     }
@@ -1061,7 +1061,7 @@ public class RotamerOptimization implements Terminatable {
             if (ensembleStates == null) {
                 ensembleStates = new ArrayList<>();
             }
-            
+
             /**
              * At the end of the recursion, compute the potential energy for
              * each rotamer of the final residue. If a lower potential energy is
@@ -1158,7 +1158,7 @@ public class RotamerOptimization implements Terminatable {
                     optimum[i] = ri;
                 }
             }
-            
+
             ensembleStates.sort(null);
         }
         return currentEnergy;
@@ -1414,10 +1414,10 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        
+
         // List to contain current residues.
         List<Residue> rList = new ArrayList<>(Collections.nCopies(4, null));
-        
+
         try {
             localBackboneEnergy = currentEnergy(rList);
         } catch (ArithmeticException ex) {
@@ -1536,9 +1536,9 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        
+
         List<Residue> rList = new ArrayList<>(Collections.nCopies(4, null));
-        
+
         try {
             localBackboneEnergy = currentEnergy(rList, false);
         } catch (ArithmeticException ex) {
@@ -1570,7 +1570,7 @@ public class RotamerOptimization implements Terminatable {
             }
             turnOffAtoms(ri);
         }
-        
+
         for (int i = 0; i < nRes; i++) {
             Residue ri = residues[i];
             rList.set(0, ri);
@@ -1660,7 +1660,7 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        
+
         List<Residue> rList = new ArrayList<>(Collections.nCopies(4, null));
         try {
             localBackboneEnergy = currentEnergy(rList, false);
@@ -1783,7 +1783,7 @@ public class RotamerOptimization implements Terminatable {
         for (int i = 0; i < nRes; i++) {
             turnOffAtoms(residues[i]);
         }
-        
+
         List<Residue> rList = new ArrayList<>(Collections.nCopies(4, null));
         try {
             localBackboneEnergy = currentEnergy(rList, false);
@@ -2158,7 +2158,7 @@ public class RotamerOptimization implements Terminatable {
     public void setResidues(ArrayList<Residue> residueList) {
         this.residueList = residueList;
     }
-    
+
     public void setCoordinatesToEnsemble(int ensnum) {
         if (ensembleStates != null && !ensembleStates.isEmpty()) {
             ensnum %= ensembleStates.size();
@@ -2168,7 +2168,7 @@ public class RotamerOptimization implements Terminatable {
             throw new IllegalArgumentException(" Ensemble states not initialized!");
         }
     }
-    
+
     public List<ResidueState[]> getEnsemble() {
         if (ensembleStates == null) {
             return null;
@@ -2182,7 +2182,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Accepts a list of residues but throws out null residues. Used by the -lR 
+     * Accepts a list of residues but throws out null residues. Used by the -lR
      * flag.
      *
      * @param residueList
@@ -2635,7 +2635,7 @@ public class RotamerOptimization implements Terminatable {
     public void setVerboseEnergies(Boolean verboseEnergies) {
         this.verboseEnergies = verboseEnergies;
     }
-    
+
     /**
      * Sets whether rotamer optimization should print out any files, or act solely
      * to optimize a structure in memory.
@@ -2868,7 +2868,7 @@ public class RotamerOptimization implements Terminatable {
             } else {
                 double[] permutationEnergies = new double[evaluatedPermutations];
                 ensembleStates = new ArrayList<>();
-                
+
                 e = rotamerOptimizationDEE(molecularAssembly, residues, 0, currentRotamers,
                         Double.MAX_VALUE, optimum, permutationEnergies);
                 int[][] acceptedPermutations = new int[evaluatedPermutations][];
@@ -2878,7 +2878,7 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(String.format("\n Checking permutations for distance < %5.3f kcal/mol from GMEC energy %10.8f kcal/mol", ensembleEnergy, e));
                 dryRunForEnsemble(residues, 0, currentRotamers, e, permutationEnergies, acceptedPermutations);
                 int numAcceptedPermutations = 0;
-                
+
                 for (int i = 0; i < acceptedPermutations.length; i++) {
                     if (acceptedPermutations[i] != null) {
                         ++numAcceptedPermutations;
@@ -2888,10 +2888,10 @@ public class RotamerOptimization implements Terminatable {
                             Rotamer[] rotamersj = residuej.getRotamers(library);
                             RotamerLibrary.applyRotamer(residuej, rotamersj[acceptedPermutations[i][j]]);
                         }
-                        
+
                         ResidueState[] states = ResidueState.storeAllCoordinates(residues);
                         ensembleStates.add(new ObjectPair<>(states, permutationEnergies[i]));
-                        
+
                         if (printFiles && master) {
                             try {
                                 FileWriter fw = new FileWriter(ensembleFile, true);
@@ -2973,7 +2973,7 @@ public class RotamerOptimization implements Terminatable {
             logIfMaster(String.format(" Approximate Energy:     %16.8f", approximateEnergy));
             return e;
         }
-        
+
         /**
          * Permutations used only to set maximum bound on ensembleNumber, thus
          * it is safe here to put that value in a 32-bit int.
@@ -2990,7 +2990,7 @@ public class RotamerOptimization implements Terminatable {
                 break;
             }
         }
-        
+
         if (nPerms < ensembleNumber) {
             logger.info(String.format(" Requested an ensemble of %d, but only %d permutations exist; returning full ensemble", ensembleNumber, nPerms));
             ensembleNumber = nPerms;
@@ -4292,7 +4292,6 @@ public class RotamerOptimization implements Terminatable {
                 atomList = residue.getAtomList();
                 for (Atom atom : atomList) {
                     atom.setUse(false);
-
                 }
         }
     }
@@ -4309,10 +4308,10 @@ public class RotamerOptimization implements Terminatable {
             default:
         }
     }
-    
+
     /**
      * Calculates the energy at the current state.
-     * 
+     *
      * @param resArray Array of residues in current energy term.
      * @return Energy of the current state.
      */
@@ -4329,11 +4328,11 @@ public class RotamerOptimization implements Terminatable {
     private double currentEnergy(List<Residue> resList) {
         return currentEnergy(resList, true);
     }
-    
+
     /**
      * Calculates the energy at the current state, with the option to throw
      * instead of catching exceptions in the energy calculation.
-     * 
+     *
      * @param resArray Array of residues in current energy term.
      * @param catchError If true, catch force field exceptions
      * @return Energy of the current state.
@@ -4382,7 +4381,7 @@ public class RotamerOptimization implements Terminatable {
             return eFunction.applyAsDouble(energyDir);
         }
     }
-    
+
     /**
      * Default method for obtaining energy: calculates energy of the Potential.
      * @param dir Ignored, should be null
@@ -4401,7 +4400,7 @@ public class RotamerOptimization implements Terminatable {
     private double currentEnergyWrapper(List<Residue> resList) {
         return currentEnergy(resList);
     }
-    
+
     /**
      * Sets the function used to calculate energy.
      * @param ef File to energy
@@ -4409,7 +4408,7 @@ public class RotamerOptimization implements Terminatable {
     public void setEnergyFunction(ToDoubleFunction<File> ef) {
         this.eFunction = ef;
     }
-    
+
     /**
      * Sets the directory provider used.
      * @param dirProvider A function of residue list to appropriate directory
@@ -4636,9 +4635,9 @@ public class RotamerOptimization implements Terminatable {
                                                 Residue resl = residues[l];
                                                 Rotamer rotl[] = resl.getRotamers(library);
                                                 for (int rl = 0; rl < rotl.length; rl++) {
-                                                    /*if (check(l, rl) || check(i, ri, l, rl) || 
-                                                            check(j, rj, l, rl) || check(k, rk, l, rl) || 
-                                                            check(i, ri, j, rj, l, rl) || check(i, ri, k, rk, l, rl) || 
+                                                    /*if (check(l, rl) || check(i, ri, l, rl) ||
+                                                            check(j, rj, l, rl) || check(k, rk, l, rl) ||
+                                                            check(i, ri, j, rj, l, rl) || check(i, ri, k, rk, l, rl) ||
                                                             check(j, rj, k, rk, l, rl)) {
                                                         continue;
                                                     }*/
@@ -6591,7 +6590,7 @@ public class RotamerOptimization implements Terminatable {
         }
         return eliminatedTriples[i][ri][j][rj][k][rk];
     }
-    
+
     /**
      * Presently constitutively returns false, as we do not eliminate quads at
      * this point.
@@ -6608,7 +6607,7 @@ public class RotamerOptimization implements Terminatable {
     protected boolean check(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
         return false;
     }
-    
+
     protected boolean checkAll(int... iris) {
         int nVals = iris.length;
         int i = iris[0];
@@ -6645,7 +6644,7 @@ public class RotamerOptimization implements Terminatable {
                 throw new IllegalArgumentException(" checkAll function only implemented for selfs, pairs, triples, or quads");
         }
     }
-    
+
     protected boolean checkTo(int... iris) {
         int nVals = iris.length;
         switch (nVals) {
@@ -6681,7 +6680,7 @@ public class RotamerOptimization implements Terminatable {
                 throw new IllegalArgumentException(" checkTo function only implemented for selfs, pairs, triples, or quads");
         }
     }
-    
+
     /**
      * Wrapper for check(i,ri); ideally just call check(i,ri). Checks if residue-
      * rotamer self i,ri has been eliminated
@@ -6692,13 +6691,13 @@ public class RotamerOptimization implements Terminatable {
     protected boolean checkToI(int i, int ri) {
         return check(i,ri);
     }
-    
+
     /**
      * Checks to see if any eliminations with j,rj have occurred; assumes i,ri
      * self has already been checked. Checks j,rj self and i,ri,j,rj pair. The
      * intent is to be part of a loop over i,ri,j,rj, and check for eliminations
      * at the j,rj point.
-     * 
+     *
      * @param i Residue i
      * @param ri Rotamer ri
      * @param j Residue j
@@ -6708,13 +6707,13 @@ public class RotamerOptimization implements Terminatable {
     protected boolean checkToJ(int i, int ri, int j, int rj) {
         return (check(j, rj) || check(i,ri,j,rj));
     }
-    
+
     /**
-     * Checks to see if any eliminations with k,rk have occurred; assumes 
+     * Checks to see if any eliminations with k,rk have occurred; assumes
      * i,ri,j,rj pair has already been checked. Checks the k,rk self, all pairs
      * with k,rk, and the i,ri,j,rj,k,rk triple. The intent is to be part of a
      * loop over i,ri,j,rj,k,rk, and check for eliminations at the k,rk point.
-     * 
+     *
      * @param i Residue i
      * @param ri Rotamer ri
      * @param j Residue j
@@ -6726,14 +6725,14 @@ public class RotamerOptimization implements Terminatable {
     protected boolean checkToK(int i, int ri, int j, int rj, int k, int rk) {
         return (check(k,rk) || check(i,ri,k,rk) || check(j,rj,k,rk) || check(i,ri,j,rj,k,rk));
     }
-    
+
     /**
-     * Checks to see if any eliminations with l,rl have occurred; assumes 
+     * Checks to see if any eliminations with l,rl have occurred; assumes
      * i,ri,j,rj,k,rk triple has already been checked. Checks the l,rl self, all
-     * pairs with l,rl, all triples with l,rl, and the quad. The intent is to be 
-     * part of a loop over i,ri,j,rj,k,rk,l,rl, and check for eliminations at 
+     * pairs with l,rl, all triples with l,rl, and the quad. The intent is to be
+     * part of a loop over i,ri,j,rj,k,rk,l,rl, and check for eliminations at
      * the l,rl point.
-     * 
+     *
      * @param i Residue i
      * @param ri Rotamer ri
      * @param j Residue j
