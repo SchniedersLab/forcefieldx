@@ -40,9 +40,11 @@ package ffx.potential.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -90,7 +92,7 @@ public class OPLSCrystalEnergyTest {
                 -23.22505628, 16759,
                 -28.45972542, 5029},
             {
-                false,
+                true,
                 "OPLS Methylparaben Benchmark",
                 "ffx/potential/structures/methylparaben-oplsaa.xyz",
                 0.48582171, 19,
@@ -100,7 +102,7 @@ public class OPLSCrystalEnergyTest {
                 -8.71533364, 7647,
                 -16.384524645738537, 2302},
             {
-                false,
+                true,
                 "OPLS Paracetamol Benchmark",
                 "ffx/potential/structures/paracetamol-oplsaa.xyz",
                 0.63722563, 20,
@@ -110,7 +112,7 @@ public class OPLSCrystalEnergyTest {
                 -9.45895598, 7831,
                 -41.34298872, 3334},
             {
-                false,
+                true,
                 "OPLS Phenacetin Benchmark",
                 "ffx/potential/structures/phenacetin-oplsaa.xyz",
                 0.53495810, 26,
@@ -138,13 +140,15 @@ public class OPLSCrystalEnergyTest {
     private final double permanentEnergy;
     private final double tolerance = 1.0e-2;
     private final double gradientTolerance = 1.0e-2;
-    private final boolean ci;
-    private final boolean ciOnly;
-    private boolean mpoleTerm;
+    private final boolean ciEnabled;
+    private final boolean ciStruct;
+    private final boolean mpoleTerm;
     private final ForceFieldEnergy forceFieldEnergy;
+    private final boolean pmeqi;
+    private final boolean solvTerm;
 
     public OPLSCrystalEnergyTest(
-            boolean ciOnly,
+            boolean ciStruct,
             String info, String filename,
             double bondEnergy, int nBonds,
             double angleEnergy, int nAngles,
@@ -152,7 +156,7 @@ public class OPLSCrystalEnergyTest {
             double improperTorsionEnergy, int nImproperTorsions,
             double vanDerWaalsEnergy, int nVanDerWaals,
             double permanentEnergy, int nPermanent) {
-        this.ciOnly = ciOnly;
+        this.ciStruct = ciStruct;
         this.info = info;
         this.bondEnergy = bondEnergy;
         this.nBonds = nBonds;
@@ -166,45 +170,78 @@ public class OPLSCrystalEnergyTest {
         this.nVanDerWaals = nVanDerWaals;
         this.permanentEnergy = permanentEnergy;
         this.nPermanent = nPermanent;
+        this.pmeqi = Boolean.valueOf(System.getProperty("pme.qi","false"));
+        this.solvTerm = Boolean.valueOf(System.getProperty("gkterm","false"));
 
-        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
-        if (!ci && ciOnly) {
+        ciEnabled = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
+        if (!ciEnabled && ciStruct) {
+            /**
+             * Skip expensive tests for normal builds.
+             */
             structure = null;
             molecularAssembly = null;
             forceFieldEnergy = null;
+            mpoleTerm = false;
+        } else {
+            /**
+             * Load the test system.
+             */
+            ClassLoader cl = this.getClass().getClassLoader();
+            structure = new File(cl.getResource(filename).getPath());
+            PotentialsUtils potentialUtils = new PotentialsUtils();
+            molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
+            forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+            mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
+        }
+    }
+
+    private static Properties initialSystemConfig;
+    /**
+     * Backup system properties for restoration.
+     */
+    @org.junit.BeforeClass
+    public static void setUpClass() {
+        initialSystemConfig = (Properties) System.getProperties().clone();
+    }
+    /**
+     * Reset persistent system keys to their state prior to entering the class.
+     */
+    @After
+    public void tearDown() {
+        System.getProperties().clear();
+        System.getProperties().putAll(initialSystemConfig);
+    }
+
+    private void setDebugParams() {
+        System.setProperty("pme.qi","true");
+        System.setProperty("pj.nt","1");
+        System.setProperty("pme.skipRecip", "true");
+    }
+
+    @Test
+    public void testLauncher() {
+        /**
+         * Skip expensive tests for normal builds.
+         * Also skip tests using generalized Kirkwood if QI is enabled (for now).
+         */
+        if ((!ciEnabled && ciStruct) || (solvTerm && pmeqi)) {
             return;
         }
-
-        /**
-         * Load the test system.
-         */
-        ClassLoader cl = this.getClass().getClassLoader();
-        structure = new File(cl.getResource(filename).getPath());
-        PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
-
-        forceFieldEnergy = molecularAssembly.getPotentialEnergy();
-        mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
-
-        if (ci) {
-            testGradient();
-            testSoftCore();
+        setDebugParams();
+        final boolean skipReal = Boolean.valueOf(System.getProperty("pme.skipReal","false"));
+        final boolean skipRecip = Boolean.valueOf(System.getProperty("pme.skipRecip","false"));
+        if (!skipReal && !skipRecip) {
+            testEnergy();
         }
+        testGradient();
+        testSoftCore();
+//        testLambdaOsrwDeriv();
     }
 
     /**
      * Test of energy method, of class PotentialEnergy.
      */
-    @Test
     public void testEnergy() {
-
-        /**
-         * Skip expensive tests for normal builds.
-         */
-        if (!ci && ciOnly) {
-            return;
-        }
-
         boolean gradient = false;
         boolean print = true;
         double total = forceFieldEnergy.energy(gradient, print);

@@ -26,7 +26,6 @@ import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.utils.PotentialsUtils;
 
 import static ffx.potential.extended.ExtUtils.prop;
-import static ffx.potential.extended.SBLogger.SB;
 
 /**
  * Helper methods to define titration-specific phenomena.
@@ -292,7 +291,7 @@ public class TitrationUtils {
         ForceField ff = mola.getForceField();
         Potential potential = mola.getPotentialEnergy();
         if (!(potential instanceof ForceFieldEnergy)) {
-            SB.warning("TitrationFactory only supported by ForceFieldEnergy potentials.");
+            logger.warning(String.format("TitrationFactory only supported by ForceFieldEnergy potentials."));
             throw new IllegalStateException();
         }
         ForceFieldEnergy ffe = (ForceFieldEnergy) potential;
@@ -521,7 +520,8 @@ public class TitrationUtils {
                         // These titratable protons are handled below; so no problem.
                     } else {
                         // Now we have a problem.
-                        SB.warning("Couldn't propagate inactive MultiResidue atom: %s: %s, %s", multiRes, activeName, activeAtom);
+                        logger.warning(format("Couldn't propagate inactive MultiResidue atom: %s: %s, %s",
+                                multiRes, activeName, activeAtom));
                     }
                 }
             }
@@ -736,7 +736,7 @@ public class TitrationUtils {
         public static Titration lookup(Residue res) {
             Titration[] titrations = multiLookup(res);
             if (titrations.length > 1) {
-                SB.warning("Titration::lookup returned more results than expected. Did you mean to invoke multi-state?");
+                logger.warning("Titration::lookup returned more results than expected. Did you mean to invoke multi-state?");
             }
             return (titrations != null) ? titrations[0] : null;
         }
@@ -766,7 +766,7 @@ public class TitrationUtils {
                     return new Titration[]{titration};
                 }
             }
-            SB.warning("No titration lookup found for residue %s", res);
+            logger.warning(format("No titration lookup found for residue %s", res));
             return null;
         }
     }

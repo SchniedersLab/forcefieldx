@@ -186,7 +186,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * thus to the size of the first category of arrays).
      */
     private int maxNumAtoms;
-    private final ParticleMeshEwaldCart particleMeshEwald;
+    private final ParticleMeshEwald particleMeshEwald;
     private final ParallelTeam parallelTeam;
     private Crystal crystal;
     private final BornRadiiRegion bornRadiiRegion;
@@ -309,7 +309,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         this.forceField = forceField;
         this.atoms = atoms;
-        this.particleMeshEwald = (ParticleMeshEwaldCart) particleMeshEwald;
+        this.particleMeshEwald = particleMeshEwald;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         nAtoms = atoms.length;
@@ -549,6 +549,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         if (fixedRadii) {
             fixedRadii = false;
         }
+
         x = particleMeshEwald.coordinates[0][0];
         y = particleMeshEwald.coordinates[0][1];
         z = particleMeshEwald.coordinates[0][2];

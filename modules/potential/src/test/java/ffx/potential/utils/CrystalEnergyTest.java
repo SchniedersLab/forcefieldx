@@ -40,9 +40,11 @@ package ffx.potential.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -53,6 +55,7 @@ import static org.junit.Assert.assertEquals;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.parameters.ForceField;
 
 /**
@@ -102,7 +105,7 @@ public class CrystalEnergyTest {
                 -45.55012417320137, 5012,
                 -3.97079858673400, 5012},
             {
-                false,
+                true,
                 "Methylparaben Benchmark",
                 "ffx/potential/structures/methylparaben.xyz",
                 0.42501694, 19,
@@ -118,7 +121,7 @@ public class CrystalEnergyTest {
                 -26.558577471708134, 2314,
                 -2.35904592, 2314},
             {
-                false,
+                true,
                 "Paracetamol Benchmark",
                 "ffx/potential/structures/paracetamol.xyz",
                 0.55316710, 20,
@@ -134,7 +137,7 @@ public class CrystalEnergyTest {
                 -32.02011297249507, 2357,
                  -4.96649992387851, 2357},
             {
-                false,
+                true,
                 "Phenacetin Benchmark",
                 "ffx/potential/structures/phenacetin.xyz",
                 0.56492623, 26,
@@ -152,8 +155,7 @@ public class CrystalEnergyTest {
         });
     }
     private final String info;
-    private final File structure;
-    private final MolecularAssembly molecularAssembly;
+    private final String filename;
     private final int nBonds;
     private final int nAngles;
     private final int nStretchBends;
@@ -180,13 +182,19 @@ public class CrystalEnergyTest {
     private final double polarizationEnergy;
     private final double tolerance = 1.0e-2;
     private final double gradientTolerance = 1.0e-2;
-    private final boolean ci;
-    private final boolean ciOnly;
+    private final boolean ciEnabled;
+    private final boolean ciStruct;
+    
+    private File structure;
+    private MolecularAssembly molecularAssembly;
+    private ForceFieldEnergy forceFieldEnergy;
+    private boolean pmeqi;
+    private boolean solvTerm;
     private boolean mpoleTerm;
-    private final ForceFieldEnergy forceFieldEnergy;
+    private String pmeName;
 
     public CrystalEnergyTest(
-            boolean ciOnly,
+            boolean ciStruct,
             String info, String filename,
             double bondEnergy, int nBonds,
             double angleEnergy, int nAngles,
@@ -200,7 +208,8 @@ public class CrystalEnergyTest {
             double vanDerWaalsEnergy, int nVanDerWaals,
             double permanentEnergy, int nPermanent,
             double polarizationEnergy, int nPolar) {
-        this.ciOnly = ciOnly;
+        this.filename = filename;
+        this.ciStruct = ciStruct;
         this.info = info;
         this.bondEnergy = bondEnergy;
         this.nBonds = nBonds;
@@ -226,48 +235,89 @@ public class CrystalEnergyTest {
         this.nPermanent = nPermanent;
         this.polarizationEnergy = polarizationEnergy;
         this.nPolar = nPolar;
-
-        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
-        if (!ci && ciOnly) {
+        this.pmeqi = Boolean.valueOf(System.getProperty("pme.qi","false"));
+        
+        this.ciEnabled = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
+        if (!ciEnabled && ciStruct) {
+            /**
+             * Skip expensive tests for normal builds.
+             */
             structure = null;
             molecularAssembly = null;
             forceFieldEnergy = null;
-            return;
+            mpoleTerm = false;
         }
+    }
 
-        System.setProperty("vdw-cutoff","8.0");
-        System.setProperty("ewald-cutoff","8.0");
+    private static Properties initialSystemConfig;
+    /**
+     * Backup system properties for restoration.
+     */
+    @org.junit.BeforeClass
+    public static void setUpClass() {
+        initialSystemConfig = (Properties) System.getProperties().clone();
+    }
+    /**
+     * Reset persistent system keys to their state prior to entering the class.
+     */
+    @After
+    public void tearDown() {
+        System.getProperties().clear();
+        System.getProperties().putAll(initialSystemConfig);
+    }
 
+    @org.junit.Test
+    public void testLauncherCart() {
+        System.setProperty("pme.qi", "false");
+        pmeqi = false;
+        load();
+        testRunner();
+        System.clearProperty("pme.qi");
+    }
+
+    @org.junit.Test
+    public void testLauncherQi() {
+        System.setProperty("pme.qi", "true");
+        System.setProperty("esvterm", "true");
+        pmeqi = true;
+        load();
+        testRunner();
+        System.clearProperty("pme.qi");
+        System.clearProperty("esvterm");
+    }
+    
+    public void load() {
         /**
          * Load the test system.
          */
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
         PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
-
+        molecularAssembly = potentialUtils.openQuietly(structure.getAbsolutePath());
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
+        pmeName = (forceFieldEnergy.getPmeNode() instanceof ParticleMeshEwaldQI) ? "Quasi-internal" : "Cartesian";
+        solvTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.GKTERM, false);
+    }
 
-        if (ci) {
-            testGradient();
-            testSoftCore();
+    public void testRunner() {
+        /**
+         * Skip expensive tests for normal builds.
+         * Also skip tests using generalized Kirkwood if QI is enabled (for now).
+         */
+        if ((!ciEnabled && ciStruct) || (solvTerm && pmeqi)) {
+            return;
         }
+        testEnergy();
+        testGradient();
+        if (!pmeqi) testSoftCore();
     }
 
     /**
      * Test of energy method, of class PotentialEnergy.
      */
-    @Test
     public void testEnergy() {
-
-        /**
-         * Skip expensive tests for normal builds.
-         */
-        if (!ci && ciOnly) {
-            return;
-        }
-
+        logger.info(String.format(" Testing crystal energy of %s with %s.", filename, pmeName));
         boolean gradient = false;
         boolean print = true;
         double total = forceFieldEnergy.energy(gradient, print);
@@ -318,6 +368,7 @@ public class CrystalEnergyTest {
      * Test of energy gradient, of class PotentialEnergy.
      */
     public void testGradient() {
+        logger.info(String.format(" Testing crystal gradient of %s with %s.", filename, pmeName));
         boolean gradient = true;
         boolean print = true;
         forceFieldEnergy.energy(gradient, print);
@@ -383,6 +434,7 @@ public class CrystalEnergyTest {
     }
 
     public void testSoftCore() {
+        logger.info(String.format(" Testing crystal softcore unity of %s with %s.", filename, pmeName));
         boolean gradient = false;
         boolean print = true;
         double e = forceFieldEnergy.energy(gradient, print);

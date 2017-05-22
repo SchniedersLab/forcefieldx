@@ -73,7 +73,6 @@ import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.VDWType;
 
-import static ffx.potential.extended.SBLogger.SB;
 import static ffx.utilities.HashCodeUtil.SEED;
 import static ffx.utilities.HashCodeUtil.hash;
 
@@ -87,15 +86,15 @@ import static ffx.utilities.HashCodeUtil.hash;
  */
 @SuppressWarnings({"serial", "CloneableImplementsClone"})
 public class Atom extends MSNode implements Comparable<Atom> {
-    
+
     private static final Logger logger = Logger.getLogger(Atom.class.getName());
 
     public enum Resolution {
         FIXEDCHARGE, AMOEBA;
     }
-    
+
     private Resolution resolution = Resolution.AMOEBA;
-    
+
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
     }
@@ -103,23 +102,25 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public Resolution getResolution() {
         return resolution;
     }
-    
+
     public enum Indexing {
         XYZ, PERSIST
     }
-    
+
     private boolean isBackground = false;
+
     public void setBackground() {
         isBackground = true;
     }
+
     public boolean isBackground() {
         return isBackground;
     }
-	
-	private Atom[] axisAtoms = null;
-	private int[] axisAtomIndices = null;
-	private MultipoleFrameDefinition frameDefinition = null;
-    
+
+    private Atom[] axisAtoms = null;
+    private int[] axisAtomIndices = null;
+    private MultipoleFrameDefinition frameDefinition = null;
+
     private static Point3d point3d = new Point3d();
     private static Point2d point2d = new Point2d();
     /**
@@ -376,10 +377,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
     private double globalDipole[] = null;
     private double globalQuadrupole[][] = null;
     private boolean applyState = false;
-	private boolean esvTerm = false;
+    private boolean esvTerm = false;
     private ExtendedVariable esv = null;
-	private Double scaledPolarizability = null;
-	private Double unscaledPolarizability = null;
+    private Double scaledPolarizability = null;
+    private Double unscaledPolarizability = null;
     private int moleculeNumber = 0;
     // solvation
     private double bornRadius;
@@ -512,7 +513,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
         return 0;
     }
-    
+
     /*
     @Override
     public int compareTo(Atom other) {
@@ -530,7 +531,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
             return Integer.compare(mi, ui);
         }
     }   */
-
     /**
      * <p>
      * addTrajectoryCoords</p>
@@ -585,7 +585,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean isHetero() {
         return hetatm;
     }
-    
+
     public Atom copy() {
         double coords[] = {xyz[0], xyz[1], xyz[2]};
         Atom atom = new Atom(getIndex(), getName(), getAltLoc(), coords,
@@ -742,7 +742,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public ArrayList<Atom> get1_5s() {
         return one_5s;
-		}
+    }
 
     /**
      * <p>
@@ -938,42 +938,44 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * The (single) ExtendedVariable of which this atom is a part (or null otherwise).
+     * The (single) ExtendedVariable of which this atom is a part (or null
+     * otherwise).
      */
     public ExtendedVariable getEsv() {
         return esv;
     }
-    
+
     public final void setEsv(ExtendedVariable esv, MultipoleType type, MultipoleType dotType, Double scaledAlpha) {
-		if (esv == null || (esvTerm && esv != this.esv)) {
-            SB.crash(format("Error attaching ESV to atom (multiples not supported): %s %s %s\n", this, this.esv, esv));
+        if (esv == null || (esvTerm && esv != this.esv)) {
+            logger.severe(format("Error attaching ESV to atom (multiples not supported): %s %s %s\n", this, this.esv, esv));
         }
         this.esv = esv;
         esvMultipole = type;
-		esvMultipoleDot = dotType;
-		unscaledPolarizability = getPolarizeType().polarizability;
-		scaledPolarizability = (scaledAlpha != null) ? scaledAlpha : unscaledPolarizability;
-		esvTerm = true;
+        esvMultipoleDot = dotType;
+        unscaledPolarizability = getPolarizeType().polarizability;
+        scaledPolarizability = (scaledAlpha != null) ? scaledAlpha : unscaledPolarizability;
+        esvTerm = true;
     }
-	public final void setEsv(ExtendedVariable esv, MultipoleType type, MultipoleType dotType) {
-		setEsv(esv, type, dotType, null);
-	}
-    
+
+    public final void setEsv(ExtendedVariable esv, MultipoleType type, MultipoleType dotType) {
+        setEsv(esv, type, dotType, null);
+    }
+
     public MultipoleType getEsvMultipole() {
         return (esvTerm) ? esvMultipole : getMultipoleType();
     }
-    
+
     public MultipoleType getEsvMultipoleDot() {
         return (esvTerm) ? esvMultipoleDot : getMultipoleType();
     }
-	
-	public double getScaledPolarizability() {
-		return (esvTerm) ? scaledPolarizability : polarizeType.polarizability;
-	}
-	
-	public double getUnscaledPolarizability() {
-		return (esvTerm) ? unscaledPolarizability : polarizeType.polarizability;
-	}
+
+    public double getScaledPolarizability() {
+        return (esvTerm) ? scaledPolarizability : polarizeType.polarizability;
+    }
+
+    public double getUnscaledPolarizability() {
+        return (esvTerm) ? unscaledPolarizability : polarizeType.polarizability;
+    }
 
     /**
      * <p>
@@ -1392,7 +1394,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
         for (Angle a : angles) {
             if (a.get1_3(atom) == this) {
                 return true;
-			}
+            }
         }
         return false;
     }
@@ -1407,7 +1409,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public boolean is_12_or_13(Atom a) {
         if (isBonded(a) || is_1_3(a)) {
             return true;
-		}
+        }
         return false;
     }
 
@@ -2182,8 +2184,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
              * for (Angle angle : angles) { if (angle == a) { return; } }
              */
             angles.add(a);
-		}
-	}
+        }
+    }
 
     /**
      * Specify that <b>this</b> Atom is part of a Bond
@@ -2199,8 +2201,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
                 }
             }
             bonds.add(b);
-		}
-	}
+        }
+    }
 
     /**
      * <p>
@@ -2210,7 +2212,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
      */
     public void removeBond(Bond b) {
         bonds.remove(b);
-	}
+    }
 
     /**
      * <p>
@@ -2221,7 +2223,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public void set1_5(Atom a) {
         if (a != null && !one_5s.contains(a)) {
             one_5s.add(a);
-		}
+        }
     }
 
     /**
@@ -2343,13 +2345,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
         if (torsion == null || !torsion.containsAtom(this)) {
             return;
         }
-        
+
         for (Torsion t : torsions) {
             if (torsion == t) {
                 return;
             }
         }
-        
+
         if (!isBackground) {
             for (Atom atom : torsion.getAtomArray()) {
                 if (atom.isBackground()) {
@@ -2357,7 +2359,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
                 }
             }
         }
-        
+
         torsions.add(torsion);
         Atom a14 = torsion.get1_4(this);
         if (a14 != null) {
@@ -2368,11 +2370,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
                     // Do not include the 1-3 atom
                     if (!torsion.containsAtom(a15)) {
                         set1_5(a15);
-					}
-				}
-			}
-		}
-	}
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Clear out the geometry lists for this atom.
@@ -2432,6 +2434,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
+    public void addToXYZGradient(int axis, double value) {
+        if (active) {
+            xyzGradient[axis] += value;
+        }
+    }
+
     /**
      * <p>
      * addToLambdaXYZGradient</p>
@@ -2447,7 +2455,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
             xyzLambdaGradient[2] += z;
         }
     }
-    
+
     /**
      * <p>
      * getXYZGradient</p>
@@ -2533,28 +2541,34 @@ public class Atom extends MSNode implements Comparable<Atom> {
             System.arraycopy(quadrupole[i], 0, globalQuadrupole[i], 0, 3);
         }
     }
-    
+
     public void setMultipoleType(MultipoleType multipoleType) {
         this.multipoleType = multipoleType;
     }
 
-	public void setAxisAtoms(Atom... set) {
-		axisAtoms = (Atom[]) ArrayUtils.clone(set);
-		axisAtomIndices = new int[axisAtoms.length];
-		for (int i = 0; i < set.length; i++) {
-			axisAtomIndices[i] = set[i].getArrayIndex();
-		}
-	}
-	public void setAxisAtomIndices(int[] set) {
-		axisAtomIndices = ArrayUtils.clone(set);
-	}
-	public int[] getAxisAtomIndices() {
-		return ArrayUtils.clone(axisAtomIndices);
-	}
+    public void setAxisAtoms(Atom... set) {
+        axisAtoms = (Atom[]) ArrayUtils.clone(set);
+        if (axisAtoms == null) {
+            axisAtomIndices = null;
+            return;
+        }
+        axisAtomIndices = new int[axisAtoms.length];
+        for (int i = 0; i < set.length; i++) {
+            axisAtomIndices[i] = set[i].getArrayIndex();
+        }
+    }
 
-	public void setFrameDefinition(MultipoleFrameDefinition frame) {
-		this.frameDefinition = frame;
-	}
+    public void setAxisAtomIndices(int[] set) {
+        axisAtomIndices = ArrayUtils.clone(set);
+    }
+
+    public int[] getAxisAtomIndices() {
+        return ArrayUtils.clone(axisAtomIndices);
+    }
+
+    public void setFrameDefinition(MultipoleFrameDefinition frame) {
+        this.frameDefinition = frame;
+    }
 
     public void setMoleculeNumber(int molecule) {
         this.moleculeNumber = molecule;
@@ -2698,14 +2712,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public final int getXyzIndex() {
         return xyzIndex;
     }
-    
+
     public final void setXyzIndex(int set) {
         xyzIndex = set;
     }
-    
+
     /**
-     * Note: the MolecularAssembly to which this Atom belongs is cached.
-     * If you wanna move atoms between assemblies, un-cache it.
+     * Note: the MolecularAssembly to which this Atom belongs is cached. If you
+     * wanna move atoms between assemblies, un-cache it.
      */
     public final int getIndex() {
         switch (MolecularAssembly.atomIndexing) {
@@ -2717,11 +2731,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
         }
     }
 
-	public final int getArrayIndex() {
-		return xyzIndex - 1;
-	}
+    public final int getArrayIndex() {
+        return xyzIndex - 1;
+    }
 
-	/**
+    /**
      * <p>
      * toMultipoleString</p>
      *
@@ -2745,7 +2759,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     public enum Descriptions {
         Default, Trim, XyzIndex_Name, ArrayIndex_Name, Resnum_Name;
     }
-    
+
     public String describe(Descriptions type) {
         switch (type) {
             default:
@@ -2755,11 +2769,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
                 return format("%d-%-3s %s %s%d", getIndex(), getName(), resName, segID, resSeq);
             case XyzIndex_Name:
                 return format("%d-%s", getIndex(), getName());
-			case ArrayIndex_Name:
-				return format("%d-%s", getIndex()-1, getName());
+            case ArrayIndex_Name:
+                return format("%d-%s", getIndex() - 1, getName());
             case Resnum_Name:
                 return format("%d-%s", resSeq, getName());
         }
+    }
+
+    /**
+     * Replaced by describe(Descriptions.XyzIndex_Name. Formats with XYZ index followed by atom name.
+     * @return A short string representation of this.
+     */
+    @Deprecated
+    public String toShortString() {
+        return describe(Descriptions.XyzIndex_Name);
     }
 
     /**

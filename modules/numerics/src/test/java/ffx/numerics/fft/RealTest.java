@@ -110,4 +110,18 @@ public class RealTest {
             assertEquals(info, orig, actual, tolerance);
         }
     }
+
+    /**
+     * Disable quasi-internal frame for all tests from this class.
+     */
+    @org.junit.BeforeClass
+    public static void setUpClass() {
+        qiPrevious = Boolean.valueOf(System.getProperty("pme.qi", "false"));
+        System.setProperty("pme.qi", "false");
+    }
+    private static boolean qiPrevious;
+    @org.junit.AfterClass
+    public static void tearDownClass() {
+        System.setProperty("pme.qi", String.valueOf(qiPrevious));
+    }
 }

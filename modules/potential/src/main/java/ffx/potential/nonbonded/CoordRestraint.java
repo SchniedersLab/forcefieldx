@@ -156,10 +156,51 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
+    /**
+     * Returns a copy of the atoms array.
+     * @return Copy of the atom array.
+     */
+    public Atom[] getAtoms() {
+        Atom[] retArray = new Atom[nAtoms];
+        System.arraycopy(atoms, 0, retArray, 0, nAtoms);
+        return retArray;
+    }
+
+    /**
+     * Returns the original coordinates of this restraint, indexed by atoms then x,y,z. This is the opposite order of
+     * the internal storage.
+     * @return Original coordinates [atoms][xyz]
+     */
+    public double[][] getOriginalCoordinates() {
+        double[][] retArray = new double[nAtoms][3];
+        for (int i = 0; i < nAtoms; i++) {
+            for (int j = 0; j < 3; j++) {
+                // Mild subtlety here: it is stored internally as [xyz][atoms], but returned as [atoms][xyz]
+                retArray[i][j] = initialCoordinates[j][i];
+            }
+        }
+        return retArray;
+    }
+
+    /**
+     * Returns the force constant in kcal/mol/Angstrom^2.
+     * @return
+     */
+    public double getForceConstant() {
+        return forceConstant;
+    }
+
     public int getNumAtoms() {
         return nAtoms;
     }
 
+    /**
+     * Calculates energy and gradients for this coordinate restraint.
+     *
+     * @param gradient Calculate gradients
+     * @param print Unused
+     * @return Energy in the coordinate restraint
+     */
     public double residual(boolean gradient, boolean print) {
 
         /**

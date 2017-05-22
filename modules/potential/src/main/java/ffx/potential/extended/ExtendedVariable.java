@@ -38,7 +38,6 @@
 package ffx.potential.extended;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,7 +62,6 @@ import ffx.potential.nonbonded.MultiplicativeSwitch;
 import ffx.potential.parameters.MultipoleType;
 
 import static ffx.potential.extended.ExtConstants.RNG;
-import static ffx.potential.extended.SBLogger.SB;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 import static ffx.potential.parameters.MultipoleType.zeroM;
 
@@ -85,6 +83,7 @@ public abstract class ExtendedVariable {
     private double theta;                           // Propagates lambda particle via "lambda=sin(theta)^2"
     private double halfThetaVelocity = 0.0;         // from OSRW, start theta with zero velocity
 	private double scaledPolarizability;
+    private StringBuilder SB = new StringBuilder();
     /**
      * Magnitude of the discretization bias in kcal/mol.
      */
@@ -173,7 +172,7 @@ public abstract class ExtendedVariable {
                      * defined ExtendedVariables that are not TitrationESVs.      */
                     assert(isTitratableHydrogen(fg));
                     if (!isTitratableHydrogen(fg)) {
-                        SB.warning("ExtendedVariable could not identify a companion for foreground atom %s.", fg);
+                        logger.warning(format("ExtendedVariable could not identify a companion for foreground atom %s.", fg));
                         throw new IllegalStateException();
                     }
                 } else {
@@ -187,7 +186,7 @@ public abstract class ExtendedVariable {
                 assert(!atomsForeground.contains(a0));
                 assert(!isTitratableHydrogen(a0));
                 if (atomsForeground.contains(a0) || isTitratableHydrogen(a0)) {
-                    SB.warning("Error: inappropriate background atom.");
+                    logger.warning("Error: inappropriate background atom.");
                     throw new IllegalStateException();
                 }
                 atomsBackground.add(a0);
@@ -303,7 +302,7 @@ public abstract class ExtendedVariable {
                 if (atomsUnshared.contains(fg)) {
                     Utype = new MultipoleType(zeroM, Ptype.frameAtomTypes, Ptype.frameDefinition, false);
                 } else {
-                    SB.warning("Error @ESV.updateMultipoles: bg null && !unshared.");
+                    logger.warning("Error @ESV.updateMultipoles: bg null && !unshared.");
                     Utype = null;
                 }
             } else {
@@ -324,13 +323,13 @@ public abstract class ExtendedVariable {
             }
             
             if (Utype == null) {
-                SB.logfn("Error @ESV.updateMultipoleTypes: bgType null.");
-                SB.logfn("   fg: %s, '%s'", fg.toString(), fg.getName());
-                SB.logfn(" Background atoms available for match: ");
+                SB.append(format("Error @ESV.updateMultipoleTypes: bgType null."));
+                SB.append(format("   fg: %s, '%s'", fg.toString(), fg.getName()));
+                SB.append(format(" Background atoms available for match: "));
                 for (Atom debug : atomsBackground) {
-                    SB.logfn("   bg: %s, '%s'", debug.toString(), debug.getName());
+                    SB.append(format("   bg: %s, '%s'", debug.toString(), debug.getName()));
                 }
-                SB.warning();
+                logger.warning(SB.toString());
                 continue;
             }
 			final double[] esvMultipole;
@@ -341,8 +340,8 @@ public abstract class ExtendedVariable {
 				esvType = MultipoleType.weightMultipoleTypes(types, mWeights, Ptype.frameAtomTypes);
 				esvDotType = MultipoleType.weightMultipoleTypes(types, mdotWeights, Ptype.frameAtomTypes);
 			} catch (IllegalArgumentException ex) {
-				SB.warning("Multipole scaling failed for fg,bg atoms: %s %s",
-						fg.describe(Descriptions.Trim), bg.describe(Descriptions.Trim));
+				logger.warning(format("Multipole scaling failed for fg,bg atoms: %s %s",
+						fg.describe(Descriptions.Trim), bg.describe(Descriptions.Trim)));
 				throw ex;
 			}
             if (esvType == null || esvDotType == null) {
@@ -354,12 +353,14 @@ public abstract class ExtendedVariable {
 			} else {
 				fg.setEsv(this, esvType, esvDotType);
 			}
-            SB.logf(" Assigning ESV MultipoleTypes for atom %s", fg.describe(Atom.Descriptions.Resnum_Name));
-            SB.nlogf("  U: %.2f*%s", lambda, Ptype.toCompactBohrString());
-            SB.nlogf("  P: %.2f*%s", 1.0 - lambda, Utype.toCompactBohrString());
-            SB.nlogf("  M:      %s", fg.getEsvMultipole().toCompactBohrString());
-            SB.nlogf("  Mdot:   %s", fg.getEsvMultipoleDot().toCompactBohrString());
-            SB.printIf(ExtUtils.verbose);
+            SB.append(format(" Assigning ESV MultipoleTypes for atom %s", fg.describe(Atom.Descriptions.Resnum_Name)));
+            SB.append(format("  U: %.2f*%s", lambda, Ptype.toCompactBohrString()));
+            SB.append(format("  P: %.2f*%s", 1.0 - lambda, Utype.toCompactBohrString()));
+            SB.append(format("  M:      %s", fg.getEsvMultipole().toCompactBohrString()));
+            SB.append(format("  Mdot:   %s", fg.getEsvMultipoleDot().toCompactBohrString()));
+            if (ExtUtils.verbose) {
+                logger.info(SB.toString());
+            }
         }
     }
 
@@ -415,19 +416,19 @@ public abstract class ExtendedVariable {
      * List all the atoms and bonded terms associated with each end state.
      */
     public final void describe() {
-        SB.logfn(" %s", this.toString());
-        SB.logfn("   %-50s %-50s", "Shared Atoms", "(Background)");
+        SB.append(format(" %s", this.toString()));
+        SB.append(format("   %-50s %-50s", "Shared Atoms", "(Background)"));
         for (int i = 0; i < atomsShared.size(); i++) {
             Atom ai = atomsShared.get(i);
-            SB.logfn("     %-50s %-50s",
+            SB.append(format("     %-50s %-50s",
                     ai.describe(Atom.Descriptions.Default).trim(),
-                    fg2bg.get(ai).describe(Atom.Descriptions.Trim));
+                    fg2bg.get(ai).describe(Atom.Descriptions.Trim)));
         }
-        SB.logfn("   Unshared Atoms");
+        SB.append(format("   Unshared Atoms"));
         for (Atom atom : atomsUnshared) {
-            SB.logfn("%s", atom);
+            SB.append(format("%s", atom));
         }
-        SB.logfn("   %-50s %-50s", "Bonded Terms", "(Background)");
+        SB.append(format("   %-50s %-50s", "Bonded Terms", "(Background)"));
         MSNode extendedNode = termNode.getChildList().stream()
 				.filter(node -> node.toString().contains("Extended")).findAny().orElse(null);
         for (MSNode term : termNode.getChildList()) {
@@ -440,9 +441,9 @@ public abstract class ExtendedVariable {
                                     .startsWith(term.toString().substring(0,term.toString().indexOf("("))))
                             .findAny().orElse(null);
             String bgTermString = (background != null) ? background.toString() : "";
-            SB.logfn("     %-50s %-50s", term.toString(), bgTermString);
+            SB.append(format("     %-50s %-50s", term.toString(), bgTermString));
         }
-        SB.print();
+        logger.info(SB.toString());
     }
 
     protected List<Atom> viewUnsharedAtoms() {

@@ -55,6 +55,7 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
+import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
@@ -109,12 +110,11 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
 import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
-
+import static ffx.potential.PotentialComponent.*;
 import static ffx.potential.bonded.Atom.Resolution.AMOEBA;
 import static ffx.potential.bonded.Atom.Resolution.FIXEDCHARGE;
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
-import static ffx.potential.PotentialComponent.*;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
 /**
@@ -153,7 +153,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private RestraintBond restraintBonds[];
     private RelativeSolvation relativeSolvation;
     private final VanDerWaals vanderWaals;
-    private final ParticleMeshEwald particleMeshEwald;
+    private ParticleMeshEwald particleMeshEwald;
     private final NCSRestraint ncsRestraint;
     private final List<CoordRestraint> coordRestraints;
     private final CoordRestraint autoCoordRestraint;
@@ -228,13 +228,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double totalBondedEnergy;
     private double vanDerWaalsEnergy;
     private double permanentMultipoleEnergy;
-	private double permanentRealSpaceEnergy;
-	private double permanentSelfEnergy;
-	private double permanentReciprocalEnergy;
+    private double permanentRealSpaceEnergy;
+    private double permanentSelfEnergy;
+    private double permanentReciprocalEnergy;
     private double polarizationEnergy;
-	private double inducedRealSpaceEnergy;
-	private double inducedSelfEnergy;
-	private double inducedReciprocalEnergy;
+    private double inducedRealSpaceEnergy;
+    private double inducedSelfEnergy;
+    private double inducedReciprocalEnergy;
     private double totalMultipoleEnergy;
     private double totalNonBondedEnergy;
     private double solvationEnergy;
@@ -254,10 +254,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private VARIABLE_TYPE[] variableTypes = null;
     private double xyz[] = null;
     private boolean printOnFailure;
-    private boolean printCompact = prop("ffe.combineBonded",	false);
-    private boolean printOverride = prop("ffe.printOverride",	false);
-    private final boolean noHeader = prop("ffe.noHeader",		false);
-	private final boolean decomposePme = prop("pme.decompose",	false);
+    private boolean printCompact = prop("ffe.combineBonded", false);
+    private boolean printOverride = prop("ffe.printOverride", false);
+    private final boolean noHeader = prop("ffe.noHeader", false);
+    private final boolean decomposePme = prop("pme.decompose", false);
     /**
      * *************************************
      */
@@ -764,12 +764,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         ForceField ffield = assembly.getForceField();
         String eImString = ffield.getString(ForceFieldString.ENERGY_IMPLEMENTATION, "FFX").toUpperCase().replaceAll("-", "_");
+        ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+        assembly.setPotential(ffxEnergy);
 
         try {
             EnergyImplementation eImpl = EnergyImplementation.valueOf(eImString);
             switch (eImpl) {
                 case FFX:
-                    ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                     return ffxEnergy;
                 case OMM:
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
@@ -779,19 +780,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         return oEnergy;
                     } catch (Exception ex) {
                         logger.warning(String.format(" Exception in creating OpenMM wrapper over force field energy: %s", ex));
+                        ex.printStackTrace();
                         ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
                         return ffxEnergy;
                     }
                 case OMM_OPENCL:
                 case OMM_OPTCPU:
                 default:
-                    logger.warning(String.format(" Energy implementation type %s not actually implemented at this time", eImpl));
-                    ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+                    logger.warning(String.format(" Energy implementation type %s not actually implemented at this time; defaulting to FFX", eImpl));
                     return ffxEnergy;
             }
         } catch (IllegalArgumentException | NullPointerException ex) {
             logger.warning(String.format(" String %s did not match a known energy implementation", eImString));
-            ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
             return ffxEnergy;
         }
     }
@@ -875,9 +875,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public void reInit() {
         int[] molecule;
         if (esvTerm) {
-			atoms = esvSystem.getExtendedAndBackgroundAtoms();
-			molecule = esvSystem.getExtendedAndBackgroundMolecule();
-		} else {
+            atoms = esvSystem.getExtendedAndBackgroundAtoms();
+            molecule = esvSystem.getExtendedAndBackgroundMolecule();
+        } else {
             atoms = molecularAssembly.getAtomArray();
             molecule = molecularAssembly.getMoleculeNumbers();
         }
@@ -1282,13 +1282,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             // Zero out the potential energy of each non-bonded term.
             vanDerWaalsEnergy = 0.0;
             permanentMultipoleEnergy = 0.0;
-				permanentRealSpaceEnergy = 0.0;
-				permanentSelfEnergy = 0.0;
-				permanentReciprocalEnergy = 0.0;
-			polarizationEnergy = 0.0;
-				inducedRealSpaceEnergy = 0.0;
-				inducedSelfEnergy = 0.0;
-				inducedReciprocalEnergy = 0.0;
+            permanentRealSpaceEnergy = 0.0;
+            permanentSelfEnergy = 0.0;
+            permanentReciprocalEnergy = 0.0;
+            polarizationEnergy = 0.0;
+            inducedRealSpaceEnergy = 0.0;
+            inducedSelfEnergy = 0.0;
+            inducedReciprocalEnergy = 0.0;
             totalMultipoleEnergy = 0.0;
             totalNonBondedEnergy = 0.0;
 
@@ -1318,9 +1318,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             try {
                 bondedRegion.setGradient(gradient);
                 parallelTeam.execute(bondedRegion);
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe(e.toString());
+            } catch (RuntimeException ex) {
+                logger.warning("Runtime exception during bonded term calculation.");
+                throw ex;
+            } catch (Exception ex) {
+                Utilities.printStackTrace(ex);
+                logger.severe(ex.toString());
             }
 
             if (!lambdaBondedTerms) {
@@ -1357,14 +1360,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     electrostaticTime = -System.nanoTime();
                     totalMultipoleEnergy = particleMeshEwald.energy(gradient, print);
                     permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
-					permanentRealSpaceEnergy = particleMeshEwald.getPermRealEnergy();
-					permanentSelfEnergy = particleMeshEwald.getPermSelfEnergy();
-					permanentReciprocalEnergy = particleMeshEwald.getPermRecipEnergy();
-					
+                    permanentRealSpaceEnergy = particleMeshEwald.getPermRealEnergy();
+                    permanentSelfEnergy = particleMeshEwald.getPermSelfEnergy();
+                    permanentReciprocalEnergy = particleMeshEwald.getPermRecipEnergy();
+
                     polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
-					inducedRealSpaceEnergy = particleMeshEwald.getIndRealEnergy();
-					inducedSelfEnergy = particleMeshEwald.getIndSelfEnergy();
-					inducedReciprocalEnergy = particleMeshEwald.getIndRecipEnergy();
+                    inducedRealSpaceEnergy = particleMeshEwald.getIndRealEnergy();
+                    inducedSelfEnergy = particleMeshEwald.getIndSelfEnergy();
+                    inducedReciprocalEnergy = particleMeshEwald.getIndRecipEnergy();
                     nPermanentInteractions = particleMeshEwald.getInteractions();
                     solvationEnergy = particleMeshEwald.getGKEnergy();
                     nGKInteractions = particleMeshEwald.getGKInteractions();
@@ -1916,14 +1919,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 ef.saveAsPDB(molecularAssembly, new File(filename));
             }
             if (ex.doCauseSevere()) {
-				Utilities.printStackTrace(ex);
+                Utilities.printStackTrace(ex);
                 logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
             } else {
                 ex.printStackTrace();
                 throw ex; // Rethrow exception
             }
 
-			throw ex; // Should ordinarily be unreachable.
+            throw ex; // Should ordinarily be unreachable.
         }
     }
 
@@ -1951,10 +1954,20 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 if (Double.isNaN(gx) || Double.isInfinite(gx)
                         || Double.isNaN(gy) || Double.isInfinite(gy)
                         || Double.isNaN(gz) || Double.isInfinite(gz)) {
-                    String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
-                            a.toString(), gx, gy, gz);
+                    /*String message = format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz);*/
+                    StringBuilder sb = new StringBuilder(format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).",
+                            a.toString(), gx, gy, gz));
+                    double[] vals = new double[3];
+                    a.getVelocity(vals);
+                    sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getAcceleration(vals);
+                    sb.append(format("\n Accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+                    a.getPreviousAcceleration(vals);
+                    sb.append(format("\n Previous accelerations: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
+
                     //logger.severe(message);
-                    throw new EnergyException(message);
+                    throw new EnergyException(sb.toString());
                 }
                 g[index++] = gx;
                 g[index++] = gy;
@@ -1966,6 +1979,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     /**
      * The coordinate array should only contain active atoms.
+     *
      * @param coords
      */
     protected void setCoordinates(double coords[]) {
@@ -2469,70 +2483,70 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return nVanDerWaalInteractions;
     }
 
-	public double getEnergyComponent(PotentialComponent component) {
-		switch (component) {
-			case Topology:
-			case ForceFieldEnergy:
-				return totalEnergy;
-			case VanDerWaals:
-				return vanDerWaalsEnergy;
-			case Multipoles:
-				return particleMeshEwald.getTotalMultipoleEnergy();
-			case Permanent:
-				return particleMeshEwald.getPermanentEnergy();
-			case Induced:
-				return particleMeshEwald.getPolarizationEnergy();
-			case PermanentRealSpace:
-				return particleMeshEwald.getPermRealEnergy();
-			case PermanentSelf:
-				return particleMeshEwald.getPermSelfEnergy();
-			case PermanentReciprocal:
-				return particleMeshEwald.getPermRecipEnergy();
-			case InducedRealSpace:
-				return particleMeshEwald.getIndRealEnergy();
-			case InducedSelf:
-				return particleMeshEwald.getIndSelfEnergy();
-			case InducedReciprocal:
-				return particleMeshEwald.getIndRecipEnergy();
-			case GeneralizedKirkwood:
-				return particleMeshEwald.getGKEnergy();
-			case Bonded:
-				return totalBondedEnergy;
-			case Bond:
-				return bondEnergy;
-			case Angle:
-				return angleEnergy;
-			case Torsion:
-				return torsionEnergy;
-			case StretchBend:
-				return stretchBendEnergy;
-			case OutOfPlaneBend:
-				return outOfPlaneBendEnergy;
-			case PiOrbitalTorsion:
-				return piOrbitalTorsionEnergy;
-			case TorsionTorsion:
-				return torsionTorsionEnergy;
-			case UreyBradley:
-				return ureyBradleyEnergy;
-			case RestraintBond:
-				return restraintBondEnergy;
-			case ImproperTorsion:
-				return improperTorsionEnergy;
-			case NCS:
-				return ncsEnergy;
-			case Restrain:
-				return restrainEnergy;
-			case pHMD:
-			case Bias:
-			case Discretizer:
-			case Acidostat:
-				return (esvTerm) ? esvSystem.getEnergyComponent(component) : 0.0;
-			case XRay:
-			default:
-				throw new AssertionError(component.name());
-		}
-	}
-	
+    public double getEnergyComponent(PotentialComponent component) {
+        switch (component) {
+            case Topology:
+            case ForceFieldEnergy:
+                return totalEnergy;
+            case VanDerWaals:
+                return vanDerWaalsEnergy;
+            case Multipoles:
+                return particleMeshEwald.getTotalMultipoleEnergy();
+            case Permanent:
+                return particleMeshEwald.getPermanentEnergy();
+            case Induced:
+                return particleMeshEwald.getPolarizationEnergy();
+            case PermanentRealSpace:
+                return particleMeshEwald.getPermRealEnergy();
+            case PermanentSelf:
+                return particleMeshEwald.getPermSelfEnergy();
+            case PermanentReciprocal:
+                return particleMeshEwald.getPermRecipEnergy();
+            case InducedRealSpace:
+                return particleMeshEwald.getIndRealEnergy();
+            case InducedSelf:
+                return particleMeshEwald.getIndSelfEnergy();
+            case InducedReciprocal:
+                return particleMeshEwald.getIndRecipEnergy();
+            case GeneralizedKirkwood:
+                return particleMeshEwald.getGKEnergy();
+            case Bonded:
+                return totalBondedEnergy;
+            case Bond:
+                return bondEnergy;
+            case Angle:
+                return angleEnergy;
+            case Torsion:
+                return torsionEnergy;
+            case StretchBend:
+                return stretchBendEnergy;
+            case OutOfPlaneBend:
+                return outOfPlaneBendEnergy;
+            case PiOrbitalTorsion:
+                return piOrbitalTorsionEnergy;
+            case TorsionTorsion:
+                return torsionTorsionEnergy;
+            case UreyBradley:
+                return ureyBradleyEnergy;
+            case RestraintBond:
+                return restraintBondEnergy;
+            case ImproperTorsion:
+                return improperTorsionEnergy;
+            case NCS:
+                return ncsEnergy;
+            case Restrain:
+                return restrainEnergy;
+            case pHMD:
+            case Bias:
+            case Discretizer:
+            case Acidostat:
+                return (esvTerm) ? esvSystem.getEnergyComponent(component) : 0.0;
+            case XRay:
+            default:
+                throw new AssertionError(component.name());
+        }
+    }
+
     public double getPermanentMultipoleEnergy() {
         return permanentMultipoleEnergy;
     }
@@ -2609,12 +2623,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     public ParticleMeshEwald getPmeNode() {
         return particleMeshEwald;
-	}
-	
-	public ParticleMeshEwaldQI getPmeQiNode() {
-		if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) throw new IllegalStateException();
-		return (ParticleMeshEwaldQI) particleMeshEwald;
-	}
+    }
+
+    public ParticleMeshEwaldQI getPmeQiNode() {
+        if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
+            throw new IllegalStateException();
+        }
+        return (ParticleMeshEwaldQI) particleMeshEwald;
+    }
+
+    public List<CoordRestraint> getCoordRestraints() {
+        return new ArrayList<>(coordRestraints);
+    }
 
     public int getSolvationInteractions() {
         return nGKInteractions;
@@ -3255,6 +3275,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         private class GradInitLoop extends IntegerForLoop {
 
             @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
+            
+            @Override
             public void run(int first, int last) throws Exception {
                 int threadID = getThreadIndex();
                 if (gradient) {
@@ -3271,7 +3296,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         private class GradReduceLoop extends IntegerForLoop {
+            @Override
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.fixed();
+            }
 
+            
             @Override
             public void run(int first, int last) throws Exception {
                 if (gradient) {

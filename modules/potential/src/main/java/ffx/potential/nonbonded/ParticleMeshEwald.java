@@ -62,13 +62,36 @@ public abstract class ParticleMeshEwald {
      * interact, and "mutual" that converges the self-consistent field to a
      * tolerance specified by the "polar-eps" keyword.
      */
-	public Polarization polarization;
+    public Polarization polarization;
+
+    /**
+     * Dimensions of [nsymm][xyz][nAtoms].
+     */
+    public double coordinates[][][];
+    /**
+     * Neighbor lists, including atoms beyond the real space cutoff.
+     * [nsymm][nAtoms][nAllNeighbors]
+     */
+    public int neighborLists[][][];
+
+    /**
+     * Dimensions of [nsymm][nAtoms][10]
+     */
+    public double globalMultipole[][][];
+
+    /**
+     * Dimensions of [nsymm][nAtoms][3]
+     */
+    public double inducedDipole[][][];
+    public double inducedDipoleCR[][][];
+
     public enum Polarization {
         MUTUAL, DIRECT, NONE
     }
-	public void setPolarization(Polarization set) {
-		this.polarization = set;
-	}
+
+    public void setPolarization(Polarization set) {
+        this.polarization = set;
+    }
 
     public enum ELEC_FORM {
         PAM, FIXED_CHARGE
@@ -86,30 +109,41 @@ public abstract class ParticleMeshEwald {
         NONE, LS, POLY, ASPC
     }
 
-	public abstract double getTotalMultipoleEnergy();
-	public abstract double getPermanentEnergy();
-	public abstract double getPermRealEnergy();
-	public abstract double getPermSelfEnergy();
-	public abstract double getPermRecipEnergy();
-	public abstract double getPolarizationEnergy();
-	public abstract double getIndRealEnergy();
-	public abstract double getIndSelfEnergy();
-	public abstract double getIndRecipEnergy();
-	public abstract double getGKEnergy();
+    public abstract double getTotalMultipoleEnergy();
 
-	public abstract GeneralizedKirkwood getGK();
-    
+    public abstract double getPermanentEnergy();
+
+    public abstract double getPermRealEnergy();
+
+    public abstract double getPermSelfEnergy();
+
+    public abstract double getPermRecipEnergy();
+
+    public abstract double getPolarizationEnergy();
+
+    public abstract double getIndRealEnergy();
+
+    public abstract double getIndSelfEnergy();
+
+    public abstract double getIndRecipEnergy();
+
+    public abstract double getGKEnergy();
+
+    public abstract GeneralizedKirkwood getGK();
+
     public static class LambdaFactors {
+
         public final double sc1;
         public final double dsc1dL;
         public final double d2sc1dL2;
         public final double sc2;
         public final double dsc2dL;
         public final double d2sc2dL2;
-		public static final LambdaFactors Defaults
-				= new LambdaFactors(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        public static final LambdaFactors Defaults
+                = new LambdaFactors(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+
         public LambdaFactors(double sc1, double dsc1dL, double d2sc1dL2,
-                             double sc2, double dsc2dL, double d2sc2dL2) {
+                double sc2, double dsc2dL, double d2sc2dL2) {
             this.sc1 = sc1;
             this.dsc1dL = dsc1dL;
             this.d2sc1dL2 = d2sc1dL2;
@@ -117,10 +151,11 @@ public abstract class ParticleMeshEwald {
             this.dsc2dL = dsc2dL;
             this.d2sc2dL2 = d2sc2dL2;
         }
-		@Override
-		public String toString() {
-			return formatArray(new double[]{sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2});
-		}
+
+        @Override
+        public String toString() {
+            return formatArray(new double[]{sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2});
+        }
     }
 
     public abstract double getEwaldCutoff();
@@ -159,14 +194,28 @@ public abstract class ParticleMeshEwald {
 
     public abstract double getDispersionEnergy(boolean throwError);
 
-	public abstract double[][][] getCoordinates();
-	public abstract double getPolarEps();
-	public abstract int[][] getPolarization11();
-	public abstract int[][] getPolarization12();
-	public abstract int[][] getPolarization13();
-	public abstract Polarization getPolarizationType();
-	public abstract int[][] getAxisAtoms();
-	public abstract double getScale14();
-	public abstract double getEwaldCoefficient();
-	public abstract ReciprocalSpace getReciprocalSpace();
+    public abstract double[][][] getCoordinates();
+
+    public abstract double getPolarEps();
+
+    public abstract int[][] getPolarization11();
+
+    public abstract int[][] getPolarization12();
+
+    public abstract int[][] getPolarization13();
+
+    public abstract Polarization getPolarizationType();
+
+    public abstract int[][] getAxisAtoms();
+
+    public abstract double getScale14();
+
+    public abstract double getEwaldCoefficient();
+
+    public abstract ReciprocalSpace getReciprocalSpace();
+
+    public abstract ELEC_FORM getElecForm();
+
+    public abstract String getName();
+
 }
