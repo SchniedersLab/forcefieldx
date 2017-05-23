@@ -1040,7 +1040,7 @@ class TTosrw extends Script {
         }
         osrw.setDeltaT(options.temperParam);
 
-        if (nArgs == 1 || options.optimize) {
+        if (options.optimize) {
             osrw.setOptimization(true, topologies[0]);
         }
 
