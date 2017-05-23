@@ -1290,8 +1290,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         for (int i = 0; i < nAtoms; i++) {
             MultipoleType multipoleType = atoms[i].getMultipoleType();
             OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle(amoebaGeneralizedKirkwoodForce,
-                    multipoleType.charge,
-                    OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i]);
+                    multipoleType.charge, OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i]);
         }
 
         OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(amoebaGeneralizedKirkwoodForce, 1.4 * OpenMM_NmPerAngstrom);
@@ -1443,112 +1442,291 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             return;
         }
 
-        // Update the vdW Force.
-        if (amoebaVDWForce != null) {
-            VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
-            VanDerWaalsForm vdwForm = vdW.getVDWForm();
-
-            double radScale = 1.0;
-            if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
-                radScale = 0.5;
-            }
-
-            /**
-             * Note that the API says it wants a SIGMA value.
-             */
-            if (vdwForm.radiusType == VanDerWaalsForm.RADIUS_TYPE.R_MIN) {
-                //radScale *= 1.122462048309372981;
-            }
-
-            int ired[] = vdW.getReductionIndex();
-            for (int i = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                VDWType vdwType = atom.getVDWType();
-                double useFactor = 1.0;
-                if (!use[i]) {
-                    useFactor = 0.0;
-                }
-                double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
-                OpenMM_AmoebaVdwForce_setParticleParameters(amoebaVDWForce,
-                        i, ired[i], OpenMM_NmPerAngstrom * vdwType.radius * radScale,
-                        eps, vdwType.reductionFactor);
-            }
-            OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, openMMContext);
-        }
-
+        // Update fixed charge non-bonded parameters.
         if (fixedChargeNonBondedForce != null) {
-            VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
-            /**
-             * Only 6-12 LJ with arithmetic mean to define sigma and geometric
-             * mean for epsilon is supported.
-             */
-            VanDerWaalsForm vdwForm = vdW.getVDWForm();
-            if (vdwForm.vdwType != LENNARD_JONES
-                    || vdwForm.radiusRule != ARITHMETIC
-                    || vdwForm.epsilonRule != GEOMETRIC) {
-                logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
-                return;
-            }
-
-            /**
-             * OpenMM vdW force requires a diameter (i.e. not radius).
-             */
-            double radScale = 1.0;
-            if (vdwForm.radiusSize == RADIUS) {
-                radScale = 2.0;
-            }
-            /**
-             * OpenMM vdw force requires atomic sigma values (i.e. not r-min).
-             */
-            if (vdwForm.radiusType == R_MIN) {
-                radScale /= 1.122462048309372981;
-            }
-
-            /**
-             * Add particles.
-             */
-            for (int i = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                double useFactor = 1.0;
-                if (!use[i]) {
-                    useFactor = 0.0;
-                }
-                double charge = 0.0;
-                MultipoleType multipoleType = atom.getMultipoleType();
-                if (multipoleType != null) {
-                    charge = multipoleType.charge;
-                }
-                charge = charge * useFactor;
-                VDWType vdwType = atom.getVDWType();
-                double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
-                double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
-                OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge, sigma, eps);
-            }
-            OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, openMMContext);
+            updateFixedChargeNonBondedForce();
         }
 
+        // Update fixed charge GB parameters.
         if (customGBForce != null) {
-            GeneralizedKirkwood gk = ffxForceFieldEnergy.getGK();
-            double baseRadii[] = gk.getBaseRadii();
-            double overlapScale[] = gk.getOverlapScale();
-            PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
-            for (int i = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                double useFactor = 1.0;
-                if (!use[i]) {
-                    useFactor = 0.0;
-                }
-                MultipoleType multipoleType = atom.getMultipoleType();
-                double charge = multipoleType.charge * useFactor;
-                double oScale = overlapScale[i] * useFactor;
-                OpenMM_DoubleArray_append(doubleArray, charge);
-                OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadii[i]);
-                OpenMM_DoubleArray_append(doubleArray, oScale);
-                OpenMM_CustomGBForce_setParticleParameters(customGBForce, i, doubleArray);
-                OpenMM_DoubleArray_resize(doubleArray, 0);
-            }
-            OpenMM_CustomGBForce_updateParametersInContext(customGBForce, openMMContext);
+            updateCustomGBForce();
         }
+
+        // Update AMOEBA vdW parameters.
+        if (amoebaVDWForce != null) {
+            updateAmoebaVDWForce();
+        }
+
+        // Update AMOEBA polarizable multipole parameters.
+        if (amoebaMultipoleForce != null) {
+            updateAmoebaMultipoleForce();
+        }
+
+        // Update GK force.
+        if (amoebaGeneralizedKirkwoodForce != null) {
+            updateAmoebaGeneralizedKirkwoodForce();
+        }
+
+        // Update WCA Force.
+        if (amoebaWcaDispersionForce != null) {
+            updateWCAForce();
+        }
+    }
+
+    private void updateAmoebaVDWForce() {
+        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+            radScale = 0.5;
+        }
+
+        /**
+         * Note that the API says it wants a SIGMA value.
+         */
+        if (vdwForm.radiusType == VanDerWaalsForm.RADIUS_TYPE.R_MIN) {
+            //radScale *= 1.122462048309372981;
+        }
+
+        int ired[] = vdW.getReductionIndex();
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            VDWType vdwType = atom.getVDWType();
+            double useFactor = 1.0;
+            if (!use[i]) {
+                useFactor = 0.0;
+            }
+            double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
+            OpenMM_AmoebaVdwForce_setParticleParameters(amoebaVDWForce,
+                    i, ired[i], OpenMM_NmPerAngstrom * vdwType.radius * radScale,
+                    eps, vdwType.reductionFactor);
+        }
+        OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, openMMContext);
+    }
+
+    private void updateFixedChargeNonBondedForce() {
+        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
+        /**
+         * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
+         * for epsilon is supported.
+         */
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        if (vdwForm.vdwType != LENNARD_JONES
+                || vdwForm.radiusRule != ARITHMETIC
+                || vdwForm.epsilonRule != GEOMETRIC) {
+            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            return;
+        }
+
+        /**
+         * OpenMM vdW force requires a diameter (i.e. not radius).
+         */
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == RADIUS) {
+            radScale = 2.0;
+        }
+        /**
+         * OpenMM vdw force requires atomic sigma values (i.e. not r-min).
+         */
+        if (vdwForm.radiusType == R_MIN) {
+            radScale /= 1.122462048309372981;
+        }
+
+        /**
+         * Update parameters.
+         */
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            double useFactor = 1.0;
+            if (!use[i]) {
+                useFactor = 0.0;
+            }
+            double charge = 0.0;
+            MultipoleType multipoleType = atom.getMultipoleType();
+            if (multipoleType != null) {
+                charge = multipoleType.charge;
+            }
+            charge = charge * useFactor;
+            VDWType vdwType = atom.getVDWType();
+            double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+            double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
+            OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge, sigma, eps);
+        }
+        OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, openMMContext);
+    }
+
+    private void updateCustomGBForce() {
+        GeneralizedKirkwood gk = ffxForceFieldEnergy.getGK();
+        double baseRadii[] = gk.getBaseRadii();
+        double overlapScale[] = gk.getOverlapScale();
+        PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            double useFactor = 1.0;
+            if (!use[i]) {
+                useFactor = 0.0;
+            }
+            MultipoleType multipoleType = atom.getMultipoleType();
+            double charge = multipoleType.charge * useFactor;
+            double oScale = overlapScale[i] * useFactor;
+            OpenMM_DoubleArray_append(doubleArray, charge);
+            OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadii[i]);
+            OpenMM_DoubleArray_append(doubleArray, oScale);
+            OpenMM_CustomGBForce_setParticleParameters(customGBForce, i, doubleArray);
+            OpenMM_DoubleArray_resize(doubleArray, 0);
+        }
+        OpenMM_DoubleArray_destroy(doubleArray);
+        OpenMM_CustomGBForce_updateParametersInContext(customGBForce, openMMContext);
+    }
+
+    private void updateAmoebaMultipoleForce() {
+        ParticleMeshEwald pme = ffxForceFieldEnergy.getPmeNode();
+        int axisAtom[][] = pme.getAxisAtoms();
+        double dipoleConversion = OpenMM_NmPerAngstrom;
+        double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+        double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom
+                * OpenMM_NmPerAngstrom;
+        double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
+
+        double polarScale = 1.0;
+        if (pme.getPolarizationType() == Polarization.NONE) {
+            polarScale = 0.0;
+        }
+
+        PointerByReference dipoles = OpenMM_DoubleArray_create(3);
+        PointerByReference quadrupoles = OpenMM_DoubleArray_create(9);
+
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            MultipoleType multipoleType = atom.getMultipoleType();
+            PolarizeType polarType = atom.getPolarizeType();
+
+            double useFactor = 1.0;
+            if (!use[i]) {
+                useFactor = 0.0;
+            }
+
+            /**
+             * Define the frame definition.
+             */
+            int axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+            switch (multipoleType.frameDefinition) {
+                case ZONLY:
+                    axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
+                    break;
+                case ZTHENX:
+                    axisType = OpenMM_AmoebaMultipoleForce_ZThenX;
+                    break;
+                case BISECTOR:
+                    axisType = OpenMM_AmoebaMultipoleForce_Bisector;
+                    break;
+                case ZTHENBISECTOR:
+                    axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
+                    break;
+                case TRISECTOR:
+                    axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
+                    break;
+                default:
+                    break;
+            }
+
+            /**
+             * Load local multipole coefficients.
+             */
+            for (int j = 0; j < 3; j++) {
+                OpenMM_DoubleArray_set(dipoles, j, multipoleType.dipole[j] * dipoleConversion * useFactor);
+
+            }
+            int l = 0;
+            for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 3; k++) {
+                    OpenMM_DoubleArray_set(quadrupoles, l++, multipoleType.quadrupole[j][k]
+                            * quadrupoleConversion / 3.0 * useFactor);
+                }
+            }
+
+            int zaxis = 0;
+            int xaxis = 0;
+            int yaxis = 0;
+            int refAtoms[] = axisAtom[i];
+            if (refAtoms != null) {
+                zaxis = refAtoms[0];
+                if (refAtoms.length > 1) {
+                    xaxis = refAtoms[1];
+                    if (refAtoms.length > 2) {
+                        yaxis = refAtoms[2];
+                    }
+                }
+            }
+
+            /**
+             * Add the multipole.
+             */
+            OpenMM_AmoebaMultipoleForce_setMultipoleParameters(amoebaMultipoleForce, i,
+                    multipoleType.charge, dipoles, quadrupoles,
+                    axisType, zaxis, xaxis, yaxis,
+                    polarType.thole,
+                    polarType.pdamp * dampingFactorConversion,
+                    polarType.polarizability * polarityConversion * polarScale * useFactor);
+        }
+        OpenMM_DoubleArray_destroy(dipoles);
+        OpenMM_DoubleArray_destroy(quadrupoles);
+
+        OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, openMMContext);
+    }
+
+    private void updateAmoebaGeneralizedKirkwoodForce() {
+        GeneralizedKirkwood gk = ffxForceFieldEnergy.getGK();
+        double overlapScale[] = gk.getOverlapScale();
+        double baseRadii[] = gk.getBaseRadii();
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            double useFactor = 1.0;
+            if (!use[i]) {
+                useFactor = 0.0;
+            }
+            MultipoleType multipoleType = atoms[i].getMultipoleType();
+            OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(amoebaGeneralizedKirkwoodForce, i,
+                    multipoleType.charge * useFactor, OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i] * useFactor);
+        }
+        OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, openMMContext);
+    }
+
+    private void updateWCAForce() {
+        VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+            radScale = 0.5;
+        }
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            double useFactor = 1.0;
+            if (!use[i]) {
+                useFactor = 0.0;
+            }
+
+            Atom atom = atoms[i];
+            VDWType vdwType = atom.getVDWType();
+            double radius = vdwType.radius;
+            double eps = vdwType.wellDepth;
+            OpenMM_AmoebaWcaDispersionForce_addParticle(amoebaWcaDispersionForce,
+                    OpenMM_NmPerAngstrom * radius * radScale,
+                    OpenMM_KJPerKcal * eps * useFactor);
+        }
+
+        OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, openMMContext);
     }
 
     /**
