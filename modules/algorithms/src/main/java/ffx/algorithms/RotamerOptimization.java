@@ -4049,7 +4049,6 @@ public class RotamerOptimization implements Terminatable {
      * Sorts an array of Residues by global index.
      *
      * @param residues Array of Residues to be sorted.
-     * @param sortedList Array of sorted Residues
      */
     private Residue[] sortResidues(Residue[] residues) {
         int nResidues = residues.length;

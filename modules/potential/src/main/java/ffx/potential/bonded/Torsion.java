@@ -173,6 +173,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
         atoms[2].setTorsion(this);
         atoms[3].setTorsion(this);
         setID_Key(false);
+        value = calculateDihedralAngle();
     }
 
     /**
@@ -254,6 +255,71 @@ public class Torsion extends BondedTerm implements LambdaInterface {
             return atoms[0];
         }
         return null;
+    }
+
+    /**
+     * Calculates the dihedral angle; useful for the constructor, when energy() has not yet been called.
+     *
+     * @return Value of the dihedral angle.
+     */
+    public double calculateDihedralAngle() {
+
+        double a0[] = new double[3];
+        double a1[] = new double[3];
+        double a2[] = new double[3];
+        double a3[] = new double[3];
+
+        /**
+         * Vector from Atom 0 to Atom 1.
+         */
+        double v01[] = new double[3];
+        /**
+         * Vector from Atom 1 to Atom 2.
+         */
+        double v12[] = new double[3];
+        /**
+         * Vector from Atom 2 to Atom 3.
+         */
+        double v23[] = new double[3];
+        /**
+         * Vector v01 cross v12.
+         */
+        double x0112[] = new double[3];
+        /**
+         * Vector v12 cross v23.
+         */
+        double x1223[] = new double[3];
+        /**
+         * Vector x0112 cross x12_32.
+         */
+        double x[] = new double[3];
+
+        double theVal = 0.0;
+
+        atoms[0].getXYZ(a0);
+        atoms[1].getXYZ(a1);
+        atoms[2].getXYZ(a2);
+        atoms[3].getXYZ(a3);
+
+        diff(a1, a0, v01);
+        diff(a2, a1, v12);
+        diff(a3, a2, v23);
+        cross(v01, v12, x0112);
+        cross(v12, v23, x1223);
+        cross(x0112, x1223, x);
+        double r01_12 = dot(x0112, x0112);
+        double r12_23 = dot(x1223, x1223);
+        double rr = sqrt(r01_12 * r12_23);
+        if (rr != 0) {
+            double r12 = r(v12);
+            double cosine = dot(x0112, x1223) / rr;
+            double sine = dot(v12, x) / (r12 * rr);
+            theVal = toDegrees(acos(cosine));
+            if (sine < 0.0) {
+                theVal = -theVal;
+            }
+        }
+        return theVal;
     }
 
     /**
