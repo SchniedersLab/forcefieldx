@@ -1478,9 +1478,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         if (fixedChargeNonBondedForce != null) {
             VanDerWaals vdW = ffxForceFieldEnergy.getVdwNode();
-            if (vdW == null) {
-                return;
-            }
             /**
              * Only 6-12 LJ with arithmetic mean to define sigma and geometric
              * mean for epsilon is supported.
@@ -1532,9 +1529,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         if (customGBForce != null) {
             GeneralizedKirkwood gk = ffxForceFieldEnergy.getGK();
-            if (gk == null) {
-                return;
-            }
             double baseRadii[] = gk.getBaseRadii();
             double overlapScale[] = gk.getOverlapScale();
             PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
@@ -1544,11 +1538,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 if (!use[i]) {
                     useFactor = 0.0;
                 }
-                double charge = 0.0;
-                MultipoleType multipoleType = atoms[i].getMultipoleType();
-                charge = multipoleType.charge;
-                charge = charge*useFactor;
-                double oScale = overlapScale[i]*useFactor;
+                MultipoleType multipoleType = atom.getMultipoleType();
+                double charge = multipoleType.charge * useFactor;
+                double oScale = overlapScale[i] * useFactor;
                 OpenMM_DoubleArray_append(doubleArray, charge);
                 OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadii[i]);
                 OpenMM_DoubleArray_append(doubleArray, oScale);
