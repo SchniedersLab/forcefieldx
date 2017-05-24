@@ -1479,7 +1479,7 @@ public class ForceField {
         VDW_SCHEDULE,
         GK_RADIIOVERRIDE,
         GK_RADIIBYNUMBER,
-		ENERGY_IMPLEMENTATION;
+		PLATFORM;
     }
 
     public enum ForceFieldDouble {

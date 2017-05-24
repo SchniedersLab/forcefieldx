@@ -112,7 +112,6 @@ public class UIFileOpener implements FileOpener {
             systemFilter.applyAtomProperties();
             // Add the system to the multiscale hierarchy.
             mainPanel.getHierarchy().addSystemNode(ffxSystem);
-            //ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(ffxSystem, systemFilter.getCoordRestraints());
             ForceFieldEnergy energy;
             if (nThreads > 0) {
                 energy = ForceFieldEnergy.energyFactory(ffxSystem, systemFilter.getCoordRestraints(), nThreads);
@@ -157,7 +156,6 @@ public class UIFileOpener implements FileOpener {
                         String fileName = ffxSystem.getFile().getAbsolutePath();
                         newSystem.setName(FilenameUtils.getBaseName(fileName) + " " + c);
                         mainPanel.getHierarchy().addSystemNode(newSystem);
-                        //energy = ForceFieldEnergy.energyFactory(newSystem, pdbFilter.getCoordRestraints());
                         if (nThreads > 0) {
                             energy = ForceFieldEnergy.energyFactory(newSystem, systemFilter.getCoordRestraints(), nThreads);
                         } else {

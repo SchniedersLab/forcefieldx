@@ -34,10 +34,6 @@ class Energy extends Script {
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
         /**
-         * -o or --openmm to try using OpenMM
-         */
-        @Option(shortName='o', defaultValue='false', description='Use OpenMM.') boolean openmm
-        /**
          * The final argument(s) should be one or more filenames.
          */
         @Unparsed List<String> filenames
@@ -53,7 +49,7 @@ class Energy extends Script {
 
         // String args[] = getArgs();
 
-        def options = new Options();
+        def options = new Options()
         cli.parseFromInstance(options, args)
 
         if (options.help == true) {
@@ -79,7 +75,7 @@ class Energy extends Script {
         try {
             // Use a method closure to try to get an instance of UIUtils (the User Interfaces
             // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils();
+            functions = getPotentialsUtils()
         } catch (MissingMethodException ex) {
             // If Groovy can't find the appropriate closure, catch the exception and build
             // an instance of the local implementation.
@@ -90,10 +86,6 @@ class Energy extends Script {
         MolecularAssembly[] assemblies = functions.open(modelFilename)
         MolecularAssembly activeAssembly = assemblies[0]
         functions.energy(activeAssembly)
-
-        if (options.openmm == true) {
-            OpenMMForceFieldEnergy openMMForceFieldEnergy = new OpenMMForceFieldEnergy(activeAssembly);
-        }
     }
 }
 

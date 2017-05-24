@@ -277,7 +277,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
      */
-    public ForceFieldEnergy(MolecularAssembly molecularAssembly) {
+    protected ForceFieldEnergy(MolecularAssembly molecularAssembly) {
         this(molecularAssembly, null);
     }
 
@@ -290,11 +290,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param restraints list of {@link ffx.potential.nonbonded.CoordRestraint}
      * objects.
      */
-    public ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints) {
+    protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints) {
         this(molecularAssembly, restraints, ParallelTeam.getDefaultThreadCount());
     }
 
-    public ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
+    protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
         if (noHeader) {
             logger.setLevel(Level.WARNING);
         }
@@ -765,37 +765,45 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return
      */
     public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints, int numThreads) {
-
         ForceField ffield = assembly.getForceField();
-        String eImString = ffield.getString(ForceFieldString.ENERGY_IMPLEMENTATION, "FFX").toUpperCase().replaceAll("-", "_");
-        ForceFieldEnergy ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
-        assembly.setPotential(ffxEnergy);
-
+        String platformString = toEnumForm(ffield.getString(ForceFieldString.PLATFORM, "FFX"));
         try {
-            EnergyImplementation eImpl = EnergyImplementation.valueOf(eImString);
-            switch (eImpl) {
-                case FFX:
-                    return ffxEnergy;
+            Platform platform = Platform.valueOf(platformString);
+            switch (platform) {
                 case OMM:
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
                 case OMM_CUDA:
                     try {
-                        OpenMMForceFieldEnergy oEnergy = new OpenMMForceFieldEnergy(assembly);
-                        return oEnergy;
+                        OpenMMForceFieldEnergy openMMEnergy = new OpenMMForceFieldEnergy(assembly, platform);
+                        return openMMEnergy;
                     } catch (Exception ex) {
-                        logger.warning(String.format(" Exception in creating OpenMM wrapper over force field energy: %s", ex));
-                        ex.printStackTrace();
-                        ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+                        logger.warning(format(" Exception creating OpenMMForceFieldEnergy: %s", ex));
+                        ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
+                        if (ffxEnergy == null) {
+                            ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+                            assembly.setPotential(ffxEnergy);
+                        }
                         return ffxEnergy;
                     }
                 case OMM_OPENCL:
                 case OMM_OPTCPU:
+                    logger.warning(format(" Platform %s not supported; defaulting to FFX", platform));
+                case FFX:
                 default:
-                    logger.warning(String.format(" Energy implementation type %s not actually implemented at this time; defaulting to FFX", eImpl));
+                    ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
+                    if (ffxEnergy == null) {
+                        ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+                        assembly.setPotential(ffxEnergy);
+                    }
                     return ffxEnergy;
             }
         } catch (IllegalArgumentException | NullPointerException ex) {
-            logger.warning(String.format(" String %s did not match a known energy implementation", eImString));
+            logger.warning(format(" String %s did not match a known energy implementation", platformString));
+            ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
+            if (ffxEnergy == null) {
+                ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
+                assembly.setPotential(ffxEnergy);
+            }
             return ffxEnergy;
         }
     }
@@ -3300,11 +3308,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         }
 
         private class GradReduceLoop extends IntegerForLoop {
+
             @Override
             public IntegerSchedule schedule() {
                 return IntegerSchedule.fixed();
             }
-
 
             @Override
             public void run(int first, int last) throws Exception {
@@ -3386,18 +3394,22 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
-     * An EnergyImplementation describes a set of force field implementations;
-     * currently FFX for the pure Java reference implementation, and various
-     * OpenMM implementations, of which OMM_CUDA is preferred. Note that AMOEBA
-     * only runs under the FFX, OMM_CUDA, and OMM_REF implementations.
+     * Platform describes a set of force field implementations that include a
+     * pure Java reference implementation (FFX), and two OpenMM implementations
+     * (OMM_CUDA and OMM_REF are supported)
      *
-     * FFX: reference FFX implementation OMM: Currently an alias for OMM_CUDA,
-     * may eventually become "try to find best OpenMM implementation" OMM_CUDA:
+     * FFX: reference FFX implementation
+     *
+     * OMM: Currently an alias for OMM_CUDA, may eventually become "try to find
+     * best OpenMM implementation" OMM_CUDA:
+     *
      * OpenMM CUDA implementation OMM_REF: OpenMM reference implementation
-     * OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA) OMM_OPENCL:
-     * OpenMM OpenCL implementation (no AMOEBA)
+     *
+     * OMM_OPTCPU: Optimized OpenMM CPU implementation (no AMOEBA)
+     *
+     * OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
      */
-    public static enum EnergyImplementation {
+    public static enum Platform {
         FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL;
     }
 }
