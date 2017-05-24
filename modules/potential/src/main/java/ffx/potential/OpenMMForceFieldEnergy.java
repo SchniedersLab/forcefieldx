@@ -1659,7 +1659,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
              * Add the multipole.
              */
             OpenMM_AmoebaMultipoleForce_setMultipoleParameters(amoebaMultipoleForce, i,
-                    multipoleType.charge, dipoles, quadrupoles,
+                    multipoleType.charge * useFactor, dipoles, quadrupoles,
                     axisType, zaxis, xaxis, yaxis,
                     polarType.thole,
                     polarType.pdamp * dampingFactorConversion,
