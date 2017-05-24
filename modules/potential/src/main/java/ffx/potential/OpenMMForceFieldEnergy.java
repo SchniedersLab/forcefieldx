@@ -1708,7 +1708,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             VDWType vdwType = atom.getVDWType();
             double radius = vdwType.radius;
             double eps = vdwType.wellDepth;
-            OpenMM_AmoebaWcaDispersionForce_addParticle(amoebaWcaDispersionForce,
+            OpenMM_AmoebaWcaDispersionForce_setParticleParameters(amoebaWcaDispersionForce, i,
                     OpenMM_NmPerAngstrom * radius * radScale,
                     OpenMM_KJPerKcal * eps * useFactor);
         }
