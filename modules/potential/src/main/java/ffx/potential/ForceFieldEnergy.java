@@ -762,7 +762,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param assembly To create FFE over
      * @param restraints Harmonic restraints
      * @param numThreads Number of threads to use for FFX energy
-     * @return
+     * @return A ForceFieldEnergy on some Platform
      */
     public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints, int numThreads) {
         ForceField ffield = assembly.getForceField();
@@ -774,7 +774,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
                 case OMM_CUDA:
                     try {
-                        OpenMMForceFieldEnergy openMMEnergy = new OpenMMForceFieldEnergy(assembly, platform);
+                        OpenMMForceFieldEnergy openMMEnergy = new OpenMMForceFieldEnergy(assembly, platform, restraints, numThreads);
                         return openMMEnergy;
                     } catch (Exception ex) {
                         logger.warning(format(" Exception creating OpenMMForceFieldEnergy: %s", ex));

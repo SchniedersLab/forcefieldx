@@ -42,10 +42,6 @@ class CoordShakeEnergy extends Script {
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
-         * -o or --openmm to try using OpenMM
-         */
-        @Option(shortName='o', defaultValue='false', description='Use OpenMM.') boolean openmm;
-        /**
          * -d or --deltaX to set the distance by which the coordinates should be moved. Applies a constant offset in x,
          * reverts, in y, reverts, then z, and reverts again.
          */
@@ -106,11 +102,9 @@ class CoordShakeEnergy extends Script {
 
         def eFunct;
 
-        if (options.openmm == true) {
-            OpenMMForceFieldEnergy  openMMForceFieldEnergy = new OpenMMForceFieldEnergy(activeAssembly);
-            thePotential = openMMForceFieldEnergy;
-
-            eFunct = { double[] coords -> return openMMForceFieldEnergy.energyVsFFX(coords, true); };
+        if (thePotential instanceof OpenMMForceFieldEnergy) {
+            OpenMMForceFieldEnergy ommE = (OpenMMForceFieldEnergy) thePotential;
+            eFunct = { double[] coords -> return ommE.energyVsFFX(coords, true); };
         } else {
             eFunct = { double[] coords -> return thePotential.energy(coords, true) };
         }

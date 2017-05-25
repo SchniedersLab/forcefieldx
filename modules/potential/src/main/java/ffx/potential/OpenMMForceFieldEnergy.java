@@ -188,16 +188,16 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private boolean use[];
 
     /**
-     * OpenMMForceFieldEnergy constructor. Has not yet been needed outside the
-     * class. The rationale to telescope to a private constructor is so that one
-     * can grab molecularAssembly's ForceFieldEnergy before the call to super()
-     * over-writes that reference.
+     * OpenMMForceFieldEnergy constructor; offloads heavy-duty computation to an OpenMM Platform while keeping track of
+     * information locally.
      *
      * @param molecularAssembly Assembly to contruct energy for.
-     * @param referenceEnergy Explicit reference to underlying reference energy.
+     * @param platform OpenMM platform to be used.
+     * @param restraints Harmonic coordinate restraints.
+     * @param nThreads Number of threads to use in the underlying ForceFieldEnergy.
      */
-    protected OpenMMForceFieldEnergy(MolecularAssembly molecularAssembly, Platform platform) {
-        super(molecularAssembly);
+    protected OpenMMForceFieldEnergy(MolecularAssembly molecularAssembly, Platform platform, List<CoordRestraint> restraints, int nThreads) {
+        super(molecularAssembly, restraints, nThreads);
 
         super.energy(false, true);
 
