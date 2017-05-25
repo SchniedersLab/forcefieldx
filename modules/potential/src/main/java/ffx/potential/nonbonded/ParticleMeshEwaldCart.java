@@ -729,10 +729,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         rotateMultipoles = forceField.getBoolean(ForceFieldBoolean.ROTATE_MULTIPOLES, true);
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
-        if (!crystal.aperiodic()) {
-            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+        if (forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)) {
+            off = Double.POSITIVE_INFINITY;
         } else {
-            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 1000.0);
+            if (!crystal.aperiodic()) {
+                off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+            } else {
+                off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 1000.0);
+            }
         }
         double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
         aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));

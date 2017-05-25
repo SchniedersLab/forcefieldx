@@ -63,6 +63,14 @@ public class NonbondedCutoff {
     }
 
     /**
+     * Returns a NonbondedCutoff that does not cut off anything.
+     * @return No-cutoff cutoff.
+     */
+    public static NonbondedCutoff noCutoffFactory() {
+        return new NonbondedCutoff(Double.MAX_VALUE, Double.MAX_VALUE, 0.0);
+    }
+
+    /**
      * At the distance "cut", a multiplicative switch begins to be applied.
      */
     public final double cut;
