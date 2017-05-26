@@ -72,12 +72,12 @@ public class MDMove implements MCMove {
 
     @Override
     public void move() {
-        mdSteps = 20;
+        mdSteps = 50;
         timeStep = 0.5;
-        printInterval = 0.01;
+        printInterval = 0.025;
         temperature = 298.15;
         boolean initVelocities = true;
-        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 10.0, temperature, initVelocities, null);
+        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 0.025, temperature, initVelocities, null);
     }
 
     public double getKineticEnergy() {

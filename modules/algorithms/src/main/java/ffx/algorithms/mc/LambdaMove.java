@@ -50,7 +50,7 @@ import ffx.algorithms.AbstractOSRW;
  */
 public class LambdaMove implements MCMove {
 
-    private final double sigma = 0.1;
+    private final double sigma = 0.2;
     private double currentLambda = 0.0;
     private final AbstractOSRW osrw;
     private final NormalDistribution dist;

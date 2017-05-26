@@ -171,13 +171,13 @@ public class MonteCarloOSRW extends BoltzmannMC {
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 dUdLAccept++;
                 double percent = (dUdLAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" MC X,dU/dL step accepted: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC X,dE/dL step accepted: E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 currentEnergy = proposedEnergy;
                 //Accept MD move using OSRW energy
             } else {
                 double percent = (dUdLAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" MC X,dU/dL step rejected: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC X,dE/dL step rejected: E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 mdMove.revertMove();
             }
@@ -201,12 +201,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 lambdaAccept++;
                 double percent = (lambdaAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step  accepted: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC Lambda step  accepted: E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 currentdUdL = proposeddUdL;
             } else {
                 double percent = (lambdaAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step  rejected: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC Lambda step  rejected: E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 lambdaMove.revertMove();
                 potential.getCoordinates(coordinates);
