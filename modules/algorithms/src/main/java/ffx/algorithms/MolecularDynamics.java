@@ -60,6 +60,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -511,7 +512,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         this.targetTemperature = temperature;
         this.initVelocities = initVelocities;
-
 
     }
 
@@ -983,7 +983,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return currentTotalEnergy;
     }
 
-    public double getKineticEnergy(){
+    public double getKineticEnergy() {
         return currentKineticEnergy;
     }
 
@@ -1115,6 +1115,31 @@ public class MolecularDynamics implements Runnable, Terminatable {
             arraycopy(aPreviousBak, 0, aPrevious, 0, numberOfVariables);
             arraycopy(massBak, 0, mass, 0, numberOfVariables);
             arraycopy(gradBak, 0, grad, 0, numberOfVariables);
+
+            Atom atoms[] = molecularAssembly.getActiveAtomArray();
+            if (atoms.length * 3 == numberOfVariables) {
+                int nAtoms = atoms.length;
+                int index = 0;
+                double vec[] = new double[3];
+                for (int i = 0; i < nAtoms; i++) {
+                    Atom atom = atoms[i];
+                    atom.moveTo(x[index], x[index + 1], x[index + 2]);
+                    atom.setXYZGradient(grad[index], grad[index+1], grad[index+2]);
+                    vec[0] = v[index];
+                    vec[1] = v[index + 1];
+                    vec[2] = v[index + 2];
+                    atom.setVelocity(vec);
+                    vec[0] = a[index];
+                    vec[1] = a[index + 1];
+                    vec[2] = a[index + 2];
+                    atom.setAcceleration(vec);
+                    vec[0] = aPrevious[index];
+                    vec[1] = aPrevious[index + 1];
+                    vec[2] = aPrevious[index + 2];
+                    atom.setPreviousAcceleration(vec);
+                    index += 3;
+                }
+            }
             if (verboseDynamicsState) {
                 describe(" Reverting State (To):");
             }

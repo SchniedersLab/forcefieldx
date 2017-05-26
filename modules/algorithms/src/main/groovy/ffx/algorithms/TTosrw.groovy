@@ -1076,7 +1076,7 @@ class TTosrw extends Script {
 
         if (options.mc) {
             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-                topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.STOCHASTIC);
+                topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.VELOCITYVERLET);
             mcOSRW.sample();
         } else {
             // Create the MolecularDynamics instance.

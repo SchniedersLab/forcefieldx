@@ -872,11 +872,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         GeneralizedKirkwood gk = super.getGK();
         if (gk != null) {
-            addGBForce();
+            addCustomGBForce();
         }
     }
 
-    private void addGBForce() {
+    private void addCustomGBForce() {
         GeneralizedKirkwood gk = super.getGK();
         if (gk == null) {
             return;
@@ -1536,9 +1536,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             double charge = 0.0;
             MultipoleType multipoleType = atom.getMultipoleType();
             if (multipoleType != null) {
-                charge = multipoleType.charge;
+                charge = multipoleType.charge * useFactor;
             }
-            charge = charge * useFactor;
             VDWType vdwType = atom.getVDWType();
             double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;

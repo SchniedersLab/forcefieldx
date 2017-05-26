@@ -71,8 +71,8 @@ public class MDMove implements MCMove {
 
     @Override
     public void move() {
-        mdSteps = 20;
-        timeStep = 0.5;
+        mdSteps = 10;
+        timeStep = 1.0;
         printInterval = 0.01;
         temperature = 298.15;
         boolean initVelocities = true;

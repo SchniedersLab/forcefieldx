@@ -228,26 +228,26 @@ public class OSRW extends AbstractOSRW {
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
-        double e = potential.energyAndGradient(x, gradient);
+        forceFieldEnergy = potential.energyAndGradient(x, gradient);
 
         /**
          * OSRW is propagated with the slowly varying terms.
          */
         if (state == STATE.FAST) {
-            return e;
+            return forceFieldEnergy;
         }
 
         if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
-            minimize(e, x, gradient);
+            minimize(forceFieldEnergy, x, gradient);
         }
 
         double biasEnergy = 0.0;
-        dEdLambda = lambdaInterface.getdEdL();
-        d2EdLambda2 = lambdaInterface.getd2EdL2();
+        dUdLambda = lambdaInterface.getdEdL();
+        d2UdL2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);
-        int FLambdaBin = binForFLambda(dEdLambda);
-        double dEdU = dEdLambda;
-        forcefielddEdL = dEdU;
+        int FLambdaBin = binForFLambda(dUdLambda);
+        double dEdU = dUdLambda;
+        dForceFieldEnergydL = dEdU;
 
         if (propagateLambda) {
             energyCount++;
@@ -287,7 +287,7 @@ public class OSRW extends AbstractOSRW {
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
-                double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 double bias = weight * biasMag
@@ -298,12 +298,12 @@ public class OSRW extends AbstractOSRW {
                 dGdFLambda -= deltaFL / FLs2 * bias;
             }
         }
-        gLdUdL = biasEnergy;
+        gLdEdL = biasEnergy;
 
         /**
          * Lambda gradient due to recursion kernel G(L, F_L).
          */
-        dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
+        dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
 
         /**
          * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
@@ -391,7 +391,7 @@ public class OSRW extends AbstractOSRW {
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
             logger.info(String.format(" %s %16.8f  %s",
-                    "OSRW Potential    ", e + biasEnergy, "(Kcal/mole)"));
+                    "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
         }
 
         if (propagateLambda && energyCount > 0) {
@@ -408,10 +408,10 @@ public class OSRW extends AbstractOSRW {
             if (energyCount % printFrequency == 0) {
                 if (lambdaBins < 1000) {
                     logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dEdU, dUdLambda - dEdU, dUdLambda, halfThetaVelocity));
                 } else {
                     logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dEdU, dUdLambda - dEdU, dUdLambda, halfThetaVelocity));
                 }
             }
 
@@ -433,7 +433,7 @@ public class OSRW extends AbstractOSRW {
             }
         }
 
-        totalEnergy = e + biasEnergy;
+        totalEnergy = forceFieldEnergy + biasEnergy;
 
         return totalEnergy;
     }

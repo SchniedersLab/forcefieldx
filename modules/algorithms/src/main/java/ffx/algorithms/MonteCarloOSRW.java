@@ -39,8 +39,6 @@ package ffx.algorithms;
 
 import java.util.logging.Logger;
 
-import static java.lang.String.format;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.algorithms.Integrator.Integrators;
@@ -50,7 +48,6 @@ import ffx.algorithms.mc.LambdaMove;
 import ffx.algorithms.mc.MDMove;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.LambdaInterface;
 
 /**
  * Sample a thermodynamic path using the OSRW method, with the time-dependent
@@ -157,6 +154,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(coordinates);
             double currentEnergy = osrw.energyAndGradient(coordinates, gradient);
             double currentdUdL = osrw.getForceFielddEdL();
+            double currentFFEnergy = osrw.getForceFieldEnergy();
             currentEnergy += mdMove.getKineticEnergy();
 
             /**
@@ -166,7 +164,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(coordinates);
             double proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
+            double proposedFFEnergy = osrw.getForceFieldEnergy();
             proposedEnergy += mdMove.getKineticEnergy();
+
+            logger.info(String.format(" Current %16.8f and Proposed %16.8f force field energies.", currentFFEnergy, proposedFFEnergy));
 
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 dUdLAccept++;

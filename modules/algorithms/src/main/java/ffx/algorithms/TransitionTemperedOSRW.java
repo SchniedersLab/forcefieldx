@@ -266,22 +266,23 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
-        double e = potential.energyAndGradient(x, gradient);
+        forceFieldEnergy = potential.energyAndGradient(x, gradient);
 
         /**
          * OSRW is propagated with the slowly varying terms.
          */
         if (state == STATE.FAST) {
-            return e;
+            return forceFieldEnergy;
         }
 
-        gLdUdL = 0.0;
-        dEdLambda = lambdaInterface.getdEdL();
-        d2EdLambda2 = lambdaInterface.getd2EdL2();
+        gLdEdL = 0.0;
+        dUdLambda = lambdaInterface.getdEdL();
+        d2UdL2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);
-        int FLambdaBin = binForFLambda(dEdLambda);
-        double dEdU = dEdLambda;
-        forcefielddEdL = dEdU;
+        int FLambdaBin = binForFLambda(dUdLambda);
+        double dEdU = dUdLambda;
+        dForceFieldEnergydL = dEdU;
+
 
         if (propagateLambda) {
             energyCount++;
@@ -289,7 +290,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             detectTransition();
 
             if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
-                optimization(e, x, gradient);
+                optimization(forceFieldEnergy, x, gradient);
             }
         }
 
@@ -327,13 +328,13 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 if (FLcenter < 0 || FLcenter >= FLambdaBins) {
                     continue;
                 }
-                double deltaFL = dEdLambda - (minFLambda + FLcenter * dFL + dFL_2);
+                double deltaFL = dUdLambda - (minFLambda + FLcenter * dFL + dFL_2);
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 double bias = weight * biasMag
                         * exp(-deltaL2 / (2.0 * ls2))
                         * exp(-deltaFL2 / (2.0 * FLs2));
-                gLdUdL += bias;
+                gLdEdL += bias;
                 dGdLambda -= deltaL / ls2 * bias;
                 dGdFLambda -= deltaFL / FLs2 * bias;
             }
@@ -342,7 +343,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         /**
          * Lambda gradient due to recursion kernel G(L, F_L).
          */
-        dEdLambda += dGdLambda + dGdFLambda * d2EdLambda2;
+        dUdLambda += dGdLambda + dGdFLambda * d2UdL2;
 
         /**
          * Cartesian coordinate gradient due to recursion kernel G(L, F_L).
@@ -425,12 +426,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
          * interpolation.
          */
         double freeEnergy = currentFreeEnergy();
-        double biasEnergy = freeEnergy + gLdUdL;
+        double biasEnergy = freeEnergy + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));
             logger.info(String.format(" %s %16.8f  %s",
-                    "OSRW Potential    ", e + biasEnergy, "(Kcal/mole)"));
+                    "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
         }
 
         if (propagateLambda && energyCount > 0) {
@@ -440,10 +441,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             if (energyCount % printFrequency == 0) {
                 if (lambdaBins < 1000) {
                     logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dEdU, dUdLambda - dEdU, dUdLambda, halfThetaVelocity));
                 } else {
                     logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dEdU, dEdLambda - dEdU, dEdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dEdU, dUdLambda - dEdU, dUdLambda, halfThetaVelocity));
                 }
             }
 
@@ -470,7 +471,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             }
         }
 
-        totalEnergy = e + biasEnergy;
+        totalEnergy = forceFieldEnergy + biasEnergy;
 
         return totalEnergy;
     }
