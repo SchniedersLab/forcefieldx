@@ -244,6 +244,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double comRestraintEnergy;
     private double esvBias;
     private double totalEnergy;
+    private final double maxDebugGradient;
     private long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     private long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
     private long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
@@ -726,6 +727,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         bondedRegion = new BondedRegion();
 
+        maxDebugGradient = forceField.getDouble(ForceFieldDouble.MAX_DEBUG_GRADIENT, Double.POSITIVE_INFINITY);
+
         molecularAssembly.setPotential(this);
         if (noHeader) {
             logger.setLevel(logger.getParent().getLevel());
@@ -762,7 +765,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param assembly To create FFE over
      * @param restraints Harmonic restraints
      * @param numThreads Number of threads to use for FFX energy
-     * @return
+     * @return A ForceFieldEnergy on some Platform
      */
     public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints, int numThreads) {
         ForceField ffield = assembly.getForceField();
@@ -774,7 +777,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
                 case OMM_CUDA:
                     try {
-                        OpenMMForceFieldEnergy openMMEnergy = new OpenMMForceFieldEnergy(assembly, platform);
+                        OpenMMForceFieldEnergy openMMEnergy = new OpenMMForceFieldEnergy(assembly, platform, restraints, numThreads);
                         return openMMEnergy;
                     } catch (Exception ex) {
                         logger.warning(format(" Exception creating OpenMMForceFieldEnergy: %s", ex));
@@ -1912,6 +1915,24 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 for (int i = 0; i < len; i++) {
                     x[i] *= optimizationScaling[i];
                     g[i] /= optimizationScaling[i];
+                }
+            }
+            if (maxDebugGradient < Double.MAX_VALUE) {
+                boolean extremeGrad = Arrays.stream(g).anyMatch((double gi) -> {
+                    return (gi > maxDebugGradient || gi < -maxDebugGradient);
+                });
+                if (extremeGrad) {
+                    String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                            ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                    String filename = String.format("%s-LARGEGRAD-%s.pdb",
+                            FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                            timeString);
+                    PotentialsFunctions ef = new PotentialsUtils();
+                    filename = ef.versionFile(filename);
+
+                    logger.warning(String.format(" Excessively large gradients detected; printing snapshot to file %s", filename));
+                    ef.saveAsPDB(molecularAssembly, new File(filename));
                 }
             }
             return e;
