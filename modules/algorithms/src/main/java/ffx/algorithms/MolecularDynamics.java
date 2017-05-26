@@ -117,6 +117,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private ExtendedSystem esvSystem;
     private DynamicsState dynamicsState;
     private double totalSimTime = 0.0;
+    private boolean quiet = false;
 
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
 
@@ -251,6 +252,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
         this(assembly, potentialEnergy, properties, listener,
                 requestedThermostat, requestedIntegrator);
         this.esvSystem = esvSystem;
+    }
+
+    public void setQuiet(boolean quiet) {
+        this.quiet = quiet;
     }
 
     /**
@@ -535,16 +540,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
         init(nSteps, timeStep, printInterval, saveInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
     }
 
-    private boolean skipIntro = false;
-
     public void redynamic(final int nSteps, final double temperature) {
-        skipIntro = true;
+        quiet = true;
 
         this.nSteps = nSteps;
         totalSimTime = 0.0;
-        this.targetTemperature = temperature;
+        targetTemperature = temperature;
         thermostat.setTargetTemperature(temperature);
-        this.initVelocities = false;
+        initVelocities = false;
 
         done = false;
         terminate = false;
@@ -613,21 +616,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         if (integrator instanceof Stochastic) {
             if (constantPressure) {
-                logger.info(format("\n Stochastic dynamics in the NPT ensemble\n"));
+                logger.info(format("\n Stochastic dynamics in the NPT ensemble"));
             } else {
-                logger.info(format("\n Stochastic dynamics in the NVT ensemble\n"));
+                logger.info(format("\n Stochastic dynamics in the NVT ensemble"));
             }
         } else if (!(thermostat instanceof Adiabatic)) {
             if (constantPressure) {
-                logger.info(format("\n Molecular dynamics in the NPT ensemble\n"));
+                logger.info(format("\n Molecular dynamics in the NPT ensemble"));
             } else {
-                logger.info(format("\n Molecular dynamics in the NVT ensemble\n"));
+                logger.info(format("\n Molecular dynamics in the NVT ensemble"));
             }
         } else {
             if (constantPressure) {
-                logger.severe(format("\n NPT Molecular dynamics requires a thermostat.\n"));
+                logger.severe(format("\n NPT Molecular dynamics requires a thermostat"));
             } else {
-                logger.info(format("\n Molecular dynamics in the NVE ensemble\n"));
+                logger.info(format("\n Molecular dynamics in the NVE ensemble"));
             }
         }
 
@@ -639,16 +642,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (dyn != null) {
             logger.info(format(" Continuing from " + dyn.getAbsolutePath()));
         }
-        logger.info(String.format(" Number of steps:     %8d", nSteps));
-        logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
-        logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
-        logger.info(String.format(" Save interval:       %8.3f (psec)", saveInterval));
-        //logger.info(String.format(" Archive file: %s", archiveFile.getName()));
-        for (int i = 0; i < assemblies.size(); i++) {
-            AssemblyInfo ai = assemblies.get(i);
-            logger.info(String.format(" Archive file %3d: %s", i, ai.archiveFile.getName()));
+
+        if (!quiet) {
+            logger.info(String.format(" Number of steps:     %8d", nSteps));
+            logger.info(String.format(" Time step:           %8.3f (fsec)", timeStep));
+            logger.info(String.format(" Print interval:      %8.3f (psec)", printInterval));
+            logger.info(String.format(" Save interval:       %8.3f (psec)", saveInterval));
+            //logger.info(String.format(" Archive file: %s", archiveFile.getName()));
+            for (int i = 0; i < assemblies.size(); i++) {
+                AssemblyInfo ai = assemblies.get(i);
+                logger.info(String.format(" Archive file %3d: %s", i, ai.archiveFile.getName()));
+            }
+            logger.info(String.format(" Restart file:     %s", restartFile.getName()));
         }
-        logger.info(String.format(" Restart file:     %s", restartFile.getName()));
 
         Thread dynamicThread = new Thread(this);
         dynamicThread.start();
@@ -662,7 +668,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 logger.log(Level.WARNING, message, e);
             }
         }
-        logger.info(" Done with an MD round.");
+        if (!quiet) {
+            logger.info(" Done with an MD round.");
+        }
     }
 
     /**
@@ -714,6 +722,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Set the target temperature.
          */
         thermostat.setTargetTemperature(targetTemperature);
+        thermostat.setQuiet(quiet);
         if (integrator instanceof Stochastic) {
             Stochastic stochastic = (Stochastic) integrator;
             stochastic.setTemperature(targetTemperature);
@@ -792,12 +801,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
             initialized = true;
         }
 
-        if (!skipIntro) {
-            logger.info(format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
-            logger.info(format("  %8s %12s %12s %12s %8s %8s\n", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
-            logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
-                    "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
-        }
+        logger.info(format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
+        logger.info(format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
+        logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
+                "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
 
         /**
          * Store the initialized state.
@@ -1124,7 +1131,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 for (int i = 0; i < nAtoms; i++) {
                     Atom atom = atoms[i];
                     atom.moveTo(x[index], x[index + 1], x[index + 2]);
-                    atom.setXYZGradient(grad[index], grad[index+1], grad[index+2]);
+                    atom.setXYZGradient(grad[index], grad[index + 1], grad[index + 2]);
                     vec[0] = v[index];
                     vec[1] = v[index + 1];
                     vec[2] = v[index + 2];

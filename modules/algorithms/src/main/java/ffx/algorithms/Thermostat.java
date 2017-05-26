@@ -152,6 +152,10 @@ public abstract class Thermostat {
      * The random number generator that the Thermostat will use.
      */
     protected Random random;
+    /**
+     * Reduce logging.
+     */
+    protected boolean quiet = false;
 
     /**
      * <p>
@@ -236,6 +240,10 @@ public abstract class Thermostat {
         return removeCenterOfMassMotion;
     }
 
+    public void setQuiet(boolean quiet) {
+        this.quiet = quiet;
+    }
+
     /**
      * <p>
      * The setRandomSeed method is used to initialize the Random number
@@ -256,7 +264,7 @@ public abstract class Thermostat {
      * @param level a {@link java.util.logging.Level} object.
      */
     protected void log(Level level) {
-        if (logger.isLoggable(level)) {
+        if (logger.isLoggable(level) && !quiet) {
             StringBuilder sb = new StringBuilder("\n");
             sb.append(toString()).append("\n");
             sb.append(format(" Target temperature:           %7.2f Kelvin\n", targetTemperature));
@@ -347,7 +355,7 @@ public abstract class Thermostat {
          * Remove the center of mass motion.
          */
         if (removeCenterOfMassMotion) {
-            centerOfMassMotion(true, true);
+            centerOfMassMotion(true, !quiet);
         }
 
         /**

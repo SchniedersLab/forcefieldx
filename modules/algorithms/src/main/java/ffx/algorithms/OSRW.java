@@ -399,7 +399,7 @@ public class OSRW extends AbstractOSRW {
              * Metadynamics grid counts (every 'countInterval' steps).
              */
             if (energyCount % countInterval == 0) {
-                addBias(dEdU, freeEnergy);
+                addBias(dEdU, x, gradient);
             }
 
             /**
@@ -439,22 +439,15 @@ public class OSRW extends AbstractOSRW {
     }
 
     @Override
-    public void addBias(double dEdU, double freeEnergy) {
+    public void addBias(double dEdU, double[] x, double[] gradient) {
+
         if (asynchronous) {
             asynchronousSend(lambda, dEdU);
         } else {
             synchronousSend(lambda, dEdU);
         }
 
-        if (jobBackend != null) {
-            if (world.size() > 1) {
-                jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f] at %7.3e psec",
-                        totalFreeEnergy, totalCounts * dt * countInterval, lambda, dEdU, -freeEnergy, energyCount * dt));
-            } else {
-                jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f]",
-                        totalFreeEnergy, totalCounts * dt * countInterval, lambda, dEdU, -freeEnergy));
-            }
-        }
+        biasCount++;
     }
 
     /**
@@ -800,8 +793,11 @@ public class OSRW extends AbstractOSRW {
                         FLambda[iL], deltaFreeEnergy, freeEnergy));
             }
         }
-        logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.",
-                freeEnergy, totalCounts));
+
+        if (print || totalCounts % 10 == 0) {
+            logger.info(String.format(" The free energy is %12.4f kcal/mol from %d counts.",
+                    freeEnergy, totalCounts));
+        }
 
         return freeEnergy;
     }

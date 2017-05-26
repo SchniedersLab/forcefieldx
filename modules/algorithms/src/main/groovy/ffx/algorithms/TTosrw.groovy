@@ -1087,7 +1087,7 @@ class TTosrw extends Script {
             }
 
             boolean initVelocities = true;
-            double restartInterval = 0.1;
+            double restartInterval = options.write;
             String fileType = "XYZ";
             int nSteps = options.steps;
             // Start sampling.

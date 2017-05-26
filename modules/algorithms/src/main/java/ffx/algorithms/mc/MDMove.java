@@ -67,12 +67,13 @@ public class MDMove implements MCMove {
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
 
         molecularDynamics.init(mdSteps, timeStep, printInterval, printInterval, temperature, true, null);
+        molecularDynamics.setQuiet(true);
     }
 
     @Override
     public void move() {
-        mdSteps = 10;
-        timeStep = 1.0;
+        mdSteps = 20;
+        timeStep = 0.5;
         printInterval = 0.01;
         temperature = 298.15;
         boolean initVelocities = true;

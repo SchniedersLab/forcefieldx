@@ -46,6 +46,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.asin;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -113,6 +114,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * "propagateLambda" flag true.
      */
     protected int energyCount;
+    protected int biasCount = 0;
     /**
      * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
      * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
@@ -190,7 +192,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double dForceFieldEnergydL;
     /**
-     * Total partial derivative of the potential (U) being sampled w.r.t. lambda.
+     * Total partial derivative of the potential (U) being sampled w.r.t.
+     * lambda.
      */
     protected double dUdLambda;
     /**
@@ -311,7 +314,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Interval between writing an OSRW restart file in steps.
      */
-    protected int saveFrequency = 1000;
+    protected int saveFrequency = 100;
     /**
      * Print detailed energy information.
      */
@@ -524,7 +527,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         this.propagateLambda = propagateLambda;
     }
 
-    public abstract void addBias(double dUdL, double freeEnergy);
+    public abstract void addBias(double dUdL, double[] x, double[] gradient);
 
     protected int binForLambda(double lambda) {
         int lambdaBin = (int) floor((lambda - minLambda) / dL);
@@ -655,7 +658,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     public void setLambda(double lambda) {
         lambdaInterface.setLambda(lambda);
         this.lambda = lambda;
-        theta = Math.asin(Math.sqrt(lambda));
+        theta = asin(sqrt(lambda));
     }
 
     public double getLambda() {

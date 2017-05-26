@@ -60,6 +60,8 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
 
@@ -280,19 +282,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         d2UdL2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);
         int FLambdaBin = binForFLambda(dUdLambda);
-        double dEdU = dUdLambda;
-        dForceFieldEnergydL = dEdU;
-
-
-        if (propagateLambda) {
-            energyCount++;
-
-            detectTransition();
-
-            if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
-                optimization(forceFieldEnergy, x, gradient);
-            }
-        }
+        dForceFieldEnergydL = dUdLambda;
 
         /**
          * Calculate recursion kernel G(L, F_L) and its derivatives with respect
@@ -354,73 +344,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             gradient[i] += dGdFLambda * dUdXdL[i];
         }
 
-        if (propagateLambda && energyCount > 0) {
-            /**
-             * Update free energy F(L) every ~10 steps.
-             */
-            if (energyCount % 10 == 0) {
-                fLambdaUpdates++;
-                boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
-                totalFreeEnergy = updateFLambda(printFLambda);
-                /**
-                 * Calculating Moving Average & Standard Deviation
-                 */
-                totalAverage += totalFreeEnergy;
-                totalSquare += Math.pow(totalFreeEnergy, 2);
-                periodCount++;
-                if (periodCount == window - 1) {
-                    lastAverage = totalAverage / window;
-                    //lastStdDev = Math.sqrt((totalSquare - Math.pow(totalAverage, 2) / window) / window);
-                    lastStdDev = Math.sqrt((totalSquare - (totalAverage * totalAverage)) / (window * window));
-                    logger.info(String.format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.",
-                            lastAverage, lastStdDev));
-                    totalAverage = 0;
-                    totalSquare = 0;
-                    periodCount = 0;
-                }
-            }
-            if (energyCount % saveFrequency == 0) {
-                if (algorithmListener != null) {
-                    algorithmListener.algorithmUpdate(lambdaOneAssembly);
-                }
-                /**
-                 * Only the rank 0 process writes the histogram restart file.
-                 */
-                if (rank == 0) {
-                    try {
-                        TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
-                                new BufferedWriter(new FileWriter(histogramFile)));
-                        ttOSRWHistogramRestart.writeHistogramFile();
-                        ttOSRWHistogramRestart.flush();
-                        ttOSRWHistogramRestart.close();
-                        logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
-                    } catch (IOException ex) {
-                        String message = " Exception writing TTOSRW histogram restart file.";
-                        logger.log(Level.INFO, message, ex);
-                    }
-                }
-                /**
-                 * All ranks write a lambda restart file.
-                 */
-                try {
-                    TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
-                    ttOSRWLambdaRestart.writeLambdaFile();
-                    ttOSRWLambdaRestart.flush();
-                    ttOSRWLambdaRestart.close();
-                    logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
-                } catch (IOException ex) {
-                    String message = " Exception writing TTOSRW lambda restart file.";
-                    logger.log(Level.INFO, message, ex);
-                }
-            }
-            /**
-             * Write out snapshot upon each full lambda traversal.
-             */
-            if (writeTraversalSnapshots) {
-                writeTraversal();
-            }
-        }
-
         /**
          * Compute the energy and gradient for the recursion slave at F(L) using
          * interpolation.
@@ -434,17 +357,20 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     "OSRW Potential    ", forceFieldEnergy + biasEnergy, "(Kcal/mole)"));
         }
 
-        if (propagateLambda && energyCount > 0) {
+        if (propagateLambda) {
+            energyCount++;
+
             /**
              * Log the current Lambda state.
              */
             if (energyCount % printFrequency == 0) {
+                double dBdL = dUdLambda - dForceFieldEnergydL;
                 if (lambdaBins < 1000) {
                     logger.info(String.format(" L=%6.4f (%3d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dEdU, dUdLambda - dEdU, dUdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
                 } else {
                     logger.info(String.format(" L=%6.4f (%4d) F_LU=%10.4f F_LB=%10.4f F_L=%10.4f V_L=%10.4f",
-                            lambda, lambdaBin, dEdU, dUdLambda - dEdU, dUdLambda, halfThetaVelocity));
+                            lambda, lambdaBin, dForceFieldEnergydL, dBdL, dUdLambda, halfThetaVelocity));
                 }
             }
 
@@ -452,23 +378,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
              * Metadynamics grid counts (every 'countInterval' steps).
              */
             if (energyCount % countInterval == 0) {
-                addBias(dEdU, freeEnergy);
+                addBias(dForceFieldEnergydL, x, gradient);
             }
-        }
 
-        /**
-         * Propagate the Lambda particle.
-         */
-        if (propagateLambda) {
             langevin();
-        } else {
-            equilibrationCounts++;
-            if (jobBackend != null) {
-                jobBackend.setComment(String.format("Equilibration [L=%6.4f, F_L=%10.4f]", lambda, dEdU));
-            }
-            if (equilibrationCounts % 10 == 0) {
-                logger.info(String.format(" L=%6.4f, F_L=%10.4f", lambda, dEdU));
-            }
         }
 
         totalEnergy = forceFieldEnergy + biasEnergy;
@@ -477,21 +390,90 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     }
 
     @Override
-    public void addBias(double dEdU, double freeEnergy) {
-        if (jobBackend != null) {
-            if (world.size() > 1) {
-                jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f] at %7.3e psec",
-                        totalFreeEnergy, totalWeight * dt * countInterval, lambda, dEdU, -freeEnergy, energyCount * dt));
-            } else {
-                jobBackend.setComment(String.format("Overall dG=%10.4f at %7.3e psec, Current: [L=%6.4f, F_L=%10.4f, dG=%10.4f]",
-                        totalFreeEnergy, totalWeight * dt * countInterval, lambda, dEdU, -freeEnergy));
-            }
-        }
+    public void addBias(double dEdU, double[] x, double[] gradient) {
+
+        detectTransition();
+
         if (asynchronous) {
             asynchronousSend(lambda, dEdU);
         } else {
             synchronousSend(lambda, dEdU);
         }
+
+        biasCount++;
+
+        /**
+         * Update F(L)
+         */
+        fLambdaUpdates++;
+        boolean printFLambda = fLambdaUpdates % fLambdaPrintInterval == 0;
+        totalFreeEnergy = updateFLambda(printFLambda);
+
+        /**
+         * Calculating Moving Average & Standard Deviation
+         */
+        totalAverage += totalFreeEnergy;
+        totalSquare += pow(totalFreeEnergy, 2);
+        periodCount++;
+        if (periodCount == window - 1) {
+            lastAverage = totalAverage / window;
+            //lastStdDev = Math.sqrt((totalSquare - Math.pow(totalAverage, 2) / window) / window);
+            lastStdDev = sqrt((totalSquare - (totalAverage * totalAverage)) / (window * window));
+            logger.info(format(" The running average is %12.4f kcal/mol and the stdev is %8.4f kcal/mol.", lastAverage, lastStdDev));
+            totalAverage = 0;
+            totalSquare = 0;
+            periodCount = 0;
+        }
+
+        if (osrwOptimization && lambda > osrwOptimizationLambdaCutoff) {
+            optimization(forceFieldEnergy, x, gradient);
+        }
+
+        /**
+         * Write out restart files.
+         */
+        if (fLambdaUpdates % saveFrequency == 0) {
+            if (algorithmListener != null) {
+                algorithmListener.algorithmUpdate(lambdaOneAssembly);
+            }
+            /**
+             * Only the rank 0 process writes the histogram restart file.
+             */
+            if (rank == 0) {
+                try {
+                    TTOSRWHistogramWriter ttOSRWHistogramRestart = new TTOSRWHistogramWriter(
+                            new BufferedWriter(new FileWriter(histogramFile)));
+                    ttOSRWHistogramRestart.writeHistogramFile();
+                    ttOSRWHistogramRestart.flush();
+                    ttOSRWHistogramRestart.close();
+                    logger.info(String.format(" Wrote TTOSRW histogram restart file to %s.", histogramFile.getName()));
+                } catch (IOException ex) {
+                    String message = " Exception writing TTOSRW histogram restart file.";
+                    logger.log(Level.INFO, message, ex);
+                }
+            }
+            /**
+             * All ranks write a lambda restart file.
+             */
+            try {
+                TTOSRWLambdaWriter ttOSRWLambdaRestart = new TTOSRWLambdaWriter(new BufferedWriter(new FileWriter(lambdaFile)));
+                ttOSRWLambdaRestart.writeLambdaFile();
+                ttOSRWLambdaRestart.flush();
+                ttOSRWLambdaRestart.close();
+                logger.info(String.format(" Wrote TTOSRW lambda restart file to %s.", lambdaFile.getName()));
+            } catch (IOException ex) {
+                String message = " Exception writing TTOSRW lambda restart file.";
+                logger.log(Level.INFO, message, ex);
+            }
+        }
+
+        /**
+         * Write out snapshot upon each full lambda traversal.
+         */
+        if (writeTraversalSnapshots) {
+            writeTraversal();
+        }
+
     }
 
     private void writeTraversal() {
@@ -897,8 +879,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
 
         }
 
-        logger.info(String.format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
-                freeEnergy, totalWeight, temperingWeight));
+        if (print || biasCount % printFrequency == 0) {
+            logger.info(String.format(" The free energy is %12.4f kcal/mol (Counts: %6.2e, Weight: %6.4f).",
+                    freeEnergy, totalWeight, temperingWeight));
+        }
 
         return freeEnergy;
     }

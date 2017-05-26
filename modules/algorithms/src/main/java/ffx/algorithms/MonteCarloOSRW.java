@@ -78,7 +78,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private final AlgorithmListener listener;
     private final Thermostats requestedThermostat;
     private final Integrators requestedIntegrator;
-    //private LambdaInterface linter;
     private double lambda = 0.0;
     private int totalMDSteps = 10000000;
     private final int mdSteps = 100;
@@ -167,18 +166,18 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedFFEnergy = osrw.getForceFieldEnergy();
             proposedEnergy += mdMove.getKineticEnergy();
 
-            logger.info(String.format(" Current %16.8f and Proposed %16.8f force field energies.", currentFFEnergy, proposedFFEnergy));
+            //logger.info(String.format(" Current %16.8f and Proposed %16.8f force field energies.", currentFFEnergy, proposedFFEnergy));
 
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 dUdLAccept++;
                 double percent = (dUdLAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" X,dU/dL MC step accepted: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC X,dU/dL step accepted: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
                         currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 currentEnergy = proposedEnergy;
                 //Accept MD move using OSRW energy
             } else {
                 double percent = (dUdLAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" X,dU/dL MC step rejected: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC X,dU/dL step rejected: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
                         currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 mdMove.revertMove();
             }
@@ -189,33 +188,35 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(coordinates);
             currentEnergy = osrw.energyAndGradient(coordinates, gradient);
             currentdUdL = osrw.getForceFielddEdL();
+            currentFFEnergy = osrw.getForceFieldEnergy();
             double currentLambda = osrw.getLambda();
             lambdaMove.move();
             proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
             proposeddUdL = osrw.getForceFielddEdL();
+            proposedFFEnergy = osrw.getForceFieldEnergy();
             double proposedLambda = osrw.getLambda();
+
+            //logger.info(String.format(" Current %16.8f and Proposed %16.8f force field energies.", currentFFEnergy, proposedFFEnergy));
 
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 lambdaAccept++;
                 double percent = (lambdaAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" Lambda MC step accepted: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC Lambda step  accepted: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
                         currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 currentdUdL = proposeddUdL;
             } else {
                 double percent = (lambdaAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" Lambda MC step rejected: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC Lambda step  rejected: e(%8.3f)=%12.6f -> e(%8.3f)=%12.6f (%5.1f)",
                         currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 lambdaMove.revertMove();
+                potential.getCoordinates(coordinates);
             }
             lambda = osrw.getLambda();
 
             /**
              * Update time dependent bias.
              */
-            double freeEnergy = osrw.updateFLambda(true);
-            osrw.addBias(currentdUdL, freeEnergy);
-
-            logger.info(String.format(" MC free energy %10.6f", freeEnergy));
+            osrw.addBias(currentdUdL, coordinates, gradient);
         }
     }
 
