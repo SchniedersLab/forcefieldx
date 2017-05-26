@@ -1511,7 +1511,7 @@ public class ForceField {
         /* Generalized Kirkwood dielectric and debugging */
         GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE,
         /* Miscellaneous */
-        RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE
+        RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT
     }
 
     public enum ForceFieldInteger {
