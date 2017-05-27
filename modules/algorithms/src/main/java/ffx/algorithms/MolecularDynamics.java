@@ -49,8 +49,6 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
-import javax.swing.undo.CannotUndoException;
-
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -779,6 +777,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
         currentPotentialEnergy = potential.energyAndGradient(x, grad);
 
         /**
+         * Initialize current and previous accelerations, unless they were
+         * just loaded from a restart file.
+         */
+        if (!loadRestart || initialized) {
+            for (int i = 0; i < numberOfVariables; i++) {
+                a[i] = -Thermostat.convert * grad[i] / mass[i];
+            }
+            if (aPrevious != null) {
+                arraycopy(a, 0, aPrevious, 0, numberOfVariables);
+            }
+        }
+
+        /**
          * Compute the current kinetic energy.
          */
         thermostat.kineticEnergy();
@@ -786,21 +797,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         currentTemperature = thermostat.getCurrentTemperature();
         currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
-        /**
-         * Initialize current and previous accelerations.
-         */
-        if (!initialized) {
-            if (!loadRestart) {
-                for (int i = 0; i < numberOfVariables; i++) {
-                    a[i] = -Thermostat.convert * grad[i] / mass[i];
-                }
-                if (aPrevious != null) {
-                    arraycopy(a, 0, aPrevious, 0, numberOfVariables);
-                }
-            }
-            initialized = true;
-        }
-
+        initialized = true;
         logger.info(format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
         logger.info(format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
         logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
@@ -1046,9 +1043,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         dynamicsState.storeState();
     }
 
-    public void revertState() {
+    public void revertState() throws Exception {
         if (dynamicsState == null) {
-            throw new CannotUndoException();
+            throw new Exception();
         }
         dynamicsState.revertState();
     }

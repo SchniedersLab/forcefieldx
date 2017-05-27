@@ -37,6 +37,9 @@
  */
 package ffx.algorithms.mc;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.algorithms.AlgorithmListener;
@@ -52,6 +55,8 @@ import ffx.potential.MolecularAssembly;
  * @author Mallory R. Tollefson
  */
 public class MDMove implements MCMove {
+
+    private static final Logger logger = Logger.getLogger(MDMove.class.getName());
 
     private int mdSteps;
     private double timeStep;
@@ -86,7 +91,11 @@ public class MDMove implements MCMove {
 
     @Override
     public void revertMove() {
-        molecularDynamics.revertState();
+        try {
+            molecularDynamics.revertState();
+        } catch (Exception ex) {
+            logger.severe(" The MD state could not be reverted.");
+        }
     }
 
 }
