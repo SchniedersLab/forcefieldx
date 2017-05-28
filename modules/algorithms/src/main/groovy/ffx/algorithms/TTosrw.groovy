@@ -26,30 +26,24 @@ import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.RotamerOptimization;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
-
 import ffx.numerics.Potential;
 import ffx.numerics.PowerSwitch;
 import ffx.numerics.SquaredTrigSwitch;
 import ffx.numerics.UnivariateSwitchingFunction;
-
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.OctTopologyEnergy;
 import ffx.potential.QuadTopologyEnergy;
-
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
-
 import ffx.potential.nonbonded.MultiplicativeSwitch;
-
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 
