@@ -1079,9 +1079,20 @@ class TTosrw extends Script {
         if (options.mc) {
             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
                 topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.VELOCITYVERLET);
+
+            if (options.nEquil > 0) {
+                logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
+                mcOSRW.setEquilibration(true)
+                mcOSRW.setMDMoveParameters(options.nEquil, options.mcMD, options.dt)
+                mcOSRW.sample()
+                mcOSRW.setEquilibration(false)
+                logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
+            }
+
+            logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
             mcOSRW.setLambdaStdDev(options.mcL)
-            mcOSRW.setMDMoveParameters(nSteps, options.mcMD, options.dt) 
-            mcOSRW.sample();
+            mcOSRW.setMDMoveParameters(options.steps, options.mcMD, options.dt)
+            mcOSRW.sample()
         } else {
             // Create the MolecularDynamics instance.
             MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,

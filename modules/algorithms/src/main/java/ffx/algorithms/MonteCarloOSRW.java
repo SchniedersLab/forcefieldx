@@ -75,21 +75,18 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
     private final Potential potential;
     private final AbstractOSRW osrw;
-    private final MolecularAssembly molecularAssembly;
-    private final CompositeConfiguration properties;
-    private final AlgorithmListener listener;
-    private final Thermostats requestedThermostat;
-    private final Integrators requestedIntegrator;
     private double lambda = 0.0;
 
-    private int lambdaAccept = 0;
-    private int dUdLAccept = 0;
+    private int acceptLambda = 0;
+    private int acceptMD = 0;
 
     private MDMove mdMove;
     private int totalSteps = 10000000;
     private int stepsPerMove = 50;
 
     private LambdaMove lambdaMove;
+
+    private boolean equilibration = false;
 
     /**
      * @param potentialEnergy
@@ -105,20 +102,18 @@ public class MonteCarloOSRW extends BoltzmannMC {
             AlgorithmListener listener, Thermostats requestedThermostat, Integrators requestedIntegrator) {
         this.potential = potentialEnergy;
         this.osrw = osrw;
-        this.molecularAssembly = molecularAssembly;
-        this.properties = properties;
-        this.listener = listener;
-        this.requestedThermostat = requestedThermostat;
-        this.requestedIntegrator = requestedIntegrator;
+
+        /**
+         * Create the MC MD and Lambda moves.
+         */
+        mdMove = new MDMove(molecularAssembly, potential, properties, listener, requestedThermostat, requestedIntegrator);
+        lambdaMove = new LambdaMove(lambda, osrw);
 
         /**
          * Changing the value of lambda will be handled by this class, as well
          * as adding the time dependent bias.
          */
         osrw.setPropagateLambda(false);
-
-        mdMove = new MDMove(molecularAssembly, potential, properties, listener, requestedThermostat, requestedIntegrator);
-        lambdaMove = new LambdaMove(lambda, osrw);
 
     }
 
@@ -130,6 +125,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
     public void setLambdaStdDev(double stdDev) {
         lambdaMove.setStdDev(stdDev);
+    }
+
+    public void setEquilibration(boolean equilibration) {
+        this.equilibration = equilibration;
     }
 
     public void setLambda(double lambda) {
@@ -161,6 +160,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
         double[] coordinates = new double[n];
         double[] gradient = new double[n];
         int numMoves = totalSteps / stepsPerMove;
+        acceptLambda = 0;
+        acceptMD = 0;
 
         /**
          * Initialize MC move instances.
@@ -170,7 +171,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(coordinates);
             double currentEnergy = osrw.energyAndGradient(coordinates, gradient);
             double currentdUdL = osrw.getForceFielddEdL();
-            double currentFFEnergy = osrw.getForceFieldEnergy();
             currentEnergy += mdMove.getKineticEnergy();
 
             /**
@@ -180,22 +180,31 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(coordinates);
             double proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
-            double proposedFFEnergy = osrw.getForceFieldEnergy();
             proposedEnergy += mdMove.getKineticEnergy();
 
-            //logger.info(String.format(" Current %16.8f and Proposed %16.8f force field energies.", currentFFEnergy, proposedFFEnergy));
             if (evaluateMove(currentEnergy, proposedEnergy)) {
-                dUdLAccept++;
-                double percent = (dUdLAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" MC X,dE/dL step accepted: E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                /**
+                 * Accept MD move.
+                 */
+                acceptMD++;
+                double percent = (acceptMD * 100.0) / (imove + 1);
+                logger.info(String.format(" MC MD step:     Accepted E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 currentEnergy = proposedEnergy;
-                //Accept MD move using OSRW energy
+
             } else {
-                double percent = (dUdLAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" MC X,dE/dL step rejected: E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                double percent = (acceptMD * 100.0) / (imove + 1);
+                logger.info(String.format(" MC MD step:     Rejected E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 mdMove.revertMove();
+            }
+
+            /**
+             * During equilibration, do not change Lambda or contribute to the
+             * OSRW bias.
+             */
+            if (equilibration) {
+                continue;
             }
 
             /**
@@ -204,24 +213,21 @@ public class MonteCarloOSRW extends BoltzmannMC {
             potential.getCoordinates(coordinates);
             currentEnergy = osrw.energyAndGradient(coordinates, gradient);
             currentdUdL = osrw.getForceFielddEdL();
-            currentFFEnergy = osrw.getForceFieldEnergy();
             double currentLambda = osrw.getLambda();
             lambdaMove.move();
             proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
             proposeddUdL = osrw.getForceFielddEdL();
-            proposedFFEnergy = osrw.getForceFieldEnergy();
             double proposedLambda = osrw.getLambda();
 
-            //logger.info(String.format(" Current %16.8f and Proposed %16.8f force field energies.", currentFFEnergy, proposedFFEnergy));
             if (evaluateMove(currentEnergy, proposedEnergy)) {
-                lambdaAccept++;
-                double percent = (lambdaAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step  accepted: E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                acceptLambda++;
+                double percent = (acceptLambda * 100.0) / (imove + 1);
+                logger.info(String.format(" MC Lambda step: Accepted E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 currentdUdL = proposeddUdL;
             } else {
-                double percent = (lambdaAccept * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step  rejected: E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                double percent = (acceptLambda * 100.0) / (imove + 1);
+                logger.info(String.format(" MC Lambda step: Rejected E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 lambdaMove.revertMove();
                 potential.getCoordinates(coordinates);
