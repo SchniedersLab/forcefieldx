@@ -109,9 +109,17 @@ class TTosrw extends Script {
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
-         * -mc or --monteCarlo to use the experimental MC-TTOSRW
+         * -mc or --monteCarlo to use MC-TTOSRW
          */
         @Option(shortName='mc', longName='monteCarlo', defaultValue='false', description='Use experimental MC-TTOSRW sampling') boolean mc;
+        /**
+         * -mcL or --mcLambdaStdDev to set MC-TTOSRW Lambda move standard deviation (default is 0.1).
+         */
+        @Option(shortName='mcL', longName='mcLambdaStdDev', defaultValue='0.1', description='MC lambda move standard deviation') double mcL;
+        /**
+         * -mcMD or --mcMDSteps to set MC-TTOSRW number of MD steps per move (default is 50).
+         */
+        @Option(shortName='mcMD', longName='mcMDSteps', defaultValue='50', description='MC MD move number of steps') int mcMD;
         /**
          * -a or --async sets asynchronous walker communication (recommended)
          */
@@ -1071,6 +1079,8 @@ class TTosrw extends Script {
         if (options.mc) {
             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
                 topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.VELOCITYVERLET);
+            mcOSRW.setLambdaStdDev(options.mcL)
+            mcOSRW.setMDMoveParameters(nSteps, options.mcMD, options.dt) 
             mcOSRW.sample();
         } else {
             // Create the MolecularDynamics instance.

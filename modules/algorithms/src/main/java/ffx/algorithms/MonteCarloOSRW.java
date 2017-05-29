@@ -39,6 +39,8 @@ package ffx.algorithms;
 
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.algorithms.Integrator.Integrators;
@@ -79,10 +81,15 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private final Thermostats requestedThermostat;
     private final Integrators requestedIntegrator;
     private double lambda = 0.0;
-    private int totalMDSteps = 10000000;
-    private final int mdSteps = 100;
+
     private int lambdaAccept = 0;
     private int dUdLAccept = 0;
+
+    private MDMove mdMove;
+    private int totalSteps = 10000000;
+    private int stepsPerMove = 50;
+
+    private LambdaMove lambdaMove;
 
     /**
      * @param potentialEnergy
@@ -110,6 +117,19 @@ public class MonteCarloOSRW extends BoltzmannMC {
          */
         osrw.setPropagateLambda(false);
 
+        mdMove = new MDMove(molecularAssembly, potential, properties, listener, requestedThermostat, requestedIntegrator);
+        lambdaMove = new LambdaMove(lambda, osrw);
+
+    }
+
+    public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep) {
+        this.totalSteps = totalSteps;
+        this.stepsPerMove = stepsPerMove;
+        mdMove.setMDParameters(stepsPerMove, timeStep);
+    }
+
+    public void setLambdaStdDev(double stdDev) {
+        lambdaMove.setStdDev(stdDev);
     }
 
     public void setLambda(double lambda) {
@@ -140,14 +160,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
         int n = potential.getNumberOfVariables();
         double[] coordinates = new double[n];
         double[] gradient = new double[n];
-        int numMoves = totalMDSteps / mdSteps;
+        int numMoves = totalSteps / stepsPerMove;
 
         /**
          * Initialize MC move instances.
          */
-        MDMove mdMove = new MDMove(molecularAssembly, potential, properties, listener, requestedThermostat, requestedIntegrator);
-        LambdaMove lambdaMove = new LambdaMove(lambda, osrw);
-
         for (int imove = 0; imove < numMoves; imove++) {
 
             potential.getCoordinates(coordinates);
@@ -167,7 +184,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
             proposedEnergy += mdMove.getKineticEnergy();
 
             //logger.info(String.format(" Current %16.8f and Proposed %16.8f force field energies.", currentFFEnergy, proposedFFEnergy));
-
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 dUdLAccept++;
                 double percent = (dUdLAccept * 100.0) / (imove + 1);
@@ -197,7 +213,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedLambda = osrw.getLambda();
 
             //logger.info(String.format(" Current %16.8f and Proposed %16.8f force field energies.", currentFFEnergy, proposedFFEnergy));
-
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 lambdaAccept++;
                 double percent = (lambdaAccept * 100.0) / (imove + 1);
@@ -216,6 +231,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             /**
              * Update time dependent bias.
              */
+            logger.info(format(" Adding bias at L=%6.4f and dU/dL=%16.8f.", lambda, currentdUdL));
             osrw.addBias(currentdUdL, coordinates, gradient);
         }
     }

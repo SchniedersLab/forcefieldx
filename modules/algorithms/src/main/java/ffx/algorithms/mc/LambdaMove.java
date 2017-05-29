@@ -50,15 +50,21 @@ import ffx.algorithms.AbstractOSRW;
  */
 public class LambdaMove implements MCMove {
 
-    private final double sigma = 0.2;
     private double currentLambda = 0.0;
     private final AbstractOSRW osrw;
-    private final NormalDistribution dist;
+
+    private NormalDistribution dist;
+    private double stdDev = 0.1;
 
     public LambdaMove(double currentLambda, AbstractOSRW osrw) {
         this.osrw = osrw;
         currentLambda = osrw.getLambda();
-        dist = new NormalDistribution(0.0, sigma);
+        dist = new NormalDistribution(0.0, stdDev);
+    }
+
+    public void setStdDev(double stdDev) {
+        this.stdDev = stdDev;
+        dist = new NormalDistribution(0.0, stdDev);
     }
 
     @Override

@@ -37,7 +37,6 @@
  */
 package ffx.algorithms.mc;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -58,10 +57,12 @@ public class MDMove implements MCMove {
 
     private static final Logger logger = Logger.getLogger(MDMove.class.getName());
 
-    private int mdSteps;
-    private double timeStep;
-    private double printInterval;
-    private double temperature;
+    private int mdSteps = 50;
+    private double timeStep = 1.0;
+    private double printInterval = 0.05;
+    private double saveInterval = 0.05;
+    private double temperature = 298.15;
+    private boolean initVelocities = true;
     private final MolecularDynamics molecularDynamics;
 
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
@@ -75,14 +76,24 @@ public class MDMove implements MCMove {
         molecularDynamics.setQuiet(true);
     }
 
+    public void setTemperature(double temperature) {
+        this.temperature = temperature;
+    }
+
+    public void initVelocities(boolean initVelocities) {
+        this.initVelocities = initVelocities;
+    }
+
+    public void setMDParameters(int mdSteps, double timeStep) {
+        this.mdSteps = mdSteps;
+        this.timeStep = timeStep;
+        printInterval = mdSteps * timeStep / 1000.0;
+        saveInterval = printInterval;
+    }
+
     @Override
     public void move() {
-        mdSteps = 50;
-        timeStep = 0.5;
-        printInterval = 0.025;
-        temperature = 298.15;
-        boolean initVelocities = true;
-        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 0.025, temperature, initVelocities, null);
+        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
     }
 
     public double getKineticEnergy() {
