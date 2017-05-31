@@ -53,11 +53,26 @@ public class DoublesDataSet implements DataSet {
     private final int nX;
     private final double sep;
     private final boolean halfWidthEnd;
-    
+
+    /**
+     * Constructs a DataSet from actual data, with no known underlying function (or at least none with an analytically
+     * solved integral). Assumes no half-width end bins (such as found in OSRW).
+     *
+     * @param x Points where f(x) is known
+     * @param fX Values/estimates of f(x)
+     */
     public DoublesDataSet(double[] x, double[] fX) {
         this(x, fX, false);
     }
-    
+
+    /**
+     * Constructs a DataSet from actual data, with no known underlying function (or at least none with an analytically
+     * solved integral).
+     *
+     * @param x Points where f(x) is known
+     * @param fX Values/estimates of f(x)
+     * @param halvedEnds Whether the first and last bins are half-width (such as OSRW)
+     */
     public DoublesDataSet(double[] x, double[] fX, boolean halvedEnds) {
         nX = x.length;
         assert nX == fX.length;
@@ -76,7 +91,13 @@ public class DoublesDataSet implements DataSet {
         sep = halfWidthEnd ? (sepDist / ((double) nX-2)) : (sepDist / ((double) nX-1));
         assertXIntegrity(this.x);
     }
-    
+
+    /**
+     * Constructs a DataSet from another DataSet, effectively masquerading a test set such as a sine wave as data from
+     * an "unknown" function. Used primarily for testing purposes.
+     *
+     * @param set DataSet to cast
+     */
     public DoublesDataSet(DataSet set) {
         nX = set.numPoints();
         

@@ -49,7 +49,13 @@ public class CompositeCurve extends FunctionDataCurve {
     private final FunctionDataCurve[] curves;
     private final double[] coeffs;
     private final int nCurves;
-    
+
+    /**
+     * Constructs a CompositeCurve that aggregates multiple FunctionDataCurves
+     * with variable weights to each component FunctionDataCurve.
+     * @param componentCurves Underlying FunctionDataCurves
+     * @param coefficients Weight to each component curve
+     */
     public CompositeCurve(List<FunctionDataCurve> componentCurves, List<Double> coefficients) {
         assert !componentCurves.isEmpty();
         nCurves = componentCurves.size();
@@ -119,9 +125,21 @@ public class CompositeCurve extends FunctionDataCurve {
         }
         return val;
     }
-    
+
+    /**
+     * Gets the component FunctionDataCurves of this CompositeCurve.
+     * @return List of component FunctionDataCurves.
+     */
     public List<FunctionDataCurve> getSubCurves() {
         return Arrays.asList(curves);
+    }
+
+    /**
+     * Gets the weights to the corresponding component curves.
+     * @return Constant weights
+     */
+    public double[] getWeights() {
+        return Arrays.copyOf(coeffs, coeffs.length);
     }
     
     @Override
