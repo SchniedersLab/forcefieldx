@@ -154,7 +154,6 @@
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
             <type>jar</type>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>commons-collections</groupId>

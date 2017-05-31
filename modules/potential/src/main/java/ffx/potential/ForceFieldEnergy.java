@@ -758,6 +758,27 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return energyFactory(assembly, restraints, ParallelTeam.getDefaultThreadCount());
     }
 
+    @SuppressWarnings("unchecked")
+    public <T extends ParticleMeshEwald> T setPmeClass(Class<T> set) {
+//        if (set != particleMeshEwald.getClass()) {
+            if (set == ParticleMeshEwaldQI.class) {
+                particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecularAssembly.getMoleculeNumbers(),
+                        molecularAssembly.getForceField(), crystal,
+                        vanderWaals.getNeighborList(), particleMeshEwald.getElecForm(), parallelTeam);
+            } else if (set == ParticleMeshEwaldCart.class) {
+                particleMeshEwald = new ParticleMeshEwaldCart(atoms, molecularAssembly.getMoleculeNumbers(),
+                        molecularAssembly.getForceField(), crystal,
+                        vanderWaals.getNeighborList(), particleMeshEwald.getElecForm(), parallelTeam);
+            } else {
+                throw new IllegalArgumentException();
+            }
+            reInit();
+//        }
+        return (T) particleMeshEwald;
+    }
+
+
+
     /**
      * Static factory method to create a ForceFieldEnergy, possibly via FFX or
      * OpenMM implementations.
@@ -2658,11 +2679,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return particleMeshEwald;
     }
 
+    public ParticleMeshEwaldCart getPmeCartNode() {
+        return (particleMeshEwald instanceof ParticleMeshEwaldCart)
+                ? (ParticleMeshEwaldCart) particleMeshEwald : null;
+    }
+
     public ParticleMeshEwaldQI getPmeQiNode() {
-        if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
-            throw new IllegalStateException();
-        }
-        return (ParticleMeshEwaldQI) particleMeshEwald;
+        return (particleMeshEwald instanceof ParticleMeshEwaldQI)
+                ? (ParticleMeshEwaldQI) particleMeshEwald : null;
     }
 
     public List<CoordRestraint> getCoordRestraints() {

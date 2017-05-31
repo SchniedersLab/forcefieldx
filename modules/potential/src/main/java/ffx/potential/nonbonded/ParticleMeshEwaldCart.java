@@ -222,21 +222,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private int gkInteractions;
     /**
-     * Permanent multipole energy (kcal/mol).
-     */
-    private double permanentMultipoleEnergy;
-    private double permanentRealSpaceEnergy;
-    private double permanentSelfEnergy;
-    private double permanentReciprocalEnergy;
-    /**
-     * Polarization energy (kcal/mol).
-     */
-    private double polarizationEnergy;
-    private double inducedRealSpaceEnergy;
-    private double inducedSelfEnergy;
-    private double inducedReciprocalEnergy;
-    private double totalMultipoleEnergy;
-    /**
      * Generalized Kirkwood energy.
      */
     private double generalizedKirkwoodEnergy;
@@ -729,14 +714,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         rotateMultipoles = forceField.getBoolean(ForceFieldBoolean.ROTATE_MULTIPOLES, true);
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
-        if (forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)) {
-            off = Double.POSITIVE_INFINITY;
+        if (!crystal.aperiodic()) {
+            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
         } else {
-            if (!crystal.aperiodic()) {
-                off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
-            } else {
-                off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 1000.0);
-            }
+            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 1000.0);
         }
         double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
         aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
@@ -806,36 +787,24 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         if (lambdaTerm) {
             /**
-             * Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable
-             * trajectories.
-             */
-            permLambdaStart = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_START, 0.4);
-            if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
-                permLambdaStart = 0.4;
-            }
-            /**
-             * Values of PERMANENT_LAMBDA_END must be greater than
-             * permLambdaStart and <= 1.0.
-             */
-            permLambdaEnd = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_END, 1.0);
-            if (permLambdaStart < permLambdaStart || permLambdaEnd > 1.0) {
-                permLambdaEnd = 1.0;
-            }
-            /**
-             * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable
-             * trajectories.
+             * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable trajectories.
              */
             permLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 2.0);
             if (permLambdaAlpha < 0.0 || permLambdaAlpha > 3.0) {
+                logger.warning("Invalid value for permanent-lambda-alpha (<0.0 || >3.0); reverting to 2.0");
                 permLambdaAlpha = 2.0;
             }
             /**
              * A PERMANENT_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at the
              * beginning of the permanent schedule. Choosing a power of 3 or
              * greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
+             *
+             * A value of 0.0 is also admissible for when ExtendedSystem is
+             * scaling multipoles rather than softcoring them.
              */
-            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 3.0);
-            if (permLambdaExponent < 3.0) {
+            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 2.0);
+            if (permLambdaExponent < 0.0) {
+                logger.warning("Invalid value for permanent-lambda-exponent (<0.0); reverting to 2.0");
                 permLambdaExponent = 3.0;
             }
             /**
@@ -843,40 +812,69 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * the beginning of the polarization schedule. Choosing a power of 3
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              *
-             * For DualForceField resolution switching, the Polarization energy
-             * will be changed at the DualForceField level, and not interpolated
-             * within ForceFieldEnergy / PME. Thus, we set the exponent to 0.0
-             * in this case.
+             * A value of 0.0 is also admissible: when polarization is not
+             * being softcored but instead scaled, as by ExtendedSystem.
              */
             polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
             if (polLambdaExponent < 0.0) {
+                logger.warning("Invalid value for polarization-lambda-exponent (<0.0); reverting to 3.0");
                 polLambdaExponent = 3.0;
             }
-            /**
-             * The POLARIZATION_LAMBDA_START defines the point in the lambda
-             * schedule when the condensed phase polarization of the ligand
-             * begins to be turned on.
-             *
-             * If the condensed phase polarization is considered near lambda=0,
-             * then SCF convergence is slow, even with Thole damping.
-             *
-             * In addition, 2 (instead of 1) condensed phase SCF calculations
-             * are necessary from the beginning of the window to lambda=1.
-             */
-            polLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
-            if (polLambdaStart < 0.0 || polLambdaStart > 0.9) {
-                polLambdaStart = 0.75;
-            }
-            /**
-             * The POLARIZATION_LAMBDA_END defines the point in the lambda
-             * schedule when the condensed phase polarization of ligand has been
-             * completely turned on. Values other than 1.0 have not been tested.
-             */
-            polLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
-            if (polLambdaEnd < polLambdaStart
-                    || polLambdaEnd > 1.0
-                    || polLambdaEnd - polLambdaStart < 0.3) {
+
+            if (noWindowing) {
+                permLambdaStart = 0.0;
+                polLambdaStart = 0.0;
+                permLambdaEnd = 1.0;
                 polLambdaEnd = 1.0;
+                logger.info("PME-Cart lambda windowing disabled. Permanent and polarization lambda affect entire [0,1].");
+            } else {
+                /**
+                 * Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable
+                 * trajectories.
+                 */
+                permLambdaStart = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_START, 0.4);
+                if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
+                    logger.warning("Invalid value for perm-lambda-start (<0.0 || >1.0); reverting to 0.4");
+                    permLambdaStart = 0.4;
+                }
+                /**
+                 * Values of PERMANENT_LAMBDA_END must be greater than permLambdaStart and <= 1.0.
+                 */
+                permLambdaEnd = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_END, 1.0);
+                if (permLambdaEnd < permLambdaStart || permLambdaEnd > 1.0) {
+                    logger.warning("Invalid value for perm-lambda-end (<start || >1.0); reverting to 1.0");
+                    permLambdaEnd = 1.0;
+                }
+                /**
+                 * The POLARIZATION_LAMBDA_START defines the point in the lambda
+                 * schedule when the condensed phase polarization of the ligand
+                 * begins to be turned on. If the condensed phase polarization is
+                 * considered near lambda=0, then SCF convergence is slow, even with
+                 * Thole damping. In addition, 2 (instead of 1) condensed phase SCF
+                 * calculations are necessary from the beginning of the window to
+                 * lambda=1.
+                 */
+                polLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.7);
+                if (polLambdaStart < 0.0 || polLambdaStart > 0.7) {
+                    logger.warning("Invalid value for polarization-lambda-start (<0.0 || >0.7); reverting to 0.7");
+                    polLambdaStart = 0.7;
+                }
+                /**
+                 * The POLARIZATION_LAMBDA_END defines the point in the lambda
+                 * schedule when the condensed phase polarization of ligand has been
+                 * completely turned on. Values other than 1.0 have not been tested.
+                 */
+                polLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
+                if (polLambdaEnd < polLambdaStart || polLambdaEnd > 1.0) {
+                    logger.warning("Invalid value for polarization-lambda-end (<start || >1.0); reverting to 1.0");
+                    polLambdaEnd = 1.0;
+                }
+                if (polLambdaEnd - polLambdaStart < 0.3) {
+                    logger.warning("Invalid value for {polarization-lambda-start,polarization-lambda-end}"
+                            + " (end-start<0.3); reverting to {0.7,1.0}");
+                    polLambdaStart = 0.7;
+                    polLambdaEnd = 1.0;
+                }
             }
 
             /**
@@ -935,7 +933,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         if (logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder("\n  Electrostatics\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append(format("\n Electrostatics       %25s\n", getClass().getSimpleName()));
             sb.append(format("   Polarization:                       %8s\n", polarization.toString()));
             if (polarization == Polarization.MUTUAL) {
                 sb.append(format("    SCF Convergence Criteria:         %8.3e\n", poleps));
@@ -1341,8 +1340,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         /**
          * Initialize energy variables.
          */
+        totalMultipoleEnergy = 0.0;
         permanentMultipoleEnergy = 0.0;
+        permanentRealSpaceEnergy = 0.0;
+        permanentSelfEnergy = 0.0;
+        permanentReciprocalEnergy = 0.0;
         polarizationEnergy = 0.0;
+        inducedRealSpaceEnergy = 0.0;
+        inducedSelfEnergy = 0.0;
+        inducedReciprocalEnergy = 0.0;
         generalizedKirkwoodEnergy = 0.0;
         /**
          * Initialize number of interactions.
@@ -1843,22 +1849,23 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         /**
          * Collect energy terms.
          */
-        permanentRealSpaceEnergy = ereal;
-        inducedRealSpaceEnergy = ereali;
-        permanentSelfEnergy = eself;
-        inducedSelfEnergy = eselfi;
-        permanentReciprocalEnergy = erecip;
-        inducedReciprocalEnergy = erecipi;
+        permanentRealSpaceEnergy += ereal;
+        permanentSelfEnergy += eself;
+        permanentReciprocalEnergy += erecip;
+        inducedRealSpaceEnergy += ereali;
+        inducedSelfEnergy += eselfi;
+        inducedReciprocalEnergy += erecipi;
         permanentMultipoleEnergy += eself + erecip + ereal;
         polarizationEnergy += eselfi + erecipi + ereali;
-        totalMultipoleEnergy = permanentMultipoleEnergy + polarizationEnergy;
+        totalMultipoleEnergy += ereal + eself + erecip + ereali + eselfi + erecipi;
 
         /**
          * Log some info.
          */
-        if (logger.isLoggable(Level.FINE)) {
+        if (logger.isLoggable(Level.FINE) || printDecomposition) {
             StringBuilder sb = new StringBuilder();
-            sb.append(format("\n Multipole Self-Energy:   %16.8f\n", eself));
+            sb.append(format("\n Global Cartesian PME, lambdaMode=%s\n", lambdaMode.toString()));
+            sb.append(format(" Multipole Self-Energy:   %16.8f\n", eself));
             sb.append(format(" Multipole Reciprocal:    %16.8f\n", erecip));
             sb.append(format(" Multipole Real Space:    %16.8f\n", ereal));
             sb.append(format(" Polarization Self-Energy:%16.8f\n", eselfi));
@@ -1867,7 +1874,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             if (generalizedKirkwoodTerm) {
                 sb.append(format(" Generalized Kirkwood:    %16.8f\n", generalizedKirkwoodEnergy));
             }
-            logger.fine(sb.toString());
+            logger.info(sb.toString());
         }
 
         return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
@@ -6860,7 +6867,19 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             generalizedKirkwood.setLambda(polLambda);
             generalizedKirkwood.setLambdaFunction(lPowPol, dlPowPol, d2lPowPol);
         }
+    }
 
+    public void printLambdaFactors() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(format("  (%4s)  mode:%-20s lambda:%.2f  permScale:%.2f  polScale:%.2f  dEdLSign:%s  doPol:%-5b  doPermRS:%-5b",
+                "CART", lambdaMode.toString(), lambda, permanentScale, polarizationScale,
+                format("%+f",dEdLSign).substring(0,1), doPolarization, doPermanentRealSpace));
+        sb.append(format("\n    lAlpha:%.2f,%.2f,%.2f  lPowPerm:%.2f,%.2f,%.2f  lPowPol:%.2f,%.2f,%.2f",
+                lAlpha,dlAlpha,d2lAlpha,lPowPerm,dlPowPerm,d2lPowPerm,lPowPol,dlPowPol,d2lPowPol));
+        sb.append(format("\n    permExp:%.2f  permAlpha:%.2f  permWindow:%.2f,%.2f  polExp:%.2f  polWindow:%.2f,%.2f",
+                permLambdaExponent, permLambdaAlpha, permLambdaStart, permLambdaEnd,
+                polLambdaExponent, polLambdaStart, polLambdaEnd));
+        logger.info(sb.toString());
     }
 
     /**
@@ -8560,41 +8579,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private static final int tensorCount = MultipoleTensor.tensorCount(3);
     private static final double oneThird = 1.0 / 3.0;
-
-    @Override
-    public double getTotalMultipoleEnergy() {
-        return permanentMultipoleEnergy + polarizationEnergy;
-    }
-
-    @Override
-    public double getPermRealEnergy() {
-        return permanentRealSpaceEnergy;
-    }
-
-    @Override
-    public double getPermSelfEnergy() {
-        return permanentSelfEnergy;
-    }
-
-    @Override
-    public double getPermRecipEnergy() {
-        return permanentReciprocalEnergy;
-    }
-
-    @Override
-    public double getIndRealEnergy() {
-        return inducedRealSpaceEnergy;
-    }
-
-    @Override
-    public double getIndSelfEnergy() {
-        return inducedSelfEnergy;
-    }
-
-    @Override
-    public double getIndRecipEnergy() {
-        return inducedReciprocalEnergy;
-    }
 
     @Override
     public GeneralizedKirkwood getGK() {

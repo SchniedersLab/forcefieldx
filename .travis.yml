@@ -19,6 +19,7 @@ notifications:
   email:
     recipients:
       jacob-litman@uiowa.edu
+      stephen-lucore@uiowa.edu
     on_success: change
     on_failure: always
 

@@ -466,9 +466,7 @@ public class VanDerWaals implements MaskingInterface,
          */
         buildNeighborList(atoms);
         // Then, optionally, prevent that neighbor list from ever updating.
-        if (disabledNeighborUpdates) {
-            neighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
-        }
+        neighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
 
         logger.info("\n  Van der Waals");
         logger.info(format("   Switch Start:                         %6.3f (A)", cut));
@@ -971,6 +969,9 @@ public class VanDerWaals implements MaskingInterface,
     @Override
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
+        if (!lambdaTerm) {
+            return;
+        }
         this.lambda = lambda;
         sc1 = vdwLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
         dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - lambda);
@@ -1045,12 +1046,7 @@ public class VanDerWaals implements MaskingInterface,
      * inner VdW loop, avoiding an "if (esv)" branch statement. A plain OSRW run
      * will have an object of type LambdaFactorsOSRW instead, which contains an
      * empty version of setFactors(i,k). The OSRW version sets new factors only
-     * on lambda updates, in setLambda(). The trick: The setFactors(i,k) method
-     * is called every time through the inner VdW loop, avoiding an "if (esv)"
-     * branch statement. A plain OSRW run will have an object of type
-     * LambdaFactorsOSRW instead, which contains an empty version of
-     * setFactors(i,k). The OSRW version sets new factors only on lambda
-     * updates, in setLambda().
+     * on lambda updates, in setLambda().
      */
     public class LambdaFactors {
 
@@ -1396,6 +1392,9 @@ public class VanDerWaals implements MaskingInterface,
                 if (threadIndex == 0) {
                     initializationTotal += System.nanoTime();
                 }
+            } catch (RuntimeException ex) {
+                logger.warning("Runtime exception expanding coordinates in thread: " + threadIndex);
+                throw ex;
             } catch (Exception e) {
                 String message = "Fatal exception expanding coordinates in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1424,6 +1423,9 @@ public class VanDerWaals implements MaskingInterface,
                 if (threadIndex == 0) {
                     vdwTotal += System.nanoTime();
                 }
+            } catch (RuntimeException ex) {
+                logger.warning("Runtime exception evaluating van der Waals energy in thread: " + threadIndex);
+                throw ex;
             } catch (Exception e) {
                 String message = "Fatal exception evaluating van der Waals energy in thread: " + threadIndex + "\n";
                 logger.log(Level.SEVERE, message, e);
@@ -1441,6 +1443,9 @@ public class VanDerWaals implements MaskingInterface,
                     if (threadIndex == 0) {
                         reductionTotal += System.nanoTime();
                     }
+                } catch (RuntimeException ex) {
+                    logger.warning("Runtime exception reducing van der Waals gradient in thread: " + threadIndex);
+                    throw ex;
                 } catch (Exception e) {
                     String message = "Fatal exception reducing van der Waals gradient in thread: " + threadIndex + "\n";
                     logger.log(Level.SEVERE, message, e);
@@ -2145,7 +2150,7 @@ public class VanDerWaals implements MaskingInterface,
                                     gradY.sub(threadID, redk, redkv * dedyk);
                                     gradZ.sub(threadID, redk, redkv * dedzk);
                                 }
-                                if (gradient && soft) {
+                                if (gradient && lambdaTerm && soft) {
                                     double dt1 = -t1 * t1d * dsc1dL;
                                     double dt2 = -t2a * t2d * dsc1dL;
                                     double f1 = dsc2dL * t1 * t2;
@@ -2192,27 +2197,34 @@ public class VanDerWaals implements MaskingInterface,
                                     lambdaGradX.sub(threadID, redk, redkv * dedldxk);
                                     lambdaGradY.sub(threadID, redk, redkv * dedldyk);
                                     lambdaGradZ.sub(threadID, redk, redkv * dedldzk);
-                                    if (esvi || esvk) {
-                                        // Assign this gradient to attached ESVs.
-                                        final double dedlp = selfScale * dedl * taper;
-                                        if (esvi) {
-                                            final double dlpdli = esvLambda[k] * lambda;
-                                            final double dEsvI = dedlp * dlpdli;
-                                            // d[S*E] = S'E + E'S
-                                            final double dSwEsvI
-                                                    = esvSwitchDeriv[i] * esvLambdaSwitch[k] * eik_preswitch
-                                                    + dEsvI * esvLambdaSwitch[i] * esvLambdaSwitch[k];
-                                            localEsvDerivI += dSwEsvI;
-                                        }
-                                        if (esvk) {
-                                            final double dlpdlk = esvLambda[i] * lambda;
-                                            final double dEsvK = dedlp * dlpdlk;
-                                            // d[S*E] = S'E + E'S
-                                            final double dSwEsvK
-                                                    = esvLambdaSwitch[i] * esvSwitchDeriv[k] * eik_preswitch
-                                                    + dEsvK * esvLambdaSwitch[i] * esvLambdaSwitch[k];
-                                            esvDeriv[idxk].addAndGet(dSwEsvK);
-                                        }
+                                }
+
+                                if (gradient && (esvi || esvk)) {
+                                    // Assign this gradient to attached ESVs.
+                                    double dt1 = -t1 * t1d * dsc1dL;
+                                    double dt2 = -t2a * t2d * dsc1dL;
+                                    double f1 = dsc2dL * t1 * t2;
+                                    double f2 = sc2 * dt1 * t2;
+                                    double f3 = sc2 * t1 * dt2;
+                                    final double dedl = ev * (f1 + f2 + f3);
+                                    final double dedlp = selfScale * dedl * taper;
+                                    if (esvi) {
+                                        final double dlpdli = esvLambda[k] * lambda;
+                                        final double dEsvI = dedlp * dlpdli;
+                                        // d[S*E] = S'E + E'S
+                                        final double dSwEsvI
+                                                = esvSwitchDeriv[i] * esvLambdaSwitch[k] * eik_preswitch
+                                                + dEsvI * esvLambdaSwitch[i] * esvLambdaSwitch[k];
+                                        localEsvDerivI += dSwEsvI;
+                                    }
+                                    if (esvk) {
+                                        final double dlpdlk = esvLambda[i] * lambda;
+                                        final double dEsvK = dedlp * dlpdlk;
+                                        // d[S*E] = S'E + E'S
+                                        final double dSwEsvK
+                                                = esvLambdaSwitch[i] * esvSwitchDeriv[k] * eik_preswitch
+                                                + dEsvK * esvLambdaSwitch[i] * esvLambdaSwitch[k];
+                                        esvDeriv[idxk].addAndGet(dSwEsvK);
                                     }
                                 }
                             }
