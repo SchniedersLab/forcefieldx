@@ -48,6 +48,9 @@ import java.util.stream.IntStream;
  * performance of a parallelized method should not be necessary, and the 
  * parallelization introduces some complexity and inefficiency.
  *
+ * Primary methods: integrateData and integrateByBins, using some DataSet,
+ * which is often a DoublesDataSet.
+ *
  * @author ceoconnell
  * @author Jacob M. Litman
  */
