@@ -58,7 +58,7 @@ import ffx.potential.bonded.Residue
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationESV.TitrationUtils;
+import ffx.potential.extended.TitrationUtils;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

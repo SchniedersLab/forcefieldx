@@ -601,6 +601,10 @@ public class PotentialsUtils implements PotentialsFunctions {
         logger.info(sb.toString());
     }
 
+    public static void assertEquals(double expected, double actual, double tolerance) {
+        assert(Math.abs(expected - actual) < tolerance);
+    }
+
 }
 
 /**

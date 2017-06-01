@@ -367,7 +367,7 @@ public final class PotentialEnergyTest {
         }
     }
 
-    @org.junit.Test @Ignore
+    @org.junit.Test
     public void testLauncherCart() {
         System.setProperty("pme.qi", "false");
         load();
