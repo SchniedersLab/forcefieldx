@@ -43,6 +43,7 @@ package ffx.numerics.integrate;
  * @author Jacob M. Litman
  */
 public interface DataSet {
+    
     /**
      * Lower bound of the points along x.
      * @return 

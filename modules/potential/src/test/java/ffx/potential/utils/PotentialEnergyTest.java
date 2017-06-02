@@ -47,6 +47,7 @@ import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -331,27 +332,22 @@ public final class PotentialEnergyTest {
     }
 
     @SuppressWarnings("fallthrough")
-    public void testRunner() {
-        final boolean skipReal = Boolean.valueOf(System.getProperty("pme.skipReal","false"));
-        final boolean skipRecip = Boolean.valueOf(System.getProperty("pme.skipRecip","false"));
+    public void testRunner(boolean qi) {
 
         // This switch intentionally falls though for Ci tests.
         switch (testType) {
             case Energy_CiOnly:
                 if (!ciEnabled) return;
             case Energy:
-                 // Energy test will fail if either real or reciprocal regions are skipped.
-                if (!skipReal && !skipRecip) {
-                    load();
-                    testEnergy();
-                }
+                load();
+                testEnergy(qi);
                 break;
 
             case Grad_CiOnly:
                 if (!ciEnabled) return;
             case Grad:
                 load();
-                testGradient();
+                if (!qi) testGradient();
                 break;
 
             case Softcore_CiOnly:
@@ -365,8 +361,8 @@ public final class PotentialEnergyTest {
                 if (!ciEnabled) return;
             case All:
                 load();
-                if (!skipReal && !skipRecip) testEnergy();
-                testGradient();
+                testEnergy(qi);
+                if (!qi) testGradient();
                 testSoftCore();
         }
     }
@@ -375,7 +371,7 @@ public final class PotentialEnergyTest {
     public void testLauncherCart() {
         System.setProperty("pme.qi", "false");
         load();
-        testRunner();
+        testRunner(false);
         System.clearProperty("pme.qi");
     }
 
@@ -383,16 +379,18 @@ public final class PotentialEnergyTest {
     public void testLauncherQi() {
         if (generalizedKirkwood) return;
         System.setProperty("pme.qi", "true");
-        System.setProperty("esvterm", "true");
-        testRunner();
+        System.setProperty("lambdaterm", "false");
+        System.setProperty("esvterm", "false");
+        testRunner(true);
         System.clearProperty("pme.qi");
+        System.clearProperty("lambdaterm");
         System.clearProperty("esvterm");
     }
 
     /**
      * Test of energy method, of class PotentialEnergy.
      */
-    public void testEnergy() {
+    public void testEnergy(boolean qi) {
         logger.info(format(" %s potential energy test on %s ", pmeName, structure.getName()));
         boolean gradient = false;
         boolean print = true;
@@ -435,8 +433,10 @@ public final class PotentialEnergyTest {
             assertEquals(info + " Permanent Multipole Count", nPermanent, forceFieldEnergy.getPermanentInteractions());
         }
         // Polarization
-        assertEquals(info + " Polarization Energy", polarizationEnergy, forceFieldEnergy.getPolarizationEnergy(), tolerance);
-        assertEquals(info + " Polarization Count", nPolar, forceFieldEnergy.getPermanentInteractions());
+        if (!qi) {  /* TODO Remove class lockout. */
+            assertEquals(info + " Polarization Energy", polarizationEnergy, forceFieldEnergy.getPolarizationEnergy(), tolerance);
+            assertEquals(info + " Polarization Count", nPolar, forceFieldEnergy.getPermanentInteractions());
+        }
 
         if (generalizedKirkwood) {
             assertEquals(info + " Solvation", solvationEnergy,

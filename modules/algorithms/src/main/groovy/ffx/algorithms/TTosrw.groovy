@@ -26,30 +26,24 @@ import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.RotamerOptimization;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
-
 import ffx.numerics.Potential;
 import ffx.numerics.PowerSwitch;
 import ffx.numerics.SquaredTrigSwitch;
 import ffx.numerics.UnivariateSwitchingFunction;
-
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.OctTopologyEnergy;
 import ffx.potential.QuadTopologyEnergy;
-
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
-
 import ffx.potential.nonbonded.MultiplicativeSwitch;
-
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 
@@ -115,9 +109,17 @@ class TTosrw extends Script {
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
-         * -mc or --monteCarlo to use the experimental MC-TTOSRW
+         * -mc or --monteCarlo to use MC-TTOSRW
          */
         @Option(shortName='mc', longName='monteCarlo', defaultValue='false', description='Use experimental MC-TTOSRW sampling') boolean mc;
+        /**
+         * -mcL or --mcLambdaStdDev to set MC-TTOSRW Lambda move standard deviation (default is 0.1).
+         */
+        @Option(shortName='mcL', longName='mcLambdaStdDev', defaultValue='0.1', description='MC lambda move standard deviation') double mcL;
+        /**
+         * -mcMD or --mcMDSteps to set MC-TTOSRW number of MD steps per move (default is 50).
+         */
+        @Option(shortName='mcMD', longName='mcMDSteps', defaultValue='50', description='MC MD move number of steps') int mcMD;
         /**
          * -a or --async sets asynchronous walker communication (recommended)
          */
@@ -1076,8 +1078,21 @@ class TTosrw extends Script {
 
         if (options.mc) {
             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-                topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.STOCHASTIC);
-            mcOSRW.sample();
+                topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.VELOCITYVERLET);
+
+            if (options.nEquil > 0) {
+                logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
+                mcOSRW.setEquilibration(true)
+                mcOSRW.setMDMoveParameters(options.nEquil, options.mcMD, options.dt)
+                mcOSRW.sample()
+                mcOSRW.setEquilibration(false)
+                logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
+            }
+
+            logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
+            mcOSRW.setLambdaStdDev(options.mcL)
+            mcOSRW.setMDMoveParameters(options.steps, options.mcMD, options.dt)
+            mcOSRW.sample()
         } else {
             // Create the MolecularDynamics instance.
             MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
@@ -1087,7 +1102,7 @@ class TTosrw extends Script {
             }
 
             boolean initVelocities = true;
-            double restartInterval = 0.1;
+            double restartInterval = options.write;
             String fileType = "XYZ";
             int nSteps = options.steps;
             // Start sampling.

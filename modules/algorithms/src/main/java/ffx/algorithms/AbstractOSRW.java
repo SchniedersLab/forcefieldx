@@ -46,6 +46,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.asin;
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -113,6 +114,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * "propagateLambda" flag true.
      */
     protected int energyCount;
+    protected int biasCount = 0;
     /**
      * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
      * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
@@ -182,22 +184,38 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     private double grad[] = null;
     /**
+     * Force Field Potential Energy (i.e. with no bias terms added).
+     */
+    protected double forceFieldEnergy;
+    /**
      * Partial derivative of the force field energy w.r.t. lambda.
      */
-    protected double forcefielddEdL;
+    protected double dForceFieldEnergydL;
     /**
-     * Total partial derivative of the potential being sampled w.r.t. lambda.
+     * Total partial derivative of the potential (U) being sampled w.r.t.
+     * lambda.
      */
-    protected double dEdLambda;
+    protected double dUdLambda;
     /**
      * 2nd partial derivative of the potential being sampled w.r.t lambda.
      */
-    protected double d2EdLambda2;
+    protected double d2UdL2;
+    /**
+     * Mixed partial derivative with respect to coordinates and lambda.
+     */
     protected double dUdXdL[] = null;
+    /**
+     * Magnitude of each hill (not including tempering) in (kcal/mol).
+     */
     protected double biasMag = 0.002;
+    /**
+     * 1D PMF with respect to lambda F(L).
+     */
     protected final double FLambda[];
-
-    protected double gLdUdL = 0.0;
+    /**
+     * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
+     */
+    protected double gLdEdL = 0.0;
 
     /**
      * Gas constant (in Kcal/mole/Kelvin).
@@ -296,7 +314,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Interval between writing an OSRW restart file in steps.
      */
-    protected int saveFrequency = 1000;
+    protected int saveFrequency = 100;
     /**
      * Print detailed energy information.
      */
@@ -509,7 +527,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         this.propagateLambda = propagateLambda;
     }
 
-    public abstract void addBias(double dUdL, double freeEnergy);
+    public abstract void addBias(double dUdL, double[] x, double[] gradient);
 
     protected int binForLambda(double lambda) {
         int lambdaBin = (int) floor((lambda - minLambda) / dL);
@@ -533,11 +551,15 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     public double getForceFielddEdL() {
-        return forcefielddEdL;
+        return dForceFieldEnergydL;
     }
 
     public double getTotaldEdLambda() {
-        return dEdLambda;
+        return dUdLambda;
+    }
+
+    public double getForceFieldEnergy() {
+        return forceFieldEnergy;
     }
 
     public Potential getPotentialEnergy() {
@@ -545,7 +567,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     public double getGofLdUdL() {
-        return gLdUdL;
+        return gLdEdL;
     }
 
     protected double currentFreeEnergy() {
@@ -581,7 +603,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
                 /**
                  * Compute the gradient d F(L) / dL at L.
                  */
-                dEdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
+                dUdLambda -= FL0 + (L1 - L0) * deltaFL / dL;
                 break;
             }
         }
@@ -636,7 +658,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     public void setLambda(double lambda) {
         lambdaInterface.setLambda(lambda);
         this.lambda = lambda;
-        theta = Math.asin(Math.sqrt(lambda));
+        theta = asin(sqrt(lambda));
     }
 
     public double getLambda() {
@@ -699,7 +721,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
         //double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() * invRandomConvert;
-        double dEdL = -dEdLambda * sin(2.0 * theta);
+        double dEdL = -dUdLambda * sin(2.0 * theta);
         halfThetaVelocity = (halfThetaVelocity * (2.0 * thetaMass - thetaFriction * dt)
                 + randomConvert2 * 2.0 * dt * (dEdL + randomForce))
                 / (2.0 * thetaMass + thetaFriction * dt);

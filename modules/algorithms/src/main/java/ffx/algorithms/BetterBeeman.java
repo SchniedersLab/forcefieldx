@@ -67,7 +67,6 @@ public class BetterBeeman extends Integrator {
     public BetterBeeman(int nVariables, double x[], double v[], double a[],
             double aPrevious[], double mass[]) {
         super(nVariables, x, v, a, aPrevious, mass);
-
         dt_8 = 0.125 * dt;
         dt2_8 = dt * dt_8;
     }

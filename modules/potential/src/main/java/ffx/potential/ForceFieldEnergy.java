@@ -244,6 +244,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double comRestraintEnergy;
     private double esvBias;
     private double totalEnergy;
+    private final double maxDebugGradient;
     private long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     private long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
     private long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
@@ -726,6 +727,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         bondedRegion = new BondedRegion();
 
+        maxDebugGradient = forceField.getDouble(ForceFieldDouble.MAX_DEBUG_GRADIENT, Double.POSITIVE_INFINITY);
+
         molecularAssembly.setPotential(this);
         if (noHeader) {
             logger.setLevel(logger.getParent().getLevel());
@@ -754,6 +757,27 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     public static ForceFieldEnergy energyFactory(MolecularAssembly assembly, List<CoordRestraint> restraints) {
         return energyFactory(assembly, restraints, ParallelTeam.getDefaultThreadCount());
     }
+
+    @SuppressWarnings("unchecked")
+    public <T extends ParticleMeshEwald> T setPmeClass(Class<T> set) {
+//        if (set != particleMeshEwald.getClass()) {
+            if (set == ParticleMeshEwaldQI.class) {
+                particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecularAssembly.getMoleculeNumbers(),
+                        molecularAssembly.getForceField(), crystal,
+                        vanderWaals.getNeighborList(), particleMeshEwald.getElecForm(), parallelTeam);
+            } else if (set == ParticleMeshEwaldCart.class) {
+                particleMeshEwald = new ParticleMeshEwaldCart(atoms, molecularAssembly.getMoleculeNumbers(),
+                        molecularAssembly.getForceField(), crystal,
+                        vanderWaals.getNeighborList(), particleMeshEwald.getElecForm(), parallelTeam);
+            } else {
+                throw new IllegalArgumentException();
+            }
+            reInit();
+//        }
+        return (T) particleMeshEwald;
+    }
+
+
 
     /**
      * Static factory method to create a ForceFieldEnergy, possibly via FFX or
@@ -1914,6 +1938,24 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     g[i] /= optimizationScaling[i];
                 }
             }
+            if (maxDebugGradient < Double.MAX_VALUE) {
+                boolean extremeGrad = Arrays.stream(g).anyMatch((double gi) -> {
+                    return (gi > maxDebugGradient || gi < -maxDebugGradient);
+                });
+                if (extremeGrad) {
+                    String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                            ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                    String filename = String.format("%s-LARGEGRAD-%s.pdb",
+                            FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                            timeString);
+                    PotentialsFunctions ef = new PotentialsUtils();
+                    filename = ef.versionFile(filename);
+
+                    logger.warning(String.format(" Excessively large gradients detected; printing snapshot to file %s", filename));
+                    ef.saveAsPDB(molecularAssembly, new File(filename));
+                }
+            }
             return e;
         } catch (EnergyException ex) {
             ex.printStackTrace();
@@ -2637,11 +2679,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return particleMeshEwald;
     }
 
+    public ParticleMeshEwaldCart getPmeCartNode() {
+        return (particleMeshEwald instanceof ParticleMeshEwaldCart)
+                ? (ParticleMeshEwaldCart) particleMeshEwald : null;
+    }
+
     public ParticleMeshEwaldQI getPmeQiNode() {
-        if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
-            throw new IllegalStateException();
-        }
-        return (ParticleMeshEwaldQI) particleMeshEwald;
+        return (particleMeshEwald instanceof ParticleMeshEwaldQI)
+                ? (ParticleMeshEwaldQI) particleMeshEwald : null;
     }
 
     public List<CoordRestraint> getCoordRestraints() {

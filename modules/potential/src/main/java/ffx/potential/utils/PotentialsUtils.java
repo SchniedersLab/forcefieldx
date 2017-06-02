@@ -72,6 +72,8 @@ public class PotentialsUtils implements PotentialsFunctions {
     private final long initTime;
     private long interTime;
     private SystemFilter lastFilter;
+    private static final Logger potLog = Logger.getLogger("");
+    private static Level levelBak = null;
 
     public PotentialsUtils() {
         initTime = System.nanoTime();
@@ -102,6 +104,17 @@ public class PotentialsUtils implements PotentialsFunctions {
     @Override
     public boolean isLocal() {
         return true;
+    }
+    
+    public void setSilentPotential(boolean silent) {
+        if (silent && potLog.isLoggable(Level.INFO) && levelBak == null) {
+            levelBak = potLog.getLevel();
+            potLog.setLevel(Level.WARNING);
+        }
+        if (!silent && levelBak != null) {
+            potLog.setLevel(levelBak);
+            levelBak = null;
+        }
     }
 
     /**
@@ -167,11 +180,9 @@ public class PotentialsUtils implements PotentialsFunctions {
      * @return
      */
     public MolecularAssembly openQuietly(String filename) {
-		Logger ffxLog = Logger.getLogger("ffx");
-		Level was = ffxLog.getLevel();
-        ffxLog.setLevel(Level.WARNING);
+		setSilentPotential(true);
         MolecularAssembly mola = open(filename);
-        ffxLog.setLevel(was);
+        setSilentPotential(false);
         return mola;
     }
 
@@ -182,11 +193,9 @@ public class PotentialsUtils implements PotentialsFunctions {
      * @return
      */
     public MolecularAssembly openQuietly(File file) {
-        Logger ffxLog = Logger.getLogger("ffx");
-        Level prevLev = ffxLog.getLevel();
-        ffxLog.setLevel(Level.WARNING);
+        setSilentPotential(true);
         MolecularAssembly mola = open(file);
-        ffxLog.setLevel(prevLev);
+        setSilentPotential(false);
         return mola;
     }
 
@@ -590,6 +599,10 @@ public class PotentialsUtils implements PotentialsFunctions {
             sb.append(String.format("   %d: %d %s %s %d %d\n", i, xyzIndex, resName, atomName, typeNum, classNum));
         }
         logger.info(sb.toString());
+    }
+
+    public static void assertEquals(double expected, double actual, double tolerance) {
+        assert(Math.abs(expected - actual) < tolerance);
     }
 
 }

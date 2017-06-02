@@ -37,6 +37,8 @@
  */
 package ffx.algorithms.mc;
 
+import java.util.logging.Logger;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.algorithms.AlgorithmListener;
@@ -53,10 +55,14 @@ import ffx.potential.MolecularAssembly;
  */
 public class MDMove implements MCMove {
 
-    private int mdSteps;
-    private double timeStep;
-    private double printInterval;
-    private double temperature;
+    private static final Logger logger = Logger.getLogger(MDMove.class.getName());
+
+    private int mdSteps = 50;
+    private double timeStep = 1.0;
+    private double printInterval = 0.05;
+    private double saveInterval = 0.05;
+    private double temperature = 298.15;
+    private boolean initVelocities = true;
     private final MolecularDynamics molecularDynamics;
 
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
@@ -67,16 +73,27 @@ public class MDMove implements MCMove {
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
 
         molecularDynamics.init(mdSteps, timeStep, printInterval, printInterval, temperature, true, null);
+        molecularDynamics.setQuiet(true);
+    }
+
+    public void setTemperature(double temperature) {
+        this.temperature = temperature;
+    }
+
+    public void initVelocities(boolean initVelocities) {
+        this.initVelocities = initVelocities;
+    }
+
+    public void setMDParameters(int mdSteps, double timeStep) {
+        this.mdSteps = mdSteps;
+        this.timeStep = timeStep;
+        printInterval = mdSteps * timeStep / 1000.0;
+        saveInterval = printInterval;
     }
 
     @Override
     public void move() {
-        mdSteps = 20;
-        timeStep = 0.5;
-        printInterval = 0.01;
-        temperature = 298.15;
-        boolean initVelocities = true;
-        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, 10.0, temperature, initVelocities, null);
+        molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
     }
 
     public double getKineticEnergy() {
@@ -85,7 +102,11 @@ public class MDMove implements MCMove {
 
     @Override
     public void revertMove() {
-        molecularDynamics.revertState();
+        try {
+            molecularDynamics.revertState();
+        } catch (Exception ex) {
+            logger.severe(" The MD state could not be reverted.");
+        }
     }
 
 }

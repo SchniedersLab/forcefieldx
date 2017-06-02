@@ -49,11 +49,13 @@ import groovy.util.CliBuilder;
 import edu.rit.pj.Comm;
 
 // Force Field X Imports
+import ffx.algorithms.AbstractOSRW;
 import ffx.algorithms.Barostat;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.OSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.Atom;
@@ -84,7 +86,10 @@ int noElecStart2 = 1;
 int noElecStop2 = -1;
 
 // Initial lambda value (0 is ligand in vacuum; 1 is ligand in PBC).
-double initiaLambda = 0.0;
+double initialLambda = 0.0;
+
+// Initial lambda value (0 is ligand in vacuum; 1 is ligand in PBC).
+boolean temper = true;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -92,15 +97,16 @@ double initiaLambda = 0.0;
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc testOSRWBias [options] <filename> [filename]');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.s(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
+cli.s1(longOpt:'start', args:1, argName:'1', 'Starting ligand atom.');
 cli.s2(longOpt:'start2', args:1, argName:'1', 'Starting ligand atom for the 2nd topology.');
-cli.f(longOpt:'final', args:1, argName:'-1', 'Final ligand atom.');
+cli.f1(longOpt:'final', args:1, argName:'-1', 'Final ligand atom.');
 cli.f2(longOpt:'final2', args:1, argName:'-1', 'Final ligand atom for the 2nd topology.');
 cli.es(longOpt:'noElecStart', args:1, argName:'1', 'No Electrostatics Starting Atom.');
 cli.es2(longOpt:'noElecStart2', args:1, argName:'1', 'No Electrostatics Starting Atom for the 2nd Topology.');
 cli.ef(longOpt:'noElecFinal', args:1, argName:'-1', 'No Electrostatics Final Atom.');
 cli.ef2(longOpt:'noElecfinal2', args:1, argName:'-1', 'No Electrostatics Final Atom for the 2nd topology.');
 cli.l(longOpt:'lambda', args:1, argName:'0.0', 'Initial lambda value (> 1.0 distributes lambda across walkers)');
+cli.t(longOpt:'temper', args:1, argName:'true', 'Use transition-tempered OSRW');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();
@@ -111,14 +117,19 @@ if (options.h || arguments == null || arguments.size() > 2) {
 // Read in command line file.
 String filename = arguments.get(0);
 
+// Transition Tempering
+if (options.t) {
+    temper = Boolean.parseBoolean(options.t);
+}
+
 // Starting ligand atom.
-if (options.s) {
-    ligandStart = Integer.parseInt(options.s);
+if (options.s1) {
+    ligandStart = Integer.parseInt(options.s1);
 }
 
 // Final ligand atom.
-if (options.f) {
-    ligandStop = Integer.parseInt(options.f);
+if (options.f1) {
+    ligandStop = Integer.parseInt(options.f1);
 }
 
 // Starting ligand atom for the 2nd topology.
@@ -219,14 +230,19 @@ for (int i = noElecStart; i <= noElecStop; i++) {
 // Turn off checks for overlapping atoms, which is expected for lambda=0.
 energy.getCrystal().setSpecialPositionCutoff(0.0);
 // OSRW will be configured for either single or dual topology.
-OSRW osrw = null;
+AbstractOSRW osrw = null;
 // Save a reference to the first topology.
 topology1 = active;
 
 if (arguments.size() == 1) {
     // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
-    osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-        298.15, 1.0, 1.0, 1.0, false, sh);
+    if (temper) {
+        osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+            active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
+    } else {
+        osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+            298.15, 1.0, 1.0, 1.0, false, sh);
+    }
 } else {
     // Open the 2nd topology.
     filename = arguments.get(1);
@@ -240,7 +256,7 @@ if (arguments.size() == 1) {
         ai.print();
     }
 
-        // Apply the no electrostatics atom selection
+    // Apply the no electrostatics atom selection
     if (noElecStart2 < 1) {
         noElecStart2 = 1;
     }
@@ -259,9 +275,15 @@ if (arguments.size() == 1) {
     energy.getCrystal().setSpecialPositionCutoff(0.0);
     // Create the DualTopology potential energy.
     DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
-    // Wrap the DualTopology potential energy inside an OSRW instance.
-    osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-        298.15, 1.0, 1.0, 1.0, false, sh);
+
+    if (temper) {
+        osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+            active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
+    } else {
+        // Wrap the DualTopology potential energy inside an OSRW instance.
+        osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+            298.15, 1.0, 1.0, 1.0, false, sh);
+    }
 }
 
 /**

@@ -64,21 +64,19 @@ public class VelocityVerlet extends Integrator {
     }
 
     /**
-     * Find pre-gradient velocities using and pre-gradient positions
+     * Find half-step velocities and full-step positions.
      */
     @Override
     public void preForce(Potential potential) {
         for (int i = 0; i < nVariables; i++) {
             v[i] = v[i] + a[i] * dt_2;
-        }
-        for (int i = 0; i < nVariables; i++) {
             x[i] = x[i] + v[i] * dt;
         }
     }
 
     /**
-     * Use Newton's second law to find acceleration from full-step positions and
-     * find the full-step velocities using the new acceleration.
+     * Use Newton's second law to find accelerations and
+     * then full-step velocities.
      */
     @Override
     public void postForce(double gradient[]) {

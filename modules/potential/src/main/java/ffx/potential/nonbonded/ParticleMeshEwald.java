@@ -41,8 +41,7 @@ import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-
-import static ffx.potential.extended.ExtUtils.formatArray;
+import ffx.potential.bonded.LambdaInterface;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -53,10 +52,36 @@ import static ffx.potential.extended.ExtUtils.formatArray;
  *
  * @author Michael J. Schnieders
  */
-public abstract class ParticleMeshEwald {
+public abstract class ParticleMeshEwald implements LambdaInterface {
 
-    protected final Logger logger = Logger.getLogger(this.getClass().getName());
+    private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
 
+    /**
+     * Total electrostatic energy == permanentMultipole + polarizationEnergy + generalizedKirkwood.
+     */
+    protected double totalElectrostaticEnergy;
+    /**
+     * Total multipole energy == permanentMultipole + polarizationEnergy (no GK).
+     */
+    protected double totalMultipoleEnergy;
+    /**
+     * Permanent multipole energy in kcal/mol == permanentRealSpace + permanentSelf + permanentReciprocal.
+     */
+    protected double permanentMultipoleEnergy;
+    protected double permanentRealSpaceEnergy;
+    protected double permanentSelfEnergy;
+    protected double permanentReciprocalEnergy;
+    /**
+     * Polarization energy in kcal/mol == inducedRealSpace + inducedSelf + inducedReciprocal.
+     */
+    protected double polarizationEnergy;
+    protected double inducedRealSpaceEnergy;
+    protected double inducedSelfEnergy;
+    protected double inducedReciprocalEnergy;
+    /**
+     * Solvation energy due to implicit GK solvent.
+     */
+    protected double generalizedKirkwoodEnergy;
     /**
      * Polarization modes include "direct", in which induced dipoles do not
      * interact, and "mutual" that converges the self-consistent field to a
@@ -84,6 +109,23 @@ public abstract class ParticleMeshEwald {
      */
     public double inducedDipole[][][];
     public double inducedDipoleCR[][][];
+    /**
+     * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py script
+     * (available from the wiki) to draw these easily in PyMol.
+     */
+    public boolean printInducedDipoles = Boolean.valueOf(System.getProperty("pme.printInducedDipoles", "false"));
+    /**
+     * Log the seven components of total electrostatic energy at each evaluation:
+     * (Permanent) PermanentRealSpace, PermanentSelf, PermanentRecip
+     * (Induced) InducedRealSpace, InducedSelf, InducedRecip, and GeneralizedKirkwood.
+     * Self, Recip terms apply only to periodic systems; GK applies only when requested and aperiodic.
+     */
+    public boolean printDecomposition;
+    /**
+     * Disables windowed lambda ranges by setting permLambdaStart = polLambdaStart = 0.0
+     * and permLambdaEnd = polLambdaEnd = 1.0.
+     */
+    protected final boolean noWindowing = Boolean.valueOf(System.getProperty("pme.noWindowing", "false"));
 
     public enum Polarization {
         MUTUAL, DIRECT, NONE
@@ -109,54 +151,11 @@ public abstract class ParticleMeshEwald {
         NONE, LS, POLY, ASPC
     }
 
-    public abstract double getTotalMultipoleEnergy();
-
-    public abstract double getPermanentEnergy();
-
-    public abstract double getPermRealEnergy();
-
-    public abstract double getPermSelfEnergy();
-
-    public abstract double getPermRecipEnergy();
-
-    public abstract double getPolarizationEnergy();
-
-    public abstract double getIndRealEnergy();
-
-    public abstract double getIndSelfEnergy();
-
-    public abstract double getIndRecipEnergy();
-
-    public abstract double getGKEnergy();
+    public enum Mask {
+        Permanent, PolarGroup, PolarEnergy, Polar, All;
+    }
 
     public abstract GeneralizedKirkwood getGK();
-
-    public static class LambdaFactors {
-
-        public final double sc1;
-        public final double dsc1dL;
-        public final double d2sc1dL2;
-        public final double sc2;
-        public final double dsc2dL;
-        public final double d2sc2dL2;
-        public static final LambdaFactors Defaults
-                = new LambdaFactors(0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
-
-        public LambdaFactors(double sc1, double dsc1dL, double d2sc1dL2,
-                double sc2, double dsc2dL, double d2sc2dL2) {
-            this.sc1 = sc1;
-            this.dsc1dL = dsc1dL;
-            this.d2sc1dL2 = d2sc1dL2;
-            this.sc2 = sc2;
-            this.dsc2dL = dsc2dL;
-            this.d2sc2dL2 = d2sc2dL2;
-        }
-
-        @Override
-        public String toString() {
-            return formatArray(new double[]{sc1, dsc1dL, d2sc1dL2, sc2, dsc2dL, d2sc2dL2});
-        }
-    }
 
     public abstract double getEwaldCutoff();
 
@@ -178,12 +177,16 @@ public abstract class ParticleMeshEwald {
 
     public abstract int getGKInteractions();
 
+    @Override
     public abstract void setLambda(double lambda);
 
+    @Override
     public abstract double getdEdL();
 
+    @Override
     public abstract void getdEdXdL(double[] gradients);
 
+    @Override
     public abstract double getd2EdL2();
 
     public abstract void destroy() throws Exception;
@@ -217,5 +220,49 @@ public abstract class ParticleMeshEwald {
     public abstract ELEC_FORM getElecForm();
 
     public abstract String getName();
+
+    public double getTotalElectrostaticEnergy() {
+        return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
+    }
+
+    public double getTotalMultipoleEnergy() {
+        return permanentMultipoleEnergy + polarizationEnergy;
+    }
+
+    public double getPermanentEnergy() {
+        return permanentMultipoleEnergy;
+    }
+
+    public double getPermRealEnergy() {
+        return permanentRealSpaceEnergy;
+    }
+
+    public double getPermSelfEnergy() {
+        return permanentSelfEnergy;
+    }
+
+    public double getPermRecipEnergy() {
+        return permanentReciprocalEnergy;
+    }
+
+    public double getPolarizationEnergy() {
+        return polarizationEnergy;
+    }
+
+    public double getIndRealEnergy() {
+        return inducedRealSpaceEnergy;
+    }
+
+    public double getIndSelfEnergy() {
+        return inducedSelfEnergy;
+    }
+
+    public double getIndRecipEnergy() {
+        return inducedReciprocalEnergy;
+    }
+
+    public double getGKEnergy() {
+        return generalizedKirkwoodEnergy;
+    }
 
 }
