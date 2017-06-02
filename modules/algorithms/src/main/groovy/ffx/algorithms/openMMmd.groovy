@@ -17,14 +17,17 @@ import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.algorithms.OpenMMMolecularDynamics;
 import ffx.potential.OpenMMForceFieldEnergy;
+import ffx.potential.nonbonded.CoordRestraint;
 
 import ffx.numerics.Potential;
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
+import ffx.potential.ForceFieldEnergy;
+import ffx.algorithms.MolecularDynamics;
 
 // Number of molecular dynamics steps
-int nSteps = 1500;
+int nSteps = 2000000;
 
 // Time step in femtoseconds.
 double timeStep = 1.0;
@@ -35,7 +38,7 @@ int intervalSteps = 100;
 double printInterval = 0.025;
 
 // Frequency to save out coordinates in picoseconds.
-double saveInterval = 1500.0;
+double saveInterval = 2000.0;
 
 // Temperature in degrees Kelvin.
 double temperature = 298.15;
@@ -43,17 +46,25 @@ double temperature = 298.15;
 // Thermostats [ ANDERSON ]
 Thermostats thermostat = null;
 
-// Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET]
-//Integrators integrator = null;
-String integrator = null;
+// Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET] for regular MolecularDynamics
+Integrators integrator = null;
+
+// Integrator string, sets integrator for OpenMMMolecularDynamics
+String stringIntegrator = "VERLET";
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
 
 // Interval to write out restart file (psec)
-double restartFrequency = 1500;
+double restartFrequency = 2000.0;
 
-double frictionCoeff = 1.0;
+double frictionCoeff = 91.0;
+
+double collisionFreq = 0.1;
+
+List<CoordRestraint> restraints = null;
+
+int numThreads = 1;
 
 // File type of snapshots.
 String fileType = "PDB";
@@ -63,7 +74,8 @@ def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Anderson]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.i(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Brownian / Langevin / Verlet / Custom / Compound]');
+cli.si(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Brownian / Langevin / Verlet / Custom / Compound]');
+cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
@@ -72,6 +84,7 @@ cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates 
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
 cli.cf(longOpt:'Coefficient of friction', args:1, argName:'1.0', 'Coefficient of friction to be used with Langevin and Brownian integrators')
+cli.q(longOpt:'Collision frequency in 1/ps', args:1, argName:'10.0', 'Collision frequency to be set when Anderson Thermostat is created: Verlet integrator requires this')
 def options = cli.parse(args);
 
 if (options.h) {
@@ -125,9 +138,18 @@ if (options.b) {
     }
 }
 
-// Integrator.
+// Integrator for OpenMMMolecularDynamics
+if (options.si) {
+    stringIntegrator = options.i.toUpperCase();
+}
+
+// Regular MolecularDynamics integrator option, not used for OpenMMMolecularDynamics
 if (options.i) {
-    integrator = options.i.toUpperCase();
+    try {
+        integrator = Integrators.valueOf(options.i.toUpperCase());
+    } catch (Exception e) {
+        integrator = null;
+    }
 }
 
 // Coefficient of friction to be used with Langevin and Brownian integrators
@@ -135,6 +157,10 @@ if (options.cf) {
     frictionCoeff = Double.parseDouble(options.cf);
 }
 
+//Collision frequency (in 1/ps) set when using Anderson Thermostat: Verlet integrator requires this
+if (options.q) {
+    collisionFreq = Double.parseDouble(options.q);
+}
 
 
 List<String> arguments = options.arguments();
@@ -168,8 +194,19 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
-OpenMMForceFieldEnergy openMMForceFieldEnergy = new OpenMMForceFieldEnergy(active);
 
-OpenMMMolecularDynamics openMMMolecularDynamics = new OpenMMMolecularDynamics(active, openMMForceFieldEnergy, active.getProperties(), temperature, saveInterval, 
-    restartFrequency, integrator, timeStep, frictionCoeff, dyn, initVelocities);
-openMMMolecularDynamics.start(nSteps, intervalSteps);
+ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(active, restraints, numThreads);
+
+
+if (forceFieldEnergy instanceof OpenMMForceFieldEnergy) {
+    
+    MolecularDynamics moldyn = MolecularDynamics.dynamicsFactory(active, forceFieldEnergy, active.getProperties(), sh, thermostat, integrator)
+
+    if (moldyn instanceof OpenMMMolecularDynamics){
+        moldyn.setRestartFrequency(restartFrequency);
+        moldyn.setIntegratorString(stringIntegrator);
+        moldyn.setFrictionCoefficient(frictionCoeff);
+        moldyn.setCollisionFrequency(collisionFreq);
+        moldyn.start(nSteps, intervalSteps, temperature, saveInterval, timeStep, dyn, initVelocities);
+    }
+} 

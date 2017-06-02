@@ -158,6 +158,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private PointerByReference openMMPositions;
     private PointerByReference setPositions;
     private PointerByReference setVelocities;
+    private PointerByReference thermostat;
 
     /**
      * OpenMM AMOEBA Force References.
@@ -206,7 +207,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         if (openMMPlatform == null) {
             loadPlatform(platform);
         }
-
+        
         // Create the OpenMM System
         openMMSystem = OpenMM_System_create();
         logger.info(" Created OpenMM System");
@@ -264,7 +265,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         // Set periodic box vectors.
         setDefaultPeriodicBoxVectors();
-
+        
         openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
 
         // Create a openMMContext.
@@ -281,7 +282,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         openMMForces = OpenMM_State_getForces(openMMState);
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
-        logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
+        //logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
         OpenMM_State_destroy(openMMState);
     }
 
@@ -2021,19 +2022,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_Context_setVelocities(openMMContext, setVelocities);
     }
 
-    public void updateOpenMMPositions(PointerByReference state) {
-        openMMPositions = OpenMM_State_getPositions(state);
-        Atom[] atoms = molecularAssembly.getAtomArray();
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(openMMPositions, i);
-            Atom atom = atoms[i];
-            atom.moveTo(posInNm.x * OpenMM_AngstromsPerNm,
-                    posInNm.y * OpenMM_AngstromsPerNm,
-                    posInNm.z * OpenMM_AngstromsPerNm);
-        }
-    }
-
     /**
      * getOpenMMPositions takes in a PointerByReference containing the position
      * information of the openMMContext. This method creates a Vec3Array that
@@ -2055,6 +2043,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             x[offset] = pos.x * OpenMM_AngstromsPerNm;
             x[offset + 1] = pos.y * OpenMM_AngstromsPerNm;
             x[offset + 2] = pos.z * OpenMM_AngstromsPerNm;
+            
+            Atom atom = atoms[i];
+            atom.moveTo(x[offset], x[offset + 1], x[offset + 2]);
         }
         return x;
     }
@@ -2153,12 +2144,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param frictionCoeff
      * @param temperature
      */
-    public void setIntegrator(String integrator, double timeStep, double frictionCoeff, double temperature) {
+    public void setIntegrator(String integrator, double timeStep, double frictionCoeff, double temperature, double collisionFreq) {
+        OpenMM_Context_destroy(openMMContext);
         double dt = timeStep * 1.0e-3;
         switch (integrator) {
             case "LANGEVIN":
                 openMMIntegrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
                 break;
+            /*
             case "BROWNIAN":
                 openMMIntegrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
                 break;
@@ -2168,11 +2161,30 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             case "COMPOUND":
                 openMMIntegrator = OpenMM_CompoundIntegrator_create();
                 break;
+            */    
             case "VERLET":
             default:
                 openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
+                thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
+                OpenMM_System_addForce(openMMSystem, thermostat);
         }
-        logger.info(String.format(" Created %s OpenMM Integrator", integrator));
+        //logger.info(String.format(" Created %s OpenMM Integrator", integrator));
+        
+        // Create a openMMContext.
+        openMMContext = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, openMMPlatform);
+
+        // Set initial positions.
+        loadOpenMMPositions();
+
+        int infoMask = OpenMM_State_Positions;
+        infoMask += OpenMM_State_Forces;
+        infoMask += OpenMM_State_Energy;
+
+        openMMState = OpenMM_Context_getState(openMMContext, infoMask, 0);
+        openMMForces = OpenMM_State_getForces(openMMState);
+        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
+
+        logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
     }
 
     /**
