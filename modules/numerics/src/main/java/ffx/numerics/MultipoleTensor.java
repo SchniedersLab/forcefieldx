@@ -37,14 +37,11 @@
  */
 package ffx.numerics;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.Math.PI;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -59,8 +56,8 @@ import static ffx.numerics.VectorMath.r;
  * The MultipoleTensor class computes derivatives of 1/|<b>r</b>| via recursion
  * to arbitrary order for Cartesian multipoles in either a global frame or a
  * quasi-internal frame. This class serves as the abstract parent to both and
- * defines all shared logic. Non-abstract methods are declared final to
- * disallow unnecessary overrides.
+ * defines all shared logic. Non-abstract methods are declared final to disallow
+ * unnecessary overrides.
  *
  * @author Michael J. Schnieders
  *
@@ -309,6 +306,7 @@ public abstract class MultipoleTensor {
     public final boolean isGlobal() {
         return (MultipoleTensorGlobal.class.isAssignableFrom(this.getClass()));
     }
+
     public final boolean isQI() {
         return (MultipoleTensorQI.class.isAssignableFrom(this.getClass()));
     }
@@ -319,32 +317,40 @@ public abstract class MultipoleTensor {
      */
     public void permScreened(double r[], double lambdaFunction, double[] Qi, double[] Qk) {
         boolean operatorChange = operator != OPERATOR.SCREENED_COULOMB;
-        if (operatorChange)
+        if (operatorChange) {
             setOperator(OPERATOR.SCREENED_COULOMB);
+        }
         boolean distanceChanged = setR(r, lambdaFunction);
         setMultipoles(Qi, Qk);
         unsetDipoles();
         unsetDamping();
-        if (!recycleTensors || distanceChanged)
+        if (!recycleTensors || distanceChanged) {
             generateTensor();
-        else tensorsRecycled++;
+        } else {
+            tensorsRecycled++;
+        }
     }
+
     /**
      * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
      * double[], double[], double[], double[], double, double)
      */
     public void permCoulomb(double r[], double lambdaFunction, double[] Qi, double[] Qk) {
         boolean operatorChange = operator != OPERATOR.COULOMB;
-        if (operatorChange)
+        if (operatorChange) {
             setOperator(OPERATOR.COULOMB);
+        }
         boolean distanceChanged = setR(r, lambdaFunction);
         setMultipoles(Qi, Qk);
         unsetDipoles();
         unsetDamping();
-        if (!recycleTensors || distanceChanged)
+        if (!recycleTensors || distanceChanged) {
             generateTensor();
-        else tensorsRecycled++;
+        } else {
+            tensorsRecycled++;
+        }
     }
+
     /**
      * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
      * double[], double[], double[], double[], double, double)
@@ -352,16 +358,20 @@ public abstract class MultipoleTensor {
     public void polarScreened(double r[], double[] Qi, double[] Qk,
             double[] ui, double[] uiCR, double[] uk, double[] ukCR) {
         boolean operatorChange = operator != OPERATOR.SCREENED_COULOMB;
-        if (operatorChange)
+        if (operatorChange) {
             setOperator(OPERATOR.SCREENED_COULOMB);
+        }
         boolean distanceChanged = setR(r);
         setMultipoles(Qi, Qk);
         setDipoles(ui, uiCR, uk, ukCR);
         unsetDamping();
-        if (!recycleTensors || distanceChanged)
+        if (!recycleTensors || distanceChanged) {
             generateTensor();
-        else tensorsRecycled++;
+        } else {
+            tensorsRecycled++;
+        }
     }
+
     /**
      * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
      * double[], double[], double[], double[], double, double)
@@ -369,44 +379,52 @@ public abstract class MultipoleTensor {
     public void polarCoulomb(double r[], double[] Qi, double[] Qk,
             double ui[], double uiCR[], double uk[], double ukCR[]) {
         boolean operatorChange = operator != OPERATOR.COULOMB;
-        if (operatorChange)
+        if (operatorChange) {
             setOperator(OPERATOR.COULOMB);
+        }
         boolean distanceChanged = setR(r);
         setMultipoles(Qi, Qk);
         setDipoles(ui, uiCR, uk, ukCR);
         unsetDamping();
-        if (!recycleTensors || distanceChanged)
+        if (!recycleTensors || distanceChanged) {
             generateTensor();
-        else tensorsRecycled++;
+        } else {
+            tensorsRecycled++;
+        }
     }
+
     /**
      * For Thole tensors.
+     *
      * @see MultipoleTensor#generateTensor(double[], double, double[], double[],
      * double[], double[], double[], double[], double, double)
      */
     public void tholeField(double[] r, double[] Qi, double[] Qk,
             double[] ui, double[] uiCR, double[] uk, double[] ukCR, double pgamma, double aiak) {
         boolean operatorChange = operator != OPERATOR.THOLE_FIELD;
-        if (operatorChange)
+        if (operatorChange) {
             setOperator(OPERATOR.THOLE_FIELD);
-        
+        }
+
         boolean distanceChanged = setR(r);
         setMultipoles(Qi, Qk);
         setDipoles(ui, uiCR, uk, ukCR);
         setTholeDamping(pgamma, aiak);
-        if (!recycleTensors || distanceChanged)
+        if (!recycleTensors || distanceChanged) {
             generateTensor();
-        else tensorsRecycled++;
+        } else {
+            tensorsRecycled++;
+        }
     }
 
     /**
-     * Prepare tensor with the given parameters.
-     * This method represents no particular tensor (damping and lambdaFunction are
-     * never applied simultaneously); it serves instead to consolidate code paths
-     * and to *UN-SET* parameters from previous uses.
+     * Prepare tensor with the given parameters. This method represents no
+     * particular tensor (damping and lambdaFunction are never applied
+     * simultaneously); it serves instead to consolidate code paths and to
+     * *UN-SET* parameters from previous uses.
      *
-     * Irrelevant parameters may be omitted via overloads: lambdaFunction necessary
-     * only for softcored interactions, dipoles only for polarization,
+     * Irrelevant parameters may be omitted via overloads: lambdaFunction
+     * necessary only for softcored interactions, dipoles only for polarization,
      * and damping parameters only for Thole tensors.
      *
      * @param r interatomic distance
@@ -423,17 +441,22 @@ public abstract class MultipoleTensor {
     public final void generateTensor(OPERATOR operator, double[] r, double lambdaFunction, double[] Qi, double[] Qk,
             double[] ui, double[] uiCR, double[] uk, double[] ukCR, double damp, double aiak) {
         boolean operatorChange = this.operator != operator;
-        if (operatorChange)
+        if (operatorChange) {
             setOperator(operator);
-        if (operator == OPERATOR.THOLE_FIELD)
+        }
+        if (operator == OPERATOR.THOLE_FIELD) {
             setTholeDamping(damp, aiak);
+        }
         boolean distanceChanged = setR(r, lambdaFunction);
         setMultipoles(Qi, Qk);
         setDipoles(ui, uiCR, uk, ukCR);
-        if (!recycleTensors || distanceChanged)
+        if (!recycleTensors || distanceChanged) {
             generateTensor();
-        else tensorsRecycled++;
+        } else {
+            tensorsRecycled++;
+        }
     }
+
     /**
      * For the MultipoleTensorTest class and testing.
      */
@@ -442,10 +465,13 @@ public abstract class MultipoleTensor {
         setMultipoles(Qi, Qk);
         unsetDipoles();
         unsetDamping();
-        if (!recycleTensors || distanceChanged)
+        if (!recycleTensors || distanceChanged) {
             generateTensor();
-        else tensorsRecycled++;
+        } else {
+            tensorsRecycled++;
+        }
     }
+
     /**
      * For the MultipoleTensorTest class and testing.
      */
@@ -455,8 +481,9 @@ public abstract class MultipoleTensor {
         setMultipoles(Qi, Qk);
         setDipoles(ui, uiCR, uk, ukCR);
         unsetDamping();
-        if (!recycleTensors || distanceChanged)
+        if (!recycleTensors || distanceChanged) {
             generateTensor();
+        }
     }
 
     public abstract double multipoleEnergy(double Fi[], double Ti[], double Tk[]);
@@ -472,6 +499,7 @@ public abstract class MultipoleTensor {
     public final int getRecycledCount() {
         return tensorsRecycled;
     }
+
     public final void resetRecycledCount() {
         tensorsRecycled = 0;
     }
@@ -502,10 +530,6 @@ public abstract class MultipoleTensor {
         }
 
     }
-
-//    public final void generateTensor() {
-
-//    }
 
     /**
      * Package-private for use by MultipoleTensorTest class only.
@@ -558,6 +582,7 @@ public abstract class MultipoleTensor {
     protected final boolean setR(double r[]) {
         return setR(r, 0.0);
     }
+
     /**
      * @param r Whether distance changed as a result.
      */
@@ -755,8 +780,10 @@ public abstract class MultipoleTensor {
     }
 
     /**
-     * TODO: This is the same logic that should let us compact the PME multidimensional
-     * arrays into 1-D; doing so should be much more efficient (less cache misses from indirection).
+     * TODO: This is the same logic that should let us compact the PME
+     * multidimensional arrays into 1-D; doing so should be much more efficient
+     * (less cache misses from indirection).
+     *
      * @see {@code MultipoleTensor::ti(intdx, int dy, int dz)}
      */
     final int ti(int dx, int dy, int dz) {
@@ -1212,7 +1239,7 @@ public abstract class MultipoleTensor {
         setMultipoleK(Qk);
 
         String whetherQI = (MultipoleTensorQI.class.isAssignableFrom(getClass())) ? "QI" : "";
-        StringBuilder sb = new StringBuilder("\n\npublic void E"+whetherQI+"5(double T[]) {\n");
+        StringBuilder sb = new StringBuilder("\n\npublic void E" + whetherQI + "5(double T[]) {\n");
         codeField(T, 0, 0, 0, sb);
         sb.append("}\n");
 
@@ -1238,12 +1265,14 @@ public abstract class MultipoleTensor {
      * dipole forces.
      */
     protected abstract void order4();
+
     /**
      * Hard coded computation of all Cartesian multipole tensors up to 5th
      * order, in the global frame, which is sufficient for quadrupole-quadrupole
      * forces.
      */
     protected abstract void order5();
+
     /**
      * Hard coded computation of all Cartesian multipole tensors up to 5th
      * order, in the global frame, which is sufficient for quadrupole-quadrupole
@@ -1298,44 +1327,55 @@ public abstract class MultipoleTensor {
                 + qyzi * (uyk * scaleDipole + pyk * scaleDipoleCR) * R021;
     }
 
-	public final double uiDotvk() {
-		return dxi * -pxk * R200
-			   + dyi * -pyk * R020
-			   + dzi * -pzk * R002;
-	}
+    public final double uiDotvk() {
+        return dxi * -pxk * R200
+                + dyi * -pyk * R020
+                + dzi * -pzk * R002;
+    }
 
-	public final double ukDotvi() {
-		return dxk * -pxi * R200
-			   + dyk * -pyi * R020
-			   + dzk * -pzi * R002;
-	}
+    public final double ukDotvi() {
+        return dxk * -pxi * R200
+                + dyk * -pyi * R020
+                + dzk * -pzi * R002;
+    }
 
     protected abstract void multipoleIField();
+
     protected abstract void multipoleKField();
 
     protected abstract void multipoleIdX();
+
     protected abstract void multipoleIdY();
+
     protected abstract void multipoleIdZ();
+
     /**
      * Never used by Global coordinates; necessary only for lambda derivatives.
      */
     protected abstract void multipoleIdZ2();
 
     protected abstract void inducedIField();
+
     protected abstract void inducedKField();
 
     protected abstract void inducedIFieldCR();
+
     protected abstract void inducedKFieldCR();
 
     protected abstract void inducedIFieldForTorque();
+
     protected abstract void inducedKFieldForTorque();
 
     protected abstract void inducedIdX();
+
     protected abstract void inducedIdY();
+
     protected abstract void inducedIdZ();
 
     protected abstract void inducedKdX();
+
     protected abstract void inducedKdY();
+
     protected abstract void inducedKdZ();
 
     protected final void multipoleITorque(double torque[]) {
@@ -1356,6 +1396,7 @@ public abstract class MultipoleTensor {
         torque[1] = dy - qy;
         torque[2] = dz - qz;
     }
+
     protected final void multipoleKTorque(double torque[]) {
         // Torque on dipole moments due to the field.
         double dx = dyk * E001 - dzk * E010;
@@ -1388,6 +1429,7 @@ public abstract class MultipoleTensor {
         total += qyzi * E011;
         return total;
     }
+
     protected final double dotMultipoleK() {
         double total = qk * E000;
         total += dxk * E100;
@@ -1650,9 +1692,11 @@ public abstract class MultipoleTensor {
     }
 
     protected abstract void setMultipoleI(double Qi[]);
+
     protected abstract void setMultipoleK(double Qk[]);
 
     protected abstract void setDipoleI(double ui[], double uiCR[]);
+
     protected abstract void setDipoleK(double uk[], double ukCR[]);
 
     // Pre-calculated divisions.

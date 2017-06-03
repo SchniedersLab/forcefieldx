@@ -37,21 +37,13 @@
  */
 package ffx.numerics;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.String.format;
-
-import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.MultipoleTensor.COORDINATES;
 import ffx.numerics.MultipoleTensor.OPERATOR;
 
-import static ffx.numerics.Erf.erfc;
-import static ffx.numerics.MultipoleTensor.OPERATOR.COULOMB;
-import static ffx.numerics.MultipoleTensor.OPERATOR.SCREENED_COULOMB;
-import static ffx.numerics.MultipoleTensor.OPERATOR.THOLE_FIELD;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.norm;
@@ -158,12 +150,14 @@ public class MultipoleTensorQI extends MultipoleTensor {
         scaleInduced(scaleField, scaleEnergy);
 
         // Find the potential, field, etc at k due to (ind + indCR) at i.
-        inducedIFieldCR();
+        inducedIFieldForTorque();
+        // inducedIFieldCR();
         // Torque on multipole k.
         multipoleKTorque(Tk);
 
         // Find the potential, field, etc at i due to (ind + indCR) at k.
-        inducedKFieldCR();
+        inducedKFieldForTorque();
+        // inducedKFieldCR();
         // Torque on multipole i.
         multipoleITorque(Ti);
 
@@ -190,6 +184,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
     public double getdEdZ() {
         return dEdZ;
     }
+
     @Override
     public double getd2EdZ2() {
         if (order < 6) {
@@ -431,6 +426,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         double term2011 = z * term2002;
         R202 = z * term2011 + term2001;
     }
+
     /**
      * Hard coded computation of all Cartesian multipole tensors up to 5th
      * order, based on a quasi-internal frame, which is sufficient for
@@ -491,6 +487,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         R221 = z * term2201;
         R401 = z * term4001;
     }
+
     /**
      * Hard coded computation of all Cartesian multipole tensors up to 6th
      * order, based on a quasi-internal frame, which is sufficient for
@@ -629,6 +626,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         term011 += qyzi * R022;
         E011 = term011;
     }
+
     @Override
     protected void multipoleKField() {
         double term000 = qk * R000;
@@ -676,6 +674,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         term011 += qyzk * R022;
         E011 = term011;
     }
+
     @Override
     protected void multipoleIdX() {
         double term100 = -dxi * R200;
@@ -713,6 +712,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         double term111 = qxyi * R221;
         E011 = term111;
     }
+
     @Override
     protected void multipoleIdY() {
         double term010 = -dyi * R020;
@@ -750,6 +750,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         term021 += qzzi * R023;
         E011 = term021;
     }
+
     @Override
     protected void multipoleIdZ() {
         double term001 = qi * R001;
@@ -848,6 +849,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         term012 += qyzi * R024;
         E011 = term012;
     }
+
     @Override
     protected void inducedIField() {
         E000 = -uzi * R001;
@@ -861,6 +863,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = -uxi * R201;
         E011 = -uyi * R021;
     }
+
     @Override
     protected void inducedKField() {
         E000 = uzk * R001;
@@ -874,6 +877,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = uxk * R201;
         E011 = uyk * R021;
     }
+
     @Override
     protected void inducedIFieldCR() {
         E000 = -pzi * R001;
@@ -887,6 +891,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = -pxi * R201;
         E011 = -pyi * R021;
     }
+
     @Override
     protected void inducedKFieldCR() {
         E000 = pzk * R001;
@@ -900,6 +905,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = pxk * R201;
         E011 = pyk * R021;
     }
+
     @Override
     protected void inducedIFieldForTorque() {
         E000 = -szi * R001;
@@ -913,6 +919,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = -sxi * R201;
         E011 = -syi * R021;
     }
+
     @Override
     protected void inducedKFieldForTorque() {
         E000 = szk * R001;
@@ -926,6 +933,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = sxk * R201;
         E011 = syk * R021;
     }
+
     @Override
     protected void inducedIdX() {
         E000 = -sxi * R200;
@@ -939,6 +947,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = -szi * R202;
         E011 = 0.0;
     }
+
     @Override
     protected void inducedIdY() {
         E000 = -syi * R020;
@@ -952,6 +961,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = 0.0;
         E011 = -szi * R022;
     }
+
     @Override
     protected void inducedIdZ() {
         E000 = -szi * R002;
@@ -965,6 +975,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = -sxi * R202;
         E011 = -syi * R022;
     }
+
     @Override
     protected void inducedKdX() {
         E000 = sxk * R200;
@@ -978,6 +989,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = szk * R202;
         E011 = 0.0;
     }
+
     @Override
     protected void inducedKdY() {
         E000 = syk * R020;
@@ -991,6 +1003,7 @@ public class MultipoleTensorQI extends MultipoleTensor {
         E101 = 0.0;
         E011 = szk * R022;
     }
+
     @Override
     protected void inducedKdZ() {
         E000 = szk * R002;
@@ -1006,7 +1019,8 @@ public class MultipoleTensorQI extends MultipoleTensor {
     }
 
     /**
-     * Specific to QI; sets transform to rotate multipoles to (and from) quasi-internal frame.
+     * Specific to QI; sets transform to rotate multipoles to (and from)
+     * quasi-internal frame.
      */
     private void setQIRotationMatrix(double dx, double dy, double dz) {
 
