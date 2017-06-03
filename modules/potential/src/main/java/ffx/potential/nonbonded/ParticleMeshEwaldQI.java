@@ -65,8 +65,9 @@ import edu.rit.util.Range;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.MultipoleTensor;
+import ffx.numerics.MultipoleTensor.OPERATOR;
 import ffx.numerics.MultipoleTensorQI;
-import ffx.numerics.MultipoleTensor.COORDINATES;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -85,11 +86,8 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
 
-import ffx.numerics.MultipoleTensor;
-
-import static ffx.numerics.MultipoleTensor.OPERATOR;
-import static ffx.numerics.MultipoleTensor.checkDampingCriterion;
 import static ffx.numerics.Erf.erfc;
+import static ffx.numerics.MultipoleTensor.checkDampingCriterion;
 import static ffx.numerics.VectorMath.cross;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
@@ -121,7 +119,6 @@ import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
 import static ffx.potential.parameters.MultipoleType.zeroD;
 import static ffx.potential.parameters.MultipoleType.zeroM;
-import static ffx.potential.utils.PotentialsUtils.assertEquals;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -1830,11 +1827,12 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
                         sectionTeam.execute(inducedDipoleFieldRegion);
                         reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
+                        /**
                         if (esvTerm) {
                             reciprocalSpace.splineInducedDipoles(unscaledInducedDipole, unscaledInducedDipoleCR, use);
                             sectionTeam.execute(inducedDipoleFieldRegion);
                             reciprocalSpace.computeInducedPhi(unscaledCartDipolePhi, unscaledCartDipolePhiCR);
-                        }
+                        } */
                     } catch (RuntimeException ex) {
                         logger.warning("Runtime exception computing the induced reciprocal space field.");
                         throw ex;
@@ -5818,12 +5816,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                             out[t101] = in[t101] * traceScale * elecScale;
                             out[t011] = in[t011] * traceScale * elecScale;
                         }
-                        PolarizeType polarizeType = atoms[ii].getPolarizeType();
-                        double polar = polarizeType.polarizability * elecScale;
-                        if (esvTerm && esvAtomsScaled[ii]) {
-                            polarizability[ii] = esvLambda[ii] * polar;
-                            unscaledPolarizability[ii] = polar;
+                        if (esvTerm) {
+                            polarizability[ii] = atoms[ii].getScaledPolarizability() * elecScale;
+                            unscaledPolarizability[ii] = atoms[ii].getUnscaledPolarizability() * elecScale;
+                            /**
+                             * if (iSymm == 0 && esvAtomsScaledAlpha[ii]) {
+                             * logger.info(format(" Scaled Polarizability for
+                             * atom %d is %8.3f", ii, polarizability[ii])); }
+                             */
                         } else {
+                            PolarizeType polarizeType = atoms[ii].getPolarizeType();
+                            double polar = polarizeType.polarizability * elecScale;
                             polarizability[ii] = polar;
                         }
                     }
@@ -6819,6 +6822,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             polarizability[i] = (esvConfig.scaleAlpha)
                     ? ai.getScaledPolarizability()
                     : ai.getUnscaledPolarizability();
+            if (esvAtomsScaledAlpha[i]) {
+                //logger.info(format(" Scaled Polarizability for atom %d is %8.3f", i, polarizability[i]));
+            }
         }
     }
 
