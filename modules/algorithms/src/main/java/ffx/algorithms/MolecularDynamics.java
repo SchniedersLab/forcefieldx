@@ -58,6 +58,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.OpenMMForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
@@ -1147,6 +1148,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
             if (verboseDynamicsState) {
                 describe(" Reverting State (To):");
             }
+        }
+    }
+    
+    public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat,
+            Integrators requestedIntegrator){
+        if (potentialEnergy instanceof OpenMMForceFieldEnergy) {
+            OpenMMMolecularDynamics ommDynamics = new OpenMMMolecularDynamics(assembly, (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+            return ommDynamics;
+        } else {
+            MolecularDynamics mDynamics = new MolecularDynamics(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+            return mDynamics;
         }
     }
 }
