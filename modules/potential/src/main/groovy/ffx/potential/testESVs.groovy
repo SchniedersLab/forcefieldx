@@ -218,7 +218,6 @@ System.setProperty("esv-pme", String.valueOf(testPermReal));
 System.setProperty("recipterm", String.valueOf(testReciprocal));         // permanent reciprocal space
 
 System.setProperty("polarizeterm", String.valueOf(testPolarization));   // polarization
-System.setProperty("polarization", "DIRECT");
 
 // Inactive Potential
 System.setProperty("gkterm", "false");
