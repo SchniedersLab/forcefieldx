@@ -1747,7 +1747,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              */
             if (reciprocalSpaceTerm && aewald > 0.0) {
                 reciprocalSpace.computeBSplines();
-                reciprocalSpace.splinePermanentMultipoles(globalMultipole, use);
+                reciprocalSpace.splinePermanentMultipoles(globalMultipole, 0, use);
             }
 
             /**

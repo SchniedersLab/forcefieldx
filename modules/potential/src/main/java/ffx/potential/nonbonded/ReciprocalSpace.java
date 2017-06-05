@@ -240,6 +240,7 @@ public class ReciprocalSpace {
     private double unscaledFracDipoleCR[][][];
     private double unscaledFracDipolePhi[][];
     private double unscaledFracDipolePhiCR[][];
+    private double fracMultipoleDot[][][];
     private double fracMultipoleDotPhi[][];
 
     /**
@@ -474,6 +475,7 @@ public class ReciprocalSpace {
             fracInducedDipolePhi = new double[nAtoms][tensorCount];
             fracInducedDipolePhiCR = new double[nAtoms][tensorCount];
             if (esvTerm) {
+                fracMultipoleDot = new double[nSymm][nAtoms][10];
                 fracMultipoleDotPhi = new double[nAtoms][tensorCount];
                 unscaledFracDipole = new double[nSymm][nAtoms][3];
                 unscaledFracDipoleCR = new double[nSymm][nAtoms][3];
@@ -772,8 +774,16 @@ public class ReciprocalSpace {
      * @param globalMultipoles an array of double.
      * @param use an array of boolean.
      */
-    public void splinePermanentMultipoles(double globalMultipoles[][][], boolean use[]) {
+    public void splinePermanentMultipoles(double globalMultipoles[][][],
+            int mode, boolean use[]) {
         splinePermanentTotal -= System.nanoTime();
+
+        double fracMultipoles[][][] = null;
+        if (mode == 0) {
+            fracMultipoles = fracMultipole;
+        } else {
+            fracMultipoles = fracMultipoleDot;
+        }
 
         switch (fftMethod) {
             case OPENCL:
@@ -794,7 +804,7 @@ public class ReciprocalSpace {
                 spatialDensityRegion.assignAtomsToCells();
                 spatialDensityRegion.setDensityLoop(spatialPermanentLoops);
                 for (int i = 0; i < threadCount; i++) {
-                    spatialPermanentLoops[i].setPermanent(globalMultipoles);
+                    spatialPermanentLoops[i].setPermanent(globalMultipoles, fracMultipoles);
                     spatialPermanentLoops[i].setUse(use);
                     spatialPermanentLoops[i].setRegion(spatialDensityRegion);
                 }
@@ -809,7 +819,7 @@ public class ReciprocalSpace {
                 rowRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
                 rowRegion.setDensityLoop(rowPermanentLoops);
                 for (int i = 0; i < threadCount; i++) {
-                    rowPermanentLoops[i].setPermanent(globalMultipoles);
+                    rowPermanentLoops[i].setPermanent(globalMultipoles, fracMultipoles);
                     rowPermanentLoops[i].setUse(use);
                 }
                 try {
@@ -824,7 +834,7 @@ public class ReciprocalSpace {
                 sliceRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
                 sliceRegion.setDensityLoop(slicePermanentLoops);
                 for (int i = 0; i < threadCount; i++) {
-                    slicePermanentLoops[i].setPermanent(globalMultipoles);
+                    slicePermanentLoops[i].setPermanent(globalMultipoles, fracMultipoles);
                     slicePermanentLoops[i].setUse(use);
                 }
                 try {
@@ -1159,6 +1169,10 @@ public class ReciprocalSpace {
         return unscaledFracDipolePhiCR;
     }
 
+    public double[][] getFracMultipoleDot() {
+        return fracMultipoleDot[0];
+    }
+
     public double[][] getFracMultipoleDotPhi() {
         return fracMultipoleDotPhi;
     }
@@ -1357,6 +1371,7 @@ public class ReciprocalSpace {
     private class SpatialPermanentLoop extends SpatialDensityLoop {
 
         private double globalMultipoles[][][] = null;
+        private double fracMultipoles[][][] = null;
         private boolean use[] = null;
         private int threadIndex;
         private final BSplineRegion bSplines;
@@ -1366,8 +1381,9 @@ public class ReciprocalSpace {
             this.bSplines = splines;
         }
 
-        public void setPermanent(double globalMultipoles[][][]) {
+        public void setPermanent(double globalMultipoles[][][], double fracMultipoles[][][]) {
             this.globalMultipoles = globalMultipoles;
+            this.fracMultipoles = fracMultipoles;
         }
 
         private void setUse(boolean use[]) {
@@ -1393,7 +1409,7 @@ public class ReciprocalSpace {
              * multipoles.
              */
             final double gm[] = globalMultipoles[iSymm][n];
-            final double fm[] = fracMultipole[iSymm][n];
+            final double fm[] = fracMultipoles[iSymm][n];
             /**
              * Charge
              */
@@ -1634,6 +1650,8 @@ public class ReciprocalSpace {
     private class RowPermanentLoop extends RowLoop {
 
         private double globalMultipoles[][][] = null;
+        private double fracMultipoles[][][] = null;
+
         private final double[] fracMPole = new double[10];
         private boolean use[] = null;
         private int threadIndex;
@@ -1648,8 +1666,10 @@ public class ReciprocalSpace {
             this.bSplines = splines;
         }
 
-        public void setPermanent(double globalMultipoles[][][]) {
+        public void setPermanent(double globalMultipoles[][][], double fracMultipoles[][][]) {
             this.globalMultipoles = globalMultipoles;
+            this.fracMultipoles = fracMultipoles;
+
         }
 
         private void setUse(boolean use[]) {
@@ -1733,7 +1753,7 @@ public class ReciprocalSpace {
                 fm[j] = fm[j] / 3.0;
             }
 
-            System.arraycopy(fm, 0, fracMultipole[iSymm][iAtom], 0, 10);
+            System.arraycopy(fm, 0, fracMultipoles[iSymm][iAtom], 0, 10);
 
             /**
              * Some atoms are not used during Lambda dynamics.
@@ -1966,6 +1986,7 @@ public class ReciprocalSpace {
     private class SlicePermanentLoop extends SliceLoop {
 
         private double globalMultipoles[][][] = null;
+        private double fracMultipoles[][][] = null;
         private final double[] fracMPole = new double[10];
         private boolean use[] = null;
         private int threadIndex;
@@ -1976,8 +1997,10 @@ public class ReciprocalSpace {
             this.bSplines = splines;
         }
 
-        public void setPermanent(double globalMultipoles[][][]) {
+        public void setPermanent(double globalMultipoles[][][],
+                double fracMultipoles[][][]) {
             this.globalMultipoles = globalMultipoles;
+            this.fracMultipoles = fracMultipoles;
         }
 
         private void setUse(boolean use[]) {
@@ -2057,7 +2080,7 @@ public class ReciprocalSpace {
                 fm[j] = fm[j] / 3.0;
             }
 
-            System.arraycopy(fm, 0, fracMultipole[iSymm][iAtom], 0, 10);
+            System.arraycopy(fm, 0, fracMultipoles[iSymm][iAtom], 0, 10);
 
             /**
              * Some atoms are not used during Lambda dynamics.
@@ -2300,8 +2323,8 @@ public class ReciprocalSpace {
         public final PermanentPhiLoop permanentPhiLoop[];
 
         private final BSplineRegion bSplineRegion;
-        private double[][] cartPermPhiIn;
-        private double[][] fracPermPhiOut;
+        private double[][] cartPermPhi;
+        private double[][] fracPermPhi;
 
         public PermanentPhiRegion(BSplineRegion bSplineRegion) {
             this.bSplineRegion = bSplineRegion;
@@ -2312,13 +2335,13 @@ public class ReciprocalSpace {
         }
 
         public void setCartPermanentPhi(double cartPermanentPhi[][]) {
-            this.cartPermPhiIn = cartPermanentPhi;
-            this.fracPermPhiOut = fracMultipolePhi;
+            this.cartPermPhi = cartPermanentPhi;
+            this.fracPermPhi = fracMultipolePhi;
         }
 
         public void setCartPermanentDotPhi(double cartPermanentDotPhi[][]) {
-            this.cartPermPhiIn = cartPermanentDotPhi;
-            this.fracPermPhiOut = fracMultipoleDotPhi;
+            this.cartPermPhi = cartPermanentDotPhi;
+            this.fracPermPhi = fracMultipoleDotPhi;
         }
 
         @Override
@@ -2453,7 +2476,7 @@ public class ReciprocalSpace {
                         tuv012 += tu01 * v2;
                         tuv111 += tu11 * v1;
                     }
-                    double out[] = fracPermPhiOut[n];
+                    double out[] = fracPermPhi[n];
                     out[t000] = tuv000;
                     out[t100] = tuv100;
                     out[t010] = tuv010;
@@ -2475,7 +2498,7 @@ public class ReciprocalSpace {
                     out[t012] = tuv012;
                     out[t111] = tuv111;
                     double in[] = out;
-                    out = cartPermPhiIn[n];
+                    out = cartPermPhi[n];
                     out[0] = transformFieldMatrix[0][0] * in[0];
                     for (int j = 1; j < 4; j++) {
                         out[j] = 0.0;
