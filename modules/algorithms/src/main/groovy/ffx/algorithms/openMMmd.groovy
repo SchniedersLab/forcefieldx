@@ -175,16 +175,15 @@ if (arguments != null && arguments.size() > 0) {
     modelfilename = active.getFile();
 }
 
-Potential potential = active.getPotentialEnergy();
+ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
 logger.info(" Starting energy (before .dyn restart loaded):");
 boolean updatesDisabled = active.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
 if (updatesDisabled) {
     logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
 }
-double[] x = new double[potential.getNumberOfVariables()];
-potential.getCoordinates(x);
-
-potential.energy(x, true);
+double[] x = new double[forceFieldEnergy.getNumberOfVariables()];
+forceFieldEnergy.getCoordinates(x);
+forceFieldEnergy.energy(x, true);
 
 logger.info("\n Running molecular dynmaics on " + modelfilename);
 
@@ -194,14 +193,8 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
-
-ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(active, restraints, numThreads);
-
-
 if (forceFieldEnergy instanceof OpenMMForceFieldEnergy) {
-    
     MolecularDynamics moldyn = MolecularDynamics.dynamicsFactory(active, forceFieldEnergy, active.getProperties(), sh, thermostat, integrator)
-
     if (moldyn instanceof OpenMMMolecularDynamics){
         moldyn.setRestartFrequency(restartFrequency);
         moldyn.setIntegratorString(stringIntegrator);
@@ -209,4 +202,4 @@ if (forceFieldEnergy instanceof OpenMMForceFieldEnergy) {
         moldyn.setCollisionFrequency(collisionFreq);
         moldyn.start(nSteps, intervalSteps, temperature, saveInterval, timeStep, dyn, initVelocities);
     }
-} 
+}

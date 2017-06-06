@@ -236,10 +236,6 @@ public class ReciprocalSpace {
      * ExtendedSystem variables
      */
     private final boolean esvTerm = ExtUtils.prop("esvterm", false);
-    private double unscaledFracDipole[][][];
-    private double unscaledFracDipoleCR[][][];
-    private double unscaledFracDipolePhi[][];
-    private double unscaledFracDipolePhiCR[][];
     private double fracMultipoleDot[][][];
     private double fracMultipoleDotPhi[][];
 
@@ -477,10 +473,6 @@ public class ReciprocalSpace {
             if (esvTerm) {
                 fracMultipoleDot = new double[nSymm][nAtoms][10];
                 fracMultipoleDotPhi = new double[nAtoms][tensorCount];
-                unscaledFracDipole = new double[nSymm][nAtoms][3];
-                unscaledFracDipoleCR = new double[nSymm][nAtoms][3];
-                unscaledFracDipolePhi = new double[nAtoms][tensorCount];
-                unscaledFracDipolePhiCR = new double[nAtoms][tensorCount];
             }
         }
     }
@@ -1076,23 +1068,6 @@ public class ReciprocalSpace {
         }
     }
 
-    public void cartToFracUnscaledDipoles(double[][][] unscaledDipole, double[][][] unscaledDipoleCR) {
-        for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-            for (int i = 0; i < nAtoms; i++) {
-                double in[] = unscaledDipole[iSymm][i];
-                double out[] = unscaledFracDipole[iSymm][i];
-                out[0] = a[0][0] * in[0] + a[0][1] * in[1] + a[0][2] * in[2];
-                out[1] = a[1][0] * in[0] + a[1][1] * in[1] + a[1][2] * in[2];
-                out[2] = a[2][0] * in[0] + a[2][1] * in[1] + a[2][2] * in[2];
-                in = unscaledDipoleCR[iSymm][i];
-                out = unscaledFracDipole[iSymm][i];
-                out[0] = a[0][0] * in[0] + a[0][1] * in[1] + a[0][2] * in[2];
-                out[1] = a[1][0] * in[0] + a[1][1] * in[1] + a[1][2] * in[2];
-                out[2] = a[2][0] * in[0] + a[2][1] * in[1] + a[2][2] * in[2];
-            }
-        }
-    }
-
     /**
      * <p>
      * Getter for the field <code>fracMultipolePhi</code>.</p>
@@ -1151,22 +1126,6 @@ public class ReciprocalSpace {
      */
     public double[][] getFracInducedDipolesCR() {
         return fracInducedDipoleCR[0];
-    }
-
-    public double[][] getUnscaledFracDipoles() {
-        return unscaledFracDipole[0];
-    }
-
-    public double[][] getUnscaledFracDipolePhi() {
-        return unscaledFracDipolePhi;
-    }
-
-    public double[][] getUnscaledFradDipolesCR() {
-        return unscaledFracDipoleCR[0];
-    }
-
-    public double[][] getUnscaledFracDipolePhiCR() {
-        return unscaledFracDipolePhiCR;
     }
 
     public double[][] getFracMultipoleDot() {

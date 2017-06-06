@@ -155,7 +155,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     private PointerByReference initialPosInNm;
     private PointerByReference openMMForces;
-    private PointerByReference openMMPositions;
     private PointerByReference setPositions;
     private PointerByReference setVelocities;
     private PointerByReference thermostat;
@@ -189,13 +188,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private boolean use[];
 
     /**
-     * OpenMMForceFieldEnergy constructor; offloads heavy-duty computation to an OpenMM Platform while keeping track of
-     * information locally.
+     * OpenMMForceFieldEnergy constructor; offloads heavy-duty computation to an
+     * OpenMM Platform while keeping track of information locally.
      *
      * @param molecularAssembly Assembly to contruct energy for.
      * @param platform OpenMM platform to be used.
      * @param restraints Harmonic coordinate restraints.
-     * @param nThreads Number of threads to use in the underlying ForceFieldEnergy.
+     * @param nThreads Number of threads to use in the underlying
+     * ForceFieldEnergy.
      */
     protected OpenMMForceFieldEnergy(MolecularAssembly molecularAssembly, Platform platform, List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
@@ -207,7 +207,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         if (openMMPlatform == null) {
             loadPlatform(platform);
         }
-        
+
         // Create the OpenMM System
         openMMSystem = OpenMM_System_create();
         logger.info(" Created OpenMM System");
@@ -265,7 +265,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         // Set periodic box vectors.
         setDefaultPeriodicBoxVectors();
-        
+
         openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
 
         // Create a openMMContext.
@@ -1462,6 +1462,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * Updates the AMOEBA van der Waals force for change in Use flags.
+     *
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
@@ -1504,6 +1505,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * Updates the fixed-charge non-bonded force for change in Use flags.
+     *
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
@@ -1564,6 +1566,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * Updates the custom GB force for change in Use flags.
+     *
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
@@ -1598,7 +1601,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     /**
-     * Updates the Amoeba electrostatic multipolar force for change in Use flags.
+     * Updates the Amoeba electrostatic multipolar force for change in Use
+     * flags.
+     *
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
@@ -1705,6 +1710,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * Updates the AMOEBA Generalized Kirkwood force for change in Use flags.
+     *
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
@@ -1731,6 +1737,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * Updates the WCA force for change in Use flags.
+     *
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
@@ -1900,7 +1907,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * getGradients</p>
      *
      * @param g an array of double.
+     * @return
      */
+    @Override
     public double[] getGradients(double g[]) {
         assert (g != null);
         int n = getNumberOfVariables();
@@ -1951,7 +1960,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     /**
      * Loads positions into OpenMM from the FFX data structure.
      */
-    public void loadOpenMMPositions() {
+    public final void loadOpenMMPositions() {
         if (initialPosInNm == null) {
             initialPosInNm = OpenMM_Vec3Array_create(0);
         } else {
@@ -2042,7 +2051,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             x[offset] = pos.x * OpenMM_AngstromsPerNm;
             x[offset + 1] = pos.y * OpenMM_AngstromsPerNm;
             x[offset + 2] = pos.z * OpenMM_AngstromsPerNm;
-            
+
             Atom atom = atoms[i];
             atom.moveTo(x[offset], x[offset + 1], x[offset + 2]);
         }
@@ -2161,7 +2170,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             case "COMPOUND":
                 openMMIntegrator = OpenMM_CompoundIntegrator_create();
                 break;
-            */    
+             */
             case "VERLET":
             default:
                 openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
@@ -2169,7 +2178,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 OpenMM_System_addForce(openMMSystem, thermostat);
         }
         //logger.info(String.format(" Created %s OpenMM Integrator", integrator));
-        
+
         // Create a openMMContext.
         openMMContext = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, openMMPlatform);
 
