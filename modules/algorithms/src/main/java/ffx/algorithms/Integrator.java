@@ -104,7 +104,8 @@ public abstract class Integrator {
         this.v = v;
         this.a = a;
         this.mass = mass;
-        this.aPrevious = null;
+        //this.aPrevious = null;
+        this.aPrevious = new double[nVariables];
         dt = 1.0;
     }
 
