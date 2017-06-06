@@ -220,6 +220,7 @@ public class Stochastic extends Integrator {
      */
     @Override
     public void postForce(double[] gradient) {
+        System.arraycopy(a, 0, aPrevious, 0, nVariables);
         for (int i = 0; i < nVariables; i++) {
             a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
