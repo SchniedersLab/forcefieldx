@@ -90,8 +90,12 @@ public class BetterBeeman extends Integrator {
      */
     @Override
     public void postForce(double gradient[]) {
+        if (aPrevious == null || aPrevious.length < a.length) {
+            aPrevious = new double[a.length];
+        }
+        System.arraycopy(a, 0, aPrevious, 0, nVariables);
         for (int i = 0; i < nVariables; i++) {
-            aPrevious[i] = a[i];
+            //aPrevious[i] = a[i]; // System.arraycopy is generally preferred.
             a[i] = -convert * gradient[i] / mass[i];
             v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
         }
