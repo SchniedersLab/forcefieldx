@@ -1328,15 +1328,15 @@ public abstract class MultipoleTensor {
     }
 
     public final double uiDotvk() {
-        return dxi * -pxk * R200
-                + dyi * -pyk * R020
-                + dzi * -pzk * R002;
+        return uxi * -pxk * R200
+                + uyi * -pyk * R020
+                + uzi * -pzk * R002;
     }
 
     public final double ukDotvi() {
-        return dxk * -pxi * R200
-                + dyk * -pyi * R020
-                + dzk * -pzi * R002;
+        return uxk * -pxi * R200
+                + uyk * -pyi * R020
+                + uzk * -pzi * R002;
     }
 
     protected abstract void multipoleIField();
