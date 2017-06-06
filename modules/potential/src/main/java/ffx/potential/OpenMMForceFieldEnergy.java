@@ -2142,6 +2142,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param timeStep
      * @param frictionCoeff
      * @param temperature
+     * @param collisionFreq
      */
     public void setIntegrator(String integrator, double timeStep, double frictionCoeff, double temperature, double collisionFreq) {
         OpenMM_Context_destroy(openMMContext);

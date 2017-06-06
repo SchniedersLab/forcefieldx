@@ -1151,6 +1151,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
     }
     
+    /**
+     * Method that determines whether a dynamics is done by the java implementation native to ffx or the OpenMM implementation
+     * 
+     * @param assembly
+     * @param potentialEnergy
+     * @param properties
+     * @param listener
+     * @param requestedThermostat
+     * @param requestedIntegrator
+     * @return 
+     */
     public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
             Potential potentialEnergy,
             CompositeConfiguration properties,

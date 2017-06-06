@@ -108,7 +108,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
      * (steps) specified by the user is completed.
      *
      * @param openMMForceFieldEnergy
-     * @param numSteps
+     * @param intervalSteps
      */
     public void takeSteps(OpenMMForceFieldEnergy openMMForceFieldEnergy, int intervalSteps) {
         //PointerByReference integrator = openMMForceFieldEnergy.getIntegrator();
@@ -381,14 +381,29 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
         this.restartFrequency = restartFrequency;
     }
 
+    /**
+     * Method to set the Integrator string
+     * 
+     * @param integrator string name of the integrator to be used during the simulation
+     */
     public void setIntegratorString(String integrator){
         this.integrator = integrator;
     }
     
+    /**
+     * Method to set the coefficient of friction (for Langevin integrator)
+     * 
+     * @param frictionCoeff coefficient of friction that acts on the atoms during simulation
+     */
     public void setFrictionCoefficient(double frictionCoeff){
         this.frictionCoeff = frictionCoeff;
     }
     
+    /**
+     * Method to set the collision frequency (for Andersen thermostat)
+     * 
+     * @param collisionFreq rate at which atoms collide in the Andersen thermostat
+     */
     public void setCollisionFrequency(double collisionFreq){
         this.collisionFreq = collisionFreq;
     }
