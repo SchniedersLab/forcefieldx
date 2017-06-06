@@ -33,7 +33,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
 
         return energy;
     }
-    
+
     @Override
     public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
@@ -104,6 +104,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
     public double getdEdZ() {
         return 0.0;
     }
+
     /**
      * Meaningful only for QI.
      */
@@ -124,7 +125,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         R = sqrt(r2);
         return false;
     }
-    
+
     @Override
     protected double Tlmnj(final int l, final int m, final int n,
             final int j, final double[] r, final double[] T000) {
@@ -1696,8 +1697,11 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term011;
     }
 
-    protected void inducedIFieldForTorque() {}
-    protected void inducedKFieldForTorque() {}
+    protected void inducedIFieldForTorque() {
+    }
+
+    protected void inducedKFieldForTorque() {
+    }
 
     @Override
     protected void inducedIdX() {
@@ -2053,14 +2057,22 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
 
     @Override
     protected void setDipoleI(double[] ui, double[] uiCR) {
-        uxi = ui[0]; uyi = ui[1]; uzi = ui[2];
-        pxi = uiCR[0]; pyi = uiCR[1]; pzi = uiCR[2];
+        uxi = ui[0];
+        uyi = ui[1];
+        uzi = ui[2];
+        pxi = uiCR[0];
+        pyi = uiCR[1];
+        pzi = uiCR[2];
     }
 
     @Override
     protected void setDipoleK(double[] uk, double[] ukCR) {
-        uxk = uk[0]; uyk = uk[1]; uzk = uk[2];
-        pxk = ukCR[0]; pyk = ukCR[1]; pzk = ukCR[2];
+        uxk = uk[0];
+        uyk = uk[1];
+        uzk = uk[2];
+        pxk = ukCR[0];
+        pyk = ukCR[1];
+        pzk = ukCR[2];
     }
 
 }

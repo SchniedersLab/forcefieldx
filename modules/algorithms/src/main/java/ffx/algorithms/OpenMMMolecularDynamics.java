@@ -13,6 +13,7 @@ import static ffx.algorithms.Thermostat.kB;
 import ffx.potential.MolecularAssembly;
 import ffx.crystal.Crystal;
 import ffx.potential.OpenMMForceFieldEnergy;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 import java.io.File;
@@ -26,6 +27,7 @@ import java.util.Random;
 import ffx.potential.parsers.DYNFilter;
 
 //import static simtk.openmm.OpenMMAmoebaLibrary.*;
+import static java.lang.String.format;
 import static simtk.openmm.OpenMMLibrary.*;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
@@ -41,6 +43,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
 
     private OpenMMForceFieldEnergy openMMForceFieldEnergy;
     private static final Logger logger = Logger.getLogger(OpenMMMolecularDynamics.class.getName());
+    private static final int DEFAULT_INTERVAL_STEPS = 100;
     private double temperature;
     private double currentTemperature;
     private double saveInterval;
@@ -81,6 +84,16 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
     private PointerByReference forces;
     private double collisionFreq;
 
+    /**
+     * Constructs an OpenMMMolecularDynamics object, to perform molecular dynamics using native OpenMM routines, avoiding
+     * the cost of communicating coordinates, gradients, and energies back and forth across the PCI bus.
+     * @param assembly MolecularAssembly to operate on
+     * @param openMMForceFieldEnergy OpenMMForceFieldEnergy Potential. Cannot be any other type of Potential.
+     * @param properties Associated properties
+     * @param listener
+     * @param thermostat May have to be slightly modified for native OpenMM routines
+     * @param integratorMD May have to be slightly modified for native OpenMM routines
+     */
     public OpenMMMolecularDynamics(MolecularAssembly assembly, OpenMMForceFieldEnergy openMMForceFieldEnergy, CompositeConfiguration properties, AlgorithmListener listener, Thermostats thermostat, Integrators integratorMD) {
 
         super(assembly, openMMForceFieldEnergy, properties, listener, thermostat, integratorMD);
@@ -102,6 +115,26 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
     }
 
     /**
+     * UNSUPPORTED: OpenMMMolecularDynamics is not presently capable of handling extended system variables. Will
+     * throw an UnsupportedOperationException.
+     * @param system
+     * @param printFrequency
+     */
+    @Override
+    public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
+        throw new UnsupportedOperationException(" OpenMMMolecularDynamics does not support extended system variables!");
+    }
+
+    /**
+     * UNSUPPORTED: OpenMMMolecularDynamics is not presently capable of handling extended system variables. Will
+     * throw an UnsupportedOperationException.
+     */
+    @Override
+    public void detachExtendedSystem() {
+        throw new UnsupportedOperationException(" OpenMMMolecularDynamics does not support extended system variables!");
+    }
+
+    /**
      * takeSteps moves the simulation forward in time a user defined number of
      * steps and integrates the equations of motion for each step. This method
      * ensures that the algorithm reports back only when the time interval
@@ -110,7 +143,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
      * @param openMMForceFieldEnergy
      * @param intervalSteps
      */
-    public void takeSteps(OpenMMForceFieldEnergy openMMForceFieldEnergy, int intervalSteps) {
+    private void takeSteps(int intervalSteps) {
         //PointerByReference integrator = openMMForceFieldEnergy.getIntegrator();
         double time = System.nanoTime();
         OpenMM_Integrator_step(integratorReference, intervalSteps);
@@ -122,10 +155,9 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
      * openMM_Update obtains the state of the simulation from OpenMM, getting
      * positions and velocities back from the OpenMM data structure.
      *
-     * @param openMMForceFieldEnergy
      * @param i
      */
-    public void openMM_Update(OpenMMForceFieldEnergy openMMForceFieldEnergy, int i) {
+    private void openMM_Update(int i) {
         int infoMask;
         //double aMass;
         //double positionConvert;
@@ -241,7 +273,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
      * @param intervalSteps
      */
     public void start(int numSteps, int intervalSteps, double temperature,
-            double saveInterval, double timeStep, File dyn, boolean initVelocities) {
+                      double saveInterval, double timeStep, File dyn, boolean initVelocities) {
         int i = 0;
         this.temperature = temperature;
         this.saveInterval = saveInterval;
@@ -249,7 +281,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
         this.dyn = dyn;
         this.initVelocities = initVelocities;
         currentTemperature = temperature;
-        
+
         done = false;
         assemblies.stream().parallel().forEach((ainfo) -> {
             MolecularAssembly mola = ainfo.getAssembly();
@@ -325,13 +357,13 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
 
         time = System.nanoTime();
         while (i < numSteps) {
-            openMM_Update(openMMForceFieldEnergy, i);
-            takeSteps(openMMForceFieldEnergy, intervalSteps);
+            openMM_Update(i);
+            takeSteps(intervalSteps);
             i = i + intervalSteps;
             finalSteps = i;
         }
 
-        openMM_Update(openMMForceFieldEnergy, finalSteps);
+        openMM_Update(finalSteps);
     }
 
     /**

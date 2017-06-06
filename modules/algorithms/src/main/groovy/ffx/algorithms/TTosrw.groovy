@@ -89,7 +89,7 @@ class TTosrw extends Script {
                 return Thermostats.valueOf(str.toUpperCase());
             } catch (Exception e) {
                 //logger.warning(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
-                System.stderr.println(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
+                System.err.println(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
                 return Thermostats.BERENDSEN;
             }
         }
@@ -99,7 +99,7 @@ class TTosrw extends Script {
                 return Integrators.valueOf(str.toUpperCase());
             } catch (Exception e) {
                 //logger.warning(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
-                System.stderr.println(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
+                System.err.println(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
                 return Integrators.BEEMAN;
             }
         }
@@ -146,7 +146,7 @@ class TTosrw extends Script {
         /**
          * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
          */
-        @Option(shortName='r', longName='report', defaultValue='0.25', description='Interfal to report thermodynamics (psec).') double report;
+        @Option(shortName='r', longName='report', defaultValue='0.25', description='Interval to report thermodynamics (psec).') double report;
         /**
          * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
          */

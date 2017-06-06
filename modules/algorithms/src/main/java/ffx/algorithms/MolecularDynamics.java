@@ -303,9 +303,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * <p>
      * Setter for the field <code>x</code>.</p>
+     * This method does not seem to be used anywhere.
      *
      * @param x a double array to set the current parameters to.
      */
+    @Deprecated
     public void setParameters(double x[]) {
         System.arraycopy(x, 0, this.x, 0, numberOfVariables);
     }
@@ -313,9 +315,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
     /**
      * <p>
      * Getter for the field <code>x</code>.</p>
+     * This method does not seem to be used anywhere, violates basic encapsulation, and is redundant with
+     * Potential.getCoordinates().
      *
      * @return a double array with the current parameters
      */
+    @Deprecated
     public double[] getParameters() {
         return x;
     }
@@ -331,6 +336,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         assemblies.get(0).archiveFile = archive;
     }
 
+    /**
+     * Setter for an archive file of arbitrary position.
+     * @param archive A File to set as archive
+     * @param pos Index of MolecularAssembly to set this for
+     */
     public void setArchiveFile(File archive, int pos) {
         assemblies.get(pos).archiveFile = archive;
     }
@@ -346,7 +356,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return assemblies.get(0).archiveFile;
     }
 
+    /**
+     * Gets a list of all archive files.
+     * @return A List of archive files
+     */
     public List<File> getArchiveFiles() {
+        // This implementation seems to work, but I'm pretty sure it's poor practice.
         ArrayList<File> aFiles = new ArrayList<>();
         assemblies.forEach((ai) -> {
             aFiles.add(ai.archiveFile);
@@ -354,13 +369,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return aFiles;
         // Below may be more thread-safe and less prone to side effects.
         // Would definitely be safer than stream().forEach(add to external list).
-        //return assemblies.stream().map((AssemblyInfo ai) -> {return ai.archiveFile;}).collect(Collectors.toList());
+        // return assemblies.stream().map((AssemblyInfo ai) -> {return ai.archiveFile;}).collect(Collectors.toList());
     }
 
+    /**
+     * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note: does not affect the underlying Potential.
+     * @param mola A MolecularAssembly to be tracked
+     */
     public void addAssembly(MolecularAssembly mola) {
-        addAssembly(mola, null);
+        addAssembly(mola, mola.getProperties());
     }
 
+    /**
+     * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note: does not affect the underlying Potential.
+     * @param mola A MolecularAssembly to be tracked
+     * @param props Associated CompositeConfiguration
+     */
     public void addAssembly(MolecularAssembly mola, CompositeConfiguration props) {
         AssemblyInfo mi = new AssemblyInfo(mola);
         mi.props = props;
@@ -369,7 +393,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Finds and removes an assembly, searching by reference equality. Removes
-     * all instances of the assembly.
+     * all instances of the assembly. Note: does not affect the underlying Potential.
      *
      * @param mola Assembly to remove.
      * @return Number of times found and removed.
@@ -539,6 +563,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         init(nSteps, timeStep, printInterval, saveInterval, "XYZ", 0.1, temperature, initVelocities, dyn);
     }
 
+    /**
+     * Causes this MolecularDynamics to take an additional set of timesteps.
+     * @param nSteps Number of steps to take
+     * @param temperature Temperature of simulation
+     */
     public void redynamic(final int nSteps, final double temperature) {
         quiet = true;
 
