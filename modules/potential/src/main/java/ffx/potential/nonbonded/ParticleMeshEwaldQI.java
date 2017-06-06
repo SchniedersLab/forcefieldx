@@ -2121,17 +2121,17 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         boolean done = false;
         boolean inducedUse[] = null;
         while (!done) {
-            long cycleTime = -System.nanoTime();
-            try {
-                if (esvSystem != null && esvSystem.config.scaleAlpha) {
-                    inducedUse = new boolean[nAtoms];
-                    for (int i = 0; i < nAtoms; i++) {
-                        inducedUse[i] = use[i];
-                        if (esvAtomsScaledAlpha[i]) {
-                            use[i] = false;
-                        }
+            if (esvSystem != null && esvSystem.config.scaleAlpha) {
+                inducedUse = new boolean[nAtoms];
+                for (int i = 0; i < nAtoms; i++) {
+                    inducedUse[i] = use[i];
+                    if (esvAtomsScaledAlpha[i]) {
+                        use[i] = false;
                     }
                 }
+            }
+            long cycleTime = -System.nanoTime();
+            try {
                 if (reciprocalSpaceTerm && aewald > 0.0) {
                     reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
                 }
@@ -2144,12 +2144,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     sectionTeam.execute(inducedDipoleFieldRegion);
                     reciprocalSpace.computeInducedPhi(unscaledCartDipolePhi, unscaledCartDipolePhiCR);
                 }
-                if (esvSystem != null && esvSystem.config.scaleAlpha) {
-                    for (int i = 0; i < nAtoms; i++) {
-                        use[i] = inducedUse[i];
-                    }
-                }
-
                 if (generalizedKirkwoodTerm) {
                     /**
                      * GK field.
@@ -2159,6 +2153,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     gkEnergyTotal += System.nanoTime();
                     logger.fine(format(" Computed GK induced field %8.3f (sec)", gkEnergyTotal * 1.0e-9));
                 }
+
                 parallelTeam.execute(sorRegion);
                 if (nSymm > 1) {
                     parallelTeam.execute(expandInducedDipolesRegion);
@@ -2169,6 +2164,12 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, "Exception computing mutual induced dipoles.", ex);
             }
+            if (esvSystem != null && esvSystem.config.scaleAlpha) {
+                for (int i = 0; i < nAtoms; i++) {
+                    use[i] = inducedUse[i];
+                }
+            }
+
             completedSCFCycles++;
             previousEps = eps;
             eps = sorRegion.getEps();
@@ -3997,26 +3998,12 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         double fxCR = aewald3 * dipoleCRi[0] - phiCRi[t100];
                         double fyCR = aewald3 * dipoleCRi[1] - phiCRi[t010];
                         double fzCR = aewald3 * dipoleCRi[2] - phiCRi[t001];
-
-//                        double fx = aewald3 * dipolei[0];
-//                        double fy = aewald3 * dipolei[1];
-//                        double fz = aewald3 * dipolei[2];
-//                        double fxCR = aewald3 * dipoleCRi[0];
-//                        double fyCR = aewald3 * dipoleCRi[1];
-//                        double fzCR = aewald3 * dipoleCRi[2];
                         field[0][0][i] += fx;
                         field[0][1][i] += fy;
                         field[0][2][i] += fz;
                         fieldCR[0][0][i] += fxCR;
                         fieldCR[0][1][i] += fyCR;
                         fieldCR[0][2][i] += fzCR;
-//                        field[0][0][i] = fx;
-//                        field[0][1][i] = fy;
-//                        field[0][2][i] = fz;
-//                        fieldCR[0][0][i] = fxCR;
-//                        fieldCR[0][1][i] = fyCR;
-//                        fieldCR[0][2][i] = fzCR;
-
                         if (esvTerm) {
                             final double dipoleiUns[] = unscaled0[i];
                             final double dipoleiUnsCR[] = unscaledCR0[i];
@@ -4028,12 +4015,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                             unscaledFieldCR[0][0][i] += (aewald3 * dipoleiUnsCR[0] - phiiUnsCR[t100]);
                             unscaledFieldCR[0][1][i] += (aewald3 * dipoleiUnsCR[1] - phiiUnsCR[t010]);
                             unscaledFieldCR[0][2][i] += (aewald3 * dipoleiUnsCR[2] - phiiUnsCR[t001]);
-//                            unscaledField[0][0][i] = aewald3 * dipoleiUns[0];
-//                            unscaledField[0][1][i] = aewald3 * dipoleiUns[1];
-//                            unscaledField[0][2][i] = aewald3 * dipoleiUns[2];
-//                            unscaledFieldCR[0][0][i] = aewald3 * dipoleiUnsCR[0];
-//                            unscaledFieldCR[0][1][i] = aewald3 * dipoleiUnsCR[1];
-//                            unscaledFieldCR[0][2][i] = aewald3 * dipoleiUnsCR[2];
                         }
                     }
                 }
@@ -4062,6 +4043,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                 for (int i = lb; i <= ub; i++) {
 
                     if (esvAtomsScaledAlpha[i]) {
+                        // ESV scaled hydrogens keep their direct polarization value.
                         continue;
                     }
 
@@ -7120,7 +7102,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             if (nSymm > 1) {
                 parallelTeam.execute(expandInducedDipolesRegion);
             }
-
             if (reciprocalSpaceTerm && aewald > 0.0) {
                 reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
             }
@@ -7165,6 +7146,21 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     "\n Self-Consistent Field\n"
                     + " Iter  RMS Change (Debye)  Time\n");
         }
+
+        /**
+         * ESV scaled hydrogens will keep their direct induced dipoles.
+         */
+        boolean inducedUse[] = null;
+        if (esvSystem != null && esvSystem.config.scaleAlpha) {
+            inducedUse = new boolean[nAtoms];
+            for (int i = 0; i < nAtoms; i++) {
+                inducedUse[i] = use[i];
+                if (esvAtomsScaledAlpha[i]) {
+                    use[i] = false;
+                }
+            }
+        }
+
         /**
          * Find the induced dipole field due to direct dipoles (or predicted
          * induced dipoles from previous steps).
@@ -7214,6 +7210,20 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              * dipoles to the conjugate vector.
              */
             for (int i = 0; i < nAtoms; i++) {
+                if (esvSystem != null && esvAtomsScaledAlpha[i]) {
+                    vec[0][i] = directDipole[i][0];
+                    vec[1][i] = directDipole[i][1];
+                    vec[2][i] = directDipole[i][2];
+                    inducedDipole[0][i][0] = directDipole[i][0];
+                    inducedDipole[0][i][1] = directDipole[i][1];
+                    inducedDipole[0][i][2] = directDipole[i][2];
+                    vecCR[0][i] = directDipoleCR[i][0];
+                    vecCR[1][i] = directDipoleCR[i][1];
+                    vecCR[2][i] = directDipoleCR[i][2];
+                    inducedDipoleCR[0][i][0] = directDipoleCR[i][0];
+                    inducedDipoleCR[0][i][1] = directDipoleCR[i][1];
+                    inducedDipoleCR[0][i][2] = directDipoleCR[i][2];
+                }
                 vec[0][i] = inducedDipole[0][i][0];
                 vec[1][i] = inducedDipole[0][i][1];
                 vec[2][i] = inducedDipole[0][i][2];
@@ -7315,6 +7325,20 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             sb.append(format(" Total:                   %7.4f",
                     startTime * TO_SECONDS));
             logger.info(sb.toString());
+        }
+
+        if (esvSystem != null && esvSystem.config.scaleAlpha) {
+            for (int i = 0; i < nAtoms; i++) {
+                use[i] = inducedUse[i];
+                if (esvAtomsScaledAlpha[i]) {
+                    inducedDipole[0][i][0] = directDipole[i][0];
+                    inducedDipole[0][i][1] = directDipole[i][1];
+                    inducedDipole[0][i][2] = directDipole[i][2];
+                    inducedDipoleCR[0][i][0] = directDipoleCR[i][0];
+                    inducedDipoleCR[0][i][1] = directDipoleCR[i][1];
+                    inducedDipoleCR[0][i][2] = directDipoleCR[i][2];
+                }
+            }
         }
 
         /**
@@ -7996,7 +8020,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                      * Set initial conjugate gradient residual (a field).
                      */
                     double ipolar;
-                    if (polarizability[i] > 0) {
+                    if (polarizability[i] > 0 && !esvAtomsScaledAlpha[i]) {
                         ipolar = 1.0 / polarizability[i];
                         rsd[0][i] = (directDipole[i][0] - inducedDipole[0][i][0]) * ipolar + field[0][0][i];
                         rsd[1][i] = (directDipole[i][1] - inducedDipole[0][i][1]) * ipolar + field[0][1][i];
@@ -8072,7 +8096,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
 
                 for (int i = lb; i <= ub; i++) {
                     /**
-                     * Revert to the stored induce dipoles.
+                     * Revert to the stored induced dipoles.
                      */
                     inducedDipole[0][i][0] = vec[0][i];
                     inducedDipole[0][i][1] = vec[1][i];
@@ -8189,7 +8213,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
-                    if (polarizability[i] > 0) {
+                    if (polarizability[i] > 0 && !esvAtomsScaledAlpha[i]) {
                         double ipolar = 1.0 / polarizability[i];
                         inducedDipole[0][i][0] = vec[0][i];
                         inducedDipole[0][i][1] = vec[1][i];
