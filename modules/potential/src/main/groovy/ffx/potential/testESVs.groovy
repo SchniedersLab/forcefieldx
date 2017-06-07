@@ -65,6 +65,8 @@ import ffx.potential.extended.TitrationUtils;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.potential.PotentialComponent;
 
+import static ffx.potential.PotentialComponent.*;
+
 // finite-difference parameters
 double lambda = 0.5;
 double step = 0.0001;
