@@ -43,13 +43,14 @@ import ffx.potential.bonded.MultiResidue;
 import ffx.potential.extended.TitrationUtils.Titration;
 
 /**
- * An extended system variable that allows continuous fractional protonation of an amino acid.
- * All atomic charges and bonded terms scale linearly between prot and deprot states.
- * 
- * Possible expansions:
- *  (1) Add back the ability to interact with OSRW lambda and thereby combine with protein design (QuadTop).
- *  (2) Allow triple-state systems such as histidine with 0.5 protons per nitrogen or tautomeric ASP/GLU.
- *  (3) Assess bytecode-output implementation via eg. ASM.
+ * An extended system variable that allows continuous fractional protonation of
+ * an amino acid. All atomic charges and bonded terms scale linearly between
+ * prot and deprot states.
+ *
+ * Possible expansions: (1) Add back the ability to interact with OSRW lambda
+ * and thereby combine with protein design (QuadTop). (2) Allow triple-state
+ * systems such as histidine with 0.5 protons per nitrogen or tautomeric
+ * ASP/GLU. (3) Assess bytecode-output implementation via eg. ASM.
  *
  * @author slucore
  */
@@ -59,7 +60,7 @@ public final class TitrationESV extends ExtendedVariable {
     private final double referenceEnergy;           // deprotonation free energy of a model tripeptide
     private final double constPh;                   // Simulation pH.
     private final double pKaModel;                  // Reference pKa value.
-    
+
     public TitrationESV(ExtendedSystem esvSystem, MultiResidue multiRes) {
         super(esvSystem, multiRes, 1.0);
         this.constPh = esvSystem.getConstantPh();
@@ -84,21 +85,21 @@ public final class TitrationESV extends ExtendedVariable {
     }
 
     /**
-     * Eqs 5,6 from Wallace+Shen 2011 "Continuous constant pH M.D. in explicit..."
-     * U_pH(ldh) = log(10)*kb*T*(pKa_model - pH)*ldh
-     * U_mod(ldh) = potential of mean force for protonation (or -deprot) of model compound
-     * U_star = sum(ldh) { U_pH(ldh) + U_mod_prot(ldh) + U_barr(ldh)
-     * This method returns U_pH + U_mod_prot.
+     * Eqs 5,6 from Wallace+Shen 2011 "Continuous constant pH M.D. in
+     * explicit..." U_pH(ldh) = log(10)*kb*T*(pKa_model - pH)*ldh U_mod(ldh) =
+     * potential of mean force for protonation (or -deprot) of model compound
+     * U_star = sum(ldh) { U_pH(ldh) + U_mod_prot(ldh) + U_barr(ldh) This method
+     * returns U_pH + U_mod_prot.
      */
     protected double getPhBias(double temperature) {
         double lambda = getLambda();
-        double uph = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh)*lambda;
+        double uph = ExtConstants.log10 * ExtConstants.Boltzmann * temperature * (pKaModel - constPh) * lambda;
         double umod = referenceEnergy * lambda;     // TODO Find PMFs for monomers/trimers/pentapeptides.
         return uph + umod;
     }
 
     protected double getPhBiasDeriv(double temperature) {
-        double duphdl = ExtConstants.log10*ExtConstants.Boltzmann*temperature*(pKaModel - constPh);
+        double duphdl = ExtConstants.log10 * ExtConstants.Boltzmann * temperature * (pKaModel - constPh);
         double dumoddl = referenceEnergy;
         return duphdl + dumoddl;
     }

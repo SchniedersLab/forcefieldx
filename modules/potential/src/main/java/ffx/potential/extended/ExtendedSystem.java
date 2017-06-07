@@ -138,8 +138,11 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
                     : true;
         }
 
-        // Particle-mesh Ewald lambda debugging
-        public final boolean scaleAlpha = prop("esv.scaleAlpha", false);
+        /**
+         * Use polarizability scaling by default.
+         */
+        public final boolean scaleAlpha = prop("esv.scaleAlpha", true);
+
         public final boolean allowSymOps = prop("esv.allowSymOps", true);
         public final boolean allowScreening = prop("esv.allowScreening", true);
         public final boolean allowTholeDamping = prop("esv.allowTholeDamping", true);
@@ -161,8 +164,12 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         public final boolean decomposeBonded = prop("esv.decomposeBonded", false);
         public final boolean decomposeDeriv = prop("esv.decomposeDeriv", false);
 
-        // electrostatics options
-        public final boolean allowLambdaSwitch = prop("esv.allowLambdaSwitch", false);	// else lswitch = L, dlswitch = 1.0
+        /**
+         * Note that without the Lambda-Switch, the derivative dPol/dEsv is
+         * incorrect at L=0.0 and L=1.0
+         */
+        public final boolean allowLambdaSwitch = prop("esv.allowLambdaSwitch", true);
+
         public final boolean nonlinearMultipoles = prop("esv.nonlinearMultipoles", false);	// sigmoid lambda Mpole switch
         public final double discrBias = prop("esv.biasMagnitude", 1.0);
         public final boolean forceRoomTemp = prop("esv.forceRoomTemp", false);

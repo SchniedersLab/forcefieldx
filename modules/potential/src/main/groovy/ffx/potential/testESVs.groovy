@@ -63,8 +63,7 @@ import ffx.potential.extended.ExtendedVariable;
 import ffx.potential.extended.TitrationESV;
 import ffx.potential.extended.TitrationUtils;
 import ffx.potential.utils.PotentialsUtils;
-
-import static ffx.potential.PotentialComponent.*;
+import ffx.potential.PotentialComponent;
 
 // finite-difference parameters
 double lambda = 0.5;
@@ -94,7 +93,7 @@ cli.t3(longOpt:'test3', 'Test 3: Switching function and path smoothness.');
 cli.i(longOpt:'iterations', args:1, argName:'1', 'Repeat FDs to verify threaded replicability.');
 cli.v(longOpt:'verbose', 'Print out all the ForceFieldEnergy decompositions.');
 cli.cut(longOpt:'cutoff', args:1, argName:'1000', 'Value of vdw-cutoff and pme-cutoff.');
-cli.nocryst('Forego the (faked) crystal lattice and skip reciprocal space contributions.');
+cli.nocryst('Test a vacuum system.');
 cli.pH(args:1, argName:'7.4', 'Constant system pH.');
 cli.ttf(longOpt:'tables-to-file', args:1, argName:'100', 'Export Utot and dUdEsv to files with this granularity (third arg to MATLAB\'s linspace).');
 
@@ -107,8 +106,8 @@ String filename = args;
 
 boolean useCrystal = (Boolean) !(options.nocryst);
 boolean testVdw = true;
-boolean testPermReal = true;
-boolean testReciprocal = useCrystal;
+boolean testPerm = true;
+boolean testInduced = true;
 boolean testPolarization = true;
 
 if (options.ttf) {
@@ -184,11 +183,6 @@ if (options.v) {
     verbose = true;
 }
 
-if (testReciprocal && cutoff > 20.0) {
-    logger.warning("Large cutoff for periodic system! Resetting to 10.0 Ang.");
-    cutoff = 10.0;
-}
-
 if (options.pH) {
     pH = Double.parseDouble(options.pH);
 } else {
@@ -199,31 +193,24 @@ if (options.pH) {
 System.setProperty("forcefield", "AMOEBA_PROTEIN_2013");
 System.setProperty("esvterm", "true");
 System.setProperty("lambdaterm", "false");
-System.setProperty("bondterm", "true");
-System.setProperty("angleterm", "true");
-System.setProperty("strbndterm", "true");
-System.setProperty("ureyterm", "true");
-System.setProperty("opbendterm", "true");
-System.setProperty("torsionterm", "true");
-System.setProperty("pitorsterm", "true");
-System.setProperty("tortorterm", "true");
-System.setProperty("improperterm", "true");
+System.setProperty("pme.qi", "true");
 
 // Optional Potential
 System.setProperty("vdwterm", String.valueOf(testVdw));                 // van der Waals
+System.setProperty("mpoleterm", String.valueOf(testPerm));          // permanent real space
 System.setProperty("esv-vdw", String.valueOf(testVdw));
-System.setProperty("mpoleterm", String.valueOf(testPermReal));          // permanent real space
-System.setProperty("pme.qi", String.valueOf(testPermReal));
-System.setProperty("esv-pme", String.valueOf(testPermReal));
-System.setProperty("recipterm", String.valueOf(testReciprocal));         // permanent reciprocal space
-
-System.setProperty("polarizeterm", String.valueOf(testPolarization));   // polarization
+System.setProperty("esv-pme", String.valueOf(testPerm));
+System.setProperty("esv-propagation", "false");         // don't allow ESV particle to undergo dynamics
+System.setProperty("esv-biasTerm", "true");             // include discretization and pH biases
+System.setProperty("esv-scaleBonded", "true");          // include effects on bonded terms
+System.setProperty("esv-backgroundBonded", "true");     // hook up BG bonded terms to FG node
+System.setProperty("esv-scaleUnshared", "true");        // use multipole scaling in all cases (eliminates softcoring)
 
 // Inactive Potential
 System.setProperty("gkterm", "false");
 System.setProperty("restrainterm", "false");
 System.setProperty("comrestrainterm", "false");
-System.setProperty("lambda_torsions", "false");
+System.setProperty("lambda-torsions", "false");
 
 // Potential Settings
 System.setProperty("permanent-lambda-alpha","2.0");
@@ -236,13 +223,6 @@ System.setProperty("intramolecular-softcore", "true");
 System.setProperty("intermolecular-softcore", "true");
 System.setProperty("vdw-cutoff", String.valueOf(cutoff));
 System.setProperty("ewald-cutoff", String.valueOf(cutoff));
-
-// ESV Settings
-System.setProperty("esv-propagation", "false");         // don't allow ESV particle to undergo dynamics
-System.setProperty("esv-biasTerm", "true");             // include discretization and pH biases
-System.setProperty("esv-scaleBonded", "true");          // include effects on bonded terms
-System.setProperty("esv-backgroundBonded", "true");     // hook up BG bonded terms to FG node
-System.setProperty("esv-scaleUnshared", "true");        // use multipole scaling in all cases (eliminates softcoring)
 
 // Logging Settings
 System.setProperty("ffe-combineBonded", "true");        // fold all bonded contributions into a single line
@@ -365,29 +345,29 @@ try {
     energy yielded by vanilla energy() calls on mutated PDB files.
     *******************************************************************************/
     if (test2) {
-        esvSystem.setLambda("A", 0.0);
-        esvSystem.setLambda("B", 0.0);
+        esvSystem.setLambda((char) 'A', 0.0);
+        esvSystem.setLambda((char) 'B', 0.0);
         final double esvTot00 = ffe.energy(true, false) - esvSystem.getBiasEnergy();
         final double esvVdw00 = ffe.getVanDerWaalsEnergy();
         final double esvPme00 = ffe.getPermanentRealSpaceEnergy();
         final double esvRcp00 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
 
-        esvSystem.setLambda("A", 0.0);
-        esvSystem.setLambda("B", 1.0);
+        esvSystem.setLambda((char) 'A', 0.0);
+        esvSystem.setLambda((char) 'B', 1.0);
         final double esvTot01 = ffe.energy(true, false) - esvSystem.getBiasEnergy();
         final double esvVdw01 = ffe.getVanDerWaalsEnergy();
         final double esvPme01 = ffe.getPermanentRealSpaceEnergy();
         final double esvRcp01 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
 
-        esvSystem.setLambda("A", 1.0);
-        esvSystem.setLambda("B", 0.0);
+        esvSystem.setLambda((char) 'A', 1.0);
+        esvSystem.setLambda((char) 'B', 0.0);
         final double esvTot10 = ffe.energy(true, false) - esvSystem.getBiasEnergy();
         final double esvVdw10 = ffe.getVanDerWaalsEnergy();
         final double esvPme10 = ffe.getPermanentRealSpaceEnergy();
         final double esvRcp10 = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
 
-        esvSystem.setLambda("A", 1.0);
-        esvSystem.setLambda("B", 1.0);
+        esvSystem.setLambda((char) 'A', 1.0);
+        esvSystem.setLambda((char) 'B', 1.0);
         final double esvTot11 = ffe.energy(true, false) - esvSystem.getBiasEnergy();
         final double esvVdw11 = ffe.getVanDerWaalsEnergy();
         final double esvPme11 = ffe.getPermanentRealSpaceEnergy();
@@ -404,13 +384,13 @@ try {
             ext.append(format("%-9s %-7s %10.6f\n", "VanWaals", "1-0", esvVdw10));
             ext.append(format("%-9s %-7s %10.6f\n", "VanWaals", "1-1", esvVdw11));
         }
-        if (testPermReal) {
+        if (testPerm) {
             ext.append(format("%-9s %-7s %10.6f\n", "PermReal", "0-0", esvPme00));
             ext.append(format("%-9s %-7s %10.6f\n", "PermReal", "0-1", esvPme01));
             ext.append(format("%-9s %-7s %10.6f\n", "PermReal", "1-0", esvPme10));
             ext.append(format("%-9s %-7s %10.6f\n", "PermReal", "1-1", esvPme11));
         }
-        if (testReciprocal) {
+        if (testInduced) {
             ext.append(format("%-9s %-7s %10.6f\n", "PermRecip", "0-0", esvRcp00));
             ext.append(format("%-9s %-7s %10.6f\n", "PermRecip", "0-1", esvRcp01));
             ext.append(format("%-9s %-7s %10.6f\n", "PermRecip", "1-0", esvRcp10));
@@ -430,11 +410,11 @@ try {
                 final double vanWaals = vanillaFFE.getVanDerWaalsEnergy();
                 vdw.append(format("%-9s %-7s %10.6f\n", "VanWaals", state, vanWaals));
             }
-            if (testPermReal) {
+            if (testPerm) {
                 final double permReal = vanillaFFE.getPermanentRealSpaceEnergy();
                 pme.append(format("%-9s %-7s %10.6f\n", "PermReal", state, permReal));
             }
-            if (testReciprocal) {
+            if (testInduced) {
                 final double reciprocal = vanillaFFE.getPermanentReciprocalSelfEnergy() + vanillaFFE.getPermanentReciprocalMpoleEnergy();
                 rcp.append(format("%-9s %-7s %10.6f\n", "PermRecip", state, reciprocal));
             }
@@ -443,8 +423,8 @@ try {
         StringBuilder vanilla = new StringBuilder();
         vanilla.append(tot.toString());
         if (testVdw) vanilla.append(vdw.toString());
-        if (testPermReal) vanilla.append(pme.toString());
-        if (testReciprocal) vanilla.append(rcp.toString());
+        if (testPerm) vanilla.append(pme.toString());
+        if (testInduced) vanilla.append(rcp.toString());
         String[] vanLines = vanilla.toString().split("\\n");
         String[] extLines = ext.toString().split("\\n");
         StringBuilder sb = new StringBuilder();
@@ -467,8 +447,8 @@ try {
         final int dimPlusOne = tableDimensions + 1;
         double[][] totalEnergies, totalDerivsA, totalDerivsB;
         double[][] vdwEnergies, vdwDerivsA, vdwDerivsB;
-        double[][] permRealEnergies, permRealDerivsA, permRealDerivsB;
-        double[][] permRecipEnergies, permRecipDerivsA, permRecipDerivsB;
+        double[][] permEnergies, permDerivsA, permDerivsB;
+        double[][] polEnergies, polDerivsA, polDerivsB;
         totalEnergies = new double[dimPlusOne][dimPlusOne];
         totalDerivsA = new double[dimPlusOne][dimPlusOne];
         totalDerivsB = new double[dimPlusOne][dimPlusOne];
@@ -477,15 +457,15 @@ try {
             vdwDerivsA = new double[dimPlusOne][dimPlusOne];
             vdwDerivsB = new double[dimPlusOne][dimPlusOne];
         }
-        if (testPermReal) {
-            permRealEnergies = new double[dimPlusOne][dimPlusOne];
-            permRealDerivsA = new double[dimPlusOne][dimPlusOne];
-            permRealDerivsB = new double[dimPlusOne][dimPlusOne];
+        if (testPerm) {
+            permEnergies = new double[dimPlusOne][dimPlusOne];
+            permDerivsA = new double[dimPlusOne][dimPlusOne];
+            permDerivsB = new double[dimPlusOne][dimPlusOne];
         }
-        if (testReciprocal) {
-            permRecipEnergies = new double[dimPlusOne][dimPlusOne];
-            permRecipDerivsA = new double[dimPlusOne][dimPlusOne];
-            permRecipDerivsB = new double[dimPlusOne][dimPlusOne];
+        if (testInduced) {
+            polEnergies = new double[dimPlusOne][dimPlusOne];
+            polDerivsA = new double[dimPlusOne][dimPlusOne];
+            polDerivsB = new double[dimPlusOne][dimPlusOne];
         }
         logger.info(format(" %30s %4d/%d", "Progress, outer loop:", 0, tableDimensions));
         for (int idxA = 0; idxA <= tableDimensions; idxA++) {
@@ -493,26 +473,26 @@ try {
             logger.info(format(" %30s %4d/%d", "", idxA, tableDimensions));
             for (int idxB = 0; idxB <= tableDimensions; idxB++) {
                 final double evB = idxB.div(tableDimensions);
-                esvSystem.setLambda('A', evA);
-                esvSystem.setLambda('B', evB);
+                esvSystem.setLambda((char) 'A', evA);
+                esvSystem.setLambda((char) 'B', evB);
                 final double totalEnergy = ffe.energy(true, false);
                 totalEnergies[idxA][idxB] = totalEnergy;
-                totalDerivsA[idxA][idxB] = esvSystem.getdEdL(0);
-                totalDerivsB[idxA][idxB] = esvSystem.getdEdL(1);
+                totalDerivsA[idxA][idxB] = esvSystem.getDerivative(0);
+                totalDerivsB[idxA][idxB] = esvSystem.getDerivative(1);
                 if (testVdw) {
                     vdwEnergies[idxA][idxB] = ffe.getVanDerWaalsEnergy();
-                    vdwDerivsA[idxA][idxB] = esvSystem.getdVdwdL(0);
-                    vdwDerivsB[idxA][idxB] = esvSystem.getdVdwdL(1);
+                    vdwDerivsA[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.VanDerWaals, 0);
+                    vdwDerivsB[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.VanDerWaals, 1);
                 }
-                if (testPermReal) {
-                    permRealEnergies[idxA][idxB] = ffe.getPermanentRealSpaceEnergy();
-                    permRealDerivsA[idxA][idxB] = esvSystem.getdPermRealdL(0);
-                    permRealDerivsB[idxA][idxB] = esvSystem.getdPermRealdL(1);
+                if (testPerm) {
+                    permEnergies[idxA][idxB] = ffe.getPermanentMultipoleEnergy();
+                    permDerivsA[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.Permanent, 0);
+                    permDerivsB[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.Permanent, 1);
                 }
-                if (testReciprocal) {
-                    permRecipEnergies[idxA][idxB] = ffe.getPermanentReciprocalSelfEnergy() + ffe.getPermanentReciprocalMpoleEnergy();
-                    permRecipDerivsA[idxA][idxB] = esvSystem.getdPermRecipSelf_dL(0) + esvSystem.getdPermRecipMpole_dL(0);
-                    permRecipDerivsB[idxA][idxB] = esvSystem.getdPermRecipSelf_dL(1) + esvSystem.getdPermRecipMpole_dL(1);
+                if (testInduced) {
+                    polEnergies[idxA][idxB] = ffe.getPolarizationEnergy();
+                    polDerivsA[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.Induced, 0);
+                    polDerivsB[idxA][idxB] = esvSystem.getDerivativeComponent(PotentialComponent.Induced, 1);
                 }
             }
         }
@@ -530,25 +510,25 @@ try {
             printAsTable(totalDerivsB, "dU_dEsvB");
         }
         if (testVdw && verbose) {
-            logger.info(format("  Smoothness Verification: VdW "));
+            logger.info(format("  Smoothness Verification: van der Waals "));
             logger.info(format(" ****************************** "));
-            printAsTable(vdwEnergies, "vanWaals");
+            printAsTable(vdwEnergies, "van der Waals");
             printAsTable(vdwDerivsA, "dVdw_dA");
             printAsTable(vdwDerivsB, "dVdw_dB");
         }
-        if (testPermReal && verbose) {
-            logger.info(format("  Smoothness Verification: PermReal "));
+        if (testPerm && verbose) {
+            logger.info(format("  Smoothness Verification: Permanent "));
             logger.info(format(" *********************************** "));
-            printAsTable(permRealEnergies, "permReal");
-            printAsTable(permRealDerivsA, "dPRealdA");
-            printAsTable(permRealDerivsB, "dPRealdB");
+            printAsTable(permEnergies, "Permanent");
+            printAsTable(permDerivsA, "dPerm_dA");
+            printAsTable(permDerivsB, "dPerm_dB");
         }
-        if (testReciprocal && verbose) {
-            logger.info(format("  Smoothness Verification: PermRecip "));
+        if (testInduced && verbose) {
+            logger.info(format("  Smoothness Verification: Polarization "));
             logger.info(format(" ************************************ "));
-            printAsTable(permRecipEnergies, "permRcp");
-            printAsTable(permRecipDerivsA, "dPRcp_dA");
-            printAsTable(permRecipDerivsB, "dPRcp_dB");
+            printAsTable(polEnergies, "Polarization");
+            printAsTable(polDerivsA, "dPol_dA");
+            printAsTable(polDerivsB, "dPol_dB");
         }
     }   // Test3
 } catch (RuntimeException ex) {

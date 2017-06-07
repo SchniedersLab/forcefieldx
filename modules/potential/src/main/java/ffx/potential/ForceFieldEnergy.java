@@ -777,8 +777,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return (T) particleMeshEwald;
     }
 
-
-
     /**
      * Static factory method to create a ForceFieldEnergy, possibly via FFX or
      * OpenMM implementations.

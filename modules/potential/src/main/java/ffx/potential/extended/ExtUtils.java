@@ -58,7 +58,6 @@ import javax.swing.tree.TreeNode;
 
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationRuntimeException;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.IntRange;
@@ -74,66 +73,72 @@ import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.ExtConstants.kB;
 
 /**
- * 
+ *
  * @author slucore
  */
 public final class ExtUtils {
-    private ExtUtils() {}   // static class
+
+    private ExtUtils() {
+    }   // static class
     private static final Logger logger = Logger.getLogger(ExtUtils.class.getName());
 
-	public static <T> void setProp(String key, T set) {
-		if (key.startsWith("esv.")) {
-			if (Arrays.asList(ExtendedSystem.ExtendedSystemConfig.class.getDeclaredFields())
-					.stream().noneMatch((Field f) -> key.substring(4).equalsIgnoreCase(f.getName()))) {
-				logger.warning(format("Setting an unused property: %s", key));
-			}
-		}
-		System.setProperty(key, String.valueOf(set));
-	}
-	public static void setProp(boolean set, String... keys) {
-		for (String key : keys)
-			setProp(key, set);
-	}
+    public static <T> void setProp(String key, T set) {
+        if (key.startsWith("esv.")) {
+            if (Arrays.asList(ExtendedSystem.ExtendedSystemConfig.class.getDeclaredFields())
+                    .stream().noneMatch((Field f) -> key.substring(4).equalsIgnoreCase(f.getName()))) {
+                logger.warning(format("Setting an unused property: %s", key));
+            }
+        }
+        System.setProperty(key, String.valueOf(set));
+    }
 
-	public static final boolean debug = prop("dbg.debug", false);
-	public static final boolean verbose = prop("dbg.verbose", false);
-	public static final String doubleFormat = prop("dbg.debugFormat", "%.3f");
+    public static void setProp(boolean set, String... keys) {
+        for (String key : keys) {
+            setProp(key, set);
+        }
+    }
 
-	/**
-	 * Print the Properties defined by the given key prefixes.
-	 */
-	public static void printConfigSet(String header, Properties properties, String[] keyPrefixes) {
+    public static final boolean debug = prop("dbg.debug", false);
+    public static final boolean verbose = prop("dbg.verbose", false);
+    public static final String doubleFormat = prop("dbg.debugFormat", "%.3f");
+
+    /**
+     * Print the Properties defined by the given key prefixes.
+     */
+    public static void printConfigSet(String header, Properties properties, String[] keyPrefixes) {
         StringBuilder SB = new StringBuilder();
-		properties.keySet().stream()
-				.filter(k -> {
-					String key = k.toString().toLowerCase();
-					for (String prefix : keyPrefixes) {
-						if (key.startsWith(prefix)) {
-							return true;
-						}
-					}
-					return false;
-				})
-				.forEach(key -> SB.append(String.format("   %-30s %s",
-						key.toString() + ":", System.getProperty(key.toString()))));
-		if (!SB.toString().isEmpty()) {
-			if (header != null) {
-				SB.insert(0, format(" %s", header));
-			}
-			logger.info(SB.toString());
-		}
-	}
-	public static void printConfigSet(String header, Properties properties, String prefix) {
-		printConfigSet(header, properties, new String[]{prefix});
-	}
-	
-	public static int[] primitivizeIntegers(List<Integer> list) {
-		return list.stream().mapToInt((Integer i) -> i).toArray();
-	}
-	public static double[] primitivizeDoubles(List<Double> list) {
-		return list.stream().mapToDouble((Double i) -> i).toArray();
-	}
-    
+        properties.keySet().stream()
+                .filter(k -> {
+                    String key = k.toString().toLowerCase();
+                    for (String prefix : keyPrefixes) {
+                        if (key.startsWith(prefix)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
+                .forEach(key -> SB.append(String.format("   %-30s %s",
+                key.toString() + ":", System.getProperty(key.toString()))));
+        if (!SB.toString().isEmpty()) {
+            if (header != null) {
+                SB.insert(0, format(" %s", header));
+            }
+            logger.info(SB.toString());
+        }
+    }
+
+    public static void printConfigSet(String header, Properties properties, String prefix) {
+        printConfigSet(header, properties, new String[]{prefix});
+    }
+
+    public static int[] primitivizeIntegers(List<Integer> list) {
+        return list.stream().mapToInt((Integer i) -> i).toArray();
+    }
+
+    public static double[] primitivizeDoubles(List<Double> list) {
+        return list.stream().mapToDouble((Double i) -> i).toArray();
+    }
+
     public static void initializeBackgroundMultipoles(List<Atom> backgroundAtoms, ForceField ff) {
         for (int i = 0; i < backgroundAtoms.size(); i++) {
             Atom bg = backgroundAtoms.get(i);
@@ -144,39 +149,58 @@ public final class ExtUtils {
             }
         }
     }
-		
-	@SafeVarargs @SuppressWarnings("serial")
-	private static <T> Collection<T> join(Collection<? extends T>... add) {
-		return (new ArrayList<T>() {{ for (Collection<? extends T> c : add) addAll(c); }});
-	}
-	@SafeVarargs @SuppressWarnings("serial")
-	public static <T> List<T> join(List<? extends T>... add) {
-		return (new ArrayList<T>() {{ for (Collection<? extends T> c : add) addAll(c); }});
-	}
-	public static List<Integer> intRange(int start, int end) {
-		return Arrays.asList(ArrayUtils.toObject(new IntRange(start, end).toArray()));
-	}
-	public static List<Integer> intRange(int single) {
-		return intRange(single,single);
-	}
-	public static <T> Collection<T> view(Collection<? extends T> c) {
-		return (c != null) ? Collections.unmodifiableCollection(c) : null;
-	}
-	public static <T> List<T> view(List<? extends T> c) {
-		return (c != null) ? Collections.unmodifiableList(c) : null;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <T> T[] arrayCopy(T[] from) {
-		List<T> to = new ArrayList<>();
-		to.addAll(Arrays.asList(from));
-		return (T[]) to.toArray();
-	}
-    
-	public static String frmt(double[] x) {
-		return formatArray(x);
-	}
-	
+
+    @SafeVarargs
+    @SuppressWarnings("serial")
+    private static <T> Collection<T> join(Collection<? extends T>... add) {
+        return (new ArrayList<T>() {
+            {
+                for (Collection<? extends T> c : add) {
+                    addAll(c);
+                }
+            }
+        });
+    }
+
+    @SafeVarargs
+    @SuppressWarnings("serial")
+    public static <T> List<T> join(List<? extends T>... add) {
+        return (new ArrayList<T>() {
+            {
+                for (Collection<? extends T> c : add) {
+                    addAll(c);
+                }
+            }
+        });
+    }
+
+    public static List<Integer> intRange(int start, int end) {
+        return Arrays.asList(ArrayUtils.toObject(new IntRange(start, end).toArray()));
+    }
+
+    public static List<Integer> intRange(int single) {
+        return intRange(single, single);
+    }
+
+    public static <T> Collection<T> view(Collection<? extends T> c) {
+        return (c != null) ? Collections.unmodifiableCollection(c) : null;
+    }
+
+    public static <T> List<T> view(List<? extends T> c) {
+        return (c != null) ? Collections.unmodifiableList(c) : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T[] arrayCopy(T[] from) {
+        List<T> to = new ArrayList<>();
+        to.addAll(Arrays.asList(from));
+        return (T[]) to.toArray();
+    }
+
+    public static String frmt(double[] x) {
+        return formatArray(x);
+    }
+
     /**
      * Helper method for logging distance and multipole arrays.
      */
@@ -192,7 +216,7 @@ public final class ExtUtils {
         sb.append("]");
         return sb.toString();
     }
-    
+
     /**
      * Helper method for logging distance and multipole arrays.
      */
@@ -215,107 +239,110 @@ public final class ExtUtils {
         sb.append("]");
         return sb.toString();
     }
-    
+
     /**
-     * Parse configuration properties of type String, Boolean, Integer, Double, OptionalInt, OptionalDouble,
-	 * and any list or array type. Default value determines the return type. Provides case-insensitivity in property keys.
+     * Parse configuration properties of type String, Boolean, Integer, Double,
+     * OptionalInt, OptionalDouble, and any list or array type. Default value
+     * determines the return type. Provides case-insensitivity in property keys.
      */
     @SuppressWarnings({"unchecked"})
     public static final <T> T prop(String key, final T defaultVal, final AbstractConfiguration properties)
             throws NoSuchElementException, NumberFormatException {
-		Objects.requireNonNull(key);
+        Objects.requireNonNull(key);
         Objects.requireNonNull(defaultVal);
-		Objects.requireNonNull(properties);
+        Objects.requireNonNull(properties);
         try {
-			// Determine whether the property exists in any valid form.
+            // Determine whether the property exists in any valid form.
             if (!properties.containsKey(key)) {
-				key = key.toLowerCase();
-				if (properties.containsKey(key.replaceAll("_", "-"))) {
-					key = key.replaceAll("_", "-");
-				} else if (properties.containsKey(key.replaceAll("_",".").replaceAll("-","."))) {
-                    key = key.replaceAll("_",".").replaceAll("-",".");
+                key = key.toLowerCase();
+                if (properties.containsKey(key.replaceAll("_", "-"))) {
+                    key = key.replaceAll("_", "-");
+                } else if (properties.containsKey(key.replaceAll("_", ".").replaceAll("-", "."))) {
+                    key = key.replaceAll("_", ".").replaceAll("-", ".");
                 } else if (properties.containsKey(key.toUpperCase())) {
                     key = key.toUpperCase();
                 } else {
                     boolean found = false;
-					Iterator<String> keys = properties.getKeys();
-					while (keys.hasNext()) {
-						String search = keys.next();
-						if (search.equalsIgnoreCase(key)) {
-							key = search;
-							found = true;
-							break;
-						}
-					}
+                    Iterator<String> keys = properties.getKeys();
+                    while (keys.hasNext()) {
+                        String search = keys.next();
+                        if (search.equalsIgnoreCase(key)) {
+                            key = search;
+                            found = true;
+                            break;
+                        }
+                    }
                     if (!found) {
                         return defaultVal;
                     }
                 }
             }
-			if (properties.getString(key) == null) {
-				return defaultVal;
-			}
-			// The property exists and is non-null.
+            if (properties.getString(key) == null) {
+                return defaultVal;
+            }
+            // The property exists and is non-null.
             if (defaultVal instanceof String) {
-				return (T) properties.getString(key, (String) defaultVal);
+                return (T) properties.getString(key, (String) defaultVal);
             } else if (defaultVal instanceof Integer) {
-				return (T) properties.getInteger(key, (Integer) defaultVal);
+                return (T) properties.getInteger(key, (Integer) defaultVal);
             } else if (defaultVal instanceof OptionalInt) {
-				return (T) OptionalInt.of(properties.getInt(key, (Integer) defaultVal));
+                return (T) OptionalInt.of(properties.getInt(key, (Integer) defaultVal));
             } else if (defaultVal instanceof Double) {
-				return (T) properties.getDouble(key, (Double) defaultVal);
+                return (T) properties.getDouble(key, (Double) defaultVal);
             } else if (defaultVal instanceof OptionalDouble) {
-				return (T) OptionalDouble.of(properties.getDouble(key, (Double) defaultVal));
+                return (T) OptionalDouble.of(properties.getDouble(key, (Double) defaultVal));
             } else if (defaultVal instanceof Boolean) {
-				// Infer true for (only) explicitly set boolean properties, eg. -Dgkterm.
-				if (properties.getString(key).isEmpty()) {
-					properties.setProperty(key, "true");
-				}
-				return (T) properties.getBoolean(key, (Boolean) defaultVal);
-			} else if (defaultVal instanceof List<?>) {
-				List<?> defaultVals = (List<?>) defaultVal;
-				List<Object> objs = properties.getList(key, defaultVals);
-				if (defaultVals.get(0) instanceof Double) {
-					List<Double> ret = new ArrayList<>();
-					for (Object obj : objs) {
-						ret.add(Double.parseDouble(obj.toString().replaceAll("[\\[\\],]","")));
-					}
-					return (T) ret;
-				} else if (defaultVals.get(0) instanceof Integer) {
-					List<Integer> ret = new ArrayList<>();
-					for (Object obj : objs) {
-						ret.add(Integer.parseInt(obj.toString().replaceAll("[\\[\\],]","")));
-					}
-					return (T) ret;
-				}
-				throw new IllegalArgumentException();
-			} else if (defaultVal.getClass().isArray()) {
-				return (T) properties.getList(key, Arrays.asList(defaultVal)).toArray(new Object[0]);
-			} else {
-				throw new IllegalArgumentException();
-			}
+                // Infer true for (only) explicitly set boolean properties, eg. -Dgkterm.
+                if (properties.getString(key).isEmpty()) {
+                    properties.setProperty(key, "true");
+                }
+                return (T) properties.getBoolean(key, (Boolean) defaultVal);
+            } else if (defaultVal instanceof List<?>) {
+                List<?> defaultVals = (List<?>) defaultVal;
+                List<Object> objs = properties.getList(key, defaultVals);
+                if (defaultVals.get(0) instanceof Double) {
+                    List<Double> ret = new ArrayList<>();
+                    for (Object obj : objs) {
+                        ret.add(Double.parseDouble(obj.toString().replaceAll("[\\[\\],]", "")));
+                    }
+                    return (T) ret;
+                } else if (defaultVals.get(0) instanceof Integer) {
+                    List<Integer> ret = new ArrayList<>();
+                    for (Object obj : objs) {
+                        ret.add(Integer.parseInt(obj.toString().replaceAll("[\\[\\],]", "")));
+                    }
+                    return (T) ret;
+                }
+                throw new IllegalArgumentException();
+            } else if (defaultVal.getClass().isArray()) {
+                return (T) properties.getList(key, Arrays.asList(defaultVal)).toArray(new Object[0]);
+            } else {
+                throw new IllegalArgumentException();
+            }
         } catch (RuntimeException ex) {
             logger.warning(String.format("Error parsing property %s with value %s; the default is %s.",
                     key, properties.getString(key, "null"), defaultVal.toString()));
             throw ex;
         }
     }
-    
-	private static AbstractConfiguration systemCache;
-	/**
-	 * If no Configuration is supplied, default to a converted and cached copy of System.getProperties().
-	 */
-	public static final <T> T prop(String key, T defaultVal) {
-		if (systemCache == null) {
-			systemCache = new CompositeConfiguration();
-		}
-		AbstractConfiguration systemCache = new CompositeConfiguration();
-		for (Object sysKey : System.getProperties().keySet()) {
-			systemCache.addProperty((String) sysKey, System.getProperty((String) sysKey));
-		}
-		return prop(key, defaultVal, systemCache);
-	}
-	
+
+    private static AbstractConfiguration systemCache;
+
+    /**
+     * If no Configuration is supplied, default to a converted and cached copy
+     * of System.getProperties().
+     */
+    public static final <T> T prop(String key, T defaultVal) {
+        if (systemCache == null) {
+            systemCache = new CompositeConfiguration();
+        }
+        AbstractConfiguration systemCache = new CompositeConfiguration();
+        for (Object sysKey : System.getProperties().keySet()) {
+            systemCache.addProperty((String) sysKey, System.getProperty((String) sysKey));
+        }
+        return prop(key, defaultVal, systemCache);
+    }
+
     /**
      * Parse property but warn if the default is not retured.
      */
@@ -326,7 +353,7 @@ public final class ExtUtils {
         }
         return parsed;
     }
-    
+
     /**
      * Parse system properties into an Enum class.
      */
@@ -348,14 +375,14 @@ public final class ExtUtils {
             return def;
         }
     }
-	
-	public static final <T extends Enum<T>> T prop(String key, Class<T> type, T def) {
-		return prop(type, key, def);
-	}
+
+    public static final <T extends Enum<T>> T prop(String key, Class<T> type, T def) {
+        return prop(type, key, def);
+    }
 
     /**
-     * Return velocities from a Maxwell-Boltzmann distribution of momenta.
-     * The variance of each independent momentum component is kT * mass.
+     * Return velocities from a Maxwell-Boltzmann distribution of momenta. The
+     * variance of each independent momentum component is kT * mass.
      */
     public static double[] maxwellVelocity(double mass, double temperature) {
         double vv[] = new double[3];
@@ -364,7 +391,7 @@ public final class ExtUtils {
         }
         return vv;
     }
-    
+
     public static void printTreeFromNode(MSNode target) {
         StringBuilder sb = new StringBuilder();
         sb.append(format(" Tree Hierarchy for %s\n", target.getName()));
@@ -388,10 +415,10 @@ public final class ExtUtils {
         }
         logger.info(sb.toString());
     }
-    
+
     /**
-     * Element-wise sum over a list of 1D double arrays.
-     * This implementation benchmarks faster than the equivalent Java8 stream() API.
+     * Element-wise sum over a list of 1D double arrays. This implementation
+     * benchmarks faster than the equivalent Java8 stream() API.
      */
     private static double[] eleSum1DArrays(List<double[]> terms, int numESVs) {
         double[] termSum = new double[terms.size()];
@@ -407,7 +434,7 @@ public final class ExtUtils {
         }
         return termSum;
     }
-    
+
     /**
      * Element-wise sum over a list of 2D double arrays.
      */
@@ -432,32 +459,31 @@ public final class ExtUtils {
         }
         return termSum;
     }
-    
+
     public static StringBuilder removeFinalNewline(StringBuilder sb) {
         if (sb.lastIndexOf("\n") + 1 == sb.length()) {
             sb.replace(sb.length() - 1, sb.length(), "");
         }
         return sb;
     }
-    
+
     /**
      * Returns the result of calling toString() on each element of the array.
-     *  Returned type is Object[] (rather than String[]) to support use as varargs.
-     *  Example: 
-     *      format("%s",          Arrays.toString( array );  // GOOD
-     *      format("%s %s %s %s", Arrays.toString( array );  // FAIL
-     * 
-     *      format("%s",          arrayToStrings( array );   // FAIL
-     *      format("%s %s %s %s", arrayToStrings( array );   // GOOD
+     * Returned type is Object[] (rather than String[]) to support use as
+     * varargs. Example: format("%s", Arrays.toString( array ); // GOOD
+     * format("%s %s %s %s", Arrays.toString( array ); // FAIL
+     *
+     * format("%s", arrayToStrings( array ); // FAIL format("%s %s %s %s",
+     * arrayToStrings( array ); // GOOD
      */
     public static Object[] arrayToStrings(Object[] args) {
         return Arrays.stream(args).map(Object::toString).toArray();
     }
-    
+
     /**
-     * Use this to iterate easily over a collection of lists.
-     * Returns the inferred parent list type. Duplicate elements allowed.
-     * "View" intentional to avoid vain attempts at modifying the component lists.
+     * Use this to iterate easily over a collection of lists. Returns the
+     * inferred parent list type. Duplicate elements allowed. "View" intentional
+     * to avoid vain attempts at modifying the component lists.
      */
     @SafeVarargs
     public static final <T> List<T> joinedListView(List<? extends T>... lists) {
@@ -469,6 +495,7 @@ public final class ExtUtils {
     }
 
     @SuppressWarnings("serial")
-    public static class UnderConstructionException extends RuntimeException {}
+    public static class UnderConstructionException extends RuntimeException {
+    }
 
 }

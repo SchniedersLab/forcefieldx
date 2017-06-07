@@ -221,6 +221,11 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * Cartesian permanent multipole phi calculated from dotted multipoles.
      */
     private double cartMultipoleDotPhi[][];
+    private double esvDirectDipole[][];
+    private double esvDirectDipoleCR[][];
+    public double esvInducedDipole[][];
+    public double esvInducedDipoleCR[][];
+
     /**
      * Shared ESV derivative component arrays. [numESVs]
      */
@@ -3538,6 +3543,21 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     directCRi[0] = indCR[0];
                     directCRi[1] = indCR[1];
                     directCRi[2] = indCR[2];
+                    if (esvTerm) {
+                        double unscaled = unscaledPolarizability[i];
+                        esvDirectDipole[i][0] = unscaled * field[0][0][i];
+                        esvDirectDipole[i][1] = unscaled * field[0][1][i];
+                        esvDirectDipole[i][2] = unscaled * field[0][2][i];
+                        esvDirectDipoleCR[i][0] = unscaled * fieldCR[0][0][i];
+                        esvDirectDipoleCR[i][1] = unscaled * fieldCR[0][1][i];
+                        esvDirectDipoleCR[i][2] = unscaled * fieldCR[0][2][i];
+                        esvInducedDipole[i][0] = esvDirectDipole[i][0];
+                        esvInducedDipole[i][1] = esvDirectDipole[i][1];
+                        esvInducedDipole[i][2] = esvDirectDipole[i][2];
+                        esvInducedDipoleCR[i][0] = esvDirectDipoleCR[i][0];
+                        esvInducedDipoleCR[i][1] = esvDirectDipoleCR[i][1];
+                        esvInducedDipoleCR[i][2] = esvDirectDipoleCR[i][2];
+                    }
                 }
             }
         }
@@ -3614,12 +3634,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     double fxCR = 0.0;
                     double fyCR = 0.0;
                     double fzCR = 0.0;
-                    double fxu = 0.0;
-                    double fyu = 0.0;
-                    double fzu = 0.0;
-                    double fxCRu = 0.0;
-                    double fyCRu = 0.0;
-                    double fzCRu = 0.0;
                     for (int j = 1; j < maxThreads; j++) {
                         fx += field[j][0][i];
                         fy += field[j][1][i];
@@ -3682,7 +3696,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                  * Apply Successive Over-Relaxation (SOR).
                  */
                 for (int i = lb; i <= ub; i++) {
-
                     if (esvAtomsScaledAlpha[i]) {
                         // ESV scaled hydrogens keep their direct polarization value.
                         continue;
@@ -4471,62 +4484,56 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     }
 
                     /* Collect influence on mutual polarization due to alpha (and, implicitly, mu) scaling. */
-                    if (esvConfig.scaleAlpha && esvAtomsScaledAlpha[i] && esvLambda[i] > 1.0e-8) {
-                        //final double[] unsi = unscaledInducedDipole[0][i];
-                        //final double[] unsCRi = unscaledInducedDipoleCR[0][i];
-
-                        scrnTensorPolar.generateTensor(r, zeroM, Qk, ui, uiCR, zeroD, zeroD);
+                    if (esvConfig.scaleAlpha && esvAtomsScaledAlpha[i]) {
+                        double uiESV[] = esvInducedDipole[i];
+                        double uiESVCR[] = esvInducedDipoleCR[i];
+                        scrnTensorPolar.generateTensor(r, zeroM, Qk, uiESV, uiESVCR, zeroD, zeroD);
                         double eScrn = scrnTensorPolar.polarizationEnergy(1.0, 1.0, mutualScale, polFi, polTi, polTk);
-
                         /**
                          * Subtract away masked Coulomb interactions included in
                          * PME.
                          */
                         double eCoul = 0.0;
                         if (groupMaskLeft != 0.0 || polarMaskLeft != 0.0) {
-                            coulTensorPolar.generateTensor(r, zeroM, Qk, ui, uiCR, zeroD, zeroD);
+                            coulTensorPolar.generateTensor(r, zeroM, Qk, uiESV, uiESVCR, zeroD, zeroD);
                             eCoul = coulTensorPolar.polarizationEnergy(groupMaskLeft, polarMaskLeft, 0.0, FiC, TiC, TkC);
                         }
-
                         /**
                          * Account for Thole Damping.
                          */
                         double eThole = 0.0;
                         if (damped) {
-                            tholeTensor.tholeField(r, zeroM, Qk, ui, uiCR, zeroD, zeroD, pgamma, aiak);
+                            tholeTensor.tholeField(r, zeroM, Qk, uiESV, uiESVCR, zeroD, zeroD, pgamma, aiak);
                             eThole = tholeTensor.polarizationEnergy(groupMask, polarMask, mutualScale, FiT, TiT, TkT);
                         }
-                        final double ePolPrescale = (eScrn - eCoul - eThole) * 0.5 * selfScale / esvLambda[i];
+                        final double ePolPrescale = (eScrn - eCoul - eThole) * 0.5 * selfScale;
                         final double ePol = lf.lfPowPol * ePolPrescale;
                         esvInducedRealDeriv_local[esvIndex[i]] += ePol * prefactor * 2.0;
                     }
 
-                    if (esvConfig.scaleAlpha && esvAtomsScaledAlpha[k] && esvLambda[k] > 1.0e-8) {
-                        //final double[] unsk = unscaledInducedDipole[iSymm][k];
-                        //final double[] unsCRk = unscaledInducedDipoleCR[iSymm][k];
-
-                        scrnTensorPolar.generateTensor(r, Qi, zeroM, zeroD, zeroD, uk, ukCR);
+                    if (esvConfig.scaleAlpha && esvAtomsScaledAlpha[k]) {
+                        double ukESV[] = esvInducedDipole[k];
+                        double ukESVCR[] = esvInducedDipoleCR[k];
+                        scrnTensorPolar.generateTensor(r, Qi, zeroM, zeroD, zeroD, ukESV, ukESVCR);
                         double eScrn = scrnTensorPolar.polarizationEnergy(1.0, 1.0, mutualScale, polFi, polTi, polTk);
-
                         /**
                          * Subtract away masked Coulomb interactions included in
                          * PME.
                          */
                         double eCoul = 0.0;
                         if (groupMaskLeft != 0.0 || polarMaskLeft != 0.0) {
-                            coulTensorPolar.generateTensor(r, Qi, zeroM, zeroD, zeroD, uk, ukCR);
+                            coulTensorPolar.generateTensor(r, Qi, zeroM, zeroD, zeroD, ukESV, ukESVCR);
                             eCoul = coulTensorPolar.polarizationEnergy(groupMaskLeft, polarMaskLeft, 0.0, FiC, TiC, TkC);
                         }
-
                         /**
                          * Account for Thole Damping.
                          */
                         double eThole = 0.0;
                         if (damped) {
-                            tholeTensor.tholeField(r, Qi, zeroM, zeroD, zeroD, uk, ukCR, pgamma, aiak);
+                            tholeTensor.tholeField(r, Qi, zeroM, zeroD, zeroD, ukESV, ukESVCR, pgamma, aiak);
                             eThole = tholeTensor.polarizationEnergy(groupMask, polarMask, mutualScale, FiT, TiT, TkT);
                         }
-                        final double ePolPrescale = (eScrn - eCoul - eThole) * 0.5 * selfScale / esvLambda[k];
+                        final double ePolPrescale = (eScrn - eCoul - eThole) * 0.5 * selfScale;
                         final double ePol = lf.lfPowPol * ePolPrescale;
                         esvInducedRealDeriv_local[esvIndex[k]] += ePol * prefactor * 2.0;
                     }
@@ -5075,12 +5082,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                                     esvInducedSelfDeriv_local[esvIndex[i]] += dIndSelfdLi;
                                 }
                                 if (esvAtomsScaledAlpha[i]) {
-                                    double lambda = esvLambda[i];
-                                    if (lambda > 1.0e-8) {
-                                        final double indiDotMdot = indi[0] * dix + indi[1] * diy + indi[2] * diz;
-                                        final double dIndSelfdLi = aewald3 * indiDotMdot / lambda;
-                                        esvInducedSelfDeriv_local[esvIndex[i]] += dIndSelfdLi;
-                                    }
+                                    double unsi[] = esvInducedDipole[i];
+                                    final double indiDotMdot = unsi[0] * dix + unsi[1] * diy + unsi[2] * diz;
+                                    final double dIndSelfdLi = aewald3 * indiDotMdot;
+                                    esvInducedSelfDeriv_local[esvIndex[i]] += dIndSelfdLi;
                                 }
                             }
                         }
@@ -5186,8 +5191,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                                 ltZ[i] += dEdLSign * dlPowPol * tqz;
                             }
                             if (esvTerm) {
-                                final double mDot[] = esvMultipoleDot[0][i];
                                 if (esvAtomsScaled[i]) {
+                                final double mDot[] = esvMultipoleDot[0][i];
                                     final double edot = mDot[t000] * sPhi[t000]
                                             + mDot[t100] * sPhi[t100]
                                             + mDot[t010] * sPhi[t010]
@@ -5201,13 +5206,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                                     esvInducedRecipDeriv_local[esvIndex[i]] += 2.0 * edot;
                                 }
                                 if (esvAtomsScaledAlpha[i]) {
-                                    double lambda = esvLambda[i];
-                                    if (lambda > 1.0e-8) {
-                                        final double mPhi[] = cartMultipolePhi[i];
-                                        final double ind[] = inducedDipole[0][i];
-                                        final double edot = ind[0] * mPhi[t100] + ind[1] * mPhi[t010] + ind[2] * mPhi[t001];
-                                        esvInducedRecipDeriv_local[esvIndex[i]] += edot / lambda;
-                                    }
+                                    final double mPhi[] = cartMultipolePhi[i];
+                                    final double ind[] = esvInducedDipole[i];
+                                    final double edot = ind[0] * mPhi[t100] + ind[1] * mPhi[t010] + ind[2] * mPhi[t001];
+                                    esvInducedRecipDeriv_local[esvIndex[i]] += edot;
                                 }
                             }
                         }
@@ -6468,6 +6470,12 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             esvInducedSelfDeriv_shared[i] = new SharedDouble(0.0);
             esvInducedRecipDeriv_shared[i] = new SharedDouble(0.0);
         }
+
+        esvDirectDipole = new double[nAtoms][3];
+        esvDirectDipoleCR = new double[nAtoms][3];
+        esvInducedDipole = new double[nAtoms][3];
+        esvInducedDipoleCR = new double[nAtoms][3];
+
         updateEsvLambda();
 
         StringBuilder sb = new StringBuilder();
