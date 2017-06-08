@@ -1801,6 +1801,35 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         return ffxE - thisE;
     }
 
+    /**
+     * Returns the current energy. Preferred is to use the methods with explicit coordinate/gradient arrays.
+     * @return Current energy.
+     */
+    @Override
+    public double energy() {
+        return energy(false, false);
+    }
+
+    /**
+     * Returns the current energy. Preferred is to use the methods with explicit coordinate/gradient arrays.
+     * @param gradient Calculate gradients as well
+     * @param print Print verbose information to screen
+     * @return Current energy.
+     */
+    @Override
+    public double energy(boolean gradient, boolean print) {
+        logger.fine(" Energy(boolean, boolean) is being called on an OpenMMForceFieldEnergy! This will result in needless array creation.");
+        int numVars = this.getNumberOfVariables();
+        double[] x = new double[numVars];
+        this.getCoordinates(x);
+        if (gradient) {
+            double[] g = new double[numVars];
+            return energyAndGradient(x, g, print);
+        } else {
+            return energy(x, print);
+        }
+    }
+
     @Override
     public double energy(double[] x) {
         return energy(x, false);
