@@ -282,7 +282,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         openMMForces = OpenMM_State_getForces(openMMState);
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
-        //logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
+        logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
+
         OpenMM_State_destroy(openMMState);
     }
 
