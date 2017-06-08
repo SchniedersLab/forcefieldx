@@ -189,7 +189,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      */
     private boolean esvTerm = false;
     private ExtendedSystem esvSystem;
-    private ExtendedSystemConfig esvConfig = null;
     private int numESVs = 0;
     /**
      * EsvID index to gradient arrays. [atom]
@@ -2073,7 +2072,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                 break;
             case CG:
             default:
-                //iterations = scfByCG();
                 iterations = scfByPCG(print, startTime);
                 break;
         }
@@ -2101,17 +2099,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         double eps = 100.0;
         double previousEps;
         boolean done = false;
-        boolean inducedUse[] = null;
         while (!done) {
-            if (esvSystem != null && esvSystem.config.scaleAlpha) {
-                inducedUse = new boolean[nAtoms];
-                for (int i = 0; i < nAtoms; i++) {
-                    inducedUse[i] = use[i];
-                    if (esvAtomsScaledAlpha[i]) {
-                        use[i] = false;
-                    }
-                }
-            }
             long cycleTime = -System.nanoTime();
             try {
                 if (reciprocalSpaceTerm && aewald > 0.0) {
@@ -2130,7 +2118,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     gkEnergyTotal += System.nanoTime();
                     logger.fine(format(" Computed GK induced field %8.3f (sec)", gkEnergyTotal * 1.0e-9));
                 }
-
                 parallelTeam.execute(sorRegion);
                 if (nSymm > 1) {
                     parallelTeam.execute(expandInducedDipolesRegion);
@@ -2141,12 +2128,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, "Exception computing mutual induced dipoles.", ex);
             }
-            if (esvSystem != null && esvSystem.config.scaleAlpha) {
-                for (int i = 0; i < nAtoms; i++) {
-                    use[i] = inducedUse[i];
-                }
-            }
-
             completedSCFCycles++;
             previousEps = eps;
             eps = sorRegion.getEps();
@@ -2182,28 +2163,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              */
             if (eps < poleps) {
                 done = true;
-            }
-        }
-
-        /**
-         * Get the final induced dipole reciprocal space field for direct
-         * polarization on titrating hydrogens, but mutual polarization on all
-         * other sites.
-         */
-        if (esvSystem != null && esvSystem.config.scaleAlpha == true) {
-            try {
-                if (reciprocalSpaceTerm && aewald > 0.0) {
-                    reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
-                }
-                sectionTeam.execute(inducedDipoleFieldRegion);
-                if (reciprocalSpaceTerm && aewald > 0.0) {
-                    reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
-                }
-            } catch (RuntimeException ex) {
-                logger.warning("Exception computing mutual induced dipoles.");
-                throw ex;
-            } catch (Exception ex) {
-                logger.log(Level.SEVERE, "Exception computing mutual induced dipoles.", ex);
             }
         }
 
@@ -2262,11 +2221,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         @Override
         public void run() {
             try {
-                // if (!esvTerm || esvConfig.recipFieldEffects) {
                 execute(permanentRealSpaceFieldSection, permanentReciprocalSection);
-                // } else {
-                //    execute(permanentRealSpaceFieldSection);
-                // }
             } catch (RuntimeException ex) {
                 logger.warning("Runtime exception computing the permanent multipole field.");
                 throw ex;
@@ -2969,7 +2924,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         public void run() {
             try {
                 if (reciprocalSpaceTerm && aewald > 0.0) {
-                    // && (!esvTerm || esvConfig.recipFieldEffects)
                     execute(inducedRealSpaceFieldSection, inducedReciprocalFieldSection);
                 } else {
                     execute(inducedRealSpaceFieldSection);
@@ -3178,64 +3132,62 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                             final double xr = dx[0];
                             final double yr = dx[1];
                             final double zr = dx[2];
-                            {	// scaled
-                                final double dipolek[] = ind[k];
-                                final double ukx = dipolek[0];
-                                final double uky = dipolek[1];
-                                final double ukz = dipolek[2];
-                                final double ukr = ukx * xr + uky * yr + ukz * zr;
-                                final double bn2ukr = bn2 * ukr;
-                                final double fimx = -bn1 * ukx + bn2ukr * xr;
-                                final double fimy = -bn1 * uky + bn2ukr * yr;
-                                final double fimz = -bn1 * ukz + bn2ukr * zr;
-                                final double rr5ukr = rr5 * ukr;
-                                final double fidx = -rr3 * ukx + rr5ukr * xr;
-                                final double fidy = -rr3 * uky + rr5ukr * yr;
-                                final double fidz = -rr3 * ukz + rr5ukr * zr;
-                                fx += (fimx - fidx);
-                                fy += (fimy - fidy);
-                                fz += (fimz - fidz);
-                                final double dipolepk[] = indCR[k];
-                                final double pkx = dipolepk[0];
-                                final double pky = dipolepk[1];
-                                final double pkz = dipolepk[2];
-                                final double pkr = pkx * xr + pky * yr + pkz * zr;
-                                final double bn2pkr = bn2 * pkr;
-                                final double pimx = -bn1 * pkx + bn2pkr * xr;
-                                final double pimy = -bn1 * pky + bn2pkr * yr;
-                                final double pimz = -bn1 * pkz + bn2pkr * zr;
-                                final double rr5pkr = rr5 * pkr;
-                                final double pidx = -rr3 * pkx + rr5pkr * xr;
-                                final double pidy = -rr3 * pky + rr5pkr * yr;
-                                final double pidz = -rr3 * pkz + rr5pkr * zr;
-                                px += (pimx - pidx);
-                                py += (pimy - pidy);
-                                pz += (pimz - pidz);
-                                final double uir = uix * xr + uiy * yr + uiz * zr;
-                                final double bn2uir = bn2 * uir;
-                                final double fkmx = -bn1 * uix + bn2uir * xr;
-                                final double fkmy = -bn1 * uiy + bn2uir * yr;
-                                final double fkmz = -bn1 * uiz + bn2uir * zr;
-                                final double rr5uir = rr5 * uir;
-                                final double fkdx = -rr3 * uix + rr5uir * xr;
-                                final double fkdy = -rr3 * uiy + rr5uir * yr;
-                                final double fkdz = -rr3 * uiz + rr5uir * zr;
-                                fX[k] += (fkmx - fkdx);
-                                fY[k] += (fkmy - fkdy);
-                                fZ[k] += (fkmz - fkdz);
-                                final double pir = pix * xr + piy * yr + piz * zr;
-                                final double bn2pir = bn2 * pir;
-                                final double pkmx = -bn1 * pix + bn2pir * xr;
-                                final double pkmy = -bn1 * piy + bn2pir * yr;
-                                final double pkmz = -bn1 * piz + bn2pir * zr;
-                                final double rr5pir = rr5 * pir;
-                                final double pkdx = -rr3 * pix + rr5pir * xr;
-                                final double pkdy = -rr3 * piy + rr5pir * yr;
-                                final double pkdz = -rr3 * piz + rr5pir * zr;
-                                fXCR[k] += (pkmx - pkdx);
-                                fYCR[k] += (pkmy - pkdy);
-                                fZCR[k] += (pkmz - pkdz);
-                            }
+                            final double dipolek[] = ind[k];
+                            final double ukx = dipolek[0];
+                            final double uky = dipolek[1];
+                            final double ukz = dipolek[2];
+                            final double ukr = ukx * xr + uky * yr + ukz * zr;
+                            final double bn2ukr = bn2 * ukr;
+                            final double fimx = -bn1 * ukx + bn2ukr * xr;
+                            final double fimy = -bn1 * uky + bn2ukr * yr;
+                            final double fimz = -bn1 * ukz + bn2ukr * zr;
+                            final double rr5ukr = rr5 * ukr;
+                            final double fidx = -rr3 * ukx + rr5ukr * xr;
+                            final double fidy = -rr3 * uky + rr5ukr * yr;
+                            final double fidz = -rr3 * ukz + rr5ukr * zr;
+                            fx += (fimx - fidx);
+                            fy += (fimy - fidy);
+                            fz += (fimz - fidz);
+                            final double dipolepk[] = indCR[k];
+                            final double pkx = dipolepk[0];
+                            final double pky = dipolepk[1];
+                            final double pkz = dipolepk[2];
+                            final double pkr = pkx * xr + pky * yr + pkz * zr;
+                            final double bn2pkr = bn2 * pkr;
+                            final double pimx = -bn1 * pkx + bn2pkr * xr;
+                            final double pimy = -bn1 * pky + bn2pkr * yr;
+                            final double pimz = -bn1 * pkz + bn2pkr * zr;
+                            final double rr5pkr = rr5 * pkr;
+                            final double pidx = -rr3 * pkx + rr5pkr * xr;
+                            final double pidy = -rr3 * pky + rr5pkr * yr;
+                            final double pidz = -rr3 * pkz + rr5pkr * zr;
+                            px += (pimx - pidx);
+                            py += (pimy - pidy);
+                            pz += (pimz - pidz);
+                            final double uir = uix * xr + uiy * yr + uiz * zr;
+                            final double bn2uir = bn2 * uir;
+                            final double fkmx = -bn1 * uix + bn2uir * xr;
+                            final double fkmy = -bn1 * uiy + bn2uir * yr;
+                            final double fkmz = -bn1 * uiz + bn2uir * zr;
+                            final double rr5uir = rr5 * uir;
+                            final double fkdx = -rr3 * uix + rr5uir * xr;
+                            final double fkdy = -rr3 * uiy + rr5uir * yr;
+                            final double fkdz = -rr3 * uiz + rr5uir * zr;
+                            fX[k] += (fkmx - fkdx);
+                            fY[k] += (fkmy - fkdy);
+                            fZ[k] += (fkmz - fkdz);
+                            final double pir = pix * xr + piy * yr + piz * zr;
+                            final double bn2pir = bn2 * pir;
+                            final double pkmx = -bn1 * pix + bn2pir * xr;
+                            final double pkmy = -bn1 * piy + bn2pir * yr;
+                            final double pkmz = -bn1 * piz + bn2pir * zr;
+                            final double rr5pir = rr5 * pir;
+                            final double pkdx = -rr3 * pix + rr5pir * xr;
+                            final double pkdy = -rr3 * piy + rr5pir * yr;
+                            final double pkdz = -rr3 * piz + rr5pir * zr;
+                            fXCR[k] += (pkmx - pkdx);
+                            fYCR[k] += (pkmy - pkdy);
+                            fZCR[k] += (pkmz - pkdz);
                         }
                         fX[i] += fx;
                         fY[i] += fy;
@@ -3270,12 +3222,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                             double px = 0.0;
                             double py = 0.0;
                             double pz = 0.0;
-                            double fxu = 0.0;
-                            double fyu = 0.0;
-                            double fzu = 0.0;
-                            double pxu = 0.0;
-                            double pyu = 0.0;
-                            double pzu = 0.0;
                             final double xi = x[i];
                             final double yi = y[i];
                             final double zi = z[i];
@@ -3340,70 +3286,68 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                                 final double xr = dx[0];
                                 final double yr = dx[1];
                                 final double zr = dx[2];
-                                {	// scaled
-                                    final double dipolek[] = inds[k];
-                                    final double ukx = dipolek[0];
-                                    final double uky = dipolek[1];
-                                    final double ukz = dipolek[2];
-                                    final double dipolepk[] = indCRs[k];
-                                    final double pkx = dipolepk[0];
-                                    final double pky = dipolepk[1];
-                                    final double pkz = dipolepk[2];
-                                    final double ukr = ukx * xr + uky * yr + ukz * zr;
-                                    final double bn2ukr = bn2 * ukr;
-                                    final double fimx = -bn1 * ukx + bn2ukr * xr;
-                                    final double fimy = -bn1 * uky + bn2ukr * yr;
-                                    final double fimz = -bn1 * ukz + bn2ukr * zr;
-                                    final double rr5ukr = rr5 * ukr;
-                                    final double fidx = -rr3 * ukx + rr5ukr * xr;
-                                    final double fidy = -rr3 * uky + rr5ukr * yr;
-                                    final double fidz = -rr3 * ukz + rr5ukr * zr;
-                                    fx += selfScale * (fimx - fidx);
-                                    fy += selfScale * (fimy - fidy);
-                                    fz += selfScale * (fimz - fidz);
-                                    final double pkr = pkx * xr + pky * yr + pkz * zr;
-                                    final double bn2pkr = bn2 * pkr;
-                                    final double pimx = -bn1 * pkx + bn2pkr * xr;
-                                    final double pimy = -bn1 * pky + bn2pkr * yr;
-                                    final double pimz = -bn1 * pkz + bn2pkr * zr;
-                                    final double rr5pkr = rr5 * pkr;
-                                    final double pidx = -rr3 * pkx + rr5pkr * xr;
-                                    final double pidy = -rr3 * pky + rr5pkr * yr;
-                                    final double pidz = -rr3 * pkz + rr5pkr * zr;
-                                    px += selfScale * (pimx - pidx);
-                                    py += selfScale * (pimy - pidy);
-                                    pz += selfScale * (pimz - pidz);
-                                    final double uir = uix * xr + uiy * yr + uiz * zr;
-                                    final double bn2uir = bn2 * uir;
-                                    final double fkmx = -bn1 * uix + bn2uir * xr;
-                                    final double fkmy = -bn1 * uiy + bn2uir * yr;
-                                    final double fkmz = -bn1 * uiz + bn2uir * zr;
-                                    final double rr5uir = rr5 * uir;
-                                    final double fkdx = -rr3 * uix + rr5uir * xr;
-                                    final double fkdy = -rr3 * uiy + rr5uir * yr;
-                                    final double fkdz = -rr3 * uiz + rr5uir * zr;
-                                    double xc = selfScale * (fkmx - fkdx);
-                                    double yc = selfScale * (fkmy - fkdy);
-                                    double zc = selfScale * (fkmz - fkdz);
-                                    fX[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
-                                    fY[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
-                                    fZ[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
-                                    final double pir = pix * xr + piy * yr + piz * zr;
-                                    final double bn2pir = bn2 * pir;
-                                    final double pkmx = -bn1 * pix + bn2pir * xr;
-                                    final double pkmy = -bn1 * piy + bn2pir * yr;
-                                    final double pkmz = -bn1 * piz + bn2pir * zr;
-                                    final double rr5pir = rr5 * pir;
-                                    final double pkdx = -rr3 * pix + rr5pir * xr;
-                                    final double pkdy = -rr3 * piy + rr5pir * yr;
-                                    final double pkdz = -rr3 * piz + rr5pir * zr;
-                                    xc = selfScale * (pkmx - pkdx);
-                                    yc = selfScale * (pkmy - pkdy);
-                                    zc = selfScale * (pkmz - pkdz);
-                                    fXCR[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
-                                    fYCR[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
-                                    fZCR[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
-                                }	// scaled
+                                final double dipolek[] = inds[k];
+                                final double ukx = dipolek[0];
+                                final double uky = dipolek[1];
+                                final double ukz = dipolek[2];
+                                final double dipolepk[] = indCRs[k];
+                                final double pkx = dipolepk[0];
+                                final double pky = dipolepk[1];
+                                final double pkz = dipolepk[2];
+                                final double ukr = ukx * xr + uky * yr + ukz * zr;
+                                final double bn2ukr = bn2 * ukr;
+                                final double fimx = -bn1 * ukx + bn2ukr * xr;
+                                final double fimy = -bn1 * uky + bn2ukr * yr;
+                                final double fimz = -bn1 * ukz + bn2ukr * zr;
+                                final double rr5ukr = rr5 * ukr;
+                                final double fidx = -rr3 * ukx + rr5ukr * xr;
+                                final double fidy = -rr3 * uky + rr5ukr * yr;
+                                final double fidz = -rr3 * ukz + rr5ukr * zr;
+                                fx += selfScale * (fimx - fidx);
+                                fy += selfScale * (fimy - fidy);
+                                fz += selfScale * (fimz - fidz);
+                                final double pkr = pkx * xr + pky * yr + pkz * zr;
+                                final double bn2pkr = bn2 * pkr;
+                                final double pimx = -bn1 * pkx + bn2pkr * xr;
+                                final double pimy = -bn1 * pky + bn2pkr * yr;
+                                final double pimz = -bn1 * pkz + bn2pkr * zr;
+                                final double rr5pkr = rr5 * pkr;
+                                final double pidx = -rr3 * pkx + rr5pkr * xr;
+                                final double pidy = -rr3 * pky + rr5pkr * yr;
+                                final double pidz = -rr3 * pkz + rr5pkr * zr;
+                                px += selfScale * (pimx - pidx);
+                                py += selfScale * (pimy - pidy);
+                                pz += selfScale * (pimz - pidz);
+                                final double uir = uix * xr + uiy * yr + uiz * zr;
+                                final double bn2uir = bn2 * uir;
+                                final double fkmx = -bn1 * uix + bn2uir * xr;
+                                final double fkmy = -bn1 * uiy + bn2uir * yr;
+                                final double fkmz = -bn1 * uiz + bn2uir * zr;
+                                final double rr5uir = rr5 * uir;
+                                final double fkdx = -rr3 * uix + rr5uir * xr;
+                                final double fkdy = -rr3 * uiy + rr5uir * yr;
+                                final double fkdz = -rr3 * uiz + rr5uir * zr;
+                                double xc = selfScale * (fkmx - fkdx);
+                                double yc = selfScale * (fkmy - fkdy);
+                                double zc = selfScale * (fkmz - fkdz);
+                                fX[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
+                                fY[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
+                                fZ[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
+                                final double pir = pix * xr + piy * yr + piz * zr;
+                                final double bn2pir = bn2 * pir;
+                                final double pkmx = -bn1 * pix + bn2pir * xr;
+                                final double pkmy = -bn1 * piy + bn2pir * yr;
+                                final double pkmz = -bn1 * piz + bn2pir * zr;
+                                final double rr5pir = rr5 * pir;
+                                final double pkdx = -rr3 * pix + rr5pir * xr;
+                                final double pkdy = -rr3 * piy + rr5pir * yr;
+                                final double pkdz = -rr3 * piz + rr5pir * zr;
+                                xc = selfScale * (pkmx - pkdx);
+                                yc = selfScale * (pkmy - pkdy);
+                                zc = selfScale * (pkmz - pkdz);
+                                fXCR[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
+                                fYCR[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
+                                fZCR[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
                             }
                             fX[i] += fx;
                             fY[i] += fy;
@@ -3696,11 +3640,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                  * Apply Successive Over-Relaxation (SOR).
                  */
                 for (int i = lb; i <= ub; i++) {
-                    if (esvAtomsScaledAlpha[i]) {
-                        // ESV scaled hydrogens keep their direct polarization value.
-                        continue;
-                    }
-
                     final double ind[] = induced0[i];
                     final double indCR[] = inducedCR0[i];
                     final double direct[] = directDipole[i];
@@ -3719,6 +3658,11 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         delta = polsor * (indCR[j] - previous);
                         indCR[j] = previous + delta;
                         epsCR += delta * delta;
+                        if (esvTerm) {
+                            double unscaled = unscaledPolarizability[i];
+                            esvInducedDipole[i][j] = esvDirectDipole[i][j] + unscaled * field[0][j][i];
+                            esvInducedDipoleCR[i][j] = esvDirectDipoleCR[i][j] + unscaled * fieldCR[0][j][i];
+                        }
                     }
                 }
             }
@@ -3824,6 +3768,22 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             }
             permanentEnergy *= ELECTRIC;
             polarizationEnergy *= ELECTRIC;
+
+            /**
+             * This term accounts for scaling the polarizability of titrating hydrogen atoms by lambda.
+             */
+            if (esvTerm) {
+                for (int i = 0; i < nAtoms; i++) {
+                    if (esvAtomsScaledAlpha[i]) {
+                        double unsi[] = esvInducedDipole[i];
+                        double unsiCR[] = esvInducedDipoleCR[i];
+                        double indDot = unsi[0] * unsiCR[0] + unsi[1] * unsiCR[1] + unsi[2] * unsiCR[2];
+                        double mutualdUdEsv = -indDot / unscaledPolarizability[i];
+                        mutualdUdEsv = mutualdUdEsv * polarizationScale * 0.5 * ELECTRIC;
+                        esvInducedRealDeriv_shared[esvIndex[i]].addAndGet(mutualdUdEsv);
+                    }
+                }
+            }
         }
 
         private void forcesToGrads(
@@ -4482,61 +4442,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         }
                         esvInducedRealDeriv_local[esvIndex[k]] += dUdLk * prefactor;
                     }
-
-                    /* Collect influence on mutual polarization due to alpha (and, implicitly, mu) scaling. */
-                    if (esvConfig.scaleAlpha && esvAtomsScaledAlpha[i]) {
-                        double uiESV[] = esvInducedDipole[i];
-                        double uiESVCR[] = esvInducedDipoleCR[i];
-                        scrnTensorPolar.generateTensor(r, zeroM, Qk, uiESV, uiESVCR, zeroD, zeroD);
-                        double eScrn = scrnTensorPolar.polarizationEnergy(1.0, 1.0, mutualScale, polFi, polTi, polTk);
-                        /**
-                         * Subtract away masked Coulomb interactions included in
-                         * PME.
-                         */
-                        double eCoul = 0.0;
-                        if (groupMaskLeft != 0.0 || polarMaskLeft != 0.0) {
-                            coulTensorPolar.generateTensor(r, zeroM, Qk, uiESV, uiESVCR, zeroD, zeroD);
-                            eCoul = coulTensorPolar.polarizationEnergy(groupMaskLeft, polarMaskLeft, 0.0, FiC, TiC, TkC);
-                        }
-                        /**
-                         * Account for Thole Damping.
-                         */
-                        double eThole = 0.0;
-                        if (damped) {
-                            tholeTensor.tholeField(r, zeroM, Qk, uiESV, uiESVCR, zeroD, zeroD, pgamma, aiak);
-                            eThole = tholeTensor.polarizationEnergy(groupMask, polarMask, mutualScale, FiT, TiT, TkT);
-                        }
-                        final double ePolPrescale = (eScrn - eCoul - eThole) * 0.5 * selfScale;
-                        final double ePol = lf.lfPowPol * ePolPrescale;
-                        esvInducedRealDeriv_local[esvIndex[i]] += ePol * prefactor * 2.0;
-                    }
-
-                    if (esvConfig.scaleAlpha && esvAtomsScaledAlpha[k]) {
-                        double ukESV[] = esvInducedDipole[k];
-                        double ukESVCR[] = esvInducedDipoleCR[k];
-                        scrnTensorPolar.generateTensor(r, Qi, zeroM, zeroD, zeroD, ukESV, ukESVCR);
-                        double eScrn = scrnTensorPolar.polarizationEnergy(1.0, 1.0, mutualScale, polFi, polTi, polTk);
-                        /**
-                         * Subtract away masked Coulomb interactions included in
-                         * PME.
-                         */
-                        double eCoul = 0.0;
-                        if (groupMaskLeft != 0.0 || polarMaskLeft != 0.0) {
-                            coulTensorPolar.generateTensor(r, Qi, zeroM, zeroD, zeroD, ukESV, ukESVCR);
-                            eCoul = coulTensorPolar.polarizationEnergy(groupMaskLeft, polarMaskLeft, 0.0, FiC, TiC, TkC);
-                        }
-                        /**
-                         * Account for Thole Damping.
-                         */
-                        double eThole = 0.0;
-                        if (damped) {
-                            tholeTensor.tholeField(r, Qi, zeroM, zeroD, zeroD, ukESV, ukESVCR, pgamma, aiak);
-                            eThole = tholeTensor.polarizationEnergy(groupMask, polarMask, mutualScale, FiT, TiT, TkT);
-                        }
-                        final double ePolPrescale = (eScrn - eCoul - eThole) * 0.5 * selfScale;
-                        final double ePol = lf.lfPowPol * ePolPrescale;
-                        esvInducedRealDeriv_local[esvIndex[k]] += ePol * prefactor * 2.0;
-                    }
                 }
             }
 
@@ -5081,12 +4986,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                                     final double dIndSelfdLi = 2.0 * aewald3 * indiDotMdot;
                                     esvInducedSelfDeriv_local[esvIndex[i]] += dIndSelfdLi;
                                 }
-                                if (esvAtomsScaledAlpha[i]) {
-                                    double unsi[] = esvInducedDipole[i];
-                                    final double indiDotMdot = unsi[0] * dix + unsi[1] * diy + unsi[2] * diz;
-                                    final double dIndSelfdLi = aewald3 * indiDotMdot;
-                                    esvInducedSelfDeriv_local[esvIndex[i]] += dIndSelfdLi;
-                                }
                             }
                         }
                     }
@@ -5192,7 +5091,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                             }
                             if (esvTerm) {
                                 if (esvAtomsScaled[i]) {
-                                final double mDot[] = esvMultipoleDot[0][i];
+                                    final double mDot[] = esvMultipoleDot[0][i];
                                     final double edot = mDot[t000] * sPhi[t000]
                                             + mDot[t100] * sPhi[t100]
                                             + mDot[t010] * sPhi[t010]
@@ -5204,12 +5103,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                                             + mDot[t101] * sPhi[t101]
                                             + mDot[t011] * sPhi[t011]));
                                     esvInducedRecipDeriv_local[esvIndex[i]] += 2.0 * edot;
-                                }
-                                if (esvAtomsScaledAlpha[i]) {
-                                    final double mPhi[] = cartMultipolePhi[i];
-                                    final double ind[] = esvInducedDipole[i];
-                                    final double edot = ind[0] * mPhi[t100] + ind[1] * mPhi[t010] + ind[2] * mPhi[t001];
-                                    esvInducedRecipDeriv_local[esvIndex[i]] += edot;
                                 }
                             }
                         }
@@ -5391,12 +5284,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                 chargeScale = 1.0;
                 dipoleScale = 1.0;
                 traceScale = 1.0;
-                if (esvTerm) {
-                    List<Double> scales = esvConfig.cdqScales;
-                    chargeScale = scales.get(0);
-                    dipoleScale = scales.get(1);
-                    traceScale = scales.get(2);
-                }
                 if (!useCharges) {
                     chargeScale = 0.0;
                 }
@@ -5546,7 +5433,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                             out[t101] = in[t101] * traceScale * elecScale;
                             out[t011] = in[t011] * traceScale * elecScale;
                         }
-                        if (esvTerm && esvSystem.config.scaleAlpha) {
+                        if (esvTerm) {
                             polarizability[ii] = atoms[ii].getScaledPolarizability() * elecScale;
                             unscaledPolarizability[ii] = atoms[ii].getUnscaledPolarizability() * elecScale;
                         } else {
@@ -6449,7 +6336,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         esvTerm = true;
         esvSystem = system;
         numESVs = esvSystem.size();
-        esvConfig = esvSystem.getConfig();
         // Update atoms and reinitialize arrays.
         /* Only include ExtH atoms in the PME arrays.
          * The background heavy atoms have their multipoles interpolated into
@@ -6477,14 +6363,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         esvInducedDipoleCR = new double[nAtoms][3];
 
         updateEsvLambda();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(format(" Attached extended system (%d variables) to PME.\n", numESVs));
-        sb.append(format("   polarization:%s  scaleAlpha:%b  recipTerm:%b\n",
-                polarization.toString(), esvConfig.scaleAlpha, reciprocalSpaceTerm));
-        sb.append(format("   esvTerm:%b  lambdaTerm:%b  noLigCondSCF:%b  ligVapelec:%b",
-                esvTerm, lambdaTerm, doNoLigandCondensedSCF, doLigandVaporElec));
-        logger.info(sb.toString());
+        logger.info(format(" Attached extended system (%d variables) to PME.\n", numESVs));
     }
 
     public void detachExtendedSystem() {
@@ -6539,13 +6418,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                 continue;
             }
             unscaledPolarizability[i] = ai.getUnscaledPolarizability();
-            polarizability[i] = (esvConfig.scaleAlpha)
-                    ? ai.getScaledPolarizability()
-                    : ai.getUnscaledPolarizability();
-            if (esvAtomsScaledAlpha[i]) {
-
-                //logger.info(format(" Scaled Polarizability for atom %d is %8.3f", i, polarizability[i]));
-            }
+            polarizability[i] = ai.getScaledPolarizability();
         }
     }
 
@@ -6758,20 +6631,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
 
         /**
-         * ESV scaled hydrogens will keep their direct induced dipoles.
-         */
-        boolean inducedUse[] = null;
-        if (esvSystem != null && esvSystem.config.scaleAlpha) {
-            inducedUse = new boolean[nAtoms];
-            for (int i = 0; i < nAtoms; i++) {
-                inducedUse[i] = use[i];
-                if (esvAtomsScaledAlpha[i]) {
-                    use[i] = false;
-                }
-            }
-        }
-
-        /**
          * Find the induced dipole field due to direct dipoles (or predicted
          * induced dipoles from previous steps).
          */
@@ -6820,20 +6679,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              * dipoles to the conjugate vector.
              */
             for (int i = 0; i < nAtoms; i++) {
-                if (esvSystem != null && esvAtomsScaledAlpha[i]) {
-                    vec[0][i] = directDipole[i][0];
-                    vec[1][i] = directDipole[i][1];
-                    vec[2][i] = directDipole[i][2];
-                    inducedDipole[0][i][0] = directDipole[i][0];
-                    inducedDipole[0][i][1] = directDipole[i][1];
-                    inducedDipole[0][i][2] = directDipole[i][2];
-                    vecCR[0][i] = directDipoleCR[i][0];
-                    vecCR[1][i] = directDipoleCR[i][1];
-                    vecCR[2][i] = directDipoleCR[i][2];
-                    inducedDipoleCR[0][i][0] = directDipoleCR[i][0];
-                    inducedDipoleCR[0][i][1] = directDipoleCR[i][1];
-                    inducedDipoleCR[0][i][2] = directDipoleCR[i][2];
-                }
                 vec[0][i] = inducedDipole[0][i][0];
                 vec[1][i] = inducedDipole[0][i][1];
                 vec[2][i] = inducedDipole[0][i][2];
@@ -6935,20 +6780,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             sb.append(format(" Total:                   %7.4f",
                     startTime * TO_SECONDS));
             logger.info(sb.toString());
-        }
-
-        if (esvSystem != null && esvSystem.config.scaleAlpha) {
-            for (int i = 0; i < nAtoms; i++) {
-                use[i] = inducedUse[i];
-                if (esvAtomsScaledAlpha[i]) {
-                    inducedDipole[0][i][0] = directDipole[i][0];
-                    inducedDipole[0][i][1] = directDipole[i][1];
-                    inducedDipole[0][i][2] = directDipole[i][2];
-                    inducedDipoleCR[0][i][0] = directDipoleCR[i][0];
-                    inducedDipoleCR[0][i][1] = directDipoleCR[i][1];
-                    inducedDipoleCR[0][i][2] = directDipoleCR[i][2];
-                }
-            }
         }
 
         /**
@@ -7074,12 +6905,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                     double px = 0.0;
                     double py = 0.0;
                     double pz = 0.0;
-                    double fxu = 0.0;
-                    double fyu = 0.0;
-                    double fzu = 0.0;
-                    double pxu = 0.0;
-                    double pyu = 0.0;
-                    double pzu = 0.0;
                     final double xi = x[i];
                     final double yi = y[i];
                     final double zi = z[i];
@@ -7144,60 +6969,58 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         final double ukx = dipolek[0];
                         final double uky = dipolek[1];
                         final double ukz = dipolek[2];
-                        {
-                            final double ukr = ukx * xr + uky * yr + ukz * zr;
-                            final double bn2ukr = bn2 * ukr;
-                            final double fimx = -bn1 * ukx + bn2ukr * xr;
-                            final double fimy = -bn1 * uky + bn2ukr * yr;
-                            final double fimz = -bn1 * ukz + bn2ukr * zr;
-                            final double rr5ukr = rr5 * ukr;
-                            final double fidx = -rr3 * ukx + rr5ukr * xr;
-                            final double fidy = -rr3 * uky + rr5ukr * yr;
-                            final double fidz = -rr3 * ukz + rr5ukr * zr;
-                            fx += (fimx - fidx);
-                            fy += (fimy - fidy);
-                            fz += (fimz - fidz);
-                            final double dipolepk[] = indCR[k];
-                            final double pkx = dipolepk[0];
-                            final double pky = dipolepk[1];
-                            final double pkz = dipolepk[2];
-                            final double pkr = pkx * xr + pky * yr + pkz * zr;
-                            final double bn2pkr = bn2 * pkr;
-                            final double pimx = -bn1 * pkx + bn2pkr * xr;
-                            final double pimy = -bn1 * pky + bn2pkr * yr;
-                            final double pimz = -bn1 * pkz + bn2pkr * zr;
-                            final double rr5pkr = rr5 * pkr;
-                            final double pidx = -rr3 * pkx + rr5pkr * xr;
-                            final double pidy = -rr3 * pky + rr5pkr * yr;
-                            final double pidz = -rr3 * pkz + rr5pkr * zr;
-                            px += (pimx - pidx);
-                            py += (pimy - pidy);
-                            pz += (pimz - pidz);
-                            final double uir = uix * xr + uiy * yr + uiz * zr;
-                            final double bn2uir = bn2 * uir;
-                            final double fkmx = -bn1 * uix + bn2uir * xr;
-                            final double fkmy = -bn1 * uiy + bn2uir * yr;
-                            final double fkmz = -bn1 * uiz + bn2uir * zr;
-                            final double rr5uir = rr5 * uir;
-                            final double fkdx = -rr3 * uix + rr5uir * xr;
-                            final double fkdy = -rr3 * uiy + rr5uir * yr;
-                            final double fkdz = -rr3 * uiz + rr5uir * zr;
-                            fX[k] += (fkmx - fkdx);
-                            fY[k] += (fkmy - fkdy);
-                            fZ[k] += (fkmz - fkdz);
-                            final double pir = pix * xr + piy * yr + piz * zr;
-                            final double bn2pir = bn2 * pir;
-                            final double pkmx = -bn1 * pix + bn2pir * xr;
-                            final double pkmy = -bn1 * piy + bn2pir * yr;
-                            final double pkmz = -bn1 * piz + bn2pir * zr;
-                            final double rr5pir = rr5 * pir;
-                            final double pkdx = -rr3 * pix + rr5pir * xr;
-                            final double pkdy = -rr3 * piy + rr5pir * yr;
-                            final double pkdz = -rr3 * piz + rr5pir * zr;
-                            fXCR[k] += (pkmx - pkdx);
-                            fYCR[k] += (pkmy - pkdy);
-                            fZCR[k] += (pkmz - pkdz);
-                        }
+                        final double ukr = ukx * xr + uky * yr + ukz * zr;
+                        final double bn2ukr = bn2 * ukr;
+                        final double fimx = -bn1 * ukx + bn2ukr * xr;
+                        final double fimy = -bn1 * uky + bn2ukr * yr;
+                        final double fimz = -bn1 * ukz + bn2ukr * zr;
+                        final double rr5ukr = rr5 * ukr;
+                        final double fidx = -rr3 * ukx + rr5ukr * xr;
+                        final double fidy = -rr3 * uky + rr5ukr * yr;
+                        final double fidz = -rr3 * ukz + rr5ukr * zr;
+                        fx += (fimx - fidx);
+                        fy += (fimy - fidy);
+                        fz += (fimz - fidz);
+                        final double dipolepk[] = indCR[k];
+                        final double pkx = dipolepk[0];
+                        final double pky = dipolepk[1];
+                        final double pkz = dipolepk[2];
+                        final double pkr = pkx * xr + pky * yr + pkz * zr;
+                        final double bn2pkr = bn2 * pkr;
+                        final double pimx = -bn1 * pkx + bn2pkr * xr;
+                        final double pimy = -bn1 * pky + bn2pkr * yr;
+                        final double pimz = -bn1 * pkz + bn2pkr * zr;
+                        final double rr5pkr = rr5 * pkr;
+                        final double pidx = -rr3 * pkx + rr5pkr * xr;
+                        final double pidy = -rr3 * pky + rr5pkr * yr;
+                        final double pidz = -rr3 * pkz + rr5pkr * zr;
+                        px += (pimx - pidx);
+                        py += (pimy - pidy);
+                        pz += (pimz - pidz);
+                        final double uir = uix * xr + uiy * yr + uiz * zr;
+                        final double bn2uir = bn2 * uir;
+                        final double fkmx = -bn1 * uix + bn2uir * xr;
+                        final double fkmy = -bn1 * uiy + bn2uir * yr;
+                        final double fkmz = -bn1 * uiz + bn2uir * zr;
+                        final double rr5uir = rr5 * uir;
+                        final double fkdx = -rr3 * uix + rr5uir * xr;
+                        final double fkdy = -rr3 * uiy + rr5uir * yr;
+                        final double fkdz = -rr3 * uiz + rr5uir * zr;
+                        fX[k] += (fkmx - fkdx);
+                        fY[k] += (fkmy - fkdy);
+                        fZ[k] += (fkmz - fkdz);
+                        final double pir = pix * xr + piy * yr + piz * zr;
+                        final double bn2pir = bn2 * pir;
+                        final double pkmx = -bn1 * pix + bn2pir * xr;
+                        final double pkmy = -bn1 * piy + bn2pir * yr;
+                        final double pkmz = -bn1 * piz + bn2pir * zr;
+                        final double rr5pir = rr5 * pir;
+                        final double pkdx = -rr3 * pix + rr5pir * xr;
+                        final double pkdy = -rr3 * piy + rr5pir * yr;
+                        final double pkdz = -rr3 * piz + rr5pir * zr;
+                        fXCR[k] += (pkmx - pkdx);
+                        fYCR[k] += (pkmy - pkdy);
+                        fZCR[k] += (pkmz - pkdz);
                     }
                     fX[i] += fx;
                     fY[i] += fy;
@@ -7232,12 +7055,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         double px = 0.0;
                         double py = 0.0;
                         double pz = 0.0;
-                        double fxu = 0.0;
-                        double fyu = 0.0;
-                        double fzu = 0.0;
-                        double pxu = 0.0;
-                        double pyu = 0.0;
-                        double pzu = 0.0;
                         final double xi = x[i];
                         final double yi = y[i];
                         final double zi = z[i];
@@ -7310,62 +7127,60 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                             final double pkx = dipolepk[0];
                             final double pky = dipolepk[1];
                             final double pkz = dipolepk[2];
-                            {
-                                final double ukr = ukx * xr + uky * yr + ukz * zr;
-                                final double bn2ukr = bn2 * ukr;
-                                final double fimx = -bn1 * ukx + bn2ukr * xr;
-                                final double fimy = -bn1 * uky + bn2ukr * yr;
-                                final double fimz = -bn1 * ukz + bn2ukr * zr;
-                                final double rr5ukr = rr5 * ukr;
-                                final double fidx = -rr3 * ukx + rr5ukr * xr;
-                                final double fidy = -rr3 * uky + rr5ukr * yr;
-                                final double fidz = -rr3 * ukz + rr5ukr * zr;
-                                fx += selfScale * (fimx - fidx);
-                                fy += selfScale * (fimy - fidy);
-                                fz += selfScale * (fimz - fidz);
-                                final double pkr = pkx * xr + pky * yr + pkz * zr;
-                                final double bn2pkr = bn2 * pkr;
-                                final double pimx = -bn1 * pkx + bn2pkr * xr;
-                                final double pimy = -bn1 * pky + bn2pkr * yr;
-                                final double pimz = -bn1 * pkz + bn2pkr * zr;
-                                final double rr5pkr = rr5 * pkr;
-                                final double pidx = -rr3 * pkx + rr5pkr * xr;
-                                final double pidy = -rr3 * pky + rr5pkr * yr;
-                                final double pidz = -rr3 * pkz + rr5pkr * zr;
-                                px += selfScale * (pimx - pidx);
-                                py += selfScale * (pimy - pidy);
-                                pz += selfScale * (pimz - pidz);
-                                final double uir = uix * xr + uiy * yr + uiz * zr;
-                                final double bn2uir = bn2 * uir;
-                                final double fkmx = -bn1 * uix + bn2uir * xr;
-                                final double fkmy = -bn1 * uiy + bn2uir * yr;
-                                final double fkmz = -bn1 * uiz + bn2uir * zr;
-                                final double rr5uir = rr5 * uir;
-                                final double fkdx = -rr3 * uix + rr5uir * xr;
-                                final double fkdy = -rr3 * uiy + rr5uir * yr;
-                                final double fkdz = -rr3 * uiz + rr5uir * zr;
-                                double xc = selfScale * (fkmx - fkdx);
-                                double yc = selfScale * (fkmy - fkdy);
-                                double zc = selfScale * (fkmz - fkdz);
-                                fX[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
-                                fY[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
-                                fZ[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
-                                final double pir = pix * xr + piy * yr + piz * zr;
-                                final double bn2pir = bn2 * pir;
-                                final double pkmx = -bn1 * pix + bn2pir * xr;
-                                final double pkmy = -bn1 * piy + bn2pir * yr;
-                                final double pkmz = -bn1 * piz + bn2pir * zr;
-                                final double rr5pir = rr5 * pir;
-                                final double pkdx = -rr3 * pix + rr5pir * xr;
-                                final double pkdy = -rr3 * piy + rr5pir * yr;
-                                final double pkdz = -rr3 * piz + rr5pir * zr;
-                                xc = selfScale * (pkmx - pkdx);
-                                yc = selfScale * (pkmy - pkdy);
-                                zc = selfScale * (pkmz - pkdz);
-                                fXCR[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
-                                fYCR[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
-                                fZCR[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
-                            }
+                            final double ukr = ukx * xr + uky * yr + ukz * zr;
+                            final double bn2ukr = bn2 * ukr;
+                            final double fimx = -bn1 * ukx + bn2ukr * xr;
+                            final double fimy = -bn1 * uky + bn2ukr * yr;
+                            final double fimz = -bn1 * ukz + bn2ukr * zr;
+                            final double rr5ukr = rr5 * ukr;
+                            final double fidx = -rr3 * ukx + rr5ukr * xr;
+                            final double fidy = -rr3 * uky + rr5ukr * yr;
+                            final double fidz = -rr3 * ukz + rr5ukr * zr;
+                            fx += selfScale * (fimx - fidx);
+                            fy += selfScale * (fimy - fidy);
+                            fz += selfScale * (fimz - fidz);
+                            final double pkr = pkx * xr + pky * yr + pkz * zr;
+                            final double bn2pkr = bn2 * pkr;
+                            final double pimx = -bn1 * pkx + bn2pkr * xr;
+                            final double pimy = -bn1 * pky + bn2pkr * yr;
+                            final double pimz = -bn1 * pkz + bn2pkr * zr;
+                            final double rr5pkr = rr5 * pkr;
+                            final double pidx = -rr3 * pkx + rr5pkr * xr;
+                            final double pidy = -rr3 * pky + rr5pkr * yr;
+                            final double pidz = -rr3 * pkz + rr5pkr * zr;
+                            px += selfScale * (pimx - pidx);
+                            py += selfScale * (pimy - pidy);
+                            pz += selfScale * (pimz - pidz);
+                            final double uir = uix * xr + uiy * yr + uiz * zr;
+                            final double bn2uir = bn2 * uir;
+                            final double fkmx = -bn1 * uix + bn2uir * xr;
+                            final double fkmy = -bn1 * uiy + bn2uir * yr;
+                            final double fkmz = -bn1 * uiz + bn2uir * zr;
+                            final double rr5uir = rr5 * uir;
+                            final double fkdx = -rr3 * uix + rr5uir * xr;
+                            final double fkdy = -rr3 * uiy + rr5uir * yr;
+                            final double fkdz = -rr3 * uiz + rr5uir * zr;
+                            double xc = selfScale * (fkmx - fkdx);
+                            double yc = selfScale * (fkmy - fkdy);
+                            double zc = selfScale * (fkmz - fkdz);
+                            fX[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
+                            fY[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
+                            fZ[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
+                            final double pir = pix * xr + piy * yr + piz * zr;
+                            final double bn2pir = bn2 * pir;
+                            final double pkmx = -bn1 * pix + bn2pir * xr;
+                            final double pkmy = -bn1 * piy + bn2pir * yr;
+                            final double pkmz = -bn1 * piz + bn2pir * zr;
+                            final double rr5pir = rr5 * pir;
+                            final double pkdx = -rr3 * pix + rr5pir * xr;
+                            final double pkdy = -rr3 * piy + rr5pir * yr;
+                            final double pkdz = -rr3 * piz + rr5pir * zr;
+                            xc = selfScale * (pkmx - pkdx);
+                            yc = selfScale * (pkmy - pkdy);
+                            zc = selfScale * (pkmz - pkdz);
+                            fXCR[k] += (xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0]);
+                            fYCR[k] += (xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1]);
+                            fZCR[k] += (xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2]);
                         }
                         fX[i] += fx;
                         fY[i] += fy;
@@ -7457,7 +7272,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                      * Set initial conjugate gradient residual (a field).
                      */
                     double ipolar;
-                    if (polarizability[i] > 0 && !esvAtomsScaledAlpha[i]) {
+                    if (polarizability[i] > 0) {
                         ipolar = 1.0 / polarizability[i];
                         rsd[0][i] = (directDipole[i][0] - inducedDipole[0][i][0]) * ipolar + field[0][0][i];
                         rsd[1][i] = (directDipole[i][1] - inducedDipole[0][i][1]) * ipolar + field[0][1][i];
@@ -7650,7 +7465,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
-                    if (polarizability[i] > 0 && !esvAtomsScaledAlpha[i]) {
+                    if (polarizability[i] > 0) {
                         double ipolar = 1.0 / polarizability[i];
                         inducedDipole[0][i][0] = vec[0][i];
                         inducedDipole[0][i][1] = vec[1][i];
@@ -7998,7 +7813,16 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         fieldCR[0][0][i] += gkFieldCR[0].get(i);
                         fieldCR[0][1][i] += gkFieldCR[1].get(i);
                         fieldCR[0][2][i] += gkFieldCR[2].get(i);
-                        // TODO: Add unscaled field handling to GK.
+                    }
+                }
+                if (esvTerm) {
+                    // Compute the unscaled induced dipoles.
+                    for (int i = lb; i <= ub; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            double unscaled = unscaledPolarizability[i];
+                            esvInducedDipole[i][j] = esvDirectDipole[i][j] + unscaled * field[0][j][i];
+                            esvInducedDipoleCR[i][j] = esvDirectDipoleCR[i][j] + unscaled * fieldCR[0][j][i];
+                        }
                     }
                 }
             }
