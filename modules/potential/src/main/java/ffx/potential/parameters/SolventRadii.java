@@ -58,6 +58,8 @@ public class SolventRadii {
     public SolventRadii(String forceFieldString, ForceField forceField) {
         switch (forceFieldString.toUpperCase()) {
             case "AMOEBA-PROTEIN-2013":
+            case "AMOEBA-DIRECT-2013":
+            case "AMOEBA-FIXED-2013":
                 defaultBondi = 1.15;
                 overlapScale = 0.60;
                 atomtypeToBondi = amoebapro13ByAtomtype;
