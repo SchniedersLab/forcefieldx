@@ -1396,7 +1396,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
             PointerByReference xyzOrigArray = OpenMM_DoubleArray_create(3);
             for (int i = 0; i < nRestAts; i++) {
-                int ommIndex = restAtoms[i].getXyzIndex();
+                int ommIndex = restAtoms[i].getXyzIndex() - 1;
                 for (int j = 0; j < 3; j++) {
                     OpenMM_DoubleArray_set(xyzOrigArray, j, oCoords[i][j]);
                 }
