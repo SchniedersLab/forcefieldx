@@ -363,7 +363,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
         if (radiiProp != null) {
-            String tokens[] = radiiProp.split(",");
+            String tokens[] = radiiProp.split("A");
             for (String token : tokens) {
                 if (!token.contains("r")) {
                     logger.severe("Invalid radius override.");
