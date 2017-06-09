@@ -37,9 +37,14 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
+import ffx.potential.ForceFieldEnergy.Platform;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 
@@ -88,6 +93,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * tolerance specified by the "polar-eps" keyword.
      */
     public Polarization polarization;
+
+    protected SCFAlgorithm scfAlgorithm = SCFAlgorithm.CG;
 
     /**
      * Dimensions of [nsymm][xyz][nAtoms].
@@ -143,8 +150,49 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
         OFF, CONDENSED, CONDENSED_NO_LIGAND, VAPOR
     }
 
+    /**
+     * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA implementations.
+     */
     public enum SCFAlgorithm {
-        SOR, CG
+        // I actually don't know if OpenMM does SOR or CG, but they both just become "Mutual".
+        SOR(true, true), CG(true, true), EPT(false, true);
+
+        private final List<Platform> supportedPlatforms;
+
+        SCFAlgorithm(boolean ffx, boolean openMM, Platform... otherPlatforms) {
+            List<Platform> platforms = new ArrayList<>();
+            if (ffx) {
+                platforms.add(Platform.FFX);
+            }
+            if (openMM) {
+                platforms.add(Platform.OMM);
+                platforms.add(Platform.OMM_CUDA);
+                platforms.add(Platform.OMM_REF);
+                // Inapplicable because the OpenCL and optimized C implementations don't have AMOEBA yet.
+                //platforms.add(ForceFieldEnergy.Platform.OMM_OPENCL);
+                //platforms.add(ForceFieldEnergy.Platform.OMM_OPTCPU);
+            }
+            platforms.addAll(Arrays.asList(otherPlatforms));
+            supportedPlatforms = Collections.unmodifiableList(platforms);
+            // Short of reflection, a final unmodifiable list is, well, unmodifiable.
+        }
+
+        /**
+         * Returns the list of supported Platforms.
+         * @return The supported platform List. Unmodifiable.
+         */
+        public List<Platform> getSupportedPlatforms() {
+            return supportedPlatforms;
+        }
+
+        /**
+         * Checks if this platform is supported
+         * @param platform To check
+         * @return Supported
+         */
+        public boolean isSupported(Platform platform) {
+            return supportedPlatforms.contains(platform);
+        }
     }
 
     public enum SCFPredictor {
@@ -263,6 +311,14 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
 
     public double getGKEnergy() {
         return generalizedKirkwoodEnergy;
+    }
+
+    /**
+     * Returns the SCF algorithm in use.
+     * @return The SCF algorithm used.
+     */
+    public SCFAlgorithm getScfAlgorithm() {
+        return scfAlgorithm;
     }
 
 }

@@ -74,6 +74,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.MultipoleTensor;
 import ffx.numerics.VectorMath;
+import ffx.potential.ForceFieldEnergy.Platform;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -490,7 +491,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private LeastSquaresPredictor leastSquaresPredictor;
     private LevenbergMarquardtOptimizer leastSquaresOptimizer;
 
-    private SCFAlgorithm scfAlgorithm = SCFAlgorithm.CG;
     /**
      * Direct induced dipoles.
      */
@@ -752,6 +752,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             algorithm = algorithm.replaceAll("-", "_").toUpperCase();
             scfAlgorithm = SCFAlgorithm.valueOf(algorithm);
         } catch (Exception e) {
+            scfAlgorithm = SCFAlgorithm.CG;
+        }
+
+        if (!scfAlgorithm.isSupported(Platform.FFX)) {
+            // Can't know a-priori whether this is being constructed under an FFX or OpenMM ForceFieldEnergy, so fine logging.
+            logger.fine(String.format(" SCF algorithm %s is not supported by FFX reference implementation; falling back to CG!", scfAlgorithm.toString()));
             scfAlgorithm = SCFAlgorithm.CG;
         }
 

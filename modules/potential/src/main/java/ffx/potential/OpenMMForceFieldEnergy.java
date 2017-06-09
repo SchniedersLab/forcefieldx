@@ -73,6 +73,7 @@ import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_Multi
 import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_NonbondedMethod.OpenMM_AmoebaMultipoleForce_NoCutoff;
 import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_NonbondedMethod.OpenMM_AmoebaMultipoleForce_PME;
 import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Direct;
+import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Extrapolated;
 import static simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_PolarizationType.OpenMM_AmoebaMultipoleForce_Mutual;
 import static simtk.openmm.OpenMMLibrary.*;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
@@ -107,6 +108,7 @@ import ffx.potential.parameters.AngleType.AngleFunction;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BondType.BondFunction;
 import ffx.potential.parameters.ImproperTorsionType;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.PiTorsionType;
@@ -1057,7 +1059,28 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 polarScale = 0.0;
             }
         } else {
-            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Mutual);
+            ForceField forceField = molecularAssembly.getForceField();
+            String algorithm = forceField.getString(ForceField.ForceFieldString.SCF_ALGORITHM, "CG");
+            ParticleMeshEwald.SCFAlgorithm scfAlgorithm;
+
+            try {
+                algorithm = algorithm.replaceAll("-", "_").toUpperCase();
+                scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.valueOf(algorithm);
+            } catch (Exception e) {
+                scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.CG;
+            }
+
+            switch (scfAlgorithm) {
+                case EPT:
+                    logger.info(" Using extrapolated perturbation theory approximation instead of full SCF calculations. Not supported in FFX reference implementation.");
+                    OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Extrapolated);
+                    break;
+                case CG:
+                case SOR:
+                default:
+                    OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Mutual);
+                    break;
+            }
         }
 
         PointerByReference dipoles = OpenMM_DoubleArray_create(3);
