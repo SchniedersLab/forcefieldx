@@ -98,6 +98,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
 
         super(assembly, openMMForceFieldEnergy, properties, listener, thermostat, integratorMD);
         this.openMMForceFieldEnergy = openMMForceFieldEnergy;
+        openMMForceFieldEnergy.addCOMMRemover(false);
         this.molecularAssembly = assembly;
         this.listener = listener;
         assemblies = new ArrayList<>();

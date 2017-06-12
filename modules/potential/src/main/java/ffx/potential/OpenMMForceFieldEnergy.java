@@ -160,6 +160,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private PointerByReference setPositions;
     private PointerByReference setVelocities;
     private PointerByReference thermostat;
+    /**
+     * OpenMM center-of-mass motion remover.
+     */
+    private PointerByReference commRemover = null;
 
     /**
      * OpenMM AMOEBA Force References.
@@ -216,9 +220,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         // Load atoms.
         addAtoms();
-
-        // CCOM remover.
-        addCCOMRemover();
 
         // Add Bond Force.
         addBondForce();
@@ -395,11 +396,32 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         logger.log(Level.INFO, " Added particles ({0})", nAtoms);
     }
 
-    private void addCCOMRemover() {
-        int frequency = 100;
-        PointerByReference cMMotionRemover = OpenMM_CMMotionRemover_create(frequency);
-        OpenMM_System_addForce(openMMSystem, cMMotionRemover);
-        logger.log(Level.INFO, " Added center of mass motion remover (frequency: {0})", frequency);
+    /**
+     * Adds a center-of-mass motion remover to the Potential. Not advised for anything not running MD using the OpenMM
+     * library (i.e. OpenMMMolecularDynamics). Has caused bugs with the FFX MD class.
+     */
+    public void addCOMMRemover() {
+        addCOMMRemover(false);
+    }
+
+    /**
+     * Adds a center-of-mass motion remover to the Potential. Not advised for anything not running MD using the OpenMM
+     * library (i.e. OpenMMMolecularDynamics). Has caused bugs with the FFX MD class.
+     *
+     * @param addIfDuplicate Add a CCOM remover even if it already exists
+     */
+    public void addCOMMRemover(boolean addIfDuplicate) {
+        if (commRemover == null || addIfDuplicate) {
+            if (commRemover != null) {
+                logger.warning(" Adding a second center-of-mass remover; this is probably incorrect!");
+            }
+            int frequency = 100;
+            commRemover = OpenMM_CMMotionRemover_create(frequency);
+            OpenMM_System_addForce(openMMSystem, commRemover);
+            logger.log(Level.INFO, " Added center of mass motion remover (frequency: {0})", frequency);
+        } else {
+            logger.warning(" Attempted to add a second center-of-mass motion remover when one already exists!");
+        }
     }
 
     private void addBondForce() {
