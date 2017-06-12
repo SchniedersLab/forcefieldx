@@ -1941,6 +1941,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     return (gi > maxDebugGradient || gi < -maxDebugGradient);
                 });
                 if (extremeGrad) {
+                    File origFile = molecularAssembly.getFile();
                     String timeString = LocalDateTime.now().format(DateTimeFormatter.
                             ofPattern("yyyy_MM_dd-HH_mm_ss"));
 
@@ -1952,6 +1953,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
                     logger.warning(String.format(" Excessively large gradients detected; printing snapshot to file %s", filename));
                     ef.saveAsPDB(molecularAssembly, new File(filename));
+                    molecularAssembly.setFile(origFile);
                 }
             }
             return e;
