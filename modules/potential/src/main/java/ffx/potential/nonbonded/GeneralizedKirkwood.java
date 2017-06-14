@@ -402,8 +402,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(String.format(" Over-riding hydrogen atom overlap scale factor to %8.5g", hydrogenOverlap));
         } catch (Exception ex) {
             hydrogenOverlap = defaultOverlapScale;
-            logger.warning(String.format(" Exception %s attempting to over-ride hydrogen atom scale factors", ex.toString()));
-            logger.info(String.format(" Hydrogen atom overlap scale factor reset to default %8.5g", defaultOverlapScale));
         }
         hydrogenOverlapScale = hydrogenOverlap;
         //hydrogenOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE, defaultOverlapScale);
