@@ -267,6 +267,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * -DradiiOverride=1r1.20,5r1.20 sets atom numbers 1,5 to Bondi=1.20
      */
     private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
+    /**
+     * Over-rides the overlap scale factor for hydrogens only.
+     */
+    private final double hydrogenOverlapScale;
     private final ForceField forceField;
 
     private static final Level GK_WARN_LEVEL;
@@ -390,6 +394,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 radiiByNumberMap.put(num, factor);
             }
         }
+
+        double defaultOverlapScale = (doUseFitRadii && hasFittedRadii) ? solventRadii.getOverlapScale() : 0.60;
+        double hydrogenOverlap;
+        try {
+            hydrogenOverlap = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE);
+            logger.info(String.format(" Over-riding hydrogen atom overlap scale factor to %8.5g", hydrogenOverlap));
+        } catch (Exception ex) {
+            hydrogenOverlap = defaultOverlapScale;
+            logger.warning(String.format(" Exception %s attempting to over-ride hydrogen atom scale factors", ex.toString()));
+            logger.info(String.format(" Hydrogen atom overlap scale factor reset to default %8.5g", defaultOverlapScale));
+        }
+        hydrogenOverlapScale = hydrogenOverlap;
+        //hydrogenOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE, defaultOverlapScale);
 
         NonPolar nonpolarModel = NonPolar.CAV_DISP;
         try {
@@ -595,6 +612,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     break;
                 case 1:
                     baseRadius[i] = 1.2;
+                    overlapScale[i] = hydrogenOverlapScale;
                     break;
                 case 2:
                     baseRadius[i] = 1.4;
