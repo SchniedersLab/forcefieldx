@@ -888,10 +888,23 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
 
         NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
-        OpenMM_NonbondedForce_setCutoffDistance(fixedChargeNonBondedForce, OpenMM_NmPerAngstrom * nonbondedCutoff.off);
+        double off = nonbondedCutoff.off;
+        double cut = nonbondedCutoff.cut;
+        OpenMM_NonbondedForce_setCutoffDistance(fixedChargeNonBondedForce, OpenMM_NmPerAngstrom * off);
 
         OpenMM_NonbondedForce_setUseSwitchingFunction(fixedChargeNonBondedForce, OpenMM_True);
-        OpenMM_NonbondedForce_setSwitchingDistance(fixedChargeNonBondedForce, OpenMM_NmPerAngstrom * nonbondedCutoff.cut);
+        if (cut == off) {
+            logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
+            if (cut == Double.MAX_VALUE || cut == Double.POSITIVE_INFINITY) {
+                logger.info(" Detected infinite or max-value cutoff; setting cut to 1E+40 for OpenMM.");
+                cut = 1E40;
+            } else {
+                logger.info(String.format(" Detected cut %8.4g == off %8.4g; scaling cut to 0.99 of off for OpenMM.", cut, off));
+                cut *= 0.99;
+            }
+        }
+        OpenMM_NonbondedForce_setSwitchingDistance(fixedChargeNonBondedForce, OpenMM_NmPerAngstrom * cut);
+
         OpenMM_NonbondedForce_setUseDispersionCorrection(fixedChargeNonBondedForce, OpenMM_False);
 
         OpenMM_Force_setForceGroup(fixedChargeNonBondedForce, 1);
