@@ -356,8 +356,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Copies from an double array of length nVarTot to two double arrays of 
      * length nVarA and nVarB.
-     * 
-     * @param <T> Type of object
+     *
      * @param from Copy from
      * @param toA Copy shared and A-specific to
      * @param toB Copy shared and B-specific to

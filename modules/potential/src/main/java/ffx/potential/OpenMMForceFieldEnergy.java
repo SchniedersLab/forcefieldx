@@ -2119,6 +2119,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         return e;
     }
 
+    @Override
+    public void setCrystal(Crystal crystal) {
+        //logger.severe(" NPT algorithms not presently functional with OpenMM acceleration!");
+        super.setCrystal(crystal);
+        setDefaultPeriodicBoxVectors();
+        loadOpenMMPositions();
+    }
+
     /**
      * <p>
      * getGradients</p>
