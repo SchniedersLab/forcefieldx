@@ -153,10 +153,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      */
     private PointerByReference openMMState;
 
-    private PointerByReference initialPosInNm;
     private PointerByReference openMMForces;
-    private PointerByReference setPositions;
-    private PointerByReference setVelocities;
+    private PointerByReference openMMPositions;
+    private PointerByReference openMMVelocities;
     private PointerByReference thermostat;
 
     /**
@@ -272,7 +271,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         openMMContext = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, openMMPlatform);
 
         // Set initial positions.
-        loadOpenMMPositions();
+        loadFFXPositionToOpenMM();
 
         int infoMask = OpenMM_State_Positions;
         infoMask += OpenMM_State_Forces;
@@ -1826,7 +1825,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
         }
         setCoordinates(x);
-        loadOpenMMPositions();
+        loadFFXPositionToOpenMM();
 
         int infoMask = OpenMM_State_Energy;
         openMMState = OpenMM_Context_getState(openMMContext, infoMask, 0);
@@ -1872,7 +1871,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
         }
         setCoordinates(x);
-        loadOpenMMPositions();
+        loadFFXPositionToOpenMM();
 
         int infoMask = OpenMM_State_Energy;
         infoMask += OpenMM_State_Forces;
@@ -1961,11 +1960,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     /**
      * Loads positions into OpenMM from the FFX data structure.
      */
-    public final void loadOpenMMPositions() {
-        if (initialPosInNm == null) {
-            initialPosInNm = OpenMM_Vec3Array_create(0);
+    public final void loadFFXPositionToOpenMM() {
+        if (openMMPositions == null) {
+            openMMPositions = OpenMM_Vec3Array_create(0);
         } else {
-            OpenMM_Vec3Array_resize(initialPosInNm, 0);
+            OpenMM_Vec3Array_resize(openMMPositions, 0);
         }
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
@@ -1975,11 +1974,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             posInNm.x = atom.getX() * OpenMM_NmPerAngstrom;
             posInNm.y = atom.getY() * OpenMM_NmPerAngstrom;
             posInNm.z = atom.getZ() * OpenMM_NmPerAngstrom;
-            OpenMM_Vec3Array_append(initialPosInNm, posInNm);
+            OpenMM_Vec3Array_append(openMMPositions, posInNm);
         }
 
         // Load positions into the openMMContext.
-        OpenMM_Context_setPositions(openMMContext, initialPosInNm);
+        OpenMM_Context_setPositions(openMMContext, openMMPositions);
     }
 
     /**
@@ -1991,20 +1990,20 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param numberOfVariables
      */
     public void setOpenMMPositions(double x[], int numberOfVariables) {
-        if (setPositions == null) {
-            setPositions = OpenMM_Vec3Array_create(0);
+        if (openMMPositions == null) {
+            openMMPositions = OpenMM_Vec3Array_create(0);
         } else {
-            OpenMM_Vec3Array_resize(setPositions, 0);
+            OpenMM_Vec3Array_resize(openMMPositions, 0);
         }
         OpenMM_Vec3.ByValue pos = new OpenMM_Vec3.ByValue();
         for (int i = 0; i < numberOfVariables; i = i + 3) {
             pos.x = x[i] * OpenMM_NmPerAngstrom;
             pos.y = x[i + 1] * OpenMM_NmPerAngstrom;
             pos.z = x[i + 2] * OpenMM_NmPerAngstrom;
-            OpenMM_Vec3Array_append(setPositions, pos);
+            OpenMM_Vec3Array_append(openMMPositions, pos);
         }
 
-        OpenMM_Context_setPositions(openMMContext, setPositions);
+        OpenMM_Context_setPositions(openMMContext, openMMPositions);
     }
 
     /**
@@ -2016,19 +2015,19 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param numberOfVariables
      */
     public void setOpenMMVelocities(double v[], int numberOfVariables) {
-        if (setVelocities == null) {
-            setVelocities = OpenMM_Vec3Array_create(0);
+        if (openMMVelocities == null) {
+            openMMVelocities = OpenMM_Vec3Array_create(0);
         } else {
-            OpenMM_Vec3Array_resize(setVelocities, 0);
+            OpenMM_Vec3Array_resize(openMMVelocities, 0);
         }
         OpenMM_Vec3.ByValue vel = new OpenMM_Vec3.ByValue();
         for (int i = 0; i < numberOfVariables; i = i + 3) {
             vel.x = v[i] * OpenMM_NmPerAngstrom;
             vel.y = v[i + 1] * OpenMM_NmPerAngstrom;
             vel.z = v[i + 2] * OpenMM_NmPerAngstrom;
-            OpenMM_Vec3Array_append(setVelocities, vel);
+            OpenMM_Vec3Array_append(openMMVelocities, vel);
         }
-        OpenMM_Context_setVelocities(openMMContext, setVelocities);
+        OpenMM_Context_setVelocities(openMMContext, openMMVelocities);
     }
 
     /**
@@ -2052,7 +2051,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             x[offset] = pos.x * OpenMM_AngstromsPerNm;
             x[offset + 1] = pos.y * OpenMM_AngstromsPerNm;
             x[offset + 2] = pos.z * OpenMM_AngstromsPerNm;
-
             Atom atom = atoms[i];
             atom.moveTo(x[offset], x[offset + 1], x[offset + 2]);
         }
@@ -2184,7 +2182,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         openMMContext = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, openMMPlatform);
 
         // Set initial positions.
-        loadOpenMMPositions();
+        loadFFXPositionToOpenMM();
 
         int infoMask = OpenMM_State_Positions;
         infoMask += OpenMM_State_Forces;

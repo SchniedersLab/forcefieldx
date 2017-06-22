@@ -344,7 +344,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
                     openMMForceFieldEnergy.setOpenMMVelocities(v, numberOfVariables);
                 }
             } else {
-                openMMForceFieldEnergy.loadOpenMMPositions();
+                openMMForceFieldEnergy.loadFFXPositionToOpenMM();
                 //openMMForceFieldEnergy.setOpenMMPositions();
 
                 if (initVelocities) {
