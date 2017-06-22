@@ -69,7 +69,7 @@ public class MDMove implements MCMove {
             CompositeConfiguration properties, AlgorithmListener listener,
             Thermostats requestedThermostat, Integrators requestedIntegrator) {
 
-        molecularDynamics = new MolecularDynamics(assembly,
+        molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
 
         molecularDynamics.init(mdSteps, timeStep, printInterval, printInterval, temperature, true, null);
