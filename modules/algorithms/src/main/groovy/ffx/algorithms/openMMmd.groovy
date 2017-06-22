@@ -27,7 +27,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.algorithms.MolecularDynamics;
 
 // Number of molecular dynamics steps
-int nSteps = 2000000;
+int nSteps = 2000;
 
 // Time step in femtoseconds.
 double timeStep = 1.0;
@@ -35,10 +35,10 @@ double timeStep = 1.0;
 int intervalSteps = 100;
 
 // Frequency to print out thermodynamics information in picoseconds.
-double printInterval = 0.025;
+double printInterval = 100.0;
 
 // Frequency to save out coordinates in picoseconds.
-double saveInterval = 2000.0;
+double saveInterval = 2.0;
 
 // Temperature in degrees Kelvin.
 double temperature = 298.15;
@@ -56,7 +56,7 @@ String stringIntegrator = "VERLET";
 boolean initVelocities = true;
 
 // Interval to write out restart file (psec)
-double restartFrequency = 2000.0;
+double restartFrequency = 2.0;
 
 double frictionCoeff = 91.0;
 
@@ -74,7 +74,7 @@ def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Anderson]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.si(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Brownian / Langevin / Verlet / Custom / Compound]');
+cli.si(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Langevin / Verlet]');
 cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
@@ -200,6 +200,7 @@ if (forceFieldEnergy instanceof OpenMMForceFieldEnergy) {
         moldyn.setIntegratorString(stringIntegrator);
         moldyn.setFrictionCoefficient(frictionCoeff);
         moldyn.setCollisionFrequency(collisionFreq);
-        moldyn.start(nSteps, intervalSteps, temperature, saveInterval, timeStep, dyn, initVelocities);
+        moldyn.setIntervalSteps(intervalSteps);
+        moldyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
     }
 }

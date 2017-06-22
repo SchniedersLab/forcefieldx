@@ -74,6 +74,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.MultipoleTensor;
 import ffx.numerics.VectorMath;
+import ffx.potential.ForceFieldEnergy.Platform;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
@@ -490,7 +491,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private LeastSquaresPredictor leastSquaresPredictor;
     private LevenbergMarquardtOptimizer leastSquaresOptimizer;
 
-    private SCFAlgorithm scfAlgorithm = SCFAlgorithm.CG;
     /**
      * Direct induced dipoles.
      */
@@ -755,6 +755,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             scfAlgorithm = SCFAlgorithm.CG;
         }
 
+        if (!scfAlgorithm.isSupported(Platform.FFX)) {
+            // Can't know a-priori whether this is being constructed under an FFX or OpenMM ForceFieldEnergy, so fine logging.
+            logger.fine(String.format(" SCF algorithm %s is not supported by FFX reference implementation; falling back to CG!", scfAlgorithm.toString()));
+            scfAlgorithm = SCFAlgorithm.CG;
+        }
+
         /**
          * The size of the preconditioner neighbor list depends on the size of
          * the preconditioner cutoff.
@@ -845,6 +851,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     logger.warning("Invalid value for perm-lambda-end (<start || >1.0); reverting to 1.0");
                     permLambdaEnd = 1.0;
                 }
+                double minPolarizationWindow = 0.1;
+                double defaultMax = 1.0;
+                double defaultMin = defaultMax - minPolarizationWindow;
                 /**
                  * The POLARIZATION_LAMBDA_START defines the point in the lambda
                  * schedule when the condensed phase polarization of the ligand
@@ -854,10 +863,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                  * calculations are necessary from the beginning of the window to
                  * lambda=1.
                  */
-                polLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.7);
-                if (polLambdaStart < 0.0 || polLambdaStart > 0.7) {
-                    logger.warning("Invalid value for polarization-lambda-start (<0.0 || >0.7); reverting to 0.7");
-                    polLambdaStart = 0.7;
+                polLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
+                if (polLambdaStart < 0.0 || polLambdaStart > defaultMin) {
+                    logger.warning("Invalid value for polarization-lambda-start (<0.0 || >0.9); reverting to 0.75");
+                    polLambdaStart = 0.75;
                 }
                 /**
                  * The POLARIZATION_LAMBDA_END defines the point in the lambda
@@ -869,11 +878,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     logger.warning("Invalid value for polarization-lambda-end (<start || >1.0); reverting to 1.0");
                     polLambdaEnd = 1.0;
                 }
-                if (polLambdaEnd - polLambdaStart < 0.3) {
-                    logger.warning("Invalid value for {polarization-lambda-start,polarization-lambda-end}"
-                            + " (end-start<0.3); reverting to {0.7,1.0}");
-                    polLambdaStart = 0.7;
-                    polLambdaEnd = 1.0;
+                if (polLambdaEnd - polLambdaStart < minPolarizationWindow) {
+                    logger.warning(String.format(" Range between polarization lambda start and end %5.3f must be at least " +
+                            "%4.2f; resetting start to %4.2f to %4.2f", (polLambdaEnd - polLambdaStart), minPolarizationWindow, defaultMin, defaultMax));
+                    polLambdaStart = defaultMin;
+                    polLambdaEnd = defaultMax;
                 }
             }
 

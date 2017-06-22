@@ -136,7 +136,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
          * AMBER99SB-TIP3F is an alias for AMBER99SB, just with different
          * explicit-solvent parameters (no re-fitting of GB parameters).
          */
-        String[] fitted = {"AMOEBA-PROTEIN-2013", "AMBER99SB", "AMBER99SB-TIP3F"};
+        String[] fitted = {"AMOEBA-PROTEIN-2013", "AMOEBA-DIRECT-2013", "AMOEBA-FIXED-2013", "AMBER99SB", "AMBER99SB-TIP3F"};
         fittedForceFields.addAll(Arrays.asList(fitted));
     }
 
@@ -267,6 +267,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * -DradiiOverride=1r1.20,5r1.20 sets atom numbers 1,5 to Bondi=1.20
      */
     private final HashMap<Integer, Double> radiiByNumberMap = new HashMap<>();
+    /**
+     * Over-rides the overlap scale factor for hydrogens only.
+     */
+    private final double hydrogenOverlapScale;
     private final ForceField forceField;
 
     private static final Level GK_WARN_LEVEL;
@@ -390,6 +394,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 radiiByNumberMap.put(num, factor);
             }
         }
+
+        double defaultOverlapScale = (doUseFitRadii && hasFittedRadii) ? solventRadii.getOverlapScale() : 0.60;
+        double hydrogenOverlap;
+        try {
+            hydrogenOverlap = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE);
+            logger.info(String.format(" Over-riding hydrogen atom overlap scale factor to %8.5g", hydrogenOverlap));
+        } catch (Exception ex) {
+            hydrogenOverlap = defaultOverlapScale;
+        }
+        hydrogenOverlapScale = hydrogenOverlap;
+        //hydrogenOverlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE, defaultOverlapScale);
 
         NonPolar nonpolarModel = NonPolar.CAV_DISP;
         try {
@@ -595,6 +610,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     break;
                 case 1:
                     baseRadius[i] = 1.2;
+                    overlapScale[i] = hydrogenOverlapScale;
                     break;
                 case 2:
                     baseRadius[i] = 1.4;
