@@ -302,31 +302,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * <p>
-     * Setter for the field <code>x</code>.</p>
-     * This method does not seem to be used anywhere.
-     *
-     * @param x a double array to set the current parameters to.
-     */
-    @Deprecated
-    public void setParameters(double x[]) {
-        System.arraycopy(x, 0, this.x, 0, numberOfVariables);
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>x</code>.</p>
-     * This method does not seem to be used anywhere, violates basic encapsulation, and is redundant with
-     * Potential.getCoordinates().
-     *
-     * @return a double array with the current parameters
-     */
-    @Deprecated
-    public double[] getParameters() {
-        return x;
-    }
-
-    /**
-     * <p>
      * Setter for the first archive file.
      *
      * @param archive a {@link java.io.File} object.
@@ -338,6 +313,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Setter for an archive file of arbitrary position.
+     *
      * @param archive A File to set as archive
      * @param pos Index of MolecularAssembly to set this for
      */
@@ -358,6 +334,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Gets a list of all archive files.
+     *
      * @return A List of archive files
      */
     public List<File> getArchiveFiles() {
@@ -373,7 +350,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note: does not affect the underlying Potential.
+     * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note:
+     * does not affect the underlying Potential.
+     *
      * @param mola A MolecularAssembly to be tracked
      */
     public void addAssembly(MolecularAssembly mola) {
@@ -381,7 +360,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note: does not affect the underlying Potential.
+     * Adds a MolecularAssembly to be tracked by this MolecularDynamics. Note:
+     * does not affect the underlying Potential.
+     *
      * @param mola A MolecularAssembly to be tracked
      * @param props Associated CompositeConfiguration
      */
@@ -393,7 +374,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Finds and removes an assembly, searching by reference equality. Removes
-     * all instances of the assembly. Note: does not affect the underlying Potential.
+     * all instances of the assembly. Note: does not affect the underlying
+     * Potential.
      *
      * @param mola Assembly to remove.
      * @return Number of times found and removed.
@@ -565,6 +547,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     /**
      * Causes this MolecularDynamics to take an additional set of timesteps.
+     *
      * @param nSteps Number of steps to take
      * @param temperature Temperature of simulation
      */
@@ -807,8 +790,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         currentPotentialEnergy = potential.energyAndGradient(x, grad);
 
         /**
-         * Initialize current and previous accelerations, unless they were
-         * just loaded from a restart file.
+         * Initialize current and previous accelerations, unless they were just
+         * loaded from a restart file.
          */
         if (!loadRestart || initialized) {
             for (int i = 0; i < numberOfVariables; i++) {
@@ -1179,29 +1162,33 @@ public class MolecularDynamics implements Runnable, Terminatable {
             }
         }
     }
-    
+
     /**
-     * Method that determines whether a dynamics is done by the java implementation native to ffx or the OpenMM implementation
-     * 
+     * Method that determines whether a dynamics is done by the java
+     * implementation native to ffx or the OpenMM implementation
+     *
      * @param assembly
      * @param potentialEnergy
      * @param properties
      * @param listener
      * @param requestedThermostat
      * @param requestedIntegrator
-     * @return 
+     * @return
      */
     public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
             Potential potentialEnergy,
             CompositeConfiguration properties,
             AlgorithmListener listener,
             Thermostats requestedThermostat,
-            Integrators requestedIntegrator){
+            Integrators requestedIntegrator) {
+        
         if (potentialEnergy instanceof OpenMMForceFieldEnergy) {
-            OpenMMMolecularDynamics ommDynamics = new OpenMMMolecularDynamics(assembly, (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+            OpenMMMolecularDynamics ommDynamics = new OpenMMMolecularDynamics(assembly,
+                    (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
             return ommDynamics;
         } else {
-            MolecularDynamics mDynamics = new MolecularDynamics(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+            MolecularDynamics mDynamics = new MolecularDynamics(assembly,
+                    potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
             return mDynamics;
         }
     }

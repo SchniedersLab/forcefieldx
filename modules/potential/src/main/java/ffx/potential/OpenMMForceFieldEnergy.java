@@ -187,6 +187,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private PointerByReference fixedChargeNonBondedForce = null;
     private PointerByReference customGBForce = null;
 
+    private double lambda = 1.0;
+
     /**
      * Use flag for each atom.
      */
@@ -205,7 +207,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     protected OpenMMForceFieldEnergy(MolecularAssembly molecularAssembly, Platform platform, List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
 
-        super.energy(false, true);
+        //super.energy(false, true);
 
         logger.info(" Initializing OpenMM\n");
 
@@ -1771,6 +1773,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     @Override
     public void setLambda(double lambda) {
 
+        this.lambda = lambda;
+
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         List<Atom> lambdaList = new ArrayList<>();
@@ -2418,5 +2422,51 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      */
     public PointerByReference getContext() {
         return openMMContext;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getdEdL() {
+        double currentLambda = lambda;
+        double dL = 0.0001;
+
+        // Set Lambda to Lambda + dL
+        setLambda(currentLambda + dL);
+
+        // Compute energy
+        double ePlus = energy();
+
+        // Set Lambda to Lambda - dL
+        setLambda(currentLambda - dL);
+
+        // Compute energy
+        double eMinus = energy();
+
+        // Set Lambda back to Lambda
+        setLambda(currentLambda);
+
+        // Compute finite difference dEdL
+        return (ePlus - eMinus) / (2.0 * dL);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param gradients
+     */
+    @Override
+    public void getdEdXdL(double gradients[]) {
+        // Note for OpenMMForceFieldEnergy this method is not implemented.
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double getd2EdL2() {
+        // Note for OpenMMForceFieldEnergy this method is not implemented.
+        return 0.0;
     }
 }
