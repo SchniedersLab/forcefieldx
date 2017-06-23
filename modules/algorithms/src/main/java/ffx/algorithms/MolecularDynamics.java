@@ -76,52 +76,86 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
     private static final double NS2SEC = 1e-9;
-    private final MolecularAssembly molecularAssembly;
-    private final List<AssemblyInfo> assemblies;
     private final Potential potential;
-    private AlgorithmListener algorithmListener;
+
     private MonteCarloListener monteCarloListener;
     private Thermostat thermostat;
     private Integrator integrator;
-    private File restartFile = null;
-    private DYNFilter dynFilter = null;
-    private int printFrequency = 100;
+
     private int printEsvFrequency = -1;
-    private int saveSnapshotFrequency = 1000;
     private int removeCOMMotionFrequency = 100;
-    private boolean initVelocities = true;
     private boolean constantPressure = false;
-    private boolean loadRestart = false;
-    private boolean initialized = false;
-    private boolean done = true;
     private boolean terminate = false;
-    private int numberOfVariables;
+    private int nSteps = 1000;
+
+    private ExtendedSystem esvSystem;
+    private DynamicsState dynamicsState;
+    private double totalSimTime = 0.0;
+    private boolean quiet = false;
+
+    protected final MolecularAssembly molecularAssembly;
+    protected final List<AssemblyInfo> assemblies;
+    protected File restartFile = null;
+    protected boolean loadRestart = false;
+    protected boolean initialized = false;
+    protected boolean done = true;
+    protected boolean initVelocities = true;
+    protected AlgorithmListener algorithmListener;
+    protected DYNFilter dynFilter = null;
+    protected int numberOfVariables;
     protected double[] x;
     protected double[] v;
     protected double[] a;
     protected double[] aPrevious;
     protected double[] grad;
     protected double[] mass;
-    private int nSteps = 1000;
-    private double targetTemperature = 298.15;
-    private double dt = 1.0;
+    protected double dt = 1.0;
+    protected int printFrequency = 100;
+    protected double restartFrequency = 0.1;
+    protected int saveRestartFileFrequency = 1000;
+    protected int saveSnapshotFrequency = 1000;
+    protected double targetTemperature = 298.15;
     protected double currentTemperature;
     protected double currentKineticEnergy;
     protected double currentPotentialEnergy;
     protected double currentTotalEnergy;
-    private boolean saveSnapshotAsPDB = true;
-    private int saveRestartFileFrequency = 1000;
-    private String fileType = "XYZ";
-    private double restartFrequency = 0.1;
-    private ExtendedSystem esvSystem;
-    private DynamicsState dynamicsState;
-    private double totalSimTime = 0.0;
-    private boolean quiet = false;
+    protected boolean saveSnapshotAsPDB = true;
+    protected String fileType = "XYZ";
 
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
 
     public enum MonteCarloNotification {
         NEVER, EACH_STEP, AFTER_DYNAMICS;
+    }
+
+    /**
+     * Method that determines whether a dynamics is done by the java
+     * implementation native to ffx or the OpenMM implementation
+     *
+     * @param assembly
+     * @param potentialEnergy
+     * @param properties
+     * @param listener
+     * @param requestedThermostat
+     * @param requestedIntegrator
+     * @return
+     */
+    public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat,
+            Integrators requestedIntegrator) {
+
+        if (potentialEnergy instanceof OpenMMForceFieldEnergy) {
+            OpenMMMolecularDynamics ommDynamics = new OpenMMMolecularDynamics(assembly,
+                    (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+            return ommDynamics;
+        } else {
+            MolecularDynamics mDynamics = new MolecularDynamics(assembly,
+                    potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+            return mDynamics;
+        }
     }
 
     /**
@@ -232,7 +266,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
 
         /**
-         * For StochasticDynamics, center of mass motion will not be removed.
+         * For Stochastic dynamics, center of mass motion will not be removed.
          */
         if (integrator instanceof Stochastic) {
             thermostat.setRemoveCenterOfMassMotion(false);
@@ -1028,7 +1062,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * members breaks encapsulation a bit, but the private inner class shouldn't
      * be used externally anyways.
      */
-    private class AssemblyInfo {
+    protected class AssemblyInfo {
 
         private final MolecularAssembly mola;
         CompositeConfiguration props = null;
@@ -1065,7 +1099,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     private final boolean verboseDynamicsState = System.getProperty("md-verbose") != null;
 
-    public class DynamicsState {
+    protected class DynamicsState {
 
         double[] xBak, vBak, aBak;
         double[] aPreviousBak, massBak, gradBak;
@@ -1163,33 +1197,4 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
     }
 
-    /**
-     * Method that determines whether a dynamics is done by the java
-     * implementation native to ffx or the OpenMM implementation
-     *
-     * @param assembly
-     * @param potentialEnergy
-     * @param properties
-     * @param listener
-     * @param requestedThermostat
-     * @param requestedIntegrator
-     * @return
-     */
-    public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
-            Potential potentialEnergy,
-            CompositeConfiguration properties,
-            AlgorithmListener listener,
-            Thermostats requestedThermostat,
-            Integrators requestedIntegrator) {
-        
-        if (potentialEnergy instanceof OpenMMForceFieldEnergy) {
-            OpenMMMolecularDynamics ommDynamics = new OpenMMMolecularDynamics(assembly,
-                    (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
-            return ommDynamics;
-        } else {
-            MolecularDynamics mDynamics = new MolecularDynamics(assembly,
-                    potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
-            return mDynamics;
-        }
-    }
 }

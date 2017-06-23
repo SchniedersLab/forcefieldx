@@ -2052,7 +2052,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double e = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
         if (verbose) {
-            //logger.log(Level.INFO, " OpenMM Energy: {0}", e);
             logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));
         }
 
@@ -2100,7 +2099,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double e = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
         if (verbose) {
-            //logger.log(Level.INFO, " OpenMM Energy: {0}", e);
             logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));
         }
 
@@ -2266,10 +2264,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      *
      * @param positions
      * @param numberOfVariables
+     * @param x
      * @return x
      */
-    public double[] getOpenMMPositions(PointerByReference positions, int numberOfVariables) {
-        double[] x = new double[numberOfVariables];
+    public double[] getOpenMMPositions(PointerByReference positions, int numberOfVariables, double x[]) {
+        if (x == null || x.length < numberOfVariables) {
+            x = new double[numberOfVariables];
+        }
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
@@ -2295,8 +2296,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param numberOfVariables
      * @return
      */
-    public double[] getOpenMMVelocities(PointerByReference velocities, int numberOfVariables) {
-        double[] v = new double[numberOfVariables];
+    public double[] getOpenMMVelocities(PointerByReference velocities, int numberOfVariables, double v[]) {
+        if (v == null || v.length < numberOfVariables) {
+            v = new double[numberOfVariables];
+        }
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
@@ -2322,8 +2325,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param mass
      * @return
      */
-    public double[] getOpenMMAccelerations(PointerByReference accelerations, int numberOfVariables, double[] mass) {
-        double[] a = new double[numberOfVariables];
+    public double[] getOpenMMAccelerations(PointerByReference accelerations, int numberOfVariables,
+            double[] mass, double[] a) {
+        if (a == null || a.length < numberOfVariables) {
+            a = new double[numberOfVariables];
+        }
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
@@ -2419,7 +2425,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         openMMForces = OpenMM_State_getForces(openMMState);
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
-        logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
+        //logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
     }
 
     /**
