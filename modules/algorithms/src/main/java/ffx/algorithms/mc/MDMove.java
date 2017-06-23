@@ -60,7 +60,7 @@ public class MDMove implements MCMove {
     private int mdSteps = 50;
     private double timeStep = 1.0;
     private double printInterval = 0.05;
-    private double saveInterval = 0.05;
+    private double saveInterval = 100000.0;
     private double temperature = 298.15;
     private boolean initVelocities = true;
     private final MolecularDynamics molecularDynamics;
@@ -72,7 +72,7 @@ public class MDMove implements MCMove {
         molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
 
-        molecularDynamics.init(mdSteps, timeStep, printInterval, printInterval, temperature, true, null);
+        molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
         molecularDynamics.setQuiet(true);
     }
 
@@ -88,7 +88,7 @@ public class MDMove implements MCMove {
         this.mdSteps = mdSteps;
         this.timeStep = timeStep;
         printInterval = mdSteps * timeStep / 1000.0;
-        saveInterval = printInterval;
+        //saveInterval = printInterval;
     }
 
     @Override

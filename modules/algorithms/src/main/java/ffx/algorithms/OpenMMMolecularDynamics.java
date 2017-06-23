@@ -108,17 +108,12 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
     private int numberOfVariables;
     private boolean done = true;
     private boolean initVelocities;
-    private double[] x;
-    private double[] v;
-    private double[] a;
-    private double[] aPrevious;
-    private double[] grad;
-    private double[] mass;
     private DYNFilter dynFilter = null;
     private PointerByReference positions;
     private PointerByReference velocities;
     private PointerByReference forces;
     private double collisionFreq;
+    private boolean running;
 
     /**
      * Constructs an OpenMMMolecularDynamics object, to perform molecular
@@ -157,6 +152,8 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         grad = new double[numberOfVariables];
 
         integrator = "VERLET";
+
+        running = false;
 
     }
 
@@ -199,7 +196,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
      *
      * @param i
      */
-    private void openMM_Update(int i) {
+    private void openMM_Update(int i, boolean running) {
         int infoMask;
         double totalEnergy;
         double potentialEnergy;
@@ -210,10 +207,12 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
 
         PointerByReference state = OpenMM_Context_getState(context, infoMask, 0);
 
-        potentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
-        kineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
+        currentPotentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
+        logger.info(String.format(" Potential Energy in OMMMD: %f", currentPotentialEnergy));
+        currentKineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
+        logger.info(String.format(" Kinetic Energy in OMMMD: %f", currentKineticEnergy));
 
-        if (i == 0) {
+        if (i == 0 && running) {
             velocities = OpenMM_State_getVelocities(state);
             v = openMMForceFieldEnergy.getOpenMMVelocities(velocities, numberOfVariables);
 
@@ -228,7 +227,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
             currentTemperature = e / (kB * dof);
         }
 
-        if (i != 0) {
+        if (i != 0 || !running) {
 
             positions = OpenMM_State_getPositions(state);
             x = openMMForceFieldEnergy.getOpenMMPositions(positions, numberOfVariables);
@@ -253,46 +252,50 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         }
 
         // assert energies = stuff we recalculated.
-        totalEnergy = potentialEnergy + kineticEnergy;
-        if (initialStep == 0) {
-            logger.log(Level.INFO, " Initial energy levels");
-            logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
-            logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
-            logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", kineticEnergy, potentialEnergy, totalEnergy, currentTemperature));
-            initialStep = 1;
-        } else if (i % printInterval == 0) {
-            time = System.nanoTime() - time;
-            logger.info(String.format(" %7d%15.4f%13.4f%13.4f%9.2f%9.3f", i, kineticEnergy, potentialEnergy,
-                    totalEnergy, currentTemperature, time * 1.0e-9));
-            time = System.nanoTime();
-        }
+        currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
+        logger.info(String.format(" Total Energy: %f", currentTotalEnergy));
 
-        if (saveInterval > 0 && i % (saveInterval * 1000) == 0 && i != 0) {
-            for (AssemblyInfo ai : assemblies) {
-                if (ai.archiveFile != null && !saveSnapshotAsPDB) {
-                    if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
-                        logger.info(String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
-                    } else {
-                        logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
-                    }
-                } else if (saveSnapshotAsPDB) {
-                    if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
-                        logger.info(String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
-                    } else {
-                        logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
+        if (running) {
+            if (initialStep == 0) {
+                logger.log(Level.INFO, " Initial energy levels");
+                logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
+                logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
+                logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+                initialStep = 1;
+            } else if (i % printInterval == 0) {
+                time = System.nanoTime() - time;
+                logger.info(String.format(" %7d%15.4f%13.4f%13.4f%9.2f%9.3f", i, currentKineticEnergy, currentPotentialEnergy,
+                        currentTotalEnergy, currentTemperature, time * 1.0e-9));
+                time = System.nanoTime();
+            }
+
+            if (saveInterval > 0 && i % (saveInterval * 1000) == 0 && i != 0) {
+                for (AssemblyInfo ai : assemblies) {
+                    if (ai.archiveFile != null && !saveSnapshotAsPDB) {
+                        if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
+                            logger.info(String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                        } else {
+                            logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
+                        }
+                    } else if (saveSnapshotAsPDB) {
+                        if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
+                            logger.info(String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                        } else {
+                            logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
+                        }
                     }
                 }
             }
-        }
 
-        /**
-         * Write out restart files every saveRestartFileFrequency steps.
-         */
-        if (restartFrequency > 0 && i % (restartFrequency * 1000) == 0 && i != 0) {
-            if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
-            } else {
-                logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+            /**
+             * Write out restart files every saveRestartFileFrequency steps.
+             */
+            if (restartFrequency > 0 && i % (restartFrequency * 1000) == 0 && i != 0) {
+                if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
+                    logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
+                } else {
+                    logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+                }
             }
         }
 
@@ -375,8 +378,10 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                     OpenMM_Context_setVelocitiesToTemperature(context, temperature, randomNumber);
                 }
             }
-
         }
+
+        int i = 0;
+        openMM_Update(i, running);
     }
 
     /**
@@ -391,19 +396,22 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
      */
     @Override
     public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
-        init(numSteps, timeStep, printInterval, saveInterval, fileType, temperature, restartFrequency, initVelocities, dyn);
+        init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
+
+        storeState();
         time = System.nanoTime();
         if (intervalSteps == 0 || intervalSteps > numSteps) {
             intervalSteps = numSteps;
         }
+        running = true;
         int i = 0;
         while (i < numSteps) {
-            openMM_Update(i);
+            openMM_Update(i, running);
             takeSteps(intervalSteps);
             i = i + intervalSteps;
             finalSteps = i;
         }
-        openMM_Update(finalSteps);
+        openMM_Update(finalSteps, running);
     }
 
     /**
