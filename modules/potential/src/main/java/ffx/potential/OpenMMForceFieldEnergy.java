@@ -2122,6 +2122,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         return e;
     }
 
+    @Override
+    public void setCrystal(Crystal crystal) {
+        super.setCrystal(crystal);
+        setDefaultPeriodicBoxVectors();
+        loadFFXPositionToOpenMM();
+    }
+
     /**
      * <p>
      * getGradients</p>
