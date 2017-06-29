@@ -121,6 +121,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      */
     private double temperingWeight = 1.0;
     /**
+     * An offset applied to min(F_L) before recalculating tempering weight.
+     */
+    private double temperOffset = 0;
+    /**
      * Transition detection flags. The transition is currently defined using the
      * following logic: First, the simulation needs to pass through mid-range
      * [0.45 to 0.55] lambda values. Second, the simulation needs to pass
@@ -263,6 +267,26 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             updateFLambda(true);
         }
 
+        String propString = System.getProperty("ttosrw-alwaystemper", "false");
+        if (Boolean.parseBoolean(propString)) {
+            logger.info(" Disabling detection of transitions; will immediately begin tempering.");
+            tempering = true;
+        }
+
+        propString = System.getProperty("ttosrw-temperOffset", "0");
+        temperOffset = 0;
+        try {
+            temperOffset = Double.parseDouble(propString);
+        } catch (NumberFormatException ex) {
+            logger.info(String.format(" Exception in parsing ttosrw-temperOffset: %s", ex.toString()));
+            temperOffset = 0;
+        }
+        if (temperOffset > 0) {
+            logger.info(String.format(" Applying a %7.4g kcal/mol offset to tempering", temperOffset));
+        } else if (temperOffset < 0) {
+            logger.warning(String.format(" Tempering offset %7.4g < 0; resetting to 0", temperOffset));
+            temperOffset = 0;
+        }
     }
 
     @Override
@@ -867,7 +891,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         }
 
         if (tempering) {
-            temperingWeight = exp(-minFL / deltaT);
+            double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
+            temperingWeight = exp(temperEnergy / deltaT);
         }
 
         if (abs(freeEnergy - previousFreeEnergy) > 0.001) {
