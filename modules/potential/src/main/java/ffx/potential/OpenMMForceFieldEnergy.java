@@ -361,6 +361,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         return pointer;
     }
 
+    /**
+     * Returns the platform array as a String
+     * @param stringArray
+     * @param i
+     * @return String
+     */
     private String stringFromArray(PointerByReference stringArray, int i) {
         Pointer platformPtr = OpenMM_StringArray_get(stringArray, i);
         if (platformPtr == null) {
@@ -379,12 +385,18 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         logger.info(" Destroyed the Context, Integrator, and OpenMMSystem.");
     }
 
+    /**
+     * Destroys pointer references to Context, Integrator and System to free up memory.
+     */
     private void freeOpenMM() {
         OpenMM_Context_destroy(openMMContext);
         OpenMM_Integrator_destroy(openMMIntegrator);
         OpenMM_System_destroy(openMMSystem);
     }
 
+    /**
+     * Adds atoms from the molecular assembly to the OpenMM System and reports to the user the number of particles added.
+     */
     private void addAtoms() {
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
