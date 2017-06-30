@@ -50,6 +50,7 @@ import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
+import org.apache.commons.lang.SystemUtils;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import simtk.openmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
@@ -311,7 +312,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
          */
         PointerByReference platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
         OpenMM_StringArray_destroy(platforms);
-        platforms = OpenMM_Platform_loadPluginsFromDirectory(pluginDir.getString(0));
+        String plugDirString = pluginDir.getString(0);
+        if (SystemUtils.IS_OS_WINDOWS) {
+            plugDirString = plugDirString + "/plugins";
+        }
+        platforms = OpenMM_Platform_loadPluginsFromDirectory(plugDirString);
 
         int numPlatforms = OpenMM_Platform_getNumPlatforms();
         boolean cuda = false;
