@@ -39,6 +39,7 @@
 // MOLECULAR & STOCHASTIC DYNAMICS
 
 // Apache Imports
+import ffx.potential.MolecularAssembly
 import ffx.potential.OpenMMForceFieldEnergy
 import org.apache.commons.io.FilenameUtils;
 
@@ -236,7 +237,9 @@ if (pressure > 0) {
         logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.");
     }
     logger.info(String.format(" Running NPT dynamics at pressure %7.4g", pressure));
-    Barostat barostat = new Barostat(active, (CrystalPotential) potential);
+    MolecularAssembly molecAssem = active; // Why this is needed is utterly inexplicable to me.
+    CrystalPotential cpot = (CrystalPotential) potential;
+    Barostat barostat = new Barostat(molecAssem, cpot);
     barostat.setPressure(pressure);
     barostat.setMaxDensity(maxDensity);
     barostat.setMinDensity(minDensity);
