@@ -75,7 +75,7 @@ import ffx.potential.parsers.XYZFilter;
 public class MolecularDynamics implements Runnable, Terminatable {
 
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
-    private static final double NS2SEC = 1e-9;
+
     private final Potential potential;
 
     private MonteCarloListener monteCarloListener;
@@ -121,6 +121,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     protected double currentTotalEnergy;
     protected boolean saveSnapshotAsPDB = true;
     protected String fileType = "XYZ";
+    protected static final double NS2SEC = 1e-9;
 
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
 

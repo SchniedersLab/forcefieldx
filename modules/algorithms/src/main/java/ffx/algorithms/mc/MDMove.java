@@ -80,7 +80,6 @@ public class MDMove implements MCMove {
             printInterval = mdSteps * timeStep;
         }
 
-
         molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
         molecularDynamics.setQuiet(true);
     }

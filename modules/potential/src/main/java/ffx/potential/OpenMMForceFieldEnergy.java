@@ -1892,7 +1892,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(quadrupoles);
 
         OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, openMMContext);
-
     }
 
     /**

@@ -210,10 +210,10 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                 logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
                         "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
             } else if (i % printFrequency == 0) {
-                time = System.nanoTime() - time;
-                logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
-                        "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
-                time = System.nanoTime();
+                double simTime = i * dt * 1.0e-3;
+                logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.2f",
+                        simTime, currentKineticEnergy, currentPotentialEnergy,
+                        currentTotalEnergy, currentTemperature, time * NS2SEC));
             }
 
             if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000) == 0 && i != 0) {
@@ -362,7 +362,6 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
 
         storeState();
-        time = System.nanoTime();
         if (intervalSteps == 0 || intervalSteps > numSteps) {
             intervalSteps = numSteps;
         }
@@ -371,7 +370,9 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         int i = 0;
         while (i < numSteps) {
             openMM_Update(i, running);
+            time = -System.nanoTime();
             takeSteps(intervalSteps);
+            time += System.nanoTime();
             i += intervalSteps;
         }
         openMM_Update(i, running);
