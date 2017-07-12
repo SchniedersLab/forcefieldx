@@ -2460,7 +2460,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     @Override
     public double getdEdL() {
         double currentLambda = lambda;
-        double dL = 0.0001;
+        double dL = 0.01;
 
         // Set Lambda to Lambda + dL
         setLambda(currentLambda + dL);
