@@ -125,6 +125,7 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
+import ffx.potential.parameters.ForceField.ForceFieldDouble;
 
 /**
  * Compute the potential energy and derivatives using OpenMM.
@@ -293,6 +294,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
         logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
+        //String someProp = System.getProperty("someProp");
+        ForceField forceField = molecularAssembly.getForceField();
+        fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.001);
 
         OpenMM_State_destroy(openMMState);
     }
