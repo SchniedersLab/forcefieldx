@@ -196,6 +196,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private boolean use[];
 
     /**
+     * Size of step to take in lambda for finite differences.
+     */
+    private double fdDLambda = 0.01;
+
+    /**
      * OpenMMForceFieldEnergy constructor; offloads heavy-duty computation to an
      * OpenMM Platform while keeping track of information locally.
      *
@@ -1789,27 +1794,32 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     @Override
     public void setLambda(double lambda) {
+        if (lambda >= 0 && lambda <= 1) {
+            this.lambda = lambda;
+            super.setLambda(lambda);
 
-        this.lambda = lambda;
+            Atom[] atoms = molecularAssembly.getAtomArray();
+            int nAtoms = atoms.length;
+            List<Atom> lambdaList = new ArrayList<>();
 
-        Atom[] atoms = molecularAssembly.getAtomArray();
-        int nAtoms = atoms.length;
-        List<Atom> lambdaList = new ArrayList<>();
-
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            if (atom.applyLambda()) {
-                lambdaList.add(atom);
+            for (int i = 0; i < nAtoms; i++) {
+                Atom atom = atoms[i];
+                if (atom.applyLambda()) {
+                    lambdaList.add(atom);
+                }
             }
-        }
 
-        Atom[] atomArray = new Atom[lambdaList.size()];
-        for (int i = 0; i < lambdaList.size(); i++) {
-            atomArray[i] = lambdaList.get(i);
-        }
+            Atom[] atomArray = new Atom[lambdaList.size()];
+            for (int i = 0; i < lambdaList.size(); i++) {
+                atomArray[i] = lambdaList.get(i);
+            }
 
-        if (amoebaMultipoleForce != null) {
-            scaleAmoebaMultipoleForceByLambda(atomArray, lambda);
+            if (amoebaMultipoleForce != null) {
+                scaleAmoebaMultipoleForceByLambda(atomArray, lambda);
+            }
+        } else {
+            String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
+            logger.warning(message);
         }
 
     }
@@ -2455,30 +2465,52 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     /**
+     * Sets the finite-difference step size used for getdEdL.
+     * @param fdDLambda FD step size.
+     */
+    public void setFdDLambda(double fdDLambda) {
+        this.fdDLambda = fdDLambda;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public double getdEdL() {
         double currentLambda = lambda;
-        double dL = 0.01;
+        double width = fdDLambda;
+        double ePlus;
+        double eMinus;
+
+        // Small optimization to only create the x array once.
+        double[] x = new double[getNumberOfVariables()];
+        this.getCoordinates(x);
+
+        // This section technically not robust to the case that fdDLambda > 0.5.
+        // However, that should be an error case checked when fdDLambda is set.
+        if (currentLambda + fdDLambda > 1.0) {
+            logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
+            ePlus = energy(x);
+            setLambda(currentLambda - fdDLambda);
+            eMinus = energy(x);
+        } else if (currentLambda - fdDLambda < 0.0) {
+            logger.fine(" Could not test the lower point, as current lambda - fdDL < 1");
+            eMinus = energy(x);
+            setLambda(currentLambda + fdDLambda);
+            ePlus = energy(x);
+        } else {
+            setLambda(currentLambda + fdDLambda);
+            ePlus = energy(x);
+            setLambda(currentLambda - fdDLambda);
+            eMinus = energy(x);
+            width *= 2.0;
+        }
 
         // Set Lambda to Lambda + dL
-        setLambda(currentLambda + dL);
-
-        // Compute energy
-        double ePlus = energy();
-
-        // Set Lambda to Lambda - dL
-        setLambda(currentLambda - dL);
-
-        // Compute energy
-        double eMinus = energy();
-
-        // Set Lambda back to Lambda
         setLambda(currentLambda);
 
         // Compute finite difference dEdL
-        return (ePlus - eMinus) / (2.0 * dL);
+        return (ePlus - eMinus) / (width);
     }
 
     /**
