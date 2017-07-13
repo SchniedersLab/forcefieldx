@@ -199,7 +199,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     /**
      * Size of step to take in lambda for finite differences.
      */
-    private double fdDLambda = 0.01;
+    private double fdDLambda = 0.001;
 
     /**
      * OpenMMForceFieldEnergy constructor; offloads heavy-duty computation to an
@@ -294,7 +294,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
         logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
-        //String someProp = System.getProperty("someProp");
         ForceField forceField = molecularAssembly.getForceField();
         fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.001);
 
