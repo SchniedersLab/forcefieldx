@@ -55,6 +55,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -2712,6 +2713,50 @@ public final class PDBFilter extends SystemFilter {
                 activeMolecularAssembly.deleteMolecule((Molecule) m);
             } else {
                 logger.info(" Patch for " + moleculeName + " succeeded.");
+            }
+        }
+        resolvePolymerLinks(molecules);
+    }
+
+    /**
+     * Resolves links between polymeric hetero groups; presently only functional for cyclic molecules.
+     * @param molecules List of Molecules in the molecular assembly.
+     */
+    private void resolvePolymerLinks(List<Molecule> molecules) {
+        CompositeConfiguration ffProps = forceField.getProperties();
+        for (String polyLink : ffProps.getStringArray("polymerlink")) {
+            logger.info(" Experimental: linking a cyclic hetero group: " + polyLink);
+            // Format: polymerlink resname atom1 atom2 [cyclize]
+            String[] toks = polyLink.split("\\s+");
+            String resName = toks[0];
+            String name1 = toks[1];
+            String name2 = toks[2];
+            int cyclicLen = 0;
+            if (toks.length > 3) {
+                cyclicLen = Integer.parseInt(toks[3]);
+            }
+
+            Molecule[] matches = molecules.stream().
+                    filter((Molecule m) -> {return m.getResidueName().equalsIgnoreCase(resName); }).toArray(Molecule[]::new);
+            for (int i = 0; i < matches.length; i++) {
+                Molecule mi = matches[i];
+                int ii = i+1;
+                if (cyclicLen < 1) {
+                    logger.severe(" No current support for polymeric, non-cyclic hetero groups");
+                    // Would probably split by chain.
+                } else {
+                    Molecule next;
+                    if (ii % cyclicLen == 0) {
+                        logger.info(String.format(" Cyclizing molecule %d to %d", i, ii - cyclicLen));
+                        next = matches[ii - cyclicLen];
+                    } else {
+                        logger.info(String.format("Extending chain from %d to %d.", i, ii));
+                        next = matches[ii];
+                    }
+                    Atom from = mi.getAtomByName(name1, true);
+                    Atom to = next.getAtomByName(name2, true);
+                    buildBond(from, to);
+                }
             }
         }
     }
