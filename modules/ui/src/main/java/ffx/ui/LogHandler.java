@@ -43,6 +43,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import ffx.ui.MainPanel.ExitStatus;
 import ffx.utilities.LoggerSevereError;
 
 import static ffx.potential.extended.ExtUtils.prop;
@@ -107,6 +108,7 @@ public class LogHandler extends Handler {
         if (!isLoggable(record) || fatal) {
             return;
         }
+
         String msg;
         try {
             msg = getFormatter().format(record);
@@ -143,7 +145,7 @@ public class LogHandler extends Handler {
                 System.err.println(" Force Field X will not continue.");
                 System.err.println(" Shutting down...");
                 flush();
-                mainPanel.setExitType(MainPanel.ExitStatus.SEVERE);
+                mainPanel.setExitType(ExitStatus.SEVERE);
                 mainPanel.exit();
             }
             ModelingShell shell = null;

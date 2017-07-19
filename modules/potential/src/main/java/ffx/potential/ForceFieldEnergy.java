@@ -730,6 +730,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         maxDebugGradient = forceField.getDouble(ForceFieldDouble.MAX_DEBUG_GRADIENT, Double.POSITIVE_INFINITY);
 
         molecularAssembly.setPotential(this);
+
         if (noHeader) {
             logger.setLevel(logger.getParent().getLevel());
         }

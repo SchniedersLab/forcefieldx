@@ -1,122 +1,144 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Title: Force Field X.
+ *
+ * Description: Force Field X - Software for Molecular Biophysics.
+ *
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
+ *
+ * This file is part of Force Field X.
+ *
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
+ *
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ *
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.algorithms;
 
-import com.sun.jna.Pointer;
-import com.sun.jna.ptr.PointerByReference;
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
-import static ffx.algorithms.Thermostat.kB;
-import ffx.potential.MolecularAssembly;
-import ffx.crystal.Crystal;
-import ffx.potential.OpenMMForceFieldEnergy;
-import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.parsers.PDBFilter;
-import ffx.potential.parsers.XYZFilter;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
+
+import com.sun.jna.ptr.PointerByReference;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
-import java.util.Random;
-import ffx.potential.parsers.DYNFilter;
 
-//import static simtk.openmm.OpenMMAmoebaLibrary.*;
-import static java.lang.String.format;
 import static simtk.openmm.OpenMMLibrary.*;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
 
+import ffx.algorithms.Integrator.Integrators;
+import ffx.algorithms.Thermostat.Thermostats;
+import ffx.crystal.Crystal;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.OpenMMForceFieldEnergy;
+import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.parsers.DYNFilter;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.XYZFilter;
+
+import static ffx.algorithms.Thermostat.kB;
+
 /**
  * Runs Molecular Dynamics using OpenMM implementation
  *
  * @author Hernan V. Bernabe
  */
-public class OpenMMMolecularDynamics extends MolecularDynamics{
+public class OpenMMMolecularDynamics extends MolecularDynamics {
+
+    private static final Logger logger = Logger.getLogger(OpenMMMolecularDynamics.class.getName());
 
     private OpenMMForceFieldEnergy openMMForceFieldEnergy;
-    private static final Logger logger = Logger.getLogger(OpenMMMolecularDynamics.class.getName());
-    private static final int DEFAULT_INTERVAL_STEPS = 100;
-    private double temperature;
-    private double currentTemperature;
-    private double saveInterval;
-    private double restartFrequency;
-    private AlgorithmListener listener;
-    private final List<AssemblyInfo> assemblies;
-    private final MolecularAssembly molecularAssembly;
-    private boolean saveSnapshotAsPDB = true;
-    private long time;
-    private int initialStep = 0;
-    private int finalSteps;
-    private String integrator;
-    private double timeStep;
-    private double frictionCoeff;
-    private double lambda;
-    private PointerByReference context;
-    private PointerByReference integratorReference;
-    private Pointer andersenTemp;
+    private PointerByReference openMMContext;
+    private PointerByReference openMMIntegrator;
+    private PointerByReference openMMPositions;
+    private PointerByReference openMMVelocities;
+    private PointerByReference openMMForces;
+
+    /**
+     * Number of OpenMM MD steps per iteration.
+     */
+    private int intervalSteps;
+
+    /**
+     * Random number generation.
+     */
     private Random random;
-    private int randomNumber;
-    private File dyn;
-    private File restartFile = null;
-    private String fileType = "XYZ";
-    private boolean loadRestart = false;
-    private boolean initialized = false;
-    private int numberOfVariables;
-    private boolean done = true;
-    private boolean initVelocities;
-    private double[] x;
-    private double[] v;
-    private double[] a;
-    private double[] aPrevious;
-    private double[] grad;
-    private double[] mass;
-    private DYNFilter dynFilter = null;
-    private PointerByReference positions;
-    private PointerByReference velocities;
-    private PointerByReference forces;
+
+    /**
+     * OpenMM Integrator definition.
+     */
+    private String integrator;
+    private double frictionCoeff;
     private double collisionFreq;
 
     /**
-     * Constructs an OpenMMMolecularDynamics object, to perform molecular dynamics using native OpenMM routines, avoiding
-     * the cost of communicating coordinates, gradients, and energies back and forth across the PCI bus.
+     * Flag to indicate OpenMM MD iteractions are running.
+     */
+    private boolean running;
+    private long time;
+
+    /**
+     * Constructs an OpenMMMolecularDynamics object, to perform molecular
+     * dynamics using native OpenMM routines, avoiding the cost of communicating
+     * coordinates, gradients, and energies back and forth across the PCI bus.
+     *
      * @param assembly MolecularAssembly to operate on
-     * @param openMMForceFieldEnergy OpenMMForceFieldEnergy Potential. Cannot be any other type of Potential.
+     * @param openMMForceFieldEnergy OpenMMForceFieldEnergy Potential. Cannot be
+     * any other type of Potential.
      * @param properties Associated properties
      * @param listener
-     * @param thermostat May have to be slightly modified for native OpenMM routines
-     * @param integratorMD May have to be slightly modified for native OpenMM routines
+     * @param thermostat May have to be slightly modified for native OpenMM
+     * routines
+     * @param integratorMD May have to be slightly modified for native OpenMM
+     * routines
      */
-    public OpenMMMolecularDynamics(MolecularAssembly assembly, OpenMMForceFieldEnergy openMMForceFieldEnergy, CompositeConfiguration properties, AlgorithmListener listener, Thermostats thermostat, Integrators integratorMD) {
-
+    public OpenMMMolecularDynamics(MolecularAssembly assembly, OpenMMForceFieldEnergy openMMForceFieldEnergy,
+            CompositeConfiguration properties, AlgorithmListener listener, Thermostats thermostat, Integrators integratorMD) {
         super(assembly, openMMForceFieldEnergy, properties, listener, thermostat, integratorMD);
+
+        /**
+         * Initialization specific to OpenMMMolecularDynamics
+         */
         this.openMMForceFieldEnergy = openMMForceFieldEnergy;
-        this.molecularAssembly = assembly;
-        this.listener = listener;
-        assemblies = new ArrayList<>();
-        assemblies.add(new AssemblyInfo(assembly));
-        assemblies.get(0).props = properties;
+        openMMForceFieldEnergy.addCOMMRemover(false);
         random = new Random();
-        randomNumber = random.nextInt();
-        mass = openMMForceFieldEnergy.getMass();
-        numberOfVariables = openMMForceFieldEnergy.getNumberOfVariables();
-        x = new double[numberOfVariables];
-        v = new double[numberOfVariables];
-        a = new double[numberOfVariables];
-        aPrevious = new double[numberOfVariables];
-        grad = new double[numberOfVariables];
+        integrator = "VERLET";
+        running = false;
     }
 
     /**
-     * UNSUPPORTED: OpenMMMolecularDynamics is not presently capable of handling extended system variables. Will
-     * throw an UnsupportedOperationException.
+     * UNSUPPORTED: OpenMMMolecularDynamics is not presently capable of handling
+     * extended system variables. Will throw an UnsupportedOperationException.
+     *
      * @param system
      * @param printFrequency
      */
@@ -126,8 +148,8 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
     }
 
     /**
-     * UNSUPPORTED: OpenMMMolecularDynamics is not presently capable of handling extended system variables. Will
-     * throw an UnsupportedOperationException.
+     * UNSUPPORTED: OpenMMMolecularDynamics is not presently capable of handling
+     * extended system variables. Will throw an UnsupportedOperationException.
      */
     @Override
     public void detachExtendedSystem() {
@@ -140,15 +162,10 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
      * ensures that the algorithm reports back only when the time interval
      * (steps) specified by the user is completed.
      *
-     * @param openMMForceFieldEnergy
      * @param intervalSteps
      */
     private void takeSteps(int intervalSteps) {
-        //PointerByReference integrator = openMMForceFieldEnergy.getIntegrator();
-        double time = System.nanoTime();
-        OpenMM_Integrator_step(integratorReference, intervalSteps);
-        double took = (double) ((System.nanoTime() - time) * 1.0e-9);
-
+        OpenMM_Integrator_step(openMMIntegrator, intervalSteps);
     }
 
     /**
@@ -157,132 +174,108 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
      *
      * @param i
      */
-    private void openMM_Update(int i) {
-        int infoMask;
-        //double aMass;
-        //double positionConvert;
-        //double velocityConvert;
-        //double forceConvert;
-        double totalEnergy;
-        double potentialEnergy;
-        double kineticEnergy;
+    private void openMM_Update(int i, boolean running) {
+        openMMContext = openMMForceFieldEnergy.getContext();
+        int infoMask = OpenMM_State_Positions + OpenMM_State_Velocities + OpenMM_State_Forces + OpenMM_State_Energy;
 
-        context = openMMForceFieldEnergy.getContext();
-        infoMask = OpenMM_State_Positions + OpenMM_State_Velocities + OpenMM_State_Forces + OpenMM_State_Energy;
+        PointerByReference state = OpenMM_Context_getState(openMMContext, infoMask, 0);
+        currentPotentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
+        currentKineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
+        currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
 
-        PointerByReference state = OpenMM_Context_getState(context, infoMask, 0);
+        openMMPositions = OpenMM_State_getPositions(state);
+        openMMForceFieldEnergy.getOpenMMPositions(openMMPositions, numberOfVariables, x);
 
-        potentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
-        kineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
+        openMMVelocities = OpenMM_State_getVelocities(state);
+        openMMForceFieldEnergy.getOpenMMVelocities(openMMVelocities, numberOfVariables, v);
 
-        if (i == 0) {
-            velocities = OpenMM_State_getVelocities(state);
-            v = openMMForceFieldEnergy.getOpenMMVelocities(velocities, numberOfVariables);
+        double e = 0.0;
+        for (int ii = 0; ii < v.length; ii++) {
+            double velocity = v[ii];
+            double v2 = velocity * velocity;
+            e += mass[ii] * v2;
+        }
 
-            double e = 0.0;
-            for (int ii = 0; ii < v.length; ii++) {
-                double velocity = v[ii];
-                double v2 = velocity * velocity;
-                e += mass[ii] * v2;
+        int dof = v.length;
+        currentTemperature = e / (kB * dof);
+
+        openMMForces = OpenMM_State_getForces(state);
+        openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numberOfVariables, mass, a);
+        openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numberOfVariables, mass, aPrevious);
+
+        if (running) {
+            if (i == 0) {
+                logger.info(format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
+                logger.info(format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
+                logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
+                        "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+            } else if (i % printFrequency == 0) {
+                time = System.nanoTime() - time;
+                logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
+                        "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+                time = System.nanoTime();
             }
 
-            int dof = v.length;
-            currentTemperature = e / (kB * dof);
-        }
-
-        if (i != 0) {
-
-            positions = OpenMM_State_getPositions(state);
-            x = openMMForceFieldEnergy.getOpenMMPositions(positions, numberOfVariables);
-
-            velocities = OpenMM_State_getVelocities(state);
-            v = openMMForceFieldEnergy.getOpenMMVelocities(velocities, numberOfVariables);
-
-            double e = 0.0;
-            for (int ii = 0; ii < v.length; ii++) {
-                double velocity = v[ii];
-                double v2 = velocity * velocity;
-                e += mass[ii] * v2;
-            }
-
-            int dof = v.length;
-            currentTemperature = e / (kB * dof);
-
-            forces = OpenMM_State_getForces(state);
-            a = openMMForceFieldEnergy.getOpenMMAccelerations(forces, numberOfVariables, mass);
-            aPrevious = openMMForceFieldEnergy.getOpenMMAccelerations(forces, numberOfVariables, mass);
-
-        }
-
-        // assert energies = stuff we recalculated.
-        totalEnergy = potentialEnergy + kineticEnergy;
-        if (initialStep == 0) {
-            logger.log(Level.INFO, " Initial energy levels");
-            logger.info(String.format("\n      Time      Kinetic    Potential        Total     Temp      CPU"));
-            logger.info(String.format("      psec     kcal/mol     kcal/mol     kcal/mol        K      sec\n"));
-            logger.info(String.format("          %13.4f%13.4f%13.4f %8.2f ", kineticEnergy, potentialEnergy, totalEnergy, currentTemperature));
-            initialStep = 1;
-        } else if (i % 100 == 0) {
-            time = System.nanoTime() - time;
-            logger.info(String.format(" %7d%15.4f%13.4f%13.4f%9.2f%9.3f", i, kineticEnergy, potentialEnergy,
-                    totalEnergy, currentTemperature, time * 1.0e-9));
-            time = System.nanoTime();
-        }
-
-        if (saveInterval > 0 && i % (saveInterval * 1000) == 0 && i != 0) {
-            for (AssemblyInfo ai : assemblies) {
-                if (ai.archiveFile != null && !saveSnapshotAsPDB) {
-                    if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
-                        logger.info(String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
-                    } else {
-                        logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
-                    }
-                } else if (saveSnapshotAsPDB) {
-                    if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
-                        logger.info(String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
-                    } else {
-                        logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
+            if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000) == 0 && i != 0) {
+                for (AssemblyInfo ai : assemblies) {
+                    if (ai.archiveFile != null && !saveSnapshotAsPDB) {
+                        if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
+                            logger.info(String.format(" Appended snap shot to %s", ai.archiveFile.getName()));
+                        } else {
+                            logger.warning(String.format(" Appending snap shot to %s failed", ai.archiveFile.getName()));
+                        }
+                    } else if (saveSnapshotAsPDB) {
+                        if (ai.pdbFilter.writeFile(ai.pdbFile, false)) {
+                            logger.info(String.format(" Wrote PDB file to %s", ai.pdbFile.getName()));
+                        } else {
+                            logger.warning(String.format(" Writing PDB file to %s failed.", ai.pdbFile.getName()));
+                        }
                     }
                 }
             }
-        }
 
-        /**
-         * Write out restart files every saveRestartFileFrequency steps.
-         */
-        if (restartFrequency > 0 && i % (restartFrequency * 1000) == 0 && i != 0) {
-            if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
-            } else {
-                logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+            /**
+             * Write out restart files every saveRestartFileFrequency steps.
+             */
+            if (restartFrequency > 0 && i % (restartFrequency * 1000) == 0 && i != 0) {
+                if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
+                    logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
+                } else {
+                    logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+                }
             }
         }
 
         OpenMM_State_destroy(state);
     }
 
-    /**
-     * start sets up context, write out file name, restart file name, sets the
-     * integrator and determines whether the simulation is starting out from a
-     * previous molecular dynamics run (.dyn) or if the initial velocities are
-     * determined by a Maxwell Boltzmann distribution. This method then calls
-     * methods openMMUPdate and takeSteps to run the molecular dynamics
-     * simulation.
-     *
-     * @param numSteps
-     * @param intervalSteps
-     */
-    public void start(int numSteps, int intervalSteps, double temperature,
-                      double saveInterval, double timeStep, File dyn, boolean initVelocities) {
-        int i = 0;
-        this.temperature = temperature;
-        this.saveInterval = saveInterval;
-        this.timeStep = timeStep;
-        this.dyn = dyn;
+    @Override
+    public void init(int numSteps, double timeStep, double printInterval, double saveInterval,
+            String fileType, double restartFrequency, double temperature, boolean initVelocities, File dyn) {
+        this.targetTemperature = temperature;
+        this.dt = timeStep;
+        this.printFrequency = (int) printInterval;
+        this.restartFile = dyn;
         this.initVelocities = initVelocities;
-        currentTemperature = temperature;
+
+        /**
+         * Convert the print interval to a print frequency.
+         */
+        printFrequency = 100;
+        if (printInterval >= this.dt) {
+            printFrequency = (int) (printInterval / this.dt);
+        }
+
+        /**
+         * Convert save interval to a save frequency.
+         */
+        saveSnapshotFrequency = 1000;
+        if (saveInterval >= this.dt) {
+            saveSnapshotFrequency = (int) (saveInterval / this.dt);
+        }
 
         done = false;
+
         assemblies.stream().parallel().forEach((ainfo) -> {
             MolecularAssembly mola = ainfo.getAssembly();
             CompositeConfiguration aprops = ainfo.props;
@@ -308,11 +301,10 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
                 ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
             }
         });
-        openMMForceFieldEnergy.setIntegrator(integrator, timeStep, frictionCoeff, temperature, collisionFreq);
 
-        integratorReference = openMMForceFieldEnergy.getIntegrator();
-
-        context = openMMForceFieldEnergy.getContext();
+        if (!initialized) {
+            updateIntegrator();
+        }
 
         String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
 
@@ -329,7 +321,6 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
         }
 
         if (!initialized) {
-
             if (loadRestart) {
                 Crystal crystal = molecularAssembly.getCrystal();
                 // possibly add check to see if OpenMM supports this space group.
@@ -337,106 +328,93 @@ public class OpenMMMolecularDynamics extends MolecularDynamics{
                     String message = " Could not load the restart file - dynamics terminated.";
                     logger.log(Level.WARNING, message);
                     done = true;
-                    return;
                 } else {
                     molecularAssembly.getPotentialEnergy().setCrystal(crystal);
                     openMMForceFieldEnergy.setOpenMMPositions(x, numberOfVariables);
                     openMMForceFieldEnergy.setOpenMMVelocities(v, numberOfVariables);
                 }
             } else {
-                openMMForceFieldEnergy.loadOpenMMPositions();
-                //openMMForceFieldEnergy.setOpenMMPositions();
-
+                openMMForceFieldEnergy.loadFFXPositionToOpenMM();
                 if (initVelocities) {
-
-                    OpenMM_Context_setVelocitiesToTemperature(context, temperature, randomNumber);
+                    int randomNumber = random.nextInt();
+                    OpenMM_Context_setVelocitiesToTemperature(openMMContext, temperature, randomNumber);
                 }
             }
-
         }
 
+        int i = 0;
+        running = false;
+        openMM_Update(i, running);
+    }
+
+    /**
+     * Start sets up context, write out file name, restart file name, sets the
+     * integrator and determines whether the simulation is starting out from a
+     * previous molecular dynamics run (.dyn) or if the initial velocities are
+     * determined by a Maxwell Boltzmann distribution. This method then calls
+     * methods openMMUPdate and takeSteps to run the molecular dynamics
+     * simulation.
+     *
+     * @param numSteps
+     */
+    @Override
+    public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
+        init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
+
+        storeState();
         time = System.nanoTime();
+        if (intervalSteps == 0 || intervalSteps > numSteps) {
+            intervalSteps = numSteps;
+        }
+        running = true;
+
+        int i = 0;
         while (i < numSteps) {
-            openMM_Update(i);
+            openMM_Update(i, running);
             takeSteps(intervalSteps);
-            i = i + intervalSteps;
-            finalSteps = i;
+            i += intervalSteps;
         }
-
-        openMM_Update(finalSteps);
-    }
-
-    /**
-     * A simple container class to hold all the infrastructure associated with a
-     * MolecularAssembly for MolecularDynamics; assembly, properties, archive
-     * and PDB files, PDB and XYZ filters. Direct access to package-private
-     * members breaks encapsulation a bit, but the private inner class shouldn't
-     * be used externally anyways.
-     */
-    private class AssemblyInfo {
-
-        private final MolecularAssembly mola;
-        CompositeConfiguration props = null;
-        File archiveFile = null;
-        File pdbFile = null;
-        PDBFilter pdbFilter = null;
-        XYZFilter xyzFilter = null;
-
-        public AssemblyInfo(MolecularAssembly assembly) {
-            this.mola = assembly;
-        }
-
-        public MolecularAssembly getAssembly() {
-            return mola;
-        }
-    }
-
-    public void setLambda(double newLambda) {
-        lambda = newLambda;
-    }
-
-    /**
-     * Method to set file type from groovy scripts.
-     *
-     * @param fileType the type of snapshot files to write.
-     */
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
-    }
-
-    /**
-     * Method to set the Restart Frequency.
-     *
-     * @param restartFrequency the time between writing restart files.
-     */
-    public void setRestartFrequency(double restartFrequency) {
-        this.restartFrequency = restartFrequency;
+        openMM_Update(i, running);
+        logger.info("");
     }
 
     /**
      * Method to set the Integrator string
-     * 
-     * @param integrator string name of the integrator to be used during the simulation
+     *
+     * @param integrator string name of the integrator to be used during the
+     * simulation
      */
-    public void setIntegratorString(String integrator){
+    public void setIntegratorString(String integrator) {
         this.integrator = integrator;
     }
-    
+
     /**
      * Method to set the coefficient of friction (for Langevin integrator)
-     * 
-     * @param frictionCoeff coefficient of friction that acts on the atoms during simulation
+     *
+     * @param frictionCoeff coefficient of friction that acts on the atoms
+     * during simulation
      */
-    public void setFrictionCoefficient(double frictionCoeff){
+    public void setFrictionCoefficient(double frictionCoeff) {
         this.frictionCoeff = frictionCoeff;
     }
-    
+
     /**
      * Method to set the collision frequency (for Andersen thermostat)
-     * 
-     * @param collisionFreq rate at which atoms collide in the Andersen thermostat
+     *
+     * @param collisionFreq rate at which atoms collide in the Andersen
+     * thermostat
      */
-    public void setCollisionFrequency(double collisionFreq){
+    public void setCollisionFrequency(double collisionFreq) {
         this.collisionFreq = collisionFreq;
+    }
+
+    public void setIntervalSteps(int intervalSteps) {
+        this.intervalSteps = intervalSteps;
+    }
+
+    public void updateIntegrator() {
+        openMMForceFieldEnergy.setIntegrator(integrator, dt, frictionCoeff, targetTemperature, collisionFreq);
+        openMMIntegrator = openMMForceFieldEnergy.getIntegrator();
+        openMMContext = openMMForceFieldEnergy.getContext();
     }
 }

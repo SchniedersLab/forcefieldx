@@ -793,7 +793,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         if (lambdaTerm) {
             /**
-             * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable trajectories.
+             * Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable
+             * trajectories.
              */
             permLambdaAlpha = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_ALPHA, 2.0);
             if (permLambdaAlpha < 0.0 || permLambdaAlpha > 3.0) {
@@ -818,8 +819,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * the beginning of the polarization schedule. Choosing a power of 3
              * or greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              *
-             * A value of 0.0 is also admissible: when polarization is not
-             * being softcored but instead scaled, as by ExtendedSystem.
+             * A value of 0.0 is also admissible: when polarization is not being
+             * softcored but instead scaled, as by ExtendedSystem.
              */
             polLambdaExponent = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_EXPONENT, 3.0);
             if (polLambdaExponent < 0.0) {
@@ -835,8 +836,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 logger.info("PME-Cart lambda windowing disabled. Permanent and polarization lambda affect entire [0,1].");
             } else {
                 /**
-                 * Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable
-                 * trajectories.
+                 * Values of PERMANENT_LAMBDA_START below 0.5 can lead to
+                 * unstable trajectories.
                  */
                 permLambdaStart = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_START, 0.4);
                 if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
@@ -844,7 +845,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     permLambdaStart = 0.4;
                 }
                 /**
-                 * Values of PERMANENT_LAMBDA_END must be greater than permLambdaStart and <= 1.0.
+                 * Values of PERMANENT_LAMBDA_END must be greater than
+                 * permLambdaStart and <= 1.0.
                  */
                 permLambdaEnd = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_END, 1.0);
                 if (permLambdaEnd < permLambdaStart || permLambdaEnd > 1.0) {
@@ -857,11 +859,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 /**
                  * The POLARIZATION_LAMBDA_START defines the point in the lambda
                  * schedule when the condensed phase polarization of the ligand
-                 * begins to be turned on. If the condensed phase polarization is
-                 * considered near lambda=0, then SCF convergence is slow, even with
-                 * Thole damping. In addition, 2 (instead of 1) condensed phase SCF
-                 * calculations are necessary from the beginning of the window to
-                 * lambda=1.
+                 * begins to be turned on. If the condensed phase polarization
+                 * is considered near lambda=0, then SCF convergence is slow,
+                 * even with Thole damping. In addition, 2 (instead of 1)
+                 * condensed phase SCF calculations are necessary from the
+                 * beginning of the window to lambda=1.
                  */
                 polLambdaStart = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_START, 0.75);
                 if (polLambdaStart < 0.0 || polLambdaStart > defaultMin) {
@@ -870,8 +872,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 }
                 /**
                  * The POLARIZATION_LAMBDA_END defines the point in the lambda
-                 * schedule when the condensed phase polarization of ligand has been
-                 * completely turned on. Values other than 1.0 have not been tested.
+                 * schedule when the condensed phase polarization of ligand has
+                 * been completely turned on. Values other than 1.0 have not
+                 * been tested.
                  */
                 polLambdaEnd = forceField.getDouble(ForceFieldDouble.POLARIZATION_LAMBDA_END, 1.0);
                 if (polLambdaEnd < polLambdaStart || polLambdaEnd > 1.0) {
@@ -879,8 +882,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     polLambdaEnd = 1.0;
                 }
                 if (polLambdaEnd - polLambdaStart < minPolarizationWindow) {
-                    logger.warning(String.format(" Range between polarization lambda start and end %5.3f must be at least " +
-                            "%4.2f; resetting start to %4.2f to %4.2f", (polLambdaEnd - polLambdaStart), minPolarizationWindow, defaultMin, defaultMax));
+                    logger.warning(String.format(" Range between polarization lambda start and end %5.3f must be at least "
+                            + "%4.2f; resetting start to %4.2f to %4.2f", (polLambdaEnd - polLambdaStart), minPolarizationWindow, defaultMin, defaultMax));
                     polLambdaStart = defaultMin;
                     polLambdaEnd = defaultMax;
                 }
@@ -2342,8 +2345,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     execute(0, nAtoms - 1, permanentRealSpaceFieldLoop[threadIndex]);
                 } catch (RuntimeException e) {
                     String message = "Runtime exception computing the real space field.\n";
-                    logger.log(Level.WARNING, message, e);
-                    throw e;
+                    logger.log(Level.SEVERE, message, e);
                 } catch (Exception e) {
                     String message = "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
                     logger.log(Level.SEVERE, message, e);
@@ -2352,6 +2354,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
             @Override
             public void finish() {
+                if (realSpaceRanges == null) {
+                    realSpaceRanges = new Range[threadCount];
+                }
+
                 /**
                  * Load balancing.
                  */
@@ -3020,6 +3026,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 try {
                     execute(0, nAtoms - 1, inducedRealSpaceFieldLoop[threadIndex]);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     String message = "Fatal exception computing the induced real space field in thread " + getThreadIndex() + "\n";
                     logger.log(Level.SEVERE, message, e);
                 }
@@ -6882,9 +6889,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         StringBuilder sb = new StringBuilder();
         sb.append(format("  (%4s)  mode:%-20s lambda:%.2f  permScale:%.2f  polScale:%.2f  dEdLSign:%s  doPol:%-5b  doPermRS:%-5b",
                 "CART", lambdaMode.toString(), lambda, permanentScale, polarizationScale,
-                format("%+f",dEdLSign).substring(0,1), doPolarization, doPermanentRealSpace));
+                format("%+f", dEdLSign).substring(0, 1), doPolarization, doPermanentRealSpace));
         sb.append(format("\n    lAlpha:%.2f,%.2f,%.2f  lPowPerm:%.2f,%.2f,%.2f  lPowPol:%.2f,%.2f,%.2f",
-                lAlpha,dlAlpha,d2lAlpha,lPowPerm,dlPowPerm,d2lPowPerm,lPowPol,dlPowPol,d2lPowPol));
+                lAlpha, dlAlpha, d2lAlpha, lPowPerm, dlPowPerm, d2lPowPerm, lPowPol, dlPowPol, d2lPowPol));
         sb.append(format("\n    permExp:%.2f  permAlpha:%.2f  permWindow:%.2f,%.2f  polExp:%.2f  polWindow:%.2f,%.2f",
                 permLambdaExponent, permLambdaAlpha, permLambdaStart, permLambdaEnd,
                 polLambdaExponent, polLambdaStart, polLambdaEnd));

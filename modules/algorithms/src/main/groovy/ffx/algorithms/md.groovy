@@ -39,17 +39,22 @@
 // MOLECULAR & STOCHASTIC DYNAMICS
 
 // Apache Imports
+import ffx.potential.MolecularAssembly
+import ffx.potential.OpenMMForceFieldEnergy
 import org.apache.commons.io.FilenameUtils;
 
 // Groovy Imports
 import groovy.util.CliBuilder;
 
 // Force Field X Imports
+import ffx.algorithms.Barostat;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 
 import ffx.numerics.Potential;
+
+import ffx.crystal.CrystalPotential
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
@@ -81,6 +86,16 @@ boolean initVelocities = true;
 // Interval to write out restart file (psec)
 double restartFrequency = 1000;
 
+// Pressure in atm; invalid (such as negative) values mean do not run NPT.
+double pressure = -1.0;
+
+// Set min and max density and set the maximum MC move size
+int meanInterval = 10;
+double minDensity = 0.5;
+double maxDensity = 1.5;
+double maxSideMove = 0.25;
+double maxAngleMove = 1.0;
+
 // File type of snapshots.
 String fileType = "PDB";
 
@@ -100,6 +115,12 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
+cli.a(longOpt:'pressure', args:1, argName:'Disabled', 'If numeric argument, then sets NPT pressure, else do not run NPT.')
+cli.ld(longOpt:'minDensity', args:1, argName:'0.5', 'Minimum density allowed by the barostat.');
+cli.hd(longOpt:'maxDensity', args:1, argName:'1.5', 'Maximum density allowed by the barostat.');
+cli.sm(longOpt:'maxSideMove', args:1, argName:'0.25', 'Maximum side move allowed by the barostat.');
+cli.am(longOpt:'maxAngleMove', args:1, argName:'1.0', 'Maximum angle move allowed by the barostat.');
+cli.mi(longOpt:'meanInterval', args:1, argName:'10', 'Mean number of MD steps between applications of the barostat.');
 def options = cli.parse(args);
 
 if (options.h) {
@@ -144,6 +165,32 @@ if (options.p) {
     System.setProperty("polarization", options.p);
 }
 
+// Pressure in atm.
+if (options.a) {
+    pressure = Double.parseDouble(options.a);
+}
+
+// Minimum density
+if (options.ld) {
+    minDensity = Double.parseDouble(options.ld);
+}
+// Maximum density
+if (options.hd) {
+    maxDensity = Double.parseDouble(options.hd);
+}
+// Max side move
+if (options.sm) {
+    maxSideMove = Double.parseDouble(options.sm);
+}
+// Max angle move
+if (options.am) {
+    maxAngleMove = Double.parseDouble(options.am);
+}
+// Max angle move
+if (options.mi) {
+    meanInterval = Integer.parseInt(options.mi);
+}
+
 // Thermostat.
 if (options.b) {
     try {
@@ -185,7 +232,24 @@ potential.getCoordinates(x);
 
 potential.energy(x, true);
 
-logger.info("\n Running molecular dynmaics on " + modelfilename);
+if (pressure > 0) {
+    if (potential instanceof OpenMMForceFieldEnergy) {
+        logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.");
+    }
+    logger.info(String.format(" Running NPT dynamics at pressure %7.4g", pressure));
+    MolecularAssembly molecAssem = active; // Why this is needed is utterly inexplicable to me.
+    CrystalPotential cpot = (CrystalPotential) potential;
+    Barostat barostat = new Barostat(molecAssem, cpot);
+    barostat.setPressure(pressure);
+    barostat.setMaxDensity(maxDensity);
+    barostat.setMinDensity(minDensity);
+    barostat.setMaxSideMove(maxSideMove);
+    barostat.setMaxAngleMove(maxAngleMove);
+    barostat.setMeanBarostatInterval(meanInterval);
+    potential = barostat;
+}
+
+logger.info("\n Running molecular dynamics on " + modelfilename);
 
 // Restart File
 File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
@@ -193,7 +257,7 @@ if (!dyn.exists()) {
     dyn = null;
 }
 
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
+MolecularDynamics molDyn = new MolecularDynamics(active, potential, active.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
