@@ -416,8 +416,8 @@ public class VanDerWaals implements MaskingInterface,
                 cut = ewaldOff;
             }
 
-            logger.info(String.format(" Neighbor list updates disabled: all nonbonded interactions calculated for atoms " +
-                    "that start the simulation within a radius of %9.3g of each other", cut));
+            logger.info(String.format(" Neighbor list updates disabled: all nonbonded interactions calculated for atoms "
+                    + "that start the simulation within a radius of %9.3g of each other", cut));
 
             nonbondedCutoff = NonbondedCutoff.noCutoffFactory();
             multiplicativeSwitch = new NonSwitch();
@@ -442,9 +442,9 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             /**
-             * Define the multiplicative switch, which sets vdW energy to zero at
-             * the cutoff distance using a window that begin at 90% of the cutoff
-             * distance.
+             * Define the multiplicative switch, which sets vdW energy to zero
+             * at the cutoff distance using a window that begin at 90% of the
+             * cutoff distance.
              */
             double vdwtaper = 0.9 * vdwcut;
             cut = vdwtaper;
@@ -471,7 +471,7 @@ public class VanDerWaals implements MaskingInterface,
         logger.info("\n  Van der Waals");
         logger.info(format("   Switch Start:                         %6.3f (A)", cut));
         logger.info(format("   Cut-Off:                              %6.3f (A)", off));
-        //logger.info(format(" Long-Range Correction:                   %B", doLongRangeCorrection));
+        logger.info(format("   Long-Range Correction:                %b", doLongRangeCorrection));
 
         if (lambdaTerm) {
             logger.info("   Alchemical Parameters");
@@ -708,9 +708,6 @@ public class VanDerWaals implements MaskingInterface,
     }
 
     private double getLongRangeCorrection() {
-        if (true) {     // Current implementation of VdW-LR is not to be trusted.
-            throw new UnsupportedOperationException();
-        }
         if (esvTerm) {  // Need to treat esvLambda chain terms below before you can do this.
             throw new UnsupportedOperationException();
         }
@@ -733,44 +730,53 @@ public class VanDerWaals implements MaskingInterface,
                 softRadCount[atomClass[i]]++;
             }
         }
-
+        
         /**
          * Integrate to maxR = 60 Angstroms or ~20 sigma. Integration step size
          * of delR to be 0.01 Angstroms.
          */
-        double maxR = 60.0;
-        int n = (int) (100.0 * (maxR - nonbondedCutoff.cut));
+        double maxR = 100.0;
+        int n = (int) (2.0 * (maxR - nonbondedCutoff.cut)); 
         double delR = (maxR - nonbondedCutoff.cut) / n;
         double total = 0.0;
-        /*
-         * logger.info(String.format(" Long range correction integral: Steps %d,
-         * Step Size %8.3f, Window %8.3f-%8.3f", n, delR, cut, cut + delR * n));
-         */
+        
         /**
          * Loop over vdW types.
          */
-        for (int i = 0; i < maxClass; i++) {
-            for (int j = 0; j < maxClass; j++) {
-                int j2 = j * 2;
-                double irv = vdwForm.radEps[i][j2 + vdwForm.RADMIN];
+        for (int i = 1; i < maxClass + 1; i++) {
+            for (int j = i; j < maxClass + 1; j++) {
+                if (radCount[i] == 0 || radCount[j] == 0) {
+                    continue;
+                }
+                
+                int j2 = j * 2; 
+                if (vdwForm.radEps[i] == null) {
+                    continue;
+                }
+                
+                double irv = vdwForm.radEps[i][j2 + vdwForm.RADMIN]; 
                 double ev = vdwForm.radEps[i][j2 + vdwForm.EPS];
+                if (irv == Double.NaN || ev == Double.NaN) {
+                    continue;
+                }
                 double sume = 0.0;
-                for (int k = 0; k <= n; k++) {
-                    double r = nonbondedCutoff.cut + k * delR;
+                for (int k = 1; k <= n; k++) { 
+                    double r = nonbondedCutoff.cut - 0.5 * delR + k * delR; 
                     double r2 = r * r;
-                    final double rho = r * irv;
+                    final double rho = r * irv; 
                     final double rho3 = rho * rho * rho;
                     final double rho7 = rho3 * rho3 * rho;
-                    final double rhod = rho + vdwForm.delta;
+                    final double rhod = rho + vdwForm.delta; 
                     final double rhod3 = rhod * rhod * rhod;
                     final double rhod7 = rhod3 * rhod3 * rhod;
                     final double t1 = vdwForm.t1n / rhod7;
-                    final double t2 = vdwForm.gamma1 / rho7 + vdwForm.gamma;
-                    final double eij = ev * t1 * (t2 - 2.0);
+                    final double t2 = vdwForm.gamma1 / (rho7 + vdwForm.gamma) - 2.0; 
+                    final double eij = ev * t1 * t2;  
                     /**
                      * Apply one minus the multiplicative switch if the
                      * interaction distance is less than the end of the
                      * switching window.
+                     * 
                      */
                     double taper = 1.0;
                     if (r2 < nonbondedCutoff.off2) {
@@ -780,15 +786,18 @@ public class VanDerWaals implements MaskingInterface,
                         taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
                         taper = 1.0 - taper;
                     }
+                    
                     double jacobian = 4.0 * PI * r2;
                     double e = jacobian * eij * taper;
-                    if (k != 0 && k != n) {
+                    if (k != n) {
                         sume += e;
                     } else {
                         sume += 0.5 * e;
                     }
+                    
                 }
-                double trapezoid = delR * sume;
+                double trapezoid = delR * sume; 
+                
                 // Normal correction
                 total += radCount[i] * radCount[j] * trapezoid;
                 // Correct for softCore vdW that are being turned off.
@@ -800,10 +809,13 @@ public class VanDerWaals implements MaskingInterface,
                 }
             }
         }
-        /**
-         * Note the factor of 2 to avoid double counting.
-         */
-        return total / 2;
+        
+        // Divide by the volume of the box.
+        total = total / crystal.volume;
+        
+        logger.info(format("   Long-Range Correction:                %16.8f", total));
+        return total;
+
     }
 
     /**
@@ -868,6 +880,12 @@ public class VanDerWaals implements MaskingInterface,
             String message = " Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
         }
+
+        if (doLongRangeCorrection) {
+            longRangeCorrection = getLongRangeCorrection(); 
+            sharedEnergy.addAndGet(longRangeCorrection);
+        }
+        
 
         return sharedEnergy.get();
     }
@@ -1208,7 +1226,7 @@ public class VanDerWaals implements MaskingInterface,
     public double getEsvDerivative(int esvID) {
         return esvDeriv[esvID].get();
     }
-	
+
     public double[] getEsvDerivatives() {
         if (!esvTerm) {
             throw new IllegalStateException();
@@ -1333,6 +1351,7 @@ public class VanDerWaals implements MaskingInterface,
              */
             if (doLongRangeCorrection) {
                 sharedEnergy.set(longRangeCorrection);
+                logger.info(format("   Energy set to Long-Range Correction:                %16.8f", sharedEnergy.get()));
             } else {
                 sharedEnergy.set(0.0);
             }
