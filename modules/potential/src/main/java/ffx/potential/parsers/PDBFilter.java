@@ -55,10 +55,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
+import ffx.potential.bonded.*;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
@@ -67,17 +67,8 @@ import ffx.crystal.SymOp;
 import ffx.numerics.VectorMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
-import ffx.potential.bonded.AminoAcidUtils;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.BondedUtils;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-import ffx.potential.bonded.MSGroup;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AtomType;
@@ -2726,6 +2717,7 @@ public final class PDBFilter extends SystemFilter {
         CompositeConfiguration ffProps = forceField.getProperties();
         for (String polyLink : ffProps.getStringArray("polymerlink")) {
             logger.info(" Experimental: linking a cyclic hetero group: " + polyLink);
+
             // Format: polymerlink resname atom1 atom2 [cyclize]
             String[] toks = polyLink.split("\\s+");
             String resName = toks[0];
@@ -2737,7 +2729,8 @@ public final class PDBFilter extends SystemFilter {
             }
 
             Molecule[] matches = molecules.stream().
-                    filter((Molecule m) -> {return m.getResidueName().equalsIgnoreCase(resName); }).toArray(Molecule[]::new);
+                    filter((Molecule m) -> m.getResidueName().equalsIgnoreCase(resName)).
+                    toArray(Molecule[]::new);
             for (int i = 0; i < matches.length; i++) {
                 Molecule mi = matches[i];
                 int ii = i+1;
@@ -2747,11 +2740,11 @@ public final class PDBFilter extends SystemFilter {
                 } else {
                     Molecule next;
                     if (ii % cyclicLen == 0) {
-                        logger.info(String.format(" Cyclizing molecule %d to %d", i, ii - cyclicLen));
                         next = matches[ii - cyclicLen];
+                        logger.info(String.format(" Cyclizing molecule %s to %s", mi, next));
                     } else {
-                        logger.info(String.format("Extending chain from %d to %d.", i, ii));
                         next = matches[ii];
+                        logger.info(String.format(" Extending chain from %s to %s.", mi, next));
                     }
                     Atom from = mi.getAtomByName(name1, true);
                     Atom to = next.getAtomByName(name2, true);

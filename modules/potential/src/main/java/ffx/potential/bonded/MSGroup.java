@@ -208,6 +208,36 @@ public abstract class MSGroup extends MSNode {
     }
 
     /**
+     * Special-case check for if a Bond connects atoms in a hetero-group polymer linkage.
+     * @param polyLinks polymerlink records from properties
+     * @param bond Bond to check
+     * @return If bond should be special-cased
+     */
+    private boolean polymerLinked(String[] polyLinks, Bond bond) {
+        Atom a1 = bond.getAtom(0);
+        Atom a2 = bond.get1_2(a1);
+
+        String resName = a1.getResidueName();
+        if (!resName.equals(a2.getResidueName())) {
+            return false;
+        }
+        String name1 = a1.getName();
+        String name2 = a2.getName();
+
+        for (String pLink : polyLinks) {
+            String[] toks = pLink.split("\\s+");
+            if (resName.equalsIgnoreCase(toks[0])) {
+                if (name1.equalsIgnoreCase(toks[1]) && name2.equalsIgnoreCase(toks[2])) {
+                    return true;
+                } else if (name1.equalsIgnoreCase(toks[2]) && name2.equalsIgnoreCase(toks[1])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * <p>
      * assignBondedTerms</p>
      *
@@ -224,13 +254,16 @@ public abstract class MSGroup extends MSNode {
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
         MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
 
+        String[] polyLinks = forceField.getProperties().getStringArray("polymerlink");
+
         // Collect all bonds for which both atoms are in this Group
         long time = System.nanoTime();
         ArrayList<Bond> bonds = new ArrayList<>();
         for (Atom atom : getAtomList()) {
+            // This check is probably unnecessary.
             if (atom.getNumBonds() != 0) {
                 for (Bond bond : atom.getBonds()) {
-                    if (bond.sameGroup() && bond.getParent() == null) {
+                    if ((bond.sameGroup() || polymerLinked(polyLinks, bond)) && bond.getParent() == null) {
                         newBondNode.add(bond);
                         bonds.add(bond);
                     }
@@ -251,10 +284,10 @@ public abstract class MSGroup extends MSNode {
                 int index = 0;
                 for (Bond bond : atom.getBonds()) {
                     index++;
-                    if (bond.sameGroup()) {
+                    if (bond.sameGroup() || polymerLinked(polyLinks, bond)) {
                         for (ListIterator<Bond> li = atom.getBonds().listIterator(index); li.hasNext();) {
                             Bond bond2 = li.next();
-                            if (bond2.sameGroup()) {
+                            if (bond2.sameGroup() || polymerLinked(polyLinks, bond2)) {
                                 Angle newAngle = Angle.angleFactory(bond, bond2, forceField);
                                 newAngleNode.insert(newAngle, 0);
                                 angles.add(newAngle);

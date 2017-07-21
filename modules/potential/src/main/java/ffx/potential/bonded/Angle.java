@@ -687,7 +687,7 @@ public class Angle extends BondedTerm implements BondedEnergy {
      */
     @Override
     public String toString() {
-        return String.format("%-s  (%7.1f,%7.2f)", id, value, energy);
+        return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
     }
 
     /**
