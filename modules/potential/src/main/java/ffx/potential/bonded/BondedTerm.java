@@ -493,7 +493,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      */
     @Override
     public String toString() {
-        return String.format("%-s  (%7.2f,%7.2f)", id, value, energy);
+        return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
     }
     
     /**
