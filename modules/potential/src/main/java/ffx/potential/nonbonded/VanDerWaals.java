@@ -760,7 +760,7 @@ public class VanDerWaals implements MaskingInterface,
                     continue;
                 }
                 double sume = 0.0;
-                for (int k = 1; k <= n; k++) { 
+                for (int k = 1; k <= n; k++) {
                     double r = nonbondedCutoff.cut - 0.5 * delR + k * delR; 
                     double r2 = r * r;
                     final double rho = r * irv; 
@@ -784,12 +784,12 @@ public class VanDerWaals implements MaskingInterface,
                         double r4 = r2 * r2;
                         double r5 = r2 * r3;
                         taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
-                        taper = 1.0 - taper;
+                        taper = 1.0 - taper;   
                     }
                     
                     double jacobian = 4.0 * PI * r2;
                     double e = jacobian * eij * taper;
-                    if (k != n) {
+                    if (j != i) {
                         sume += e;
                     } else {
                         sume += 0.5 * e;
