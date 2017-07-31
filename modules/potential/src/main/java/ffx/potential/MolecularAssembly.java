@@ -120,13 +120,13 @@ public class MolecularAssembly extends MSGroup {
      */
     public static final double KCAL_TO_KJ = 4.184;
     private static double[] a = new double[3];
-    
+
     public static final Indexing atomIndexing = prop(Indexing.class, "sys.atomIndexing", Indexing.XYZ);
     /**
      * Persistent index parallel to xyzIndex.
      */
     public static int persistentAtomIndexer = 1;
-    
+
     // MolecularSystem member variables
     private File file;
     protected ForceField forceField;
@@ -591,7 +591,7 @@ public class MolecularAssembly extends MSGroup {
             }
         }
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -813,7 +813,8 @@ public class MolecularAssembly extends MSGroup {
     public Atom[] getAtomArray() {
         ArrayList<Atom> atoms = getAtomList();
         Atom[] atomArray = atoms.toArray(new Atom[atoms.size()]);
-        Arrays.sort(atomArray);
+
+        // Arrays.sort(atomArray);
 
         for (int i=0; i<atoms.size(); i++) {
             atomArray[i].setXyzIndex(i+1);

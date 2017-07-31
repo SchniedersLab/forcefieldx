@@ -215,7 +215,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         super(molecularAssembly, restraints, nThreads);
 
         //super.energy(false, true);
-
         logger.info(" Initializing OpenMM\n");
 
         if (openMMPlatform == null) {
@@ -295,7 +294,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
         ForceField forceField = molecularAssembly.getForceField();
-        fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.001);
+        fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.00001);
 
         OpenMM_State_destroy(openMMState);
     }
@@ -376,6 +375,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * Returns the platform array as a String
+     *
      * @param stringArray
      * @param i
      * @return String
@@ -399,7 +399,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     /**
-     * Destroys pointer references to Context, Integrator and System to free up memory.
+     * Destroys pointer references to Context, Integrator and System to free up
+     * memory.
      */
     private void freeOpenMM() {
         OpenMM_Context_destroy(openMMContext);
@@ -408,7 +409,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     /**
-     * Adds atoms from the molecular assembly to the OpenMM System and reports to the user the number of particles added.
+     * Adds atoms from the molecular assembly to the OpenMM System and reports
+     * to the user the number of particles added.
      */
     private void addAtoms() {
         Atom[] atoms = molecularAssembly.getAtomArray();
@@ -2028,28 +2030,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         return energy(false, false);
     }
 
-    /**
-     * Returns the current energy. Preferred is to use the methods with explicit
-     * coordinate/gradient arrays.
-     *
-     * @param gradient Calculate gradients as well
-     * @param print Print verbose information to screen
-     * @return Current energy.
-     */
-    @Override
-    public double energy(boolean gradient, boolean print) {
-        logger.fine(" Energy(boolean, boolean) is being called on an OpenMMForceFieldEnergy! This will result in needless array creation.");
-        int numVars = this.getNumberOfVariables();
-        double[] x = new double[numVars];
-        this.getCoordinates(x);
-        if (gradient) {
-            double[] g = new double[numVars];
-            return energyAndGradient(x, g, print);
-        } else {
-            return energy(x, print);
-        }
-    }
-
     @Override
     public double energy(double[] x) {
         return energy(x, false);
@@ -2435,8 +2415,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             case "VERLET":
             default:
                 openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
-                //thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
-                //OpenMM_System_addForce(openMMSystem, thermostat);
+            //thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
+            //OpenMM_System_addForce(openMMSystem, thermostat);
         }
         //logger.info(String.format(" Created %s OpenMM Integrator", integrator));
 
@@ -2468,11 +2448,15 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * Sets the finite-difference step size used for getdEdL.
+     *
      * @param fdDLambda FD step size.
      */
     public void setFdDLambda(double fdDLambda) {
         this.fdDLambda = fdDLambda;
     }
+
+    private boolean doOpenMMdEdL = true;
+    private boolean doFFXdEdL = true;
 
     /**
      * {@inheritDoc}
@@ -2483,36 +2467,79 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double width = fdDLambda;
         double ePlus;
         double eMinus;
+        double dEdL = 0.0;
+        double openMMdEdL = 0.0;
+        double ffxdEdL = 0.0;
 
         // Small optimization to only create the x array once.
         double[] x = new double[getNumberOfVariables()];
-        this.getCoordinates(x);
+        getCoordinates(x);
 
-        // This section technically not robust to the case that fdDLambda > 0.5.
-        // However, that should be an error case checked when fdDLambda is set.
-        if (currentLambda + fdDLambda > 1.0) {
-            logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
-            ePlus = energy(x);
-            setLambda(currentLambda - fdDLambda);
-            eMinus = energy(x);
-        } else if (currentLambda - fdDLambda < 0.0) {
-            logger.fine(" Could not test the lower point, as current lambda - fdDL < 1");
-            eMinus = energy(x);
-            setLambda(currentLambda + fdDLambda);
-            ePlus = energy(x);
-        } else {
-            setLambda(currentLambda + fdDLambda);
-            ePlus = energy(x);
-            setLambda(currentLambda - fdDLambda);
-            eMinus = energy(x);
-            width *= 2.0;
+        if (doOpenMMdEdL) {
+            width = fdDLambda;
+            if (currentLambda + fdDLambda > 1.0) {
+                logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
+                ePlus = energy(x);
+                setLambda(currentLambda - fdDLambda);
+                eMinus = energy(x);
+            } else if (currentLambda - fdDLambda < 0.0) {
+                logger.fine(" Could not test the lower point, as current lambda - fdDL < 1");
+                eMinus = energy(x);
+                setLambda(currentLambda + fdDLambda);
+                ePlus = energy(x);
+            } else {
+                setLambda(currentLambda + fdDLambda);
+                ePlus = energy(x);
+                setLambda(currentLambda - fdDLambda);
+                eMinus = energy(x);
+                //logger.info(String.format(" OpenMM %12.8f %12.8f", ePlus, eMinus));
+                width *= 2.0;
+            }
+            // Reset Lambda.
+            setLambda(currentLambda);
+            openMMdEdL = (ePlus - eMinus) / width;
+            //logger.info(String.format(" Step: %16.10f OpenMM: %16.10f", fdDLambda, openMMdEdL));
+            dEdL = openMMdEdL;
         }
 
-        // Set Lambda to Lambda + dL
-        setLambda(currentLambda);
+        if (doFFXdEdL || !doOpenMMdEdL) {
+            width = fdDLambda;
+            // This section technically not robust to the case that fdDLambda > 0.5.
+            // However, that should be an error case checked when fdDLambda is set.
+            super.setLambda(1.0);
+            if (currentLambda + fdDLambda > 1.0) {
+                logger.fine(" Could not test the upper point, as current lambda + fdDL > 1");
+                super.setLambdaMultipoleScale(currentLambda);
+                ePlus = super.energy(x, false);
+                // ePlus = super.getTotalElectrostaticEnergy();
+                super.setLambdaMultipoleScale(currentLambda - fdDLambda);
+                eMinus = super.energy(x, false);
+                // eMinus = super.getTotalElectrostaticEnergy();
+            } else if (currentLambda - fdDLambda < 0.0) {
+                logger.fine(" Could not test the lower point, as current lambda - fdDL < 1");
+                super.setLambdaMultipoleScale(currentLambda);
+                eMinus = super.energy(x, false);
+                // eMinus = super.getTotalElectrostaticEnergy();
+                super.setLambdaMultipoleScale(currentLambda + fdDLambda);
+                ePlus = super.energy(x, false);
+                // ePlus = super.getTotalElectrostaticEnergy();
+            } else {
+                super.setLambdaMultipoleScale(currentLambda + fdDLambda);
+                ePlus = super.energy(x, false);
+                // ePlus = super.getTotalElectrostaticEnergy();
+                super.setLambdaMultipoleScale(currentLambda - fdDLambda);
+                eMinus = super.energy(x, false);
+                // eMinus = super.getTotalElectrostaticEnergy();
+                //logger.info(String.format(" FFX    %12.8f %12.8f", ePlus, eMinus));
+                width *= 2.0;
+            }
+            super.setLambdaMultipoleScale(currentLambda);
+            ffxdEdL = (ePlus - eMinus) / width;
+            //logger.info(String.format(" Step: %16.10f FFX:    %16.10f", fdDLambda, ffxdEdL));
+            dEdL = ffxdEdL;
+        }
 
-        // Compute finite difference dEdL
-        return (ePlus - eMinus) / (width);
+        return dEdL;
     }
 
     /**
@@ -2521,7 +2548,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param gradients
      */
     @Override
-    public void getdEdXdL(double gradients[]) {
+    public void getdEdXdL(double gradients[]
+    ) {
         // Note for OpenMMForceFieldEnergy this method is not implemented.
     }
 

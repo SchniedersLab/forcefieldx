@@ -66,7 +66,7 @@ import ffx.potential.MolecularAssembly;
  * 3.) Randomly change the value of Lambda.
  *
  * 4.) Accept / Reject the Lambda move using the OSRW energy.
- * 
+ *
  * 5.) Add a biasing potential to the current value of Lambda.
  *
  * @author Mallory R. Tollefson
@@ -120,7 +120,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
     }
 
     /**
-     * Takes in parameters and calls the MDMove method setMDParameters to update the stepsPerMove and timeStep parameters to the current value in this class
+     * Takes in parameters and calls the MDMove method setMDParameters to update
+     * the stepsPerMove and timeStep parameters to the current value in this
+     * class
+     *
      * @param totalSteps
      * @param stepsPerMove
      * @param timeStep
@@ -132,24 +135,30 @@ public class MonteCarloOSRW extends BoltzmannMC {
     }
 
     /**
-     * Calls on LambdaMove class method setLambdaStdDev to update the lambda standard deviation to the current value in this class
-     * @param stdDev 
+     * Calls on LambdaMove class method setLambdaStdDev to update the lambda
+     * standard deviation to the current value in this class
+     *
+     * @param stdDev
      */
     public void setLambdaStdDev(double stdDev) {
         lambdaMove.setStdDev(stdDev);
     }
 
     /**
-     * Sets the value of the boolean equilibration variables to true or false to either allow an equilibration step or skip it.
-     * @param equilibration 
+     * Sets the value of the boolean equilibration variables to true or false to
+     * either allow an equilibration step or skip it.
+     *
+     * @param equilibration
      */
     public void setEquilibration(boolean equilibration) {
         this.equilibration = equilibration;
     }
 
     /**
-     * Calls on the OSRW method set lambda to update lambda to the current value in this class
-     * @param lambda 
+     * Calls on the OSRW method set lambda to update lambda to the current value
+     * in this class
+     *
+     * @param lambda
      */
     public void setLambda(double lambda) {
         this.lambda = lambda;
@@ -158,6 +167,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
 
     /**
      * Returns the current value of lambda
+     *
      * @return lambda
      */
     public double getLambda() {

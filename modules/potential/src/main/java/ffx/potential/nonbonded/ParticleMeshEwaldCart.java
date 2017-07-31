@@ -209,6 +209,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private final boolean useQuadrupoles;
     /**
+     * If less than 1.0, all atoms with their lambda flags set will have their
+     * multipoles and polarizabilities scaled.
+     */
+    private double lambdaScaleMultipoles = 1.0;
+
+    /**
      * If set to false, multipoles are fixed in their local frame and torques
      * are zero, which is useful for narrowing down discrepancies between
      * analytic and finite-difference derivatives(default is true).
@@ -3742,6 +3748,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
             permanentEnergy *= ELECTRIC;
             polarizationEnergy *= ELECTRIC;
+
+            //logger.info(String.format(" RealSpace Energy: %12.8f", permanentEnergy + polarizationEnergy));
         }
 
         /**
@@ -5425,7 +5433,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             private final double tempQuadrupole[][] = new double[3][3];
             private final double dipole[] = new double[3];
             private final double quadrupole[][] = new double[3][3];
-            private double chargeScale, dipoleScale, quadrupoleScale;
+            private double chargeScale, dipoleScale, quadrupoleScale, polarizabilityScale;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -5436,22 +5444,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             }
 
             @Override
-            public void start() {
-                chargeScale = 1.0;
-                dipoleScale = 1.0;
-                quadrupoleScale = 1.0;
-                if (!useCharges) {
-                    chargeScale = 0.0;
-                }
-                if (!useDipoles) {
-                    dipoleScale = 0.0;
-                }
-                if (!useQuadrupoles) {
-                    quadrupoleScale = 0.0;
-                }
-            }
-
-            @Override
             public void run(int lb, int ub) {
                 for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                     final double x[] = coordinates[iSymm][0];
@@ -5459,6 +5451,26 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                     final double z[] = coordinates[iSymm][2];
                     for (int ii = lb; ii <= ub; ii++) {
                         Atom atom = atoms[ii];
+                        chargeScale = 1.0;
+                        dipoleScale = 1.0;
+                        quadrupoleScale = 1.0;
+                        polarizabilityScale = 1.0;
+                        if (atom.applyLambda()) {
+                            chargeScale = lambdaScaleMultipoles;
+                            dipoleScale = lambdaScaleMultipoles;
+                            quadrupoleScale = lambdaScaleMultipoles;
+                            polarizabilityScale = lambdaScaleMultipoles;
+                            //logger.info(String.format(" FFX Scaling Atom %s by %10.6f ", atom.toString(), lambdaScaleMultipoles));
+                        }
+                        if (!useCharges) {
+                            chargeScale = 0.0;
+                        }
+                        if (!useDipoles) {
+                            dipoleScale = 0.0;
+                        }
+                        if (!useQuadrupoles) {
+                            quadrupoleScale = 0.0;
+                        }
                         final double in[] = localMultipole[ii];
                         final double out[] = globalMultipole[iSymm][ii];
                         double elecScale = 1.0;
@@ -5490,7 +5502,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                 out[t101] = 0.0;
                                 out[t011] = 0.0;
                                 PolarizeType polarizeType = atoms[ii].getPolarizeType();
-                                polarizability[ii] = polarizeType.polarizability * elecScale;
+                                polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
                                 continue;
                             }
                             switch (frame[ii]) {
@@ -5674,11 +5686,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                             out[t011] = in[t011] * quadrupoleScale * elecScale;
                         }
                         PolarizeType polarizeType = atoms[ii].getPolarizeType();
-                        polarizability[ii] = polarizeType.polarizability * elecScale;
+                        polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
                     }
                 }
             }
         }
+    }
+
+    @Override
+    public void setLambdaMultipoleScale(double multipoleScale) {
+        lambdaScaleMultipoles = multipoleScale;
     }
 
     private class ExpandInducedDipolesRegion extends ParallelRegion {
@@ -8604,42 +8621,52 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * Access methods for OpenMM.
      */
+    @Override
     public double[][][] getCoordinates() {
         return coordinates;
     }
 
+    @Override
     public double getPolarEps() {
         return poleps;
     }
 
+    @Override
     public int[][] getPolarization11() {
         return ip11;
     }
 
+    @Override
     public int[][] getPolarization12() {
         return ip12;
     }
 
+    @Override
     public int[][] getPolarization13() {
         return ip13;
     }
 
+    @Override
     public Polarization getPolarizationType() {
         return polarization;
     }
 
+    @Override
     public int[][] getAxisAtoms() {
         return axisAtom;
     }
 
+    @Override
     public double getScale14() {
         return m14scale;
     }
 
+    @Override
     public double getEwaldCoefficient() {
         return aewald;
     }
 
+    @Override
     public ReciprocalSpace getReciprocalSpace() {
         return reciprocalSpace;
     }

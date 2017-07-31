@@ -62,22 +62,26 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
 
     /**
-     * Total electrostatic energy == permanentMultipole + polarizationEnergy + generalizedKirkwood.
+     * Total electrostatic energy == permanentMultipole + polarizationEnergy +
+     * generalizedKirkwood.
      */
     protected double totalElectrostaticEnergy;
     /**
-     * Total multipole energy == permanentMultipole + polarizationEnergy (no GK).
+     * Total multipole energy == permanentMultipole + polarizationEnergy (no
+     * GK).
      */
     protected double totalMultipoleEnergy;
     /**
-     * Permanent multipole energy in kcal/mol == permanentRealSpace + permanentSelf + permanentReciprocal.
+     * Permanent multipole energy in kcal/mol == permanentRealSpace +
+     * permanentSelf + permanentReciprocal.
      */
     protected double permanentMultipoleEnergy;
     protected double permanentRealSpaceEnergy;
     protected double permanentSelfEnergy;
     protected double permanentReciprocalEnergy;
     /**
-     * Polarization energy in kcal/mol == inducedRealSpace + inducedSelf + inducedReciprocal.
+     * Polarization energy in kcal/mol == inducedRealSpace + inducedSelf +
+     * inducedReciprocal.
      */
     protected double polarizationEnergy;
     protected double inducedRealSpaceEnergy;
@@ -117,20 +121,21 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     public double inducedDipole[][][];
     public double inducedDipoleCR[][][];
     /**
-     * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py script
-     * (available from the wiki) to draw these easily in PyMol.
+     * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py
+     * script (available from the wiki) to draw these easily in PyMol.
      */
     public boolean printInducedDipoles = Boolean.valueOf(System.getProperty("pme.printInducedDipoles", "false"));
     /**
-     * Log the seven components of total electrostatic energy at each evaluation:
-     * (Permanent) PermanentRealSpace, PermanentSelf, PermanentRecip
-     * (Induced) InducedRealSpace, InducedSelf, InducedRecip, and GeneralizedKirkwood.
-     * Self, Recip terms apply only to periodic systems; GK applies only when requested and aperiodic.
+     * Log the seven components of total electrostatic energy at each
+     * evaluation: (Permanent) PermanentRealSpace, PermanentSelf, PermanentRecip
+     * (Induced) InducedRealSpace, InducedSelf, InducedRecip, and
+     * GeneralizedKirkwood. Self, Recip terms apply only to periodic systems; GK
+     * applies only when requested and aperiodic.
      */
     public boolean printDecomposition;
     /**
-     * Disables windowed lambda ranges by setting permLambdaStart = polLambdaStart = 0.0
-     * and permLambdaEnd = polLambdaEnd = 1.0.
+     * Disables windowed lambda ranges by setting permLambdaStart =
+     * polLambdaStart = 0.0 and permLambdaEnd = polLambdaEnd = 1.0.
      */
     protected final boolean noWindowing = Boolean.valueOf(System.getProperty("pme.noWindowing", "false"));
 
@@ -151,7 +156,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
     }
 
     /**
-     * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA implementations.
+     * Describes available SCF algorithms, and whether they are supported by the
+     * FFX and/or CUDA implementations.
      */
     public enum SCFAlgorithm {
         // I actually don't know if OpenMM does SOR or CG, but they both just become "Mutual".
@@ -179,6 +185,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
 
         /**
          * Returns the list of supported Platforms.
+         *
          * @return The supported platform List. Unmodifiable.
          */
         public List<Platform> getSupportedPlatforms() {
@@ -187,6 +194,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
 
         /**
          * Checks if this platform is supported
+         *
          * @param platform To check
          * @return Supported
          */
@@ -265,6 +273,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
 
     public abstract ReciprocalSpace getReciprocalSpace();
 
+    public abstract void setLambdaMultipoleScale(double scale);
+
     public abstract ELEC_FORM getElecForm();
 
     public abstract String getName();
@@ -315,6 +325,7 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
 
     /**
      * Returns the SCF algorithm in use.
+     *
      * @return The SCF algorithm used.
      */
     public SCFAlgorithm getScfAlgorithm() {

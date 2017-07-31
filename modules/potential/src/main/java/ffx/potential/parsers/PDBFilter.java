@@ -215,13 +215,14 @@ public final class PDBFilter extends SystemFilter {
     private int modelsWritten = -1;
     private boolean noVersioning = false;
     private final static Set<String> backboneNames;
+
     static {
         Set<String> bbAts = new HashSet<>();
         //String[] names = {"C", "CA", "N", "O", "H", "H1", "H2", "H3", "OXT", "OT2"};
         String[] names = {"C", "CA", "N", "O", "OXT", "OT2"};
         bbAts.addAll(Arrays.asList(names));
         backboneNames = Collections.unmodifiableSet(bbAts);
-        // If necessary, can now expose backboneNames as a public, final 
+        // If necessary, can now expose backboneNames as a public, final
         // unmodifiable Set.
     }
 
@@ -290,10 +291,12 @@ public final class PDBFilter extends SystemFilter {
             mutations = new ArrayList<>();
         }
         mutations.add(new Mutation(resID, chainID, name));
-    }    
+    }
+
     public void mutate(Mutation mutation) {
         mutations.add(mutation);
     }
+
     public void mutate(List<Mutation> mutations) {
         this.mutations.addAll(mutations);
     }
@@ -1155,7 +1158,7 @@ public final class PDBFilter extends SystemFilter {
     public void setLogWrites(boolean logWrites) {
         this.logWrites = logWrites;
     }
-    
+
     public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
         FileWriter fw;
         BufferedWriter bw;
@@ -1185,12 +1188,14 @@ public final class PDBFilter extends SystemFilter {
             return false;
         }
     }
+
     public boolean writeFileWithHeader(File saveFile, String header) {
         return writeFileWithHeader(saveFile, header, true);
-    }	
-	public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
-		return writeFileWithHeader(saveFile, header.toString());
-	}
+    }
+
+    public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
+        return writeFileWithHeader(saveFile, header.toString());
+    }
 
     /**
      * <p>
@@ -2710,7 +2715,9 @@ public final class PDBFilter extends SystemFilter {
     }
 
     /**
-     * Resolves links between polymeric hetero groups; presently only functional for cyclic molecules.
+     * Resolves links between polymeric hetero groups; presently only functional
+     * for cyclic molecules.
+     *
      * @param molecules List of Molecules in the molecular assembly.
      */
     private void resolvePolymerLinks(List<Molecule> molecules) {
@@ -2733,7 +2740,7 @@ public final class PDBFilter extends SystemFilter {
                     toArray(Molecule[]::new);
             for (int i = 0; i < matches.length; i++) {
                 Molecule mi = matches[i];
-                int ii = i+1;
+                int ii = i + 1;
                 if (cyclicLen < 1) {
                     logger.severe(" No current support for polymeric, non-cyclic hetero groups");
                     // Would probably split by chain.
@@ -3831,6 +3838,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     public static class Mutation {
+
         /**
          * Residue ID of the residue to mutate.
          */
@@ -3843,12 +3851,13 @@ public final class PDBFilter extends SystemFilter {
          * Character for the chain ID of the residue that will be mutated.
          */
         final char chainChar;
+
         public Mutation(int resID, char chainChar, String newResName) {
             if (newResName == null || newResName.length() != 3) {
                 logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
             }
             try {
-               AminoAcid3.valueOf(newResName);
+                AminoAcid3.valueOf(newResName);
             } catch (IllegalArgumentException ex) {
                 logger.log(Level.WARNING, "Invalid mutation target: %s.", newResName);
             }
@@ -3856,6 +3865,7 @@ public final class PDBFilter extends SystemFilter {
             this.chainChar = chainChar;
             this.resName = newResName;
         }
+
         public Mutation(char chain, int res, String newName) {
             this(res, chain, newName);
         }

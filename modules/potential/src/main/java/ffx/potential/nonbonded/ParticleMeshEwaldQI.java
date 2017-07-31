@@ -6254,6 +6254,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
     }
 
+    public void setLambdaMultipoleScale(double multipoleScale) {
+        //
+    }
+
     /**
      * {@inheritDoc}
      *

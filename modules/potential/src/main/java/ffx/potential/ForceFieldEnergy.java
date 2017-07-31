@@ -114,6 +114,7 @@ import static ffx.potential.PotentialComponent.*;
 import static ffx.potential.bonded.Atom.Resolution.AMOEBA;
 import static ffx.potential.bonded.Atom.Resolution.FIXEDCHARGE;
 import static ffx.potential.extended.ExtUtils.prop;
+import static ffx.potential.parameters.ForceField.ForceFieldBoolean.LAMBDATERM;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 
@@ -797,6 +798,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
                 case OMM_CUDA:
                     try {
+                        System.setProperty("lambdaterm","false");
+                        ffield.addForceFieldBoolean(LAMBDATERM, Boolean.FALSE);
                         OpenMMForceFieldEnergy openMMEnergy = new OpenMMForceFieldEnergy(assembly, platform, restraints, numThreads);
                         return openMMEnergy;
                     } catch (Exception ex) {
@@ -1276,6 +1279,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @return a double.
      */
     public double energy(boolean gradient, boolean print) {
+
+        //logger.info(" ForceFieldEnergy energy called.");
+
         try {
             bondTime = 0;
             angleTime = 0;
@@ -1885,7 +1891,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
         }
         setCoordinates(x);
-        double e = energy(false, verbose);
+        double e = this.energy(false, verbose);
         /**
          * Rescale the coordinates.
          */
@@ -2536,6 +2542,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     public int getVanDerWaalsInteractions() {
         return nVanDerWaalInteractions;
+    }
+
+    public void setLambdaMultipoleScale(double scale) {
+        if (particleMeshEwald != null) {
+            particleMeshEwald.setLambdaMultipoleScale(scale);
+        }
     }
 
     public double getEnergyComponent(PotentialComponent component) {

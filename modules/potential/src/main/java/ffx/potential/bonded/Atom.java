@@ -2742,18 +2742,16 @@ public class Atom extends MSNode implements Comparable<Atom> {
      * @return a {@link java.lang.String} object.
      */
     public String toMultipoleString() {
-        {
-            if (multipoleType == null || globalDipole == null || globalQuadrupole == null) {
-                return null;
-            }
-            StringBuilder multipoleBuffer = new StringBuilder(toString());
-            multipoleBuffer.append(String.format("\n%11$s % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f\n" + "%11$s % 7.5f\n" + "%11$s % 7.5f % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f", multipoleType.getCharge(), globalDipole[0], globalDipole[1],
-                    globalDipole[2], globalQuadrupole[0][0],
-                    globalQuadrupole[1][0], globalQuadrupole[1][1],
-                    globalQuadrupole[2][0], globalQuadrupole[2][1],
-                    globalQuadrupole[2][2], "                 "));
-            return multipoleBuffer.toString();
+        if (multipoleType == null || globalDipole == null || globalQuadrupole == null) {
+            return null;
         }
+        StringBuilder multipoleBuffer = new StringBuilder(toString());
+        multipoleBuffer.append(String.format("\n%11$s % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f\n" + "%11$s % 7.5f\n" + "%11$s % 7.5f % 7.5f\n" + "%11$s % 7.5f % 7.5f % 7.5f", multipoleType.getCharge(), globalDipole[0], globalDipole[1],
+                globalDipole[2], globalQuadrupole[0][0],
+                globalQuadrupole[1][0], globalQuadrupole[1][1],
+                globalQuadrupole[2][0], globalQuadrupole[2][1],
+                globalQuadrupole[2][2], "                 "));
+        return multipoleBuffer.toString();
     }
 
     public enum Descriptions {
@@ -2777,7 +2775,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
 
     /**
-     * Replaced by describe(Descriptions.XyzIndex_Name. Formats with XYZ index followed by atom name.
+     * Replaced by describe(Descriptions.XyzIndex_Name. Formats with XYZ index
+     * followed by atom name.
+     *
      * @return A short string representation of this.
      */
     @Deprecated
