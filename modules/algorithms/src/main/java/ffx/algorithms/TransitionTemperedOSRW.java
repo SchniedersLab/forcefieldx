@@ -113,7 +113,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      * The Dama et al. transition-tempering rate parameter. A reasonable value
      * is about 2 to 4 kT.
      */
-    private double temperingFactor = 4.0;
+    private double temperingFactor = 8.0;
     private double deltaT = temperingFactor * R * 298.0;
     /**
      * The Dama et al. transition-tempering weight: temperingWeight =

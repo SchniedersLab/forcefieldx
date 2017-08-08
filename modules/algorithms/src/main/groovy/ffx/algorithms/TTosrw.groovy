@@ -218,7 +218,7 @@ class TTosrw extends Script {
         /**
          * -b or --bias sets the initial Gaussian bias magnitude in kcal/mol.
          */
-        @Option(shortName='g', longName='bias', defaultValue='0.002',
+        @Option(shortName='g', longName='bias', defaultValue='0.05',
             description='Gaussian bias magnitude (kcal/mol)') double biasMag;
         /**
          * -m or --mass sets the lambda particle mass.
@@ -285,7 +285,7 @@ class TTosrw extends Script {
          * -tp or --temperingParam sets the Dama et al tempering rate parameter,
          * in multiples of kBT.
          */
-        @Option(shortName='tp', longName='temperingParam', defaultValue='4.0',
+        @Option(shortName='tp', longName='temperingParam', defaultValue='8.0',
             description='Dama et al tempering rate parameter in multiples of kBT') double temperParam;
         /**
          * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart
