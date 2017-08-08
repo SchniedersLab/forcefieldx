@@ -2455,7 +2455,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         this.fdDLambda = fdDLambda;
     }
 
-    private boolean doOpenMMdEdL = true;
+    private boolean doOpenMMdEdL = false;
     private boolean doFFXdEdL = true;
 
     /**
