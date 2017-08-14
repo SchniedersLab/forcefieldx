@@ -95,7 +95,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     private final double recursionWeights[][];
     private final double myRecursionWeight[];
     /**
-     * These DoubleBufs wrap the recusionWeight arrays.
+     * These DoubleBufs wrap the recursionWeight arrays.
      */
     private final DoubleBuf recursionWeightsBuf[];
     private final DoubleBuf myRecursionWeightBuf;
@@ -267,19 +267,19 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             updateFLambda(true);
         }
 
-        String propString = System.getProperty("ttosrw-alwaystemper", "false");
+        String propString = System.getProperty("ttosrw-alwaystemper", "true");
         if (Boolean.parseBoolean(propString)) {
             logger.info(" Disabling detection of transitions; will immediately begin tempering.");
             tempering = true;
         }
 
-        propString = System.getProperty("ttosrw-temperOffset", "0");
-        temperOffset = 0;
+        propString = System.getProperty("ttosrw-temperOffset", "1");
+        temperOffset = 1;
         try {
             temperOffset = Double.parseDouble(propString);
         } catch (NumberFormatException ex) {
-            logger.info(String.format(" Exception in parsing ttosrw-temperOffset: %s", ex.toString()));
-            temperOffset = 0;
+            logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
+            temperOffset = 1;
         }
         if (temperOffset > 0) {
             logger.info(String.format(" Applying a %7.4g kcal/mol offset to tempering", temperOffset));
