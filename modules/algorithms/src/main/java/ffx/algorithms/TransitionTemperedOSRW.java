@@ -108,7 +108,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      * A flag to indicate if the transition has been crossed and Dama et al.
      * transition-tempering should begin.
      */
-    private boolean tempering = false;
+    private boolean tempering = true;
     /**
      * The Dama et al. transition-tempering rate parameter. A reasonable value
      * is about 2 to 4 kT.
@@ -123,7 +123,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     /**
      * An offset applied to min(F_L) before recalculating tempering weight.
      */
-    private double temperOffset = 0;
+    private double temperOffset = 1.0;
     /**
      * Transition detection flags. The transition is currently defined using the
      * following logic: First, the simulation needs to pass through mid-range
