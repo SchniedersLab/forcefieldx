@@ -822,7 +822,7 @@ public class VanDerWaals implements MaskingInterface,
         // Divide by the volume of the box.
         total = total / crystal.volume;
         
-        logger.info(format("   Long-Range Correction:                %16.8f", total));
+        /*logger.info(format("   Long-Range Correction:                %16.8f", total));*/
         return total;
 
     }
@@ -1025,7 +1025,7 @@ public class VanDerWaals implements MaskingInterface,
         // Redo the long range correction.
         if (doLongRangeCorrection) {
             longRangeCorrection = getLongRangeCorrection();
-            logger.info(String.format(" Long-range vdW correction %12.8f (kcal/mole).",
+            logger.info(String.format(" Long-range VdW correction %12.8f (kcal/mole).",
                     longRangeCorrection));
         } else {
             longRangeCorrection = 0.0;
@@ -1361,6 +1361,7 @@ public class VanDerWaals implements MaskingInterface,
             if (doLongRangeCorrection) {
                 longRangeCorrection = getLongRangeCorrection();
                 sharedEnergy.set(longRangeCorrection);
+                logger.info(format("   Long-Range Correction:                %16.8f", longRangeCorrection));
             } else {
                 sharedEnergy.set(0.0);
             }
