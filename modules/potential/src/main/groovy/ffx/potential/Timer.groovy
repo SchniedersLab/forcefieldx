@@ -93,8 +93,7 @@ class Timer extends Script {
 
         // Set the number of threads.
         if (options.threads > 0) {
-            int nThreads = options.threads
-            System.setProperty("pj.nt", nThreads);
+            System.setProperty("pj.nt", Integer.toString(options.threads));
         }
 
         logger.info("\n Timing energy and gradient for " + modelFilename);
