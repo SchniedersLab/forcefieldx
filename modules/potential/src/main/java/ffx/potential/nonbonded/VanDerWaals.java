@@ -375,7 +375,7 @@ public class VanDerWaals implements MaskingInterface,
         threadCount = parallelTeam.getThreadCount();
         sharedInteractions = new SharedInteger();
         sharedEnergy = new SharedDouble();
-        doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, true);
+        doLongRangeCorrection = forceField.getBoolean(ForceField.ForceFieldBoolean.VDWLRTERM, false);
         vanDerWaalsRegion = new VanDerWaalsRegion();
         initializationTime = new long[threadCount];
         vdwTime = new long[threadCount];
