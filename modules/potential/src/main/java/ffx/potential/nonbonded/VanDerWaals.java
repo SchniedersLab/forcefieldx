@@ -472,6 +472,11 @@ public class VanDerWaals implements MaskingInterface,
         logger.info(format("   Switch Start:                         %6.3f (A)", cut));
         logger.info(format("   Cut-Off:                              %6.3f (A)", off));
         logger.info(format("   Long-Range Correction:                %b", doLongRangeCorrection));
+        if (doLongRangeCorrection) {
+                longRangeCorrection = getLongRangeCorrection();
+                sharedEnergy.set(longRangeCorrection);
+                logger.info(format("                                        %16.8f", longRangeCorrection));
+        }
 
         if (lambdaTerm) {
             logger.info("   Alchemical Parameters");
@@ -1361,7 +1366,6 @@ public class VanDerWaals implements MaskingInterface,
             if (doLongRangeCorrection) {
                 longRangeCorrection = getLongRangeCorrection();
                 sharedEnergy.set(longRangeCorrection);
-                logger.info(format("   Long-Range Correction:                %16.8f", longRangeCorrection));
             } else {
                 sharedEnergy.set(0.0);
             }
