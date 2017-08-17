@@ -475,7 +475,7 @@ public class VanDerWaals implements MaskingInterface,
         if (doLongRangeCorrection) {
                 longRangeCorrection = getLongRangeCorrection();
                 sharedEnergy.set(longRangeCorrection);
-                logger.info(format("                                        %16.8f", longRangeCorrection));
+                logger.info(format("                                     %5.3f", longRangeCorrection));
         }
 
         if (lambdaTerm) {
