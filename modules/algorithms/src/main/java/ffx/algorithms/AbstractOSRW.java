@@ -207,7 +207,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Magnitude of each hill (not including tempering) in (kcal/mol).
      */
-    protected double biasMag = 0.002;
+    protected double biasMag = 0.05;
     /**
      * 1D PMF with respect to lambda F(L).
      */

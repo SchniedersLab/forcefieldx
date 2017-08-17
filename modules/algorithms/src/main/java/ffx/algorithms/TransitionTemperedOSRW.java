@@ -95,7 +95,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     private final double recursionWeights[][];
     private final double myRecursionWeight[];
     /**
-     * These DoubleBufs wrap the recusionWeight arrays.
+     * These DoubleBufs wrap the recursionWeight arrays.
      */
     private final DoubleBuf recursionWeightsBuf[];
     private final DoubleBuf myRecursionWeightBuf;
@@ -108,12 +108,12 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      * A flag to indicate if the transition has been crossed and Dama et al.
      * transition-tempering should begin.
      */
-    private boolean tempering = false;
+    private boolean tempering = true;
     /**
      * The Dama et al. transition-tempering rate parameter. A reasonable value
      * is about 2 to 4 kT.
      */
-    private double temperingFactor = 4.0;
+    private double temperingFactor = 8.0;
     private double deltaT = temperingFactor * R * 298.0;
     /**
      * The Dama et al. transition-tempering weight: temperingWeight =
@@ -123,7 +123,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
     /**
      * An offset applied to min(F_L) before recalculating tempering weight.
      */
-    private double temperOffset = 0;
+    private double temperOffset = 1.0;
     /**
      * Transition detection flags. The transition is currently defined using the
      * following logic: First, the simulation needs to pass through mid-range
@@ -267,19 +267,19 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             updateFLambda(true);
         }
 
-        String propString = System.getProperty("ttosrw-alwaystemper", "false");
+        String propString = System.getProperty("ttosrw-alwaystemper", "true");
         if (Boolean.parseBoolean(propString)) {
             logger.info(" Disabling detection of transitions; will immediately begin tempering.");
             tempering = true;
         }
 
-        propString = System.getProperty("ttosrw-temperOffset", "0");
-        temperOffset = 0;
+        propString = System.getProperty("ttosrw-temperOffset", "1");
+        temperOffset = 1;
         try {
             temperOffset = Double.parseDouble(propString);
         } catch (NumberFormatException ex) {
-            logger.info(String.format(" Exception in parsing ttosrw-temperOffset: %s", ex.toString()));
-            temperOffset = 0;
+            logger.info(String.format(" Exception in parsing ttosrw-temperOffset, resetting to 1.0 kcal/mol: %s", ex.toString()));
+            temperOffset = 1;
         }
         if (temperOffset > 0) {
             logger.info(String.format(" Applying a %7.4g kcal/mol offset to tempering", temperOffset));

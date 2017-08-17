@@ -3174,7 +3174,6 @@ public class RotamerOptimization implements Terminatable {
         }
 
         logIfMaster(String.format(" Approximate Energy:     %16.8f", approximateEnergy));
-
         return e;
     }
 
@@ -4457,6 +4456,7 @@ public class RotamerOptimization implements Terminatable {
                     loaded = loadEnergyRestart(energyRestartFile, residues);
                 }
             }
+            long energyTime = -System.nanoTime();
             SinglesEnergyRegion singlesRegion = new SinglesEnergyRegion(energyWorkerTeam.getThreadCount(), residues);
             PairsEnergyRegion pairsRegion = new PairsEnergyRegion(energyWorkerTeam.getThreadCount(), residues);
             TriplesEnergyRegion triplesRegion = new TriplesEnergyRegion(energyWorkerTeam.getThreadCount(), residues);
@@ -4492,6 +4492,8 @@ public class RotamerOptimization implements Terminatable {
                     Thread.sleep(POLLING_FREQUENCY);
                 }
                 energyWorkerTeam.execute(singlesRegion);
+                long timeOut = System.nanoTime() + energyTime;
+                logIfMaster(String.format(" Time for single energies: %12.4g", (timeOut * 1.0E-9)));
 
                 if (loaded < 2) {
                     jobMapPairs.clear();
@@ -4536,6 +4538,8 @@ public class RotamerOptimization implements Terminatable {
                     Thread.sleep(POLLING_FREQUENCY);
                 }
                 energyWorkerTeam.execute(pairsRegion);
+                timeOut = System.nanoTime() + energyTime;
+                logIfMaster(String.format(" Time for pair energies:   %12.4g", (timeOut * 1.0E-9)));
 
                 if (threeBodyTerm) {
                     if (loaded < 3) {
@@ -4595,6 +4599,8 @@ public class RotamerOptimization implements Terminatable {
                         Thread.sleep(POLLING_FREQUENCY);
                     }
                     energyWorkerTeam.execute(triplesRegion);
+                    timeOut = System.nanoTime() + energyTime;
+                    logIfMaster(String.format(" Time for triple energies: %12.4g", (timeOut * 1.0E-9)));
                 }
 
                 if (computeQuads) {
@@ -4693,6 +4699,8 @@ public class RotamerOptimization implements Terminatable {
 
                     logger.info(String.format(" Running quads: %d jobs.", jobMapQuads.size()));
                     energyWorkerTeam.execute(quadsRegion);
+                    timeOut = System.nanoTime() + energyTime;
+                    logIfMaster(String.format(" Time for quad energies:   %12.4g", (timeOut * 1.0E-9)));
                 }
             } catch (Exception ex) {
                 String message = " Exception computing rotamer energies in parallel.";
@@ -4702,6 +4710,8 @@ public class RotamerOptimization implements Terminatable {
                 // receiveThread.die();
             }
 
+            energyTime += System.nanoTime();
+            logIfMaster(String.format(" Time for all energies:    %12.4g", (energyTime * 1.0E-9)));
             // Turn on all atoms.
             for (int i = 0; i < atoms.length; i++) {
                 atoms[i].setUse(true);
@@ -5904,7 +5914,6 @@ public class RotamerOptimization implements Terminatable {
      * @param ri Rotamer ri of Residue i
      * @param j Residue j
      * @param rj Rotamer rj of Residue j
-     * @param k Residue k
      *
      * @return true if this term is valid.
      */
