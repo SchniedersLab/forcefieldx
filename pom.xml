@@ -1072,6 +1072,7 @@
         <!-- Specify versions of Dependencies to Use -->
         <apple-java-extensions.version>1.6</apple-java-extensions.version>
         <!-- Commons Configuration 2.1 is available, but is not backwards compatible with 1.10 -->
+        <commons-cli.version>1.4</commons-cli.version>
         <commons-configuration.version>1.10</commons-configuration.version>
         <commons-io.version>2.5</commons-io.version>
         <commons-lang3.version>3.5</commons-lang3.version>
