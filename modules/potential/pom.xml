@@ -120,24 +120,6 @@
             <version>${java3d.version}</version>
         </dependency>
         <dependency>
-            <groupId>java3d</groupId>
-            <artifactId>j3dutils</artifactId>
-            <type>jar</type>
-            <version>${java3d.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>java3d</groupId>
-            <artifactId>vecmath</artifactId>
-            <type>jar</type>
-            <version>${java3d.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>java3d</groupId>
-            <artifactId>j3dvrml</artifactId>
-            <type>jar</type>
-            <version>${java3d.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.biojava</groupId>
             <artifactId>biojava3-structure</artifactId>
             <version>${biojava.version}</version>

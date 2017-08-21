@@ -679,7 +679,7 @@ public class RendererCache {
                 | Sphere.ENABLE_GEOMETRY_PICKING, 4 + 3 * res, ap);
         sphereGeom[res] = sphere.getShape().getGeometry();
         // GeometryArray g = (GeometryArray) sphereGeom[res];
-		/*
+        /*
          * if (!g.isLive()) { g.setCapability(g.ALLOW_FORMAT_READ);
          * g.setCapability(g.ALLOW_COUNT_READ);
          * g.setCapability(g.ALLOW_COORDINATE_READ); }

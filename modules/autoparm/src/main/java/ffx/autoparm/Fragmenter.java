@@ -48,10 +48,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
+
 import org.openscience.cdk.atomtype.CDKAtomTypeMatcher;
 import org.openscience.cdk.exception.CDKException;
 import org.openscience.cdk.exception.InvalidSmilesException;
-import ffx.autoparm.fragment.ExhaustiveFragmenter;
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IAtomType;
@@ -65,6 +65,8 @@ import org.openscience.cdk.smiles.SmilesParser;
 import org.openscience.cdk.tools.CDKHydrogenAdder;
 import org.openscience.cdk.tools.manipulator.AtomContainerManipulator;
 import org.openscience.cdk.tools.manipulator.AtomTypeManipulator;
+
+import ffx.autoparm.fragment.ExhaustiveFragmenter;
 
 /**
  * Splits large molecules into fragments for PolType Maps fragments to full
@@ -162,7 +164,7 @@ public class Fragmenter {
                     //test to see if setID worked
                     for (int j = 0; j < molecule.getAtomCount(); j++) {
                         IAtom test2 = molecule.getAtom(j);
-                       // System.out.println("atomType: " + test2.getAtomTypeName());
+                        // System.out.println("atomType: " + test2.getAtomTypeName());
                         // System.out.println("test2ID: " + test2.getID());
                     }
 
@@ -1043,7 +1045,7 @@ public class Fragmenter {
  toFullTypes.add(mapmatch.findMatchingAtomType(full, toFullTest.get(typeC)));
  }
  System.out.println("toFullTypes size: "+toFullTypes.size());*/
-/*for (int mapC2 = 0; mapC2 < mol.getAtomCount(); mapC2++) {
+ /*for (int mapC2 = 0; mapC2 < mol.getAtomCount(); mapC2++) {
  CDKAtomTypeMatcher fragmapmatch = CDKAtomTypeMatcher.getInstance(mol.getBuilder());
  IAtom testFragAtom = null;
  //assigns an atom from the fragment to compare to the atom assigned from the full drug
@@ -1149,7 +1151,7 @@ public class Fragmenter {
  }
  }*/
 
-/* Tried KabschAlignment; needs IAtomContainers or IAtom arrays of the same length
+ /* Tried KabschAlignment; needs IAtomContainers or IAtom arrays of the same length
  //Atom arrays
  IAtom[] fullAtoms = new IAtom[full.getAtomCount()];
  IAtom[] molAtoms = new IAtom[mol.getAtomCount()];

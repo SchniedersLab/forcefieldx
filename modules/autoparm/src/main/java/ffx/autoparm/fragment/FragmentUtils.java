@@ -59,29 +59,31 @@ package ffx.autoparm.fragment;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+import java.util.ArrayList;
+import java.util.List;
+
 import org.openscience.cdk.interfaces.IAtom;
 import org.openscience.cdk.interfaces.IAtomContainer;
 import org.openscience.cdk.interfaces.IBond;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Helper methods for fragmentation algorithms.
  * <p/>
- * Most of these methods are specific to the fragmentation algorithms
- * in this package and so are protected. In general, these methods will
- * not be used by the rest of the API or by other users of the library.
+ * Most of these methods are specific to the fragmentation algorithms in this
+ * package and so are protected. In general, these methods will not be used by
+ * the rest of the API or by other users of the library.
  *
  * @author Rajarshi Guha
  * @cdk.module fragment
  */
 /**
  * Potential edits made to fit FFX specifications
+ *
  * @author rcorrigan
  */
 public class FragmentUtils {
-     /**
+
+    /**
      * Non destructively split a molecule into two parts at the specified bond.
      *
      * Note that if a ring bond is specified, the resultant list will contain
@@ -99,10 +101,11 @@ public class FragmentUtils {
             // later on we'll want to make sure that the fragment doesn't contain
             // the bond joining the current atom and the atom that is on the other side
             IAtom excludedAtom;
-            if (atom.equals(bond.getAtom(0)))
+            if (atom.equals(bond.getAtom(0))) {
                 excludedAtom = bond.getAtom(1);
-            else
+            } else {
                 excludedAtom = bond.getAtom(0);
+            }
 
             List<IBond> part = new ArrayList<IBond>();
             part.add(bond);
@@ -121,13 +124,15 @@ public class FragmentUtils {
             // by checking for more than 2 atoms, we exclude single bond fragments
             // also if a fragment has the same number of atoms as the parent molecule,
             // it is the parent molecule, so we exclude it.
-            if (partContainer.getAtomCount() > 2 && partContainer.getAtomCount() != atomContainer.getAtomCount())
+            if (partContainer.getAtomCount() > 2 && partContainer.getAtomCount() != atomContainer.getAtomCount()) {
                 ret.add(partContainer);
+            }
 
             part.remove(0);
             partContainer = makeAtomContainer(atom, part, excludedAtom);
-            if (partContainer.getAtomCount() > 2 && partContainer.getAtomCount() != atomContainer.getAtomCount())
+            if (partContainer.getAtomCount() > 2 && partContainer.getAtomCount() != atomContainer.getAtomCount()) {
                 ret.add(partContainer);
+            }
         }
         return ret;
     }
@@ -141,10 +146,13 @@ public class FragmentUtils {
         partContainer.addAtom(atom);
         for (IBond aBond : parts) {
             for (IAtom bondedAtom : aBond.atoms()) {
-                if (!bondedAtom.equals(excludedAtom) && !partContainer.contains(bondedAtom))
+                if (!bondedAtom.equals(excludedAtom) && !partContainer.contains(bondedAtom)) {
                     partContainer.addAtom(bondedAtom);
+                }
             }
-            if (!aBond.contains(excludedAtom)) partContainer.addBond(aBond);
+            if (!aBond.contains(excludedAtom)) {
+                partContainer.addBond(aBond);
+            }
         }
         return partContainer;
     }
@@ -152,10 +160,14 @@ public class FragmentUtils {
     protected static List<IBond> traverse(IAtomContainer atomContainer, IAtom atom, List<IBond> bondList) {
         List<IBond> connectedBonds = atomContainer.getConnectedBondsList(atom);
         for (IBond aBond : connectedBonds) {
-            if (bondList.contains(aBond)) continue;
+            if (bondList.contains(aBond)) {
+                continue;
+            }
             bondList.add(aBond);
             IAtom nextAtom = aBond.getConnectedAtom(atom);
-            if (atomContainer.getConnectedAtomsCount(nextAtom) == 1) continue;
+            if (atomContainer.getConnectedAtomsCount(nextAtom) == 1) {
+                continue;
+            }
             traverse(atomContainer, nextAtom, bondList);
         }
         return bondList;

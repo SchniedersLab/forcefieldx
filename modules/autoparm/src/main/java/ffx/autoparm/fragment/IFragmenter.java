@@ -66,13 +66,13 @@ import org.openscience.cdk.interfaces.IAtomContainer;
  * An interface for classes implementing fragmentation algorithms.
  *
  * @author Rajarshi Guha
- * @cdk.module  fragment
+ * @cdk.module fragment
  * @cdk.githash
  * @cdk.keyword fragment
  */
-
 /**
  * Potential edits made to fit FFX specifications
+ *
  * @author rcorrigan
  */
 public interface IFragmenter {
@@ -81,7 +81,8 @@ public interface IFragmenter {
      * Generate fragments for the input molecule.
      *
      * @param atomContainer The input molecule
-     * @throws org.openscience.cdk.exception.CDKException if ring detection fails
+     * @throws org.openscience.cdk.exception.CDKException if ring detection
+     * fails
      */
     public void generateFragments(IAtomContainer atomContainer) throws CDKException;
 
@@ -99,4 +100,3 @@ public interface IFragmenter {
      */
     public IAtomContainer[] getFragmentsAsContainers();
 }
-

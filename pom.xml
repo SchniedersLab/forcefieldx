@@ -305,6 +305,9 @@
             <distribution>manual</distribution>
         </license>
     </licenses>
+    <!-- prerequisites>
+        <maven>3.2</maven>
+    </prerequisites -->
     <scm>
         <url>http://github.com/mjschnie/ffx</url>
         <connection>scm:git:http://github.com/mjschnie/ffx.git</connection>
@@ -555,7 +558,7 @@
                                     <version>1.8</version>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
-                                    <version>3.3</version>
+                                    <version>3.2</version>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>
@@ -1073,15 +1076,15 @@
         <commons-io.version>2.5</commons-io.version>
         <commons-lang3.version>3.5</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
-        <commons-cli.version>1.3</commons-cli.version>
         <groovy-all.version>2.5.0.1-SNAPSHOT</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.6.0</java3d.version>
         <jcuda.version>6.5.0</jcuda.version>
         <jocl.version>2.3.2</jocl.version>
         <junit.version>4.12</junit.version>
-        <biojava.version>3.0.8</biojava.version>
-        <cdk.version>1.5.13</cdk.version>
+        <biojava.version>3.1.0</biojava.version>
+        <cdk.version>2.0</cdk.version>
+        <clustering.version>1.1.0</clustering.version>
     </properties>
     <modules>
         <module>modules/algorithms</module>
