@@ -371,11 +371,10 @@ public class ClusterStructures {
             subClusters = new ArrayList<>(Arrays.asList(cluster));
 
             while (nClusters < numClusters) {
-                double maxDist = subClusters.get(0).getDistance();
+                double maxDist = subClusters.get(0).getDistanceValue();
                 Cluster maxCluster = subClusters.get(0);
-
                 for (Cluster subcluster : subClusters) {
-                    double dist = subcluster.getDistance();
+                    double dist = subcluster.getDistanceValue();
                     if (dist > maxDist) {
                         maxDist = dist;
                         maxCluster = subcluster;
@@ -404,11 +403,11 @@ public class ClusterStructures {
      *
      * @param cluster
      * @param cutoff
-     * 
+     *
      * @return A List of Cluster instances.
      */
     private List<Cluster> getSubclusters(Cluster cluster, double cutoff) {
-        if (cluster.getDistance() < cutoff || cluster.isLeaf()) {
+        if (cluster.getDistanceValue() < cutoff || cluster.isLeaf()) {
             return Arrays.asList(cluster);
         } else {
             List<Cluster> clusters = new ArrayList<>();
@@ -476,23 +475,23 @@ public class ClusterStructures {
          * way or the other, or perhaps a RPGMA RMSD-like algorithm.
          */
         SLINK {
-                    @Override
-                    public String toString() {
-                        return "single linkage";
-                    }
-                },
+            @Override
+            public String toString() {
+                return "single linkage";
+            }
+        },
         AV_LINK {
-                    @Override
-                    public String toString() {
-                        return "average linkage (UPGMA)";
-                    }
-                },
+            @Override
+            public String toString() {
+                return "average linkage (UPGMA)";
+            }
+        },
         CLINK {
-                    @Override
-                    public String toString() {
-                        return "complete linkage";
-                    }
-                };
+            @Override
+            public String toString() {
+                return "complete linkage";
+            }
+        };
     }
 
     // Copyright license for hierarchical-clustering-java
