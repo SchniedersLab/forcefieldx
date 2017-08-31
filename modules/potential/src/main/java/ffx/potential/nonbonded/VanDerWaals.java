@@ -472,11 +472,6 @@ public class VanDerWaals implements MaskingInterface,
         logger.info(format("   Switch Start:                         %6.3f (A)", cut));
         logger.info(format("   Cut-Off:                              %6.3f (A)", off));
         logger.info(format("   Long-Range Correction:                %b", doLongRangeCorrection));
-        if (doLongRangeCorrection) {
-                longRangeCorrection = getLongRangeCorrection();
-                sharedEnergy.set(longRangeCorrection);
-                logger.info(format("                                         %5.3f", longRangeCorrection));
-        }
 
         if (lambdaTerm) {
             logger.info("   Alchemical Parameters");
