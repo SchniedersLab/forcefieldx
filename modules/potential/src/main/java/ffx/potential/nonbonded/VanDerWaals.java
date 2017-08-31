@@ -737,7 +737,7 @@ public class VanDerWaals implements MaskingInterface,
         }
         
         /**
-         * Integrate to maxR = 60 Angstroms or ~20 sigma. Integration step size
+         * Integrate to maxR = 100 Angstroms or ~33 sigma. Integration step size
          * of delR to be 0.01 Angstroms.
          */
         double maxR = 100.0;
@@ -786,6 +786,7 @@ public class VanDerWaals implements MaskingInterface,
                             t2 = vdwForm.gamma1 / (rho6 + vdwForm.gamma) - 2.0;
                     }
                     final double eij = ev * t1 * t2;  
+                    logger.info(format("\tik:\t%16.8f", eij));
                     /**
                      * Apply one minus the multiplicative switch if the
                      * interaction distance is less than the end of the
@@ -803,7 +804,7 @@ public class VanDerWaals implements MaskingInterface,
                     
                     double jacobian = 4.0 * PI * r2;
                     double e = jacobian * eij * taper;
-                    if (k != n) {
+                    if (j != i) {
                         sume += e;
                     } else {
                         sume += 0.5 * e;
@@ -825,9 +826,12 @@ public class VanDerWaals implements MaskingInterface,
         }
         
         // Divide by the volume of the box.
-        total = total / crystal.volume;
+        total = total / crystal.getUnitCell().volume;
+        // Multiply by the number of the sym ops in the unit cell
+        total = total * crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         
         /*logger.info(format("   Long-Range Correction:                %16.8f", total));*/
+        /*logger.info(format("   Number of Sym Ops:                    %d", crystal.getUnitCell().spaceGroup.getNumberOfSymOps()));*/
         return total;
 
     }
