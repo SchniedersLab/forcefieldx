@@ -786,7 +786,6 @@ public class VanDerWaals implements MaskingInterface,
                             t2 = vdwForm.gamma1 / (rho6 + vdwForm.gamma) - 2.0;
                     }
                     final double eij = ev * t1 * t2;  
-                    logger.info(format("\tik:\t%16.8f", eij));
                     /**
                      * Apply one minus the multiplicative switch if the
                      * interaction distance is less than the end of the
@@ -822,7 +821,6 @@ public class VanDerWaals implements MaskingInterface,
                             + (radCount[i] - softRadCount[i]) * softRadCount[j])
                             * (1.0 - lambda) * trapezoid;
                 }
-                logger.info(format("   rv:                %16.8f", (1/irv)));
             }
         }
         
@@ -831,8 +829,6 @@ public class VanDerWaals implements MaskingInterface,
         // Multiply by the number of the sym ops in the unit cell
         total = total * crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
         
-        /*logger.info(format("   Long-Range Correction:                %16.8f", total));*/
-        /*logger.info(format("   Number of Sym Ops:                    %d", crystal.getUnitCell().spaceGroup.getNumberOfSymOps()));*/
         return total;
 
     }
