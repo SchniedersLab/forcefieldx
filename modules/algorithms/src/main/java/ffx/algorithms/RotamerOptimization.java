@@ -8029,17 +8029,18 @@ public class RotamerOptimization implements Terminatable {
         private final Residue residues[];
         private final int nResidues;
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
+        private int singlesEnergyCounter;
         //private double originalAtomicCoordinates[][][];
 
         public SinglesEnergyRegion(int nt, Residue residues[]) {
             energyLoop = new SinglesEnergyLoop();
             this.residues = residues;
             nResidues = residues.length;
-
         }
 
         @Override
         public void start() {
+            singlesEnergyCounter = 0;
             // setup and compute E(BB)
             /*ArrayList<Residue> currentResidueList = new ArrayList<>();
              currentResidueList.addAll(Arrays.asList(residues));
@@ -8116,6 +8117,8 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
+            
+            logger.info(String.format(" Singles Energy Count: %d", singlesEnergyCounter));
         }
 
         private class SinglesEnergyLoop extends WorkerIteration<Integer> {
@@ -8159,6 +8162,7 @@ public class RotamerOptimization implements Terminatable {
                     } else {
                         List<Residue> rList = Arrays.asList(resi);
                         selfEnergy = currentEnergy(rList) - backboneEnergy;
+                        singlesEnergyCounter++;
                     }
 
                     double anEnergy[] = new double[3];
@@ -8200,6 +8204,7 @@ public class RotamerOptimization implements Terminatable {
         private final Residue residues[];
         private final int nResidues;
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
+        private int pairsEnergyCounter;
         //private double originalAtomicCoordinates[][][];
 
         public PairsEnergyRegion(int nt, Residue residues[]) {
@@ -8208,6 +8213,11 @@ public class RotamerOptimization implements Terminatable {
             nResidues = residues.length;
         }
 
+         @Override
+        public void start() {
+            pairsEnergyCounter = 0;
+        }
+        
         @Override
         public void run() throws Exception {
             if (!jobMapPairs.isEmpty()) {
@@ -8265,6 +8275,7 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
+            logger.info(String.format(" Pairs Energy Count: %d", pairsEnergyCounter));
         }
 
         private class PairsEnergyLoop extends WorkerIteration<Integer> {
@@ -8328,11 +8339,13 @@ public class RotamerOptimization implements Terminatable {
                             twoBodyEnergy = currentEnergy(rList) - self(i, ri) - self(j, rj) - backboneEnergy;
                             String distString = (dist < Double.MAX_VALUE) ? String.format("%10.3f", dist) : String.format("     large");
                             logger.info(String.format(" Pair %7s %-2d, %7s %-2d: %16.8f at %s Ang", resi, ri, resj, rj, twoBodyEnergy, distString));
+                            pairsEnergyCounter++;
                         }
                     } else {
                         twoBodyEnergy = currentEnergy(rList)
                                 - self(i, ri) - self(j, rj) - backboneEnergy;
                         logger.info(String.format(" Pair %7s %-2d, %7s %-2d: %16.8f", resi, ri, resj, rj, twoBodyEnergy));
+                        pairsEnergyCounter++;
                     }
 
                     // get energy and broadcast it
@@ -8376,6 +8389,7 @@ public class RotamerOptimization implements Terminatable {
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
         //private double originalAtomicCoordinates[][][];
         private double localDistanceMatrix[][][][];
+        private int triplesEnergyCounter;
 
         public TriplesEnergyRegion(int nt, Residue residues[]) {
             energyLoop = new TriplesEnergyLoop();
@@ -8386,6 +8400,7 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void start() {
+            triplesEnergyCounter = 0;
             if (distance <= 0) {
                 logger.info(" Calculating local distance matrix using non-eliminated rotamers.");
                 // TODO: check on the location of this call - might need to be done per trimer-job
@@ -8455,6 +8470,7 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
+            logger.info(String.format(" Triples Energy Count: %d", triplesEnergyCounter));
         }
 
         private class TriplesEnergyLoop extends WorkerIteration<Integer> {
@@ -8545,6 +8561,7 @@ public class RotamerOptimization implements Terminatable {
                                 String distString = (dist < Double.MAX_VALUE) ? String.format("%10.3f", dist) : String.format("     large");
                                 logger.info(String.format(" Trimer %7s %-2d, %7s %-2d, %7s %-2d: %16.8f at %s Ang.",
                                         resi, ri, resj, rj, resk, rk, threeBodyEnergy, distString));
+                                triplesEnergyCounter++;
                             }
 
                             // revert rotamers, turn off
@@ -8600,6 +8617,7 @@ public class RotamerOptimization implements Terminatable {
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
         //private double originalAtomicCoordinates[][][];
         private double localDistanceMatrix[][][][];
+        private int quadsEnergyCounter;
 
         public QuadsEnergyRegion(int nt, Residue residues[]) {
             energyLoop = new QuadsEnergyLoop();
@@ -8610,6 +8628,7 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void start() {
+            quadsEnergyCounter = 0;
             if (distance <= 0) {
                 logger.info(" Calculating local distance matrix using non-eliminated rotamers.");
                 // TODO: check on the location of this call - might need to be done per quad-job
@@ -8627,6 +8646,7 @@ public class RotamerOptimization implements Terminatable {
         @Override
         public void finish() {
             // no "I'm finished" signal for quads
+            logger.info(String.format(" Quads Energy Count: %d", quadsEnergyCounter));
         }
 
         private class QuadsEnergyLoop extends WorkerIteration<Integer> {
@@ -8725,6 +8745,7 @@ public class RotamerOptimization implements Terminatable {
                                         - triple(i, ri, j, rj, k, rk) - triple(i, ri, j, rj, l, rl) - triple(i, ri, k, rk, l, rl) - triple(j, rj, k, rk, l, rl)
                                         - backboneEnergy;
                                 String distString = (dist < Double.MAX_VALUE) ? String.format("%10.3f", dist) : String.format("     large");
+                                quadsEnergyCounter++;
                                 if (Math.abs(quadEnergy) > 1.0) {
                                     StringBuilder sb = new StringBuilder();
                                     sb.append(String.format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %16.8f at %s Ang.\n",
