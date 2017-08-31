@@ -822,6 +822,7 @@ public class VanDerWaals implements MaskingInterface,
                             + (radCount[i] - softRadCount[i]) * softRadCount[j])
                             * (1.0 - lambda) * trapezoid;
                 }
+                logger.info(format("   rv:                %16.8f", (1/irv)));
             }
         }
         
