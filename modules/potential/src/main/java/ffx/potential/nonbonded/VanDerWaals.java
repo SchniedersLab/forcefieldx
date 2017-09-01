@@ -890,13 +890,6 @@ public class VanDerWaals implements MaskingInterface,
             String message = " Fatal exception expanding coordinates.\n";
             logger.log(Level.SEVERE, message, e);
         }
-
-        if (doLongRangeCorrection) {
-            longRangeCorrection = getLongRangeCorrection(); 
-            sharedEnergy.addAndGet(longRangeCorrection);
-        }
-        
-
         return sharedEnergy.get();
     }
 
