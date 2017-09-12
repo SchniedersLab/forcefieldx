@@ -1476,7 +1476,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                     ForceFieldEnergy ffE2 = (ForceFieldEnergy) potential2;
                     ffE2.setLambdaBondedTerms(true);
                     if (verbose) {
-                        logger.info(" Calculating lambda bonded terms for topology 1");
+                        logger.info(" Calculating lambda bonded terms for topology 2");
                     }
                     restraintEnergy2 = potential2.energy(x2, verbose);
                     ffE2.setLambdaBondedTerms(false);
