@@ -774,11 +774,13 @@ public class VanDerWaals implements MaskingInterface,
                             final double rhod7 = rhod3 * rhod3 * rhod;
                             t1 = vdwForm.t1n / rhod7;
                             t2 = vdwForm.gamma1 / (rho7 + vdwForm.gamma) - 2.0; 
+                            break;
                         case LENNARD_JONES :
                             final double rho6 = rho3 * rho3;
                             final double rhod6 = rhod3 * rhod3;
                             t1 = vdwForm.t1n / rhod6;
                             t2 = vdwForm.gamma1 / (rho6 + vdwForm.gamma) - 2.0;
+                            break;
                     }
                     final double eij = ev * t1 * t2;  
                     /**

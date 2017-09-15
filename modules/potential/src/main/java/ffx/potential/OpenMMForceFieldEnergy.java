@@ -1139,6 +1139,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 case EPT:
                     logger.info(" Using extrapolated perturbation theory approximation instead of full SCF calculations. Not supported in FFX reference implementation.");
                     OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Extrapolated);
+                    PointerByReference exptCoefficients = OpenMM_DoubleArray_create(4);
+                    OpenMM_DoubleArray_set(exptCoefficients, 0, -0.154);
+                    OpenMM_DoubleArray_set(exptCoefficients, 1, 0.017);
+                    OpenMM_DoubleArray_set(exptCoefficients, 2, 0.657);
+                    OpenMM_DoubleArray_set(exptCoefficients, 3, 0.475);
+                    OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(amoebaMultipoleForce,exptCoefficients);
+                    OpenMM_DoubleArray_destroy(exptCoefficients);
                     break;
                 case CG:
                 case SOR:
