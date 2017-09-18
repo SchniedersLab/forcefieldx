@@ -944,11 +944,27 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             totalSimTime += dt;
             if (step % printFrequency == 0) {
+                
+                /**
+                 * Original print statement
+                 * time = System.nanoTime() - time;
+                 * logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
+                 * totalSimTime, currentKineticEnergy, currentPotentialEnergy,
+                 * currentTotalEnergy, currentTemperature, time * NS2SEC));
+                 * time = System.nanoTime();
+                 */
+                                
+                // Shirts et al. logging info
+                Crystal crystal = molecularAssembly.getCrystal();
+                double volume = crystal.getUnitCell().volume;
+
+                // Shirts et al. print statement
                 time = System.nanoTime() - time;
-                logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
-                        totalSimTime, currentKineticEnergy, currentPotentialEnergy,
-                        currentTotalEnergy, currentTemperature, time * NS2SEC));
+                logger.info(format("Shirts %7.3e %12.4f %12.4f %12.4f %12.4f %8.2f %8.3f",
+                totalSimTime, currentKineticEnergy, currentPotentialEnergy,
+                currentTotalEnergy, volume, currentTemperature, time * NS2SEC));
                 time = System.nanoTime();
+
             }
             if (step % printEsvFrequency == 0 && esvSystem != null) {
                 logger.info(format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()));
