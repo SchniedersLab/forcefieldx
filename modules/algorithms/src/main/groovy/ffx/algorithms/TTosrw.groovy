@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 // Groovy Imports
 import groovy.cli.Option;
 import groovy.cli.Unparsed;
-import groovy.util.CliBuilder;
 
 // Parallel Java Imports
 import edu.rit.pj.Comm;
@@ -17,15 +16,8 @@ import edu.rit.pj.Comm;
 import org.apache.commons.io.FilenameUtils;
 
 // FFX Imports
-import ffx.algorithms.Barostat;
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.AlgorithmUtils;
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
-import ffx.algorithms.RotamerOptimization;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
@@ -45,7 +37,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.MultiplicativeSwitch;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 
 /**
  * The TTosrw script uses the Transition-Tempered Orthogonal Space Random Walk
@@ -66,29 +57,10 @@ class TTosrw extends Script {
      */
     class Options {
 
-        /*private final Closure parseThermostat = {str ->
-        try {
-        return Thermostats.valueOf(str.toUpperCase());
-        } catch (Exception e) {
-        logger.warning(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
-        return Thermostats.BERENDSEN;
-        }
-        };
-
-        private final Closure parseIntegrator = {str ->
-        try {
-        return Integrators.valueOf(str.toUpperCase());
-        } catch (Exception e) {
-        logger.warning(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
-        return Integrators.BEEMAN;
-        }
-        }*/
-
         private static parseThermo(String str) {
             try {
                 return Thermostats.valueOf(str.toUpperCase());
             } catch (Exception e) {
-                //logger.warning(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
                 System.err.println(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
                 return Thermostats.BERENDSEN;
             }
@@ -98,7 +70,6 @@ class TTosrw extends Script {
             try {
                 return Integrators.valueOf(str.toUpperCase());
             } catch (Exception e) {
-                //logger.warning(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
                 System.err.println(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
                 return Integrators.BEEMAN;
             }
@@ -158,12 +129,10 @@ class TTosrw extends Script {
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
-        //@Option(shortName='b', longName='thermostat', defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') String tstat;
         @Option(shortName='b', longName='thermostat', convert = {s -> return parseThermo(s);}, defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') Thermostats tstat;
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, or Stochastic (AKA Langevin dynamics).
          */
-        //@Option(shortName='i', longName='integrator', defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') String integrator;
         @Option(shortName='i', longName='integrator', convert = {s -> return parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') Integrators integrator;
         /**
          * -s1 or --start1 defines the first softcored atom for the first topology.

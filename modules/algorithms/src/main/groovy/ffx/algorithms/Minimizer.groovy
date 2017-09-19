@@ -4,18 +4,12 @@ package ffx.algorithms;
 // Groovy Imports
 import groovy.cli.Option;
 import groovy.cli.Unparsed;
-import groovy.util.CliBuilder;
 
 // Java Imports
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 // FFX Imports
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.AlgorithmUtils;
-import ffx.algorithms.Minimize;
-
 import ffx.numerics.Potential;
 import ffx.numerics.PowerSwitch;
 import ffx.numerics.SquaredTrigSwitch;
@@ -111,14 +105,11 @@ class Minimizer extends Script {
          * -uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
          */
         @Option(shortName='uaA', longName='unsharedA', description='Unshared atoms in the A dual topology (period-separated hyphenated ranges)') String unsharedA;
-        //@Option(shortName='uaA', longName='unsharedA', numberOfArgumentsString='*', valueSeparator='.', description='Unshared atoms in the A dual topology (period-separated hyphenated ranges)') String[] unsharedA;
         /**
          * -uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
          */
         @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
-        //@Option(shortName='uaB', longName='unsharedB', numberOfArgumentsString='*', valueSeparator='.', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String[] unsharedB;
-        // I'm not sure it's worthwhile to clutter up the options with something that can be set by property.
-        //@Option(shortName='p', longName='polarization', defaultValue='MUTUAL', description='Polarization model: [none/direct/mutual]') String polarizationModel;
+
         /**
          * -sf or --switchingFunction sets the switching function to be used by
          * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)
