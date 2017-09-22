@@ -92,6 +92,23 @@ public class HeadlessMain {
                 if (embeddedScript == null) {
                     embeddedScript = loader.getResource(pathName + ".groovy");
                 }
+
+                // One last check, flipping the case of the first character of the script.
+                if (embeddedScript == null) {
+                    logger.warning(String.format(" File %s not found; attempting to find script with different capitalization", name));
+                    char firstChar = name.charAt(0);
+                    if (Character.isUpperCase(firstChar)) {
+                        name = String.format("%c%s", Character.toLowerCase(firstChar), name.substring(1));
+                    } else {
+                        name = String.format("%c%s", Character.toUpperCase(firstChar), name.substring(1));
+                    }
+                    pathName = "ffx/scripts/" + name;
+                    embeddedScript = loader.getResource(pathName + ".ffx");
+                }
+                if (embeddedScript == null) {
+                    embeddedScript = loader.getResource(pathName + ".groovy");
+                }
+
                 if (embeddedScript != null) {
                     try {
                         commandLineFile = new File(
