@@ -109,7 +109,6 @@ class Minimizer extends Script {
          * -uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
          */
         @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
-
         /**
          * -sf or --switchingFunction sets the switching function to be used by
          * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)
@@ -126,8 +125,6 @@ class Minimizer extends Script {
          */
         @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0', 
             description='Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)') String lambdaFunction;
-        
-        
         /**
          * The final argument(s) should be one or more filenames.
          */
