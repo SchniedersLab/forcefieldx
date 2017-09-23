@@ -1,16 +1,16 @@
 
-package ffx.algorithms;
-
-// Groovy Imports
-import groovy.cli.Option;
-import groovy.cli.Unparsed;
+package ffx.algorithms
 
 // FFX Imports
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.Thermostat.Thermostats
+
+// Groovy Imports
+import groovy.cli.Option
+import groovy.cli.Unparsed
 
 // Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
 /**
  * The Anneal script.
@@ -23,7 +23,7 @@ class Anneal extends Script {
 
     private static parseThermo(String str) {
         try {
-            return Thermostats.valueOf(str.toUpperCase());
+            return Thermostats.valueOf(str.toUpperCase())
         } catch (Exception e) {
             System.err.println(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
             return Thermostats.BERENDSEN;
@@ -32,7 +32,7 @@ class Anneal extends Script {
 
     private static parseIntegrator(String str) {
         try {
-            return Integrators.valueOf(str.toUpperCase());
+            return Integrators.valueOf(str.toUpperCase())
         } catch (Exception e) {
             System.err.println(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
             return Integrators.BEEMAN;
@@ -50,51 +50,49 @@ class Anneal extends Script {
         /**
          * -h or --help to print a help message.
          */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.') boolean help;
+        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.') boolean help
         /**
          * -n or --steps Number of molecular dynamics steps per annealing window (1000).
          */
-        @Option(shortName='n', longName='steps', defaultValue='1000', description='Number of MD steps per annealing window.') int n;
+        @Option(shortName='n', longName='steps', defaultValue='1000', description='Number of MD steps per annealing window.') int n
         /**
          * -d or --dt Time step in femtosceonds (1.0).
          */
-        @Option(shortName='d', longName='dt', defaultValue='1.0', description='Time step (fsec).') double d;
+        @Option(shortName='d', longName='dt', defaultValue='1.0', description='Time step (fsec).') double d
         /**
          * -w or --windows Number of annealing windows (10).
          */
-        @Option(shortName='w', longName='windows', defaultValue='10', description='Number of annealing windows.') int w;
+        @Option(shortName='w', longName='windows', defaultValue='10', description='Number of annealing windows.') int w
         /**
          * -l or --low Low temperature limit in degrees Kelvin (10.0).
          */
-        @Option(shortName='l', longName='low', defaultValue='10.0', description='Low temperature limit (Kelvin).') double l;
+        @Option(shortName='l', longName='low', defaultValue='10.0', description='Low temperature limit (Kelvin).') double l
         /**
          * -h or --high High temperature limit in degrees Kelvin (1000.0).
          */
-        @Option(shortName='h', longName='high', defaultValue='1000.0', description='High temperature limit (Kelvin).') double h;
+        @Option(shortName='h', longName='high', defaultValue='1000.0', description='High temperature limit (Kelvin).') double h
         /**
          * -b or --thermostat sets the desired thermostat [Adiabatic, Berendsen, Bussi].
          */
         @Option(shortName='t', longName='thermostat', convert = {s -> return parseThermo(s);}, defaultValue='Berendsen',
-                description='Thermostat: Adiabatic, Berendsen or Bussi.') Thermostats thermo;
+                description='Thermostat: Adiabatic, Berendsen or Bussi.') Thermostats thermo
         /**
          * -i or --integrator sets the desired integrator [Beeman, RESPA, Stochastic].
          */
         @Option(shortName='i', longName='integrator', convert = {s -> return parseIntegrator(s);}, defaultValue='Beeman',
-                description='Integrator: Beeman, RESPA or Stochastic.') Integrators integrate;
-
+                description='Integrator: Beeman, RESPA or Stochastic.') Integrators integrate
         /**
          * The final argument should be a filename.
          */
-        @Unparsed List<String> filenames;
-
+        @Unparsed List<String> filenames
     }
 
     def run() {
 
-        def cli = new CliBuilder(usage: ' ffxc Anneal [options] <filename>', header: ' Options:');
+        def cli = new CliBuilder(usage: ' ffxc Anneal [options] <filename>', header: ' Options:')
 
         def options = new Options()
-        cli.parseFromInstance(options, args);
+        cli.parseFromInstance(options, args)
 
         if (options.help == true) {
             return cli.usage()
@@ -143,13 +141,13 @@ class Anneal extends Script {
             modelfilename = active.getFile();
         }
 
-        logger.info("\n Running simulated annealing on " + modelfilename);
+        logger.info("\n Running simulated annealing on " + modelfilename)
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, active.getPotentialEnergy(),
-                active.getProperties(), null, thermostat, integrator);
-        simulatedAnnealing.anneal(high, low, windows, steps, timeStep);
+                active.getProperties(), null, thermostat, integrator)
+        simulatedAnnealing.anneal(high, low, windows, steps, timeStep)
 
-        String ext = FilenameUtils.getExtension(modelfilename);
-        modelfilename = FilenameUtils.removeExtension(modelfilename);
+        String ext = FilenameUtils.getExtension(modelfilename)
+        modelfilename = FilenameUtils.removeExtension(modelfilename)
 
         if (ext.toUpperCase().contains("XYZ")) {
             saveAsXYZ(new File(modelfilename + ".xyz"));
