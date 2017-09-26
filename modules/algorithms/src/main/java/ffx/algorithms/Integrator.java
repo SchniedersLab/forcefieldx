@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -39,6 +39,8 @@ package ffx.algorithms;
 
 import ffx.numerics.Potential;
 
+import java.util.logging.Logger;
+
 /**
  * The Integrator class is responsible for propagation of degrees of freedom
  * through time. Implementations must define their behavior at pre-force and
@@ -50,6 +52,8 @@ import ffx.numerics.Potential;
  */
 public abstract class Integrator {
 
+    private static final Logger logger = Logger.getLogger(Integrator.class.getName());
+
     /**
      * An enumeration of available integrators.
      */
@@ -57,6 +61,21 @@ public abstract class Integrator {
 
         BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET
     };
+
+    /**
+     * Parse an integrator String into an instance of the Integrators enum.
+     *
+     * @param str Integrator string.
+     * @return Integrator enum.
+     */
+    public static Integrators parseIntegrator(String str) {
+        try {
+            return Integrators.valueOf(str.toUpperCase());
+        } catch (Exception e) {
+            logger.info(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
+            return Integrators.BEEMAN;
+        }
+    }
 
     protected double x[];
     protected double v[];
@@ -78,7 +97,7 @@ public abstract class Integrator {
      * @param mass Mass.
      */
     public Integrator(int nVariables, double x[], double v[], double a[],
-            double aPrevious[], double mass[]) {
+                      double aPrevious[], double mass[]) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
@@ -120,7 +139,7 @@ public abstract class Integrator {
      * @param mass the mass for each variable.
      */
     public void setNumberOfVariables(int nVariables, double x[], double v[],
-            double a[], double aPrevious[], double mass[]) {
+                                     double a[], double aPrevious[], double mass[]) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;
@@ -139,7 +158,7 @@ public abstract class Integrator {
      * @param mass the mass for each variable.
      */
     public void setNumberOfVariables(int nVariables, double x[], double v[],
-            double a[], double mass[]) {
+                                     double a[], double mass[]) {
         this.nVariables = nVariables;
         this.x = x;
         this.v = v;

@@ -39,41 +39,23 @@ import ffx.potential.nonbonded.MultiplicativeSwitch;
 import ffx.potential.parameters.ForceField;
 
 /**
- * The TTosrw script uses the Transition-Tempered Orthogonal Space Random Walk
+ * The Thermodynamics script uses the Transition-Tempered Orthogonal Space Random Walk
  * algorithm to estimate a free energy.
  * <br>
  * Usage:
  * <br>
- * ffxc TTosrw [options] &lt;filename [file2...]&gt;
+ * ffxc Thermodynamics [options] &lt;filename&gt [file2...];
  */
-class TTosrw extends Script {
+class Thermodynamics extends Script {
 
     /**
-     * Options for the TTosrw Script.
+     * Options for the Thermodynamics script.
      * <br>
      * Usage:
      * <br>
-     * ffxc TTosrw [options] &lt;filename [file2...]&gt;
+     * ffxc Thermodynamics [options] &lt;filename&gt [file2...];
      */
     class Options {
-
-        private static parseThermo(String str) {
-            try {
-                return Thermostats.valueOf(str.toUpperCase());
-            } catch (Exception e) {
-                System.err.println(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
-                return Thermostats.BERENDSEN;
-            }
-        }
-
-        private static parseIntegrator(String str) {
-            try {
-                return Integrators.valueOf(str.toUpperCase());
-            } catch (Exception e) {
-                System.err.println(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
-                return Integrators.BEEMAN;
-            }
-        }
 
         /**
          * -h or --help to print a help message
@@ -129,11 +111,11 @@ class TTosrw extends Script {
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
-        @Option(shortName='b', longName='thermostat', convert = {s -> return parseThermo(s);}, defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') Thermostats tstat;
+        @Option(shortName='b', longName='thermostat', convert = {s -> return Thermostat.parseThermostat(s);}, defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') Thermostats tstat;
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, or Stochastic (AKA Langevin dynamics).
          */
-        @Option(shortName='i', longName='integrator', convert = {s -> return parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') Integrators integrator;
+        @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') Integrators integrator;
         /**
          * -s1 or --start1 defines the first softcored atom for the first topology.
          */
@@ -574,7 +556,7 @@ class TTosrw extends Script {
     }
 
     def run() {
-        def cli = new CliBuilder(usage:' ffxc TTosrw [options] <filename> [file2...]', header:' Options:');
+        def cli = new CliBuilder(usage:' ffxc Thermodynamics [options] <filename> [file2...]', header:' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);

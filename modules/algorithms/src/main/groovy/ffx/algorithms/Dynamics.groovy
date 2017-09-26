@@ -18,57 +18,37 @@ import ffx.potential.OpenMMForceFieldEnergy
 import ffx.potential.parameters.ForceField;
 
 /**
- * The MD script implements stochastic and molecular dynamics algorithms.
+ * The Dynamics script implements molecular and stochastic dynamics algorithms.
  * <br>
  * Usage:
  * <br>
- * ffxc MD [options] &lt;filename&gt; [file2...]
+ * ffxc Dynamics [options] &lt;filename&gt; [file2...]
  */
-class MD extends Script {
+class Dynamics extends Script {
 
     /**
-     * Options for the MD Script.
+     * Options for the Dynamics Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc MD [options] &lt;filename&gt; [file2...]
+     * ffxc Dynamics [options] &lt;filename&gt; [file2...]
      */
     class Options {
-
-        private static parseThermo(String str) {
-            try {
-                return Thermostats.valueOf(str.toUpperCase());
-            } catch (Exception e) {
-                System.err.println(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
-                return Thermostats.BERENDSEN;
-            }
-        }
-
-        private static parseIntegrator(String str) {
-            try {
-                return Integrators.valueOf(str.toUpperCase());
-            } catch (Exception e) {
-                System.err.println(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
-                return Integrators.BEEMAN;
-            }
-        }
 
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help;
-
+        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.') boolean help;
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
-        @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return parseThermo(s); },
+        @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return Thermostat.parseThermostat(s); },
                 defaultValue = 'Berendsen', description = 'Thermostat: [Adiabatic / Berendsen / Bussi].')
         Thermostats tstat;
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, or Stochastic (AKA Langevin dynamics).
          */
-        @Option(shortName = 'i', longName = 'integrator', convert = { s -> return parseIntegrator(s); },
+        @Option(shortName = 'i', longName = 'integrator', convert = { s -> return Integrator.parseIntegrator(s); },
                 defaultValue = 'Beeman', description = 'Integrator: [Beeman / Respa / Stochastic]')
         Integrators integrator;
         /**
@@ -148,7 +128,7 @@ class MD extends Script {
 
     def run() {
 
-        def cli = new CliBuilder(usage: ' ffxc MD [options] <filename> [file2...]', header: ' Options:');
+        def cli = new CliBuilder(usage: ' ffxc Dynamics [options] <filename> [file2...]', header: ' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);
@@ -251,7 +231,7 @@ class MD extends Script {
         MolecularDynamics molDyn = new MolecularDynamics(active, potential, active.getProperties(), sh, thermostat, integrator);
         molDyn.setFileType(fileType);
         molDyn.setRestartFrequency(restartFrequency);
-        molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+        molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
     }
 }
 
