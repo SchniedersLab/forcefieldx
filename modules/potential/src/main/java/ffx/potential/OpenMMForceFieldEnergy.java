@@ -2470,6 +2470,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      */
     @Override
     public double getdEdL() {
+        if (!lambdaTerm) {
+            return 0.0;
+        }
+
         double currentLambda = lambda;
         double width = fdDLambda;
         double ePlus;
@@ -2555,8 +2559,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param gradients
      */
     @Override
-    public void getdEdXdL(double gradients[]
-    ) {
+    public void getdEdXdL(double gradients[]) {
         // Note for OpenMMForceFieldEnergy this method is not implemented.
     }
 
