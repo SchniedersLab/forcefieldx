@@ -1206,7 +1206,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     vec[2] = aPrevious[index + 2];
                     atom.setPreviousAcceleration(vec);
                     index += 3;
+                    if(i == 0){
+                        //logger.info(String.format(" In revert for loop"));
+                    }
                 }
+                //logger.info(String.format(" Coordinates were reverted"));
+            }
+            else {
+                //logger.info(String.format( "WARNING: Coordinates were not reverted"));
             }
             if (verboseDynamicsState) {
                 describe(" Reverting State (To):");
