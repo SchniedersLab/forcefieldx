@@ -314,7 +314,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Interval between writing an OSRW restart file in steps.
      */
-    protected int saveFrequency = 100;
+    protected int saveFrequency = 1000;
     /**
      * Print detailed energy information.
      */

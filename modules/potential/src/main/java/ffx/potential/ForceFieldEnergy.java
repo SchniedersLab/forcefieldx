@@ -193,7 +193,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean restrainWithLambda;
     private boolean comTerm;
     private boolean esvTerm;
-    private boolean lambdaTerm;
+    protected boolean lambdaTerm;
     protected boolean lambdaBondedTerms = false;
     private boolean relativeSolvationTerm;
     private boolean rigidHydrogens = false;

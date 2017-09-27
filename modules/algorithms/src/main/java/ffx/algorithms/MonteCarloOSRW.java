@@ -69,7 +69,13 @@ import ffx.potential.MolecularAssembly;
  *
  * 5.) Add a biasing potential to the current value of Lambda.
  *
+ * @author Michael J. Schnieders
+ *
+ * @author Hernan Beranbe
+ *
  * @author Mallory R. Tollefson
+ *
+ * @since 1.0
  */
 public class MonteCarloOSRW extends BoltzmannMC {
 

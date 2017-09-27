@@ -37,6 +37,8 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.logging.Logger;
 
 import static java.util.Arrays.fill;
@@ -152,8 +154,10 @@ public class CoordRestraint implements LambdaInterface {
             initialCoordinates[0][i] = a.getX();
             initialCoordinates[1][i] = a.getY();
             initialCoordinates[2][i] = a.getZ();
-            a.print();
+            //a.print();
         }
+
+        Arrays.stream(atoms).sorted(Comparator.comparingInt(Atom::getIndex)).forEach(Atom::print);
     }
 
     /**
