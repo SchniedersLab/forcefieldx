@@ -1847,11 +1847,45 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             if (amoebaMultipoleForce != null) {
                 scaleAmoebaMultipoleForceByLambda(atomArray, lambda);
             }
+            if (fixedChargeNonBondedForce != null){
+                scaleFixedChargeNonBondedForceByLambda(atomArray, lambda);
+            }
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
         }
 
+    }
+    
+    private void scaleFixedChargeNonBondedForceByLambda(Atom[] atoms, double lambda){
+        
+        double radScale = getVDWRadius();
+        
+        if (radScale < 0){
+            return;
+        }
+        
+        int nAtoms = atoms.length;
+        for(int i = 0; i < nAtoms; i ++){
+            Atom atom = atoms[i];
+            double lambdaFactor = lambda;
+            if (!atom.applyLambda()){
+                lambdaFactor = 1.0;
+            }
+            
+            double charge = 0.0;
+            MultipoleType multipoleType = atom.getMultipoleType();
+            if (multipoleType != null) {
+                charge = multipoleType.charge;
+            }
+            VDWType vdwType = atom.getVDWType();
+            double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+            double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+            OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge*lambdaFactor, sigma, eps);
+            
+        }
+        
+        OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, openMMContext);
     }
 
     private void scaleAmoebaMultipoleForceByLambda(Atom[] atoms, double lambda) {
@@ -2424,6 +2458,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double dt = timeStep * 1.0e-3;
         switch (integrator) {
             case "LANGEVIN":
+                logger.log(Level.INFO, String.format("created langevin integrator"));
                 openMMIntegrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
                 break;
             /*
@@ -2439,9 +2474,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
              */
             case "VERLET":
             default:
-                openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
-            //thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
-            //OpenMM_System_addForce(openMMSystem, thermostat);
+            openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
+            thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
+            OpenMM_System_addForce(openMMSystem, thermostat);
         }
         //logger.info(String.format(" Created %s OpenMM Integrator", integrator));
 
@@ -2588,5 +2623,40 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     public double getd2EdL2() {
         // Note for OpenMMForceFieldEnergy this method is not implemented.
         return 0.0;
+    }
+    
+    public double getVDWRadius(){
+        VanDerWaals vdW = super.getVdwNode();
+        if (vdW == null) {
+            return -1.0;
+        }
+        
+         /**
+         * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
+         * for epsilon is supported.
+         */
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        if (vdwForm.vdwType != LENNARD_JONES
+                || vdwForm.radiusRule != ARITHMETIC
+                || vdwForm.epsilonRule != GEOMETRIC) {
+            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            return -1.0;
+        }
+        
+        /**
+         * OpenMM vdW force requires a diameter (i.e. not radius).
+         */
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == RADIUS) {
+            radScale = 2.0;
+        }
+        /**
+         * OpenMM vdw force requires atomic sigma values (i.e. not r-min).
+         */
+        if (vdwForm.radiusType == R_MIN) {
+            radScale /= 1.122462048309372981;
+        }
+        
+        return radScale;
     }
 }

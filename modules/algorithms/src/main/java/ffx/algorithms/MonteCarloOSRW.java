@@ -198,6 +198,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
     public void sample() {
         int n = potential.getNumberOfVariables();
         double[] coordinates = new double[n];
+        double[] proposedCoordinates = new double[n];
+        double[] newCoordinates;
         double[] gradient = new double[n];
         int numMoves = totalSteps / stepsPerMove;
         acceptLambda = 0;
@@ -217,8 +219,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
              * Run MD.
              */
             mdMove.move();
-            potential.getCoordinates(coordinates);
-            double proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
+            potential.getCoordinates(proposedCoordinates);
+            double proposedEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
             proposedEnergy += mdMove.getKineticEnergy();
 
@@ -231,12 +233,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
                 logger.info(String.format(" MC MD step %d:     Accepted E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         imove + 1, currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 currentEnergy = proposedEnergy;
+                newCoordinates = proposedCoordinates;
 
             } else {
                 double percent = (acceptMD * 100.0) / (imove + 1);
                 logger.info(String.format(" MC MD step %d:     Rejected E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
                         imove + 1, currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 mdMove.revertMove();
+                newCoordinates = coordinates;
             }
 
             /**
@@ -250,12 +254,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
             /**
              * Update Lambda.
              */
-            potential.getCoordinates(coordinates);
-            currentEnergy = osrw.energyAndGradient(coordinates, gradient);
+            currentEnergy = osrw.energyAndGradient(newCoordinates, gradient);
             currentdUdL = osrw.getForceFielddEdL();
             double currentLambda = osrw.getLambda();
             lambdaMove.move();
-            proposedEnergy = osrw.energyAndGradient(coordinates, gradient);
+            proposedEnergy = osrw.energyAndGradient(newCoordinates, gradient);
             proposeddUdL = osrw.getForceFielddEdL();
             double proposedLambda = osrw.getLambda();
 
