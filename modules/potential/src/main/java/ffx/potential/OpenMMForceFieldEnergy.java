@@ -389,13 +389,22 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
 
     @Override
-    public void finalize() throws Throwable {
-        super.finalize();
-        System.out.println(" OpenMMForceFieldEnergy instance is getting finalized.");
-
-        // Free the OpenMM System.
+    public void destroy() throws Exception {
+        super.destroy();
         freeOpenMM();
         logger.info(" Destroyed the Context, Integrator, and OpenMMSystem.");
+    }
+
+    @Override
+    public void finalize() throws Throwable {
+        // Safer to leave super.finalize() in, even though right now that calls Object.finalize().
+        logger.info(" OpenMMForceFieldEnergy instance is being finalized.");
+        super.finalize();
+        if (destroyed) {
+            logger.info(String.format(" Finalize called on a destroyed OpenMM ForceFieldEnergy %s", this.toString()));
+        } else {
+            destroy();
+        }
     }
 
     /**
@@ -403,9 +412,18 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * memory.
      */
     private void freeOpenMM() {
-        OpenMM_Context_destroy(openMMContext);
-        OpenMM_Integrator_destroy(openMMIntegrator);
-        OpenMM_System_destroy(openMMSystem);
+        if (openMMContext != null) {
+            OpenMM_Context_destroy(openMMContext);
+            openMMContext = null;
+        }
+        if (openMMIntegrator != null) {
+            OpenMM_Integrator_destroy(openMMIntegrator);
+            openMMIntegrator = null;
+        }
+        if (openMMSystem != null) {
+            OpenMM_System_destroy(openMMSystem);
+            openMMSystem = null;
+        }
     }
 
     /**

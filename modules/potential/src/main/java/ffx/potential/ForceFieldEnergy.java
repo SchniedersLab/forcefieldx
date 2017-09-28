@@ -272,6 +272,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     private Resolution resolution = Resolution.AMOEBA;
 
+    // Flag to indicate proper shutdown of FFE
+    protected boolean destroyed = false;
+
     /**
      * <p>
      * Constructor for ForceFieldEnergy.</p>
@@ -2444,19 +2447,24 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     public void destroy() throws Exception {
-        if (parallelTeam != null) {
-            try {
-                parallelTeam.shutdown();
-            } catch (Exception ex) {
-                String message = " Error in shutting down the ParallelTeam.";
-                logger.log(Level.WARNING, message, ex);
+        if (destroyed) {
+            logger.warning(String.format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
+        } else {
+            if (parallelTeam != null) {
+                try {
+                    parallelTeam.shutdown();
+                } catch (Exception ex) {
+                    String message = " Error in shutting down the ParallelTeam.";
+                    logger.log(Level.WARNING, message, ex);
+                }
             }
-        }
-        if (vanderWaals != null) {
-            vanderWaals.destroy();
-        }
-        if (particleMeshEwald != null) {
-            particleMeshEwald.destroy();
+            if (vanderWaals != null) {
+                vanderWaals.destroy();
+            }
+            if (particleMeshEwald != null) {
+                particleMeshEwald.destroy();
+            }
+            destroyed = true;
         }
     }
 
