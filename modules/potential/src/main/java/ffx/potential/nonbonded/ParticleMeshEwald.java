@@ -139,6 +139,12 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      */
     protected final boolean noWindowing = Boolean.valueOf(System.getProperty("pme.noWindowing", "false"));
 
+    /**
+     * Default cutoff values for PME and aperiodic systems.
+     */
+    public static final double PERIODIC_DEFAULT_EWALD_CUTOFF = 7.0;
+    public static final double APERIODIC_DEFAULT_EWALD_CUTOFF = 1000.0;
+
     public enum Polarization {
         MUTUAL, DIRECT, NONE
     }

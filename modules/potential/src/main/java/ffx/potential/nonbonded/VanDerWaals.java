@@ -434,11 +434,14 @@ public class VanDerWaals implements MaskingInterface,
             }
 
             // Ensure Van der Waals cutoff is at least as large as Ewald cutoff.
-            double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+            //double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+            double ewaldOff = crystal.aperiodic() ? ParticleMeshEwald.APERIODIC_DEFAULT_EWALD_CUTOFF : ParticleMeshEwald.PERIODIC_DEFAULT_EWALD_CUTOFF;
+            ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, ewaldOff);
+
             if (ewaldOff > vdwcut) {
                 vdwcut = ewaldOff;
                 logger.info(" The Van der Waals cutoff must be at least as large as the Ewald cutoff.");
-                logger.info(String.format(" The Van der Waals cutoff has been set to %f", ewaldOff));
+                logger.info(String.format(" The Van der Waals cutoff has been set to %-12.4g", ewaldOff));
             }
 
             /**

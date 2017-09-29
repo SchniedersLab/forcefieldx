@@ -721,10 +721,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
 
         if (!crystal.aperiodic()) {
-            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, PERIODIC_DEFAULT_EWALD_CUTOFF);
         } else {
-            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 1000.0);
+            off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, APERIODIC_DEFAULT_EWALD_CUTOFF);
         }
+
         double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
         aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
         setEwaldParameters(off, aewald);

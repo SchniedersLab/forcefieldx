@@ -46,10 +46,10 @@ class Dynamics extends Script {
                 defaultValue = 'Berendsen', description = 'Thermostat: [Adiabatic / Berendsen / Bussi].')
         Thermostats tstat;
         /**
-         * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, or Stochastic (AKA Langevin dynamics).
+         * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, Velocity Verlet, or Stochastic (AKA Langevin dynamics).
          */
         @Option(shortName = 'i', longName = 'integrator', convert = { s -> return Integrator.parseIntegrator(s); },
-                defaultValue = 'Beeman', description = 'Integrator: [Beeman / Respa / Stochastic]')
+                defaultValue = 'Beeman', description = 'Integrator: [Beeman / Respa / Stochastic / VelocityVerlet ]')
         Integrators integrator;
         /**
          * -d or --dt sets the timestep in femtoseconds (default of 1.0). A value of 2.0 is possible for the RESPA integrator.

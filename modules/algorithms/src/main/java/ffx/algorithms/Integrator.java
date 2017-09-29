@@ -70,7 +70,7 @@ public abstract class Integrator {
      */
     public static Integrators parseIntegrator(String str) {
         try {
-            return Integrators.valueOf(str.toUpperCase());
+            return Integrators.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
         } catch (Exception e) {
             logger.info(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
             return Integrators.BEEMAN;
