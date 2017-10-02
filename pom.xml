@@ -918,10 +918,6 @@
                 <version>2.10.4</version>
                 <configuration>
                     <quiet>true</quiet>
-                    <header><![CDATA[
-                    <script type=\"text/javascript\" src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML\"></script>
-                    ]]>
-                    </header>
                     <failOnError>false</failOnError>
                     <excludePackageNames>edu.rit.*</excludePackageNames>
                 </configuration>

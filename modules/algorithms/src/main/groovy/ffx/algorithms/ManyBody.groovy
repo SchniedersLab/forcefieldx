@@ -67,7 +67,7 @@ class ManyBody extends Script {
         /**
          * -g or --goldstein Use Goldstein elimination criteria instead of dead-end elimination criteria.
          */
-        @Option(shortName = 'g', longName = 'goldstein', defaultValue = 'true',
+        @Option(shortName = 'g', longName = 'goldstein', defaultValue = 'false',
                 description = 'Use Goldstein criteria instead of dead-end elimination criteria.')
         boolean goldstein
         /**
@@ -135,13 +135,13 @@ class ManyBody extends Script {
         /**
          * -v or --verbose Prints beginning and default-conformation energies.
          */
-        @Option(shortName = 'v', longName = 'verbose', defaultValue = 'true',
+        @Option(shortName = 'v', longName = 'verbose', defaultValue = 'false',
                 description = 'Prints beginning and default-conformation energies.')
         boolean verbose
         /**
          * -o or --original Include starting coordinates as their own rotamer.
          */
-        @Option(shortName = 'o', longName = 'original', defaultValue = 'true',
+        @Option(shortName = 'o', longName = 'original', defaultValue = 'false',
                 description = 'Include starting coordinates as their own rotamer.')
         boolean original
         /**

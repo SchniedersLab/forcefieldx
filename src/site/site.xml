@@ -23,7 +23,7 @@
             img="/images/icon90.png"
         />
     </poweredBy>
-    <googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId>
+    <!-- googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId -->
     <bannerLeft>
         <name>
             <![CDATA[
@@ -81,7 +81,16 @@
     </custom>
     <body>
         <head>
-            <![CDATA[<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript" />]]>
+            <![CDATA[
+                <script async src="https://www.googletagmanager.com/gtag/js?id=UA-12576019-1"></script>
+                <script>
+                    window.dataLayer = window.dataLayer || [];
+                    function gtag(){dataLayer.push(arguments)};
+                    gtag('js', new Date());
+                    gtag('config', 'UA-12576019-1');
+                </script>
+                <script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript" />
+            ]]>
         </head>
         <!-- links>
             <item name="Biochem." href="http://www.medicine.uiowa.edu/biochemistry"/>
