@@ -116,7 +116,7 @@ class ManyBody extends Script {
         /**
          * -t or --threeBody Include 3-Body interactions in the elimination criteria.
          */
-        @Option(shortName = 't', longName = 'threeBody', defaultValue = 'true',
+        @Option(shortName = 't', longName = 'threeBody', defaultValue = 'false',
                 description = 'Include 3-Body interactions in the elimination criteria.')
         boolean threeBody
         /**

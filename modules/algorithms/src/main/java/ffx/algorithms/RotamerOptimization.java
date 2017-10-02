@@ -241,11 +241,25 @@ public class RotamerOptimization implements Terminatable {
      * at the beginning of rotamer optimization.
      */
     private boolean lazyMatrix = false;
+
+    /**
+     * Flag to control use of 3-body terms.
+     */
+    protected boolean threeBodyTerm = true;
+    /**
+     * Flag to set 3-body energies to zero outside of a cutoff.
+     */
+    private boolean threeBodyCutoff = true;
+    /**
+     * Triple cutoff distance.
+     */
+    private double threeBodyCutoffDist = 9.0;
     /**
      * Trimer-energies for each trimer of rotamers.
      * [residue1][rotamer1][residue2][rotamer2][residue3][rotamer3]
      */
     protected double threeBodyEnergy[][][][][][];
+
     /**
      * Flag to prune clashes.
      */
@@ -276,18 +290,6 @@ public class RotamerOptimization implements Terminatable {
      * Pair clash energy threshold (kcal/mol) for MultiResidues.
      */
     private double multiResPairClashAddn = 80.0;
-    /**
-     * Flag to control use of 3-body terms.
-     */
-    protected boolean threeBodyTerm = true;
-    /**
-     * Flag to set 3-body energies to zero outside of a cutoff.
-     */
-    private boolean threeBodyCutoff = true;
-    /**
-     * Triple cutoff distance.
-     */
-    private double threeBodyCutoffDist = 9.0;
     /**
      * Quad cutoff flag and distance.
      */
@@ -8213,7 +8215,7 @@ public class RotamerOptimization implements Terminatable {
                             logger.info(String.format(" Trimer %7s %-2d, %7s %-2d, %7s %-2d:   set to 1.0E100 at %13.6f Ang < %5.3f Ang.",
                                     resi, ri, resj, rj, resk, rk, dist, superpositionThreshold));
                         } else {
-                            long time = System.nanoTime();
+                            long time = -System.nanoTime();
                             // turn on, apply rotamers
                             turnOnAtoms(resi);
                             turnOnAtoms(resj);
