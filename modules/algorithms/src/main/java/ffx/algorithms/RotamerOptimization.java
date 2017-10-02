@@ -7737,6 +7737,15 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
+    private void revertResidue(Residue res, ResidueState resState, Rotamer rotamer) {
+        if (res.getResidueType() == NA) {
+            res.revertState(resState);
+        } else {
+            RotamerLibrary.applyRotamer(res, rotamer);
+        }
+        turnOffAtoms(res);
+    }
+
     private class SinglesEnergyRegion extends WorkerRegion {
 
         private final SinglesEnergyLoop energyLoop;
@@ -7872,12 +7881,8 @@ public class RotamerOptimization implements Terminatable {
                         logger.info(String.format(" Self %7s %-2d: %16.8f in %6.4f (sec).", resi, ri, selfEnergy, time * 1.0e-9));
                     }
 
-                    if (resi.getResidueType() == NA) {
-                        resi.revertState(resiOriginal);
-                    } else {
-                        RotamerLibrary.applyRotamer(resi, resi.getRotamers(library)[0]);
-                    }
-                    turnOffAtoms(resi);
+                    // Revert residues and turn off atoms.
+                    revertResidue(resi, resiOriginal, resi.getRotamers(library)[0]);
 
                     double anEnergy[] = new double[3];
                     anEnergy[0] = i;
@@ -7900,7 +7905,6 @@ public class RotamerOptimization implements Terminatable {
         private final int nResidues;
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
         private int pairsEnergyCounter;
-        //private double originalAtomicCoordinates[][][];
 
         public PairsEnergyRegion(int nt, Residue residues[]) {
             energyLoop = new PairsEnergyLoop();
@@ -7977,12 +7981,11 @@ public class RotamerOptimization implements Terminatable {
 
             @Override
             public void run(Integer key) {
-                // Compute the pair-energy for each pair of rotamers
-                // Pair-level job indexing method
+                /**
+                 * Compute the pair-energy for each pair of rotamers using a pair-level job indexing method.
+                 */
                 for (int jobKey = key; jobKey <= key; jobKey++) {
                     if (!jobMapPairs.keySet().contains(jobKey)) {
-                        //logger.warning(String.format("(sbox %d) Unexpected: pairs jobKey not contained in map (key = %d).", BOXNUM, jobKey));
-                        //logger.warning(String.format("Unexpected: pairs jobKey not contained in map (key = %d).", jobKey));
                         continue;
                     }
                     Integer job[] = jobMapPairs.get(jobKey);
@@ -8001,7 +8004,7 @@ public class RotamerOptimization implements Terminatable {
                     ResidueState resiOriginal = resi.getResidueType() == NA ? resi.storeState() : null;
                     ResidueState resjOriginal = resj.getResidueType() == NA ? resj.storeState() : null;
 
-                    // turn on, apply rot
+                    // Turn on atoms and apply rotamers.
                     long time = -System.nanoTime();
                     turnOnAtoms(resi);
                     turnOnAtoms(resj);
@@ -8050,19 +8053,10 @@ public class RotamerOptimization implements Terminatable {
                     DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
                     multicastBuf(commEnergyBuf);
 
-                    // move back, turn off
-                    if (resi.getResidueType() == NA) {
-                        resi.revertState(resiOriginal);
-                    } else {
-                        RotamerLibrary.applyRotamer(resi, resi.getRotamers(library)[0]);
-                    }
-                    if (resj.getResidueType() == NA) {
-                        resj.revertState(resjOriginal);
-                    } else {
-                        RotamerLibrary.applyRotamer(resj, resj.getRotamers(library)[0]);
-                    }
-                    turnOffAtoms(resi);
-                    turnOffAtoms(resj);
+                    // Revert residues and turn off atoms.
+                    revertResidue(resi, resiOriginal, resi.getRotamers(library)[0]);
+                    revertResidue(resj, resjOriginal, resj.getRotamers(library)[0]);
+
                     if (algorithmListener != null) {
                         algorithmListener.algorithmUpdate(molecularAssembly);
                     }
@@ -8244,25 +8238,10 @@ public class RotamerOptimization implements Terminatable {
                                 triplesEnergyCounter++;
                             }
 
-                            // revert rotamers, turn off
-                            if (resi.getResidueType() == NA) {
-                                resi.revertState(resiOriginal);
-                            } else {
-                                RotamerLibrary.applyRotamer(resi, resi.getRotamers(library)[0]);
-                            }
-                            if (resj.getResidueType() == NA) {
-                                resj.revertState(resjOriginal);
-                            } else {
-                                RotamerLibrary.applyRotamer(resj, resj.getRotamers(library)[0]);
-                            }
-                            if (resk.getResidueType() == NA) {
-                                resk.revertState(reskOriginal);
-                            } else {
-                                RotamerLibrary.applyRotamer(resk, resk.getRotamers(library)[0]);
-                            }
-                            turnOffAtoms(resi);
-                            turnOffAtoms(resj);
-                            turnOffAtoms(resk);
+                            // Revert rotamers and turn off atoms.
+                            revertResidue(resi, resiOriginal, resi.getRotamers(library)[0]);
+                            revertResidue(resj, resjOriginal, resj.getRotamers(library)[0]);
+                            revertResidue(resk, reskOriginal, resk.getRotamers(library)[0]);
                         }
                         double commEnergy[] = new double[7];
                         commEnergy[0] = i;
@@ -8292,7 +8271,6 @@ public class RotamerOptimization implements Terminatable {
         private final Residue residues[];
         private final int nResidues;
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
-        //private double originalAtomicCoordinates[][][];
         private double localDistanceMatrix[][][][];
         private int quadsEnergyCounter;
 
@@ -8363,10 +8341,6 @@ public class RotamerOptimization implements Terminatable {
                     ResidueState resjOriginalCoordinates = (resj.getResidueType() == NA ? resj.storeState() : null);
                     ResidueState reskOriginalCoordinates = (resk.getResidueType() == NA ? resk.storeState() : null);
                     ResidueState reslOriginalCoordinates = (resl.getResidueType() == NA ? resl.storeState() : null);
-                    /*double[][] resiOriginalCoordinates = (resi.getResidueType() == NA ? storeSingleCoordinates(resi) : null);
-                     double[][] resjOriginalCoordinates = (resj.getResidueType() == NA ? storeSingleCoordinates(resj) : null);
-                     double[][] reskOriginalCoordinates = (resk.getResidueType() == NA ? storeSingleCoordinates(resk) : null);
-                     double[][] reslOriginalCoordinates = (resl.getResidueType() == NA ? storeSingleCoordinates(resl) : null);*/
 
                     int indexOfI = allResiduesList.indexOf(resi);
                     int indexOfJ = allResiduesList.indexOf(resj);
@@ -8453,63 +8427,18 @@ public class RotamerOptimization implements Terminatable {
                                     }
                                     sb.append(String.format("     --f--\n"));
                                     logger.info(sb.toString());
-//                                    String filename = FilenameUtils.removeExtension(molecularAssembly.getFile().toString()) + "." + jobKey;
-//                                    File file = new File(filename);
-//                                    PDBFilter filt = new PDBFilter(file, molecularAssembly, null, null);
-//                                    filt.writeFile(file, false);
                                 } else {
                                     logger.info(String.format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %16.8f at %s Ang.",
                                             resi, ri, resj, rj, resk, rk, resl, rl, quadEnergy, distString));
                                 }
                             }
 
-                            // revert rotamers, turn off
-                            if (resi.getResidueType() == NA) {
-                                resi.revertState(resiOriginalCoordinates);
-                                //revertSingleResidueCoordinates(resi, resiOriginalCoordinates);
-                            } else {
-                                RotamerLibrary.applyRotamer(resi, resi.getRotamers(library)[0]);
-                            }
-                            if (resj.getResidueType() == NA) {
-                                resj.revertState(resjOriginalCoordinates);
-                                //revertSingleResidueCoordinates(resj, resjOriginalCoordinates);
-                            } else {
-                                RotamerLibrary.applyRotamer(resj, resj.getRotamers(library)[0]);
-                            }
-                            if (resk.getResidueType() == NA) {
-                                resk.revertState(reskOriginalCoordinates);
-                                //revertSingleResidueCoordinates(resk, reskOriginalCoordinates);
-                            } else {
-                                RotamerLibrary.applyRotamer(resk, resk.getRotamers(library)[0]);
-                            }
-                            if (resl.getResidueType() == NA) {
-                                resl.revertState(reslOriginalCoordinates);
-                                //revertSingleResidueCoordinates(resl, reslOriginalCoordinates);
-                            } else {
-                                RotamerLibrary.applyRotamer(resl, resl.getRotamers(library)[0]);
-                            }
-                            turnOffAtoms(resi);
-                            turnOffAtoms(resj);
-                            turnOffAtoms(resk);
-                            turnOffAtoms(resl);
+                            // Revert rotamers and turn off atoms.
+                            revertResidue(resi, resiOriginalCoordinates, resi.getRotamers(library)[0]);
+                            revertResidue(resj, resjOriginalCoordinates, resj.getRotamers(library)[0]);
+                            revertResidue(resk, reskOriginalCoordinates, resk.getRotamers(library)[0]);
+                            revertResidue(resl, reslOriginalCoordinates, resl.getRotamers(library)[0]);
                         }
-                        /* No broadcasting of quad energies, just print!
-                         double commEnergy[] = new double[9];
-                         commEnergy[0] = i;
-                         commEnergy[1] = ri;
-                         commEnergy[2] = j;
-                         commEnergy[3] = rj;
-                         commEnergy[4] = k;
-                         commEnergy[5] = rk;
-                         commEnergy[6] = l;
-                         commEnergy[7] = rl;
-                         commEnergy[8] = quadEnergy;
-                         DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
-                         multicastBuf(commEnergyBuf);
-                         if (algorithmListener != null) {
-                         algorithmListener.algorithmUpdate(molecularAssembly);
-                         }
-                         */
                     } else {
                         logger.info(String.format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %16.8f at %10.3f Ang.",
                                 resi, ri, resj, rj, resk, rk, resl, rl, 0.0, quadCutoffDist));
