@@ -40,26 +40,14 @@
 import org.apache.commons.io.FilenameUtils;
 
 // ENERGY
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
-
 import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.ResidueEnumerations;
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.Residue.ResidueType;
+import ffx.potential.bonded.Rotamer
 
 // Groovy Imports
-import groovy.util.CliBuilder;
-
 // FFX Imports
 import ffx.algorithms.RotamerOptimization
-import ffx.algorithms.RotamerOptimization.Direction;
-import edu.rit.pj.Comm
-import java.util.Scanner;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -183,7 +171,7 @@ if (options.x) {
 residueList = rotamerOptimization.getResidues();
 energy();
 RotamerLibrary.measureRotamers(residueList, false);
-rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
+rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
 
 logger.info(" Final Minimum Energy");
 energy();

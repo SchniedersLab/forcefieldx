@@ -536,7 +536,7 @@ class Thermodynamics extends Script {
         String oldLazyMat = System.getProperty("ro-lazyMatrix");
         System.setProperty("ro-lazyMatrix", "true");
 
-        ropt.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
+        ropt.optimize(RotamerOptimization.Algorithm.ALL);
         ropt.setCoordinatesToEnsemble(rank);
 
         // One final energy call to ensure the coordinates are properly set at the

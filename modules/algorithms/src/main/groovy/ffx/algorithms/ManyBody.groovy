@@ -1,8 +1,6 @@
 package ffx.algorithms
 
 // Java Imports
-import java.util.Scanner
-
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils
 
@@ -14,17 +12,13 @@ import groovy.cli.Unparsed
 import edu.rit.pj.Comm
 
 // FFX Imports
-import ffx.potential.MolecularAssembly
-import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.bonded.Rotamer
-import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3
 import ffx.potential.bonded.Residue.ResidueType
-import ffx.utilities.LoggerSevereError
 
 import static ffx.potential.extended.ExtUtils.prop
 
@@ -65,11 +59,11 @@ class ManyBody extends Script {
                 description = 'Algorithm: independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5)')
         int algorithm
         /**
-         * -g or --goldstein Use Goldstein elimination criteria instead of dead-end elimination criteria.
+         * -dee or --deadEnd Use dead-end elimination criteria instead of Goldstein criteria.
          */
-        @Option(shortName = 'g', longName = 'goldstein', defaultValue = 'false',
-                description = 'Use Goldstein criteria instead of dead-end elimination criteria.')
-        boolean goldstein
+        @Option(shortName = 'dee', longName = 'deadEnd',
+                description = 'Use dead-end elimination criteria instead of Goldstein criteria.')
+        boolean dee
         /**
          * -w or --window Size of the sliding window with respect to adjacent residues (default = 7).
          */
@@ -116,7 +110,7 @@ class ManyBody extends Script {
         /**
          * -t or --threeBody Include 3-Body interactions in the elimination criteria.
          */
-        @Option(shortName = 't', longName = 'threeBody', defaultValue = 'false',
+        @Option(shortName = 't', longName = 'threeBody',
                 description = 'Include 3-Body interactions in the elimination criteria.')
         boolean threeBody
         /**
@@ -135,19 +129,19 @@ class ManyBody extends Script {
         /**
          * -v or --verbose Prints beginning and default-conformation energies.
          */
-        @Option(shortName = 'v', longName = 'verbose', defaultValue = 'false',
+        @Option(shortName = 'v', longName = 'verbose',
                 description = 'Prints beginning and default-conformation energies.')
         boolean verbose
         /**
-         * -o or --original Include starting coordinates as their own rotamer.
+         * -o or --original Do not include starting coordinates as their own rotamer.
          */
-        @Option(shortName = 'o', longName = 'original', defaultValue = 'false',
-                description = 'Include starting coordinates as their own rotamer.')
+        @Option(shortName = 'o', longName = 'original',
+                description = 'Do not include starting coordinates as their own rotamer.')
         boolean original
         /**
          * -d or --decompose Print energy decomposition for original-coordinates rotamers.
          */
-        @Option(shortName = 'd', longName = 'decompose', defaultValue = 'false',
+        @Option(shortName = 'd', longName = 'decompose',
                 description = 'Print energy decomposition for original-coordinates rotamers.')
         boolean decompose
         /**
@@ -199,7 +193,7 @@ class ManyBody extends Script {
         /**
          * -vW or --videoWriter Prototype video snapshot output, which skips energy calculations.
          */
-        @Option(shortName = 'vW', longName = 'videoWriter', defaultValue = 'false',
+        @Option(shortName = 'vW', longName = 'videoWriter',
                 description = 'Prototype video snapshot output, which skips energy calculation.')
         boolean videoWriter
         /**
@@ -233,11 +227,11 @@ class ManyBody extends Script {
                 description = 'Follow elimination criteria with (n) Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.')
         int monteCarlo
         /**
-         * -z or --revert Undo an unfavorable change.
+         * -z or --noRevert Do not revert an unfavorable change.
          */
-        @Option(shortName = 'z', longName = 'revert', defaultValue = 'false',
+        @Option(shortName = 'z', longName = 'revert',
                 description = 'Undo an unfavorable change.')
-        boolean revert
+        boolean noRevert
 
         /**
          * The final argument(s) should be one or more filenames.
@@ -266,11 +260,11 @@ class ManyBody extends Script {
          */
         int library = options.library
         int algorithm = options.algorithm
-        boolean useGoldstein = options.goldstein
+        boolean useGoldstein = !options.dee
         boolean threeBodyTerm = options.threeBody
         int pruningType = options.prune
-        boolean revert = options.revert
-        boolean useOrigCoordsRotamer = options.original
+        boolean revert = !options.noRevert
+        boolean useOrigCoordsRotamer = !options.original
         boolean verboseEnergies = options.verbose
         boolean decomposeOriginal = options.decompose
         if (decomposeOriginal) {
@@ -716,13 +710,13 @@ class ManyBody extends Script {
         if (algorithm == 1) {
             rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT);
         } else if (algorithm == 2) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
         } else if (algorithm == 3) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE);
         } else if (algorithm == 4) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW);
         } else if (algorithm == 5) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX_OPTIMIZATION);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX);
         }
 
         if (master) {

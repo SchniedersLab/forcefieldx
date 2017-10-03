@@ -40,19 +40,13 @@
 import org.apache.commons.io.FilenameUtils;
 
 // ENERGY
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
-
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.ResidueEnumerations;
+import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.Residue.ResidueType;
-import ffx.utilities.LoggerSevereError;
-
+import ffx.potential.bonded.Residue.ResidueType
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementEnergy;
@@ -61,8 +55,6 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
 
 // Groovy Imports
-import groovy.util.CliBuilder;
-
 // FFX Imports
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction;
@@ -70,8 +62,6 @@ import ffx.algorithms.RotamerOptimization.Direction;
 // PJ Imports
 import edu.rit.pj.Comm
 // Java Imports
-import java.util.Scanner;
-
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 int library = 2;
@@ -851,13 +841,13 @@ if (decomposeOriginal) {
 if (algorithm == 1) {
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT);
 } else if (algorithm == 2) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
 } else if (algorithm == 3) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE);
 } else if (algorithm == 4) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW);
 } else if (algorithm == 5) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX_OPTIMIZATION);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX);
 }
 
 if (master) {
