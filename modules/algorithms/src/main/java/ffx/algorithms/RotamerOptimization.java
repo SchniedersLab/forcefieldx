@@ -48,7 +48,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -86,7 +85,6 @@ import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.NACorrectionException;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
@@ -96,7 +94,6 @@ import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.IndexIndexPair;
 import ffx.utilities.ObjectPair;
 
-import static ffx.potential.bonded.Residue.ResidueType.AA;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
@@ -2221,6 +2218,12 @@ public class RotamerOptimization implements Terminatable {
             logger.info("(Key) Ignoring nucleic acids.");
             ignoreNA = true;
         }
+
+        logger.info(String.format("\n Rotamer Library:     %s", library.getLibrary()));
+        logger.info(String.format(" Algorithm:           %s", algorithm));
+        logger.info(String.format(" Goldstein Criteria:  %b", useGoldstein));
+        logger.info(String.format(" Three-Body Energies: %b\n", threeBodyTerm));
+
         /*
          * Collect all residues in the MolecularAssembly. Use all Residues with
          * Rotamers and all forced residues if using sliding window and forced
@@ -2234,7 +2237,7 @@ public class RotamerOptimization implements Terminatable {
             for (Residue residuej : current) {
                 if (useForcedResidues) {
                     switch (algorithm) {
-                        case SLIDING_WINDOW:
+                        case WINDOW:
                             if (residuej == null) {
                                 // Do nothing.
                             } else if (residuej.getRotamers(library) != null) {
@@ -2298,16 +2301,16 @@ public class RotamerOptimization implements Terminatable {
                 case INDEPENDENT:
                     e = independent(residueList);
                     break;
-                case GLOBAL:
-                    e = globalBruteForce(residueList);
+                case BRUTE_FORCE:
+                    e = bruteForce(residueList);
                     break;
-                case GLOBAL_DEE:
-                    e = globalUsingEliminations(residueList);
+                case ALL:
+                    e = globalOptimization(residueList);
                     break;
-                case SLIDING_WINDOW:
-                    e = slidingWindow(residueList, windowSize, increment, revert, distance, direction);
+                case WINDOW:
+                    e = slidingWindowOptimization(residueList, windowSize, increment, revert, distance, direction);
                     break;
-                case BOX_OPTIMIZATION:
+                case BOX:
                     e = boxOptimization(residueList);
                     break;
                 default:
@@ -2808,7 +2811,7 @@ public class RotamerOptimization implements Terminatable {
      * @param residueList Residues to optimize.
      * @return Final energy.
      */
-    private double globalUsingEliminations(List<Residue> residueList) {
+    private double globalOptimization(List<Residue> residueList) {
         int currentEnsemble = Integer.MAX_VALUE;
         Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
         int nResidues = residues.length;
@@ -3222,7 +3225,7 @@ public class RotamerOptimization implements Terminatable {
      * @param residueList Residues to be optimized.
      * @return GMEC (Global Minimum Energy Conformation) energy.
      */
-    private double globalBruteForce(List<Residue> residueList) {
+    private double bruteForce(List<Residue> residueList) {
 
         Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
         int nResidues = residues.length;
@@ -3436,8 +3439,8 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
-    private double slidingWindow(ArrayList<Residue> residueList, int windowSize, int increment, boolean revert,
-                                 double distance, Direction direction) {
+    private double slidingWindowOptimization(ArrayList<Residue> residueList, int windowSize, int increment, boolean revert,
+                                             double distance, Direction direction) {
 
         long beginTime = -System.nanoTime();
         boolean incrementTruncated = false;
@@ -3448,7 +3451,7 @@ public class RotamerOptimization implements Terminatable {
         int nOptimize = residueList.size();
         if (nOptimize < windowSize) {
             windowSize = nOptimize;
-            logger.warning(" Window size too small for given residue range; truncating window size.");
+            logger.info(" Window size too small for given residue range; truncating window size.");
         }
         switch (direction) {
             case BACKWARD:
@@ -3578,7 +3581,7 @@ public class RotamerOptimization implements Terminatable {
                                 logger.info(" Window has no rotameric residues.");
                                 ResidueState.revertAllCoordinates(currentWindow, coordinates);
                             } else {
-                                globalUsingEliminations(onlyRotameric);
+                                globalOptimization(onlyRotameric);
                                 double finalEnergy = currentEnergy(currentWindow);
                                 if (startingEnergy <= finalEnergy) {
                                     logger.warning("Optimization did not yield a better energy. Reverting to orginal coordinates.");
@@ -3586,7 +3589,7 @@ public class RotamerOptimization implements Terminatable {
                                 }
                             }
                         } else {
-                            globalUsingEliminations(currentWindow);
+                            globalOptimization(currentWindow);
                             double finalEnergy = currentEnergy(currentWindow);
                             if (startingEnergy <= finalEnergy) {
                                 logger.warning("Optimization did not yield a better energy. Reverting to orginal coordinates.");
@@ -3597,10 +3600,10 @@ public class RotamerOptimization implements Terminatable {
                         if (onlyRotameric.size() < 1) {
                             logger.info(" Window has no rotameric residues.");
                         } else {
-                            globalUsingEliminations(onlyRotameric);
+                            globalOptimization(onlyRotameric);
                         }
                     } else {
-                        globalUsingEliminations(currentWindow);
+                        globalOptimization(currentWindow);
                     }
                     if (!incrementTruncated) {
                         if (windowStart + (windowSize - 1) + increment > nOptimize - 1) {
@@ -3832,7 +3835,7 @@ public class RotamerOptimization implements Terminatable {
                         x = new double[nAtoms * 3];
                     }
                     double startingEnergy = currentEnergy(residuesList);
-                    globalUsingEliminations(residuesList);
+                    globalOptimization(residuesList);
                     double finalEnergy = currentEnergy(residuesList);
                     if (startingEnergy <= finalEnergy) {
                         logger.warning("Optimization did not yield a better energy. Reverting to orginal coordinates.");
@@ -3843,7 +3846,7 @@ public class RotamerOptimization implements Terminatable {
                     logIfMaster(String.format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
                     logIfMaster(String.format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
                 } else {
-                    globalUsingEliminations(residuesList);
+                    globalOptimization(residuesList);
                     long currentTime = System.nanoTime();
                     boxTime += currentTime;
                     logIfMaster(String.format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
@@ -6358,6 +6361,9 @@ public class RotamerOptimization implements Terminatable {
      * @return True if rotamer eliminated.
      */
     protected boolean check(int i, int ri) {
+        if (eliminatedSingles == null) {
+            return false;
+        }
         return eliminatedSingles[i][ri];
     }
 
@@ -6371,6 +6377,9 @@ public class RotamerOptimization implements Terminatable {
      * @return True if eliminated pair.
      */
     protected boolean check(int i, int ri, int j, int rj) {
+        if (eliminatedPairs == null) {
+            return false;
+        }
         // If j is an earlier residue than i, swap j with i, as eliminated
         // rotamers are stored with the earlier residue listed first.
         if (j < i) {
@@ -6396,7 +6405,10 @@ public class RotamerOptimization implements Terminatable {
      * @return True if eliminated triple.
      */
     protected boolean check(int i, int ri, int j, int rj, int k, int rk) {
-        if (j < i) {
+        if (eliminatedTriples == null) {
+            return false;
+        }
+         if (j < i) {
             int ii = i;
             int iri = ri;
             i = j;
@@ -7216,7 +7228,7 @@ public class RotamerOptimization implements Terminatable {
                 String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
                 Path restartPath = Paths.get(filename + ".restart");
                 // if there's already one there, back it up before starting a new one
-                // this happens when wrapping globalUsingEliminations with e.g. box optimization
+                // this happens when wrapping globalOptimization with e.g. box optimization
 //                if (Files.exists(restartPath)) {
 //                    int i = 0;
 //                    Path backupRestartPath = Paths.get(filename + ".resBak");
@@ -8847,7 +8859,7 @@ public class RotamerOptimization implements Terminatable {
 
     public enum Algorithm {
 
-        INDEPENDENT, GLOBAL, GLOBAL_DEE, SLIDING_WINDOW, SLIDING_WINDOW_DEE, BOX_OPTIMIZATION
+        ALL, BOX, WINDOW, INDEPENDENT, BRUTE_FORCE
     }
 
     public enum Direction {

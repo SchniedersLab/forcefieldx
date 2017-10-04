@@ -41,21 +41,15 @@
 import org.apache.commons.io.FilenameUtils;
 
 // ENERGY
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Atom
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.ResidueEnumerations;
+import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.bonded.Rotamer
 
 import static java.lang.Math.exp;
 import static java.lang.Math.random;
 
 // Groovy Imports
-import groovy.util.CliBuilder;
-
 // FFX Imports
 import ffx.algorithms.RotamerOptimization;
 import ffx.algorithms.RotamerOptimization.Direction;
@@ -63,8 +57,7 @@ import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import edu.rit.pj.Comm;
-import ffx.algorithms.MolecularDynamics;
-import java.util.Scanner;
+import ffx.algorithms.MolecularDynamics
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
@@ -660,13 +653,13 @@ original = rotamerOptimization.storeCoordinates(residueList);
 if (algorithm == 1) {
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT);
 } else if (algorithm == 2) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
 } else if (algorithm == 3) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE);
 } else if (algorithm == 4) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW);
 } else if (algorithm == 5) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX_OPTIMIZATION);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX);
 }
 e1 = returnEnergy();
 rotamerOptimization.revertCoordinates(residueList, original);
@@ -690,13 +683,13 @@ for (int i = 0; i < numberOfIterations; i++) {
     if (algorithm == 1) {
         rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT);
     } else if (algorithm == 2) {
-        rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
+        rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
     } else if (algorithm == 3) {
-        rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL);
+        rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE);
     } else if (algorithm == 4) {
-        rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
+        rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW);
     } else if (algorithm == 5) {
-        rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX_OPTIMIZATION);
+        rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX);
     }
     e2 = returnEnergy();
     if (e1 >= e2) {

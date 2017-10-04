@@ -91,6 +91,7 @@ public class RotamerLibrary {
      * the reference is simply returned.
      */
     private final Rotamer[][] nucleicAcidRotamerCache = new Rotamer[numberOfNucleicAcids][];
+
     private ProteinLibrary proteinLibrary = ProteinLibrary.PonderAndRichards;
     
     // Can easily add an naSolvationLibrary when we want to do NA sequence optimization.
