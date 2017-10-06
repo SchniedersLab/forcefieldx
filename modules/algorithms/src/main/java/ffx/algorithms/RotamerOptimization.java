@@ -6105,12 +6105,13 @@ public class RotamerOptimization implements Terminatable {
     }
 
     private boolean eliminateRotamer(Residue[] residues, int i, int ri, boolean verbose) {
-        if (!eliminatedSingles[i][ri] && !(library.getUsingOrigCoordsRotamer() && ri == 0)) {
-            Residue residue = residues[i];
-            logIfMaster(String.format(" Pruning rotamer: %s %d", residue, ri));
+        if (!check(i,ri)) {
+            if (verbose) {
+                logIfMaster(String.format(" Pruning rotamer: %s %d", residues[i], ri));
+            }
             eliminatedSingles[i][ri] = true;
             int pruned = eliminateRotamerPairs(residues, i, ri, verbose);
-            if (pruned > 0) {
+            if (pruned > 0 && verbose) {
                 logIfMaster(String.format("  Pruned %d rotamer pairs.", pruned));
             }
             return true;
@@ -6120,7 +6121,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     private boolean eliminateRotamerPair(Residue[] residues, int i, int ri, int j, int rj, boolean verbose) {
-        if (!check(i, ri, j, rj) && !(library.getUsingOrigCoordsRotamer() && ri == 0 && rj == 0)) {
+        if (!check(i, ri, j, rj)) {
             if (i > j) {
                 int ii = i;
                 int iri = ri;
@@ -6129,11 +6130,8 @@ public class RotamerOptimization implements Terminatable {
                 j = ii;
                 rj = iri;
             }
-            Residue residuei = residues[i];
-            Residue residuej = residues[j];
             if (verbose) {
-                logIfMaster(String.format("  Pruning rotamer pair: %s %d %s %d",
-                        residuei, ri, residuej, rj));
+                logIfMaster(String.format("  Pruning rotamer pair: %s %d %s %d", residues[i], ri, residues[j], rj));
             }
             eliminatedPairs[i][ri][j][rj] = true;
             if (threeBodyTerm) {
@@ -6150,8 +6148,8 @@ public class RotamerOptimization implements Terminatable {
 
     private boolean eliminateRotamerTriple(Residue[] residues, int i, int ri, int j, int rj, int k, int rk,
                                            boolean verbose) {
-        if (!check(i, ri, j, rj, k, rk) && !(library.getUsingOrigCoordsRotamer() && ri == 0 && rj == 0 && rk == 0)) {
-            if (j < i) {
+        if (!check(i, ri, j, rj, k, rk)) {
+            if (i > j) {
                 int ii = i;
                 int iri = ri;
                 i = j;
