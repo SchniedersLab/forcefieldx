@@ -24,6 +24,8 @@
                 <include>ffx.bat</include>
                 <include>ffxc.bat</include>
                 <include>ffx-all.jar</include>
+                <include>scheduler</include>
+                <include>scheduler.bat</include>
             </includes>
         </fileSet>
         <fileSet>
