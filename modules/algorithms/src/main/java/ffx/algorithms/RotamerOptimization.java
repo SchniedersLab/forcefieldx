@@ -143,6 +143,7 @@ public class RotamerOptimization implements Terminatable {
      * Number of permutations whose energy is explicitly evaluated.
      */
     private int evaluatedPermutations = 0;
+    private int evaluatedPermutationsPrint = 0;
     /**
      * An array of polymers from the MolecularAssembly.
      */
@@ -364,14 +365,15 @@ public class RotamerOptimization implements Terminatable {
     private boolean writeEnergyRestart = true;
     private boolean loadEnergyRestart = false;
     private File energyRestartFile;
-    private final HashMap<Integer, Integer[]> jobMapSingles = new HashMap<>();
-    private final HashMap<Integer, Integer[]> jobMapPairs = new HashMap<>();
-    private final HashMap<Integer, Integer[]> jobMapTrimers = new HashMap<>();
-    private final HashMap<Integer, Integer[]> jobMapQuads = new HashMap<>();
+    private final HashMap<Integer, Integer[]> singlesMap = new HashMap<>();
+    private final HashMap<Integer, Integer[]> pairsMap = new HashMap<>();
+    private final HashMap<Integer, Integer[]> trimersMap = new HashMap<>();
+    private final HashMap<Integer, Integer[]> quadsMap = new HashMap<>();
     private List<String> energiesToWrite;
 
     private ParallelTeam parallelTeam;
     private GoldsteinRotamerPairRegion goldsteinRotamerPairRegion;
+    private EnergyRegion energyRegion;
 
     private boolean verbose = false;
     // In X, Y, Z.
@@ -475,7 +477,6 @@ public class RotamerOptimization implements Terminatable {
                 verbose = true;
             }
         }
-
 
         // Process relevant system keys.
         String skipEnergies = System.getProperty("ro-skipEnergies");
@@ -885,7 +886,6 @@ public class RotamerOptimization implements Terminatable {
         double currentEnergy = initialEnergy;
 
         int nAccept = 0;
-        //int nReject = 0;
 
         /**
          * I have the vague idea of parallelizing down to individual threads, by
@@ -907,13 +907,6 @@ public class RotamerOptimization implements Terminatable {
                 currentEnergy = rmc.lastEnergy();
                 //++nReject;
             }
-            /*if (threeBodyTerm) {
-                logIfMaster(String.format(" %d Energy through 3-Body interactions: %16.8f",
-                        i, currentEnergy));
-            } else {
-                logIfMaster(String.format(" %d Energy through 2-Body interactions: %16.8f",
-                        i, currentEnergy));
-            }*/
         }
 
         initTime += System.nanoTime();
@@ -1183,12 +1176,16 @@ public class RotamerOptimization implements Terminatable {
         // This is the initialization condition.
         if (i == 0) {
             evaluatedPermutations = 0;
+            evaluatedPermutationsPrint = 1;
         }
-        if (evaluatedPermutations >= 1e6) {
-            if (evaluatedPermutations % 1000000 == 0) {
-                logIfMaster(String.format("The permutation has reached %10.4e.", (double) evaluatedPermutations));
+
+        if (evaluatedPermutations >= evaluatedPermutationsPrint) {
+            if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
+                logIfMaster(String.format(" The permutations have reached %10.4e.", (double) evaluatedPermutations));
+                evaluatedPermutationsPrint *= 10;
             }
         }
+
         int nResidues = residues.length;
         Residue residuei = residues[i];
         Rotamer[] rotamersi = residuei.getRotamers(library);
@@ -1214,8 +1211,7 @@ public class RotamerOptimization implements Terminatable {
             }
         } else {
             /**
-             * At the end of the recursion, check each rotamer of the final
-             * residue.
+             * At the end of the recursion, check each rotamer of the final residue.
              */
             for (int ri = 0; ri < lenri; ri++) {
                 if (check(i, ri)) {
@@ -1230,12 +1226,12 @@ public class RotamerOptimization implements Terminatable {
                         break;
                     }
                 }
-                if (deadEnd) {
-                    continue;
+                if (!deadEnd) {
+                    evaluatedPermutations++;
                 }
-                evaluatedPermutations++;
             }
         }
+
         return 0.0;
     }
 
@@ -1338,24 +1334,23 @@ public class RotamerOptimization implements Terminatable {
      * trimers).
      */
     private double computeEnergy(Residue residues[], int rotamers[], boolean print) {
-        int nResidues = residues.length;
         double selfSum = 0.0;
         double pairSum = 0.0;
         double threeBodySum = 0.0;
-
-        for (int a = 0; a < nResidues; a++) {
-            int ai = rotamers[a];
-            selfSum += self(a, ai);
-            for (int b = a + 1; b < nResidues; b++) {
-                int bi = rotamers[b];
-                pairSum += pair(a, ai, b, bi);
-                if (threeBodyTerm) {
-                    for (int c = b + 1; c < nResidues; c++) {
-                        int ci = rotamers[c];
-                        threeBodySum += triple(a, ai, b, bi, c, ci);
-                    }
-                }
+        try {
+            if (parallelTeam == null) {
+                parallelTeam = new ParallelTeam();
             }
+            if (energyRegion == null) {
+                energyRegion = new EnergyRegion(parallelTeam.getThreadCount());
+            }
+            energyRegion.init(residues, rotamers);
+            parallelTeam.execute(energyRegion);
+            selfSum = energyRegion.getSelf();
+            pairSum = energyRegion.getPair();
+            threeBodySum = energyRegion.getThreeBody();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, " Exception in EnergyRegion.", e);
         }
 
         double approximateEnergy = backboneEnergy + selfSum + pairSum + threeBodySum;
@@ -1371,6 +1366,99 @@ public class RotamerOptimization implements Terminatable {
             }
         }
         return approximateEnergy;
+    }
+
+    private class EnergyRegion extends ParallelRegion {
+
+        private SharedDouble self;
+        private SharedDouble pair;
+        private SharedDouble threeBody;
+        private EnergyLoop energyLoops[];
+        private Residue residues[];
+        private int rotamers[];
+        private int nResidues;
+
+        public EnergyRegion(int nThreads) {
+            self = new SharedDouble();
+            pair = new SharedDouble();
+            threeBody = new SharedDouble();
+            energyLoops = new EnergyLoop[nThreads];
+        }
+
+        public void init(Residue residues[], int rotamers[]) {
+            this.residues = residues;
+            this.rotamers = rotamers;
+            this.nResidues = residues.length;
+        }
+
+        public void start() {
+            self.set(0.0);
+            pair.set(0.0);
+            threeBody.set(0.0);
+        }
+
+        public double getSelf() {
+            return self.get();
+        }
+
+        public double getPair() {
+            return pair.get();
+        }
+
+        public double getThreeBody() {
+            return threeBody.get();
+        }
+
+        @Override
+        public void run() {
+            int threadID = getThreadIndex();
+            if (energyLoops[threadID] == null) {
+                energyLoops[threadID] = new EnergyLoop();
+            }
+            try {
+                execute(0, nResidues - 1, energyLoops[threadID]);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, " Exception in EnergyLoop.", e);
+            }
+        }
+
+        private class EnergyLoop extends IntegerForLoop {
+            private double selfSum;
+            private double pairSum;
+            private double threeBodySum;
+
+            @Override
+            public void start() {
+                selfSum = 0.0;
+                pairSum = 0.0;
+                threeBodySum = 0.0;
+            }
+
+            @Override
+            public void finish() {
+                self.addAndGet(selfSum);
+                pair.addAndGet(pairSum);
+                threeBody.addAndGet(threeBodySum);
+            }
+
+            @Override
+            public void run(int lb, int ub) {
+                for (int a = lb; a <= ub; a++) {
+                    int ai = rotamers[a];
+                    selfSum += self(a, ai);
+                    for (int b = a + 1; b < nResidues; b++) {
+                        int bi = rotamers[b];
+                        pairSum += pair(a, ai, b, bi);
+                        if (threeBodyTerm) {
+                            for (int c = b + 1; c < nResidues; c++) {
+                                int ci = rotamers[c];
+                                threeBodySum += triple(a, ai, b, bi, c, ci);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -2838,9 +2926,8 @@ public class RotamerOptimization implements Terminatable {
                 x = new double[nAtoms * 3];
             }
             /**
-             * Compute the number of permutations without eliminating dead-ends
-             * and compute the number of permutations using singleton
-             * elimination.
+             * Compute the number of permutations without eliminating dead-ends and compute the number
+             * of permutations using singleton elimination.
              */
             double permutations = 1;
             double singletonPermutations = 1;
@@ -2864,12 +2951,11 @@ public class RotamerOptimization implements Terminatable {
             dryRun(residues, 0, currentRotamers);
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
             if (evaluatedPermutations == 0) {
-                logger.severe("No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
+                logger.severe(" No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
             }
             if (master && printFiles && ensembleFile == null) {
                 File file = molecularAssembly.getFile();
                 String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
-                //ensembleFile = SystemFilter.version(new File(filename + ".ens"));
                 ensembleFile = new File(filename + ".ens");
                 if (ensembleFile.exists()) {
                     for (int i = 2; i < 1000; i++) {
@@ -2961,7 +3047,7 @@ public class RotamerOptimization implements Terminatable {
                 Rotamer[] rotamers = residue.getRotamers(library);
                 int ri = optimum[i];
                 Rotamer rotamer = rotamers[ri];
-                logIfMaster(String.format(" %c %s %s (%d)", residue.getChainID(), residue, rotamer.toString(), ri));
+                logIfMaster(String.format(" %c %7s %s (%d)", residue.getChainID(), residue, rotamer.toAngleString(), ri));
                 RotamerLibrary.applyRotamer(residue, rotamer);
             }
 
@@ -3076,19 +3162,7 @@ public class RotamerOptimization implements Terminatable {
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
             currentEnsemble = (int) evaluatedPermutations;
             if (ensembleNumber == 1 && currentEnsemble == 0) {
-                logger.severe("No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
-                /*  PROGRAMMATIC ENSEMBLE CONTROL (dangerous)
-                 if (getPruning() == 0) {
-                 logger.warning(" Unable to recover a rotamer path; commencing ensemble search.");
-                 setEnsemble(10, 5.0);
-                 startingBuffer = 5.0;
-                 continue;
-                 } else {
-                 logger.warning(" Pruning left no valid path through rotamer space; recomputing without pruning.");
-                 setPruning(0);
-                 continue;
-                 }
-                 */
+                logger.severe(" No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
             }
             if (ensembleNumber > 1) {
                 if (master && printFiles && ensembleFile == null) {
@@ -3149,6 +3223,7 @@ public class RotamerOptimization implements Terminatable {
             logger.warning(" No valid rotamer permutations found; results will be unreliable.  Try increasing the starting ensemble buffer.");
         }
         double[] permutationEnergyStub = null;
+
         if (useMonteCarlo()) {
             firstValidPerm(residues, 0, currentRotamers);
             rotamerOptimizationMC(residues, optimum, currentRotamers, nMCsteps, false, mcUseAll);
@@ -3163,7 +3238,7 @@ public class RotamerOptimization implements Terminatable {
             Rotamer[] rotamers = residue.getRotamers(library);
             int ri = optimum[i];
             Rotamer rotamer = rotamers[ri];
-            logIfMaster(String.format(" %c %s %s (%d)", residue.getChainID(), residue, rotamer.toString(), ri));
+            logIfMaster(String.format(" %c %7s %s (%d)", residue.getChainID(), residue, rotamer.toAngleString(), ri));
             RotamerLibrary.applyRotamer(residue, rotamer);
         }
 
@@ -4454,7 +4529,7 @@ public class RotamerOptimization implements Terminatable {
             QuadsEnergyRegion quadsRegion = new QuadsEnergyRegion(energyWorkerTeam.getThreadCount(), residues);
             try {
                 if (loaded < 1) {
-                    jobMapSingles.clear();
+                    singlesMap.clear();
                     // allocate selfEnergy
                     int singleJobIndex = 0;
                     selfEnergy = new double[nResidues][];
@@ -4469,7 +4544,7 @@ public class RotamerOptimization implements Terminatable {
                                 if (decomposeOriginal && ri != 0) {
                                     continue;
                                 }
-                                jobMapSingles.put(singleJobIndex++, selfJob);
+                                singlesMap.put(singleJobIndex++, selfJob);
                             }
                         }
                     }
@@ -4487,7 +4562,7 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(String.format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
 
                 if (loaded < 2) {
-                    jobMapPairs.clear();
+                    pairsMap.clear();
                     // allocate twoBodyEnergy and create jobs
                     int pairJobIndex = 0;
                     twoBodyEnergy = new double[nResidues][][][];
@@ -4516,7 +4591,7 @@ public class RotamerOptimization implements Terminatable {
                                     if (decomposeOriginal && (ri != 0 || rj != 0)) {
                                         continue;
                                     }
-                                    jobMapPairs.put(pairJobIndex++, pairJob);
+                                    pairsMap.put(pairJobIndex++, pairJob);
                                 }
                             }
                         }
@@ -4536,7 +4611,7 @@ public class RotamerOptimization implements Terminatable {
 
                 if (threeBodyTerm) {
                     if (loaded < 3) {
-                        jobMapTrimers.clear();
+                        trimersMap.clear();
                         // allocate threeBodyEnergy and create jobs
                         int trimerJobIndex = 0;
                         threeBodyEnergy = new double[nResidues][][][][][];
@@ -4577,7 +4652,7 @@ public class RotamerOptimization implements Terminatable {
                                                 if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
                                                     continue;
                                                 }
-                                                jobMapTrimers.put(trimerJobIndex++, trimerJob);
+                                                trimersMap.put(trimerJobIndex++, trimerJob);
                                             }
                                         }
                                     }
@@ -4598,7 +4673,7 @@ public class RotamerOptimization implements Terminatable {
 
                 if (computeQuads) {
                     logger.info(" Creating quad jobs...");
-                    jobMapQuads.clear();
+                    quadsMap.clear();
                     boolean maxedOut = false;
                     // create quad jobs (no memory allocation)
                     int quadJobIndex = 0;
@@ -4646,8 +4721,8 @@ public class RotamerOptimization implements Terminatable {
                                                     if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0 || rl != 0)) {
                                                         continue;
                                                     }
-                                                    jobMapQuads.put(quadJobIndex++, quadJob);
-                                                    if (jobMapQuads.size() > quadMaxout) {
+                                                    quadsMap.put(quadJobIndex++, quadJob);
+                                                    if (quadsMap.size() > quadMaxout) {
                                                         maxedOut = true;
                                                         break;
                                                     }
@@ -4690,7 +4765,7 @@ public class RotamerOptimization implements Terminatable {
                         Thread.sleep(POLLING_FREQUENCY);
                     }
 
-                    logger.info(String.format(" Running quads: %d jobs.", jobMapQuads.size()));
+                    logger.info(String.format(" Running quads: %d jobs.", quadsMap.size()));
                     energyWorkerTeam.execute(quadsRegion);
                     quadsTime = System.nanoTime() - (triplesTime + pairsTime + singlesTime + energyStartTime);
                     logIfMaster(String.format(" Time for quad energies:   %12.4g", (quadsTime * 1.0E-9)));
@@ -6041,12 +6116,13 @@ public class RotamerOptimization implements Terminatable {
         double goldsteinEnergy = self(i,riA) + self(j,rjC) + pair(i, riA, j, rjC)
                 - self(i,riB) - self(j,rjD) - pair(i, riB, j, rjD);
 
-        if (parallelTeam == null) {
-            parallelTeam = new ParallelTeam();
-            goldsteinRotamerPairRegion = new GoldsteinRotamerPairRegion(parallelTeam.getThreadCount());
-        }
-
         try {
+            if (parallelTeam == null) {
+                parallelTeam = new ParallelTeam();
+            }
+            if (goldsteinRotamerPairRegion == null) {
+                goldsteinRotamerPairRegion = new GoldsteinRotamerPairRegion(parallelTeam.getThreadCount());
+            }
             goldsteinRotamerPairRegion.init(residues, i, riA, riB, j, rjC, rjD);
             parallelTeam.execute(goldsteinRotamerPairRegion);
             goldsteinEnergy += goldsteinRotamerPairRegion.getSumOverK();
@@ -6106,7 +6182,7 @@ public class RotamerOptimization implements Terminatable {
             try {
                 execute(0, nRes-1, goldsteinRotamerPairLoop[threadID]);
             } catch (Exception e) {
-                logger.log(Level.WARNING, " Exception in GoldsteinRotamerPairLoop.", e);
+                logger.log(Level.WARNING, " Exception in GoldsteinRotamerPairRegion.", e);
             }
         }
 
@@ -7066,7 +7142,7 @@ public class RotamerOptimization implements Terminatable {
                 logger.warning(String.format("Empty or unreadable energy restart file: %s.", restartFile.getCanonicalPath()));
             }
             if (loaded >= 1) {
-                jobMapSingles.clear();
+                singlesMap.clear();
                 // allocate selfEnergy array and create self jobs
                 HashMap<String, Integer> reverseJobMapSingles = new HashMap<>();
                 int singleJobIndex = 0;
@@ -7080,13 +7156,13 @@ public class RotamerOptimization implements Terminatable {
                         if (decomposeOriginal && ri != 0) {
                             continue;
                         }
-                        jobMapSingles.put(singleJobIndex, selfJob);
+                        singlesMap.put(singleJobIndex, selfJob);
                         String revKey = String.format("%d %d", i, ri);
                         reverseJobMapSingles.put(revKey, singleJobIndex);
                         singleJobIndex++;
                     }
                 }
-                // fill in self-energies from file while removing the corresponding jobs from jobMapSingles
+                // fill in self-energies from file while removing the corresponding jobs from singlesMap
                 for (String line : singleLines) {
                     try {
                         String tok[] = line.replace(",", "").replace(":", "").split("\\s+");
@@ -7108,7 +7184,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                         // remove that job from the pool
                         String revKey = String.format("%d %d", i, ri);
-                        Integer ret[] = jobMapSingles.remove(reverseJobMapSingles.get(revKey));
+                        Integer ret[] = singlesMap.remove(reverseJobMapSingles.get(revKey));
                         if (ret == null) {
                             //logIfMaster(String.format("(sdl %d) Restart file contained unnecessary value for %s", BOXNUM, revKey));
                         }
@@ -7123,12 +7199,12 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
             if (loaded >= 2) {
-                if (jobMapSingles.size() > 0) {
+                if (singlesMap.size() > 0) {
                     if (master) {
                         logger.warning("Double-check that parameters match original run!  Found pairs in restart file, but singles job queue is non-empty.");
                     }
                 }
-                jobMapPairs.clear();
+                pairsMap.clear();
                 // allocated twoBodyEnergy array and create pair jobs
                 HashMap<String, Integer> reverseJobMapPairs = new HashMap<>();
                 int pairJobIndex = 0;
@@ -7154,7 +7230,7 @@ public class RotamerOptimization implements Terminatable {
                                 if (decomposeOriginal && (ri != 0 || rj != 0)) {
                                     continue;
                                 }
-                                jobMapPairs.put(pairJobIndex, pairJob);
+                                pairsMap.put(pairJobIndex, pairJob);
                                 String revKey = String.format("%d %d %d %d", i, ri, j, rj);
                                 reverseJobMapPairs.put(revKey, pairJobIndex);
                                 pairJobIndex++;
@@ -7162,7 +7238,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                     }
                 }
-                // fill in pair-energies from file while removing the corresponding jobs from jobMapPairs
+                // fill in pair-energies from file while removing the corresponding jobs from pairsMap
                 for (String line : pairLines) {
                     try {
                         String tok[] = line.replace(",", "").replace(":", "").split("\\s+");
@@ -7191,7 +7267,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                         // remove that job from the pool
                         String revKey = String.format("%d %d %d %d", i, ri, j, rj);
-                        Integer ret[] = jobMapPairs.remove(reverseJobMapPairs.get(revKey));
+                        Integer ret[] = pairsMap.remove(reverseJobMapPairs.get(revKey));
                         if (ret == null) {
                             //logIfMaster(String.format("(sdl %d) Restart file contained unnecessary value for %s", BOXNUM, revKey));
                         }
@@ -7206,13 +7282,13 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
             if (loaded >= 3) {
-                if (jobMapPairs.size() > 0) {
+                if (pairsMap.size() > 0) {
                     if (master) {
                         logger.warning("Double-check that parameters match original run!  Found trimers in restart file, but pairs job queue is non-empty.");
                     }
                 }
                 HashMap<String, Integer> reverseJobMapTrimers = new HashMap<>();
-                jobMapTrimers.clear();
+                trimersMap.clear();
                 // allocate threeBodyEnergy array, fill in triple-energies from file
                 int trimerJobIndex = 0;
                 threeBodyEnergy = new double[nResidues][][][][][];
@@ -7246,7 +7322,7 @@ public class RotamerOptimization implements Terminatable {
                                         if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
                                             continue;
                                         }
-                                        jobMapTrimers.put(trimerJobIndex, trimerJob);
+                                        trimersMap.put(trimerJobIndex, trimerJob);
                                         String revKey = String.format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
                                         reverseJobMapTrimers.put(revKey, trimerJobIndex);
                                         trimerJobIndex++;
@@ -7256,7 +7332,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                     }
                 }
-                // fill in triple-energies from file while removing the corresponding jobs from jobMapTrimers
+                // fill in triple-energies from file while removing the corresponding jobs from trimersMap
                 for (String line : tripleLines) {
                     try {
                         String tok[] = line.replace(",", "").replace(":", "").split("\\s+");
@@ -7292,7 +7368,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                         // remove that job from the pool
                         String revKey = String.format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
-                        Integer ret[] = jobMapTrimers.remove(reverseJobMapTrimers.get(revKey));
+                        Integer ret[] = trimersMap.remove(reverseJobMapTrimers.get(revKey));
                         if (ret == null) {
                             //logIfMaster(String.format("(sdl %d) Restart file contained unnecessary value for %s", BOXNUM, revKey));
                         }
@@ -7827,8 +7903,8 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void run() throws Exception {
-            if (!jobMapSingles.isEmpty()) {
-                execute(jobMapSingles.keySet().iterator(), energyLoop);
+            if (!singlesMap.isEmpty()) {
+                execute(singlesMap.keySet().iterator(), energyLoop);
             }
         }
 
@@ -7886,10 +7962,10 @@ public class RotamerOptimization implements Terminatable {
                  * Compute the self-energy for one rotamer.
                  */
                 for (int jobKey = key; jobKey <= key; jobKey++) {
-                    if (!jobMapSingles.keySet().contains(jobKey)) {
+                    if (!singlesMap.keySet().contains(jobKey)) {
                         continue;
                     }
-                    Integer job[] = jobMapSingles.get(jobKey);
+                    Integer job[] = singlesMap.get(jobKey);
                     int i = job[0];
                     int ri = job[1];
                     if (!(useOrigCoordsRot && ri == 0) && pruneClashes && check(i, ri)) {
@@ -7957,8 +8033,8 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void run() throws Exception {
-            if (!jobMapPairs.isEmpty()) {
-                execute(jobMapPairs.keySet().iterator(), energyLoop);
+            if (!pairsMap.isEmpty()) {
+                execute(pairsMap.keySet().iterator(), energyLoop);
             }
         }
 
@@ -8023,10 +8099,10 @@ public class RotamerOptimization implements Terminatable {
                  * Compute the pair-energy for each pair of rotamers using a pair-level job indexing method.
                  */
                 for (int jobKey = key; jobKey <= key; jobKey++) {
-                    if (!jobMapPairs.keySet().contains(jobKey)) {
+                    if (!pairsMap.keySet().contains(jobKey)) {
                         continue;
                     }
-                    Integer job[] = jobMapPairs.get(jobKey);
+                    Integer job[] = pairsMap.get(jobKey);
                     int i = job[0];
                     int ri = job[1];
                     int j = job[2];
@@ -8132,8 +8208,8 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void run() throws Exception {
-            if (!jobMapTrimers.isEmpty()) {
-                execute(jobMapTrimers.keySet().iterator(), energyLoop);
+            if (!trimersMap.isEmpty()) {
+                execute(trimersMap.keySet().iterator(), energyLoop);
             }
         }
 
@@ -8201,10 +8277,10 @@ public class RotamerOptimization implements Terminatable {
             public void run(Integer key) {
                 // Trimer-level job indexing method
                 for (int jobKey = key; jobKey <= key; jobKey++) {
-                    if (!jobMapTrimers.keySet().contains(jobKey)) {
+                    if (!trimersMap.keySet().contains(jobKey)) {
                         continue;
                     }
-                    Integer job[] = jobMapTrimers.get(jobKey);
+                    Integer job[] = trimersMap.get(jobKey);
                     int i = job[0];
                     int ri = job[1];
                     int j = job[2];
@@ -8332,8 +8408,8 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void run() throws Exception {
-            if (!jobMapQuads.isEmpty()) {
-                execute(jobMapQuads.keySet().iterator(), energyLoop);
+            if (!quadsMap.isEmpty()) {
+                execute(quadsMap.keySet().iterator(), energyLoop);
             }
         }
 
@@ -8349,10 +8425,10 @@ public class RotamerOptimization implements Terminatable {
             public void run(Integer key) {
                 // Quad-level job indexing method
                 for (int jobKey = key; jobKey <= key; jobKey++) {
-                    if (!jobMapQuads.keySet().contains(jobKey)) {
+                    if (!quadsMap.keySet().contains(jobKey)) {
                         continue;
                     }
-                    Integer job[] = jobMapQuads.get(jobKey);
+                    Integer job[] = quadsMap.get(jobKey);
                     int i = job[0];
                     int ri = job[1];
                     int j = job[2];

@@ -280,4 +280,13 @@ public class Rotamer {
         }
         return sb.toString();
     }
+
+    public String toAngleString() {
+        StringBuilder sb = new StringBuilder();
+        int n = angles.length;
+        for (int i = 0; i < n; i++) {
+            sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
+        }
+        return sb.toString();
+    }
 }
