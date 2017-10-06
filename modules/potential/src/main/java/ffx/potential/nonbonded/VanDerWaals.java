@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -332,7 +332,7 @@ public class VanDerWaals implements MaskingInterface,
      * @since 1.0
      */
     public VanDerWaals(Atom atoms[], int molecule[], Crystal crystal, ForceField forceField,
-            ParallelTeam parallelTeam) {
+                       ParallelTeam parallelTeam) {
         this.atoms = atoms;
         this.molecule = molecule;
         this.crystal = crystal;
@@ -733,16 +733,16 @@ public class VanDerWaals implements MaskingInterface,
                 softRadCount[atomClass[i]]++;
             }
         }
-        
+
         /**
          * Integrate to maxR = 100 Angstroms or ~33 sigma. Integration step size
          * of delR to be 0.01 Angstroms.
          */
         double maxR = 100.0;
-        int n = (int) (2.0 * (maxR - nonbondedCutoff.cut)); 
+        int n = (int) (2.0 * (maxR - nonbondedCutoff.cut));
         double delR = (maxR - nonbondedCutoff.cut) / n;
         double total = 0.0;
-        
+
         /**
          * Loop over vdW types.
          */
@@ -751,46 +751,46 @@ public class VanDerWaals implements MaskingInterface,
                 if (radCount[i] == 0 || radCount[j] == 0) {
                     continue;
                 }
-                
-                int j2 = j * 2; 
+
+                int j2 = j * 2;
                 if (vdwForm.radEps[i] == null) {
                     continue;
                 }
-                
-                double irv = vdwForm.radEps[i][j2 + vdwForm.RADMIN]; 
+
+                double irv = vdwForm.radEps[i][j2 + vdwForm.RADMIN];
                 double ev = vdwForm.radEps[i][j2 + vdwForm.EPS];
-                if (irv == Double.NaN  || irv == 0 || ev == Double.NaN) {
+                if (irv == Double.NaN || irv == 0 || ev == Double.NaN) {
                     continue;
                 }
                 double sume = 0.0;
-                for (int k = 1; k <= n; k++) { 
-                    double r = nonbondedCutoff.cut - 0.5 * delR + k * delR; 
+                for (int k = 1; k <= n; k++) {
+                    double r = nonbondedCutoff.cut - 0.5 * delR + k * delR;
                     double r2 = r * r;
-                    final double rho = r * irv; 
+                    final double rho = r * irv;
                     final double rho3 = rho * rho * rho;
                     final double rhod = rho + vdwForm.delta;
                     final double rhod3 = rhod * rhod * rhod;
                     double t1 = 0, t2 = 0;
                     switch (vdwForm.vdwType) {
-                        case BUFFERED_14_7 :
+                        case BUFFERED_14_7:
                             final double rho7 = rho3 * rho3 * rho;
                             final double rhod7 = rhod3 * rhod3 * rhod;
                             t1 = vdwForm.t1n / rhod7;
-                            t2 = vdwForm.gamma1 / (rho7 + vdwForm.gamma) - 2.0; 
+                            t2 = vdwForm.gamma1 / (rho7 + vdwForm.gamma) - 2.0;
                             break;
-                        case LENNARD_JONES :
+                        case LENNARD_JONES:
                             final double rho6 = rho3 * rho3;
                             final double rhod6 = rhod3 * rhod3;
                             t1 = vdwForm.t1n / rhod6;
                             t2 = vdwForm.gamma1 / (rho6 + vdwForm.gamma) - 2.0;
                             break;
                     }
-                    final double eij = ev * t1 * t2;  
+                    final double eij = ev * t1 * t2;
                     /**
                      * Apply one minus the multiplicative switch if the
                      * interaction distance is less than the end of the
                      * switching window.
-                     * 
+                     *
                      */
                     double taper = 1.0;
                     if (r2 < nonbondedCutoff.off2) {
@@ -800,7 +800,7 @@ public class VanDerWaals implements MaskingInterface,
                         taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
                         taper = 1.0 - taper;
                     }
-                    
+
                     double jacobian = 4.0 * PI * r2;
                     double e = jacobian * eij * taper;
                     if (j != i) {
@@ -808,10 +808,10 @@ public class VanDerWaals implements MaskingInterface,
                     } else {
                         sume += 0.5 * e;
                     }
-                    
+
                 }
-                double trapezoid = delR * sume; 
-                
+                double trapezoid = delR * sume;
+
                 // Normal correction
                 total += radCount[i] * radCount[j] * trapezoid;
                 // Correct for softCore vdW that are being turned off.
@@ -823,12 +823,12 @@ public class VanDerWaals implements MaskingInterface,
                 }
             }
         }
-        
+
         // Divide by the volume of the box.
         total = total / crystal.getUnitCell().volume;
         // Multiply by the number of the sym ops in the unit cell
         total = total * crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
-        
+
         return total;
 
     }
