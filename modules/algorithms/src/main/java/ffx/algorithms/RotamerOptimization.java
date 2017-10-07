@@ -4292,10 +4292,6 @@ public class RotamerOptimization implements Terminatable {
 
         // Beginning energy
         int currentRotamers[] = new int[residues.length];
-        // Print starting energies if they're meaningful, i.e. rotamer-zeros are original coordinates.
-        if (library.getUsingOrigCoordsRotamer()) {
-            computeEnergy(residues, currentRotamers, master);
-        }
 
         if (pruneClashes) {
             validateDEE(residues);
@@ -6396,7 +6392,7 @@ public class RotamerOptimization implements Terminatable {
         try {
             ret = twoBodyEnergy[i][ri][j][rj];
         } catch (NullPointerException ex) {
-            String message = String.format("NPE for pair %d-%d, %d-%d", i, ri, j, rj);
+            String message = String.format(" NPE for pair %d-%d, %d-%d", i, ri, j, rj);
             logger.log(Level.SEVERE, message, ex);
         }
         return ret;
