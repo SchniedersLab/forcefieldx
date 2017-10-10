@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -172,14 +172,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      */
     private Crystal crystal;
     private int nSymm;
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom atoms[];
-    /**
-     * The number of atoms in the system.
-     */
-    private int nAtoms;
 
     /**
      * *****************************************
@@ -500,9 +492,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     private double directDipoleCR[][];
     private double cartesianDipolePhi[][];
     private double cartesianDipolePhiCR[][];
-    private int ip11[][];
-    private int ip12[][];
-    private int ip13[][];
+
     /**
      * *************************************************************************
      * Mutable Particle Mesh Ewald constants.
@@ -675,7 +665,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
     public ParticleMeshEwaldQI(Atom atoms[], int molecule[], ForceField forceField,
-            Crystal crystal, NeighborList neighborList, ELEC_FORM elecForm, ParallelTeam parallelTeam) {
+                               Crystal crystal, NeighborList neighborList, ELEC_FORM elecForm, ParallelTeam parallelTeam) {
         this.atoms = atoms;
         this.molecule = molecule;
         this.forceField = forceField;
@@ -1119,7 +1109,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             }
 
             /* ESV flag array, initialized regardless of esvTerm. */
-            esvAtomsScaled = new boolean[nAtoms];	// True for other ESV residue atoms.
+            esvAtomsScaled = new boolean[nAtoms];    // True for other ESV residue atoms.
             esvAtomsScaledAlpha = new boolean[nAtoms];
             fill(esvAtomsScaled, false);
             fill(esvAtomsScaledAlpha, false);
@@ -2098,7 +2088,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         if (print) {
             sb = new StringBuilder(
                     "\n Self-Consistent Field\n"
-                    + " Iter  RMS Change (Debye)  Time\n");
+                            + " Iter  RMS Change (Debye)  Time\n");
         }
         int completedSCFCycles = 0;
         int maxSCFCycles = 1000;
@@ -3638,7 +3628,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
                         fieldCR[0][2][i] += gkFieldCR[2].get(i);
                     }
                     if (esvTerm) {
-                        throw new UnsupportedOperationException();	// TODO: Handle unscaled field.
+                        throw new UnsupportedOperationException();    // TODO: Handle unscaled field.
                     }
                 }
 
@@ -4209,7 +4199,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             }
 
             private double permanent(int i, int k, double[] r,
-                    LambdaFactors lf, double permMask, double[] Qi, double[] Qk) {
+                                     LambdaFactors lf, double permMask, double[] Qi, double[] Qk) {
                 final double selfScale = (i == k) ? 0.5 : 1.0;
                 final double permMaskLeft = 1.0 - permMask;
                 final double eScrn, dScrn, d2Scrn;
@@ -4296,8 +4286,8 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             }
 
             private double polarization(int i, int k, double[] r,
-                    LambdaFactors lf, double groupMask, double polarMask, double[] Qi, double[] Qk,
-                    double[] ui, double[] uiCR, double[] uk, double[] ukCR, double pgamma, double aiak) {
+                                        LambdaFactors lf, double groupMask, double polarMask, double[] Qi, double[] Qk,
+                                        double[] ui, double[] uiCR, double[] uk, double[] ukCR, double pgamma, double aiak) {
                 final double mutualScale = (polarization == Polarization.MUTUAL) ? 1.0 : 0.0;
                 final double selfScale = (i == k) ? 0.5 : 1.0;
                 final double groupMaskLeft = 1.0 - groupMask;
@@ -4372,9 +4362,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             }
 
             private void esvDerivative(int i, int k, int iSymm, double[] r,
-                    LambdaFactors lf, double permMask, double groupMask, double polarMask,
-                    double[] Qi, double[] Qk, double[] ui, double[] uiCR, double[] uk, double[] ukCR,
-                    double pgamma, double aiak) {
+                                       LambdaFactors lf, double permMask, double groupMask, double polarMask,
+                                       double[] Qi, double[] Qk, double[] ui, double[] uiCR, double[] uk, double[] ukCR,
+                                       double pgamma, double aiak) {
 
                 final double permMaskLeft = 1.0 - permMask;
                 final double groupMaskLeft = 1.0 - groupMask;
@@ -4452,9 +4442,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             }
 
             private void permanentAndPolarization(int i, int k, double[] r,
-                    LambdaFactors lf, double permMask, double groupMask, double polarMask,
-                    double[] Qi, double[] Qk, double[] ui, double[] uiCR, double[] uk, double[] ukCR,
-                    double pgamma, double aiak, double[] result) {
+                                                  LambdaFactors lf, double permMask, double groupMask, double polarMask,
+                                                  double[] Qi, double[] Qk, double[] ui, double[] uiCR, double[] uk, double[] ukCR,
+                                                  double pgamma, double aiak, double[] result) {
                 final double mutualScale = (polarization == Polarization.MUTUAL) ? 1.0 : 0.0;
                 final double selfScale = (i == k) ? 0.5 : 1.0;
                 final double permMaskLeft = 1.0 - permMask;
@@ -5911,168 +5901,14 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         return off;
     }
 
-    private void assignPolarizationGroups() {
-        /**
-         * Find directly connected group members for each atom.
-         */
-        List<Integer> group = new ArrayList<>();
-        List<Integer> polarizationGroup = new ArrayList<>();
-        //int g11 = 0;
-        for (Atom ai : atoms) {
-            group.clear();
-            polarizationGroup.clear();
-            Integer index = ai.getIndex() - 1;
-            group.add(index);
-            polarizationGroup.add(ai.getType());
-            PolarizeType polarizeType = ai.getPolarizeType();
-            if (polarizeType != null) {
-                if (polarizeType.polarizationGroup != null) {
-                    for (int i : polarizeType.polarizationGroup) {
-                        if (!polarizationGroup.contains(i)) {
-                            polarizationGroup.add(i);
-                        }
-                    }
-                    growGroup(polarizationGroup, group, ai);
-                    Collections.sort(group);
-                    ip11[index] = new int[group.size()];
-                    int j = 0;
-                    for (int k : group) {
-                        ip11[index][j++] = k;
-                    }
-                } else {
-                    ip11[index] = new int[group.size()];
-                    int j = 0;
-                    for (int k : group) {
-                        ip11[index][j++] = k;
-                    }
-                }
-                //g11 += ip11[index].length;
-                //System.out.println(format("%d %d", index + 1, g11));
-            } else {
-                String message = "The polarize keyword was not found for atom "
-                        + (index + 1) + " with type " + ai.getType();
-                logger.log(Level.SEVERE, message, new IllegalStateException());
-            }
-        }
-        /**
-         * Find 1-2 group relationships.
-         */
-        int mask[] = new int[nAtoms];
-        List<Integer> list = new ArrayList<>();
-        List<Integer> keep = new ArrayList<>();
-        for (int i = 0; i < nAtoms; i++) {
-            mask[i] = -1;
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            list.clear();
-            for (int j : ip11[i]) {
-                list.add(j);
-                mask[j] = i;
-            }
-            keep.clear();
-            for (int j : list) {
-                Atom aj = atoms[j];
-                ArrayList<Bond> bonds = aj.getBonds();
-                for (Bond b : bonds) {
-                    Atom ak = b.get1_2(aj);
-                    int k = ak.getArrayIndex();
-                    if (mask[k] != i) {
-                        keep.add(k);
-                    }
-                }
-            }
-            list.clear();
-            for (int j : keep) {
-                for (int k : ip11[j]) {
-                    list.add(k);
-                }
-            }
-            Collections.sort(list);
-            ip12[i] = new int[list.size()];
-            int j = 0;
-            for (int k : list) {
-                ip12[i][j++] = k;
-            }
-        }
-        /**
-         * Find 1-3 group relationships.
-         */
-        for (int i = 0; i < nAtoms; i++) {
-            mask[i] = -1;
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            for (int j : ip11[i]) {
-                mask[j] = i;
-            }
-            for (int j : ip12[i]) {
-                mask[j] = i;
-            }
-            list.clear();
-            for (int j : ip12[i]) {
-                for (int k : ip12[j]) {
-                    if (mask[k] != i) {
-                        if (!list.contains(k)) {
-                            list.add(k);
-                        }
-                    }
-                }
-            }
-            ip13[i] = new int[list.size()];
-            Collections.sort(list);
-            int j = 0;
-            for (int k : list) {
-                ip13[i][j++] = k;
-            }
-        }
-    }
-
-    /**
-     * A recursive method that checks all atoms bonded to the seed atom for
-     * inclusion in the polarization group. The method is called on each newly
-     * found group member.
-     *
-     * @param polarizationGroup Atom types that should be included in the group.
-     * @param group XYZ indeces of current group members.
-     * @param seed The bonds of the seed atom are queried for inclusion in the
-     * group.
-     */
-    private void growGroup(List<Integer> polarizationGroup,
-            List<Integer> group, Atom seed) {
-        List<Bond> bonds = seed.getBonds();
-        for (Bond bi : bonds) {
-            Atom aj = bi.get1_2(seed);
-            int tj = aj.getType();
-            boolean added = false;
-            for (int g : polarizationGroup) {
-                if (g == tj) {
-                    Integer index = aj.getIndex() - 1;
-                    if (!group.contains(index)) {
-                        group.add(index);
-                        added = true;
-                        break;
-                    }
-                }
-            }
-            if (added) {
-                PolarizeType polarizeType = aj.getPolarizeType();
-                for (int i : polarizeType.polarizationGroup) {
-                    if (!polarizationGroup.contains(i)) {
-                        polarizationGroup.add(i);
-                    }
-                }
-                growGroup(polarizationGroup, group, aj);
-            }
-        }
-    }
-
     private void torque(int iSymm,
-            double tx[], double ty[], double tz[],
-            double gx[], double gy[], double gz[],
-            double origin[], double[] u,
-            double v[], double w[], double uv[], double uw[],
-            double vw[], double ur[], double us[], double vs[],
-            double ws[], double t1[], double t2[], double r[],
-            double s[]) {
+                        double tx[], double ty[], double tz[],
+                        double gx[], double gy[], double gz[],
+                        double origin[], double[] u,
+                        double v[], double w[], double uv[], double uw[],
+                        double vw[], double ur[], double us[], double vs[],
+                        double ws[], double t1[], double t2[], double r[],
+                        double s[]) {
         for (int i = 0; i < nAtoms; i++) {
             final int ax[] = axisAtom[i];
             // Ions, for example, have no torque.
@@ -6637,7 +6473,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         if (print) {
             sb = new StringBuilder(
                     "\n Self-Consistent Field\n"
-                    + " Iter  RMS Change (Debye)  Time\n");
+                            + " Iter  RMS Change (Debye)  Time\n");
         }
 
         /**

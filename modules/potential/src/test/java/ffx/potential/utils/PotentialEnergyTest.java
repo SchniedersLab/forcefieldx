@@ -353,17 +353,16 @@ public final class PotentialEnergyTest {
             case Softcore_CiOnly:
                 if (!ciEnabled) return;
             case Softcore:
-                load();
-                testSoftCore();
+                //load();
+                //testSoftCore();
                 break;
-
             case All_CiOnly:
                 if (!ciEnabled) return;
             case All:
                 load();
                 testEnergy(qi);
                 if (!qi) testGradient();
-                testSoftCore();
+                // testSoftCore();
         }
     }
 

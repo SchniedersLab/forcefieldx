@@ -316,10 +316,10 @@ public class CrystalEnergyTest {
         if (pmeqi) return;
         testGradient();
         // Set lambdaterm and reload the system for softcore.
-        System.setProperty("lambdaterm", "true");
-        load();
-        testSoftCore();
-        System.clearProperty("lambdaterm");
+        // System.setProperty("lambdaterm", "true");
+        // load();
+        // testSoftCore();
+        // System.clearProperty("lambdaterm");
     }
 
     /**

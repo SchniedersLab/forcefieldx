@@ -226,7 +226,7 @@ public class ForceFieldFilter {
             if (properties != null) {
                 parse(properties);
             }
-            forceField.checkPolarizationTypes();
+            //forceField.checkPolarizationTypes();
         } catch (FileNotFoundException e) {
             String message = "Exception parsing force field.";
             logger.log(Level.WARNING, message, e);
@@ -337,7 +337,7 @@ public class ForceFieldFilter {
                     }
                 }
             }
-            forceField.checkPolarizationTypes();
+            //forceField.checkPolarizationTypes();
         } catch (Exception e) {
             String message = "Exception parsing force field.";
             logger.log(Level.WARNING, message, e);

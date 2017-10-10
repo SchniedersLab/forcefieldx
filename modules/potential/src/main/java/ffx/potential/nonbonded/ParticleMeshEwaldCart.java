@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -167,14 +167,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         logger.severe("Cartesian PME does not support ESV handling.");
     }
 
-    /**
-     * An ordered array of atoms in the system.
-     */
-    private Atom atoms[];
-    /**
-     * The number of atoms in the system.
-     */
-    private int nAtoms;
     /**
      * Unit cell and spacegroup information.
      */
@@ -504,9 +496,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private double directDipoleCR[][];
     private double cartesianDipolePhi[][];
     private double cartesianDipolePhiCR[][];
-    private int ip11[][];
-    private int ip12[][];
-    private int ip13[][];
+
     /**
      * *************************************************************************
      * Mutable Particle Mesh Ewald constants.
@@ -676,7 +666,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
     public ParticleMeshEwaldCart(Atom atoms[], int molecule[], ForceField forceField,
-            Crystal crystal, NeighborList neighborList, ELEC_FORM elecForm, ParallelTeam parallelTeam) {
+                                 Crystal crystal, NeighborList neighborList, ELEC_FORM elecForm, ParallelTeam parallelTeam) {
         this.atoms = atoms;
         this.molecule = molecule;
         this.forceField = forceField;
@@ -2138,7 +2128,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         if (print) {
             sb = new StringBuilder(
                     "\n Self-Consistent Field\n"
-                    + " Iter  RMS Change (Debye)  Time\n");
+                            + " Iter  RMS Change (Debye)  Time\n");
         }
         int completedSCFCycles = 0;
         int maxSCFCycles = 1000;
@@ -4149,9 +4139,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                 logger.info(atoms[k].toString());
                                 logger.severe(String.format(" The permanent multipole energy between atoms %d and %d (%d) is %16.8f at %16.8f A.", i, k, iSymm, ei, r));*/
                                 String message = String.format(" %s\n %s\n %s\n "
-                                        + "The permanent multipole energy between "
-                                        + "atoms %d and %d (%d) is %16.8f at "
-                                        + "%16.8f A.", crystal.getUnitCell().toString(),
+                                                + "The permanent multipole energy between "
+                                                + "atoms %d and %d (%d) is %16.8f at "
+                                                + "%16.8f A.", crystal.getUnitCell().toString(),
                                         atoms[i].toString(), atoms[k].toString(),
                                         i, k, iSymm, ei, r);
                                 throw new EnergyException(message, false);
@@ -4227,10 +4217,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                                 logger.info(format(" with induced dipole: %8.3f %8.3f %8.3f", ukx, uky, ukz));
                                 logger.severe(String.format(" The polarization energy due to atoms %d and %d (%d) is %10.6f at %10.6f A.", i + 1, k + 1, iSymm, ei, r));*/
                                 String message = String.format(" %s\n"
-                                        + " %s\n with induced dipole: %8.3f %8.3f %8.3f\n"
-                                        + " %s\n with induced dipole: %8.3f %8.3f %8.3f\n"
-                                        + " The polarization energy due to atoms "
-                                        + "%d and %d (%d) is %10.6f at %10.6f A.",
+                                                + " %s\n with induced dipole: %8.3f %8.3f %8.3f\n"
+                                                + " %s\n with induced dipole: %8.3f %8.3f %8.3f\n"
+                                                + " The polarization energy due to atoms "
+                                                + "%d and %d (%d) is %10.6f at %10.6f A.",
                                         crystal.getUnitCell(), atoms[i], uix, uiy, uiz,
                                         atoms[k], ukx, uky, ukz, i + 1, k + 1, iSymm, ei, r);
                                 throw new EnergyException(message, false);
@@ -6457,175 +6447,14 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         return false;
     }
 
-    private void assignPolarizationGroups() {
-        /**
-         * Find directly connected group members for each atom.
-         */
-        List<Integer> group = new ArrayList<>();
-        List<Integer> polarizationGroup = new ArrayList<>();
-        //int g11 = 0;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom a = atoms[i];
-            if (a.getIndex() - 1 != i) {
-                logger.severe(" Atom indexing is not consistent in PME.");
-            }
-        }
-
-        for (Atom ai : atoms) {
-            group.clear();
-            polarizationGroup.clear();
-            Integer index = ai.getIndex() - 1;
-            group.add(index);
-            polarizationGroup.add(ai.getType());
-            PolarizeType polarizeType = ai.getPolarizeType();
-            if (polarizeType != null) {
-                if (polarizeType.polarizationGroup != null) {
-                    for (int i : polarizeType.polarizationGroup) {
-                        if (!polarizationGroup.contains(i)) {
-                            polarizationGroup.add(i);
-                        }
-                    }
-                    growGroup(polarizationGroup, group, ai);
-                    Collections.sort(group);
-                    ip11[index] = new int[group.size()];
-                    int j = 0;
-                    for (int k : group) {
-                        ip11[index][j++] = k;
-                    }
-                } else {
-                    ip11[index] = new int[group.size()];
-                    int j = 0;
-                    for (int k : group) {
-                        ip11[index][j++] = k;
-                    }
-                }
-                //g11 += ip11[index].length;
-                //System.out.println(format("%d %d", index + 1, g11));
-            } else {
-                String message = "The polarize keyword was not found for atom "
-                        + (index + 1) + " with type " + ai.getType();
-                logger.severe(message);
-            }
-        }
-        /**
-         * Find 1-2 group relationships.
-         */
-        int mask[] = new int[nAtoms];
-        List<Integer> list = new ArrayList<>();
-        List<Integer> keep = new ArrayList<>();
-        for (int i = 0; i < nAtoms; i++) {
-            mask[i] = -1;
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            list.clear();
-            for (int j : ip11[i]) {
-                list.add(j);
-                mask[j] = i;
-            }
-            keep.clear();
-            for (int j : list) {
-                Atom aj = atoms[j];
-                ArrayList<Bond> bonds = aj.getBonds();
-                for (Bond b : bonds) {
-                    Atom ak = b.get1_2(aj);
-                    int k = ak.getIndex() - 1;
-                    if (mask[k] != i) {
-                        keep.add(k);
-                    }
-                }
-            }
-            list.clear();
-            for (int j : keep) {
-                for (int k : ip11[j]) {
-                    list.add(k);
-                }
-            }
-            Collections.sort(list);
-            ip12[i] = new int[list.size()];
-            int j = 0;
-            for (int k : list) {
-                ip12[i][j++] = k;
-            }
-        }
-        /**
-         * Find 1-3 group relationships.
-         */
-        for (int i = 0; i < nAtoms; i++) {
-            mask[i] = -1;
-        }
-        for (int i = 0; i < nAtoms; i++) {
-            for (int j : ip11[i]) {
-                mask[j] = i;
-            }
-            for (int j : ip12[i]) {
-                mask[j] = i;
-            }
-            list.clear();
-            for (int j : ip12[i]) {
-                for (int k : ip12[j]) {
-                    if (mask[k] != i) {
-                        if (!list.contains(k)) {
-                            list.add(k);
-                        }
-                    }
-                }
-            }
-            ip13[i] = new int[list.size()];
-            Collections.sort(list);
-            int j = 0;
-            for (int k : list) {
-                ip13[i][j++] = k;
-            }
-        }
-    }
-
-    /**
-     * A recursive method that checks all atoms bonded to the seed atom for
-     * inclusion in the polarization group. The method is called on each newly
-     * found group member.
-     *
-     * @param polarizationGroup Atom types that should be included in the group.
-     * @param group XYZ indeces of current group members.
-     * @param seed The bonds of the seed atom are queried for inclusion in the
-     * group.
-     */
-    private void growGroup(List<Integer> polarizationGroup,
-            List<Integer> group, Atom seed) {
-        List<Bond> bonds = seed.getBonds();
-        for (Bond bi : bonds) {
-            Atom aj = bi.get1_2(seed);
-            int tj = aj.getType();
-            boolean added = false;
-            for (int g : polarizationGroup) {
-                if (g == tj) {
-                    Integer index = aj.getIndex() - 1;
-                    if (!group.contains(index)) {
-                        group.add(index);
-                        added = true;
-                        break;
-                    }
-                }
-            }
-            if (added) {
-                PolarizeType polarizeType = aj.getPolarizeType();
-                for (int i : polarizeType.polarizationGroup) {
-                    if (!polarizationGroup.contains(i)) {
-                        polarizationGroup.add(i);
-                    }
-                }
-                growGroup(polarizationGroup, group, aj);
-            }
-        }
-    }
-
     private void torque(int iSymm,
-            double tx[], double ty[], double tz[],
-            double gx[], double gy[], double gz[],
-            double origin[], double[] u,
-            double v[], double w[], double uv[], double uw[],
-            double vw[], double ur[], double us[], double vs[],
-            double ws[], double t1[], double t2[], double r[],
-            double s[]) {
+                        double tx[], double ty[], double tz[],
+                        double gx[], double gy[], double gz[],
+                        double origin[], double[] u,
+                        double v[], double w[], double uv[], double uw[],
+                        double vw[], double ur[], double us[], double vs[],
+                        double ws[], double t1[], double t2[], double r[],
+                        double s[]) {
         for (int i = 0; i < nAtoms; i++) {
             final int ax[] = axisAtom[i];
             // Ions, for example, have no torque.
@@ -7017,7 +6846,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         if (print) {
             sb = new StringBuilder(
                     "\n Self-Consistent Field\n"
-                    + " Iter  RMS Change (Debye)  Time\n");
+                            + " Iter  RMS Change (Debye)  Time\n");
         }
         /**
          * Find the induced dipole field due to direct dipoles (or predicted
@@ -8264,10 +8093,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             leastSquaresPredictor.initialSolution[0] = 1.0;
             PointVectorValuePair optimum
                     = leastSquaresOptimizer.optimize(maxEvals,
-                            leastSquaresPredictor,
-                            leastSquaresPredictor.calculateTarget(),
-                            leastSquaresPredictor.weights,
-                            leastSquaresPredictor.initialSolution);
+                    leastSquaresPredictor,
+                    leastSquaresPredictor.calculateTarget(),
+                    leastSquaresPredictor.weights,
+                    leastSquaresPredictor.initialSolution);
             double[] optimalValues = optimum.getPoint();
             if (logger.isLoggable(Level.FINEST)) {
                 logger.finest(String.format("\n LS RMS:            %10.6f", leastSquaresOptimizer.getRMS()));
@@ -8453,6 +8282,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         public MultivariateMatrixFunction jacobian() {
             return multivariateMatrixFunction;
         }
+
         private MultivariateMatrixFunction multivariateMatrixFunction
                 = new MultivariateMatrixFunction() {
             @Override

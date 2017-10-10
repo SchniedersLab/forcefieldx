@@ -234,8 +234,8 @@ public class OPLSCrystalEnergyTest {
             testEnergy();
         }
         testGradient();
-        testSoftCore();
-//        testLambdaOsrwDeriv();
+        // testSoftCore();
+        // testLambdaOsrwDeriv();
     }
 
     /**

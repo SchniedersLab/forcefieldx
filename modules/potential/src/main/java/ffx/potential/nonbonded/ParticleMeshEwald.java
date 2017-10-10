@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -46,7 +46,9 @@ import java.util.logging.Logger;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy.Platform;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.parameters.PolarizeType;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
@@ -60,6 +62,21 @@ import ffx.potential.bonded.LambdaInterface;
 public abstract class ParticleMeshEwald implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
+
+    /**
+     * An ordered array of atoms in the system.
+     */
+    protected Atom atoms[];
+    /**
+     * The number of atoms in the system.
+     */
+    protected int nAtoms;
+    /**
+     * Polarization groups.
+     */
+    protected int ip11[][];
+    protected int ip12[][];
+    protected int ip13[][];
 
     /**
      * Total electrostatic energy == permanentMultipole + polarizationEnergy +
@@ -120,6 +137,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      */
     public double inducedDipole[][][];
     public double inducedDipoleCR[][][];
+
+
     /**
      * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py
      * script (available from the wiki) to draw these easily in PyMol.
@@ -336,6 +355,148 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      */
     public SCFAlgorithm getScfAlgorithm() {
         return scfAlgorithm;
+    }
+
+    protected void assignPolarizationGroups() {
+        /**
+         * Find directly connected group members for each atom.
+         */
+        List<Integer> group = new ArrayList<>();
+        for (int i = 0; i < nAtoms; i++) {
+            Atom a = atoms[i];
+            if (a.getIndex() - 1 != i) {
+                logger.severe(" Atom indexing is not consistent in PME.");
+            }
+        }
+        for (Atom ai : atoms) {
+            group.clear();
+            Integer index = ai.getIndex() - 1;
+            group.add(index);
+            PolarizeType polarizeType = ai.getPolarizeType();
+            if (polarizeType != null) {
+                if (polarizeType.polarizationGroup != null) {
+                    growGroup(group, ai);
+                    Collections.sort(group);
+                    ip11[index] = new int[group.size()];
+                    int j = 0;
+                    for (int k : group) {
+                        ip11[index][j++] = k;
+                    }
+                } else {
+                    ip11[index] = new int[group.size()];
+                    int j = 0;
+                    for (int k : group) {
+                        ip11[index][j++] = k;
+                    }
+                }
+            } else {
+                String message = "The polarize keyword was not found for atom "
+                        + (index + 1) + " with type " + ai.getType();
+                logger.severe(message);
+            }
+        }
+        /**
+         * Find 1-2 group relationships.
+         */
+        int mask[] = new int[nAtoms];
+        List<Integer> list = new ArrayList<>();
+        List<Integer> keep = new ArrayList<>();
+        for (int i = 0; i < nAtoms; i++) {
+            mask[i] = -1;
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            list.clear();
+            for (int j : ip11[i]) {
+                list.add(j);
+                mask[j] = i;
+            }
+            keep.clear();
+            for (int j : list) {
+                Atom aj = atoms[j];
+                ArrayList<Bond> bonds = aj.getBonds();
+                for (Bond b : bonds) {
+                    Atom ak = b.get1_2(aj);
+                    int k = ak.getIndex() - 1;
+                    if (mask[k] != i) {
+                        keep.add(k);
+                    }
+                }
+            }
+            list.clear();
+            for (int j : keep) {
+                for (int k : ip11[j]) {
+                    list.add(k);
+                }
+            }
+            Collections.sort(list);
+            ip12[i] = new int[list.size()];
+            int j = 0;
+            for (int k : list) {
+                ip12[i][j++] = k;
+            }
+        }
+        /**
+         * Find 1-3 group relationships.
+         */
+        for (int i = 0; i < nAtoms; i++) {
+            mask[i] = -1;
+        }
+        for (int i = 0; i < nAtoms; i++) {
+            for (int j : ip11[i]) {
+                mask[j] = i;
+            }
+            for (int j : ip12[i]) {
+                mask[j] = i;
+            }
+            list.clear();
+            for (int j : ip12[i]) {
+                for (int k : ip12[j]) {
+                    if (mask[k] != i) {
+                        if (!list.contains(k)) {
+                            list.add(k);
+                        }
+                    }
+                }
+            }
+            ip13[i] = new int[list.size()];
+            Collections.sort(list);
+            int j = 0;
+            for (int k : list) {
+                ip13[i][j++] = k;
+            }
+        }
+    }
+
+    /**
+     * A recursive method that checks all atoms bonded to the seed atom for
+     * inclusion in the polarization group. The method is called on each newly
+     * found group member.
+     *
+     * @param group XYZ indeces of current group members.
+     * @param seed The bonds of the seed atom are queried for inclusion in the
+     * group.
+     */
+    private void growGroup(List<Integer> group, Atom seed) {
+        List<Bond> bonds = seed.getBonds();
+        for (Bond bi : bonds) {
+            Atom aj = bi.get1_2(seed);
+            int tj = aj.getType();
+            boolean added = false;
+            PolarizeType polarizeType = seed.getPolarizeType();
+            for (int type : polarizeType.polarizationGroup) {
+                if (type == tj) {
+                    Integer index = aj.getIndex() - 1;
+                    if (!group.contains(index)) {
+                        group.add(index);
+                        added = true;
+                        break;
+                    }
+                }
+            }
+            if (added) {
+                growGroup(group, aj);
+            }
+        }
     }
 
 }
