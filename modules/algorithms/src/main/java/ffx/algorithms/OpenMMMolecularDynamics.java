@@ -418,4 +418,13 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         openMMIntegrator = openMMForceFieldEnergy.getIntegrator();
         openMMContext = openMMForceFieldEnergy.getContext();
     }
+
+    /**
+     * Returns the OpenMM DynamicsEngine
+     * @return OPENMM
+     */
+    @Override
+    public DynamicsEngine getEngine() {
+        return DynamicsEngine.OPENMM;
+    }
 }

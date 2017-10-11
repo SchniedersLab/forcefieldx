@@ -79,6 +79,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     private final Potential potential;
 
+    private final DynamicsEngine engine = DynamicsEngine.FFX;
+
     private MonteCarloListener monteCarloListener;
     private Thermostat thermostat;
     private Integrator integrator;
@@ -1071,6 +1073,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 }
             }
         }
+    }
+
+    /**
+     * Returns the DynamicsEngine in use; will typically be over-ridden by subclasses.
+     * @return FFX engine.
+     */
+    public DynamicsEngine getEngine() {
+        return engine;
     }
 
     /**
