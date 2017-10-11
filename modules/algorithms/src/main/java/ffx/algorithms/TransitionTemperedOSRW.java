@@ -456,7 +456,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         /**
          * Write out restart files.
          */
-        if (fLambdaUpdates % saveFrequency == 0) {
+        //if (fLambdaUpdates % saveFrequency == 0) {
+        if (energyCount % saveFrequency == 0) {
             if (algorithmListener != null) {
                 algorithmListener.algorithmUpdate(lambdaOneAssembly);
             }

@@ -735,9 +735,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Method to set the Restart Frequency.
      *
      * @param restartFrequency the time between writing restart files.
+     * @throws IllegalArgumentException If restart frequency is not a positive number
      */
-    public void setRestartFrequency(double restartFrequency) {
-        this.restartFrequency = restartFrequency;
+    public void setRestartFrequency(double restartFrequency) throws IllegalArgumentException {
+        if (Double.isFinite(restartFrequency) && restartFrequency > 0) {
+            this.restartFrequency = restartFrequency;
+        } else {
+            throw new IllegalArgumentException(String.format(" Restart frequency must be positive finite, was %10.4g", restartFrequency));
+        }
     }
 
     /**
