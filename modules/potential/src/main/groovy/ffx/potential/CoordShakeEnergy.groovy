@@ -2,6 +2,7 @@
 package ffx.potential
 
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.LambdaInterface
 
 
 // Groovy Imports
@@ -46,6 +47,10 @@ class CoordShakeEnergy extends Script {
          * reverts, in y, reverts, then z, and reverts again.
          */
         @Option(shortName='d', longName='deltaX', defaultValue='1.0', description='Distance to move coordinates (applies to all equally)') double dX;
+        /**
+         * -l or --lambda sets the lambda value to evaluate at.
+         */
+        @Option(shortName='l', longName='lambda', defaultValue='-1', description='Lambda value') double initialLambda;
         /**
          * The final argument(s) should be one or more filenames.
          */
@@ -99,6 +104,19 @@ class CoordShakeEnergy extends Script {
         MolecularAssembly[] assemblies = functions.open(modelFilename)
         MolecularAssembly activeAssembly = assemblies[0]
         Potential thePotential = activeAssembly.getPotentialEnergy();
+
+        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology has lambda specified.
+        boolean lambdaTerm = options.initialLambda >= 0.0;
+        if (lambdaTerm) {
+            System.setProperty("lambdaterm","true");
+        }
+        if (options.initialLambda < 0.0 || options.initialLambda > 1.0) {
+            options.initialLambda = 0.0;
+        }
+
+        if (lambdaTerm) {
+            ((LambdaInterface) thePotential).setLambda(options.initialLambda);
+        }
 
         def eFunct;
 
