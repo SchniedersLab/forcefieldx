@@ -2425,8 +2425,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             case "VERLET":
             default:
             openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
-            thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
-            OpenMM_System_addForce(openMMSystem, thermostat);
+            //thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
+            //OpenMM_System_addForce(openMMSystem, thermostat);
         }
         //logger.info(String.format(" Created %s OpenMM Integrator", integrator));
 

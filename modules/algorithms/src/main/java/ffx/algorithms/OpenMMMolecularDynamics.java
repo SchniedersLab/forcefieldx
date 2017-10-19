@@ -216,7 +216,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
             }
 
-            if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000) == 0 && i != 0) {
+            if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000 / intervalSteps) == 0 && i != 0) {
                 for (AssemblyInfo ai : assemblies) {
                     if (ai.archiveFile != null && !saveSnapshotAsPDB) {
                         if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
@@ -237,7 +237,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
             /**
              * Write out restart files every saveRestartFileFrequency steps.
              */
-            if (restartFrequency > 0 && i % (restartFrequency * 1000) == 0 && i != 0) {
+            if (restartFrequency > 0 && i % (restartFrequency * 1000 / intervalSteps ) == 0 && i != 0) {
                 if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
                     logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
                 } else {
@@ -417,5 +417,14 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         openMMForceFieldEnergy.setIntegrator(integrator, dt, frictionCoeff, targetTemperature, collisionFreq);
         openMMIntegrator = openMMForceFieldEnergy.getIntegrator();
         openMMContext = openMMForceFieldEnergy.getContext();
+    }
+
+    /**
+     * Returns the OpenMM DynamicsEngine
+     * @return OPENMM
+     */
+    @Override
+    public DynamicsEngine getEngine() {
+        return DynamicsEngine.OPENMM;
     }
 }

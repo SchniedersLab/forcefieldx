@@ -97,13 +97,17 @@ class Thermodynamics extends Script {
          */
         @Option(shortName='d', defaultValue='1.0', description='Time discretization step (fsec)') double dt;
         /**
-         * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
+         * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.25 psec default).
          */
         @Option(shortName='r', longName='report', defaultValue='0.25', description='Interval to report thermodynamics (psec).') double report;
         /**
-         * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
+         * -w or --write sets snapshot save frequency in picoseconds (10.0 psec default).
          */
         @Option(shortName='w', longName='write', defaultValue='10.0', description='Interval to write out coordinates (psec).') double write;
+        /**
+         * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
+         */
+        @Option(shortName='k', longName='checkpoint', defaultValue='1.0', description='Interval to write out histogram and .dyn restart files') double checkpoint;
         /**
          * -t or --temperature sets the simulation temperature (Kelvin).
          */
@@ -666,18 +670,9 @@ class Thermodynamics extends Script {
                 rankDirectory.mkdir();
             }
             withRankName = rankDirectory.getPath() + File.separator + baseFilename;
-            /*lambdaRestart = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam");
-            dyn = new File(rankDirectory.getPath() + File.separator + baseFilename + ".dyn");
-            lambdaOneFile = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam1");
-            lambdaZeroFile = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam0");*/
             structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName());
-        }/* else {
-        // For a single process job, try to get the restart files from the current directory.
-        lambdaRestart = new File(baseFilename + ".lam");
-        dyn = new File(baseFilename + ".dyn");
-        lambdaOneFile = new File(baseFilename + ".lam1");
-        lambdaZeroFile = new File(baseFilename + ".lam0");
-        }*/
+        }
+
         lambdaRestart = new File(withRankName + ".lam");
         dyn = new File(withRankName + ".dyn");
         lambdaOneFile = new File(withRankName + ".lam1");
@@ -955,17 +950,9 @@ class Thermodynamics extends Script {
                 optStructure(topologies[0], dualTopologies[0]);
                 optStructure(topologies[3], dualTopologies[1]);
                 break;
-            case 8:
-                optStructure(topologies[0], dualTopologies[0]);
-                optStructure(topologies[3], dualTopologies[1]);
-
-                // More elegant would be to copy coordinates from 0-4 and 3-7.
-                // More elegant is currently low priority, and thus will be accomplished as t approaches infinity.
-                optStructure(topologies[4], dualTopologies[2]);
-                optStructure(topologies[7], dualTopologies[3]);
-                break;
+            // Oct-topology is deprecated on account of not working as intended.
             default:
-                logger.severe(" First: must have 1, 2, 4, or 8 topologies. Second, how did this script not fail earlier?");
+                logger.severe(" First: must have 1, 2, or 4 topologies.");
                 break;
             }
         }
@@ -981,7 +968,7 @@ class Thermodynamics extends Script {
 
         osrw = new TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart,
             topologies[0].getProperties(), options.temp, options.dt, options.report,
-            options.write, options.async, resetNumSteps, aFuncts.getDefaultListener());
+            options.checkpoint, options.async, resetNumSteps, aFuncts.getDefaultListener());
 
         osrw.setResetStatistics(options.reset);
         if (options.traversals) {
@@ -1056,6 +1043,7 @@ class Thermodynamics extends Script {
             double restartInterval = options.write;
             String fileType = "XYZ";
             int nSteps = options.steps;
+            molDyn.setRestartFrequency(options.checkpoint);
             // Start sampling.
             if (options.nEquil > 0) {
                 logger.info(" Beginning equilibration");

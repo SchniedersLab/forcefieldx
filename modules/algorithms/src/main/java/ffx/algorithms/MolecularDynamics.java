@@ -40,6 +40,7 @@ package ffx.algorithms;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,6 +78,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private static final Logger logger = Logger.getLogger(MolecularDynamics.class.getName());
 
     private final Potential potential;
+
+    private final DynamicsEngine engine = DynamicsEngine.FFX;
 
     private MonteCarloListener monteCarloListener;
     private Thermostat thermostat;
@@ -732,9 +735,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Method to set the Restart Frequency.
      *
      * @param restartFrequency the time between writing restart files.
+     * @throws IllegalArgumentException If restart frequency is not a positive number
      */
-    public void setRestartFrequency(double restartFrequency) {
-        this.restartFrequency = restartFrequency;
+    public void setRestartFrequency(double restartFrequency) throws IllegalArgumentException {
+        if (Double.isFinite(restartFrequency) && restartFrequency > 0) {
+            this.restartFrequency = restartFrequency;
+        } else {
+            throw new IllegalArgumentException(String.format(" Restart frequency must be positive finite, was %10.4g", restartFrequency));
+        }
     }
 
     /**
@@ -1073,6 +1081,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
+     * Returns the DynamicsEngine in use; will typically be over-ridden by subclasses.
+     * @return FFX engine.
+     */
+    public DynamicsEngine getEngine() {
+        return engine;
+    }
+
+    /**
      * A simple container class to hold all the infrastructure associated with a
      * MolecularAssembly for MolecularDynamics; assembly, properties, archive
      * and PDB files, PDB and XYZ filters. Direct access to package-private
@@ -1218,6 +1234,49 @@ public class MolecularDynamics implements Runnable, Terminatable {
             if (verboseDynamicsState) {
                 describe(" Reverting State (To):");
             }
+        }
+    }
+
+    /**
+     * Enumerates available molecular dynamics engines; presently limited to the FFX
+     * reference engine and the OpenMM engine. Distinct from the force field energy
+     * Platform, as the FFX engine can use OpenMM energies, but not vice-versa.
+     */
+    public enum DynamicsEngine {
+        FFX(true, false), OPENMM(true, true);
+
+        // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
+        // is internally stored as a bit field.
+        private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(ForceFieldEnergy.Platform.class);
+
+        DynamicsEngine(boolean ffx, boolean openMM) {
+            if (ffx) {
+                platforms.add(ForceFieldEnergy.Platform.FFX);
+            }
+            if (openMM) {
+                platforms.add(ForceFieldEnergy.Platform.OMM);
+                platforms.add(ForceFieldEnergy.Platform.OMM_REF);
+                platforms.add(ForceFieldEnergy.Platform.OMM_CUDA);
+                platforms.add(ForceFieldEnergy.Platform.OMM_OPENCL);
+                platforms.add(ForceFieldEnergy.Platform.OMM_OPTCPU);
+            }
+        }
+
+        /**
+         * Checks if this energy Platform is supported by this DynamicsEngine
+         * @param platform
+         * @return If supported
+         */
+        public boolean supportsPlatform(ForceFieldEnergy.Platform platform) {
+            return platforms.contains(platform);
+        }
+
+        /**
+         * Gets the set of Platforms supported by this DynamicsEngine
+         * @return An EnumSet
+         */
+        public EnumSet<ForceFieldEnergy.Platform> getSupportedPlatforms() {
+            return EnumSet.copyOf(platforms);
         }
     }
 

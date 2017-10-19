@@ -384,7 +384,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * @param temperature the simulation temperature.
      * @param dt the time step.
      * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
+     * @param checkpointInterval number of steps between restart file updates.
      * @param asynchronous set to true if walkers run asynchronously.
      * @param algorithmListener the AlgorithmListener to be notified of
      * progress.
@@ -392,10 +392,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
     public AbstractOSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous,
+            double checkpointInterval, boolean asynchronous,
             AlgorithmListener algorithmListener) {
         this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
-                temperature, dt, printInterval, saveInterval, asynchronous,
+                temperature, dt, printInterval, checkpointInterval, asynchronous,
                 true, algorithmListener);
     }
 
@@ -411,7 +411,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * @param temperature the simulation temperature.
      * @param dt the time step.
      * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
+     * @param checkpointInterval number of steps between restart file updates.
      * @param asynchronous set to true if walkers run asynchronously.
      * @param resetNumSteps whether to reset energy counts to 0
      * @param algorithmListener the AlgorithmListener to be notified of
@@ -420,7 +420,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     public AbstractOSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
             File lambdaFile, File histogramFile, CompositeConfiguration properties,
             double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous, boolean resetNumSteps,
+            double checkpointInterval, boolean asynchronous, boolean resetNumSteps,
             AlgorithmListener algorithmListener) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
@@ -457,8 +457,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
          * Convert the save interval to a save frequency.
          */
         saveFrequency = 1000;
-        if (saveInterval >= this.dt) {
-            saveFrequency = (int) (saveInterval / this.dt);
+        if (checkpointInterval >= this.dt) {
+            saveFrequency = (int) (checkpointInterval / this.dt);
         }
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
@@ -520,7 +520,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
         logger.info(String.format("  Gaussian Bias Magnitude:       %6.4f (kcal/mole)", biasMag));
         logger.info(String.format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
         logger.info(String.format("  Print Interval:                 %6.3f psec", printInterval));
-        logger.info(String.format("  Save Interval:                  %6.3f psec", saveInterval));
+        logger.info(String.format("  Save Interval:                  %6.3f psec", checkpointInterval));
     }
 
     public void setPropagateLambda(boolean propagateLambda) {
