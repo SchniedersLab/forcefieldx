@@ -192,11 +192,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private double lambda = 1.0;
 
     /**
-     * Use flag for each atom.
-     */
-    private boolean use[];
-
-    /**
      * Size of step to take in lambda for finite differences.
      */
     private double fdDLambda = 0.001;
@@ -433,10 +428,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private void addAtoms() {
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
-        use = new boolean[nAtoms];
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            use[i] = atom.getUse();
             OpenMM_System_addParticle(openMMSystem, atom.getMass());
         }
         logger.log(Level.INFO, " Added particles ({0})", nAtoms);
@@ -1527,50 +1520,35 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private void updateParameters() {
 
         Atom[] atoms = molecularAssembly.getAtomArray();
-        int nAtoms = atoms.length;
-        List<Integer> changedIndices = new ArrayList<>();
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            boolean useI = atom.getUse();
-            if (useI != use[i]) {
-                changedIndices.add(i);
-                use[i] = useI;
-            }
-        }
-
-        if (changedIndices.isEmpty()) {
-            return;
-        }
-        int[] useChanged = changedIndices.stream().mapToInt(Integer::intValue).toArray();
 
         // Update fixed charge non-bonded parameters.
         if (fixedChargeNonBondedForce != null) {
-            updateFixedChargeNonBondedForce(atoms, useChanged);
+            updateFixedChargeNonBondedForce(atoms);
         }
 
         // Update fixed charge GB parameters.
         if (customGBForce != null) {
-            updateCustomGBForce(atoms, useChanged);
+            updateCustomGBForce(atoms);
         }
 
         // Update AMOEBA vdW parameters.
         if (amoebaVDWForce != null) {
-            updateAmoebaVDWForce(atoms, useChanged);
+            updateAmoebaVDWForce(atoms);
         }
 
         // Update AMOEBA polarizable multipole parameters.
         if (amoebaMultipoleForce != null) {
-            updateAmoebaMultipoleForce(atoms, useChanged);
+            updateAmoebaMultipoleForce(atoms);
         }
 
         // Update GK force.
         if (amoebaGeneralizedKirkwoodForce != null) {
-            updateAmoebaGeneralizedKirkwoodForce(atoms, useChanged);
+            updateAmoebaGeneralizedKirkwoodForce(atoms);
         }
 
         // Update WCA Force.
         if (amoebaWcaDispersionForce != null) {
-            updateWCAForce(atoms, useChanged);
+            updateWCAForce(atoms);
         }
     }
 
@@ -1580,7 +1558,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
-    private void updateAmoebaVDWForce(Atom[] atoms, int[] useChanged) {
+    private void updateAmoebaVDWForce(Atom[] atoms) {
         VanDerWaals vdW = super.getVdwNode();
         VanDerWaalsForm vdwForm = vdW.getVDWForm();
 
@@ -1597,16 +1575,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
 
         int ired[] = vdW.getReductionIndex();
-        /*Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {*/
-        int nAtoms = useChanged.length;
-        for (int j = 0; j < nAtoms; j++) {
-            int i = useChanged[j];
+        for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             VDWType vdwType = atom.getVDWType();
             double useFactor = 1.0;
-            if (!use[i]) {
+            if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
@@ -1623,7 +1597,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
-    private void updateFixedChargeNonBondedForce(Atom[] atoms, int[] useChanged) {
+    private void updateFixedChargeNonBondedForce(Atom[] atoms) {
         VanDerWaals vdW = super.getVdwNode();
         /**
          * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
@@ -1654,15 +1628,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         /**
          * Update parameters.
          */
-        /*Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {*/
-        int nAtoms = useChanged.length;
-        for (int j = 0; j < nAtoms; j++) {
-            int i = useChanged[j];
+        for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             double useFactor = 1.0;
-            if (!use[i]) {
+            if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
             double charge = 0.0;
@@ -1684,21 +1654,17 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
-    private void updateCustomGBForce(Atom[] atoms, int[] useChanged) {
+    private void updateCustomGBForce(Atom[] atoms) {
         GeneralizedKirkwood gk = super.getGK();
         double baseRadii[] = gk.getBaseRadii();
         double overlapScale[] = gk.getOverlapScale();
         PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
 
-        /*Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {*/
-        int nAtoms = useChanged.length;
-        for (int j = 0; j < nAtoms; j++) {
-            int i = useChanged[j];
+        for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             double useFactor = 1.0;
-            if (!use[i]) {
+            if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
             MultipoleType multipoleType = atom.getMultipoleType();
@@ -1721,7 +1687,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param atoms Array of all Atoms in the system
      * @param useChanged Indices of atoms with changed Use flags
      */
-    private void updateAmoebaMultipoleForce(Atom[] atoms, int[] useChanged) {
+    private void updateAmoebaMultipoleForce(Atom[] atoms) {
         ParticleMeshEwald pme = super.getPmeNode();
         int axisAtom[][] = pme.getAxisAtoms();
         double dipoleConversion = OpenMM_NmPerAngstrom;
@@ -1738,21 +1704,15 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         PointerByReference dipoles = OpenMM_DoubleArray_create(3);
         PointerByReference quadrupoles = OpenMM_DoubleArray_create(9);
 
-        /*Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {*/
-        int nAtoms = useChanged.length;
-        for (int iInd = 0; iInd < nAtoms; iInd++) {
-            int i = useChanged[iInd];
+        for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             MultipoleType multipoleType = atom.getMultipoleType();
             PolarizeType polarType = atom.getPolarizeType();
-
             double useFactor = 1.0;
-            if (!use[i]) {
+            if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
-
             /**
              * Define the frame definition.
              */
@@ -1820,6 +1780,59 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(quadrupoles);
 
         OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, openMMContext);
+    }
+
+    /**
+     * Updates the AMOEBA Generalized Kirkwood force for change in Use flags.
+     *
+     * @param atoms Array of all Atoms in the system
+     * @param useChanged Indices of atoms with changed Use flags
+     */
+    private void updateAmoebaGeneralizedKirkwoodForce(Atom[] atoms) {
+        GeneralizedKirkwood gk = super.getGK();
+        double overlapScale[] = gk.getOverlapScale();
+        double baseRadii[] = gk.getBaseRadii();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            double useFactor = 1.0;
+            if (!atoms[i].getUse()) {
+                useFactor = 0.0;
+            }
+            MultipoleType multipoleType = atoms[i].getMultipoleType();
+            OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(amoebaGeneralizedKirkwoodForce, i,
+                    multipoleType.charge * useFactor, OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i] * useFactor);
+        }
+        OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, openMMContext);
+    }
+
+    /**
+     * Updates the WCA force for change in Use flags.
+     *
+     * @param atoms Array of all Atoms in the system
+     * @param useChanged Indices of atoms with changed Use flags
+     */
+    private void updateWCAForce(Atom[] atoms) {
+        VanDerWaals vdW = super.getVdwNode();
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+            radScale = 0.5;
+        }
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            double useFactor = 1.0;
+            if (!atoms[i].getUse()) {
+                useFactor = 0.0;
+            }
+            Atom atom = atoms[i];
+            VDWType vdwType = atom.getVDWType();
+            double radius = vdwType.radius;
+            double eps = vdwType.wellDepth;
+            OpenMM_AmoebaWcaDispersionForce_setParticleParameters(amoebaWcaDispersionForce, i,
+                    OpenMM_NmPerAngstrom * radius * radScale,
+                    OpenMM_KJPerKcal * eps * useFactor);
+        }
+        OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, openMMContext);
     }
 
     @Override
@@ -1983,69 +1996,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(quadrupoles);
 
         OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, openMMContext);
-    }
-
-    /**
-     * Updates the AMOEBA Generalized Kirkwood force for change in Use flags.
-     *
-     * @param atoms Array of all Atoms in the system
-     * @param useChanged Indices of atoms with changed Use flags
-     */
-    private void updateAmoebaGeneralizedKirkwoodForce(Atom[] atoms, int[] useChanged) {
-        GeneralizedKirkwood gk = super.getGK();
-        double overlapScale[] = gk.getOverlapScale();
-        double baseRadii[] = gk.getBaseRadii();
-        /*Atom[] atoms = molecularAssembly.getAtomArray();
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {*/
-        int nAtoms = useChanged.length;
-        for (int j = 0; j < nAtoms; j++) {
-            int i = useChanged[j];
-            double useFactor = 1.0;
-            if (!use[i]) {
-                useFactor = 0.0;
-            }
-            MultipoleType multipoleType = atoms[i].getMultipoleType();
-            OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(amoebaGeneralizedKirkwoodForce, i,
-                    multipoleType.charge * useFactor, OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i] * useFactor);
-        }
-        OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, openMMContext);
-    }
-
-    /**
-     * Updates the WCA force for change in Use flags.
-     *
-     * @param atoms Array of all Atoms in the system
-     * @param useChanged Indices of atoms with changed Use flags
-     */
-    private void updateWCAForce(Atom[] atoms, int[] useChanged) {
-        VanDerWaals vdW = super.getVdwNode();
-        VanDerWaalsForm vdwForm = vdW.getVDWForm();
-        double radScale = 1.0;
-        if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
-            radScale = 0.5;
-        }
-        /*Atom[] atoms = molecularAssembly.getAtomArray();
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {*/
-        int nAtoms = useChanged.length;
-        for (int j = 0; j < nAtoms; j++) {
-            int i = useChanged[j];
-            double useFactor = 1.0;
-            if (!use[i]) {
-                useFactor = 0.0;
-            }
-
-            Atom atom = atoms[i];
-            VDWType vdwType = atom.getVDWType();
-            double radius = vdwType.radius;
-            double eps = vdwType.wellDepth;
-            OpenMM_AmoebaWcaDispersionForce_setParticleParameters(amoebaWcaDispersionForce, i,
-                    OpenMM_NmPerAngstrom * radius * radScale,
-                    OpenMM_KJPerKcal * eps * useFactor);
-        }
-
-        OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, openMMContext);
     }
 
     /**
