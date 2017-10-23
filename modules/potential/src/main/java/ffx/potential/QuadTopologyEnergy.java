@@ -615,6 +615,19 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         return dEdL;
     }
 
+    /**
+     * Returns true if both dual topologies are zero at the ends.
+     *
+     * @return If dEdL guaranteed zero at ends.
+     */
+    @Override
+    public boolean dEdLZeroAtEnds() {
+        if (!dualTopA.dEdLZeroAtEnds() || !dualTopB.dEdLZeroAtEnds()) {
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public double getd2EdL2() {
         return d2EdL2;
