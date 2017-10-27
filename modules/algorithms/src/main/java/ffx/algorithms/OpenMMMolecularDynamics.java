@@ -216,7 +216,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
             }
 
-            if (saveRestartFileFrequency > 0 && i % (saveRestartFileFrequency * 1000 / intervalSteps) == 0 && i != 0) {
+            if (saveSnapshotFrequency > 0 && i % (saveSnapshotFrequency * 1000 / intervalSteps) == 0 && i != 0) {
                 for (AssemblyInfo ai : assemblies) {
                     if (ai.archiveFile != null && !saveSnapshotAsPDB) {
                         if (ai.xyzFilter.writeFile(ai.archiveFile, true)) {
