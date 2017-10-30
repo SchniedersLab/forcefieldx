@@ -1710,9 +1710,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             MultipoleType multipoleType = atom.getMultipoleType();
             PolarizeType polarType = atom.getPolarizeType();
             double useFactor = 1.0;
+
             if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
+
             /**
              * Define the frame definition.
              */
