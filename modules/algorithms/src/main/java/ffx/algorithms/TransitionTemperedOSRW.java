@@ -48,6 +48,7 @@ import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,6 +69,11 @@ import edu.rit.mp.DoubleBuf;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.Potential;
+import ffx.numerics.integrate.DataSet;
+import ffx.numerics.integrate.DoublesDataSet;
+import ffx.numerics.integrate.Integrate1DNumeric;
+import ffx.numerics.integrate.Integrate1DNumeric.IntegrationType;
+import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.*;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.EnergyException;
@@ -145,6 +151,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      * walkers.
      */
     private final ReceiveThread receiveThread;
+
+    private final IntegrationType integrationType;
 
     /**
      * OSRW Asynchronous MultiWalker Constructor.
@@ -260,13 +268,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             receiveThread = null;
         }
 
-        /**
-         * Update and print out the recursion slave.
-         */
-        if (readHistogramRestart) {
-            updateFLambda(true);
-        }
-
         String propString = System.getProperty("ttosrw-alwaystemper", "true");
         if (Boolean.parseBoolean(propString)) {
             logger.info(" Disabling detection of transitions; will immediately begin tempering.");
@@ -286,6 +287,23 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         } else if (temperOffset < 0) {
             logger.warning(String.format(" Tempering offset %7.4g < 0; resetting to 0", temperOffset));
             temperOffset = 0;
+        }
+
+        propString = System.getProperty("ttosrw-integrationType", "SIMPSONS");
+        IntegrationType testType = SIMPSONS;
+        try {
+            testType = IntegrationType.valueOf(propString.toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Invalid argument %s to ttosrw-integrationType; resetting to SIMPSONS", propString));
+            testType = SIMPSONS;
+        }
+        integrationType = testType;
+
+        /**
+         * Update and print out the recursion slave.
+         */
+        if (readHistogramRestart) {
+            updateFLambda(true);
         }
     }
 
@@ -900,6 +918,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             if (print) {
                 stringBuilder.append(String.format(" Minimum Bias %8.3f", minFL));
                 logger.info(stringBuilder.toString());
+                double fromNumeric = integrateNumeric(FLambda, integrationType);
+                logger.info(String.format(" Free energy from %s rule: %12.4f", integrationType.toString(), fromNumeric));
+
                 previousFreeEnergy = freeEnergy;
             }
 
@@ -911,6 +932,67 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         }
 
         return freeEnergy;
+    }
+
+    /**
+     * Integrates dUdL over lambda using more sophisticated techniques than midpoint rectangular integration.
+     *
+     * The ends (from 0 to dL and 1-dL to 1) are integrated with trapezoids
+     *
+     * @param dUdLs dUdL at the midpoint of each bin.
+     * @param type Integration type to use.
+     * @return Current delta-G estimate.
+     */
+    private double integrateNumeric(double[] dUdLs, IntegrationType type) {
+        // Integrate between the second bin midpoint and the second-to-last bin midpoint.
+        double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0-dL, (lambdaBins - 2), false);
+        double[] midVals = Arrays.copyOfRange(dUdLs, 1, (lambdaBins - 1));
+        DataSet dSet = new DoublesDataSet(midLams, midVals, false);
+
+        double val = Integrate1DNumeric.integrateData(dSet, Integrate1DNumeric.IntegrationSide.LEFT, type);
+
+        double dL_4 = dL_2 * 0.5;
+
+        // Initially, assume dU/dL is exactly 0 at the endpoints. This is sometimes a true assumption.
+        double val0 = 0;
+        double val1 = 0;
+
+        // If we cannot guarantee that dUdL is exactly 0 at the endpoints, interpolate.
+        if (lambdaInterface.dEdLZeroAtEnds()) {
+            double recipSlopeLen = 1.0 / (dL * 0.75);
+
+            double slope = dUdLs[0] - dUdLs[1];
+            slope *= recipSlopeLen;
+            val0 = dUdLs[0] + (slope * dL_4);
+
+            slope = dUdLs[lambdaBins-1] - dUdLs[lambdaBins - 2];
+            slope *= recipSlopeLen;
+            val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
+            logger.fine(String.format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
+        }
+
+        // Integrate trapezoids from 0 to the second bin midpoint, and from second-to-last bin midpoint to 1.
+        val += trapezoid(0, dL_4, val0, dUdLs[0]);
+        val += trapezoid(dL_4, dL, dUdLs[0], dUdLs[1]);
+        val += trapezoid(1.0 - dL, 1.0 - dL_4, dUdLs[lambdaBins - 2], dUdLs[lambdaBins - 1]);
+        val += trapezoid(1.0 - dL_4, 1.0, dUdLs[lambdaBins - 1], val1);
+
+        return val;
+    }
+
+    /**
+     * Integrates a trapezoid.
+     *
+     * @param x0 First x point
+     * @param x1 Second x point
+     * @param fX1 First f(x) point
+     * @param fX2 Second f(x) point
+     * @return The area under a trapezoid.
+     */
+    private double trapezoid(double x0, double x1, double fX1, double fX2) {
+        double val = 0.5 * (fX1 + fX2);
+        val *= (x1 - x0);
+        return val;
     }
 
     /**

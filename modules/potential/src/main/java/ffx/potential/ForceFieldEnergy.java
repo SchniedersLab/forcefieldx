@@ -2192,6 +2192,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * Returns true if lambda term is not enabled for this ForceFieldEnergy.
+     *
+     * @return If dEdL guaranteed zero at ends.
+     */
+    @Override
+    public boolean dEdLZeroAtEnds() {
+        // This may actually be true even with softcored atoms.
+        // For now, serves the purpose of reporting true when nothing is softcored.
+        return !lambdaTerm;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @param gradients

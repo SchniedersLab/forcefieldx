@@ -1004,6 +1004,20 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         return e1 + e2;
     }
 
+    /**
+     * Returns true if both force field energies are zero at the ends, and the switching
+     * function's first derivative is zero at the end bounds.
+     *
+     * @return If dEdL guaranteed zero at ends.
+     */
+    @Override
+    public boolean dEdLZeroAtEnds() {
+        if (!forceFieldEnergy1.dEdLZeroAtEnds() || !forceFieldEnergy2.dEdLZeroAtEnds()) {
+            return false;
+        }
+        return (switchFunction.highestOrderZeroDerivativeAtZeroBound() > 0);
+    }
+
     @Override
     public double getd2EdL2() {
         double e1 = f1L * d2EdL2_1 + 2.0 * dF1dL * dEdL_1 + d2F1dL2 * energy1

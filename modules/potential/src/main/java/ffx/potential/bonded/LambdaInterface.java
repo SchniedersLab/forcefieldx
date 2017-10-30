@@ -88,4 +88,14 @@ public interface LambdaInterface {
      * @since 1.0
      */
     public void getdEdXdL(double gradient[]);
+
+    /**
+     * Returns true if dUdL is guaranteed to be zero at 0 and 1. Default
+     * implementation is to return false.
+     *
+     * @return True if dUdL is guaranteed 0 at endpoints.
+     */
+    public default boolean dEdLZeroAtEnds() {
+        return false;
+    }
 }

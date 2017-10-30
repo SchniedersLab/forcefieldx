@@ -1243,12 +1243,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Platform, as the FFX engine can use OpenMM energies, but not vice-versa.
      */
     public enum DynamicsEngine {
-        FFX(true, false), OPENMM(true, true);
+        FFX(true, true), OPENMM(false, true);
 
         // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
         // is internally stored as a bit field.
         private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(ForceFieldEnergy.Platform.class);
 
+        /**
+         * Constructs a DynamicsEngine using the two presently known types of Platform.
+         * @param ffx Add support for the FFX reference energy platform.
+         * @param openMM Add support for the OpenMM energy platforms.
+         */
         DynamicsEngine(boolean ffx, boolean openMM) {
             if (ffx) {
                 platforms.add(ForceFieldEnergy.Platform.FFX);
