@@ -327,6 +327,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             UnivariateSwitchingFunction switchFunction) {
         potential1 = topology1;
         potential2 = topology2;
+        potential2.setCrystal(potential1.getCrystal());
         lambdaInterface1 = (LambdaInterface) potential1;
         lambdaInterface2 = (LambdaInterface) potential2;
         this.atoms1 = atoms1;
@@ -481,6 +482,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         forceFieldEnergy2 = topology2.getPotentialEnergy();
         potential1 = forceFieldEnergy1;
         potential2 = forceFieldEnergy2;
+        potential2.setCrystal(potential1.getCrystal());
         lambdaInterface1 = forceFieldEnergy1;
         lambdaInterface2 = forceFieldEnergy2;
         atoms1 = topology1.getAtomArray();
