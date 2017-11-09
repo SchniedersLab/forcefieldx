@@ -1046,11 +1046,13 @@ public final class MainPanel extends JPanel implements ActionListener,
             + commitSCM // Will contain its own spacing/newline, or be empty.
             + "\n        Copyright (c)  Michael J. Schnieders    2001-2017 \n"
             + "        Portions Copyright (c)  Timothy D. Fenn 2009-2017 \n"
+            + "        Portions Copyright (c)  Jacob M. Litman 2015-2017 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"
-            + "        Force Field X is distributed under the GPL v. 3 license and \n"
-            + "        hosted by the Schnieders Lab at The University of Iowa. \n"
+            + "        Force Field X is distributed under the GPL v. 3 license\n"
+            + "        with linking exception and is hosted by the Schnieders Lab \n"
+            + "        at The University of Iowa.\n"
             + "\n"
             + "        For publications please see http://ffx.eng.uiowa.edu/publications.html \n"
             + "        For the GPL v.3 license see http://ffx.eng.uiowa.edu/license.html \n";
