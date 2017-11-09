@@ -72,6 +72,20 @@ public class Rotamer {
     public final int length;
     public final ResidueState originalState;
     public final boolean isState;
+
+    /**
+     * Factory method to construct an original-coordinates Rotamer from a residue.
+     * Intended to address a bug in decompose-original.
+     *
+     * @param res Residue to construct default rotamer for.
+     * @return Original-coordinates rotamer.
+     */
+    public static Rotamer defaultRotamerFactory(Residue res) {
+        ResidueState origState = res.storeState();
+        double[] chi = RotamerLibrary.measureRotamer(res, false);
+        double[] sigmas = new double[chi.length];
+        return new Rotamer(res, chi, sigmas);
+    }
     
     /**
      * Constructs a Rotamer from a Residue, an array of torsions, and optionally
