@@ -159,13 +159,14 @@ class MutatePDB extends Script {
         if (repack) {
             logger.info("\n Repacking... \n");
             ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly);
-            forcefieldEnergy.setPrintOnFailure(false, false);
             molecularAssembly.setPotential(forceFieldEnergy);
+            forceFieldEnergy.setPrintOnFailure(false, false);
 
             // Do a sliding-window rotamer optimization on a single one-residue window with a radius-inclusion criterion.
             rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
             rLib.setUseOrigCoordsRotamer(true);
 
+            // This does break encapsulation of our modules.
             RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
             rotamerOptimization.setThreeBodyEnergy(threeBodyRepack);
             rotamerOptimization.setForcedResidues(resID, resID);
