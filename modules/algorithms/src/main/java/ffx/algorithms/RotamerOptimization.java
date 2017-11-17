@@ -973,7 +973,7 @@ public class RotamerOptimization implements Terminatable {
      * @param permutationEnergies Energies of visited permutations or null.
      * @return current energy.
      */
-    public double rotamerOptimizationDEE(MolecularAssembly molecularAssembly, Residue residues[], int i,
+    private double rotamerOptimizationDEE(MolecularAssembly molecularAssembly, Residue residues[], int i,
                                          int currentRotamers[], double lowEnergy, int optimum[], double[] permutationEnergies) {
         // This is the initialization condition.
         if (i == 0) {
@@ -1146,7 +1146,7 @@ public class RotamerOptimization implements Terminatable {
      * @param currentRotamers
      * @return 0.
      */
-    public double dryRun(Residue residues[], int i, int currentRotamers[]) {
+    private double dryRun(Residue residues[], int i, int currentRotamers[]) {
         // This is the initialization condition.
         if (i == 0) {
             evaluatedPermutations = 0;
@@ -1220,7 +1220,7 @@ public class RotamerOptimization implements Terminatable {
      * @param permutations        Contains accepted permutations.
      * @return 0.
      */
-    public double dryRunForEnsemble(Residue residues[], int i, int currentRotamers[],
+    private double dryRunForEnsemble(Residue residues[], int i, int currentRotamers[],
                                     double gmecEnergy, double[] permutationEnergies, int[][] permutations) {
         // This is the initialization condition.
         if (i == 0) {
@@ -2907,7 +2907,7 @@ public class RotamerOptimization implements Terminatable {
      * @param currentRotamers
      * @return If valid permutation found.
      */
-    public boolean firstValidPerm(Residue residues[], int i, int currentRotamers[]) {
+    private boolean firstValidPerm(Residue residues[], int i, int currentRotamers[]) {
         int nResidues = residues.length;
         Residue residuei = residues[i];
         Rotamer[] rotamersi = residuei.getRotamers(library);
@@ -6967,7 +6967,6 @@ public class RotamerOptimization implements Terminatable {
             logger.info(format(" NPE for self energy (%3d,%2d).", i, ri));
             throw npe;
         }
-
     }
 
     private double pair(int i, int ri, int j, int rj) {
@@ -7549,7 +7548,7 @@ public class RotamerOptimization implements Terminatable {
         energyRestartFile = file;
     }
 
-    public int nameToNumber(String residueString, Residue residues[]) throws NumberFormatException {
+    private int nameToNumber(String residueString, Residue residues[]) throws NumberFormatException {
         int ret = -1;
         for (int x = 0; x < residues.length; x++) {
             if (residueString.equals(residues[x].toString())) {
@@ -7563,11 +7562,11 @@ public class RotamerOptimization implements Terminatable {
         return ret;
     }
 
-    public int loadEnergyRestart(File restartFile, Residue residues[]) {
+    private int loadEnergyRestart(File restartFile, Residue residues[]) {
         return loadEnergyRestart(restartFile, residues, -1, null);
     }
 
-    public int loadEnergyRestart(File restartFile, Residue residues[], int boxIteration, int[] cellIndices) {
+    private int loadEnergyRestart(File restartFile, Residue residues[], int boxIteration, int[] cellIndices) {
         try {
             int nResidues = residues.length;
             Path path = Paths.get(restartFile.getCanonicalPath());
@@ -8188,7 +8187,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residues to prune rotamers over.
      */
-    public void pruneSingleClashes(Residue residues[]) {
+    private void pruneSingleClashes(Residue residues[]) {
         if (!pruneClashes) {
             return;
         }
@@ -8237,7 +8236,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residues whose rotamers are to be pruned.
      */
-    public void prunePairClashes(Residue residues[]) {
+    private void prunePairClashes(Residue residues[]) {
         if (!prunePairClashes) {
             return;
         }
@@ -9200,7 +9199,7 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
-    public void multicastBuf(Buf message) {
+    private void multicastBuf(Buf message) {
         for (int p = 0; p < numProc; p++) {
             try {
                 world.send(p, message);
@@ -9219,7 +9218,7 @@ public class RotamerOptimization implements Terminatable {
         private int snapshotNum = 1;
         public final boolean skipEnergies;
 
-        public VideoWriter(MolecularAssembly molecularAssembly, boolean ignoreInactiveAtoms, boolean skipEnergies) {
+        VideoWriter(MolecularAssembly molecularAssembly, boolean ignoreInactiveAtoms, boolean skipEnergies) {
             this.molecularAssembly = molecularAssembly;
             this.ignoreInactiveAtoms = ignoreInactiveAtoms;
             this.skipEnergies = skipEnergies;
