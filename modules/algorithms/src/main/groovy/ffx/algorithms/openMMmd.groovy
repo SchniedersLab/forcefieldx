@@ -87,6 +87,7 @@ def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Anderson]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
+cli.z(longOpt:'intervalSteps', args:1, argName:'100', 'Number of steps per MD trajectory (fsec)');
 cli.si(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Langevin / Verlet]');
 cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
@@ -122,6 +123,10 @@ if (options.b) {
 // Load the time steps in femtoseconds.
 if (options.d) {
     timeStep = Double.parseDouble(options.d);
+}
+
+if (options.z) {
+    intervalSteps = Integer.parseInt(options.z);
 }
 
 // Integrator for OpenMMMolecularDynamics

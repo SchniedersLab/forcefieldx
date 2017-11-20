@@ -411,6 +411,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
 
     public void setIntervalSteps(int intervalSteps) {
         this.intervalSteps = intervalSteps;
+        logger.info(String.format(" Interval Steps set at %d", intervalSteps));
     }
 
     public void updateIntegrator() {
