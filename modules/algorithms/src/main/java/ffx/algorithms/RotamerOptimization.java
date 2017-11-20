@@ -4613,6 +4613,7 @@ public class RotamerOptimization implements Terminatable {
             return potential.energy(x);
         }*/
         List<Rotamer> rots = resList.stream().
+                filter(res -> res != null ).
                 map(Residue::getRotamer).
                 collect(Collectors.toList());
         File energyDir = dirSupplier.apply(resList, rots);

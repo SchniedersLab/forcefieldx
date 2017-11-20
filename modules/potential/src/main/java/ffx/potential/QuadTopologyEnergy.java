@@ -161,6 +161,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB, List<Integer> uniqueAList, List<Integer> uniqueBList) {
         this.dualTopA = dualTopologyA;
         this.dualTopB = dualTopologyB;
+        dualTopB.setCrystal(dualTopA.getCrystal());
         dualTopB.reloadCommonMasses(true);
         linterA = (LambdaInterface) dualTopologyA;
         linterB = (LambdaInterface) dualTopologyB;
@@ -181,15 +182,16 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = nCommon; i < nVarA; i++) {
             uniqueASet.add(i);
         }
+
         uniqueAList = new ArrayList<>(uniqueASet);
         uniqueA = uniqueAList.size();
         int[] uniquesA = new int[uniqueA];
         for (int i = 0; i < uniqueA; i++) {
             uniquesA[i] = uniqueAList.get(i);
         }
-        /*IntStream.range(0, uniqueA).parallel().forEach((i) -> {
-            uniquesA[i] = uniqueAList.get(i);
-        });*/
+        // Following can replace above 5 lines without constructing an intermediate List.
+        //uniquesA = uniqueASet.stream().mapToInt(Integer::intValue).toArray();
+        //uniqueA = uniquesA.length;
         
         /**
          * Following logic is to A, deal with Integer to int array
@@ -211,9 +213,6 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < uniqueB; i++) {
             uniquesB[i] = uniqueBList.get(i);
         }
-        /*IntStream.range(0, uniqueA).parallel().forEach((i) -> {
-            uniquesA[i] = uniqueAList.get(i);
-        });*/
         
         nShared = nVarA - uniqueA;
         assert (nShared == nVarB - uniqueB);
@@ -236,12 +235,10 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
                     int destIndex = nShared + uniqueIndex;
                     indexAToGlobal[i] = destIndex;
                     indexGlobalToA[destIndex] = i;
-                    //logger.info(String.format("Unique A: i %d destIndex %d uniqueIndex %d", i, destIndex, uniqueIndex));
                     ++uniqueIndex;
                 } else {
                     indexAToGlobal[i] = commonIndex;
                     indexGlobalToA[commonIndex++] = i;
-                    //logger.info(String.format("Common A: i %d commonIndex %d", i, commonIndex-1));
                 }
             }
         } else {
@@ -249,10 +246,6 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
                 indexAToGlobal[i] = i;
                 indexGlobalToA[i] = i;
             }
-            /*IntStream.range(0, nVarA).parallel().forEach((i) -> { 
-                indexAToGlobal[i] = i;
-                indexGlobalToA[i] = i; 
-            });*/
         }
         
         if (uniqueB > 0) {
@@ -270,20 +263,10 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
                 }
             }
         } else {
-            /*System.out.println(String.format(" Lengths: Total: %5d Shared: %5d "
-                    + "Total A: %5d Unique A: %5d Total B: %5d "
-                    + "Unique B: %5d", nVarTot, nShared, nVarA, uniqueA, nVarB, uniqueB));
-            System.out.println(String.format(" Arrays:  GlobalToA: %5d "
-                    + "AToGlobal: %5d GlobalToB: %5d BToGlobal: %5d", 
-                    indexGlobalToA.length, indexAToGlobal.length, indexGlobalToB.length, indexBToGlobal.length));*/
             for (int i = 0; i < nVarB; i++) {
                 indexBToGlobal[i] = i;
                 indexGlobalToB[i] = i;
             }
-            /*IntStream.range(0, nVarB).parallel().forEach((i) -> {
-                indexBToGlobal[i] = i;
-                indexGlobalToB[i] = i;
-            });*/
         }
         
         xA = new double[nVarA];
@@ -424,7 +407,6 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     @Override
     public double energy(double[] x, boolean verbose) {
-        //if (inParallel) {
         region.setX(x);
         region.setVerbose(verbose);
         try {
@@ -432,12 +414,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         } catch (Exception ex) {
             throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
         }
-        /*} else {
-            doublesTo(x, xA, xB);
-            energyA = dualTopA.energy(xA, verbose);
-            energyB = dualTopB.energy(xB, verbose);
-            totalEnergy = energyA + energyB;
-        }*/
+
         if (verbose) {
             logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
         }
@@ -451,7 +428,6 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     
     @Override
     public double energyAndGradient(double[] x, double[] g, boolean verbose) {
-        //if (inParallel) {
         region.setX(x);
         region.setG(g);
         region.setVerbose(verbose);
@@ -460,23 +436,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         } catch (Exception ex) {
             throw new EnergyException(String.format(" Exception in calculating quad-topology energy: %s", ex.toString()), false);
         }
-        /*} else {
-            doublesTo(x, xA, xB);
 
-            energyA = dualTopA.energyAndGradient(xA, gA, verbose);
-            dEdL_A = linterA.getdEdL();
-            d2EdL2_A = linterA.getd2EdL2();
-
-            energyB = dualTopB.energyAndGradient(xB, gB, verbose);
-            dEdL_B = linterB.getdEdL();
-            d2EdL2_B = linterB.getd2EdL2();
-
-            addDoublesFrom(g, gA, gB);
-
-            dEdL = dEdL_A + dEdL_B;
-            d2EdL2 = d2EdL2_A + d2EdL2_B;
-            totalEnergy = energyA + energyB;
-        }*/
         if (verbose) {
             logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
         }
