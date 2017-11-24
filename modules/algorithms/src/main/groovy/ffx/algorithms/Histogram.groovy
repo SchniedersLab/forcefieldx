@@ -117,7 +117,6 @@ class Histogram extends Script {
             if (pmf) {
                 osrw.evaluatePMF();
             }
-
         }
     }
 }

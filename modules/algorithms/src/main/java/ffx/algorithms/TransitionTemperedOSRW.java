@@ -1236,10 +1236,16 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 biasMag = Double.parseDouble(readLine().split(" +")[1]);
                 biasCutoff = Integer.parseInt(readLine().split(" +")[1]);
                 countInterval = Integer.parseInt(readLine().split(" +")[1]);
+
                 lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
+                dL = 1.0 / (lambdaBins - 1);
+                dL_2 = dL / 2.0;
+
                 FLambdaBins = Integer.parseInt(readLine().split(" +")[1]);
                 minFLambda = Double.parseDouble(readLine().split(" +")[1]);
                 dFL = Double.parseDouble(readLine().split(" +")[1]);
+                dFL_2 = dFL / 2.0;
+
                 int flag = Integer.parseInt(readLine().split(" +")[1]);
                 if (flag != 0) {
                     tempering = true;
