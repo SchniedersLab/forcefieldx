@@ -79,22 +79,6 @@
             <timezone>-7</timezone>
         </developer>
         <developer>
-            <id>slucore</id>
-            <name>Stephen D. LuCore</name>
-            <email>stephen-lucore@uiowa.edu</email>
-            <organization>Graduate Student, Schnieders Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Many-Body Dead-End Elimination for Protein Structure Prediction and Optimization
-                </role>
-                <role>
-                    Alchemical Free Energy Methods to Predict pKa
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
             <id>jmlitman</id>
             <name>Jacob M. Litman</name>
             <email>jacob-litman@uiowa.edu</email>
@@ -122,19 +106,6 @@
                 </role>
                 <role>
                     Structure Optimization
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <id>tcolling</id>
-            <name>Timothy Collingsworth</name>
-            <email>timothy-collingsworth@uiowa.edu</email>
-            <organization>Biochemistry Graduate Student, Schnieders Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Constant PH Protein-Ligand Binding
                 </role>
             </roles>
             <timezone>-5</timezone>
@@ -1070,7 +1041,7 @@
         <!-- Commons Configuration 2.1 is available, but is not backwards compatible with 1.10 -->
         <commons-cli.version>1.4</commons-cli.version>
         <commons-configuration.version>1.10</commons-configuration.version>
-        <commons-io.version>2.5</commons-io.version>
+        <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.5</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <groovy-all.version>2.5.0.1-SNAPSHOT</groovy-all.version>
