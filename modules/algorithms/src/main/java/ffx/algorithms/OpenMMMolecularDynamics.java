@@ -56,6 +56,8 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Posi
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
 
 import ffx.algorithms.Integrator.Integrators;
+import static ffx.algorithms.Integrator.Integrators.STOCHASTIC;
+import static ffx.algorithms.Integrator.Integrators.VELOCITYVERLET;
 import ffx.algorithms.Thermostat.Thermostats;
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
@@ -66,6 +68,7 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 
 import static ffx.algorithms.Thermostat.kB;
+import ffx.potential.parameters.ForceField;
 
 /**
  * Runs Molecular Dynamics using OpenMM implementation
@@ -97,11 +100,12 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
      * OpenMM Integrator definition.
      */
     private String integrator;
-    private double frictionCoeff;
-    private double collisionFreq;
+    private Integrators integratorMD;
+    private double frictionCoeff = 91.0;
+    private double collisionFreq = 0.01;
 
     /**
-     * Flag to indicate OpenMM MD iteractions are running.
+     * Flag to indicate OpenMM MD interactions are running.
      */
     private boolean running;
     private long time;
@@ -131,8 +135,9 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         this.openMMForceFieldEnergy = openMMForceFieldEnergy;
         openMMForceFieldEnergy.addCOMMRemover(false);
         random = new Random();
-        integrator = "VERLET";
+        //integrator = "VERLET";
         running = false;
+        
     }
 
     /**
@@ -257,7 +262,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         this.printFrequency = (int) printInterval;
         this.restartFile = dyn;
         this.initVelocities = initVelocities;
-
+        
         /**
          * Convert the print interval to a print frequency.
          */
@@ -273,7 +278,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         if (saveInterval >= this.dt) {
             saveSnapshotFrequency = (int) (saveInterval / this.dt);
         }
-
+        
         done = false;
 
         assemblies.stream().parallel().forEach((ainfo) -> {
@@ -302,6 +307,8 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
             }
         });
 
+        integratorToString(integratorMD);
+        
         if (!initialized) {
             updateIntegrator();
         }
@@ -352,7 +359,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
      * integrator and determines whether the simulation is starting out from a
      * previous molecular dynamics run (.dyn) or if the initial velocities are
      * determined by a Maxwell Boltzmann distribution. This method then calls
-     * methods openMMUPdate and takeSteps to run the molecular dynamics
+     * methods openMMUpdate and takeSteps to run the molecular dynamics
      * simulation.
      *
      * @param numSteps
@@ -388,6 +395,26 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
     public void setIntegratorString(String integrator) {
         this.integrator = integrator;
     }
+    
+    public void integratorToString(Integrators integrator){
+        if (integrator == null){
+            this.integrator = "VERLET";
+            logger.info(String.format(" No specified integrator, will use Verlet"));
+        }
+        else{
+            switch (integrator){
+                case STOCHASTIC:
+                    this.integrator = "LANGEVIN";
+                    break;
+                case VELOCITYVERLET:
+                default:
+                    this.integrator = "VERLET";
+                    break;
+            }
+        }
+        
+        logger.info(String.format(" Created %s intgerator", this.integrator));
+    }
 
     /**
      * Method to set the coefficient of friction (for Langevin integrator)
@@ -415,7 +442,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
     }
 
     public void updateIntegrator() {
-        openMMForceFieldEnergy.setIntegrator(integrator, dt, frictionCoeff, targetTemperature, collisionFreq);
+        openMMForceFieldEnergy.setIntegrator(integrator, dt, targetTemperature);
         openMMIntegrator = openMMForceFieldEnergy.getIntegrator();
         openMMContext = openMMForceFieldEnergy.getContext();
     }

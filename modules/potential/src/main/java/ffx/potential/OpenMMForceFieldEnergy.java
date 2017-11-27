@@ -189,6 +189,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private PointerByReference fixedChargeNonBondedForce = null;
     private PointerByReference customGBForce = null;
 
+    private double frictionCoeff;
+    private double collisionFreq;
+
     private double lambda = 1.0;
 
     /**
@@ -197,10 +200,15 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private double fdDLambda = 0.001;
 
     /**
+     * Variable to set water molecule bonds as rigid
+     */
+    private boolean rigidHydrogen = false;
+
+    /**
      * OpenMMForceFieldEnergy constructor; offloads heavy-duty computation to an
      * OpenMM Platform while keeping track of information locally.
      *
-     * @param molecularAssembly Assembly to contruct energy for.
+     * @param molecularAssembly Assembly to construct energy for.
      * @param platform OpenMM platform to be used.
      * @param restraints Harmonic coordinate restraints.
      * @param nThreads Number of threads to use in the underlying
@@ -220,8 +228,16 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         openMMSystem = OpenMM_System_create();
         logger.info(" Created OpenMM System");
 
+        ForceField forceField = molecularAssembly.getForceField();
+
         // Load atoms.
         addAtoms();
+
+        rigidHydrogen = forceField.getBoolean(ForceField.ForceFieldBoolean.RIGID_HYDROGEN, false);
+
+        if (rigidHydrogen) {
+            setUpHydrogenConstraints(openMMSystem);
+        }
 
         // Add Bond Force.
         addBondForce();
@@ -270,6 +286,9 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         // Set periodic box vectors.
         setDefaultPeriodicBoxVectors();
+        
+        frictionCoeff = forceField.getDouble(ForceFieldDouble.FRICTION_COEFF, 91.0);
+        collisionFreq = forceField.getDouble(ForceFieldDouble.COLLISION_FREQ, 0.01);
 
         openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
 
@@ -288,8 +307,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
         logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
-        ForceField forceField = molecularAssembly.getForceField();
-        fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.00001);
+        fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.001);
 
         OpenMM_State_destroy(openMMState);
     }
@@ -1155,7 +1173,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     OpenMM_DoubleArray_set(exptCoefficients, 1, 0.017);
                     OpenMM_DoubleArray_set(exptCoefficients, 2, 0.657);
                     OpenMM_DoubleArray_set(exptCoefficients, 3, 0.475);
-                    OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(amoebaMultipoleForce,exptCoefficients);
+                    OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(amoebaMultipoleForce, exptCoefficients);
                     OpenMM_DoubleArray_destroy(exptCoefficients);
                     break;
                 case CG:
@@ -1862,7 +1880,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             if (amoebaMultipoleForce != null) {
                 scaleAmoebaMultipoleForceByLambda(atomArray, lambda);
             }
-            if (fixedChargeNonBondedForce != null){
+            if (fixedChargeNonBondedForce != null) {
                 scaleFixedChargeNonBondedForceByLambda(atomArray, lambda);
             }
         } else {
@@ -1871,23 +1889,23 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
 
     }
-    
-    private void scaleFixedChargeNonBondedForceByLambda(Atom[] atoms, double lambda){
-        
+
+    private void scaleFixedChargeNonBondedForceByLambda(Atom[] atoms, double lambda) {
+
         double radScale = getVDWRadius();
-        
-        if (radScale < 0){
+
+        if (radScale < 0) {
             return;
         }
-        
+
         int nAtoms = atoms.length;
-        for(int i = 0; i < nAtoms; i ++){
+        for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             double lambdaFactor = lambda;
-            if (!atom.applyLambda()){
+            if (!atom.applyLambda()) {
                 lambdaFactor = 1.0;
             }
-            
+
             double charge = 0.0;
             MultipoleType multipoleType = atom.getMultipoleType();
             if (multipoleType != null) {
@@ -1896,10 +1914,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             VDWType vdwType = atom.getVDWType();
             double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
-            OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge*lambdaFactor, sigma, eps);
-            
+            OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge * lambdaFactor, sigma, eps);
+
         }
-        
+
         OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, openMMContext);
     }
 
@@ -2405,7 +2423,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * @param temperature
      * @param collisionFreq
      */
-    public void setIntegrator(String integrator, double timeStep, double frictionCoeff, double temperature, double collisionFreq) {
+    public void setIntegrator(String integrator, double timeStep, double temperature) {
         OpenMM_Context_destroy(openMMContext);
         double dt = timeStep * 1.0e-3;
         switch (integrator) {
@@ -2426,7 +2444,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
              */
             case "VERLET":
             default:
-            openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
+                openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
             //thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
             //OpenMM_System_addForce(openMMSystem, thermostat);
         }
@@ -2576,14 +2594,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         // Note for OpenMMForceFieldEnergy this method is not implemented.
         return 0.0;
     }
-    
-    public double getVDWRadius(){
+
+    public double getVDWRadius() {
         VanDerWaals vdW = super.getVdwNode();
         if (vdW == null) {
             return -1.0;
         }
-        
-         /**
+
+        /**
          * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
          * for epsilon is supported.
          */
@@ -2594,7 +2612,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
             return -1.0;
         }
-        
+
         /**
          * OpenMM vdW force requires a diameter (i.e. not radius).
          */
@@ -2608,7 +2626,51 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         if (vdwForm.radiusType == R_MIN) {
             radScale /= 1.122462048309372981;
         }
-        
+
         return radScale;
+    }
+
+    public void setUpHydrogenConstraints(PointerByReference system) {
+        int i;
+        int iAtom1;
+        int iAtom2;
+
+        //Atom[] atoms = molecularAssembly.getAtomArray();
+
+        Bond[] bonds = super.getBonds();
+        
+        logger.info(String.format(" Setting up Hydrogen constraints"));
+        
+        if (bonds == null || bonds.length < 1) {
+            return;
+        }
+        int nBonds = bonds.length;
+        Atom atom1;
+        Atom atom2;
+        Atom parentAtom;
+        Bond bondForBondLength;
+        BondType bondType;
+        
+        for (i = 0; i < nBonds; i++) {
+            Bond bond = bonds[i];
+            atom1 = bond.getAtom(0);
+            atom2 = bond.getAtom(1);
+            if (atom1.isHydrogen()){
+                parentAtom = atom1.getBonds().get(0).get1_2(atom1);
+                bondForBondLength = atom1.getBonds().get(0);
+                bondType = bondForBondLength.bondType;
+                iAtom1 = atom1.getXyzIndex() - 1;
+                iAtom2 = parentAtom.getXyzIndex() - 1;
+                OpenMM_System_addConstraint(system, iAtom1, iAtom2, bondForBondLength.bondType.distance * OpenMM_NmPerAngstrom);
+            }
+            else if (atom2.isHydrogen()){
+                parentAtom = atom2.getBonds().get(0).get1_2(atom2);
+                bondForBondLength = atom2.getBonds().get(0);
+                bondType = bondForBondLength.bondType;
+                iAtom1 = atom2.getXyzIndex() - 1;
+                iAtom2 = parentAtom.getXyzIndex() - 1;
+                OpenMM_System_addConstraint(system, iAtom1, iAtom2, bondForBondLength.bondType.distance * OpenMM_NmPerAngstrom);
+            }
+        }
     }
 }
