@@ -407,13 +407,17 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                     this.integrator = "LANGEVIN";
                     break;
                 case VELOCITYVERLET:
+                    this.integrator = "VERLET";
+                    break;
                 default:
                     this.integrator = "VERLET";
+                    logger.warning(String.format(" Integrator %s incompatible with " +
+                            "OpenMM MD integration; defaulting to %s", integrator, this.integrator));
                     break;
             }
         }
         
-        logger.info(String.format(" Created %s intgerator", this.integrator));
+        logger.info(String.format(" Created %s integrator", this.integrator));
     }
 
     /**

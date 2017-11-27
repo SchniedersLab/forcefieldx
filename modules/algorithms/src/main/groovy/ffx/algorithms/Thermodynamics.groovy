@@ -1033,6 +1033,7 @@ class Thermodynamics extends Script {
             mcOSRW.sample()
         } else {
             // Create the MolecularDynamics instance.
+            // If we switch over to using the factory method, request the FFX Dynamics engine.
             MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
                 topologies[0].getProperties(), null, options.tstat, options.integrator);
             for (int i = 1; i < topologies.size(); i++) {
