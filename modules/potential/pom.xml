@@ -62,13 +62,13 @@
                 </includes>
             </resource>
         </resources>
-        <plugins>
+        <!-- plugins>
             <plugin>
                 <groupId>com.nativelibs4java</groupId>
                 <artifactId>maven-jnaerator-plugin</artifactId>
                 <version>0.13-SNAPSHOT</version>
             </plugin>
-        </plugins>
+        </plugins -->
     </build>
     <dependencies>
         <dependency>

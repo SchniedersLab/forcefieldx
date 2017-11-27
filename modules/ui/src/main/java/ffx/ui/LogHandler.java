@@ -82,7 +82,14 @@ public class LogHandler extends Handler {
      * @since 1.0
      */
     public LogHandler() {
-        setFormatter(new LogFormatter(false));
+
+        boolean mpiLogging = false;
+        String logString = System.getProperty("mpiLogging", "false");
+        if (!logString.trim().equalsIgnoreCase("false")) {
+            mpiLogging = true;
+        }
+
+        setFormatter(new LogFormatter(false, mpiLogging));
         setLevel(Level.ALL);
     }
 

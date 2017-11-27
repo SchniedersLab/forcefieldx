@@ -151,6 +151,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             Thermostats requestedThermostat,
             Integrators requestedIntegrator) {
 
+        return dynamicsFactory(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator, defaultEngine(potentialEnergy));
+        /*
         if (potentialEnergy instanceof OpenMMForceFieldEnergy) {
             OpenMMMolecularDynamics ommDynamics = new OpenMMMolecularDynamics(assembly,
                     (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
@@ -159,6 +161,42 @@ public class MolecularDynamics implements Runnable, Terminatable {
             MolecularDynamics mDynamics = new MolecularDynamics(assembly,
                     potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
             return mDynamics;
+        }
+        */
+    }
+
+    public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
+            Potential potentialEnergy,
+            CompositeConfiguration properties,
+            AlgorithmListener listener,
+            Thermostats requestedThermostat,
+            Integrators requestedIntegrator, DynamicsEngine engine) {
+        switch (engine) {
+            case OPENMM:
+                return new OpenMMMolecularDynamics(assembly,
+                        (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+            case FFX:
+            default:
+                return new MolecularDynamics(assembly,
+                        potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+        }
+    }
+
+    private static DynamicsEngine defaultEngine(Potential potentialEnergy) {
+        if (System.getProperty("MD-engine") != null) {
+            if (System.getProperty("MD-engine").equalsIgnoreCase("OMM")) {
+                logger.info(String.format(" Creating OpenMM Dynamics Object"));
+                return DynamicsEngine.OPENMM;
+            } else {
+                logger.info(String.format(" Creating FFX Dynamics Object"));
+                return DynamicsEngine.FFX;
+            }
+        } else {
+            if (potentialEnergy instanceof OpenMMForceFieldEnergy) {
+                return DynamicsEngine.OPENMM;
+            } else {
+                return DynamicsEngine.FFX;
+            }
         }
     }
 
@@ -735,7 +773,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * Method to set the Restart Frequency.
      *
      * @param restartFrequency the time between writing restart files.
-     * @throws IllegalArgumentException If restart frequency is not a positive number
+     * @throws IllegalArgumentException If restart frequency is not a positive
+     * number
      */
     public void setRestartFrequency(double restartFrequency) throws IllegalArgumentException {
         if (Double.isFinite(restartFrequency) && restartFrequency > 0) {
@@ -952,14 +991,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             totalSimTime += dt;
             if (step % printFrequency == 0) {
-                
+
                 /**
                  * Original print statement
                  */
                 time = System.nanoTime() - time;
                 logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
-                    totalSimTime, currentKineticEnergy, currentPotentialEnergy,
-                    currentTotalEnergy, currentTemperature, time * NS2SEC));
+                        totalSimTime, currentKineticEnergy, currentPotentialEnergy,
+                        currentTotalEnergy, currentTemperature, time * NS2SEC));
                 time = System.nanoTime();
 
                 // Shirts et al. logging info
@@ -1081,7 +1120,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Returns the DynamicsEngine in use; will typically be over-ridden by subclasses.
+     * Returns the DynamicsEngine in use; will typically be over-ridden by
+     * subclasses.
+     *
      * @return FFX engine.
      */
     public DynamicsEngine getEngine() {
@@ -1222,13 +1263,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
                     vec[2] = aPrevious[index + 2];
                     atom.setPreviousAcceleration(vec);
                     index += 3;
-                    if(i == 0){
+                    if (i == 0) {
                         //logger.info(String.format(" In revert for loop"));
                     }
                 }
                 //logger.info(String.format(" Coordinates were reverted"));
-            }
-            else {
+            } else {
                 //logger.info(String.format( "WARNING: Coordinates were not reverted"));
             }
             if (verboseDynamicsState) {
@@ -1238,9 +1278,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
 
     /**
-     * Enumerates available molecular dynamics engines; presently limited to the FFX
-     * reference engine and the OpenMM engine. Distinct from the force field energy
-     * Platform, as the FFX engine can use OpenMM energies, but not vice-versa.
+     * Enumerates available molecular dynamics engines; presently limited to the
+     * FFX reference engine and the OpenMM engine. Distinct from the force field
+     * energy Platform, as the FFX engine can use OpenMM energies, but not
+     * vice-versa.
      */
     public enum DynamicsEngine {
         FFX(true, true), OPENMM(false, true);
@@ -1250,7 +1291,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
         private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(ForceFieldEnergy.Platform.class);
 
         /**
-         * Constructs a DynamicsEngine using the two presently known types of Platform.
+         * Constructs a DynamicsEngine using the two presently known types of
+         * Platform.
+         *
          * @param ffx Add support for the FFX reference energy platform.
          * @param openMM Add support for the OpenMM energy platforms.
          */
@@ -1269,6 +1312,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         /**
          * Checks if this energy Platform is supported by this DynamicsEngine
+         *
          * @param platform
          * @return If supported
          */
@@ -1278,6 +1322,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         /**
          * Gets the set of Platforms supported by this DynamicsEngine
+         *
          * @return An EnumSet
          */
         public EnumSet<ForceFieldEnergy.Platform> getSupportedPlatforms() {

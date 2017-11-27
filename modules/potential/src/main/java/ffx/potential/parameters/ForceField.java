@@ -1513,7 +1513,11 @@ public class ForceField {
         /* Miscellaneous */
         RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT,
         /* OpenMM finite-difference lambda step size */
-        FD_DLAMBDA
+        FD_DLAMBDA,
+        /* OpenMM coefficient of friction for Langevin integrator */
+        FRICTION_COEFF,
+        /* OpenMM collision frequency for Langevin integrator */
+        COLLISION_FREQ
     }
 
     public enum ForceFieldInteger {
@@ -1542,7 +1546,9 @@ public class ForceField {
         INTERMOLECULAR_SOFTCORE, INTRAMOLECULAR_SOFTCORE,
         LAMBDA_VALENCE_RESTRAINTS, LAMBDA_TORSIONS, RECIPTERM, BORN_USE_ALL,
         CHECK_ALL_NODE_CHARGES, GK_USEFITRADII, GK_VERBOSERADII, PRINT_ON_FAILURE,
-        DISABLE_NEIGHBOR_UPDATES
+        DISABLE_NEIGHBOR_UPDATES,
+        /* Flag to set Hydrogen bonds to rigid*/
+        RIGID_HYDROGEN
     }
 
     public enum ForceFieldType {

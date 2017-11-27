@@ -51,7 +51,7 @@ Thermostats thermostat = null;
 Integrators integrator = null;
 
 // Integrator string, sets integrator for OpenMMMolecularDynamics
-String stringIntegrator = "VERLET";
+//String stringIntegrator = "VERLET";
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -87,8 +87,8 @@ def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Anderson]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.z(longOpt:'intervalSteps', args:1, argName:'100', 'Number of steps per MD trajectory (fsec)');
-cli.si(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Langevin / Verlet]');
+cli.z(longOpt: 'intervalSteps', args: 1, argName:'100', 'Number of steps for each MD trajectory (fsec)');
+//cli.si(longOpt:'integrate', args:1, argName:'Verlet', 'Integrator: [Langevin / Verlet]');
 cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
@@ -267,9 +267,9 @@ logger.info(" about to create dynamics object");
 MolecularDynamics moldyn = MolecularDynamics.dynamicsFactory(active, forceFieldEnergy, active.getProperties(), sh, thermostat, integrator)
 if (moldyn instanceof OpenMMMolecularDynamics){
     moldyn.setRestartFrequency(restartFrequency);
-    moldyn.setIntegratorString(stringIntegrator);
-    moldyn.setFrictionCoefficient(frictionCoeff);
-    moldyn.setCollisionFrequency(collisionFreq);
+    //moldyn.setIntegratorString(stringIntegrator);
+    //moldyn.setFrictionCoefficient(frictionCoeff);
+    //moldyn.setCollisionFrequency(collisionFreq);
     moldyn.setIntervalSteps(intervalSteps);
     moldyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 }
