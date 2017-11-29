@@ -47,6 +47,7 @@ import java.util.ListIterator;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -1846,4 +1847,63 @@ public class MolecularAssembly extends MSGroup {
         }
     }
 
+    /**
+     * Moves the center of all chemical entities into the primary
+     * unit cell. Somewhat experimental feature; use with caution.
+     */
+    public void moveAllIntoUnitCell() {
+        moveIntoUnitCell(getChains());
+        moveIntoUnitCell(getWaters());
+        moveIntoUnitCell(getIons());
+
+        // Unsure why this mapping is flagged as necessary
+        List<MSNode> molNodes = getMolecules().stream().
+                map((Molecule m) -> (MSNode) m ).
+                collect(Collectors.toList());
+        moveIntoUnitCell(molNodes);
+    }
+
+    private void moveIntoUnitCell(MSNode[] groups) {
+        moveIntoUnitCell(Arrays.asList(groups));
+    }
+
+    /**
+     * Move the center of each listed chemical entity into the primary unit cell.
+     * @param groups
+     */
+    private void moveIntoUnitCell(List<MSNode> groups) {
+        Crystal cryst = getCrystal();
+        if (cryst.aperiodic()) {
+            return;
+        }
+
+        for (MSNode group : groups) {
+            double[] com = new double[3];
+            double[] xyz = new double[3];
+            double[] translate = new double[3];
+
+            List<Atom> atoms = group.getAtomList();
+            double totMass = 0;
+
+            for (Atom atom : atoms) {
+                double mass = atom.getMass();
+                totMass += mass;
+                xyz = atom.getXYZ(xyz);
+                for (int i = 0; i < 3; i++) {
+                    double diff = xyz[i] - com[i];
+                    diff /= totMass;
+                    com[i] += diff;
+                }
+            }
+
+            cryst.toPrimaryCell(com, translate);
+            for (int i = 0; i < 3; i++) {
+                translate[i] -= com[i];
+            }
+
+            for (Atom atom : atoms) {
+                atom.move(translate);
+            }
+        }
+    }
 }

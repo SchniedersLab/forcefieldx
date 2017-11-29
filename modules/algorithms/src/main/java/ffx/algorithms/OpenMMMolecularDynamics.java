@@ -62,6 +62,7 @@ import ffx.algorithms.Thermostat.Thermostats;
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.OpenMMForceFieldEnergy;
+import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -336,8 +337,23 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                     logger.log(Level.WARNING, message);
                     done = true;
                 } else {
-                    molecularAssembly.getPotentialEnergy().setCrystal(crystal);
-                    openMMForceFieldEnergy.setOpenMMPositions(x, numberOfVariables);
+                    //molecularAssembly.getPotentialEnergy().setCrystal(crystal);
+                    openMMForceFieldEnergy.setCrystal(crystal);
+
+                    // Load positions into the main FFX data structure, move into primary unit cell, then load to OpenMM.
+                    Atom[] atoms = molecularAssembly.getAtomArray();
+                    double[] xyz = new double[3];
+                    for (int i = 0; i < atoms.length; i++) {
+                        int i3 = i*3;
+                        for (int j = 0; j < 3; j++) {
+                            xyz[j] = x[i3+j];
+                        }
+                        atoms[i].setXYZ(xyz);
+                    }
+                    molecularAssembly.moveAllIntoUnitCell();
+                    openMMForceFieldEnergy.loadFFXPositionToOpenMM();
+                    //openMMForceFieldEnergy.setOpenMMPositions(x, numberOfVariables);
+
                     openMMForceFieldEnergy.setOpenMMVelocities(v, numberOfVariables);
                 }
             } else {
