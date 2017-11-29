@@ -83,10 +83,14 @@ public class LogHandler extends Handler {
      */
     public LogHandler() {
 
-        boolean mpiLogging = false;
-        String logString = System.getProperty("mpiLogging", "false");
-        if (!logString.trim().equalsIgnoreCase("false")) {
+        boolean mpiLogging = true;
+        String logString = System.getProperty("mpiLogging", "true");
+        /*if (!logString.trim().equalsIgnoreCase("false")) {
             mpiLogging = true;
+        }*/
+        if (logString.trim().equalsIgnoreCase("false")) {
+            System.err.println(" WARNING: MPI-disabled logging does not presently function correctly.");
+            mpiLogging = false;
         }
 
         setFormatter(new LogFormatter(false, mpiLogging));
