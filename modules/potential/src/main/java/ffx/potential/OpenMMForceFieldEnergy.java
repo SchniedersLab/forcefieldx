@@ -205,6 +205,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     private boolean rigidHydrogen = false;
 
     /**
+     * Whether to enforce periodic boundary conditions when obtaining new States.
+     */
+    public final int enforcePBC;
+
+    /**
      * OpenMMForceFieldEnergy constructor; offloads heavy-duty computation to an
      * OpenMM Platform while keeping track of information locally.
      *
@@ -302,7 +307,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         infoMask += OpenMM_State_Forces;
         infoMask += OpenMM_State_Energy;
 
-        openMMState = OpenMM_Context_getState(openMMContext, infoMask, 0);
+        boolean pbcEnforced = forceField.getBoolean(ForceField.ForceFieldBoolean.ENFORCE_PBC, false);
+        enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
+
+        openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
         openMMForces = OpenMM_State_getForces(openMMState);
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
@@ -2086,7 +2094,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         loadFFXPositionToOpenMM();
 
         int infoMask = OpenMM_State_Energy;
-        openMMState = OpenMM_Context_getState(openMMContext, infoMask, 0);
+        openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
         if (verbose) {
@@ -2133,7 +2141,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         int infoMask = OpenMM_State_Energy;
         infoMask += OpenMM_State_Forces;
 
-        openMMState = OpenMM_Context_getState(openMMContext, infoMask, 0);
+        openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 
         if (verbose) {
@@ -2460,7 +2468,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         infoMask += OpenMM_State_Forces;
         infoMask += OpenMM_State_Energy;
 
-        openMMState = OpenMM_Context_getState(openMMContext, infoMask, 0);
+        openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
         openMMForces = OpenMM_State_getForces(openMMState);
         double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
 

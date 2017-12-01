@@ -184,7 +184,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         openMMContext = openMMForceFieldEnergy.getContext();
         int infoMask = OpenMM_State_Positions + OpenMM_State_Velocities + OpenMM_State_Forces + OpenMM_State_Energy;
 
-        PointerByReference state = OpenMM_Context_getState(openMMContext, infoMask, 0);
+        PointerByReference state = OpenMM_Context_getState(openMMContext, infoMask, openMMForceFieldEnergy.enforcePBC);
         currentPotentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
         currentKineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
