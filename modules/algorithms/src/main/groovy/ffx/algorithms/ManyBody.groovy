@@ -87,7 +87,7 @@ class ManyBody extends Script {
          */
         @Option(shortName = 'c', longName = 'chain', defaultValue = '-1',
                 description = 'Single character chain ID of the residues to optimize.')
-        int chain
+        char chain;
         /**
          * -s or --start Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.
          */
@@ -275,7 +275,7 @@ class ManyBody extends Script {
         /**
          * Chain, Residue and/or Box selections.
          */
-        String chain = options.chain
+        String chain = String.valueOf(options.chain);
         int startResID = options.start
         int allStartResID = options.all
         int finalResID = options.last
