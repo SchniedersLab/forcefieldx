@@ -38,6 +38,8 @@
 package ffx.algorithms;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,6 +48,8 @@ import static java.lang.String.format;
 
 import com.sun.jna.ptr.PointerByReference;
 
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -86,6 +90,8 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
     private PointerByReference openMMPositions;
     private PointerByReference openMMVelocities;
     private PointerByReference openMMForces;
+
+    private DynamicsState lastState = new DynamicsState();
 
     /**
      * Number of OpenMM MD steps per iteration.
@@ -208,6 +214,41 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         openMMForces = OpenMM_State_getForces(state);
         openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numberOfVariables, mass, a);
         openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numberOfVariables, mass, aPrevious);
+
+        if (!Double.isFinite(currentPotentialEnergy)) {
+            logger.warning(" Non-finite energy returned by OpenMM: simulation probably unstable.");
+            DynamicsState thisState = new DynamicsState();
+            thisState.storeState();
+            lastState.revertState();
+
+            File origFile = molecularAssembly.getFile();
+            String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                    ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+            String filename = String.format("%s-LAST-%s.pdb",
+                    FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                    timeString);
+
+            PotentialsFunctions ef = new PotentialsUtils();
+            filename = ef.versionFile(filename);
+            logger.info(String.format(" Writing before-error snapshot to file %s", filename));
+            ef.saveAsPDB(molecularAssembly, new File(filename));
+            molecularAssembly.setFile(origFile);
+
+            thisState.revertState();
+
+            filename = String.format("%s-ERROR-%s.pdb",
+                    FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                    timeString);
+
+            filename = ef.versionFile(filename);
+            logger.info(String.format(" Writing after-error snapshot to file %s", filename));
+            ef.saveAsPDB(molecularAssembly, new File(filename));
+            molecularAssembly.setFile(origFile);
+            // Logging and printing here.
+        }
+
+        lastState.storeState();
 
         if (running) {
             if (i == 0) {
