@@ -129,16 +129,11 @@ if (options.z) {
     intervalSteps = Integer.parseInt(options.z);
 }
 
-// Integrator for OpenMMMolecularDynamics
-if (options.si) {
-    stringIntegrator = options.i.toUpperCase();
-}
-
-// Regular MolecularDynamics integrator option, not used for OpenMMMolecularDynamics
 if (options.i) {
     try {
         integrator = Integrators.valueOf(options.i.toUpperCase());
     } catch (Exception e) {
+        logger.warning(String.format(" Exception in parsing integrator %s: %s", options.i, e.toString()));
         integrator = null;
     }
 }
@@ -274,10 +269,6 @@ if (moldyn instanceof OpenMMMolecularDynamics){
     moldyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
 }
 else{
-    logger.info(" in set up for java md");
-    MolecularDynamics molDyn_java = new MolecularDynamics(active, forceFieldEnergy, active.getProperties(), sh, thermostat, integrator);
-    molDyn_java.setFileType(fileType);
-    molDyn_java.setRestartFrequency(restartFrequency);
-    molDyn_java.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+    logger.severe(" Could not start OpenMM molecular dynamics");
 }
 //}

@@ -491,6 +491,16 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
     }
 
+    /**
+     * Add an Andersen thermostat to the system. Note: does not check if one already exists.
+     * @param targetTemp Target temperature in Kelvins.
+     * @param collisionFreq Collision frequency in 1/psec
+     */
+    public void addAndersenThermostat(double targetTemp, double collisionFreq) {
+        PointerByReference aThermo = OpenMMLibrary.OpenMM_AndersenThermostat_create(targetTemp, collisionFreq);
+        OpenMM_System_addForce(openMMSystem, aThermo);
+    }
+
     private void addBondForce() {
         Bond bonds[] = super.getBonds();
         if (bonds == null || bonds.length < 1) {

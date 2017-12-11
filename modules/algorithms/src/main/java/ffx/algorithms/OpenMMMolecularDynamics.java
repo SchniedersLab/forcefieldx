@@ -40,6 +40,7 @@ package ffx.algorithms;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -74,6 +75,7 @@ import ffx.potential.parsers.XYZFilter;
 
 import static ffx.algorithms.Thermostat.kB;
 import ffx.potential.parameters.ForceField;
+import simtk.openmm.OpenMMLibrary;
 
 /**
  * Runs Molecular Dynamics using OpenMM implementation
@@ -91,6 +93,11 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
     private PointerByReference openMMVelocities;
     private PointerByReference openMMForces;
 
+    private final Integrators integratorType;
+    private final Thermostats thermostatType;
+    private String openMMIntegratorString;
+    private String openMMThermostatString;
+
     private DynamicsState lastState = new DynamicsState();
 
     /**
@@ -106,8 +113,6 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
     /**
      * OpenMM Integrator definition.
      */
-    private String integrator;
-    private Integrators integratorMD;
     private double frictionCoeff = 91.0;
     private double collisionFreq = 0.01;
 
@@ -142,9 +147,10 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         this.openMMForceFieldEnergy = openMMForceFieldEnergy;
         openMMForceFieldEnergy.addCOMMRemover(false);
         random = new Random();
-        //integrator = "VERLET";
+        this.thermostatType = thermostat;
+        this.integratorType = integratorMD;
+
         running = false;
-        
     }
 
     /**
@@ -349,10 +355,12 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
             }
         });
 
-        integratorToString(integratorMD);
+        integratorToString();
+        thermostatToString();
         
         if (!initialized) {
             updateIntegrator();
+            updateThermostat();
         }
 
         String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
@@ -442,59 +450,54 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         openMM_Update(i, running);
         logger.info("");
     }
-
-    /**
-     * Method to set the Integrator string
-     *
-     * @param integrator string name of the integrator to be used during the
-     * simulation
-     */
-    public void setIntegratorString(String integrator) {
-        this.integrator = integrator;
-    }
     
-    public void integratorToString(Integrators integrator){
-        if (integrator == null){
-            this.integrator = "VERLET";
+    private void integratorToString(){
+        if (integratorType == null){
+            this.openMMIntegratorString = "VERLET";
             logger.info(String.format(" No specified integrator, will use Verlet"));
         }
-        else{
-            switch (integrator){
+
+        else {
+            switch (integratorType){
                 case STOCHASTIC:
-                    this.integrator = "LANGEVIN";
+                    this.openMMIntegratorString = "LANGEVIN";
                     break;
                 case VELOCITYVERLET:
-                    this.integrator = "VERLET";
+                    this.openMMIntegratorString = "VERLET";
                     break;
                 default:
-                    this.integrator = "VERLET";
+                    this.openMMIntegratorString = "VERLET";
                     logger.warning(String.format(" Integrator %s incompatible with " +
-                            "OpenMM MD integration; defaulting to %s", integrator, this.integrator));
+                            "OpenMM MD integration; defaulting to %s", integratorType, this.openMMIntegratorString));
                     break;
             }
         }
         
-        logger.info(String.format(" Created %s integrator", this.integrator));
+        logger.info(String.format(" Created %s integrator", this.openMMIntegratorString));
     }
 
-    /**
-     * Method to set the coefficient of friction (for Langevin integrator)
-     *
-     * @param frictionCoeff coefficient of friction that acts on the atoms
-     * during simulation
-     */
-    public void setFrictionCoefficient(double frictionCoeff) {
-        this.frictionCoeff = frictionCoeff;
-    }
+    private void thermostatToString () {
+        if (integratorType != null && integratorType == Integrators.STOCHASTIC) {
+            logger.fine(" Ignoring requested thermostat due to Langevin dynamics.");
+            openMMThermostatString = "NVE";
+            return;
+        }
 
-    /**
-     * Method to set the collision frequency (for Andersen thermostat)
-     *
-     * @param collisionFreq rate at which atoms collide in the Andersen
-     * thermostat
-     */
-    public void setCollisionFrequency(double collisionFreq) {
-        this.collisionFreq = collisionFreq;
+        if (thermostatType == null) {
+            openMMThermostatString = "ANDERSEN";
+            logger.info(String.format(" No specified thermostat, will use %s", openMMThermostatString));
+        } else {
+            switch (thermostatType) {
+                case ADIABATIC:
+                    logger.info(" Adiabatic thermostat specified; will use NVE dynamics");
+                    openMMThermostatString = "NVE";
+                    break;
+                default:
+                    openMMThermostatString = "ANDERSEN";
+                    logger.info(String.format(" Thermostat %s requested, but incompatible with OpenMM: will use %s thermostat", thermostatType, openMMThermostatString));
+                    break;
+            }
+        }
     }
 
     public void setIntervalSteps(int intervalSteps) {
@@ -502,10 +505,21 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         logger.info(String.format(" Interval Steps set at %d", intervalSteps));
     }
 
-    public void updateIntegrator() {
-        openMMForceFieldEnergy.setIntegrator(integrator, dt, targetTemperature);
+    private void updateIntegrator() {
+        openMMForceFieldEnergy.setIntegrator(openMMIntegratorString, dt, targetTemperature);
         openMMIntegrator = openMMForceFieldEnergy.getIntegrator();
         openMMContext = openMMForceFieldEnergy.getContext();
+    }
+
+    private void updateThermostat() {
+        switch (openMMThermostatString) {
+            case "NVE":
+                break;
+            case "ANDERSEN":
+            default:
+                openMMForceFieldEnergy.addAndersenThermostat(targetTemperature, collisionFreq);
+                break;
+        }
     }
 
     /**
