@@ -64,6 +64,7 @@ import ffx.algorithms.Integrator.Integrators;
 import static ffx.algorithms.Integrator.Integrators.STOCHASTIC;
 import static ffx.algorithms.Integrator.Integrators.VELOCITYVERLET;
 import ffx.algorithms.Thermostat.Thermostats;
+import static ffx.algorithms.Thermostat.convert;
 import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.OpenMMForceFieldEnergy;
@@ -92,6 +93,8 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
     private PointerByReference openMMPositions;
     private PointerByReference openMMVelocities;
     private PointerByReference openMMForces;
+    private int numParticles;
+    private int dof;
 
     private final Integrators integratorType;
     private final Thermostats thermostatType;
@@ -151,6 +154,10 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         this.integratorType = integratorMD;
 
         running = false;
+
+        integratorToString(integratorMD);
+        updateIntegrator();
+
     }
 
     /**
@@ -201,11 +208,14 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         currentKineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
 
+        //numParticles = openMMForceFieldEnergy.getNumParticles() * 3;
+        //logger.info(String.format(" number of particles %d", numParticles));
+        //logger.info(String.format(" number of variables %d", numberOfVariables));
         openMMPositions = OpenMM_State_getPositions(state);
-        openMMForceFieldEnergy.getOpenMMPositions(openMMPositions, numberOfVariables, x);
+        openMMForceFieldEnergy.getOpenMMPositions(openMMPositions, numParticles, x);
 
         openMMVelocities = OpenMM_State_getVelocities(state);
-        openMMForceFieldEnergy.getOpenMMVelocities(openMMVelocities, numberOfVariables, v);
+        openMMForceFieldEnergy.getOpenMMVelocities(openMMVelocities, numParticles, v);
 
         double e = 0.0;
         for (int ii = 0; ii < v.length; ii++) {
@@ -214,12 +224,17 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
             e += mass[ii] * v2;
         }
 
-        int dof = v.length;
+        //e *= 0.5 / convert;
+        //logger.info(String.format(" OpenMM Kinetic Energy: %f", currentKineticEnergy));
+        //logger.info(String.format(" Kinetic Energy calculated from velocities: %f", (e* 0.5 / convert)));
+        //int dof = v.length;
+        //dof = openMMForceFieldEnergy.calculateDegreesOfFreedom();
+        logger.info(String.format(" number of degrees of freedom is %d", dof));
         currentTemperature = e / (kB * dof);
 
         openMMForces = OpenMM_State_getForces(state);
-        openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numberOfVariables, mass, a);
-        openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numberOfVariables, mass, aPrevious);
+        openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numParticles, mass, a);
+        openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numParticles, mass, aPrevious);
 
         if (!Double.isFinite(currentPotentialEnergy)) {
             logger.warning(" Non-finite energy returned by OpenMM: simulation probably unstable.");
@@ -312,7 +327,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         this.printFrequency = (int) printInterval;
         this.restartFile = dyn;
         this.initVelocities = initVelocities;
-        
+
         /**
          * Convert the print interval to a print frequency.
          */
@@ -328,7 +343,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         if (saveInterval >= this.dt) {
             saveSnapshotFrequency = (int) (saveInterval / this.dt);
         }
-        
+
         done = false;
 
         assemblies.stream().parallel().forEach((ainfo) -> {
@@ -357,14 +372,6 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
             }
         });
 
-        integratorToString();
-        thermostatToString();
-        
-        if (!initialized) {
-            updateIntegrator();
-            updateThermostat();
-        }
-
         String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
 
         if (dyn == null) {
@@ -379,6 +386,10 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
             dynFilter = new DYNFilter(molecularAssembly.getName());
         }
 
+        dof = openMMForceFieldEnergy.calculateDegreesOfFreedom();
+        logger.info(String.format(" number of degrees of freedom is %d", dof));
+        numParticles = openMMForceFieldEnergy.getNumParticles() * 3;
+        logger.info(String.format(" number of particles is %d", (numParticles / 3)));
         if (!initialized) {
             if (loadRestart) {
                 Crystal crystal = molecularAssembly.getCrystal();
@@ -395,9 +406,9 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                     Atom[] atoms = molecularAssembly.getAtomArray();
                     double[] xyz = new double[3];
                     for (int i = 0; i < atoms.length; i++) {
-                        int i3 = i*3;
+                        int i3 = i * 3;
                         for (int j = 0; j < 3; j++) {
-                            xyz[j] = x[i3+j];
+                            xyz[j] = x[i3 + j];
                         }
                         atoms[i].setXYZ(xyz);
                     }
@@ -406,6 +417,9 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                     //openMMForceFieldEnergy.setOpenMMPositions(x, numberOfVariables);
 
                     openMMForceFieldEnergy.setOpenMMVelocities(v, numberOfVariables);
+                    molecularAssembly.getPotentialEnergy().setCrystal(crystal);
+                    openMMForceFieldEnergy.setOpenMMPositions(x, numParticles);
+                    openMMForceFieldEnergy.setOpenMMVelocities(v, numParticles);
                 }
             } else {
                 openMMForceFieldEnergy.loadFFXPositionToOpenMM();
@@ -435,6 +449,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
     public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
         init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
 
+        //initialized = true;
         storeState();
         if (intervalSteps == 0 || intervalSteps > numSteps) {
             intervalSteps = numSteps;
@@ -453,15 +468,13 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         openMM_Update(i, running);
         logger.info("");
     }
-    
-    private void integratorToString(){
-        if (integratorType == null){
-            this.openMMIntegratorString = "VERLET";
-            logger.info(String.format(" No specified integrator, will use Verlet"));
-        }
 
-        else {
-            switch (integratorType){
+    public final void integratorToString(Integrators integrator) {
+        if (integrator == null) {
+            openMMIntegratorString = "VERLET";
+            logger.info(String.format(" No specified integrator, will use Verlet"));
+        } else {
+            switch (integratorType) {
                 case STOCHASTIC:
                     this.openMMIntegratorString = "LANGEVIN";
                     break;
@@ -470,16 +483,16 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                     break;
                 default:
                     this.openMMIntegratorString = "VERLET";
-                    logger.warning(String.format(" Integrator %s incompatible with " +
-                            "OpenMM MD integration; defaulting to %s", integratorType, this.openMMIntegratorString));
+                    logger.warning(String.format(" Integrator %s incompatible with "
+                            + "OpenMM MD integration; defaulting to %s", integratorType, this.openMMIntegratorString));
                     break;
             }
         }
-        
+
         logger.info(String.format(" Created %s integrator", this.openMMIntegratorString));
     }
 
-    private void thermostatToString () {
+    private void thermostatToString() {
         if (integratorType != null && integratorType == Integrators.STOCHASTIC) {
             logger.fine(" Ignoring requested thermostat due to Langevin dynamics.");
             openMMThermostatString = "NVE";
@@ -508,7 +521,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         logger.info(String.format(" Interval Steps set at %d", intervalSteps));
     }
 
-    private void updateIntegrator() {
+    public final void updateIntegrator() {
         openMMForceFieldEnergy.setIntegrator(openMMIntegratorString, dt, targetTemperature);
         openMMIntegrator = openMMForceFieldEnergy.getIntegrator();
         openMMContext = openMMForceFieldEnergy.getContext();
@@ -527,6 +540,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
 
     /**
      * Returns the OpenMM DynamicsEngine
+     *
      * @return OPENMM
      */
     @Override

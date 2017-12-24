@@ -1250,9 +1250,12 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 }
             }
 
-            int zaxis = 0;
-            int xaxis = 0;
-            int yaxis = 0;
+            //int zaxis = 0;
+            int zaxis = 1;
+            //int xaxis = 0;
+            int xaxis = 1;
+            //int yaxis = 0;
+            int yaxis = 1;
             int refAtoms[] = axisAtom[i];
             if (refAtoms != null) {
                 zaxis = refAtoms[0];
@@ -1262,6 +1265,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                         yaxis = refAtoms[2];
                     }
                 }
+            }
+            else{
+                
+                axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+                logger.info(String.format(" Atom type %s", atom.getAtomType().toString()));
             }
 
             /**
@@ -2364,7 +2372,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             v[offset] = vel.x * OpenMM_AngstromsPerNm;
             v[offset + 1] = vel.y * OpenMM_AngstromsPerNm;
             v[offset + 2] = vel.z * OpenMM_AngstromsPerNm;
-        }
+        }    
         return v;
     }
 
@@ -2690,5 +2698,33 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 OpenMM_System_addConstraint(system, iAtom1, iAtom2, bondForBondLength.bondType.distance * OpenMM_NmPerAngstrom);
             }
         }
+    }
+    
+    public int calculateDegreesOfFreedom(){
+        int dof = 0;
+        
+        for (int i = 0; i < OpenMM_System_getNumParticles(openMMSystem); i++){
+            if (OpenMM_System_getParticleMass(openMMSystem, i) > 0){
+                dof += 3;
+            }
+        }
+        dof = dof - OpenMM_System_getNumConstraints(openMMSystem);
+        
+        /*for (int i = 0; i < OpenMM_System_getNumForces(openMMSystem); i++){
+            if (OpenMM_System_getForce(openMMSystem, i) == commRemover){
+                dof = dof - 3;
+                break;
+            }
+        }*/
+        if (commRemover != null) {
+            dof -= 3;
+        }
+        
+        return dof;
+    }
+    
+    public int getNumParticles(){
+        int numParticles = OpenMM_System_getNumParticles(openMMSystem);
+        return numParticles;
     }
 }

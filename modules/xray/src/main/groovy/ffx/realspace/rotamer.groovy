@@ -880,13 +880,13 @@ if (decomposeOriginal) {
 if (algorithm == 1) {
     rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT);
 } else if (algorithm == 2) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL_DEE);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
 } else if (algorithm == 3) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.GLOBAL);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE);
 } else if (algorithm == 4) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW);
 } else if (algorithm == 5) {
-    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX_OPTIMIZATION);
+    rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX);
 }
 
 if (master) {
