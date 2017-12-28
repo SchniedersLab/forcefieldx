@@ -124,6 +124,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
      */
     private boolean running;
     private long time;
+    private int numInfiniteEnergies = 0;
 
     /**
      * Constructs an OpenMMMolecularDynamics object, to perform molecular
@@ -267,6 +268,9 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
             ef.saveAsPDB(molecularAssembly, new File(filename));
             molecularAssembly.setFile(origFile);
             // Logging and printing here.
+            if (numInfiniteEnergies++ > 200) {
+                logger.severe(String.format(" %d infinite energies experienced; shutting down FFX", numInfiniteEnergies));
+            }
         }
 
         lastState.storeState();
