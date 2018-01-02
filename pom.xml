@@ -550,7 +550,7 @@
                             <rules>
                                 <banDuplicatePomDependencyVersions/>
                                 <!-- dependencyConvergence/ -->
-                                <reactorModuleConvergence/>
+                                <!-- reactorModuleConvergence/ -->
                                 <requirePluginVersions/>
                                 <requireMavenVersion>
                                     <version>3.0</version>

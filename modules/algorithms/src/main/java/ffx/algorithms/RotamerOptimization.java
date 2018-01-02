@@ -444,11 +444,13 @@ public class RotamerOptimization implements Terminatable {
         this.algorithmListener = algorithmListener;
         eFunction = this::currentPE;
         dirSupplier = (List<Residue> resList, List<Rotamer> rotList) -> null;
+
         world = Comm.world();
         numProc = world.size();
         rank = world.rank();
         master = rank == 0;
         energyWorkerTeam = new WorkerTeam(world);
+
         if (System.getProperty("verbose") != null) {
             if (System.getProperty("verbose").equalsIgnoreCase("true")) {
                 verbose = true;
