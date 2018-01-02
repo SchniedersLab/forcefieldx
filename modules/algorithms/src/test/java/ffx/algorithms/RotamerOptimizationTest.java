@@ -58,18 +58,13 @@ public class RotamerOptimizationTest {
             logger.log(Level.WARNING, message, e.toString());
             message = String.format(" Skipping rotamer optimization test.");
             logger.log(Level.WARNING, message, e.toString());
+            return;
         }
 
         // Run the optimization.
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
         rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
         rLib.setUseOrigCoordsRotamer(true);
-
-        RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
-        rotamerOptimization.setThreeBodyEnergy(false);
-        rotamerOptimization.setUseGoldstein(true);
-        rotamerOptimization.setPruning(0);
-        rotamerOptimization.setEnergyRestartFile(restartFile);
 
         int counter = 1;
         int allStartResID = 1;
@@ -96,9 +91,13 @@ public class RotamerOptimizationTest {
             }
         }
 
+        RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
+        rotamerOptimization.setThreeBodyEnergy(false);
+        rotamerOptimization.setUseGoldstein(true);
+        rotamerOptimization.setPruning(0);
+        rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
         rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-
     }
 
 }

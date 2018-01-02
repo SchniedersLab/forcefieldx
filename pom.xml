@@ -777,6 +777,7 @@
                 <groupId>ru.concerteza.buildnumber</groupId>
                 <inherited>false</inherited>
                 <artifactId>maven-jgit-buildnumber-plugin</artifactId>
+                <version>1.2.10</version>
                 <executions>
                     <execution>
                         <id>git-buildnumber</id>
