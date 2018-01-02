@@ -17,14 +17,14 @@ This requires Maven v. 3.2 or later to be installed with its bin directory inclu
 
 Once the Maven build succeeds, Force Field X can be executed using platform dependent start-up scripts located in the bin. On Mac OS X or Linux:
 
-    bin/ffxc energy examples/alamet.xyz
+    bin/ffxc Energy examples/alamet.xyz
 
 On Windows:
 
-    bin/ffxc.bat energy examples/alamet.xyz
+    bin/ffxc.bat Energy examples/alamet.xyz
 
 
-The ffx/bin directory should be appended to your $PATH environment variable. The "energy" command refers to an internal version of the energy.ffx script that can be found in the ffx/scripts directory. To embed your own script within FFX, place it into the scripts directory and rebuild FFX.
+The ffx/bin directory should be appended to your $PATH environment variable. The "Energy" command refers to an internal version of the Energy.groovy script that can be found in the ffx/scripts directory. To embed your own script within FFX, place it into the scripts directory and rebuild FFX.
 
 
 [![Build Status](https://travis-ci.org/mjschnie/ffx.svg?branch=master)](https://travis-ci.org/mjschnie/ffx/)

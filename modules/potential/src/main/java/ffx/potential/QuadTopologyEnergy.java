@@ -560,6 +560,9 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     @Override
     public void setLambda(double lambda) {
+        if (!Double.isFinite(lambda) || lambda > 1.0 || lambda < 0.0) {
+            throw new ArithmeticException(String.format(" Attempted to set invalid lambda value of %10.6g", lambda));
+        }
         this.lambda = lambda;
         dualTopA.setLambda(lambda);
         dualTopB.setLambda(lambda);
