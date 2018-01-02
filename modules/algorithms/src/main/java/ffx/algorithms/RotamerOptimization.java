@@ -3426,7 +3426,7 @@ public class RotamerOptimization implements Terminatable {
                     int rj = optimum[j];
                     for (int k = j + 1; k < nResidues; k++) {
                         int rk = optimum[k];
-                        double triple = triple(i, ri, j, rj, k, rj);
+                        double triple = triple(i, ri, j, rj, k, rk);
                         residueEnergy[i] += triple / 3.0;
                         residueEnergy[j] += triple / 3.0;
                         residueEnergy[k] += triple / 3.0;
