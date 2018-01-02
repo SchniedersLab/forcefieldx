@@ -60,7 +60,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.parameters.ForceField;
 
-
 /**
  * Test the PotentialEnergy class.
  *
@@ -212,6 +211,7 @@ public final class PotentialEnergyTest {
                 0.0, 0,
                 1.0e-2, 1.0e-2, false}});
     }
+
     private final String info;
     private final int nBonds;
     private final int nAngles;

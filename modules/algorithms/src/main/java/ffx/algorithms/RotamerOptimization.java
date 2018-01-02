@@ -62,12 +62,7 @@ import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.*;
 import edu.rit.pj.reduction.SharedDouble;
 
-import static edu.rit.pj.IntegerSchedule.dynamic;
-
-import edu.rit.pj.reduction.SharedInteger;
 import org.apache.commons.io.FilenameUtils;
-
-import static org.apache.commons.math3.util.FastMath.abs;
 
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.algorithms.mc.MCMove;
@@ -354,7 +349,7 @@ public class RotamerOptimization implements Terminatable {
     private List<String> energiesToWrite;
 
     private ParallelTeam parallelTeam;
-    private GoldsteinRotamerPairRegion goldsteinRotamerPairRegion;
+    private GoldsteinPairRegion goldsteinPairRegion;
     private EnergyRegion energyRegion;
 
     private boolean verbose = false;
@@ -4381,7 +4376,7 @@ public class RotamerOptimization implements Terminatable {
                     i++;
                     logIfMaster(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
                     // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
-                    while (goldsteinRotamerDriver(residues)) {
+                    while (goldsteinDriver(residues)) {
                         i++;
                         logIfMaster(this.toString());
                         logIfMaster(format("\n Iteration %d: Applying Single Rotamer Goldstein DEE conditions ", i));
@@ -4390,7 +4385,7 @@ public class RotamerOptimization implements Terminatable {
                     logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
                     // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
                     pairEliminated = false;
-                    while (goldsteinRotamerPairDriver(residues)) {
+                    while (goldsteinPairDriver(residues)) {
                         pairEliminated = true;
                         i++;
                         logIfMaster(this.toString());
@@ -4493,7 +4488,7 @@ public class RotamerOptimization implements Terminatable {
                 i++;
                 logIfMaster(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
                 // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
-                while (goldsteinRotamerDriver(residues)) {
+                while (goldsteinDriver(residues)) {
                     i++;
                     logIfMaster(this.toString());
                     logIfMaster(format("\n Iteration %d: Applying Single Rotamer Goldstein DEE conditions ", i));
@@ -4501,7 +4496,7 @@ public class RotamerOptimization implements Terminatable {
                 i++;
                 logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
                 // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
-                while (goldsteinRotamerPairDriver(residues)) {
+                while (goldsteinPairDriver(residues)) {
                     pairEliminated = true;
                     i++;
                     logIfMaster(this.toString());
@@ -6198,7 +6193,7 @@ public class RotamerOptimization implements Terminatable {
         return true;
     }
 
-    private boolean goldsteinRotamerDriver(Residue[] residues) {
+    private boolean goldsteinDriver(Residue[] residues) {
         int nres = residues.length;
         // A flag to indicate if a rotamer is eliminated.
         boolean eliminated = false;
@@ -6218,7 +6213,7 @@ public class RotamerOptimization implements Terminatable {
                     if (riA == riB || check(i, riB)) {
                         continue;
                     }
-                    if (goldsteinRotamerElimination(residues, i, riA, riB)) {
+                    if (goldsteinElimination(residues, i, riA, riB)) {
                         eliminated = true;
                         break;
                     }
@@ -6228,7 +6223,7 @@ public class RotamerOptimization implements Terminatable {
         return eliminated;
     }
 
-    private boolean goldsteinRotamerElimination(Residue residues[], int i, int riA, int riB) {
+    private boolean goldsteinElimination(Residue residues[], int i, int riA, int riB) {
         int nres = residues.length;
         Residue resi = residues[i];
 
@@ -6357,7 +6352,7 @@ public class RotamerOptimization implements Terminatable {
      * @param residues The list of residues to be optimized.
      * @return true if a residue is eliminated.
      */
-    private boolean goldsteinRotamerPairDriver(Residue[] residues) {
+    private boolean goldsteinPairDriver(Residue[] residues) {
         int nres = residues.length;
         // A flag to indicate if any more rotamers or rotamer pairs were eliminated.
         boolean eliminated = false;
@@ -6443,7 +6438,7 @@ public class RotamerOptimization implements Terminatable {
                                  continue;
                                  } */
                                 // Try to eliminate R_i(riA) & R_j(rjC) using R_i(riB) & R_j(rjD)
-                                if (goldsteinRotamerPairElimination(residues, i, riA, riB, j, rjC, rjD)) {
+                                if (goldsteinPairElimination(residues, i, riA, riB, j, rjC, rjD)) {
                                     eliminated = true;
                                     breakOut = true;
                                 }
@@ -6469,8 +6464,8 @@ public class RotamerOptimization implements Terminatable {
      * @param rjD      Index of the 2nd residue's rotamer to use for elimination.
      * @return Return true if eliminated.
      */
-    private boolean goldsteinRotamerPairElimination(Residue residues[],
-                                                    int i, int riA, int riB, int j, int rjC, int rjD) {
+    private boolean goldsteinPairElimination(Residue residues[],
+                                             int i, int riA, int riB, int j, int rjC, int rjD) {
 
         ArrayList<Residue> missedResidues = null;
         // Initialize the Goldstein energy.
@@ -6481,15 +6476,15 @@ public class RotamerOptimization implements Terminatable {
             if (parallelTeam == null) {
                 parallelTeam = new ParallelTeam();
             }
-            if (goldsteinRotamerPairRegion == null) {
-                goldsteinRotamerPairRegion = new GoldsteinRotamerPairRegion(parallelTeam.getThreadCount());
+            if (goldsteinPairRegion == null) {
+                goldsteinPairRegion = new GoldsteinPairRegion(parallelTeam.getThreadCount());
             }
-            goldsteinRotamerPairRegion.init(residues, i, riA, riB, j, rjC, rjD);
-            parallelTeam.execute(goldsteinRotamerPairRegion);
-            goldsteinEnergy += goldsteinRotamerPairRegion.getSumOverK();
-            missedResidues = goldsteinRotamerPairRegion.getMissedResidues();
+            goldsteinPairRegion.init(residues, i, riA, riB, j, rjC, rjD);
+            parallelTeam.execute(goldsteinPairRegion);
+            goldsteinEnergy += goldsteinPairRegion.getSumOverK();
+            missedResidues = goldsteinPairRegion.getMissedResidues();
         } catch (Exception e) {
-            logger.log(Level.WARNING, " Exception in GoldsteinRotamerPairRegion.", e);
+            logger.log(Level.WARNING, " Exception in GoldsteinPairRegion.", e);
         }
         // goldsteinEnergy += goldsteinPairSumOverK(residues, 0, nres-1, i, riA, riB, j, rjC, rjD);
 
@@ -6514,7 +6509,7 @@ public class RotamerOptimization implements Terminatable {
         return false;
     }
 
-    private class GoldsteinRotamerPairRegion extends ParallelRegion {
+    private class GoldsteinPairRegion extends ParallelRegion {
 
         Residue residues[];
         int i, riA, rjC;
@@ -6524,7 +6519,7 @@ public class RotamerOptimization implements Terminatable {
         SharedDouble sharedSumOverK = new SharedDouble();
         ArrayList<Residue> blockedResidues;
 
-        GoldsteinRotamerPairRegion(int nThreads) {
+        GoldsteinPairRegion(int nThreads) {
             goldsteinRotamerPairLoop = new GoldsteinRotamerPairLoop[nThreads];
         }
 
@@ -6568,7 +6563,7 @@ public class RotamerOptimization implements Terminatable {
             try {
                 execute(0, nRes - 1, goldsteinRotamerPairLoop[threadID]);
             } catch (Exception e) {
-                logger.log(Level.WARNING, " Exception in GoldsteinRotamerPairRegion.", e);
+                logger.log(Level.WARNING, " Exception in GoldsteinPairRegion.", e);
             }
         }
 
