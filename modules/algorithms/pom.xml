@@ -26,6 +26,14 @@
                     <include>*</include>
                 </includes>
             </resource>
+            <resource>
+                <directory>${basedir}/src/main/java/ffx/algorithms/structures
+                </directory>
+                <targetPath>ffx/algorithms/structures</targetPath>
+                <includes>
+                    <include>*</include>
+                </includes>
+            </resource>
         </resources>
     </build>
     <dependencies>
@@ -81,6 +89,13 @@
             <groupId>com.apporiented</groupId>
             <artifactId>hierarchical-clustering</artifactId>
             <version>${clustering.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+            <type>jar</type>
         </dependency>
     </dependencies>
 </project>
