@@ -38,18 +38,10 @@
 
 // MINIMIZE
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.algorithms.CrystalMinimize;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
-import ffx.potential.MolecularAssembly;
 import ffx.algorithms.CrystalMinimize
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.XtalEnergy
 
 // Default convergence criteria.

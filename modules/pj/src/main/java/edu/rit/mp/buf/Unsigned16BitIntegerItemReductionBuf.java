@@ -24,13 +24,12 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Unsigned16BitIntegerBuf;
-import edu.rit.mp.Buf;
+import java.nio.ByteBuffer;
 
+import edu.rit.mp.Buf;
+import edu.rit.mp.Unsigned16BitIntegerBuf;
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class Unsigned16BitIntegerItemReductionBuf provides a reduction buffer for

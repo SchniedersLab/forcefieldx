@@ -38,7 +38,6 @@
 package ffx.algorithms;
 
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;

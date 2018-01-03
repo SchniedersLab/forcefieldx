@@ -38,17 +38,9 @@
 
 package ffx.potential
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.potential.parsers.PDBFileMatcher;
+import ffx.potential.parsers.PDBFileFilter
+import ffx.potential.parsers.PDBFileMatcher
 import ffx.potential.parsers.SimplePDBMatcher
-import ffx.potential.parsers.PDBFileFilter;
 
 File sourceFileSource; // The "good" structures: for our purposes, FFX structures.
 File matchFileSource; // The structures to back-correlate and fix: MSMBuilder structures.

@@ -24,27 +24,21 @@
 //******************************************************************************
 package edu.rit.mp;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.buf.ByteArrayBuf;
 import edu.rit.mp.buf.ByteArrayBuf_1;
 import edu.rit.mp.buf.ByteItemBuf;
 import edu.rit.mp.buf.ByteMatrixBuf;
 import edu.rit.mp.buf.ByteMatrixBuf_1;
 import edu.rit.mp.buf.EmptyByteBuf;
-import edu.rit.mp.buf.SharedByteBuf;
 import edu.rit.mp.buf.SharedByteArrayBuf;
 import edu.rit.mp.buf.SharedByteArrayBuf_1;
-
-import edu.rit.pj.reduction.ByteOp;
-import edu.rit.pj.reduction.Op;
+import edu.rit.mp.buf.SharedByteBuf;
 import edu.rit.pj.reduction.SharedByte;
 import edu.rit.pj.reduction.SharedByteArray;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class ByteBuf is the abstract base class for a buffer of byte items sent or

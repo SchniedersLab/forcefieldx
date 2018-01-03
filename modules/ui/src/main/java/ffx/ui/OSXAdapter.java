@@ -37,21 +37,21 @@
  */
 package ffx.ui;
 
+import javax.swing.ImageIcon;
+
 import java.io.File;
 import java.util.List;
 import java.util.logging.Logger;
 
-import javax.swing.ImageIcon;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.apple.eawt.AboutHandler;
-import com.apple.eawt.OpenFilesHandler;
-import com.apple.eawt.QuitHandler;
-import com.apple.eawt.PreferencesHandler;
 import com.apple.eawt.AppEvent;
 import com.apple.eawt.Application;
+import com.apple.eawt.OpenFilesHandler;
+import com.apple.eawt.PreferencesHandler;
+import com.apple.eawt.QuitHandler;
 import com.apple.eawt.QuitResponse;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * The OSXAdapter class was developed by following an example supplied on the OS

@@ -1,17 +1,12 @@
 
 package ffx.potential
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
 
-// FFX Imports
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
-import ffx.potential.MolecularAssembly;
 
 /**
  * The TestGradient script evaluates the consistency of the energy and gradient.

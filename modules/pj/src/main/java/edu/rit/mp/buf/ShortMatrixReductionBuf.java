@@ -24,17 +24,15 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Buf;
-import edu.rit.mp.ShortBuf;
-
-import edu.rit.pj.reduction.ShortOp;
-import edu.rit.pj.reduction.Op;
-import edu.rit.pj.reduction.ReduceArrays;
-
-import edu.rit.util.Range;
-
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
+
+import edu.rit.mp.Buf;
+import edu.rit.mp.ShortBuf;
+import edu.rit.pj.reduction.Op;
+import edu.rit.pj.reduction.ReduceArrays;
+import edu.rit.pj.reduction.ShortOp;
+import edu.rit.util.Range;
 
 /**
  * Class ShortMatrixReductionBuf provides a reduction buffer for class

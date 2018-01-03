@@ -24,17 +24,13 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Buf;
-import edu.rit.mp.CharacterBuf;
-
-import edu.rit.pj.reduction.CharacterOp;
-import edu.rit.pj.reduction.Op;
-
-import edu.rit.util.Arrays;
-import edu.rit.util.Range;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+
+import edu.rit.mp.Buf;
+import edu.rit.pj.reduction.CharacterOp;
+import edu.rit.pj.reduction.Op;
+import edu.rit.util.Range;
 
 /**
  * Class CharacterArrayBuf_1 provides a buffer for an array of character items

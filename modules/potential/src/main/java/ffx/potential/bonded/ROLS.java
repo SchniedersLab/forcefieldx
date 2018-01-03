@@ -37,15 +37,15 @@
  */
 package ffx.potential.bonded;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.J3DGraphics2D;
 import javax.media.j3d.Material;
 import javax.media.j3d.Node;
 import javax.vecmath.Color3f;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;

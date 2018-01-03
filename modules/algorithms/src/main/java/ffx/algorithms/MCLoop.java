@@ -39,8 +39,9 @@ package ffx.algorithms;
 
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Logger;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Logger;
+
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.random;
 
@@ -49,7 +50,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Loop;
-import java.util.ArrayList;
 
 /**
  * @author Armin Avdic

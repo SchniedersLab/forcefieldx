@@ -37,11 +37,12 @@
  */
 package ffx.potential.bonded;
 
+import java.util.Arrays;
+
 import static org.apache.commons.math3.util.FastMath.max;
 
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
-import java.util.Arrays;
 
 /**
  * The Rotamer Class usually represents one immutable amino acid Rotamer. It is

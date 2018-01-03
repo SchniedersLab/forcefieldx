@@ -37,19 +37,21 @@
  */
 package ffx.potential;
 
-import edu.rit.pj.ParallelRegion;
-import edu.rit.pj.ParallelSection;
-import edu.rit.pj.ParallelTeam;
-import ffx.crystal.Crystal;
-import ffx.crystal.CrystalPotential;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.utils.EnergyException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+
+import edu.rit.pj.ParallelRegion;
+import edu.rit.pj.ParallelSection;
+import edu.rit.pj.ParallelTeam;
+
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
+import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.utils.EnergyException;
 
 /**
  * Implements an error-canceling quad topology, where two large dual-topology 

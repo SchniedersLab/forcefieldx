@@ -42,7 +42,6 @@ import static java.lang.Math.sqrt;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-
 import static ffx.numerics.VectorMath.diff;
 
 /**

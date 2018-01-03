@@ -37,14 +37,14 @@
  */
 package ffx.ui.behaviors;
 
-import java.awt.AWTEvent;
-import java.awt.event.MouseEvent;
-import java.util.Enumeration;
-
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
 import javax.media.j3d.WakeupCriterion;
 import javax.media.j3d.WakeupOnAWTEvent;
+
+import java.awt.AWTEvent;
+import java.awt.event.MouseEvent;
+import java.util.Enumeration;
 
 /**
  * The MouseSelection class implements a mouse selection behavior.

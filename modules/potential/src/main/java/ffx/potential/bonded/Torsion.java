@@ -38,7 +38,6 @@
 package ffx.potential.bonded;
 
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -48,7 +47,6 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
-
 import static ffx.numerics.VectorMath.cross;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;

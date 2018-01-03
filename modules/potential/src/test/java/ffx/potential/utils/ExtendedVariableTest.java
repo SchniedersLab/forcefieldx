@@ -43,7 +43,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.lang.StringUtils;
@@ -65,7 +64,6 @@ import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.parameters.ForceField.ForceFieldName;
-
 import static ffx.potential.extended.ExtUtils.setProp;
 
 /**

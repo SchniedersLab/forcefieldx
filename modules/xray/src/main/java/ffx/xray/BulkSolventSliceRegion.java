@@ -39,7 +39,6 @@ package ffx.xray;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.ParallelTeam;

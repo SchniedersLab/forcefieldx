@@ -38,12 +38,8 @@
 
 package ffx.utilities
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils
 
 int startModel = 1;
 int endModel = -1;

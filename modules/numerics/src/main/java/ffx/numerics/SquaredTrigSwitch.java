@@ -38,6 +38,7 @@
 package ffx.numerics;
 
 import java.util.function.DoubleUnaryOperator;
+
 import org.apache.commons.math3.util.FastMath;
 
 /**

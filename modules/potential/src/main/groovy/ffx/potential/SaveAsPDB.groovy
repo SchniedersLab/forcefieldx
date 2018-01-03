@@ -1,18 +1,10 @@
 package ffx.potential
 
-// SAVE AS PDB
+import org.apache.commons.io.FilenameUtils
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
 import groovy.cli.Option
-import groovy.util.CliBuilder;
 import groovy.cli.Unparsed
 
-
-// FFX Imports
-import ffx.potential.MolecularAssembly
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.PotentialsFunctions

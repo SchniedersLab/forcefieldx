@@ -24,16 +24,12 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Buf;
-import edu.rit.mp.BooleanBuf;
+import java.nio.ByteBuffer;
 
+import edu.rit.mp.Buf;
 import edu.rit.pj.reduction.BooleanOp;
 import edu.rit.pj.reduction.Op;
-
-import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class BooleanArrayBuf_1 provides a buffer for an array of Boolean items sent

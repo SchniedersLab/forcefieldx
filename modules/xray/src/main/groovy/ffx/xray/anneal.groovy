@@ -36,25 +36,17 @@
  * exception statement from your version.
  */
 
-// XRAY SIMULATED ANNEALING
+import org.apache.commons.io.FilenameUtils
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.SimulatedAnnealing
+import ffx.algorithms.Thermostat.Thermostats
+import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.parsers.DiffractionFile
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.algorithms.SimulatedAnnealing;
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
-
-// type of refinement
 RefinementMode refinementmode = RefinementMode.COORDINATES;
 
 // suffix to append to output data

@@ -24,22 +24,19 @@
 //******************************************************************************
 package edu.rit.pj.job;
 
-import edu.rit.io.Stdio;
-
 import java.io.Externalizable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.PrintStream;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-
 import java.util.ArrayList;
+
+import edu.rit.io.Stdio;
 
 /**
  * Class Job encapsulates a job and its attributes. A job is typically created

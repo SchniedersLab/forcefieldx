@@ -37,11 +37,11 @@
  */
 package ffx.xray.parsers;
 
+import javax.swing.filechooser.FileFilter;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-
-import javax.swing.filechooser.FileFilter;
 
 /**
  * The MTZFileFilter class is used to choose CCP4 MTZ files

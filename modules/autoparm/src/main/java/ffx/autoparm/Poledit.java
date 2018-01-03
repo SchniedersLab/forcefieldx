@@ -60,7 +60,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
-
 import static ffx.autoparm.PME_2.atoms;
 import static ffx.autoparm.PME_2.axisAtom;
 import static ffx.autoparm.PME_2.coordinates;

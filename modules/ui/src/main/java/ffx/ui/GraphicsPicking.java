@@ -37,11 +37,6 @@
  */
 package ffx.ui;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.logging.Logger;
-
 import javax.media.j3d.Bounds;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Node;
@@ -51,9 +46,10 @@ import javax.media.j3d.Transform3D;
 import javax.swing.tree.TreePath;
 import javax.vecmath.Vector3d;
 
-import com.sun.j3d.utils.picking.PickCanvas;
-import com.sun.j3d.utils.picking.PickIntersection;
-import com.sun.j3d.utils.picking.PickResult;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Vector;
+import java.util.logging.Logger;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -64,6 +60,10 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.ui.behaviors.PickMouseBehavior;
+
+import com.sun.j3d.utils.picking.PickCanvas;
+import com.sun.j3d.utils.picking.PickIntersection;
+import com.sun.j3d.utils.picking.PickResult;
 
 /**
  * The GraphicsPicking class is used to make selections and measurements.

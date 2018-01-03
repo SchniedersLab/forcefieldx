@@ -37,18 +37,11 @@
  */
 
 // Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.MSNode;
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.MSNode
+import ffx.potential.bonded.Molecule
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc deuterate [options] <pdbfilename>');

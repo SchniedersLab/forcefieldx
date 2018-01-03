@@ -38,20 +38,14 @@
 
 // MOLECULAR & STOCHASTIC DYNAMICS
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.MonteCarloListener;
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.algorithms.mc.RosenbluthOBMC;
-import ffx.algorithms.mc.RosenbluthCBMC;
-import ffx.potential.bonded.Residue;
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.MonteCarloListener
+import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.mc.RosenbluthCBMC
+import ffx.potential.bonded.Residue
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;

@@ -37,6 +37,11 @@
  */
 package ffx.algorithms;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
+
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -45,10 +50,6 @@ import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.PotentialsFunctions;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Evaluate binding affinity from an MD trajectory using MM-GKSA/MM-GBSA/MM-PBSA

@@ -39,7 +39,6 @@ package ffx.potential.nonbonded;
 
 import java.util.List;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -50,7 +49,6 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.parameters.ForceField;
-
 import static ffx.numerics.VectorMath.rsq;
 
 /**

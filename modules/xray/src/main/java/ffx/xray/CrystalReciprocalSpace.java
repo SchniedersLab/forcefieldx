@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -74,11 +73,7 @@ import ffx.potential.nonbonded.SliceRegion;
 import ffx.potential.nonbonded.SpatialDensityLoop;
 import ffx.potential.nonbonded.SpatialDensityRegion;
 import ffx.xray.RefinementMinimize.RefinementMode;
-
 import static ffx.numerics.fft.Complex3D.iComplex3D;
-import static ffx.xray.CrystalReciprocalSpace.SolventModel.BINARY;
-import static ffx.xray.CrystalReciprocalSpace.SolventModel.GAUSSIAN;
-import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
 
 /**
  * Structure factor calculation (including bulk solvent structure factors)

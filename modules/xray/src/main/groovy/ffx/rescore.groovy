@@ -36,38 +36,20 @@
  * exception statement from your version.
  */
 
-package ffx.xray;
+package ffx.xray
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
+import java.nio.file.Path
+import java.nio.file.Paths
 
-// Groovy Imports
-import groovy.util.CliBuilder;
+import org.apache.commons.io.FilenameUtils
 
-// Java Imports
-import java.nio.file.Paths;
-import java.nio.file.Path;
-
-// FFX Imports
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmUtils;
-import ffx.algorithms.Minimize;
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.parsers.CoordinateFileFilter;
-import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceFile;
-import ffx.utilities.DoubleIndexPair;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.Rescore
-import ffx.xray.Rescore.RescoreStrategy;
-import ffx.xray.parsers.DiffractionFile;
+import ffx.algorithms.AlgorithmFunctions
+import ffx.algorithms.AlgorithmUtils
+import ffx.potential.parsers.CoordinateFileFilter
+import ffx.realspace.RealSpaceFile
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.Rescore.RescoreStrategy
+import ffx.xray.parsers.DiffractionFile
 
 // RMS gradient per atom convergence criteria
 double eps = -1.0;

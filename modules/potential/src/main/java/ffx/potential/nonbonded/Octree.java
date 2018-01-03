@@ -37,6 +37,8 @@
  */
 package ffx.potential.nonbonded;
 
+import javax.vecmath.Point3d;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -44,10 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
-
-import javax.vecmath.Point3d;
 
 import ffx.potential.bonded.Atom;
 

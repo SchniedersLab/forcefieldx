@@ -24,14 +24,13 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.IntegerBuf;
-
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedInteger;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class SharedIntegerBuf provides a buffer for a shared integer item sent or

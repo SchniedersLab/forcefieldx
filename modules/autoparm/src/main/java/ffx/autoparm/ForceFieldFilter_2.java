@@ -51,7 +51,6 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
-
 import static org.apache.commons.math3.util.FastMath.abs;
 
 import ffx.potential.parameters.AngleType;

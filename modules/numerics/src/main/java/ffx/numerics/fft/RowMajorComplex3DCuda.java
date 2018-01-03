@@ -42,7 +42,6 @@ import java.net.URL;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.io.FileUtils;
@@ -53,15 +52,29 @@ import edu.rit.pj.ParallelTeam;
 import jcuda.LogLevel;
 import jcuda.Pointer;
 import jcuda.Sizeof;
-import jcuda.driver.*;
+import jcuda.driver.CUcontext;
+import jcuda.driver.CUdevice;
+import jcuda.driver.CUdeviceptr;
+import jcuda.driver.CUdevprop;
+import jcuda.driver.JCudaDriver;
 import jcuda.jcufft.JCufft;
 import jcuda.jcufft.cufftHandle;
 import jcuda.jcufft.cufftType;
 import jcuda.runtime.dim3;
 import jcuda.utils.KernelLauncher;
-
-import static jcuda.driver.JCudaDriver.*;
-import static jcuda.jcufft.JCufft.*;
+import static jcuda.driver.JCudaDriver.cuCtxCreate;
+import static jcuda.driver.JCudaDriver.cuDeviceGet;
+import static jcuda.driver.JCudaDriver.cuDeviceGetProperties;
+import static jcuda.driver.JCudaDriver.cuInit;
+import static jcuda.driver.JCudaDriver.cuMemAlloc;
+import static jcuda.driver.JCudaDriver.cuMemFree;
+import static jcuda.driver.JCudaDriver.cuMemcpyDtoH;
+import static jcuda.driver.JCudaDriver.cuMemcpyHtoD;
+import static jcuda.jcufft.JCufft.CUFFT_FORWARD;
+import static jcuda.jcufft.JCufft.CUFFT_INVERSE;
+import static jcuda.jcufft.JCufft.cufftDestroy;
+import static jcuda.jcufft.JCufft.cufftExecC2C;
+import static jcuda.jcufft.JCufft.cufftPlan3d;
 
 /**
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.

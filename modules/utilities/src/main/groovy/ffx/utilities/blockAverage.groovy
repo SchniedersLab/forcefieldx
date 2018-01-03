@@ -38,15 +38,6 @@
 
 package ffx.utilities
 
-import java.util.logging.Level;
-
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
 boolean testMode = false;
 Optional<Double> psPerHisto = Optional.empty();
 Optional<Integer> blockSizeStep = Optional.empty();

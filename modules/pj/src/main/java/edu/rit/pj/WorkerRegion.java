@@ -24,10 +24,10 @@
 //******************************************************************************
 package edu.rit.pj;
 
+import java.util.Iterator;
+
 import edu.rit.util.LongRange;
 import edu.rit.util.Range;
-
-import java.util.Iterator;
 
 /**
  * Class WorkerRegion is the abstract base class for a worker region that is

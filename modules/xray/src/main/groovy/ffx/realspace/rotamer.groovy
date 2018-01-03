@@ -37,46 +37,28 @@
  */
 
 // Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// ENERGY
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
-
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.ResidueEnumerations;
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.Residue.ResidueType;
-import ffx.utilities.LoggerSevereError;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.algorithms.RotamerOptimization;
-import ffx.algorithms.RotamerOptimization.Direction;
-
-// PJ Imports
 import edu.rit.pj.Comm
-// Java Imports
-import java.util.Scanner;
 
-import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceFile;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
+import ffx.algorithms.RotamerOptimization
+import ffx.algorithms.RotamerOptimization.Direction
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.MultiResidue
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Residue.ResidueType
+import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
+import ffx.realspace.RealSpaceData
+import ffx.realspace.RealSpaceFile
+import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.parsers.DiffractionFile
 
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
 int library = 2;
 int startResID = -1;
 int allStartResID = 1;

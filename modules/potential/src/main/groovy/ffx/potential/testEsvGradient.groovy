@@ -39,32 +39,18 @@
 
 // TEST LAMBDA GRADIENT
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import java.util.logging.Level
+import java.util.logging.Logger
+import static java.lang.String.format
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.numerics.Potential;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Polymer;
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.MultiResidue
+import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
-import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.ExtendedVariable;
-import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationUtils;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static java.lang.String.format;
-//import edu.rit.pj.ParallelTeam;
+import ffx.potential.extended.ExtendedSystem
+import ffx.potential.extended.TitrationESV
+import ffx.potential.extended.TitrationUtils
 
 // finite-difference parameters
 double lambda = 0.5;

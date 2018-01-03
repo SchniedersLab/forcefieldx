@@ -37,9 +37,6 @@
  */
 
 // MINIMIZE 2
-
-import groovy.util.CliBuilder
-
 def cli = new CliBuilder(usage:' ffxc minimize_2 [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);

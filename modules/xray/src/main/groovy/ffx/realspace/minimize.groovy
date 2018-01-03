@@ -38,17 +38,12 @@
 
 // REALSPACE MINIMIZE
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceFile;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.realspace.RealSpaceData
+import ffx.realspace.RealSpaceFile
+import ffx.xray.RefinementMinimize
+import ffx.xray.RefinementMinimize.RefinementMode
 
 // RMS gradient per atom convergence criteria
 double eps = 1.0;

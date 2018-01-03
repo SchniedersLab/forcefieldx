@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
@@ -53,7 +52,6 @@ import static org.apache.commons.math3.util.FastMath.random;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.norm;

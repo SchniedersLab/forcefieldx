@@ -36,17 +36,12 @@
  * exception statement from your version.
  */
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.numerics.VectorMath;
-import ffx.potential.bonded.Atom;
-import ffx.xray.DiffractionData;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
+import ffx.potential.bonded.Atom
+import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.parsers.DiffractionFile
 
 // First atom to test.
 int atomID = 0;

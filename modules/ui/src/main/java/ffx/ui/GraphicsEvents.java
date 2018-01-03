@@ -37,11 +37,6 @@
  */
 package ffx.ui;
 
-import java.awt.AWTEvent;
-import java.awt.Event;
-import java.awt.event.MouseEvent;
-import java.util.Enumeration;
-
 import javax.media.j3d.Behavior;
 import javax.media.j3d.Bounds;
 import javax.media.j3d.BranchGroup;
@@ -55,10 +50,10 @@ import javax.media.j3d.WakeupOnBehaviorPost;
 import javax.media.j3d.WakeupOr;
 import javax.vecmath.Point3d;
 
-import com.sun.j3d.utils.picking.PickCanvas;
-import com.sun.j3d.utils.picking.PickIntersection;
-import com.sun.j3d.utils.picking.PickResult;
-import com.sun.j3d.utils.universe.SimpleUniverse;
+import java.awt.AWTEvent;
+import java.awt.Event;
+import java.awt.event.MouseEvent;
+import java.util.Enumeration;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -67,6 +62,11 @@ import ffx.ui.behaviors.GlobalBehavior;
 import ffx.ui.behaviors.MouseRotate;
 import ffx.ui.behaviors.MouseTranslate;
 import ffx.ui.behaviors.MouseZoom;
+
+import com.sun.j3d.utils.picking.PickCanvas;
+import com.sun.j3d.utils.picking.PickIntersection;
+import com.sun.j3d.utils.picking.PickResult;
+import com.sun.j3d.utils.universe.SimpleUniverse;
 
 /**
  * The GraphicsEvents class listens for mouse events over the Java3D

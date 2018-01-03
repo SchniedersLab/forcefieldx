@@ -25,7 +25,6 @@
 package edu.rit.util;
 
 import java.io.Serializable;
-
 import java.lang.reflect.Constructor;
 
 /**

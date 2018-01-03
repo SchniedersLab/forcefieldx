@@ -36,30 +36,17 @@
  * exception statement from your version.
  */
 
-package ffx.algorithms;
+package ffx.algorithms
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Java Imports
-import java.nio.file.Paths;
-import java.nio.file.Path;
-
-// Force Field X Algorithms imports
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.parsers.CoordinateFileFilter;
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmUtils;
-import ffx.algorithms.ClusterStructures;
-import static ffx.algorithms.ClusterStructures.ClustAlg.*;
-import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.*;
-
-import ffx.potential.parsers.PDBFileFilter;
+import ffx.potential.parsers.CoordinateFileFilter
+import ffx.potential.parsers.PDBFileFilter
+import static ffx.algorithms.ClusterStructures.ClustAlg.AV_LINK
+import static ffx.algorithms.ClusterStructures.ClustAlg.CLINK
+import static ffx.algorithms.ClusterStructures.ClustAlg.SLINK;
+import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.BACKBONE_DIHEDRALS
+import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.CA_RMSD
+import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.DIHEDRALS
+import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.RMSD
 
 boolean copyFiles = true;
 boolean parallel = true;

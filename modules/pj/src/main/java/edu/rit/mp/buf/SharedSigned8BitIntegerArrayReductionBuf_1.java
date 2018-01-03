@@ -24,16 +24,13 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Buf;
-import edu.rit.mp.Signed8BitIntegerBuf;
+import java.nio.ByteBuffer;
 
+import edu.rit.mp.Buf;
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedIntegerArray;
-
 import edu.rit.util.Range;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class SharedSigned8BitIntegerArrayReductionBuf_1 provides a reduction buffer

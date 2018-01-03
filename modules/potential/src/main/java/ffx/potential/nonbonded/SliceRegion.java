@@ -39,7 +39,6 @@ package ffx.potential.nonbonded;
 
 import java.nio.DoubleBuffer;
 import java.util.logging.Level;
-
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.IntegerForLoop;
@@ -48,7 +47,6 @@ import edu.rit.pj.ParallelRegion;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
-
 import static ffx.potential.nonbonded.SpatialDensityRegion.logger;
 
 /**

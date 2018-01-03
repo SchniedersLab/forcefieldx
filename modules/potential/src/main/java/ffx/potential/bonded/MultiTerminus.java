@@ -37,54 +37,25 @@
  */
 package ffx.potential.bonded;
 
+import javax.swing.tree.MutableTreeNode;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
-
-import javax.media.j3d.BranchGroup;
-import javax.media.j3d.Material;
-import javax.vecmath.Color3f;
-
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-
-import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
-
-import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
-import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-
-import static ffx.potential.bonded.BondedUtils.buildBond;
-import static ffx.potential.bonded.BondedUtils.buildHydrogenAtom;
-import static ffx.potential.bonded.BondedUtils.intxyz;
-
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
-import ffx.potential.parameters.ForceField;
-
-import static ffx.potential.bonded.Residue.origAtEnd;
-
-import ffx.potential.parameters.AngleType;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.BondType;
-import ffx.potential.parameters.TorsionType;
-import ffx.potential.utils.PotentialsUtils;
-
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
-import static ffx.utilities.HashCodeUtil.hash;
-
-import java.util.logging.Level;
-
-import static ffx.utilities.HashCodeUtil.hash;
-import static ffx.utilities.HashCodeUtil.hash;
-
 import java.util.concurrent.ThreadLocalRandom;
-
-import javax.swing.tree.MutableTreeNode;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
 import ffx.potential.extended.TitrationUtils.TitrationType;
+import ffx.potential.parameters.AngleType;
+import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.TorsionType;
+import static ffx.potential.bonded.BondedUtils.buildBond;
+import static ffx.potential.bonded.BondedUtils.intxyz;
 
 /**
  * The MultiResidue class allows switching between residues for uses such as

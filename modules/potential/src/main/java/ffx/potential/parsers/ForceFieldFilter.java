@@ -54,7 +54,6 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-
 import static org.apache.commons.math3.util.FastMath.abs;
 
 import ffx.potential.parameters.AngleType;
@@ -68,21 +67,20 @@ import ffx.potential.parameters.ForceField.ForceFieldInteger;
 import ffx.potential.parameters.ForceField.ForceFieldName;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.ForceField.ForceFieldType;
+import ffx.potential.parameters.ISolvRadType;
 import ffx.potential.parameters.ImproperTorsionType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
 import ffx.potential.parameters.PiTorsionType;
 import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.RelativeSolvationType;
 import ffx.potential.parameters.StretchBendType;
 import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
-import ffx.potential.parameters.RelativeSolvationType;
 import ffx.utilities.Keyword;
-
 import static ffx.potential.parameters.ForceField.toEnumForm;
-import ffx.potential.parameters.ISolvRadType;
 
 /**
  * The ForceFieldFilter Class is used to parse and store molecular mechanics

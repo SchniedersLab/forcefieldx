@@ -37,12 +37,9 @@
  */
 package ffx.potential.nonbonded;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
@@ -76,7 +73,6 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.extended.ExtUtils;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
 import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.nonbonded.ScfPredictor.PredictorMode;
 import ffx.potential.parameters.ForceField;
@@ -86,7 +82,6 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
-
 import static ffx.numerics.Erf.erfc;
 import static ffx.numerics.MultipoleTensor.checkDampingCriterion;
 import static ffx.numerics.VectorMath.cross;

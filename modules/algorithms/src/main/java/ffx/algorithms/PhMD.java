@@ -44,11 +44,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.io.FilenameUtils;
-
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.random;
@@ -83,7 +81,6 @@ import ffx.potential.extended.TitrationUtils.TitrationConfig;
 import ffx.potential.extended.TitrationUtils.TitrationType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
-
 import static ffx.potential.extended.TitrationUtils.findResiduePolymer;
 import static ffx.potential.extended.TitrationUtils.inactivateResidue;
 import static ffx.potential.extended.TitrationUtils.performTitration;

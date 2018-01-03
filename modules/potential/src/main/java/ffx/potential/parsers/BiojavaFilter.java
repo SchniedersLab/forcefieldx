@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -80,7 +79,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter.HetAtoms;
 import ffx.utilities.Hybrid36;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
 import static ffx.potential.bonded.AminoAcidUtils.AA_C;

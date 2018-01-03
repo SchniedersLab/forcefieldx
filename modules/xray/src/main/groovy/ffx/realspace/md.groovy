@@ -38,20 +38,14 @@
 
 // REALSPACE MOLECULAR DYNAMICS
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceFile;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.Thermostat.Thermostats
+import ffx.realspace.RealSpaceData
+import ffx.realspace.RealSpaceFile
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize.RefinementMode
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;

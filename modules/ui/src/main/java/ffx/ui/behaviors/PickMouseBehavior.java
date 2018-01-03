@@ -37,11 +37,6 @@
  */
 package ffx.ui.behaviors;
 
-import java.awt.AWTEvent;
-import java.awt.Event;
-import java.awt.event.MouseEvent;
-import java.util.Enumeration;
-
 import javax.media.j3d.Behavior;
 import javax.media.j3d.Bounds;
 import javax.media.j3d.BranchGroup;
@@ -50,6 +45,11 @@ import javax.media.j3d.TransformGroup;
 import javax.media.j3d.WakeupCriterion;
 import javax.media.j3d.WakeupOnAWTEvent;
 import javax.media.j3d.WakeupOr;
+
+import java.awt.AWTEvent;
+import java.awt.Event;
+import java.awt.event.MouseEvent;
+import java.util.Enumeration;
 
 import com.sun.j3d.utils.picking.PickCanvas;
 

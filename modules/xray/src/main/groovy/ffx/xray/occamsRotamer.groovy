@@ -36,27 +36,18 @@
  * exception statement from your version.
  */
 
-// Java Imports
-// Groovy Imports
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// PJ Imports
-// FFX Imports
 import ffx.algorithms.RotamerOptimization
-import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Rotamer
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
+import ffx.potential.bonded.RotamerLibrary
+import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
-
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.parsers.DiffractionFile
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc realSpace.rotamer [options] <filename> [data]');

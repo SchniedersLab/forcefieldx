@@ -24,13 +24,12 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.ShortBuf;
-
-import edu.rit.pj.reduction.ShortOp;
 import edu.rit.pj.reduction.Op;
-
-import java.nio.ByteBuffer;
+import edu.rit.pj.reduction.ShortOp;
 
 /**
  * Class ShortItemBuf provides a buffer for a single short item sent or received

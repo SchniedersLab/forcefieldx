@@ -38,19 +38,13 @@
 
 // REALSPACE SIMULATED ANNEALING
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.algorithms.SimulatedAnnealing;
-import ffx.realspace.RealSpaceFile;
-import ffx.realspace.RealSpaceData;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.algorithms.SimulatedAnnealing
+import ffx.realspace.RealSpaceData
+import ffx.realspace.RealSpaceFile
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize.RefinementMode
 
 // suffix to append to output data
 String suffix = "_anneal";

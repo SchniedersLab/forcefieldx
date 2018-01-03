@@ -24,30 +24,23 @@
 //******************************************************************************
 package edu.rit.pj.cluster;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
+
 import edu.rit.mp.ChannelGroup;
 import edu.rit.mp.ChannelGroupClosedException;
-import edu.rit.mp.Status;
-
 import edu.rit.mp.ObjectBuf;
-
+import edu.rit.mp.Status;
 import edu.rit.mp.buf.ObjectItemBuf;
-
 import edu.rit.util.ByteSequence;
 import edu.rit.util.Timer;
 import edu.rit.util.TimerTask;
 import edu.rit.util.TimerThread;
-
-import java.lang.reflect.Method;
-
-import java.io.IOException;
-import java.io.PrintStream;
-
-import java.net.InetSocketAddress;
-
-import java.util.Map;
-import java.util.Properties;
-
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Class JobBackend is the main program for a job backend process in the PJ

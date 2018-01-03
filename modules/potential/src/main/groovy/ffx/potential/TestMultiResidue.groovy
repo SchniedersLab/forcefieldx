@@ -1,22 +1,16 @@
 
 package ffx.potential
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
 
-// FFX Imports
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResidueType;
+import ffx.potential.bonded.MultiResidue
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Residue.ResidueType
 import ffx.potential.parameters.ForceField
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils;
-
+import ffx.potential.utils.PotentialsFunctions
+import ffx.potential.utils.PotentialsUtils
 
 /**
  * The TestMultiResidue script evaluates the energy of a MultiResidue system.

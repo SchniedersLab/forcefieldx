@@ -37,13 +37,13 @@
  */
 package ffx.potential.bonded;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Material;
 import javax.vecmath.Color3f;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
@@ -51,7 +51,6 @@ import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
-
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.utilities.HashCodeUtil.SEED;

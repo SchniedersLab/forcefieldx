@@ -38,45 +38,9 @@
  */
 
 // STITCH
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-import groovy.lang.MissingPropertyException;
-
-// FFX Imports
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
+import ffx.autoparm.Stitch
 import ffx.potential.parameters.ForceField
-import ffx.potential.parsers.PatchCombiner
-import ffx.potential.MolecularAssembly;
-import ffx.autoparm.Stitch;
-
-//Java Imports
-import java.io.FileReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.lang.Object;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.util.Arrays;
-import java.io.CharArrayReader;
-import static java.lang.System.out;
-import ffx.potential.ForceFieldEnergy
-import java.lang.ArrayIndexOutOfBoundsException;
-import java.lang.IndexOutOfBoundsException;
-import java.lang.String;
-import java.util.regex.Pattern;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.parameters.ForceField;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * PolType parameter stitching code

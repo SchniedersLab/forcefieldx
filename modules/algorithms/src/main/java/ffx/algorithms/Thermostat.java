@@ -40,7 +40,6 @@ package ffx.algorithms;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;

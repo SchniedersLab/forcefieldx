@@ -1,16 +1,9 @@
 
 package ffx.potential
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils
-
-// FFX Imports
-import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Loop
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.utils.PotentialsFunctions

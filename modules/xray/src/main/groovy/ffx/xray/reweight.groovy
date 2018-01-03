@@ -38,36 +38,7 @@
 
 package ffx.xray
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Java Imports
-import java.nio.file.Paths;
-import java.nio.file.Path;
-
-// FFX Imports
-import ffx.algorithms.Minimize;
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parsers.CoordinateFileFilter;
-import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceFile;
-import ffx.utilities.DoubleIndexPair;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.Rescore;
-
+import ffx.xray.parsers.DiffractionFile
 
 double boltzRestraint = 0.0;
 String targetFunct = "xray_energy";

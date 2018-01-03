@@ -36,29 +36,14 @@
  * exception statement from your version.
  */
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// ENERGY
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
+import ffx.algorithms.GenerateRotamers
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3
+import ffx.potential.bonded.RotamerLibrary
 
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.ResidueEnumerations;
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.algorithms.GenerateRotamers;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
 Residue residue = null;
 int nChi;
 File outFile;

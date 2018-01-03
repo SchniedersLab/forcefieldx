@@ -38,31 +38,26 @@
 
 // LOOP BUILDER
 
-// Java Imports
-// Apache Commons Imports
 import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-// Paralle Java Imports
-import edu.rit.pj.Comm;
-import edu.rit.mp.DoubleBuf;
-import edu.rit.mp.IntegerBuf;
+import edu.rit.mp.DoubleBuf
+import edu.rit.mp.IntegerBuf
+import edu.rit.pj.Comm
 
-// FFX Imports
 import ffx.algorithms.Integrator.Integrators
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.OSRW;
-import ffx.algorithms.TransitionTemperedOSRW;
+import ffx.algorithms.MCLoop
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.OSRW
 import ffx.algorithms.RotamerOptimization
-import ffx.algorithms.SimulatedAnnealing;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.algorithms.MCLoop;
+import ffx.algorithms.SimulatedAnnealing
+import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.TransitionTemperedOSRW
+import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
-import ffx.potential.ForceFieldEnergy;
-import ffx.numerics.Potential;
 
 // Default convergence criteria.
 double eps = 0.1;

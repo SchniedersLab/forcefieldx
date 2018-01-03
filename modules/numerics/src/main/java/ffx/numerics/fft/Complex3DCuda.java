@@ -45,10 +45,12 @@ import java.nio.DoubleBuffer;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.io.FileUtils;
+
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelTeam;
 
 import jcuda.LogLevel;
 import jcuda.Pointer;
@@ -64,7 +66,6 @@ import jcuda.driver.JCudaDriver;
 import jcuda.jcufft.JCufft;
 import jcuda.jcufft.cufftHandle;
 import jcuda.jcufft.cufftType;
-
 import static jcuda.driver.JCudaDriver.CU_MEMHOSTALLOC_DEVICEMAP;
 import static jcuda.driver.JCudaDriver.align;
 import static jcuda.driver.JCudaDriver.cuCtxCreate;
@@ -90,9 +91,6 @@ import static jcuda.jcufft.JCufft.CUFFT_INVERSE;
 import static jcuda.jcufft.JCufft.cufftDestroy;
 import static jcuda.jcufft.JCufft.cufftExecZ2Z;
 import static jcuda.jcufft.JCufft.cufftPlan3d;
-
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelTeam;
 
 /**
  * Compute a 3D Convolution using Java wrappers to the CUDA Driver API.

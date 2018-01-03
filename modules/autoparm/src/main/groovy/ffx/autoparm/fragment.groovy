@@ -37,13 +37,6 @@
  * exception statement from your version.
  */
 
-
-// Groovy Imports
-import groovy.util.CliBuilder
-import groovy.lang.MissingPropertyException
-
-// FFX Imports
-import ffx.autoparm.Fragmenter
 import ffx.autoparm.Unstitch
 import ffx.autoparm.Wizard
 
@@ -53,10 +46,6 @@ import ffx.autoparm.Wizard
  *
  * @author Rae Ann Corrigan
  */
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
-
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc fragment [options] <sdf-filename> <cif-filename>');

@@ -36,16 +36,13 @@
  * exception statement from your version.
  */
 
-// ANALYZE
+// ANALYZE: gives system potential and prints out system multipoles
 
-import groovy.util.CliBuilder
-
-//Gives system potential and prints out system multipoles
-//filename = xyzfile
-//use the -k flag to specify a keyfile
-//use the -o flag to specify options
-//options are: p -> prints out system multipole information; d-> prints out detailed information about the interactions (right now it only prints out information about tor-angles but that can be
-//changed easily
+//  filename = xyzfile
+//  use the -k flag to specify a keyfile
+//  use the -o flag to specify options
+//  options are: p -> prints out system multipole information; d-> prints out detailed information about the interactions (right now it only prints out information about tor-angles but that can be
+//  changed easily
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc analyze [options] <filename>');

@@ -39,7 +39,6 @@ package ffx.potential.bonded;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -53,7 +52,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.norm;
 import static ffx.numerics.VectorMath.r;

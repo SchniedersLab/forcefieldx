@@ -1,23 +1,16 @@
 package ffx.potential
 
-// SAVE AS XYZ
+import org.apache.commons.io.FilenameUtils
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
 import groovy.cli.Option
-import groovy.util.CliBuilder;
 import groovy.cli.Unparsed
 
-// FFX Imports
 import ffx.crystal.Crystal
 import ffx.crystal.SymOp
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.ForceField;
+import ffx.potential.bonded.Atom
+import ffx.potential.parameters.ForceField
 import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils;
+import ffx.potential.utils.PotentialsUtils
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file

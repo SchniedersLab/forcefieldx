@@ -38,19 +38,11 @@
 
 // Convert from PRM to Property
 
-// Apache Imports
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.CompositeConfiguration
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.utilities.Keyword;
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.ForceFieldFilter
+import ffx.utilities.Keyword
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc prmToProperty <prm> [prm] ...');

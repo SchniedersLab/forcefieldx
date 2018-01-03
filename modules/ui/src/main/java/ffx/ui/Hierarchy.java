@@ -37,11 +37,6 @@
  */
 package ffx.ui;
 
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.logging.Logger;
-
 import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
@@ -52,6 +47,11 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.RowMapper;
 import javax.swing.tree.TreePath;
+
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.logging.Logger;
 
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;

@@ -38,14 +38,7 @@
 
 // SAVE AS PDB
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+import org.apache.commons.io.FilenameUtils
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc saveAsPDB [options] <filename>');

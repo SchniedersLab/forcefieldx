@@ -40,7 +40,6 @@ package ffx.potential.nonbonded;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -48,7 +47,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
-
 import static ffx.potential.parameters.ForceField.ForceFieldString.EPSILONRULE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSRULE;
 import static ffx.potential.parameters.ForceField.ForceFieldString.RADIUSSIZE;

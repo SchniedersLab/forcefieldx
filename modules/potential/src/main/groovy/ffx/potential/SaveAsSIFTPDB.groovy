@@ -1,19 +1,12 @@
 package ffx.potential
 
+import org.apache.commons.io.FilenameUtils
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
 import groovy.cli.Option
-import groovy.util.CliBuilder;
 import groovy.cli.Unparsed
 
-//FFX Imports
-import ffx.potential.MolecularAssembly
 import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils;
-
+import ffx.potential.utils.PotentialsUtils
 
 /**
  * The SaveAsSIFTPDB script saves a file as a PDB file or as a SIFTPDB file

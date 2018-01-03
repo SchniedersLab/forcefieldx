@@ -1,17 +1,14 @@
 
-package ffx.algorithms;
+package ffx.algorithms
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.cli.Option;
-import groovy.cli.Unparsed;
+import groovy.cli.Option
+import groovy.cli.Unparsed
 
-// Force Field X Imports
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
+import ffx.potential.DualTopologyEnergy
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.bonded.Atom
 
 /**
  * The TestOSRWBias script tests the Transition-Tempered Orthogonal Space Random Walk Potential.

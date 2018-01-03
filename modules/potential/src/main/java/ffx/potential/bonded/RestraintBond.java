@@ -37,10 +37,6 @@
  */
 package ffx.potential.bonded;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
-
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Geometry;
 import javax.media.j3d.LineArray;
@@ -50,13 +46,16 @@ import javax.media.j3d.TransformGroup;
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Vector3d;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
-
 import static ffx.numerics.VectorMath.angle;
 import static ffx.numerics.VectorMath.cross;
 import static ffx.numerics.VectorMath.diff;

@@ -86,13 +86,8 @@ import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
-
 import static ffx.algorithms.ClusterStructures.generatePath;
-import static ffx.xray.Rescore.RescoreStrategy.ENERGY_EVAL;
-import static ffx.xray.Rescore.RescoreStrategy.MINIMIZE;
 import static ffx.xray.Rescore.RescoreStrategy.NO_RESCORE;
-import static ffx.xray.Rescore.RescoreStrategy.RS_MIN;
-import static ffx.xray.Rescore.RescoreStrategy.XRAY_MIN;
 
 /**
  * This class performs rescoring on a provided list of structure files.

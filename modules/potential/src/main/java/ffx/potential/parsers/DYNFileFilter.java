@@ -37,9 +37,9 @@
  */
 package ffx.potential.parsers;
 
-import java.io.File;
-
 import javax.swing.filechooser.FileFilter;
+
+import java.io.File;
 
 import org.apache.commons.io.FilenameUtils;
 

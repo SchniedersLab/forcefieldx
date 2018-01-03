@@ -1,24 +1,14 @@
 
 package ffx.potential
 
+import groovy.cli.Option
+import groovy.cli.Unparsed
+
+import ffx.numerics.Potential
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
-
-
-// Groovy Imports
-import groovy.cli.Option;
-import groovy.cli.Unparsed;
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.numerics.Potential;
-
-import ffx.potential.MolecularAssembly;
-import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils;
-import ffx.potential.OpenMMForceFieldEnergy
-
-import java.util.function.ToDoubleFunction;
+import ffx.potential.utils.PotentialsFunctions
+import ffx.potential.utils.PotentialsUtils
 
 /**
  * The CoordShakeEnergy script evaluates the energy of a system before and after moving coordinates by a fixed offset.

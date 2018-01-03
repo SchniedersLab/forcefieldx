@@ -37,10 +37,6 @@
  */
 package ffx.ui;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.util.Enumeration;
-
 import javax.media.j3d.Appearance;
 import javax.media.j3d.Bounds;
 import javax.media.j3d.BranchGroup;
@@ -59,13 +55,17 @@ import javax.vecmath.Color3f;
 import javax.vecmath.Matrix3d;
 import javax.vecmath.Vector3d;
 
+import java.awt.Color;
+import java.awt.Font;
+import java.util.Enumeration;
+
+import ffx.ui.behaviors.MouseBehaviorCallback;
+
 import com.sun.j3d.utils.geometry.Cone;
 import com.sun.j3d.utils.geometry.Cylinder;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.picking.PickTool;
 import com.sun.j3d.utils.universe.ViewingPlatform;
-
-import ffx.ui.behaviors.MouseBehaviorCallback;
 
 /**
  * The GraphicsAxis class encapsulates the 3D Axis that is used to display and

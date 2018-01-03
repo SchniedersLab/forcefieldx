@@ -43,14 +43,6 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
 
-import static ffx.crystal.SpaceGroup.CrystalSystem.CUBIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.HEXAGONAL;
-import static ffx.crystal.SpaceGroup.CrystalSystem.MONOCLINIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.ORTHORHOMBIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TETRAGONAL;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TRICLINIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
-
 /**
  * This class computes the energy and Cartesian coordinate gradient, plus finite
  * difference derivatives of lattice parameters.

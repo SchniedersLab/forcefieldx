@@ -55,10 +55,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import static java.lang.String.format;
 
-import ffx.potential.bonded.*;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
@@ -67,8 +65,17 @@ import ffx.crystal.SymOp;
 import ffx.numerics.VectorMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
+import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.BondedUtils;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
+import ffx.potential.bonded.MSGroup;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AtomType;
@@ -76,7 +83,6 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
 import static ffx.potential.bonded.AminoAcidUtils.renameArginineHydrogens;
@@ -96,8 +102,6 @@ import static ffx.potential.bonded.ResidueEnumerations.getAminoAcid;
 import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_2;
 import static ffx.potential.parsers.PDBFilter.PDBFileStandard.VERSION3_3;
-import static ffx.potential.parsers.SystemFilter.dieOnMissingAtom;
-import static ffx.potential.parsers.SystemFilter.version;
 import static ffx.utilities.StringUtils.padLeft;
 import static ffx.utilities.StringUtils.padRight;
 

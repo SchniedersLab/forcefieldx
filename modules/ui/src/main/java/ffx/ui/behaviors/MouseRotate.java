@@ -37,10 +37,6 @@
  */
 package ffx.ui.behaviors;
 
-import java.awt.AWTEvent;
-import java.awt.event.MouseEvent;
-import java.util.Enumeration;
-
 import javax.media.j3d.Behavior;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
@@ -48,6 +44,10 @@ import javax.media.j3d.WakeupCriterion;
 import javax.media.j3d.WakeupOnAWTEvent;
 import javax.vecmath.Matrix4d;
 import javax.vecmath.Vector3d;
+
+import java.awt.AWTEvent;
+import java.awt.event.MouseEvent;
+import java.util.Enumeration;
 
 // import ffe.panels.*;
 /**

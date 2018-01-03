@@ -37,6 +37,8 @@
  */
 package ffx.potential.parsers;
 
+import javax.vecmath.Vector3d;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,10 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
-
-import javax.vecmath.Vector3d;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 

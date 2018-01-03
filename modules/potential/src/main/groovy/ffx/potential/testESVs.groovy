@@ -35,37 +35,29 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+
+import java.util.logging.Logger
+import static java.lang.String.format
+
+import org.apache.commons.lang.StringUtils
+
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
+import ffx.potential.PotentialComponent
+import ffx.potential.extended.ExtendedSystem
+import ffx.potential.utils.PotentialsUtils
 
 // Groovy Imports
-import groovy.util.CliBuilder;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static java.lang.String.format;
-import static java.util.logging.Level.FINE;
-
-// FFX Imports
-import ffx.numerics.Potential;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue
-import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.extended.ExtendedVariable;
-import ffx.potential.extended.TitrationESV;
-import ffx.potential.extended.TitrationUtils;
-import ffx.potential.utils.PotentialsUtils;
-import ffx.potential.PotentialComponent;
-
-import static ffx.potential.PotentialComponent.*;
+import static ffx.potential.PotentialComponent.Bias
+import static ffx.potential.PotentialComponent.Bonded
+import static ffx.potential.PotentialComponent.InducedRealSpace
+import static ffx.potential.PotentialComponent.InducedReciprocal
+import static ffx.potential.PotentialComponent.InducedSelf
+import static ffx.potential.PotentialComponent.PermanentRealSpace
+import static ffx.potential.PotentialComponent.PermanentReciprocal
+import static ffx.potential.PotentialComponent.PermanentSelf
+import static ffx.potential.PotentialComponent.Topology
+import static ffx.potential.PotentialComponent.VanDerWaals
 
 // finite-difference parameters
 double lambda = 0.5;

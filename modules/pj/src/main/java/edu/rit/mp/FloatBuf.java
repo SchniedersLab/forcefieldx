@@ -24,27 +24,21 @@
 //******************************************************************************
 package edu.rit.mp;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.buf.EmptyFloatBuf;
 import edu.rit.mp.buf.FloatArrayBuf;
 import edu.rit.mp.buf.FloatArrayBuf_1;
 import edu.rit.mp.buf.FloatItemBuf;
 import edu.rit.mp.buf.FloatMatrixBuf;
 import edu.rit.mp.buf.FloatMatrixBuf_1;
-import edu.rit.mp.buf.SharedFloatBuf;
 import edu.rit.mp.buf.SharedFloatArrayBuf;
 import edu.rit.mp.buf.SharedFloatArrayBuf_1;
-
-import edu.rit.pj.reduction.FloatOp;
-import edu.rit.pj.reduction.Op;
+import edu.rit.mp.buf.SharedFloatBuf;
 import edu.rit.pj.reduction.SharedFloat;
 import edu.rit.pj.reduction.SharedFloatArray;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class FloatBuf is the abstract base class for a buffer of float items sent or

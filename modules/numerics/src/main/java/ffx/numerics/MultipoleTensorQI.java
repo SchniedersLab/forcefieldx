@@ -41,9 +41,6 @@ import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.numerics.MultipoleTensor.COORDINATES;
-import ffx.numerics.MultipoleTensor.OPERATOR;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.norm;

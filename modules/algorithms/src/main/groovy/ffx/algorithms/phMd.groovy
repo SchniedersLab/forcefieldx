@@ -38,22 +38,16 @@
 
 // MOLECULAR & STOCHASTIC DYNAMICS
 
-// Apache Imports
+import org.apache.commons.io.FilenameUtils
+
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.PhMD
+import ffx.algorithms.Thermostat.Thermostats
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3
 import ffx.potential.extended.TitrationUtils
-import ffx.potential.utils.PotentialsUtils
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.PhMD;
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;

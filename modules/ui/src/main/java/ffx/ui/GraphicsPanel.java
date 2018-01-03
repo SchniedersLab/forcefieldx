@@ -37,11 +37,11 @@
  */
 package ffx.ui;
 
+import javax.swing.JPanel;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridLayout;
-
-import javax.swing.JPanel;
 
 /**
  * The GraphicsPanel class contains the 3D Canvas and its status box.

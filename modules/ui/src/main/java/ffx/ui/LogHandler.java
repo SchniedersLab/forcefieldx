@@ -45,7 +45,6 @@ import java.util.logging.LogRecord;
 
 import ffx.ui.MainPanel.ExitStatus;
 import ffx.utilities.LoggerSevereError;
-
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**

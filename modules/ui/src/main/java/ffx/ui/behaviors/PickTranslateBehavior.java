@@ -37,13 +37,13 @@
  */
 package ffx.ui.behaviors;
 
-import java.awt.event.MouseEvent;
-
 import javax.media.j3d.Bounds;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
+
+import java.awt.event.MouseEvent;
 
 import com.sun.j3d.utils.picking.PickResult;
 

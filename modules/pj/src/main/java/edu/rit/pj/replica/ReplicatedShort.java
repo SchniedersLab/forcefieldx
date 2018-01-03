@@ -24,17 +24,13 @@
 //******************************************************************************
 package edu.rit.pj.replica;
 
-import edu.rit.mp.ShortBuf;
-
-import edu.rit.mp.buf.ShortItemBuf;
-
-import edu.rit.pj.Comm;
-
-import edu.rit.pj.reduction.ShortOp;
-
 import java.io.IOException;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
+import edu.rit.mp.ShortBuf;
+import edu.rit.mp.buf.ShortItemBuf;
+import edu.rit.pj.Comm;
+import edu.rit.pj.reduction.ShortOp;
 
 /**
  * Class ReplicatedShort provides a replicated, shared reduction variable for a

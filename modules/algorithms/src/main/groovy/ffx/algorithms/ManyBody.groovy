@@ -1,25 +1,19 @@
 package ffx.algorithms
 
-// Java Imports
-// Apache Commons Imports
 import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
-// PJ Imports
 import edu.rit.pj.Comm
 
-// FFX Imports
+import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.MultiResidue
-import ffx.potential.bonded.RotamerLibrary
-import ffx.potential.bonded.Rotamer
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3
 import ffx.potential.bonded.Residue.ResidueType
-
+import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
 import static ffx.potential.extended.ExtUtils.prop
 
 /**
