@@ -457,7 +457,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         infoMask += OpenMM_State_Forces;
         infoMask += OpenMM_State_Energy;
 
-        boolean pbcEnforced = forceField.getBoolean(ForceField.ForceFieldBoolean.ENFORCE_PBC, false);
+        boolean aperiodic = super.getCrystal().aperiodic();
+        boolean pbcEnforced = forceField.getBoolean(ForceField.ForceFieldBoolean.ENFORCE_PBC, !aperiodic);
         enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
 
         openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
