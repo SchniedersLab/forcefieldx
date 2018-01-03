@@ -42,7 +42,6 @@ import java.util.logging.Logger;
 import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.UreyBradleyType;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.scalar;

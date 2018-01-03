@@ -37,20 +37,6 @@
  */
 package ffx.potential;
 
-import java.io.File;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
-import static java.lang.String.format;
-
 import javax.media.j3d.Appearance;
 import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.BranchGroup;
@@ -73,7 +59,18 @@ import javax.vecmath.Matrix3d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
-import com.sun.j3d.utils.picking.PickTool;
+import java.io.File;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
@@ -95,11 +92,12 @@ import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.parameters.ForceField;
-
 import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 import static ffx.potential.extended.ExtUtils.prop;
+
+import com.sun.j3d.utils.picking.PickTool;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,

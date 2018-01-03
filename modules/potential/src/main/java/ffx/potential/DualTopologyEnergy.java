@@ -38,9 +38,9 @@
 package ffx.potential;
 
 // PJ Imports
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import org.apache.commons.math3.util.FastMath;

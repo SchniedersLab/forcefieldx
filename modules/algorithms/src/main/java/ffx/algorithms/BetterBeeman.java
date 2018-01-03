@@ -38,7 +38,6 @@
 package ffx.algorithms;
 
 import ffx.numerics.Potential;
-
 import static ffx.algorithms.Thermostat.convert;
 
 /**

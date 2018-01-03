@@ -38,7 +38,6 @@
 package ffx.numerics;
 
 import java.util.Random;
-
 import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Float.intBitsToFloat;
 

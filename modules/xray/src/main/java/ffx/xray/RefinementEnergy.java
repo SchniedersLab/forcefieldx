@@ -37,9 +37,6 @@
  */
 package ffx.xray;
 
-import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceEnergy;
-
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -48,9 +45,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
+
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Thermostat;
@@ -58,6 +56,7 @@ import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Atom.Descriptions;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
@@ -66,20 +65,10 @@ import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.realspace.RealSpaceData;
+import ffx.realspace.RealSpaceEnergy;
 import ffx.xray.RefinementMinimize.RefinementMode;
-
 import static ffx.numerics.VectorMath.b2u;
-import static ffx.xray.RefinementMinimize.RefinementMode.BFACTORS;
-import static ffx.xray.RefinementMinimize.RefinementMode.BFACTORS_AND_OCCUPANCIES;
-import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES;
-import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_BFACTORS;
-import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_BFACTORS_AND_OCCUPANCIES;
-import static ffx.xray.RefinementMinimize.RefinementMode.COORDINATES_AND_OCCUPANCIES;
-import static ffx.xray.RefinementMinimize.RefinementMode.OCCUPANCIES;
-
-import org.apache.commons.io.FilenameUtils;
-
-import ffx.potential.bonded.Atom.Descriptions;
 
 /**
  * Combine the X-ray target and chemical potential energy using the

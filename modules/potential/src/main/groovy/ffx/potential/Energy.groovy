@@ -1,16 +1,11 @@
 
 package ffx.potential
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
 
-// FFX Imports
-import ffx.potential.MolecularAssembly
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
-import ffx.potential.OpenMMForceFieldEnergy
 
 /**
  * The Energy script evaluates the energy of a system.

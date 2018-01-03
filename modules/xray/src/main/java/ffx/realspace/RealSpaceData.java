@@ -41,11 +41,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-
 import static org.apache.commons.math3.util.FastMath.floor;
 
 import edu.rit.pj.IntegerForLoop;
@@ -65,7 +63,6 @@ import ffx.xray.DataContainer;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.RefinementModel;
-
 import static ffx.crystal.Crystal.mod;
 
 /**

@@ -38,7 +38,6 @@
 package ffx.numerics;
 
 import java.util.logging.Logger;
-
 import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -48,14 +47,14 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
+import static ffx.numerics.LBFGS.ANGLEMAX;
+import static ffx.numerics.LBFGS.CAPPA;
+import static ffx.numerics.LBFGS.INTMAX;
+import static ffx.numerics.LBFGS.SLOPEMAX;
+import static ffx.numerics.LBFGS.STEPMAX;
+import static ffx.numerics.LBFGS.STEPMIN;
 import static ffx.numerics.LBFGS.XdotY;
 import static ffx.numerics.LBFGS.aXplusY;
-import static ffx.numerics.LBFGS.CAPPA;
-import static ffx.numerics.LBFGS.STEPMIN;
-import static ffx.numerics.LBFGS.STEPMAX;
-import static ffx.numerics.LBFGS.SLOPEMAX;
-import static ffx.numerics.LBFGS.ANGLEMAX;
-import static ffx.numerics.LBFGS.INTMAX;
 
 /**
  * This class implements an algorithm for uni-dimensional line search. This file

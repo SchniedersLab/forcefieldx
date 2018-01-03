@@ -1,24 +1,15 @@
 
 package ffx.algorithms
 
-// Groovy Imports
-import groovy.cli.Option;
-import groovy.cli.Unparsed;
-import groovy.util.CliBuilder;
+import org.apache.commons.io.FilenameUtils
 
-// FFX Imports
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.AlgorithmUtils;
+import groovy.cli.Option
+import groovy.cli.Unparsed
 
-import ffx.potential.MolecularAssembly;
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.RotamerLibrary;
-
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-
+import ffx.potential.bonded.RotamerLibrary
 
 /**
  * The ApplyTorsions script is used to apply a custom set of torsions to a side 

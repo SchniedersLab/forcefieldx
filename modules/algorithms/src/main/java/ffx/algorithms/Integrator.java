@@ -37,9 +37,9 @@
  */
 package ffx.algorithms;
 
-import ffx.numerics.Potential;
-
 import java.util.logging.Logger;
+
+import ffx.numerics.Potential;
 
 /**
  * The Integrator class is responsible for propagation of degrees of freedom

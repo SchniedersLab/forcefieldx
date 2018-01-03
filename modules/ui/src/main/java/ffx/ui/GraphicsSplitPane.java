@@ -37,12 +37,12 @@
  */
 package ffx.ui;
 
+import javax.swing.JSplitPane;
+
 import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-
-import javax.swing.JSplitPane;
 
 /**
  * The GraphicsSplitPane is an early attempt at working around issues caused by

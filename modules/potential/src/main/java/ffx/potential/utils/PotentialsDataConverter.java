@@ -42,7 +42,6 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;

@@ -37,23 +37,6 @@
  */
 package ffx.ui;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.Menu;
-import java.awt.MenuBar;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.EventObject;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.prefs.Preferences;
-
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -67,9 +50,25 @@ import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
-import org.codehaus.groovy.runtime.MethodClosure;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.EventObject;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
-import groovy.ui.Console;
+import org.codehaus.groovy.runtime.MethodClosure;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
@@ -91,7 +90,8 @@ import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.utilities.LoggerSevereError;
-import java.util.ArrayList;
+
+import groovy.ui.Console;
 
 /**
  * The ModelingShell is used to script Multiscale Modeling Routines via the

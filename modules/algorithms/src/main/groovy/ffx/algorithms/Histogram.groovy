@@ -1,14 +1,11 @@
-package ffx.algorithms;
+package ffx.algorithms
 
-// Groovy Imports
-import groovy.cli.Option;
-import groovy.cli.Unparsed;
+import org.apache.commons.io.FilenameUtils
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import groovy.cli.Option
+import groovy.cli.Unparsed
 
-// Force Field X Imports
-import ffx.potential.ForceFieldEnergy;
+import ffx.potential.ForceFieldEnergy
 
 /**
  * The Histogram script prints out a (TT-)OSRW histogram from a *.his file.

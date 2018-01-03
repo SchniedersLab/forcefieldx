@@ -24,13 +24,12 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.Buf;
 import edu.rit.mp.IntegerBuf;
-
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class IntegerItemBuf provides a buffer for a single integer item sent or

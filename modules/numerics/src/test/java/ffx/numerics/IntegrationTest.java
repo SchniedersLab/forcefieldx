@@ -40,16 +40,17 @@ package ffx.numerics;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
-import static ffx.numerics.Integration.HalfBinComposite;
-import static ffx.numerics.Integration.generateTestData_v1;
-import static ffx.numerics.Integration.trapInputLeft;
-import static ffx.numerics.Integration.SimpsonsLeft;
+
 import static ffx.numerics.Integration.BooleLeft;
-import static ffx.numerics.Integration.rectangularMethodLeft;
-import static ffx.numerics.Integration.trapInputRight;
-import static ffx.numerics.Integration.SimpsonsRight;
 import static ffx.numerics.Integration.BooleRight;
+import static ffx.numerics.Integration.HalfBinComposite;
+import static ffx.numerics.Integration.SimpsonsLeft;
+import static ffx.numerics.Integration.SimpsonsRight;
+import static ffx.numerics.Integration.generateTestData_v1;
+import static ffx.numerics.Integration.rectangularMethodLeft;
 import static ffx.numerics.Integration.rectangularMethodRight;
+import static ffx.numerics.Integration.trapInputLeft;
+import static ffx.numerics.Integration.trapInputRight;
 
 /**The IntegrationTest is a JUnit test for the Integration program that ensures
  * that the integrals are calculated correctly. This test is run using known 

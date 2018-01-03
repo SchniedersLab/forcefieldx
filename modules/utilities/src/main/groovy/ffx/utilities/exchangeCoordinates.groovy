@@ -38,21 +38,13 @@
 
 package ffx.utilities
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.AminoAcidUtils;
-import ffx.potential.parsers.PDBFilter;
-
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.AminoAcidUtils
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.parsers.PDBFilter
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc exchangeCoordinates -i [start] -f [end] <toFilename> <fromFilename>');

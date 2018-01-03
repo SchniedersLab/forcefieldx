@@ -36,19 +36,13 @@
  * exception statement from your version.
  */
 
-// BIOTYPE
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.nonbonded.Octree;
 import javax.vecmath.Point3d
+
+import org.apache.commons.io.FilenameUtils
+
+import ffx.potential.bonded.Atom
+import ffx.potential.nonbonded.Octree
 
 int maxTreeDepth = 10;
 int maxAtomsPerVolume = 20;

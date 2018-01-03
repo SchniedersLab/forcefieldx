@@ -38,29 +38,24 @@
  */
 
 // Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import static java.lang.Math.exp
+import static java.lang.Math.random
 
-// ENERGY
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.RotamerLibrary
-import ffx.potential.bonded.Rotamer
+import org.apache.commons.io.FilenameUtils
 
-import static java.lang.Math.exp;
-import static java.lang.Math.random;
+import edu.rit.pj.Comm
 
-// Groovy Imports
-// FFX Imports
-import ffx.algorithms.RotamerOptimization;
-import ffx.algorithms.RotamerOptimization.Direction;
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.numerics.Potential;
-import edu.rit.pj.Comm;
+import ffx.algorithms.Integrator.Integrators
 import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.RotamerOptimization
+import ffx.algorithms.RotamerOptimization.Direction
+import ffx.algorithms.Thermostat.Thermostats
+import ffx.numerics.Potential
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
 
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
 int library = 1;
 int startResID = -1;
 int allStartResID = 1;

@@ -39,28 +39,14 @@
 
 // Solve the crystal structure prediction problem using a random search.
 
-// Apache Commons Imports
 import org.apache.commons.io.FilenameUtils
-import org.apache.commons.math3.complex.Quaternion
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.algorithms.CrystalMinimize;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Molecule
-import ffx.potential.MolecularAssembly;
-import ffx.algorithms.CrystalMinimize
 import ffx.algorithms.Minimize
 import ffx.crystal.Crystal
-import ffx.potential.XtalEnergy
-
-
-// Things below this line normally do not need to be changed.
-// ===========================================================================
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 
 // Default convergence criteria.
 double eps = 1.0;

@@ -39,7 +39,6 @@ package ffx.xray;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -51,7 +50,6 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.xray.RefinementMinimize.RefinementMode;
-
 import static ffx.numerics.VectorMath.b2u;
 import static ffx.numerics.VectorMath.determinant3;
 import static ffx.numerics.VectorMath.diff;

@@ -38,7 +38,6 @@
 package ffx.numerics;
 
 import org.apache.commons.math3.util.FastMath;
-
 import static org.apache.commons.math3.util.FastMath.atan2;
 import static org.apache.commons.math3.util.FastMath.cosh;
 import static org.apache.commons.math3.util.FastMath.hypot;

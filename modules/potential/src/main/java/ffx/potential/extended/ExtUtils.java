@@ -37,6 +37,8 @@
  */
 package ffx.potential.extended;
 
+import javax.swing.tree.TreeNode;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,24 +53,19 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
-
-import javax.swing.tree.TreeNode;
 
 import org.apache.commons.configuration.AbstractConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.IntRange;
-
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
-
 import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.ExtConstants.kB;
 

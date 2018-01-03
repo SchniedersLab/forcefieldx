@@ -24,17 +24,13 @@
 //******************************************************************************
 package edu.rit.pj.replica;
 
-import edu.rit.mp.CharacterBuf;
-
-import edu.rit.mp.buf.CharacterItemBuf;
-
-import edu.rit.pj.Comm;
-
-import edu.rit.pj.reduction.CharacterOp;
-
 import java.io.IOException;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
+import edu.rit.mp.CharacterBuf;
+import edu.rit.mp.buf.CharacterItemBuf;
+import edu.rit.pj.Comm;
+import edu.rit.pj.reduction.CharacterOp;
 
 /**
  * Class ReplicatedCharacter provides a replicated, shared reduction variable

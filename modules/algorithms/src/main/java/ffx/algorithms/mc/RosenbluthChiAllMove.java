@@ -65,7 +65,6 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parsers.PDBFilter;
-
 import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
 
 /**

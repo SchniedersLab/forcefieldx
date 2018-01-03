@@ -38,54 +38,35 @@
 
 // LOOP BUILDER
 
-// Java Imports
-import java.util.Scanner;
+import org.apache.commons.io.FilenameUtils
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
+import edu.rit.mp.DoubleBuf
+import edu.rit.mp.IntegerBuf
+import edu.rit.pj.Comm
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Paralle Java Imports
-import edu.rit.pj.Comm;
-import edu.rit.mp.DoubleBuf;
-import edu.rit.mp.IntegerBuf;
-
-// FFX Imports
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Minimize;
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.OSRW;
-import ffx.algorithms.TransitionTemperedOSRW;
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.MCLoop
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.OSRW
 import ffx.algorithms.RotamerOptimization
-import ffx.algorithms.RotamerOptimization.Direction;
-import ffx.algorithms.SimulatedAnnealing;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.algorithms.MCLoop;
-import ffx.numerics.Potential;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.ResidueEnumerations;
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.Residue.ResidueType;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-
-import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceFile;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
+import ffx.algorithms.SimulatedAnnealing
+import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.TransitionTemperedOSRW
+import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.bonded.Angle
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.RotamerLibrary
+import ffx.realspace.RealSpaceData
+import ffx.realspace.RealSpaceFile
+import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.parsers.DiffractionFile
 
 // Default convergence criteria.
 double eps = 0.1;

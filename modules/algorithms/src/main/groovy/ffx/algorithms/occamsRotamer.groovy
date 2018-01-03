@@ -37,20 +37,13 @@
  */
 
 // Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// ENERGY
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Rotamer
-
-// Groovy Imports
-// FFX Imports
 import ffx.algorithms.RotamerOptimization
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc rotamer [options] <filename>');

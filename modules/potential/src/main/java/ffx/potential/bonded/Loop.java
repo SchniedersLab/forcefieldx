@@ -38,11 +38,12 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Logger;
+
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 
 /**
  * @author Mallory R. Tollefson

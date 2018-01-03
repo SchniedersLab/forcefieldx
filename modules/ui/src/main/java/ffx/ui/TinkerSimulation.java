@@ -37,13 +37,13 @@
  */
 package ffx.ui;
 
+import javax.swing.Timer;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.List;
-
-import javax.swing.Timer;
 
 import ffx.potential.bonded.Atom;
 import ffx.ui.commands.FFXClient;

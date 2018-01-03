@@ -38,7 +38,6 @@
 package ffx.xray;
 
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -66,7 +65,6 @@ import ffx.crystal.ReflectionSpline;
 import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
-
 import static ffx.numerics.ModifiedBessel.i1OverI0;
 import static ffx.numerics.ModifiedBessel.lnI0;
 import static ffx.numerics.VectorMath.dot;

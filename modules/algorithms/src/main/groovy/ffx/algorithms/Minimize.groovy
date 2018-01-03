@@ -1,31 +1,26 @@
 
-package ffx.algorithms;
+package ffx.algorithms
 
-// Groovy Imports
-import groovy.cli.Option;
-import groovy.cli.Unparsed;
+import java.util.regex.Pattern
+import java.util.stream.Collectors
 
-// Java Imports
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import org.apache.commons.io.FilenameUtils
 
-// FFX Imports
-import ffx.numerics.Potential;
-import ffx.numerics.PowerSwitch;
-import ffx.numerics.SquaredTrigSwitch;
-import ffx.numerics.UnivariateSwitchingFunction;
+import groovy.cli.Option
+import groovy.cli.Unparsed
 
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.OctTopologyEnergy;
-import ffx.potential.QuadTopologyEnergy;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.nonbonded.MultiplicativeSwitch;
-
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import ffx.numerics.Potential
+import ffx.numerics.PowerSwitch
+import ffx.numerics.SquaredTrigSwitch
+import ffx.numerics.UnivariateSwitchingFunction
+import ffx.potential.DualTopologyEnergy
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
+import ffx.potential.OctTopologyEnergy
+import ffx.potential.QuadTopologyEnergy
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.LambdaInterface
+import ffx.potential.nonbonded.MultiplicativeSwitch
 
 /**
  * The Minimize script uses a limited-memory BFGS algorithm to minimize the 

@@ -40,7 +40,6 @@ package ffx.potential.nonbonded;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -49,7 +48,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-
 import static ffx.numerics.VectorMath.rsq;
 
 /**

@@ -1,16 +1,9 @@
 
 package ffx.potential
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
 
-// PJ Imports
-import edu.rit.pj.ParallelTeam
-
-// FFX Imports
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 

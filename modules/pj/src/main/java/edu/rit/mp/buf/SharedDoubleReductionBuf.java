@@ -24,14 +24,12 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Buf;
-import edu.rit.mp.DoubleBuf;
+import java.nio.ByteBuffer;
 
+import edu.rit.mp.Buf;
 import edu.rit.pj.reduction.DoubleOp;
 import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedDouble;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class SharedDoubleReductionBuf provides a reduction buffer for class

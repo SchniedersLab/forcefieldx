@@ -51,7 +51,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parsers.PDBFilter;
-
 import static ffx.algorithms.mc.BoltzmannMC.BOLTZMANN;
 
 /**

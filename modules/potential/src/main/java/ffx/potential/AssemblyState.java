@@ -37,13 +37,14 @@
  */
 package ffx.potential;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The AssemblyState class stores the chemical and coordinate state of a Molecular

@@ -1,17 +1,13 @@
 
 package ffx.potential
 
-// Apache Imports
 import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
 
-// FFX Imports
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Bond
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 

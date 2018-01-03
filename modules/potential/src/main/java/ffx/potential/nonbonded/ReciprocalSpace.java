@@ -40,7 +40,6 @@ package ffx.potential.nonbonded;
 import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -70,7 +69,6 @@ import ffx.potential.extended.ExtUtils;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldInteger;
-
 import static ffx.crystal.Crystal.mod;
 import static ffx.numerics.UniformBSpline.bSpline;
 import static ffx.numerics.UniformBSpline.bSplineDerivatives;

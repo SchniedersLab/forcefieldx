@@ -40,7 +40,6 @@ package ffx.potential.parameters;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-
 import static java.util.Arrays.copyOf;
 
 import static org.apache.commons.math3.util.FastMath.PI;

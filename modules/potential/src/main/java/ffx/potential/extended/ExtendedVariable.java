@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -60,7 +59,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
 import ffx.potential.nonbonded.MultiplicativeSwitch;
 import ffx.potential.parameters.MultipoleType;
-
 import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 import static ffx.potential.parameters.MultipoleType.zeroM;

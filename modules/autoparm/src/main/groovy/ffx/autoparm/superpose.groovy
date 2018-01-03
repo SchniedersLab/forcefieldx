@@ -36,12 +36,9 @@
  * exception statement from your version.
  */
 
-// SUPERPOSE
+// SUPERPOSE: Give two xyzfiles
+//  Program will print out information about the distance between the two
 
-import groovy.util.CliBuilder
-
-//Give two xyzfiles
-//Program will print out information about the distance between the two
 def cli = new CliBuilder(usage:' ffxc superpose <filename1> <filename2>');
 cli.h(longOpt:'help', 'Print this help message.');
 def options = cli.parse(args);

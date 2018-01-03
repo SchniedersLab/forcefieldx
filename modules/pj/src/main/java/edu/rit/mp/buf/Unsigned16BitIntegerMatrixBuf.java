@@ -24,17 +24,15 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
-import edu.rit.mp.Buf;
-import edu.rit.mp.Unsigned16BitIntegerBuf;
-
-import edu.rit.pj.reduction.IntegerOp;
-import edu.rit.pj.reduction.Op;
-
-import edu.rit.util.Arrays;
-import edu.rit.util.Range;
-
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
+
+import edu.rit.mp.Buf;
+import edu.rit.mp.Unsigned16BitIntegerBuf;
+import edu.rit.pj.reduction.IntegerOp;
+import edu.rit.pj.reduction.Op;
+import edu.rit.util.Arrays;
+import edu.rit.util.Range;
 
 /**
  * Class Unsigned16BitIntegerMatrixBuf provides a buffer for a matrix of

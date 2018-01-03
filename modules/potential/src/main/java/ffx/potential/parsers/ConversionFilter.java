@@ -39,10 +39,10 @@ package ffx.potential.parsers;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -56,7 +56,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.parameters.ForceField;
-import static ffx.potential.parsers.SystemFilter.parseAtNumArg;
 
 /**
  * The ConversionFilter class is the base class for most Force Field X parsers

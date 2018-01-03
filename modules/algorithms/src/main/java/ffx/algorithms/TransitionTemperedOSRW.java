@@ -51,12 +51,10 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -73,10 +71,10 @@ import ffx.numerics.integrate.DataSet;
 import ffx.numerics.integrate.DoublesDataSet;
 import ffx.numerics.integrate.Integrate1DNumeric;
 import ffx.numerics.integrate.Integrate1DNumeric.IntegrationType;
-import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.*;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.EnergyException;
+import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
 
 /**
  * An implementation of Transition-Tempered Orthogonal Space Random Walk

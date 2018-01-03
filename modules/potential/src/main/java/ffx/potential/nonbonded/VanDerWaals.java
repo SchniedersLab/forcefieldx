@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
@@ -77,7 +76,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.VDWType;
-
 import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADMIN;

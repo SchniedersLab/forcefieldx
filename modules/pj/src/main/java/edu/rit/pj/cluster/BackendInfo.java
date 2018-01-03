@@ -24,9 +24,6 @@
 //******************************************************************************
 package edu.rit.pj.cluster;
 
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * Class BackendInfo provides a record of information about one backend node in
  * the PJ cluster middleware.

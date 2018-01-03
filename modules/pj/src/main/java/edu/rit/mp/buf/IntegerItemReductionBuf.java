@@ -24,13 +24,12 @@
 //******************************************************************************
 package edu.rit.mp.buf;
 
-import edu.rit.mp.IntegerBuf;
-import edu.rit.mp.Buf;
+import java.nio.ByteBuffer;
 
+import edu.rit.mp.Buf;
+import edu.rit.mp.IntegerBuf;
 import edu.rit.pj.reduction.IntegerOp;
 import edu.rit.pj.reduction.Op;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class IntegerItemReductionBuf provides a reduction buffer for class

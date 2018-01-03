@@ -40,7 +40,6 @@ package ffx.algorithms;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.exp;
@@ -56,14 +55,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
-
-import static ffx.crystal.SpaceGroup.CrystalSystem.CUBIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.HEXAGONAL;
-import static ffx.crystal.SpaceGroup.CrystalSystem.MONOCLINIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.ORTHORHOMBIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TETRAGONAL;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TRICLINIC;
-import static ffx.crystal.SpaceGroup.CrystalSystem.TRIGONAL;
 
 /**
  * The Barostat class maintains constant pressure using random trial moves in

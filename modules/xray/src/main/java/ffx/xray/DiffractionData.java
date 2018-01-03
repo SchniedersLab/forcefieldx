@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -70,7 +69,6 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
 import ffx.xray.parsers.MTZWriter;
 import ffx.xray.parsers.MTZWriter.MTZType;
-
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
 
 /**

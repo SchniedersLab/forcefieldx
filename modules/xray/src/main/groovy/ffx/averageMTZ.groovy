@@ -36,15 +36,7 @@
  * exception statement from your version.
  */
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-import java.io.File;
-
-import ffx.xray.parsers.MTZFilter;
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+import ffx.xray.parsers.MTZFilter
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc averageMTZ [options] <mtzfilename1> <mtzfilename2> <iteration>',

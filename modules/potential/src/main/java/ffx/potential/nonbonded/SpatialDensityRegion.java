@@ -40,7 +40,6 @@ package ffx.potential.nonbonded;
 import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.floor;

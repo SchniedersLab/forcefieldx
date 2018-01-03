@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
@@ -53,7 +52,6 @@ import ffx.potential.bonded.Residue.ResiduePosition;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
 import static ffx.potential.bonded.BondedUtils.buildBond;

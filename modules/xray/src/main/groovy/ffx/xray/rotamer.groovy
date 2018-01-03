@@ -36,34 +36,26 @@
  * exception statement from your version.
  */
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// ENERGY
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.Rotamer
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.Residue.ResidueType
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
-
-// Groovy Imports
-// FFX Imports
-import ffx.algorithms.RotamerOptimization
-import ffx.algorithms.RotamerOptimization.Direction;
-
-// PJ Imports
 import edu.rit.pj.Comm
-// Java Imports
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+
+import ffx.algorithms.RotamerOptimization
+import ffx.algorithms.RotamerOptimization.Direction
+import ffx.potential.bonded.MultiResidue
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Residue.ResidueType
+import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
+import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.parsers.DiffractionFile
+
 int library = 2;
 int startResID = -1;
 int allStartResID = 1;

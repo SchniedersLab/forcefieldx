@@ -24,27 +24,21 @@
 //******************************************************************************
 package edu.rit.mp;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.buf.EmptySigned16BitIntegerBuf;
+import edu.rit.mp.buf.SharedSigned16BitIntegerArrayBuf;
+import edu.rit.mp.buf.SharedSigned16BitIntegerArrayBuf_1;
+import edu.rit.mp.buf.SharedSigned16BitIntegerBuf;
 import edu.rit.mp.buf.Signed16BitIntegerArrayBuf;
 import edu.rit.mp.buf.Signed16BitIntegerArrayBuf_1;
 import edu.rit.mp.buf.Signed16BitIntegerItemBuf;
 import edu.rit.mp.buf.Signed16BitIntegerMatrixBuf;
 import edu.rit.mp.buf.Signed16BitIntegerMatrixBuf_1;
-import edu.rit.mp.buf.SharedSigned16BitIntegerBuf;
-import edu.rit.mp.buf.SharedSigned16BitIntegerArrayBuf;
-import edu.rit.mp.buf.SharedSigned16BitIntegerArrayBuf_1;
-
-import edu.rit.pj.reduction.IntegerOp;
-import edu.rit.pj.reduction.Op;
 import edu.rit.pj.reduction.SharedInteger;
 import edu.rit.pj.reduction.SharedIntegerArray;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class Signed16BitIntegerBuf is the abstract base class for a buffer of signed

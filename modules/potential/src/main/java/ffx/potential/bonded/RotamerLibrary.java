@@ -52,11 +52,8 @@ import java.util.logging.Logger;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
-
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static ffx.potential.bonded.BondedUtils.intxyz;
-import static ffx.potential.bonded.Residue.ResidueType.AA;
-import static ffx.potential.bonded.Residue.ResidueType.NA;
 
 /**
  * The Rotamer Library Class manages a library of side-chain Rotamers for amino

@@ -37,20 +37,23 @@
  */
 package ffx.ui;
 
+import java.awt.Cursor;
+import java.io.File;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
+
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.parsers.BiojavaFilter;
 import ffx.potential.parsers.ConversionFilter;
 import ffx.potential.parsers.FileOpener;
-import java.awt.Cursor;
+
 //import ffx.potential.parsers.SystemFilter;
-import java.io.File;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * The UIDataConverter class converts a data structure into a Force Field X data 

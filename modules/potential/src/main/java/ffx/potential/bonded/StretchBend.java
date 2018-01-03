@@ -47,7 +47,6 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.StretchBendType;
-
 import static ffx.numerics.VectorMath.cross;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;

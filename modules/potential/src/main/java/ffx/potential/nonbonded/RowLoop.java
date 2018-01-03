@@ -37,10 +37,10 @@
  */
 package ffx.potential.nonbonded;
 
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import edu.rit.pj.IntegerForLoop;
-import java.util.ArrayList;
 
 /**
  * The RowLoop class is used to parallelize placing onto a 3D grid

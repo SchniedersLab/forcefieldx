@@ -1,19 +1,10 @@
 package ffx.potential
-// SAVE SYMMETRY MATES
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
 import groovy.cli.Option
-import groovy.util.CliBuilder;
 import groovy.cli.Unparsed
 
-// FFX Imports
-import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils;
-import ffx.potential.MolecularAssembly;
-
+import ffx.potential.utils.PotentialsFunctions
+import ffx.potential.utils.PotentialsUtils
 
 /**
  * The SaveSymMates script saves the symmetry mates for a PDB file

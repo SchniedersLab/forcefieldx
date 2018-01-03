@@ -1,16 +1,13 @@
 
 package ffx.algorithms
 
-// FFX Imports
-import ffx.algorithms.Integrator.Integrators
-import ffx.algorithms.Thermostat.Thermostats
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.Thermostat.Thermostats
 
 /**
  * The Anneal script.

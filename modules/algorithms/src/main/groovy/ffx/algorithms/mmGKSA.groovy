@@ -37,25 +37,12 @@
  * exception statement from your version.
  */
 
-// Apache Commons Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Java Imports
-import java.util.Set;
-import java.util.HashSet;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-import groovy.lang.MissingMethodException;
-
-// FFX Imports
-import ffx.algorithms.MMgksa;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.parsers.SystemFilter;
-import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils;
+import ffx.algorithms.MMgksa
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.utils.PotentialsFunctions
+import ffx.potential.utils.PotentialsUtils
 
 // Default weight parameters
 double elecWt = 1.0;

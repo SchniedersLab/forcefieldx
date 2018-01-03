@@ -24,8 +24,6 @@
 //******************************************************************************
 package edu.rit.io;
 
-import edu.rit.util.Range;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -36,6 +34,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import edu.rit.util.Range;
 
 /**
  * Class DoubleMatrixFile provides an object for reading or writing a double

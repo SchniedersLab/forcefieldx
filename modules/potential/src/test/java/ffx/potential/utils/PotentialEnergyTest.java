@@ -42,16 +42,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.util.Random;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.ForceFieldEnergy;

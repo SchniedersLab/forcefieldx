@@ -39,24 +39,14 @@
 
 // MOLECULAR & STOCHASTIC DYNAMICS
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
+import edu.rit.pj.Comm
 
-// PJ Imports
-import edu.rit.pj.Comm;
-
-// FFX Imports
-import ffx.algorithms.mc.MolecularMC;
-import ffx.algorithms.mc.CoordShakeMove;
-import ffx.algorithms.mc.MCMove;
-import ffx.potential.AssemblyState;
-import ffx.potential.bonded.ResidueState;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Residue;
+import ffx.algorithms.mc.CoordShakeMove
+import ffx.algorithms.mc.MCMove
+import ffx.algorithms.mc.MolecularMC
+import ffx.potential.AssemblyState
 
 // Number of Monte Carlo steps
 int nSteps = 1000000;

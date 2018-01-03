@@ -54,7 +54,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-
 import static ffx.potential.bonded.BondedUtils.intxyz;
 
 /**

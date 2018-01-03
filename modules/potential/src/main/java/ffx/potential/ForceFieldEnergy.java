@@ -45,12 +45,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.io.FilenameUtils;
-
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -108,13 +106,7 @@ import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-
-import static ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl.MULTI;
-import static ffx.potential.PotentialComponent.*;
-import static ffx.potential.bonded.Atom.Resolution.AMOEBA;
-import static ffx.potential.bonded.Atom.Resolution.FIXEDCHARGE;
 import static ffx.potential.extended.ExtUtils.prop;
-import static ffx.potential.parameters.ForceField.ForceFieldBoolean.LAMBDATERM;
 import static ffx.potential.parameters.ForceField.ForceFieldString.ARRAY_REDUCTION;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 

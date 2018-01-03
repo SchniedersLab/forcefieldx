@@ -43,11 +43,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-
 import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.crystal.Crystal;

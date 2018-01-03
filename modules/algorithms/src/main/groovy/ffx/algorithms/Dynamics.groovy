@@ -1,21 +1,18 @@
 
-package ffx.algorithms;
+package ffx.algorithms
 
-// Groovy Imports
-import groovy.cli.Option;
-import groovy.cli.Unparsed;
+import org.apache.commons.io.FilenameUtils
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import groovy.cli.Option
+import groovy.cli.Unparsed
 
-// Force Field X Imports
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.Thermostat.Thermostats
 import ffx.crystal.CrystalPotential
-import ffx.numerics.Potential;
+import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.OpenMMForceFieldEnergy
-import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.ForceField
 
 /**
  * The Dynamics script implements molecular and stochastic dynamics algorithms.

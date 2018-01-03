@@ -24,27 +24,21 @@
 //******************************************************************************
 package edu.rit.mp;
 
+import java.nio.ByteBuffer;
+
 import edu.rit.mp.buf.EmptyLongBuf;
 import edu.rit.mp.buf.LongArrayBuf;
 import edu.rit.mp.buf.LongArrayBuf_1;
 import edu.rit.mp.buf.LongItemBuf;
 import edu.rit.mp.buf.LongMatrixBuf;
 import edu.rit.mp.buf.LongMatrixBuf_1;
-import edu.rit.mp.buf.SharedLongBuf;
 import edu.rit.mp.buf.SharedLongArrayBuf;
 import edu.rit.mp.buf.SharedLongArrayBuf_1;
-
-import edu.rit.pj.reduction.LongOp;
-import edu.rit.pj.reduction.Op;
+import edu.rit.mp.buf.SharedLongBuf;
 import edu.rit.pj.reduction.SharedLong;
 import edu.rit.pj.reduction.SharedLongArray;
-
 import edu.rit.util.Arrays;
 import edu.rit.util.Range;
-
-import java.io.IOException;
-
-import java.nio.ByteBuffer;
 
 /**
  * Class LongBuf is the abstract base class for a buffer of long items sent or

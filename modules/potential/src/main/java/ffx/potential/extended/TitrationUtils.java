@@ -43,7 +43,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.io.FilenameUtils;
@@ -61,7 +60,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.utils.PotentialsUtils;
-
 import static ffx.potential.extended.ExtUtils.prop;
 
 /**

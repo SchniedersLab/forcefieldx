@@ -36,23 +36,15 @@
  * exception statement from your version.
  */
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.crystal.Crystal;
-import ffx.crystal.ReflectionList;
-import ffx.crystal.Resolution;
-import ffx.xray.DiffractionRefinementData;
-import ffx.xray.parsers.CIFFilter;
-import ffx.xray.parsers.MTZWriter;
-import ffx.xray.parsers.MTZWriter.MTZType;
-
-// Things below this line normally do not need to be changed.
-// ===============================================================================================
+import ffx.crystal.Crystal
+import ffx.crystal.ReflectionList
+import ffx.crystal.Resolution
+import ffx.xray.DiffractionRefinementData
+import ffx.xray.parsers.CIFFilter
+import ffx.xray.parsers.MTZWriter
+import ffx.xray.parsers.MTZWriter.MTZType
 
 // Create the command line parser.
 def cli = new CliBuilder(usage:' ffxc cif2mtz [options] <pdbfilename> <ciffilename>');

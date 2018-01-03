@@ -39,7 +39,6 @@ package ffx.xray;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
-
 import static java.util.Arrays.fill;
 
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -53,7 +52,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldBoolean;
 import ffx.xray.RefinementMinimize.RefinementMode;
-
 import static ffx.algorithms.Thermostat.convert;
 import static ffx.algorithms.Thermostat.kB;
 import static ffx.numerics.VectorMath.b2u;

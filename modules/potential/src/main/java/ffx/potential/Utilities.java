@@ -48,7 +48,6 @@ import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-
 import static ffx.numerics.VectorMath.diff;
 
 /**

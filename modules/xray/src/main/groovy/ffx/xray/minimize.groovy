@@ -36,20 +36,13 @@
  * exception statement from your version.
  */
 
-// XRAY MINIMIZE
+import org.apache.commons.io.FilenameUtils
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// Force Field X Imports
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.RefinementMinimize;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
+import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementMinimize
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.parsers.DiffractionFile
 
 // RMS gradient per atom convergence criteria
 double eps = -1.0;

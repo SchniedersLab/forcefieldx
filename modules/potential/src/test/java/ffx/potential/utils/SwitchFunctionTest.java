@@ -37,17 +37,19 @@
  */
 package ffx.potential.utils;
 
+import java.util.logging.Logger;
+import static java.lang.Math.ulp;
+
+import org.apache.commons.math3.util.FastMath;
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import ffx.numerics.PowerSwitch;
 import ffx.numerics.SquaredTrigSwitch;
 import ffx.numerics.UnivariateSwitchingFunction;
 import ffx.potential.nonbonded.MultiplicativeSwitch;
-import static java.lang.Math.ulp;
-import java.util.logging.Logger;
-import org.apache.commons.math3.util.FastMath;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
 /**
  * Test the various switching functions.

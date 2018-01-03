@@ -6,26 +6,16 @@
 
 package ffx.algorithms
 
-//Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-//FFX Imports
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
-import ffx.algorithms.OpenMMMolecularDynamics;
-import ffx.algorithms.Barostat;
-import ffx.algorithms.MolecularDynamics;
-import ffx.potential.OpenMMForceFieldEnergy;
-import ffx.potential.nonbonded.CoordRestraint;
-import ffx.potential.MolecularAssembly
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldBoolean;
-import ffx.potential.ForceFieldEnergy;
-import ffx.numerics.Potential;
+import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.Thermostat.Thermostats
 import ffx.crystal.CrystalPotential
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
+import ffx.potential.OpenMMForceFieldEnergy
+import ffx.potential.nonbonded.CoordRestraint
+import ffx.potential.parameters.ForceField
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;

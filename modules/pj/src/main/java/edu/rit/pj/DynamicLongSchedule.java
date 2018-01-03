@@ -24,9 +24,9 @@
 //******************************************************************************
 package edu.rit.pj;
 
-import edu.rit.util.LongRange;
-
 import java.util.concurrent.atomic.AtomicLong;
+
+import edu.rit.util.LongRange;
 
 /**
  * Class DynamicLongSchedule provides a dynamic schedule object. The loop index

@@ -51,7 +51,6 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 
@@ -69,7 +68,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ForceFieldDouble;
 import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.XYZFilter;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.r;
 

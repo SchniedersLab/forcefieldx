@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import org.apache.commons.io.FilenameUtils;
@@ -71,7 +70,6 @@ import ffx.potential.extended.TitrationUtils.TitrationConfig;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.utils.SystemTemperatureException;
-
 import static ffx.potential.extended.ExtConstants.ns2sec;
 import static ffx.potential.extended.TitrationUtils.propagateInactiveResidues;
 

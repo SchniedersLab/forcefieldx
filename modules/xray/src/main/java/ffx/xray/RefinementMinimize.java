@@ -37,8 +37,6 @@
  */
 package ffx.xray;
 
-import ffx.realspace.RealSpaceData;
-
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +50,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import ffx.realspace.RealSpaceData;
 
 /**
  * Refinement minimization class using {@link OptimizationListener} interface,

@@ -24,13 +24,11 @@
 //******************************************************************************
 package edu.rit.pj;
 
-import edu.rit.mp.ObjectBuf;
-
-import edu.rit.mp.buf.ObjectItemBuf;
-
-import edu.rit.util.Range;
-
 import java.io.IOException;
+
+import edu.rit.mp.ObjectBuf;
+import edu.rit.mp.buf.ObjectItemBuf;
+import edu.rit.util.Range;
 
 /**
  * Class WorkerIntegerStrideForLoop is the abstract base class for one variation

@@ -1,28 +1,22 @@
 
-package ffx.potentials;
+package ffx.potentials
 
-// Groovy Imports
+import org.apache.commons.configuration.CompositeConfiguration
+
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
 
-import org.apache.commons.configuration.CompositeConfiguration;
-
-// Force Field X Imports
-import ffx.algorithms.RotamerOptimization;
-import ffx.algorithms.RotamerOptimization.Algorithm;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.bonded.RotamerLibrary.ProteinLibrary;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.PDBFilter;
-import ffx.utilities.Keyword;
+import ffx.algorithms.RotamerOptimization
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.ForceFieldFilter
+import ffx.potential.parsers.PDBFilter
+import ffx.utilities.Keyword
 
 /**
  * The MutatePDB script mutates a residue of a PDB file.

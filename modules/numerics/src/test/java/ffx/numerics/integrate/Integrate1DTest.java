@@ -39,6 +39,7 @@ package ffx.numerics.integrate;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.junit.Test;
@@ -47,9 +48,8 @@ import static org.junit.Assert.assertTrue;
 
 import ffx.numerics.integrate.Integrate1DNumeric.IntegrationSide;
 import ffx.numerics.integrate.Integrate1DNumeric.IntegrationType;
-
-import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationSide.*;
-import java.util.logging.Logger;
+import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationSide.LEFT;
+import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationSide.RIGHT;
 
 /**
  * The IntegrationTest is a JUnit test for the Integration program that ensures

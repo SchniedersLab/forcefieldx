@@ -38,7 +38,6 @@
 package ffx.crystal;
 
 import org.apache.commons.configuration.CompositeConfiguration;
-
 import static org.apache.commons.math3.util.FastMath.abs;
 
 /**

@@ -1,24 +1,13 @@
 
 package ffx.potential
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
 import groovy.cli.Option
-import groovy.util.CliBuilder;
 import groovy.cli.Unparsed
 
-// Force Field X Imports
-import ffx.potential.parsers.CoordinateFileFilter;
-import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils;
-import ffx.potential.MolecularAssembly;
-
-// BioJava Imports
-
-// PJ imports
+import ffx.potential.parsers.CoordinateFileFilter
 
 /**
  * The SplitPDBDirectory script 

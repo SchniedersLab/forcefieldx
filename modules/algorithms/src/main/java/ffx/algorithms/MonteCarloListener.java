@@ -37,8 +37,6 @@
  */
 package ffx.algorithms;
 
-import ffx.potential.MolecularAssembly;
-
 /**
  * The AlgorithmListener will be notified at regular intervals during an
  * algorithm. This interface is useful for updating the user interface or

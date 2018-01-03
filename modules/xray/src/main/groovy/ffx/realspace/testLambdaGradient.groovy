@@ -39,26 +39,19 @@
 
 // TEST LAMBDA GRADIENT
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
-import groovy.util.CliBuilder;
-
-// FFX Imports
-import ffx.numerics.Potential;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.ForceFieldEnergy;
-import ffx.potential.MolecularAssembly;
-import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceFile;
-import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.DiffractionData;
-import ffx.xray.RefinementEnergy;
-import ffx.xray.RefinementMinimize.RefinementMode;
-import ffx.xray.parsers.DiffractionFile;
+import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.LambdaInterface
+import ffx.realspace.RealSpaceData
+import ffx.realspace.RealSpaceFile
+import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.parsers.DiffractionFile
 
 // First ligand atom.
 int ligandStart = 1;

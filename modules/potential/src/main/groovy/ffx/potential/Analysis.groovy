@@ -1,15 +1,9 @@
 
 package ffx.potential
 
-// Groovy Imports
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.util.CliBuilder
 
-// FFX Imports
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.AtomType
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 

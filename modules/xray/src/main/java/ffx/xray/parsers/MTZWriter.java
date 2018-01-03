@@ -46,7 +46,6 @@ import java.util.Date;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 

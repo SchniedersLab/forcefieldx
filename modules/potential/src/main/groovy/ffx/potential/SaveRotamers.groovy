@@ -1,26 +1,19 @@
 
-package ffx.potentials;
+package ffx.potentials
 
-// Apache Imports
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.FilenameUtils
 
-// Groovy Imports
 import groovy.cli.Option
-import groovy.util.CliBuilder;
 import groovy.cli.Unparsed
 
-// FFX Imports
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
-import ffx.potential.bonded.Atom
-import ffx.potential.bonded.Residue;
-
-
 
 /**
  * The SaveRotamers script saves a file as a PDB file
