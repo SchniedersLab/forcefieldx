@@ -101,7 +101,7 @@ class Biotype extends Script {
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
  *
  * This file is part of Force Field X.
  *
