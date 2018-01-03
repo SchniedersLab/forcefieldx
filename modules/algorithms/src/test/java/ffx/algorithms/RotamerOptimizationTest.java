@@ -68,25 +68,71 @@ public class RotamerOptimizationTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {
-                        "Trpcage Direct with Original Rotamers",
+                        "Trpcage Direct with Orig Rot (Goldstein)",
                         "ffx/algorithms/structures/trpcage.pdb",
                         "ffx/algorithms/structures/trpcage.direct.orig.restart",
-                        0,              // Pruning Level.
+                        1,              // Pruning Level.
                         true,           // Goldstein Elimination.
                         false,          // Use 3-body Enegeries.
                         true,           // Use Original Rotamers.
-                        -628.143879,  // Expected Energy.
+                        true,           // Do Overall Opt.
+                         -628.143879,   // Expected Energy.
+                        true,           // Do Self-Energy Opt.
+                        22086.367273,   // Expected Self-Energy.
+                        true,           // Do Pair-Energy Opt.
+                        5,              // Pair residue
+                        1280.865248,    // Expected Pair-Energy.
                         1.0e-3          // Energy Tolerance.
                 },
                 {
-                        "Trpcage Direct without Original Rotamers",
+                        "Trpcage Direct with Orig Rot (DEE, Prune=1)",
+                        "ffx/algorithms/structures/trpcage.pdb",
+                        "ffx/algorithms/structures/trpcage.direct.orig.restart",
+                        1,              // Pruning Level.
+                        false,          // Goldstein Elimination.
+                        false,          // Use 3-body Enegeries.
+                        true,           // Use Original Rotamers.
+                        false,          // Do Overall Opt. (false because DEE leaves too many permutations)
+                        -628.143879,    // Expected Energy.
+                        true,           // Do Self-Energy Opt.
+                        22086.367273,   // Expected Self-Energy.
+                        true,           // Do Pair-Energy Opt.
+                        5,              // Pair residue
+                        1280.865248,    // Expected Pair-Energy.
+                        1.0e-3          // Energy Tolerance.
+                },
+                {
+                        "Trpcage Direct with Orig Rot (DEE, Prune=2)",
+                        "ffx/algorithms/structures/trpcage.pdb",
+                        "ffx/algorithms/structures/trpcage.direct.orig.restart",
+                        2,              // Pruning Level.
+                        false,          // Goldstein Elimination.
+                        false,          // Use 3-body Enegeries.
+                        true,           // Use Original Rotamers.
+                        true,           // Do Overall Opt. (false because DEE leaves too many permutations)
+                        -628.143879,    // Expected Energy.
+                        true,           // Do Self-Energy Opt.
+                        -616.237522,    // Expected Self-Energy.
+                        true,           // Do Pair-Energy Opt.
+                        5,              // Pair residue
+                        -563.929018,    // Expected Pair-Energy.
+                        1.0e-3          // Energy Tolerance.
+                },
+                {
+                        "Trpcage Direct (Goldstein)",
                         "ffx/algorithms/structures/trpcage.pdb",
                         "ffx/algorithms/structures/trpcage.direct.restart",
-                        0,              // Pruning Level.
+                        1,              // Pruning Level.
                         true,           // Goldstein Elimination.
                         false,          // Use 3-body Enegeries.
                         false,          // Use Original Rotamers.
-                        -417.237837,  // Expected Energy.
+                        true,           // Do Overall Opt.
+                        -386.555625,    // Expected Energy.
+                        true,           // Do Self-Energy Opt.
+                        20622.950231,   // Expected Self-Energy.
+                        true,           // Do Pair-Energy Opt.
+                        5,              // Pair residue.
+                        2433.067837,    // Expected Pair-Energy.
                         1.0e-3          // Energy Tolerance.
                 }
         });
@@ -99,7 +145,13 @@ public class RotamerOptimizationTest {
     boolean useGoldstein;
     boolean useThreeBody;
     boolean useOriginalRotamers;
+    boolean doOverallOpt;
     double expectedEnergy;
+    boolean doSelfOpt;
+    double expectedSelfEnergy;
+    boolean doPairOpt;
+    int pairResidue;
+    double expectedPairEnergy;
     double tolerance;
     File structure;
     File restartFile;
@@ -113,7 +165,13 @@ public class RotamerOptimizationTest {
                                    boolean useGoldstein,
                                    boolean useThreeBody,
                                    boolean useOriginalRotamers,
+                                   boolean doOverallOpt,
                                    double expectedEnergy,
+                                   boolean doSelfOpt,
+                                   double expectedSelfEnergy,
+                                   boolean doPairOpt,
+                                   int pairResidue,
+                                   double expectedPairEnergy,
                                    double tolerance) {
         this.info = info;
         this.filename = filename;
@@ -122,7 +180,13 @@ public class RotamerOptimizationTest {
         this.useGoldstein = useGoldstein;
         this.useThreeBody = useThreeBody;
         this.useOriginalRotamers = useOriginalRotamers;
+        this.doOverallOpt = doOverallOpt;
         this.expectedEnergy = expectedEnergy;
+        this.doSelfOpt = doSelfOpt;
+        this.expectedSelfEnergy = expectedSelfEnergy;
+        this.doPairOpt = doPairOpt;
+        this.pairResidue = pairResidue;
+        this.expectedPairEnergy = expectedPairEnergy;
         this.tolerance = tolerance;
     }
 
@@ -192,8 +256,24 @@ public class RotamerOptimizationTest {
         rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
 
-        double energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-        assertEquals(info + " Energy", expectedEnergy, energy, tolerance);
+        double energy = 0.0;
+        if (doOverallOpt) {
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
+        }
+
+        if (doSelfOpt) {
+            rotamerOptimization.setTestSelfEnergyEliminations(true);
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
+        }
+
+        if (doPairOpt) {
+            rotamerOptimization.setTestPairEnergyEliminations(pairResidue);
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
+        }
+
 
     }
 
