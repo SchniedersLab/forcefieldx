@@ -3,7 +3,7 @@
  *
  * Description: Force Field X - Software for Molecular Biophysics.
  *
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
  *
  * This file is part of Force Field X.
  *
@@ -843,35 +843,35 @@ if (algorithm == 1) {
 }
 
 if (master) {
-if (min) {
-    RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
-    if (eps < 0.0) {
-	eps = refinementMinimize.getEps();
-    }
-    refinementMinimize.minimize(eps);
-    refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
-    refinementMinimize.minimize(eps);
-}
-
-diffractiondata.scaleBulkFit();
-diffractiondata.printStats();
-
-if (master) {
-    logger.info(" Final Minimum Energy");
-    energy();
-    if (largePairCutoff > 0.0 || largeTrimerCutoff > 0.0) {
-        rotamerOptimization.printLargeInteractions(largePairCutoff,largeTrimerCutoff,false);
+    if (min) {
+        RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES);
+        if (eps < 0.0) {
+        eps = refinementMinimize.getEps();
+        }
+        refinementMinimize.minimize(eps);
+        refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
+        refinementMinimize.minimize(eps);
     }
 
-    logger.info(" Final Rotamers");
-    RotamerLibrary.measureRotamers(residueList, false);
+    diffractiondata.scaleBulkFit();
+    diffractiondata.printStats();
 
-    String ext = FilenameUtils.getExtension(filename);
-    filename = FilenameUtils.removeExtension(filename);
-    if (ext.toUpperCase().contains("XYZ")) {
-        saveAsXYZ(new File(filename + ".xyz"));
-    } else {
-        saveAsPDB(new File(filename + ".pdb"));
+    if (master) {
+        logger.info(" Final Minimum Energy");
+        energy();
+        if (largePairCutoff > 0.0 || largeTrimerCutoff > 0.0) {
+            rotamerOptimization.printLargeInteractions(largePairCutoff,largeTrimerCutoff,false);
+        }
+
+        logger.info(" Final Rotamers");
+        RotamerLibrary.measureRotamers(residueList, false);
+
+        String ext = FilenameUtils.getExtension(filename);
+        filename = FilenameUtils.removeExtension(filename);
+        if (ext.toUpperCase().contains("XYZ")) {
+            saveAsXYZ(new File(filename + ".xyz"));
+        } else {
+            saveAsPDB(new File(filename + ".pdb"));
+        }
     }
-}
 }

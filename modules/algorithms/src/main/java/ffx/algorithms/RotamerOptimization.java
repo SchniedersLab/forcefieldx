@@ -3,7 +3,7 @@
  * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
  * <p>
- * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
  * <p>
  * This file is part of Force Field X.
  * <p>
@@ -3465,9 +3465,10 @@ public class RotamerOptimization implements Terminatable {
                     for (int k = j + 1; k < nResidues; k++) {
                         int rk = optimum[k];
                         double triple = triple(i, ri, j, rj, k, rk);
-                        residueEnergy[i] += triple / 3.0;
-                        residueEnergy[j] += triple / 3.0;
-                        residueEnergy[k] += triple / 3.0;
+                        double thirdTrip = triple / 3.0;
+                        residueEnergy[i] += thirdTrip;
+                        residueEnergy[j] += thirdTrip;
+                        residueEnergy[k] += thirdTrip;
                         sumTrimerEnergy += triple;
                     }
                 }
@@ -8549,7 +8550,7 @@ public class RotamerOptimization implements Terminatable {
                 try {
                     Thread.sleep(POLLING_FREQUENCY);
                     if (waiting++ == 1000) {
-                        logger.warning(format(" Process %d experiencing long wait for others' trimer energies.", Comm.world().rank()));
+                        logger.warning(format(" Process %d experiencing long wait for others' self energies.", Comm.world().rank()));
                     }
                 } catch (InterruptedException e) {
                     logger.warning(" Parallel self-energy computation was interrupted.");
