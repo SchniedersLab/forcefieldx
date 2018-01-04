@@ -190,7 +190,11 @@ class MutatePDB extends Script {
             Polymer polymer = molecularAssembly.getChain(chain.toString());
             Residue residue = polymer.getResidue(resID);
             Rotamer[] rotamers = residue.getRotamers(rLib);
-            RotamerLibrary.applyRotamer(residue, rotamers[destRotamer]);
+            if (rotamers != null && rotamers.length > 0) {
+                RotamerLibrary.applyRotamer(residue, rotamers[destRotamer]);
+            } else {
+                logger.info(" No rotamer to apply.");
+            }
         }
         pdbFilter.writeFile(structure, false);
     }
