@@ -143,7 +143,8 @@
             <!--item name="Automatic Parameterization"  href="modules/autoparm/index.html"/ -->
             <item name="Crystal" href="modules/crystal/index.html"/>
             <item name="Numerics" href="modules/numerics/index.html"/>
-            <item name="OpenMM" href="modules/openmm/index.html"/>
+            <item name="OpenMM Wrappers" href="modules/openmm/index.html"/>
+            <item name="Parallel Java" href="modules/pj/index.html"/>
             <item name="Potential" href="modules/potential/index.html"/>
             <item name="User Interfaces" href="modules/ui/index.html"/>
             <item name="Utilities" href="modules/utilities/index.html"/>

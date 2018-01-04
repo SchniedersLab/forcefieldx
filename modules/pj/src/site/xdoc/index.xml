@@ -10,7 +10,14 @@
     </properties>
     <body>
         <section name="Introduction">
-            <p>Minor modifications to the Parallel Java API</p>
+            <p>Parallel Java (PJ) is an API and middleware for parallel programming in 100% Java
+                on shared memory multiprocessor (SMP) parallel computers, cluster parallel computers,
+                and hybrid SMP cluster parallel computers. PJ was developed by Professor Alan Kaminsky
+                and his student Luke McOmber in the Department of Computer Science at the Rochester Institute of Technology.</p>
+            <p>
+            Please see the <a href="https://www.cs.rit.edu/~ark/pj.shtml">PJ website</a>for further information.
+            </p>
+            <p>This version of PJ includes minor modifications compared to the original.</p>
         </section>
     </body>
 </document>
