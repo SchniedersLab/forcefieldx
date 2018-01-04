@@ -38,11 +38,21 @@
 package ffx.utilities;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.math3.util.FastMath;
 
@@ -50,6 +60,64 @@ import org.apache.commons.math3.util.FastMath;
  * @author Michael Schnieders
  */
 public class StringUtils {
+
+    /**
+     * Creates a writer for text to a Gzip file.
+     *
+     * @param file Gzip file to write to.
+     * @return A Writer
+     * @throws IOException
+     */
+    public static Writer createGzipWriter(File file) throws IOException {
+        return createGzipWriter(file, Charset.defaultCharset());
+    }
+
+    /**
+     * Creates a writer for text to a Gzip file.
+     *
+     * @param file Gzip file to write to.
+     * @param cs Character set to use.
+     * @return A Writer
+     * @throws IOException
+     */
+    public static Writer createGzipWriter(File file, Charset cs) throws IOException {
+        /*
+         * The BufferedWriter buffers the input.
+         * The OutputStreamWriter converts the input to bytes.
+         * The GZIPOutputStream compresses the bytes.
+         * The FileOutputStream writes bytes to a file.
+         */
+        return new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(file)), cs));
+    }
+
+    /**
+     * Creates a reader from a Gzip file to text.
+     *
+     * @param file Gzip file to read from.
+     * @return A Reader.
+     * @throws IOException
+     */
+    public static Reader createGzipReader(File file) throws IOException {
+        return createGzipReader(file, Charset.defaultCharset());
+    }
+
+    /**
+     * Creates a reader from a Gzip file to text.
+     *
+     * @param file Gzip file to read from.
+     * @param cs Character set to use.
+     * @return A Reader.
+     * @throws IOException
+     */
+    public static Reader createGzipReader(File file, Charset cs) throws IOException {
+        /*
+         * The BufferedReader buffers the input requests, reading a large chunk at a time and caching it.
+         * The InputStreamReader converts the input bytes to characters.
+         * The GZIPInputStream decompresses incoming input bytes from GZIP to raw bytes.
+         * The FileInputStream reads raw bytes from a (gzipped) file.
+         */
+        return new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file)), cs));
+    }
     
     /**
      * Prints a fixed-width decimal, similar to String.format(%width.precf, val),
