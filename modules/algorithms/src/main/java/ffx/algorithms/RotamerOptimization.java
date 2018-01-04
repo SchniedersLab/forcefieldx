@@ -345,6 +345,17 @@ public class RotamerOptimization implements Terminatable {
     private int numResidues = 0;
 
     /**
+     * Test Self-Energy Elimination.
+     */
+    boolean testSelfEnergyEliminations = false;
+    /**
+     * Test Pair-Energy Elimination.
+     *
+     * If greater than or equal to 0, test the specified residue.
+     */
+    int testPairEnergyEliminations = -1;
+
+    /**
      * Parallel Java Variables.
      */
     private boolean parallelEnergies = true;
@@ -2932,6 +2943,16 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
+    public void setTestSelfEnergyEliminations(boolean testSelfEnergyEliminations) {
+        this.testSelfEnergyEliminations = testSelfEnergyEliminations;
+        testPairEnergyEliminations = -1;
+    }
+
+    public void setTestPairEnergyEliminations(int testPairEnergyEliminations) {
+        this.testPairEnergyEliminations = testPairEnergyEliminations;
+        testSelfEnergyEliminations = false;
+    }
+
     private double independent(List<Residue> residues) {
         if (x == null) {
             Atom atoms[] = molecularAssembly.getAtomArray();
@@ -4610,6 +4631,12 @@ public class RotamerOptimization implements Terminatable {
         }
 
         rotamerEnergies(residues);
+
+        if (testSelfEnergyEliminations) {
+            testSelfEnergyElimination(residues);
+        } else if (testPairEnergyEliminations > -1) {
+            testPairEnergyElimination(residues, testPairEnergyEliminations);
+        }
 
         // testSelfEnergyElimination(residues);
 
@@ -7756,7 +7783,9 @@ public class RotamerOptimization implements Terminatable {
                                 logIfMaster(format(" From restart file: Self energy %3d (%7s,%2d): %12.4f", i, residues[i], ri, energy));
                             }
                         } catch (Exception e) {
-                            logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                            if (verbose) {
+                                logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                            }
                         }
                         // remove that job from the pool
                         String revKey = format("%d %d", i, ri);
@@ -7838,7 +7867,9 @@ public class RotamerOptimization implements Terminatable {
                                         residues[i], ri, residues[j], rj, energy));
                             }
                         } catch (Exception e) {
-                            logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                            if (verbose) {
+                                logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                            }
                         }
                         // remove that job from the pool
                         String revKey = format("%d %d %d %d", i, ri, j, rj);
@@ -7933,7 +7964,9 @@ public class RotamerOptimization implements Terminatable {
                         try {
                             threeBodyEnergy[i][ri][j][rj][k][rk] = energy;
                         } catch (ArrayIndexOutOfBoundsException ex) {
-                            logger.log(Level.SEVERE, format("Restart file contained an out-of-bounds index.  Offending line: %s", line), ex);
+                            if (verbose) {
+                                logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                            }
                         }
                         if (verbose) {
                             logIfMaster(format(" From restart file: Trimer energy %3d %-2d, %3d %-2d, %3d %-2d: %16.8f", i, ri, j, rj, k, rk, energy));
