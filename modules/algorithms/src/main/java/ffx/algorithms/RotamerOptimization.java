@@ -445,6 +445,10 @@ public class RotamerOptimization implements Terminatable {
      * input file.
      */
     private ToDoubleFunction<File> eFunction;
+    // Default value for maxRotCheckDepth
+    private int defaultMaxRotCheckDepth = 3;
+    // Maximum depth to check if a rotamer can be eliminated.
+    private int maxRotCheckDepth = defaultMaxRotCheckDepth;
 
     /**
      * RotamerOptimization constructor.
@@ -681,6 +685,24 @@ public class RotamerOptimization implements Terminatable {
             // Property works in the contest of Residue class.
             logger.info(format(" (KEY) origAtEnd: %b", value));
         }
+
+        String prop = "ro-maxRotCheckDepth";
+        String propStr = System.getProperty(prop);
+        if (propStr != null) {
+            try {
+                maxRotCheckDepth = Integer.parseInt(propStr);
+                if (maxRotCheckDepth > 3 || maxRotCheckDepth < 0) {
+                    throw new IllegalArgumentException(" ro-maxRotSearchDepth must be between 0-3 inclusive!");
+                }
+            } catch (Exception ex) {
+                maxRotCheckDepth = defaultMaxRotCheckDepth;
+                logger.warning(String.format(" Could not parse %s value %s as valid integer; defaulting to %d", prop, propStr, maxRotCheckDepth));
+                logger.warning(String.format(" Exception: %s", ex));
+            }
+        } else {
+            maxRotCheckDepth = defaultMaxRotCheckDepth;
+        }
+
         allAssemblies = new ArrayList<>();
         allAssemblies.add(molecularAssembly);
     }
@@ -6789,29 +6811,6 @@ public class RotamerOptimization implements Terminatable {
         return true;
     }
 
-    private boolean eliminateRotamer(Residue[] residues, int i, int ri, int rj, boolean verbose) {
-        // Check the rotamer (i, ri) has not already been eliminated.
-        if (check(i, ri) || ri == rj) {
-            return false;
-        }
-
-        // Check that rotamer rj is valid to eliminate ri.
-        if (!validRotamer(residues, i, rj)) {
-            return false;
-        }
-
-        eliminatedSingles[i][ri] = true;
-        int rotCount = rotamerCount(residues, i);
-        if (verbose) {
-            logIfMaster(format(" %7s rotamer %2d eliminated (%2d left).", residues[i], ri, rotCount));
-        }
-        int eliminatedPairs = eliminateRotamerPairs(residues, i, ri, verbose);
-        if (eliminatedPairs > 0 && verbose) {
-            logIfMaster(format("  Eliminated %2d rotamer pairs.", eliminatedPairs));
-        }
-        return true;
-    }
-
     private int eliminateRotamerPairs(Residue[] residues, int i, int ri, boolean verbose) {
         int nres = residues.length;
         int eliminatedPairs = 0;
@@ -6862,6 +6861,12 @@ public class RotamerOptimization implements Terminatable {
         int nRes = residues.length;
         Rotamer rotI[] = residues[i].getRotamers(library);
         int ni = rotI.length;
+
+        if (maxRotCheckDepth == 0) {
+            // Short-circuit on number of rotamers available.
+            return ni;
+        }
+
         // Initialize the count to 0.
         int rotCount = 0;
         // Loop over the rotamers for residue i.
@@ -6869,15 +6874,17 @@ public class RotamerOptimization implements Terminatable {
             if (check(i, ri)) {
                 continue;
             }
-            // Check that rotamer ri has valid pairs with all other residues.
             boolean valid = true;
-            for (int j = 0; j < nRes; j++) {
-                if (i == j) {
-                    continue;
-                }
-                if (rotamerPairCount(residues, i, ri, j) == 0) {
-                    valid = false;
-                    break;
+            if (maxRotCheckDepth > 1) {
+                // Check that rotamer ri has valid pairs with all other residues.
+                for (int j = 0; j < nRes; j++) {
+                    if (i == j) {
+                        continue;
+                    }
+                    if (rotamerPairCount(residues, i, ri, j) == 0) {
+                        valid = false;
+                        break;
+                    }
                 }
             }
             if (valid) {
@@ -6901,14 +6908,16 @@ public class RotamerOptimization implements Terminatable {
             return false;
         }
 
-        // Loop over all residues to check for valid pairs and triples.
-        int n = residues.length;
-        for (int j = 0; j < n; j++) {
-            if (j == i) {
-                continue;
-            }
-            if (rotamerPairCount(residues, i, ri, j) == 0) {
-                return false;
+        if (maxRotCheckDepth > 1) {
+            // Loop over all residues to check for valid pairs and triples.
+            int n = residues.length;
+            for (int j = 0; j < n; j++) {
+                if (j == i) {
+                    continue;
+                }
+                if (rotamerPairCount(residues, i, ri, j) == 0) {
+                    return false;
+                }
             }
         }
         return true;
@@ -6931,7 +6940,7 @@ public class RotamerOptimization implements Terminatable {
         }
 
         // Return false if either rotamer is not valid.
-        if (!validRotamer(residues, i, ri) || !validRotamer(residues, j, rj)) {
+        if (maxRotCheckDepth > 0 && (!validRotamer(residues, i, ri) || !validRotamer(residues, j, rj))) {
             return false;
         }
 
@@ -6940,45 +6949,21 @@ public class RotamerOptimization implements Terminatable {
             return false;
         }
 
-        // Loop over all residues to check for valid triples.
-        int n = residues.length;
-        for (int k = 0; k < n; k++) {
-            if (k == i || k == j) {
-                continue;
-            }
-            // There must be at least one valid rotamer triple between (i, ri) and (j, rj) with residue k.
-            if (rotamerTripleCount(residues, i, ri, j, rj, k) == 0) {
-                // Eliminate the pair?
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Count the rotamer pairs remaining for residues i and j.
-     *
-     * @param residues Residue array.
-     * @param i        The first residue to examine.
-     * @param j        The second residue to examine.
-     * @return The remaining rotamer pair count.
-     */
-    private int rotamerPairCount(Residue residues[], int i, int j) {
-        int pairCount = 0;
-        Rotamer rotI[] = residues[i].getRotamers(library);
-        int ni = rotI.length;
-        Rotamer rotJ[] = residues[j].getRotamers(library);
-        int nj = rotJ.length;
-        for (int ri = 0; ri < ni; ri++) {
-            if (!check(i, ri)) {
-                for (int rj = 0; rj < nj; rj++) {
-                    if (!check(j, rj) && !check(i, ri, j, rj)) {
-                        pairCount++;
-                    }
+        if (maxRotCheckDepth > 2) {
+            // Loop over all residues to check for valid triples.
+            int n = residues.length;
+            for (int k = 0; k < n; k++) {
+                if (k == i || k == j) {
+                    continue;
+                }
+                // There must be at least one valid rotamer triple between (i, ri) and (j, rj) with residue k.
+                if (rotamerTripleCount(residues, i, ri, j, rj, k) == 0) {
+                    // Eliminate the pair?
+                    return false;
                 }
             }
         }
-        return pairCount;
+        return true;
     }
 
     /**
@@ -7004,12 +6989,14 @@ public class RotamerOptimization implements Terminatable {
                 // Loop over all residues k to check for valid rotamer triples.
                 int nRes = residues.length;
                 boolean valid = true;
-                for (int k = 0; k < nRes; k++) {
-                    if (k == i || k == j) {
-                        continue;
-                    }
-                    if (rotamerTripleCount(residues, i, ri, j, rj, k) == 0) {
-                        valid = false;
+                if (maxRotCheckDepth > 2) {
+                    for (int k = 0; k < nRes; k++) {
+                        if (k == i || k == j) {
+                            continue;
+                        }
+                        if (rotamerTripleCount(residues, i, ri, j, rj, k) == 0) {
+                            valid = false;
+                        }
                     }
                 }
                 if (valid) {
