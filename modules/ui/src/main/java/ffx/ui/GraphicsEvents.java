@@ -55,6 +55,11 @@ import java.awt.Event;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
+import com.sun.j3d.utils.picking.PickCanvas;
+import com.sun.j3d.utils.picking.PickIntersection;
+import com.sun.j3d.utils.picking.PickResult;
+import com.sun.j3d.utils.universe.SimpleUniverse;
+
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.ui.GraphicsCanvas.LeftButtonMode;
@@ -62,11 +67,6 @@ import ffx.ui.behaviors.GlobalBehavior;
 import ffx.ui.behaviors.MouseRotate;
 import ffx.ui.behaviors.MouseTranslate;
 import ffx.ui.behaviors.MouseZoom;
-
-import com.sun.j3d.utils.picking.PickCanvas;
-import com.sun.j3d.utils.picking.PickIntersection;
-import com.sun.j3d.utils.picking.PickResult;
-import com.sun.j3d.utils.universe.SimpleUniverse;
 
 /**
  * The GraphicsEvents class listens for mouse events over the Java3D

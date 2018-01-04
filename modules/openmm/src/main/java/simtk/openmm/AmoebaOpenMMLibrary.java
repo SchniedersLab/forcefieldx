@@ -1,5 +1,8 @@
 package simtk.openmm;
 
+import java.nio.DoubleBuffer;
+import java.nio.IntBuffer;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
@@ -8,9 +11,6 @@ import com.sun.jna.PointerType;
 import com.sun.jna.ptr.DoubleByReference;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
-
-import java.nio.DoubleBuffer;
-import java.nio.IntBuffer;
 
 /**
  * JNA Wrapper for library <b>AmoebaOpenMM</b><br>

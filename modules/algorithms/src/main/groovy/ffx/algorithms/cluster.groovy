@@ -42,7 +42,7 @@ import ffx.potential.parsers.CoordinateFileFilter
 import ffx.potential.parsers.PDBFileFilter
 import static ffx.algorithms.ClusterStructures.ClustAlg.AV_LINK
 import static ffx.algorithms.ClusterStructures.ClustAlg.CLINK
-import static ffx.algorithms.ClusterStructures.ClustAlg.SLINK;
+import static ffx.algorithms.ClusterStructures.ClustAlg.SLINK
 import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.BACKBONE_DIHEDRALS
 import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.CA_RMSD
 import static ffx.algorithms.ClusterStructures.ClusterDistanceFunction.DIHEDRALS

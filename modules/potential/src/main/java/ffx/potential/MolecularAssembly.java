@@ -72,6 +72,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import static java.lang.String.format;
 
+import com.sun.j3d.utils.picking.PickTool;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
@@ -96,8 +98,6 @@ import static ffx.potential.bonded.Residue.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.Residue.ResiduePosition.MIDDLE_RESIDUE;
 import static ffx.potential.extended.ExtUtils.prop;
-
-import com.sun.j3d.utils.picking.PickTool;
 
 /**
  * The MolecularAssembly class is a collection of Polymers, Hetero Molecules,

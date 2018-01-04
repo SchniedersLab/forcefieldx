@@ -83,13 +83,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
+import com.sun.j3d.utils.universe.SimpleUniverse;
+
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
-
-import com.sun.j3d.utils.universe.SimpleUniverse;
 
 /**
  * The GraphicsCanvas class provides a Canvas on which to render 3D Graphics.

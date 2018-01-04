@@ -141,11 +141,7 @@
             <item name="Modules" href="/modules.html"/>
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
             <!--item name="Automatic Parameterization"  href="modules/autoparm/index.html"/ -->
-            <!-- item name="Binding Affinity"  href="modules/binding/index.html"/ -->
-            <!-- item name="Coarse Grain" href="modules/cg/index.html"/ -->
-            <!-- item name="Continuum Electrostatics" href="modules/continuum/index.html"/ -->
             <item name="Crystal" href="modules/crystal/index.html"/>
-            <!-- item name="Nucleic Acids" href="modules/nucleic/index.html"/ -->
             <item name="Numerics" href="modules/numerics/index.html"/>
             <item name="OpenMM" href="modules/openmm/index.html"/>
             <item name="Potential" href="modules/potential/index.html"/>

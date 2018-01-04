@@ -59,13 +59,13 @@ import java.awt.Color;
 import java.awt.Font;
 import java.util.Enumeration;
 
-import ffx.ui.behaviors.MouseBehaviorCallback;
-
 import com.sun.j3d.utils.geometry.Cone;
 import com.sun.j3d.utils.geometry.Cylinder;
 import com.sun.j3d.utils.geometry.Sphere;
 import com.sun.j3d.utils.picking.PickTool;
 import com.sun.j3d.utils.universe.ViewingPlatform;
+
+import ffx.ui.behaviors.MouseBehaviorCallback;
 
 /**
  * The GraphicsAxis class encapsulates the 3D Axis that is used to display and
