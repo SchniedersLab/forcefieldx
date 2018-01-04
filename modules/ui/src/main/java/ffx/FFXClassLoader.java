@@ -192,7 +192,8 @@ public class FFXClassLoader extends URLClassLoader {
             // Lars Behnke's hierarchical-clustering-java
             "com.apporiented/hierarchical-clustering.jar",
             // OpenMM
-            "simtk/openmm.jar"
+            "simtk/openmm.jar",
+            "net.java.dev.jna/jna.jar"
         }));
 
         String osName = System.getProperty("os.name").toUpperCase();

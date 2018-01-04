@@ -60,6 +60,7 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
+import static ffx.algorithms.Thermostat.convert;
 import static ffx.algorithms.Thermostat.kB;
 
 import com.sun.jna.ptr.PointerByReference;
@@ -208,30 +209,13 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         currentPotentialEnergy = OpenMM_State_getPotentialEnergy(state) * OpenMM_KcalPerKJ;
         currentKineticEnergy = OpenMM_State_getKineticEnergy(state) * OpenMM_KcalPerKJ;
         currentTotalEnergy = currentPotentialEnergy + currentKineticEnergy;
+        currentTemperature = 2.0 * currentKineticEnergy * convert / (kB * dof);
 
-        //numParticles = openMMForceFieldEnergy.getNumParticles() * 3;
-        //logger.info(String.format(" number of particles %d", numParticles));
-        //logger.info(String.format(" number of variables %d", numberOfVariables));
         openMMPositions = OpenMM_State_getPositions(state);
         openMMForceFieldEnergy.getOpenMMPositions(openMMPositions, numParticles, x);
 
         openMMVelocities = OpenMM_State_getVelocities(state);
         openMMForceFieldEnergy.getOpenMMVelocities(openMMVelocities, numParticles, v);
-
-        double e = 0.0;
-        for (int ii = 0; ii < v.length; ii++) {
-            double velocity = v[ii];
-            double v2 = velocity * velocity;
-            e += mass[ii] * v2;
-        }
-
-        //e *= 0.5 / convert;
-        //logger.info(String.format(" OpenMM Kinetic Energy: %f", currentKineticEnergy));
-        //logger.info(String.format(" Kinetic Energy calculated from velocities: %f", (e* 0.5 / convert)));
-        //int dof = v.length;
-        //dof = openMMForceFieldEnergy.calculateDegreesOfFreedom();
-        logger.info(String.format(" number of degrees of freedom is %d", dof));
-        currentTemperature = e / (kB * dof);
 
         openMMForces = OpenMM_State_getForces(state);
         openMMForceFieldEnergy.getOpenMMAccelerations(openMMForces, numParticles, mass, a);
@@ -379,10 +363,10 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
 
         if (dyn == null) {
-            this.restartFile = new File(firstFileName + ".dyn");
+            restartFile = new File(firstFileName + ".dyn");
             loadRestart = false;
         } else {
-            this.restartFile = dyn;
+            restartFile = dyn;
             loadRestart = true;
         }
 
@@ -391,9 +375,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         }
 
         dof = openMMForceFieldEnergy.calculateDegreesOfFreedom();
-        logger.info(String.format(" number of degrees of freedom is %d", dof));
-        numParticles = openMMForceFieldEnergy.getNumParticles() * 3;
-        logger.info(String.format(" number of particles is %d", (numParticles / 3)));
+
         if (!initialized) {
             if (loadRestart) {
                 Crystal crystal = molecularAssembly.getCrystal();
@@ -418,10 +400,11 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
                     }
                     molecularAssembly.moveAllIntoUnitCell();
                     openMMForceFieldEnergy.loadFFXPositionToOpenMM();
-                    //openMMForceFieldEnergy.setOpenMMPositions(x, numberOfVariables);
 
                     openMMForceFieldEnergy.setOpenMMVelocities(v, numberOfVariables);
-                    molecularAssembly.getPotentialEnergy().setCrystal(crystal);
+
+                    // molecularAssembly.getPotentialEnergy().setCrystal(crystal);
+
                     openMMForceFieldEnergy.setOpenMMPositions(x, numParticles);
                     openMMForceFieldEnergy.setOpenMMVelocities(v, numParticles);
                 }
@@ -436,7 +419,9 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
 
         int i = 0;
         running = false;
-        openMM_Update(i, running);
+
+        // logger.info(" Calling OpenMM Update from MD Init.");
+        // openMM_Update(i, running);
     }
 
     /**
@@ -463,12 +448,14 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         int i = 0;
         time = -System.nanoTime();
         while (i < numSteps) {
+            logger.info(" Calling OpenMM Update prior to MD Steps.");
             openMM_Update(i, running);
             //time = -System.nanoTime();
             takeSteps(intervalSteps);
             //time += System.nanoTime();
             i += intervalSteps;
         }
+        logger.info(" Calling OpenMM Update after MD Steps.");
         openMM_Update(i, running);
         logger.info("");
     }

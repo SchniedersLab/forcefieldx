@@ -826,7 +826,7 @@
                             <storepass>${storepass}</storepass>
                             <keypass>${keypass}</keypass>
                             <removeExistingSignatures>true</removeExistingSignatures>
-                            <tca>http://timestamp.digicert.com</tca>
+                            <tsa>http://timestamp.digicert.com</tsa>
                         </configuration>
                         <executions>
                             <execution>
@@ -1011,7 +1011,7 @@
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>3.8</version>
                 <configuration>
-                    <linkXref>true</linkXref>
+                    <linkXRef>true</linkXRef>
                     <minimumTokens>500</minimumTokens>
                     <aggregate>true</aggregate>
                     <targetJdk>1.8</targetJdk>
@@ -1112,6 +1112,8 @@
         <jcuda.version>6.5.0</jcuda.version>
         <jocl.version>2.3.2</jocl.version>
         <junit.version>4.12</junit.version>
+        <openmm.version>7.1</openmm.version>
+        <jna.version>4.1.0</jna.version>
         <biojava.version>3.1.0</biojava.version>
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.1.0</clustering.version>
@@ -1121,6 +1123,7 @@
         <module>modules/autoparm</module>
         <module>modules/crystal</module>
         <module>modules/numerics</module>
+        <module>modules/openmm</module>
         <module>modules/pj</module>
         <module>modules/potential</module>
         <module>modules/ui</module>

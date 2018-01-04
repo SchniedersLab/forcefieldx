@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>edu.uiowa.eng.ffx</groupId>
+        <artifactId>ffx</artifactId>
+        <version>1.0.0-beta</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <groupId>simtk</groupId>
+    <artifactId>openmm</artifactId>
+    <version>${openmm.version}</version>
+    <packaging>jar</packaging>
+    <name>OpenMM Java Wrappers</name>
+    <description>Java wrappers for the OpenMM API.</description>
+    <dependencies>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>${jna.version}</version>
+        </dependency>
+        <!-- dependency>
+            <groupId>com.nativelibs4java</groupId>
+            <artifactId>jnaerator-runtime</artifactId>
+            <version>0.13-SNAPSHOT</version>
+        </dependency -->
+    </dependencies>
+</project>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project
+    name="OpenMM"
+    xmlns="http://maven.apache.org/DECORATION/1.7.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0 http://maven.apache.org/xsd/decoration-1.7.0.xsd">
+    <body>
+        <menu name="OpenMM">
+            <item name="OpenMM Java Wrappers" href="/index.html"/>
+        </menu>
+    </body>
+</project>

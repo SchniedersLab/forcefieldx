@@ -148,11 +148,10 @@
             <artifactId>commons-collections</artifactId>
             <version>4.0-SNAPSHOT</version>
         </dependency>
-
         <dependency>
             <groupId>simtk</groupId>
             <artifactId>openmm</artifactId>
-            <version>7.1</version>
+            <version>${openmm.version}</version>
         </dependency>
         <!-- dependency>
             <groupId>com.nativelibs4java</groupId>
