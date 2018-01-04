@@ -1129,10 +1129,6 @@
         <module>modules/ui</module>
         <module>modules/utilities</module>
         <module>modules/xray</module>
-        <!-- module>modules/binding</module -->
-        <!-- module>modules/cg</module -->
-        <!-- module>modules/continuum</module -->
-        <!-- module>modules/nucleic</module -->
     </modules>
     <dependencies>
         <dependency>
