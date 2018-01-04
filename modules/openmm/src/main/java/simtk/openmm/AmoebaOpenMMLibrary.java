@@ -19,7 +19,7 @@ import com.sun.jna.ptr.PointerByReference;
  * For help, please visit <a href="http://nativelibs4java.googlecode.com/">NativeLibs4Java</a> , <a href="http://rococoa.dev.java.net/">Rococoa</a>, or <a href="http://jna.dev.java.net/">JNA</a>.
  */
 public class AmoebaOpenMMLibrary implements Library {
-    public static final String JNA_LIBRARY_NAME = "AmoebaOpenMM";
+    public static final String JNA_LIBRARY_NAME = "OpenMMAmoeba";
     public static final NativeLibrary JNA_NATIVE_LIB = NativeLibrary.getInstance(AmoebaOpenMMLibrary.JNA_LIBRARY_NAME);
 
     static {
