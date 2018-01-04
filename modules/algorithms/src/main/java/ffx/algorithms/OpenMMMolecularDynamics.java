@@ -421,8 +421,8 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         int i = 0;
         running = false;
 
-        // logger.info(" Calling OpenMM Update from MD Init.");
-        // openMM_Update(i, running);
+        logger.info(" Calling OpenMM Update from MD Init.");
+        openMM_Update(i, running);
     }
 
     /**
