@@ -22,10 +22,5 @@
             <artifactId>jna</artifactId>
             <version>${jna.version}</version>
         </dependency>
-        <!-- dependency>
-            <groupId>com.nativelibs4java</groupId>
-            <artifactId>jnaerator-runtime</artifactId>
-            <version>0.13-SNAPSHOT</version>
-        </dependency -->
     </dependencies>
 </project>
