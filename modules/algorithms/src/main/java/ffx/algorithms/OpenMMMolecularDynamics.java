@@ -67,7 +67,7 @@ import com.sun.jna.ptr.PointerByReference;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Context_getState;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Context_setVelocitiesToTemperature;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Integrator_step;
-import static simtk.openmm.OpenMMLibrary.OpenMM_KcalPerKJ;
+import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;

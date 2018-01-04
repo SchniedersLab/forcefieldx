@@ -1,23 +1,24 @@
 
 -limitComments
 
--runtime BridJ 
+-runtime JNA
 
--mode StandaloneJar
+-direct
 
--jar openmm-7.1.jar
+-skipDeprecated
 
--libFile /c/sdl/Utility/Miniconda3/pkgs/openmm-7.1.0rc1-py35_0/include/libOpenMM.dylib
+-mode Jar
+
+-jar openmm-7.1.1.jar
 
 -package simtk.openmm
 
 -library OpenMM
 
--package simtk.openmm
+/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/include/OpenMMCWrapper.h
 
--I/c/sdl/Utility/Miniconda3/pkgs/openmm-7.1.0rc1-py35_0/include/
+-library AmoebaOpenMM
 
-/c/sdl/Utility/Miniconda3/pkgs/openmm-7.1.0rc1-py35_0/include/OpenMMCWrapper.h
-/c/sdl/Utility/Miniconda3/pkgs/openmm-7.1.0rc1-py35_0/include/AmoebaOpenMMCWrapper.h
+/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/include/AmoebaOpenMMCWrapper.h
 
 

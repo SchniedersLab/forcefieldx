@@ -1112,7 +1112,7 @@
         <jcuda.version>6.5.0</jcuda.version>
         <jocl.version>2.3.2</jocl.version>
         <junit.version>4.12</junit.version>
-        <openmm.version>7.1</openmm.version>
+        <openmm.version>7.1.1</openmm.version>
         <jna.version>4.1.0</jna.version>
         <biojava.version>3.1.0</biojava.version>
         <cdk.version>2.0</cdk.version>
