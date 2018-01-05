@@ -45,8 +45,25 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import com.sun.jna.ptr.PointerByReference;
+
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
+
+import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Context_getState;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Context_setVelocitiesToTemperature;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Integrator_step;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_destroy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_getForces;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_getKineticEnergy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPositions;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_getVelocities;
 
 import ffx.algorithms.Integrator.Integrators;
 import ffx.algorithms.Thermostat.Thermostats;
@@ -62,22 +79,6 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import static ffx.algorithms.Thermostat.convert;
 import static ffx.algorithms.Thermostat.kB;
-
-import com.sun.jna.ptr.PointerByReference;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Context_getState;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Context_setVelocitiesToTemperature;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Integrator_step;
-import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_destroy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_getForces;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_getKineticEnergy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPositions;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_getVelocities;
 
 /**
  * Runs Molecular Dynamics using OpenMM implementation
@@ -420,8 +421,8 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         int i = 0;
         running = false;
 
-        // logger.info(" Calling OpenMM Update from MD Init.");
-        // openMM_Update(i, running);
+        logger.info(" Calling OpenMM Update from MD Init.");
+        openMM_Update(i, running);
     }
 
     /**

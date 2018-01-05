@@ -14,7 +14,8 @@
     <artifactId>pj</artifactId>
     <packaging>jar</packaging>
     <name>Parallel Java</name>
-    <description>Minor modifications to Parallel Java</description>
+    <description>Continuation (and minor modifications) to Parallel Java</description>
+    <version>1.0.1</version>
     <build>
         <pluginManagement>
             <!-- Explicitly define plugin versions for reproducible builds -->

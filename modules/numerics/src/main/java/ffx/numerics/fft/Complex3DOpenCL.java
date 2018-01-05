@@ -44,9 +44,6 @@ import java.nio.DoubleBuffer;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import edu.rit.pj.IntegerSchedule;
-import edu.rit.pj.ParallelTeam;
-
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
@@ -55,6 +52,9 @@ import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory.Mem;
 import com.jogamp.opencl.CLPlatform;
 import com.jogamp.opencl.CLProgram;
+
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.pj.ParallelTeam;
 
 /**
  * This class implements a Java wrapper for calling clMath FFT.
