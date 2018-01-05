@@ -863,6 +863,31 @@ public abstract class SystemFilter {
             }
         }
 
+        String[] xyzRestStrings = properties.getStringArray("xyzRestraint");
+        for (String xR : xyzRestStrings) {
+            String[] toks = xR.split("\\s+");
+            int nToks = toks.length;
+            if (nToks != 6) {
+                logger.info(" XYZ restraint rejected: must have force constant, lambda boolean (true/false), 3 coordinates, and an atom number");
+                logger.info(" For a coordinate restraint centered on original coordinates, use restraint or lamrestraint keys.");
+                logger.info(String.format(" Rejected restraint string: %s", xR));
+            } else {
+                try {
+                    double forceConst = Double.parseDouble(toks[0]);
+                    boolean useLambda = Boolean.parseBoolean(toks[1]);
+                    double[] restXYZ = new double[3];
+                    for (int i = 0; i < 3; i++) {
+                        restXYZ[i] = Double.parseDouble(toks[i+2]);
+                    }
+                    int atNum = Integer.parseInt(toks[5]);
+                    Atom[] atArr = { molaAtoms[atNum] };
+                    coordRestraints.add(new CoordRestraint(atArr, forceField, useLambda, forceConst));
+                } catch (Exception ex) {
+                    logger.info(String.format(" Exception parsing xyzRestraint %s: %s", xR, ex.toString()));
+                }
+            }
+        }
+
         String[] noElStrings = properties.getStringArray("noElectro");
         for (String noE : noElStrings) {
             String[] toks = noE.split("\\s+");
