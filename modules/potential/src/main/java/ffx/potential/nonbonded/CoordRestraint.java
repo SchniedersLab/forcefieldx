@@ -86,6 +86,7 @@ public class CoordRestraint implements LambdaInterface {
     private AtomType atom1Type;
     private AtomType atom2Type;
     private AtomType atom3Type;
+    private boolean ignoreHydrogen = true;
 
     /**
      * This CoordRestraint is based on the unit cell parameters and symmetry
@@ -314,7 +315,7 @@ public class CoordRestraint implements LambdaInterface {
                 }
             } else {
 
-                if (atom.isHydrogen()) {
+                if (ignoreHydrogen && atom.isHydrogen()) {
                     continue;
                 }
 
@@ -385,13 +386,21 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
+    /**
+     * Sets the initial coordinates to new values.
+     * @param newInitialCoordinates Indexed xyz,atom number.
+     */
     public void setCoordinatePin(double[][] newInitialCoordinates) {
         if (newInitialCoordinates.length != initialCoordinates.length) {
             throw new IllegalArgumentException(" Incorrect number of atoms!");
         }
-        for (int i = 0; i < initialCoordinates.length; i++) {
-            System.arraycopy(newInitialCoordinates[i], 0, initialCoordinates[i], 0, 3);
+        for (int i = 0; i < 3; i++) {
+            System.arraycopy(newInitialCoordinates[i], 0, initialCoordinates[i], 0, initialCoordinates[0].length);
         }
+    }
+
+    public void setIgnoreHydrogen(boolean ignoreHydrogen) {
+        this.ignoreHydrogen = ignoreHydrogen;
     }
 
     public void resetCoordinatePin() {
