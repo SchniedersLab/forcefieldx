@@ -17,7 +17,11 @@
             <p>
             Please see the <a href="https://www.cs.rit.edu/~ark/pj.shtml">PJ website</a>for further information.
             </p>
-            <p>This version of PJ includes minor modifications compared to the original.</p>
+            <p>
+            This version of PJ includes minor modifications compared to the original.
+            </p>
+            <p>Jacob Litman at the Schnieders Lab in the Department of Biochemistry at the University of Iowa added
+                a mechanism for shutdown and garbage collection of ParallelTeams.</p>
         </section>
     </body>
 </document>
