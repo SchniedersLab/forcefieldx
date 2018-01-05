@@ -276,9 +276,6 @@
             <distribution>manual</distribution>
         </license>
     </licenses>
-    <!-- prerequisites>
-        <maven>3.2</maven>
-    </prerequisites -->
     <scm>
         <url>http://github.com/mjschnie/ffx</url>
         <connection>scm:git:http://github.com/mjschnie/ffx.git</connection>
@@ -394,7 +391,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.0.0-M1</version>
+                    <version>3.0.0</version>
                     <inherited>true</inherited>
                     <configuration>
                         <author>true</author>
@@ -428,7 +425,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-site-plugin</artifactId>
-                    <version>3.6</version>
+                    <version>3.7</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
@@ -948,7 +945,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.0-M1</version>
+                <version>3.0.0</version>
                 <configuration>
                     <quiet>true</quiet>
                     <failOnError>false</failOnError>
