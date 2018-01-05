@@ -54,8 +54,8 @@ import ffx.potential.MolecularAssembly;
  * Sample a thermodynamic path using the OSRW method, with the time-dependent
  * bias built up using Metropolis Monte Carlo steps.
  *
- * The goal is generate coordinate (X) MC moves using molecular dynamics at a
- * fixed lambda value, following by MC lambda moves.
+ * The algorithm generates coordinate (X) MC moves using molecular dynamics at a
+ * fixed lambda value (i.e. using OpenMM), followed by MC lambda moves.
  *
  * 1.) At a fixed Lambda, run a defined length MD trajectory to "move"
  * coordinates and dU/dL.
@@ -66,7 +66,7 @@ import ffx.potential.MolecularAssembly;
  *
  * 4.) Accept / Reject the Lambda move using the OSRW energy.
  *
- * 5.) Add a biasing potential to the current value of Lambda.
+ * 5.) Add to the time dependent 2D bias using the current values of Lambda and dU/dL.
  *
  * @author Michael J. Schnieders
  *
@@ -203,6 +203,13 @@ public class MonteCarloOSRW extends BoltzmannMC {
         int numMoves = totalSteps / stepsPerMove;
         acceptLambda = 0;
         acceptMD = 0;
+
+        /**
+         * Test Lambda End-States.
+         */
+
+
+
 
         /**
          * Initialize MC move instances.

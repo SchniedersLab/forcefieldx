@@ -421,7 +421,7 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         int i = 0;
         running = false;
 
-        logger.info(" Calling OpenMM Update from MD Init.");
+        // logger.info(" Calling OpenMM Update from MD Init.");
         openMM_Update(i, running);
     }
 
@@ -449,14 +449,14 @@ public class OpenMMMolecularDynamics extends MolecularDynamics {
         int i = 0;
         time = -System.nanoTime();
         while (i < numSteps) {
-            logger.info(" Calling OpenMM Update prior to MD Steps.");
+            // logger.info(" Calling OpenMM Update prior to MD Steps.");
             openMM_Update(i, running);
             //time = -System.nanoTime();
             takeSteps(intervalSteps);
             //time += System.nanoTime();
             i += intervalSteps;
         }
-        logger.info(" Calling OpenMM Update after MD Steps.");
+        // logger.info(" Calling OpenMM Update after MD Steps.");
         openMM_Update(i, running);
         logger.info("");
     }

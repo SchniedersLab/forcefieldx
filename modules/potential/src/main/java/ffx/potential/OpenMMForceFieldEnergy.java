@@ -1752,7 +1752,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * Updates the AMOEBA van der Waals force for change in Use flags.
      *
      * @param atoms Array of all Atoms in the system
-     * @param useChanged Indices of atoms with changed Use flags
      */
     private void updateAmoebaVDWForce(Atom[] atoms) {
         VanDerWaals vdW = super.getVdwNode();
@@ -1791,7 +1790,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * Updates the fixed-charge non-bonded force for change in Use flags.
      *
      * @param atoms Array of all Atoms in the system
-     * @param useChanged Indices of atoms with changed Use flags
      */
     private void updateFixedChargeNonBondedForce(Atom[] atoms) {
         VanDerWaals vdW = super.getVdwNode();
@@ -1831,6 +1829,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
+
+            double lambdaScale = lambda;
+            if (!atom.applyLambda()) {
+                lambdaScale = 1.0;
+            }
+
+            useFactor *= lambdaScale;
+
             double charge = 0.0;
             MultipoleType multipoleType = atom.getMultipoleType();
             if (multipoleType != null) {
@@ -1848,7 +1854,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * Updates the custom GB force for change in Use flags.
      *
      * @param atoms Array of all Atoms in the system
-     * @param useChanged Indices of atoms with changed Use flags
      */
     private void updateCustomGBForce(Atom[] atoms) {
         GeneralizedKirkwood gk = super.getGK();
@@ -1863,6 +1868,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
+            double lambdaScale = lambda;
+            if (!atom.applyLambda()) {
+                lambdaScale = 1.0;
+            }
+
+            useFactor *= lambdaScale;
+
             MultipoleType multipoleType = atom.getMultipoleType();
             double charge = multipoleType.charge * useFactor;
             double oScale = overlapScale[i] * useFactor;
@@ -1881,7 +1893,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * flags.
      *
      * @param atoms Array of all Atoms in the system
-     * @param useChanged Indices of atoms with changed Use flags
      */
     private void updateAmoebaMultipoleForce(Atom[] atoms) {
         ParticleMeshEwald pme = super.getPmeNode();
@@ -1910,6 +1921,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
+
+            double lambdaScale = lambda;
+            if (!atom.applyLambda()) {
+                lambdaScale = 1.0;
+            }
+
+            useFactor *= lambdaScale;
 
             /**
              * Define the frame definition.
@@ -1984,7 +2002,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * Updates the AMOEBA Generalized Kirkwood force for change in Use flags.
      *
      * @param atoms Array of all Atoms in the system
-     * @param useChanged Indices of atoms with changed Use flags
      */
     private void updateAmoebaGeneralizedKirkwoodForce(Atom[] atoms) {
         GeneralizedKirkwood gk = super.getGK();
@@ -1996,9 +2013,18 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
+
+            double lambdaScale = lambda;
+            if (!atoms[i].applyLambda()) {
+                lambdaScale = 1.0;
+            }
+
+            useFactor *= lambdaScale;
+
             MultipoleType multipoleType = atoms[i].getMultipoleType();
             OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(amoebaGeneralizedKirkwoodForce, i,
-                    multipoleType.charge * useFactor, OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i] * useFactor);
+                    multipoleType.charge * useFactor,
+                    OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i] * useFactor);
         }
         OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, openMMContext);
     }
@@ -2007,7 +2033,6 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * Updates the WCA force for change in Use flags.
      *
      * @param atoms Array of all Atoms in the system
-     * @param useChanged Indices of atoms with changed Use flags
      */
     private void updateWCAForce(Atom[] atoms) {
         VanDerWaals vdW = super.getVdwNode();
@@ -2022,6 +2047,13 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
+
+            double lambdaScale = lambda;
+            if (!atoms[i].applyLambda()) {
+                lambdaScale = 1.0;
+            }
+            useFactor *= lambdaScale;
+
             Atom atom = atoms[i];
             VDWType vdwType = atom.getVDWType();
             double radius = vdwType.radius;
@@ -2035,165 +2067,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     @Override
     public void setLambda(double lambda) {
-        if (lambda >= 0 && lambda <= 1) {
+        if (lambda >= 0.0 && lambda <= 1.0) {
             this.lambda = lambda;
             super.setLambda(lambda);
-
-            Atom[] atoms = molecularAssembly.getAtomArray();
-            int nAtoms = atoms.length;
-            List<Atom> lambdaList = new ArrayList<>();
-
-            for (int i = 0; i < nAtoms; i++) {
-                Atom atom = atoms[i];
-                if (atom.applyLambda()) {
-                    lambdaList.add(atom);
-                }
-            }
-
-            Atom[] atomArray = new Atom[lambdaList.size()];
-            for (int i = 0; i < lambdaList.size(); i++) {
-                atomArray[i] = lambdaList.get(i);
-            }
-
-            if (amoebaMultipoleForce != null) {
-                scaleAmoebaMultipoleForceByLambda(atomArray, lambda);
-            }
-            if (fixedChargeNonBondedForce != null) {
-                scaleFixedChargeNonBondedForceByLambda(atomArray, lambda);
-            }
+            updateParameters();
         } else {
             String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
             logger.warning(message);
         }
-
-    }
-
-    private void scaleFixedChargeNonBondedForceByLambda(Atom[] atoms, double lambda) {
-
-        double radScale = getVDWRadius();
-
-        if (radScale < 0) {
-            return;
-        }
-
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            double lambdaFactor = lambda;
-            if (!atom.applyLambda()) {
-                lambdaFactor = 1.0;
-            }
-
-            double charge = 0.0;
-            MultipoleType multipoleType = atom.getMultipoleType();
-            if (multipoleType != null) {
-                charge = multipoleType.charge;
-            }
-            VDWType vdwType = atom.getVDWType();
-            double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
-            double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
-            OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge * lambdaFactor, sigma, eps);
-
-        }
-
-        OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, openMMContext);
-    }
-
-    private void scaleAmoebaMultipoleForceByLambda(Atom[] atoms, double lambda) {
-        ParticleMeshEwald pme = super.getPmeNode();
-        int axisAtom[][] = pme.getAxisAtoms();
-        double dipoleConversion = OpenMM_NmPerAngstrom;
-        double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
-        double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom
-                * OpenMM_NmPerAngstrom;
-        double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
-
-        double polarScale = 1.0;
-        if (pme.getPolarizationType() == Polarization.NONE) {
-            polarScale = 0.0;
-        }
-
-        PointerByReference dipoles = OpenMM_DoubleArray_create(3);
-        PointerByReference quadrupoles = OpenMM_DoubleArray_create(9);
-
-        int nAtoms = atoms.length;
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            MultipoleType multipoleType = atom.getMultipoleType();
-            PolarizeType polarType = atom.getPolarizeType();
-
-            double lambdaFactor = lambda;
-            if (!atom.applyLambda()) {
-                lambdaFactor = 1.0;
-            }
-
-            /**
-             * Define the frame definition.
-             */
-            int axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
-            switch (multipoleType.frameDefinition) {
-                case ZONLY:
-                    axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
-                    break;
-                case ZTHENX:
-                    axisType = OpenMM_AmoebaMultipoleForce_ZThenX;
-                    break;
-                case BISECTOR:
-                    axisType = OpenMM_AmoebaMultipoleForce_Bisector;
-                    break;
-                case ZTHENBISECTOR:
-                    axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
-                    break;
-                case TRISECTOR:
-                    axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
-                    break;
-                default:
-                    break;
-            }
-
-            /**
-             * Load local multipole coefficients.
-             */
-            for (int j = 0; j < 3; j++) {
-                OpenMM_DoubleArray_set(dipoles, j, multipoleType.dipole[j] * dipoleConversion * lambdaFactor);
-
-            }
-            int l = 0;
-            for (int j = 0; j < 3; j++) {
-                for (int k = 0; k < 3; k++) {
-                    OpenMM_DoubleArray_set(quadrupoles, l++, multipoleType.quadrupole[j][k]
-                            * quadrupoleConversion / 3.0 * lambdaFactor);
-                }
-            }
-
-            int zaxis = 0;
-            int xaxis = 0;
-            int yaxis = 0;
-            int refAtoms[] = axisAtom[i];
-            if (refAtoms != null) {
-                zaxis = refAtoms[0];
-                if (refAtoms.length > 1) {
-                    xaxis = refAtoms[1];
-                    if (refAtoms.length > 2) {
-                        yaxis = refAtoms[2];
-                    }
-                }
-            }
-
-            /**
-             * Add the multipole.
-             */
-            OpenMM_AmoebaMultipoleForce_setMultipoleParameters(amoebaMultipoleForce, i,
-                    multipoleType.charge * lambdaFactor, dipoles, quadrupoles,
-                    axisType, zaxis, xaxis, yaxis,
-                    polarType.thole,
-                    polarType.pdamp * dampingFactorConversion,
-                    polarType.polarizability * polarityConversion * polarScale * lambdaFactor);
-        }
-        OpenMM_DoubleArray_destroy(dipoles);
-        OpenMM_DoubleArray_destroy(quadrupoles);
-
-        OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, openMMContext);
     }
 
     /**
@@ -2665,6 +2546,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     private boolean doOpenMMdEdL = false;
     private boolean doFFXdEdL = true;
+    private boolean testdEdL = true;
 
     /**
      * {@inheritDoc}
@@ -2673,6 +2555,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     public double getdEdL() {
         if (!lambdaTerm) {
             return 0.0;
+        }
+
+        if (testdEdL) {
+            testLambda();
+            testdEdL = false;
         }
 
         double currentLambda = lambda;
@@ -2752,6 +2639,37 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
 
         return dEdL;
+    }
+
+    /**
+     * Test the OpenMM and FFX energy for Lambda = 0 and Lambda = 1.
+     */
+    public void testLambda() {
+        // Save the current value of Lambda.
+        double currentLambda = lambda;
+
+        // Small optimization to only create the x array once.
+        double[] x = new double[getNumberOfVariables()];
+        getCoordinates(x);
+
+        // Test OpenMM at L=0 and L=1.
+        setLambda(0.0);
+        double openMMEnergyZero = energy(x);
+        setLambda(1.0);
+        double openMMEnergyOne = energy(x);
+
+        // Test FFX at L=0 and L=1.
+        super.setLambda(1.0);
+        super.setLambdaMultipoleScale(0.0);
+        double ffxEnergyZero = super.energy(x, false);
+        super.setLambdaMultipoleScale(1.0);
+        double ffxEnergyOne = super.energy(x, false);
+        super.setLambdaMultipoleScale(currentLambda);
+
+        setLambda(currentLambda);
+
+        logger.info(format(" OpenMM Energy at L=0: %16.8f and L=1: %16.8f", openMMEnergyZero, openMMEnergyOne));
+        logger.info(format(" FFX Energy    at L=0: %16.8f and L=1: %16.8f", ffxEnergyZero, ffxEnergyOne));
     }
 
     /**

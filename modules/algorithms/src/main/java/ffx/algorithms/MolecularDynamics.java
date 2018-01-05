@@ -1097,8 +1097,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
         return currentTotalEnergy;
     }
 
+    /**
+     * Get the system kinetic energy.
+     *
+     * @return kinetic energy.
+     */
     public double getKineticEnergy() {
         return currentKineticEnergy;
+    }
+
+    /**
+     * Get the system potential energy.
+     *
+     * @return potential energy.
+     */
+    public double getPotentialEnergy() {
+        return currentPotentialEnergy;
     }
 
     /**

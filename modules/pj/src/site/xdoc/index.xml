@@ -2,8 +2,7 @@
 <document
     xmlns="http://maven.apache.org/XDOC/2.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
-    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Parallel Java</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
@@ -13,15 +12,14 @@
             <p>Parallel Java (PJ) is an API and middleware for parallel programming in 100% Java
                 on shared memory multiprocessor (SMP) parallel computers, cluster parallel computers,
                 and hybrid SMP cluster parallel computers. PJ was developed by Professor Alan Kaminsky
-                and his student Luke McOmber in the Department of Computer Science at the Rochester Institute of Technology.</p>
-            <p>
-            Please see the <a href="https://www.cs.rit.edu/~ark/pj.shtml">PJ website</a>for further information.
+                and his student Luke McOmber in the Department of Computer Science at the Rochester Institute of Technology.
+                Please see the <a href="https://www.cs.rit.edu/~ark/pj.shtml">PJ website</a>for further information.
             </p>
             <p>
             This version of PJ includes minor modifications compared to the original.
+            <ul>Jacob Litman, a Department of Biochemistry graduate student at the University of Iowa, added
+                a mechanism for shutdown and garbage collection of PJ ParallelTeam instances.</ul>
             </p>
-            <p>Jacob Litman at the Schnieders Lab in the Department of Biochemistry at the University of Iowa added
-                a mechanism for shutdown and garbage collection of ParallelTeams.</p>
         </section>
     </body>
 </document>

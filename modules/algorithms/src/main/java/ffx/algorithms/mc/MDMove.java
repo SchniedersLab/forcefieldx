@@ -82,6 +82,8 @@ public class MDMove implements MCMove {
 
         molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
         molecularDynamics.setQuiet(true);
+
+
     }
 
     public void setTemperature(double temperature) {
@@ -106,6 +108,9 @@ public class MDMove implements MCMove {
     public double getKineticEnergy() {
         return molecularDynamics.getKineticEnergy();
     }
+
+    public double getPotentialEnergy() { return molecularDynamics.getPotentialEnergy(); }
+
 
     @Override
     public void revertMove() {

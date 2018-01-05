@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>Welcome</title>
         <author email="michael-schnieders@uiowa.edu">
@@ -15,40 +16,58 @@
                     <td>
                         <h4>Introduction</h4>
                         <p>Force Field X is an atomic resolution molecular modeling application that targets open
-                            research questions in the areas of:</p>
+                            research questions in the areas of:
+                        </p>
                         <ul>
-                            <li>predicting the structure, thermodynamic stability and solubility of organic polymer crystals,</li>
-                            <li>predicting the effect of missense mutations on protein structure, thermodynamics and molecular phenotype</li>
+                            <li>predicting the structure, thermodynamic stability and solubility of organic polymer
+                                crystals,
+                            </li>
+                            <li>predicting the effect of missense mutations on protein structure, thermodynamics and
+                                molecular phenotype
+                            </li>
                             <li>computational design of biomolecules in both soluble and crystalline environments</li>
                         </ul>
                         <h4>New Approaches Developed in the Schnieders' Lab</h4>
-                        <p>To address these questions, novel global optimization methods and alchemical thermodynamic paths
-                            have been implemented in Force Field X. Examples include:</p>
+                        <p>To address these questions, novel global optimization methods and alchemical thermodynamic
+                            paths
+                            have been implemented in Force Field X. Examples include:
+                        </p>
                         <ul>
                             <li>Organic crystals property prediction based on
-                                "Growth of the Asymmetric Unit into a Crystal via alcHEmy" (GAUCHE)</li>
+                                "Growth of the Asymmetric Unit into a Crystal via alcHEmy" (GAUCHE)
+                            </li>
                             <li>Many-body dead-end elimination (MB-DEE) for global optimization of non-pairwise energy
-                                functions over a discrete permutation space (i.e. side-chain rotamers).</li>
-                            <li>A general "dual force field" framework to compute the thermodynamic cost to change between
-                                fixed charge (i.e. OPLS-AA or Amber) and a polarizable multipole force field (i.e. AMOEBA).</li>
-                            <li>Refinement of biomolecular structures against experimental data sets (i.e. X-ray / neutron diffraction
-                                and/or CryoEM) and the polarizable AMOEBA force field.</li>
+                                functions over a discrete permutation space (i.e. side-chain rotamers).
+                            </li>
+                            <li>A general "dual force field" framework to compute the thermodynamic cost to change
+                                between
+                                fixed charge (i.e. OPLS-AA or Amber) and a polarizable multipole force field (i.e.
+                                AMOEBA).
+                            </li>
+                            <li>Refinement of biomolecular structures against experimental data sets (i.e. X-ray /
+                                neutron diffraction
+                                and/or CryoEM) and the polarizable AMOEBA force field.
+                            </li>
                         </ul>
                         <h4>The Force Field X Code and Manual</h4>
                         <p>
                             The FFX code is parallelized for clusters of many-core nodes using an open (GPL v. 3),
-                            modular and platform independent approach. See the FFX online manual for instructions on how to
-                            <a href="download.html">download</a> and
-                            <a href="install.html">install</a> the program.
+                            modular and platform independent approach. See the FFX online manual for instructions on how
+                            to
+                            <a href="download.html">download</a>
+                            and
+                            <a href="install.html">install</a>
+                            the program.
                             The manual also describes available
-                            <a href="commands.html">modeling commands</a> and
+                            <a href="commands.html">modeling commands</a>
+                            and
                             <a href="properties.html">property settings</a>,
                             and provides a few <a href="examples.html">examples</a> with more on the way.
                         </p>
                     </td>
                     <td bgcolor="white">
                         <p align="left">
-                            <img src="images/rotamer.png" alt="Rotamer" />
+                            <img src="images/rotamer.png" alt="Rotamer"/>
                         </p>
                     </td>
                 </tr>
