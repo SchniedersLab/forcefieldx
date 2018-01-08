@@ -502,15 +502,40 @@ public abstract class ConversionFilter {
         int nmolaAtoms = molaAtoms.length;
         String[] nouseKeys = properties.getStringArray("nouse");
         for (String nouseKey : nouseKeys) {
-            try {
+            /*try {
                 int[] nouseRange = parseAtNumArg("nouse", nouseKey, nmolaAtoms);
                 logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
-                        + "used", nouseRange[0]+1, nouseRange[1]+1));
+                        + "used", nouseRange[0] + 1, nouseRange[1] + 1));
                 for (int i = nouseRange[0]; i <= nouseRange[1]; i++) {
                     molaAtoms[i].setUse(false);
                 }
             } catch (IllegalArgumentException ex) {
                 logger.log(Level.INFO, ex.getLocalizedMessage());
+            }*/
+            String[] toks = nouseKey.split("\\s+");
+
+            for (String tok : toks) {
+                try {
+                    int[] nouseRange = parseAtNumArg("restraint", tok, nmolaAtoms);
+                    logger.info(String.format(" Setting atoms %d-%d to not be used",
+                            nouseRange[0] + 1, nouseRange[1] + 1));
+                    for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
+                        molaAtoms[j].setUse(false);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    boolean atomFound = false;
+                    for (Atom atom : molaAtoms) {
+                        if (atom.getName().equalsIgnoreCase(tok)) {
+                            atomFound = true;
+                            atom.setUse(false);
+                        }
+                    }
+                    if (atomFound) {
+                        logger.info(String.format(" Setting atoms with name %s to not be used", tok));
+                    } else {
+                        logger.log(Level.INFO, ex.getLocalizedMessage());
+                    }
+                }
             }
         }
 
