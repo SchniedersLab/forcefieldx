@@ -634,6 +634,13 @@ public abstract class ConversionFilter {
         }
 
         String[] xyzRestStrings = properties.getStringArray("xyzRestraint");
+
+        // Variables to let sequential and otherwise identical xyzRestraint strings to be globbed into one restraint.
+        List<Atom> restraintAts = new ArrayList<>();
+        List<double[]> coords = new ArrayList<>();
+        double lastForceConst = 0;
+        boolean lastUseLam = false;
+
         for (String xR : xyzRestStrings) {
             String[] toks = xR.split("\\s+");
             int nToks = toks.length;
@@ -645,20 +652,54 @@ public abstract class ConversionFilter {
                 try {
                     double forceConst = Double.parseDouble(toks[0]);
                     boolean useLambda = Boolean.parseBoolean(toks[1]);
-                    double[][] restXYZ = new double[3][1];
+
+                    if (forceConst != lastForceConst || useLambda != lastUseLam) {
+                        int nAts = restraintAts.size();
+                        if (nAts != 0) {
+                            double[][] restXYZ = new double[3][nAts];
+                            Atom[] atArr = restraintAts.toArray(new Atom[nAts]);
+                            for (int i = 0; i < 3; i++) {
+                                for (int j = 0; j < nAts; j++) {
+                                    restXYZ[i][j] = coords.get(j)[i];
+                                }
+                            }
+                            CoordRestraint thePin = new CoordRestraint(atArr, forceField, lastUseLam, lastForceConst);
+                            thePin.setCoordinatePin(restXYZ);
+                            thePin.setIgnoreHydrogen(false);
+                            coordRestraints.add(thePin);
+                        }
+                        restraintAts = new ArrayList<>();
+                        coords = new ArrayList<>();
+                        lastForceConst = forceConst;
+                        lastUseLam = useLambda;
+                    }
+
+                    double[] atXYZ = new double[3];
                     for (int i = 0; i < 3; i++) {
-                        restXYZ[i][0] = Double.parseDouble(toks[i+2]);
+                        atXYZ[i] = Double.parseDouble(toks[i+2]);
                     }
                     int atNum = Integer.parseInt(toks[5]) - 1;
-                    Atom[] atArr = { molaAtoms[atNum] };
-                    CoordRestraint thePin = new CoordRestraint(atArr, forceField, useLambda, forceConst);
-                    thePin.setCoordinatePin(restXYZ);
-                    thePin.setIgnoreHydrogen(false);
-                    coordRestraints.add(thePin);
+                    restraintAts.add(molaAtoms[atNum]);
+                    coords.add(atXYZ);
                 } catch (Exception ex) {
                     logger.info(String.format(" Exception parsing xyzRestraint %s: %s", xR, ex.toString()));
                 }
             }
+        }
+
+        int nAts = restraintAts.size();
+        if (nAts != 0) {
+            double[][] restXYZ = new double[3][nAts];
+            Atom[] atArr = restraintAts.toArray(new Atom[nAts]);
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < nAts; j++) {
+                    restXYZ[i][j] = coords.get(j)[i];
+                }
+            }
+            CoordRestraint thePin = new CoordRestraint(atArr, forceField, lastUseLam, lastForceConst);
+            thePin.setCoordinatePin(restXYZ);
+            thePin.setIgnoreHydrogen(false);
+            coordRestraints.add(thePin);
         }
 
         String[] noElStrings = properties.getStringArray("noElectro");
