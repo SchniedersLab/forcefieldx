@@ -658,7 +658,7 @@ public abstract class SystemFilter {
         int nmolaAtoms = molaAtoms.length;
         String[] nouseKeys = properties.getStringArray("nouse");
         for (String nouseKey : nouseKeys) {
-            try {
+            /*try {
                 int[] nouseRange = parseAtNumArg("nouse", nouseKey, nmolaAtoms);
                 logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
                         + "used", nouseRange[0] + 1, nouseRange[1] + 1));
@@ -667,51 +667,32 @@ public abstract class SystemFilter {
                 }
             } catch (IllegalArgumentException ex) {
                 logger.log(Level.INFO, ex.getLocalizedMessage());
-            }
-            /*Matcher m = intrangePattern.matcher(nouseKey);
-            if (m.matches()) {
-                int start = Integer.parseInt(m.group(1)) - 1;
-                int end = Integer.parseInt(m.group(2)) - 1;
-                if (start > end) {
-                    logger.log(Level.INFO, String.format(" Input %s not valid; "
-                            + "start > end", nouseKey));
-                } else if (start < 0) {
-                    logger.log(Level.INFO, String.format(" Input %s not valid; "
-                            + "atoms should be indexed starting from 1", nouseKey));
-                } else {
-                    logger.log(Level.INFO, String.format(" Atoms %s set to be not "
-                            + "used", nouseKey));
-                    for (int i = start; i <= end; i++) {
-                        if (i >= nmolaAtoms) {
-                            logger.log(Level.INFO, String.format(" Atom index %d is "
-                                    + "out of bounds for molecular assembly of "
-                                    + "length %d", i + 1, nmolaAtoms));
-                            break;
-                        }
-                        molaAtoms[i].setUse(false);
-                    }
-                }
-            } else {
-                try {
-                    int atNum = Integer.parseUnsignedInt(nouseKey) - 1;
-                    if (atNum >= nmolaAtoms) {
-                        logger.log(Level.INFO, String.format(" Atom index %d is "
-                                + "out of bounds for molecular assembly of "
-                                + "length %d", atNum + 1, nmolaAtoms));
-                    } else if (atNum < 0) {
-                        logger.log(Level.INFO, String.format(" Input %s not valid; "
-                                + "atoms should be indexed starting from 1", nouseKey));
-                    } else {
-                        logger.log(Level.INFO, String.format(" Atom %s set to be not "
-                                + "used", nouseKey));
-                        molaAtoms[atNum].setUse(false);
-                    }
-                } catch (NumberFormatException ex) {
-                    logger.log(Level.INFO, String.format(" nouse key %s cannot "
-                            + "be interpreted as an atom number or range of atom "
-                            + "numbers.", nouseKey));
-                }
             }*/
+            String[] toks = nouseKey.split("\\s+");
+
+            for (String tok : toks) {
+                try {
+                    int[] nouseRange = parseAtNumArg("restraint", tok, nmolaAtoms);
+                    logger.info(String.format(" Setting atoms %d-%d to not be used",
+                            nouseRange[0] + 1, nouseRange[1] + 1));
+                    for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
+                        molaAtoms[j].setUse(false);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    boolean atomFound = false;
+                    for (Atom atom : molaAtoms) {
+                        if (atom.getName().equalsIgnoreCase(tok)) {
+                            atomFound = true;
+                            atom.setUse(false);
+                        }
+                    }
+                    if (atomFound) {
+                        logger.info(String.format(" Setting atoms with name %s to not be used", tok));
+                    } else {
+                        logger.log(Level.INFO, ex.getLocalizedMessage());
+                    }
+                }
+            }
         }
 
         String[] inactiveKeys = properties.getStringArray("inactive");
@@ -793,10 +774,10 @@ public abstract class SystemFilter {
 
             for (int i = 1; i < toks.length; i++) {
                 try {
-                    int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
+                    int[] restrRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
                     logger.info(String.format(" Adding atoms %d-%d to restraint",
-                            nouseRange[0] + 1, nouseRange[1] + 1));
-                    for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
+                            restrRange[0] + 1, restrRange[1] + 1));
+                    for (int j = restrRange[0]; j <= restrRange[1]; j++) {
                         restraintAtoms.add(molaAtoms[j]);
                     }
                 } catch (IllegalArgumentException ex) {
@@ -832,10 +813,10 @@ public abstract class SystemFilter {
 
             for (int i = 1; i < toks.length; i++) {
                 try {
-                    int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
+                    int[] restrRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
                     logger.info(String.format(" Adding atoms %d-%d to restraint",
-                            nouseRange[0] + 1, nouseRange[1] + 1));
-                    for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
+                            restrRange[0] + 1, restrRange[1] + 1));
+                    for (int j = restrRange[0]; j <= restrRange[1]; j++) {
                         restraintAtoms.add(molaAtoms[j]);
                     }
                 } catch (IllegalArgumentException ex) {
@@ -864,6 +845,13 @@ public abstract class SystemFilter {
         }
 
         String[] xyzRestStrings = properties.getStringArray("xyzRestraint");
+
+        // Variables to let sequential and otherwise identical xyzRestraint strings to be globbed into one restraint.
+        List<Atom> restraintAts = new ArrayList<>();
+        List<double[]> coords = new ArrayList<>();
+        double lastForceConst = 0;
+        boolean lastUseLam = false;
+
         for (String xR : xyzRestStrings) {
             String[] toks = xR.split("\\s+");
             int nToks = toks.length;
@@ -875,20 +863,54 @@ public abstract class SystemFilter {
                 try {
                     double forceConst = Double.parseDouble(toks[0]);
                     boolean useLambda = Boolean.parseBoolean(toks[1]);
-                    double[][] restXYZ = new double[3][1];
+
+                    if (forceConst != lastForceConst || useLambda != lastUseLam) {
+                        int nAts = restraintAts.size();
+                        if (nAts != 0) {
+                            double[][] restXYZ = new double[3][nAts];
+                            Atom[] atArr = restraintAts.toArray(new Atom[nAts]);
+                            for (int i = 0; i < 3; i++) {
+                                for (int j = 0; j < nAts; j++) {
+                                    restXYZ[i][j] = coords.get(j)[i];
+                                }
+                            }
+                            CoordRestraint thePin = new CoordRestraint(atArr, forceField, lastUseLam, lastForceConst);
+                            thePin.setCoordinatePin(restXYZ);
+                            thePin.setIgnoreHydrogen(false);
+                            coordRestraints.add(thePin);
+                        }
+                        restraintAts = new ArrayList<>();
+                        coords = new ArrayList<>();
+                        lastForceConst = forceConst;
+                        lastUseLam = useLambda;
+                    }
+
+                    double[] atXYZ = new double[3];
                     for (int i = 0; i < 3; i++) {
-                        restXYZ[i][0] = Double.parseDouble(toks[i+2]);
+                        atXYZ[i] = Double.parseDouble(toks[i+2]);
                     }
                     int atNum = Integer.parseInt(toks[5]) - 1;
-                    Atom[] atArr = { molaAtoms[atNum] };
-                    CoordRestraint thePin = new CoordRestraint(atArr, forceField, useLambda, forceConst);
-                    thePin.setCoordinatePin(restXYZ);
-                    thePin.setIgnoreHydrogen(false);
-                    coordRestraints.add(thePin);
+                    restraintAts.add(molaAtoms[atNum]);
+                    coords.add(atXYZ);
                 } catch (Exception ex) {
                     logger.info(String.format(" Exception parsing xyzRestraint %s: %s", xR, ex.toString()));
                 }
             }
+        }
+
+        int nAts = restraintAts.size();
+        if (nAts != 0) {
+            double[][] restXYZ = new double[3][nAts];
+            Atom[] atArr = restraintAts.toArray(new Atom[nAts]);
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < nAts; j++) {
+                    restXYZ[i][j] = coords.get(j)[i];
+                }
+            }
+            CoordRestraint thePin = new CoordRestraint(atArr, forceField, lastUseLam, lastForceConst);
+            thePin.setCoordinatePin(restXYZ);
+            thePin.setIgnoreHydrogen(false);
+            coordRestraints.add(thePin);
         }
 
         String[] noElStrings = properties.getStringArray("noElectro");
