@@ -13,7 +13,6 @@ import ffx.algorithms.Thermostat.Thermostats
 import ffx.crystal.CrystalPotential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.OpenMMForceFieldEnergy
 import ffx.potential.nonbonded.CoordRestraint
 import ffx.potential.parameters.ForceField
 
@@ -40,7 +39,7 @@ Thermostats thermostat = null;
 // Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET] for regular MolecularDynamics
 Integrators integrator = null;
 
-// Integrator string, sets integrator for OpenMMMolecularDynamics
+// Integrator string, sets integrator for MolecularDynamicsOpenMM
 //String stringIntegrator = "VERLET";
 
 // Reset velocities (ignored if a restart file is given)
@@ -222,7 +221,7 @@ forceFieldEnergy.getCoordinates(x);
 forceFieldEnergy.energy(x, true);
 
 if (pressure > 0) {
-    if (potential instanceof OpenMMForceFieldEnergy) {
+    if (potential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
         logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.");
     }
     logger.info(String.format(" Running NPT dynamics at pressure %7.4g", pressure));
@@ -248,9 +247,9 @@ if (!dyn.exists()) {
 
 logger.info(" about to create dynamics object");
 
-//if (forceFieldEnergy instanceof OpenMMForceFieldEnergy) {
+//if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
 MolecularDynamics moldyn = MolecularDynamics.dynamicsFactory(active, forceFieldEnergy, active.getProperties(), sh, thermostat, integrator)
-if (moldyn instanceof OpenMMMolecularDynamics){
+if (moldyn instanceof MolecularDynamicsOpenMM){
     moldyn.setRestartFrequency(restartFrequency);
     //moldyn.setIntegratorString(stringIntegrator);
     //moldyn.setFrictionCoefficient(frictionCoeff);

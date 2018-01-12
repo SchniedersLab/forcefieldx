@@ -793,10 +793,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 case OMM_REF: // Should be split from the code once we figure out how to specify a kernel.
                 case OMM_CUDA:
                     try {
-                        OpenMMForceFieldEnergy openMMEnergy = new OpenMMForceFieldEnergy(assembly, platform, restraints, numThreads);
+                        ForceFieldEnergyOpenMM openMMEnergy = new ForceFieldEnergyOpenMM(assembly, platform, restraints, numThreads);
                         return openMMEnergy;
                     } catch (Exception ex) {
-                        logger.warning(format(" Exception creating OpenMMForceFieldEnergy: %s", ex));
+                        logger.warning(format(" Exception creating ForceFieldEnergyOpenMM: %s", ex));
                         ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
                         if (ffxEnergy == null) {
                             ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);

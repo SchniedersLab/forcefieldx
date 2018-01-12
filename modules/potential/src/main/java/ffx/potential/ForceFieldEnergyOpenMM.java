@@ -285,114 +285,175 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
  *
  * @since 1.0
  */
-public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
+public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
-    private static final Logger logger = Logger.getLogger(OpenMMForceFieldEnergy.class.getName());
+    private static final Logger logger = Logger.getLogger(ForceFieldEnergyOpenMM.class.getName());
 
-    private static PointerByReference openMMPlatform;
-
+    /**
+     * OpenMM Platform.
+     */
+    private static PointerByReference platform = null;
     /**
      * OpenMM System.
      */
-    private PointerByReference openMMSystem;
+    private PointerByReference system = null;
     /**
      * OpenMM Integrator.
      */
-    private PointerByReference openMMIntegrator;
+    private PointerByReference integrator = null;
     /**
      * OpenMM Context.
      */
-    private PointerByReference openMMContext;
+    private PointerByReference context = null;
     /**
      * OpenMM State.
      */
-    private PointerByReference openMMState;
-
-    private PointerByReference openMMForces;
-    private PointerByReference openMMPositions;
-    private PointerByReference openMMVelocities;
-    private PointerByReference thermostat;
+    private PointerByReference state = null;
+    /**
+     * OpenMM Forces.
+     */
+    private PointerByReference forces = null;
+    /**
+     * OpenMM Positions.
+     */
+    private PointerByReference positions = null;
+    /**
+     * OpenMM Velocities.
+     */
+    private PointerByReference velocities = null;
     /**
      * OpenMM center-of-mass motion remover.
      */
     private PointerByReference commRemover = null;
-
     /**
-     * OpenMM AMOEBA Force References.
+     * Number of particles.
+     */
+    private int numParticles = 0;
+    /**
+     * OpenMM AMOEBA Bond Force.
      */
     private PointerByReference amoebaBondForce = null;
+    /**
+     * OpenMM AMOEBA Angle Force.
+     */
     private PointerByReference amoebaAngleForce = null;
+    /**
+     * OpenMM AMOEBA In-Plane Angle Force.
+     */
     private PointerByReference amoebaInPlaneAngleForce = null;
+    /**
+     * OpenMM AMOEBA Urey Bradley Force.
+     */
     private PointerByReference amoebaUreyBradleyForce = null;
+    /**
+     * OpenMM AMOEBA Out-of-Plane Bend Force.
+     */
     private PointerByReference amoebaOutOfPlaneBendForce = null;
+    /**
+     * OpenMM AMOEBA Stretch Bend Force.
+     */
     private PointerByReference amoebaStretchBendForce = null;
+    /**
+     * OpenMM AMOEBA Torsion Force.
+     */
     private PointerByReference amoebaTorsionForce = null;
+    /**
+     * OpenMM Improper Torsion Force.
+     */
     private PointerByReference amoebaImproperTorsionForce = null;
+    /**
+     * OpenMM AMOEBA Pi Torsion Force.
+     */
     private PointerByReference amoebaPiTorsionForce = null;
+    /**
+     * OpenMM AMOEBA Torsion Torsion Force.
+     */
     private PointerByReference amoebaTorsionTorsionForce = null;
+    /**
+     * OpenMM AMOEBA van der Waals Force.
+     */
     private PointerByReference amoebaVDWForce = null;
+    /**
+     * OpenMM AMOEBA Multipole Force.
+     */
     private PointerByReference amoebaMultipoleForce = null;
+    /**
+     * OpenMM Generalized Kirkwood Force.
+     */
     private PointerByReference amoebaGeneralizedKirkwoodForce = null;
+    /**
+     * OpenMM AMOEBA WCA Dispersion Force.
+     */
     private PointerByReference amoebaWcaDispersionForce = null;
     /**
-     * OpenMM Fixed Charge Force References.
+     * OpenMM Fixed Charge Non-Bonded Force.
      */
     private PointerByReference fixedChargeNonBondedForce = null;
-    private PointerByReference customGBForce = null;
-
-    private double frictionCoeff;
-    private double collisionFreq;
-
-    private double lambda = 1.0;
-
     /**
-     * Size of step to take in lambda for finite differences.
+     * OpenMM Custom GB Force.
+     */
+    private PointerByReference customGBForce = null;
+    /**
+     * Langevin friction coefficient.
+     */
+    private double frictionCoeff;
+    /**
+     * Langevin collision frequency.
+     */
+    private double collisionFreq;
+    /**
+     * Value of the state variable Lambda.
+     */
+    private double lambda = 1.0;
+    /**
+     * Lambda step size for finite difference dU/dL.
      */
     private double fdDLambda = 0.001;
-
     /**
-     * Variable to set water molecule bonds as rigid
+     * Flag to set water molecule bonds as rigid.
      */
     private boolean rigidHydrogen = false;
-
     /**
      * Whether to enforce periodic boundary conditions when obtaining new States.
      */
     public final int enforcePBC;
 
     /**
-     * OpenMMForceFieldEnergy constructor; offloads heavy-duty computation to an
+     * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an
      * OpenMM Platform while keeping track of information locally.
      *
      * @param molecularAssembly Assembly to construct energy for.
      * @param platform OpenMM platform to be used.
      * @param restraints Harmonic coordinate restraints.
-     * @param nThreads Number of threads to use in the underlying
-     * ForceFieldEnergy.
+     * @param nThreads Number of threads to use in the super class ForceFieldEnergy instance.
      */
-    protected OpenMMForceFieldEnergy(MolecularAssembly molecularAssembly, Platform platform, List<CoordRestraint> restraints, int nThreads) {
+    protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform platform, List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
 
         //super.energy(false, true);
         logger.info(" Initializing OpenMM\n");
 
-        if (openMMPlatform == null) {
+        if (ForceFieldEnergyOpenMM.platform == null) {
             loadPlatform(platform);
         }
 
         // Create the OpenMM System
-        openMMSystem = OpenMM_System_create();
+        system = OpenMM_System_create();
         logger.info(" Created OpenMM System");
 
         ForceField forceField = molecularAssembly.getForceField();
 
         // Load atoms.
-        addAtoms();
+        try {
+            addAtoms();
+        } catch (Exception e) {
+            logger.severe(" Atom without mass encountered.");
+        }
 
         rigidHydrogen = forceField.getBoolean(ForceField.ForceFieldBoolean.RIGID_HYDROGEN, false);
 
         if (rigidHydrogen) {
-            setUpHydrogenConstraints(openMMSystem);
+            setUpHydrogenConstraints(system);
         }
 
         // Add Bond Force.
@@ -446,10 +507,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         frictionCoeff = forceField.getDouble(ForceFieldDouble.FRICTION_COEFF, 91.0);
         collisionFreq = forceField.getDouble(ForceFieldDouble.COLLISION_FREQ, 0.01);
 
-        openMMIntegrator = OpenMM_VerletIntegrator_create(0.001);
+        integrator = OpenMM_VerletIntegrator_create(0.001);
 
-        // Create a openMMContext.
-        openMMContext = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, openMMPlatform);
+        // Create a context.
+        context = OpenMM_Context_create_2(system, integrator, ForceFieldEnergyOpenMM.platform);
 
         // Set initial positions.
         loadFFXPositionToOpenMM();
@@ -462,14 +523,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         boolean pbcEnforced = forceField.getBoolean(ForceField.ForceFieldBoolean.ENFORCE_PBC, !aperiodic);
         enforcePBC = pbcEnforced ? OpenMM_True : OpenMM_False;
 
-        openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
-        openMMForces = OpenMM_State_getForces(openMMState);
-        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
+        state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+        forces = OpenMM_State_getForces(state);
+        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
         logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
         fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.001);
 
-        OpenMM_State_destroy(openMMState);
+        OpenMM_State_destroy(state);
     }
 
     /**
@@ -524,11 +585,11 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
 
         if (cuda && platform != Platform.OMM_REF) {
-            openMMPlatform = OpenMM_Platform_getPlatformByName("CUDA");
+            ForceFieldEnergyOpenMM.platform = OpenMM_Platform_getPlatformByName("CUDA");
             // OpenMM_Platform_setPropertyDefaultValue(platform, stringPtr("Precision"), stringPtr("mixed"));
             logger.info(" Created OpenMM AMOEBA CUDA Plaform");
         } else {
-            openMMPlatform = OpenMM_Platform_getPlatformByName("Reference");
+            ForceFieldEnergyOpenMM.platform = OpenMM_Platform_getPlatformByName("Reference");
             logger.info(" Created OpenMM AMOEBA Reference Plaform");
         }
 
@@ -571,7 +632,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     @Override
     public void finalize() throws Throwable {
         // Safer to leave super.finalize() in, even though right now that calls Object.finalize().
-        logger.info(" OpenMMForceFieldEnergy instance is being finalized.");
+        logger.info(" ForceFieldEnergyOpenMM instance is being finalized.");
         super.finalize();
         if (destroyed) {
             logger.info(String.format(" Finalize called on a destroyed OpenMM ForceFieldEnergy %s", this.toString()));
@@ -585,17 +646,17 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * memory.
      */
     private void freeOpenMM() {
-        if (openMMContext != null) {
-            OpenMM_Context_destroy(openMMContext);
-            openMMContext = null;
+        if (context != null) {
+            OpenMM_Context_destroy(context);
+            context = null;
         }
-        if (openMMIntegrator != null) {
-            OpenMM_Integrator_destroy(openMMIntegrator);
-            openMMIntegrator = null;
+        if (integrator != null) {
+            OpenMM_Integrator_destroy(integrator);
+            integrator = null;
         }
-        if (openMMSystem != null) {
-            OpenMM_System_destroy(openMMSystem);
-            openMMSystem = null;
+        if (system != null) {
+            OpenMM_System_destroy(system);
+            system = null;
         }
     }
 
@@ -603,12 +664,17 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * Adds atoms from the molecular assembly to the OpenMM System and reports
      * to the user the number of particles added.
      */
-    private void addAtoms() {
+    private void addAtoms() throws Exception {
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
+        numParticles = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            OpenMM_System_addParticle(openMMSystem, atom.getMass());
+            OpenMM_System_addParticle(system, atom.getMass());
+            if (atom.getMass() <= 0.0) {
+                throw new Exception(" Atom without mass greater than 0.");
+            }
+            numParticles++;
         }
         logger.log(Level.INFO, " Added particles ({0})", nAtoms);
     }
@@ -636,7 +702,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
             int frequency = 100;
             commRemover = OpenMM_CMMotionRemover_create(frequency);
-            OpenMM_System_addForce(openMMSystem, commRemover);
+            OpenMM_System_addForce(system, commRemover);
             logger.log(Level.INFO, " Added center of mass motion remover (frequency: {0})", frequency);
         } else {
             logger.warning(" Attempted to add a second center-of-mass motion remover when one already exists!");
@@ -650,7 +716,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      */
     public void addAndersenThermostat(double targetTemp, double collisionFreq) {
         PointerByReference aThermo = OpenMMLibrary.OpenMM_AndersenThermostat_create(targetTemp, collisionFreq);
-        OpenMM_System_addForce(openMMSystem, aThermo);
+        OpenMM_System_addForce(system, aThermo);
     }
 
     private void addBondForce() {
@@ -680,7 +746,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
         }
 
-        OpenMM_System_addForce(openMMSystem, amoebaBondForce);
+        OpenMM_System_addForce(system, amoebaBondForce);
         logger.log(Level.INFO, " Added bonds ({0})", nBonds);
     }
 
@@ -719,7 +785,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic(amoebaAngleForce, AngleType.sextic);
         }
 
-        OpenMM_System_addForce(openMMSystem, amoebaAngleForce);
+        OpenMM_System_addForce(system, amoebaAngleForce);
         logger.log(Level.INFO, " Added angles ({0})", nAngles);
     }
 
@@ -755,7 +821,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleQuartic(amoebaInPlaneAngleForce, AngleType.quartic);
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAnglePentic(amoebaInPlaneAngleForce, AngleType.quintic);
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleSextic(amoebaInPlaneAngleForce, AngleType.sextic);
-        OpenMM_System_addForce(openMMSystem, amoebaInPlaneAngleForce);
+        OpenMM_System_addForce(system, amoebaInPlaneAngleForce);
         logger.log(Level.INFO, " Added in-plane angles ({0})", nAngles);
     }
 
@@ -782,7 +848,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(amoebaUreyBradleyForce,
                 UreyBradleyType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
 
-        OpenMM_System_addForce(openMMSystem, amoebaUreyBradleyForce);
+        OpenMM_System_addForce(system, amoebaUreyBradleyForce);
         logger.log(Level.INFO, " Added Urey-Bradleys ({0})", nUreys);
     }
 
@@ -808,7 +874,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendQuartic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quartic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quintic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.sextic);
-        OpenMM_System_addForce(openMMSystem, amoebaOutOfPlaneBendForce);
+        OpenMM_System_addForce(system, amoebaOutOfPlaneBendForce);
         logger.log(Level.INFO, " Added Out of Plane Bends ({0})", nOutOfPlaneBends);
     }
 
@@ -834,7 +900,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     (OpenMM_KJPerKcal / OpenMM_NmPerAngstrom) * fc0, (OpenMM_KJPerKcal / OpenMM_NmPerAngstrom) * fc1);
 
         }
-        OpenMM_System_addForce(openMMSystem, amoebaStretchBendForce);
+        OpenMM_System_addForce(system, amoebaStretchBendForce);
         logger.log(Level.INFO, " Added Stretch Bends ({0})", nStretchBends);
     }
 
@@ -861,7 +927,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
         }
 
-        OpenMM_System_addForce(openMMSystem, amoebaTorsionForce);
+        OpenMM_System_addForce(system, amoebaTorsionForce);
         logger.log(Level.INFO, " Added Torsions ({0})", nTorsions);
     }
 
@@ -886,7 +952,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     OpenMM_KJPerKcal * improperTorsion.units
                     * improperTorsion.scaleFactor * improperTorsionType.k);
         }
-        OpenMM_System_addForce(openMMSystem, amoebaImproperTorsionForce);
+        OpenMM_System_addForce(system, amoebaImproperTorsionForce);
         logger.log(Level.INFO, " Added improper torsions ({0})", nImpropers);
     }
 
@@ -911,7 +977,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     a1, a2, a3, a4, a5, a6,
                     OpenMM_KJPerKcal * type.forceConstant * units);
         }
-        OpenMM_System_addForce(openMMSystem, amoebaPiTorsionForce);
+        OpenMM_System_addForce(system, amoebaPiTorsionForce);
         logger.log(Level.INFO, " Added Pi-Orbital Torsions ({0})", nPiOrbitalTorsions);
     }
 
@@ -1015,7 +1081,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_3D_DoubleArray_destroy(grid3D);
         }
         OpenMM_DoubleArray_destroy(values);
-        OpenMM_System_addForce(openMMSystem, amoebaTorsionTorsionForce);
+        OpenMM_System_addForce(system, amoebaTorsionTorsionForce);
         logger.log(Level.INFO, " Added Torsion-Torsions ({0})", nTorsionTorsions);
     }
 
@@ -1135,7 +1201,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_NonbondedForce_setUseDispersionCorrection(fixedChargeNonBondedForce, OpenMM_False);
 
         OpenMM_Force_setForceGroup(fixedChargeNonBondedForce, 1);
-        OpenMM_System_addForce(openMMSystem, fixedChargeNonBondedForce);
+        OpenMM_System_addForce(system, fixedChargeNonBondedForce);
         logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force."));
 
         GeneralizedKirkwood gk = super.getGK();
@@ -1224,7 +1290,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         double cut = gk.getCutoff();
         OpenMM_CustomGBForce_setCutoffDistance(customGBForce, cut);
         OpenMM_Force_setForceGroup(customGBForce, 1);
-        OpenMM_System_addForce(openMMSystem, customGBForce);
+        OpenMM_System_addForce(system, customGBForce);
 
         logger.log(Level.INFO, " Added generalized Born force");
     }
@@ -1236,7 +1302,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         }
 
         amoebaVDWForce = OpenMM_AmoebaVdwForce_create();
-        OpenMM_System_addForce(openMMSystem, amoebaVDWForce);
+        OpenMM_System_addForce(system, amoebaVDWForce);
         OpenMM_Force_setForceGroup(amoebaVDWForce, 1);
 
         VanDerWaalsForm vdwForm = vdW.getVDWForm();
@@ -1554,7 +1620,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
         OpenMM_IntArray_destroy(covalentMap);
 
-        OpenMM_System_addForce(openMMSystem, amoebaMultipoleForce);
+        OpenMM_System_addForce(system, amoebaMultipoleForce);
         OpenMM_Force_setForceGroup(amoebaMultipoleForce, 1);
 
         logger.log(Level.INFO, " Added polarizable multipole force.");
@@ -1605,7 +1671,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                 OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(amoebaGeneralizedKirkwoodForce, OpenMM_False);
                 break;
         }
-        OpenMM_System_addForce(openMMSystem, amoebaGeneralizedKirkwoodForce);
+        OpenMM_System_addForce(system, amoebaGeneralizedKirkwoodForce);
 
         switch (nonpolar) {
             case CAV_DISP:
@@ -1667,7 +1733,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_AmoebaWcaDispersionForce_setSlevy(amoebaWcaDispersionForce, slevy);
         OpenMM_AmoebaWcaDispersionForce_setShctd(amoebaWcaDispersionForce, shctd);
 
-        OpenMM_System_addForce(openMMSystem, amoebaWcaDispersionForce);
+        OpenMM_System_addForce(system, amoebaWcaDispersionForce);
         logger.log(Level.INFO, " Added WCA dispersion force.");
 
     }
@@ -1706,7 +1772,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
             OpenMM_DoubleArray_destroy(xyzOrigArray);
 
-            OpenMM_System_addForce(openMMSystem, theRestraint);
+            OpenMM_System_addForce(system, theRestraint);
         }
     }
 
@@ -1783,7 +1849,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     i, ired[i], OpenMM_NmPerAngstrom * vdwType.radius * radScale,
                     eps, vdwType.reductionFactor);
         }
-        OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, openMMContext);
+        OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, context);
     }
 
     /**
@@ -1847,7 +1913,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
             OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge, sigma, eps);
         }
-        OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, openMMContext);
+        OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, context);
     }
 
     /**
@@ -1885,7 +1951,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             OpenMM_DoubleArray_resize(doubleArray, 0);
         }
         OpenMM_DoubleArray_destroy(doubleArray);
-        OpenMM_CustomGBForce_updateParametersInContext(customGBForce, openMMContext);
+        OpenMM_CustomGBForce_updateParametersInContext(customGBForce, context);
     }
 
     /**
@@ -1995,7 +2061,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(dipoles);
         OpenMM_DoubleArray_destroy(quadrupoles);
 
-        OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, openMMContext);
+        OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, context);
     }
 
     /**
@@ -2026,7 +2092,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     multipoleType.charge * useFactor,
                     OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i] * useFactor);
         }
-        OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, openMMContext);
+        OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, context);
     }
 
     /**
@@ -2062,7 +2128,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
                     OpenMM_NmPerAngstrom * radius * radScale,
                     OpenMM_KJPerKcal * eps * useFactor);
         }
-        OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, openMMContext);
+        OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, context);
     }
 
     @Override
@@ -2145,8 +2211,8 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         loadFFXPositionToOpenMM();
 
         int infoMask = OpenMM_State_Energy;
-        openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
-        double e = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
+        state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+        double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
         if (verbose) {
             logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));
@@ -2162,7 +2228,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
         }
 
-        OpenMM_State_destroy(openMMState);
+        OpenMM_State_destroy(state);
         return e;
     }
 
@@ -2192,14 +2258,14 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         int infoMask = OpenMM_State_Energy;
         infoMask += OpenMM_State_Forces;
 
-        openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
-        double e = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
+        state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+        double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
         if (verbose) {
             logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));
         }
 
-        openMMForces = OpenMM_State_getForces(openMMState);
+        forces = OpenMM_State_getForces(state);
 
         getGradients(g);
         /**
@@ -2213,7 +2279,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             }
         }
 
-        OpenMM_State_destroy(openMMState);
+        OpenMM_State_destroy(state);
         return e;
     }
 
@@ -2244,7 +2310,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atoms[i];
             if (a.isActive()) {
-                OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(openMMForces, i);
+                OpenMM_Vec3 posInNm = OpenMM_Vec3Array_get(forces, i);
                 /**
                  * Convert OpenMM Forces in KJ/Nm into an FFX gradient in
                  * Kcal/A.
@@ -2283,10 +2349,10 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      * Loads positions into OpenMM from the FFX data structure.
      */
     public final void loadFFXPositionToOpenMM() {
-        if (openMMPositions == null) {
-            openMMPositions = OpenMM_Vec3Array_create(0);
+        if (positions == null) {
+            positions = OpenMM_Vec3Array_create(0);
         } else {
-            OpenMM_Vec3Array_resize(openMMPositions, 0);
+            OpenMM_Vec3Array_resize(positions, 0);
         }
         Atom[] atoms = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
@@ -2296,65 +2362,65 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             posInNm.x = atom.getX() * OpenMM_NmPerAngstrom;
             posInNm.y = atom.getY() * OpenMM_NmPerAngstrom;
             posInNm.z = atom.getZ() * OpenMM_NmPerAngstrom;
-            OpenMM_Vec3Array_append(openMMPositions, posInNm);
+            OpenMM_Vec3Array_append(positions, posInNm);
         }
 
-        // Load positions into the openMMContext.
-        OpenMM_Context_setPositions(openMMContext, openMMPositions);
+        // Load positions into the context.
+        OpenMM_Context_setPositions(context, positions);
     }
 
     /**
      * setOpenMMPositions takes in an array of doubles generated by the DYN
      * reader method and appends these values to a Vec3Array. Finally this
-     * method sets the created Vec3Array as the positions of the openMMContext.
+     * method sets the created Vec3Array as the positions of the context.
      *
      * @param x
      * @param numberOfVariables
      */
     public void setOpenMMPositions(double x[], int numberOfVariables) {
-        if (openMMPositions == null) {
-            openMMPositions = OpenMM_Vec3Array_create(0);
+        if (positions == null) {
+            positions = OpenMM_Vec3Array_create(0);
         } else {
-            OpenMM_Vec3Array_resize(openMMPositions, 0);
+            OpenMM_Vec3Array_resize(positions, 0);
         }
         OpenMM_Vec3.ByValue pos = new OpenMM_Vec3.ByValue();
         for (int i = 0; i < numberOfVariables; i = i + 3) {
             pos.x = x[i] * OpenMM_NmPerAngstrom;
             pos.y = x[i + 1] * OpenMM_NmPerAngstrom;
             pos.z = x[i + 2] * OpenMM_NmPerAngstrom;
-            OpenMM_Vec3Array_append(openMMPositions, pos);
+            OpenMM_Vec3Array_append(positions, pos);
         }
 
-        OpenMM_Context_setPositions(openMMContext, openMMPositions);
+        OpenMM_Context_setPositions(context, positions);
     }
 
     /**
      * setOpenMMVelocities takes in an array of doubles generated by the DYN
      * reader method and appends these values to a Vec3Array. Finally this
-     * method sets the created Vec3Arrat as the velocities of the openMMContext.
+     * method sets the created Vec3Arrat as the velocities of the context.
      *
      * @param v
      * @param numberOfVariables
      */
     public void setOpenMMVelocities(double v[], int numberOfVariables) {
-        if (openMMVelocities == null) {
-            openMMVelocities = OpenMM_Vec3Array_create(0);
+        if (velocities == null) {
+            velocities = OpenMM_Vec3Array_create(0);
         } else {
-            OpenMM_Vec3Array_resize(openMMVelocities, 0);
+            OpenMM_Vec3Array_resize(velocities, 0);
         }
         OpenMM_Vec3.ByValue vel = new OpenMM_Vec3.ByValue();
         for (int i = 0; i < numberOfVariables; i = i + 3) {
             vel.x = v[i] * OpenMM_NmPerAngstrom;
             vel.y = v[i + 1] * OpenMM_NmPerAngstrom;
             vel.z = v[i + 2] * OpenMM_NmPerAngstrom;
-            OpenMM_Vec3Array_append(openMMVelocities, vel);
+            OpenMM_Vec3Array_append(velocities, vel);
         }
-        OpenMM_Context_setVelocities(openMMContext, openMMVelocities);
+        OpenMM_Context_setVelocities(context, velocities);
     }
 
     /**
      * getOpenMMPositions takes in a PointerByReference containing the position
-     * information of the openMMContext. This method creates a Vec3Array that
+     * information of the context. This method creates a Vec3Array that
      * contains the three dimensional information of the positions of the atoms.
      * The method then adds these values to a new double array x and returns it
      * to the method call
@@ -2384,7 +2450,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * getOpenMMVelocities takes in a PointerByReference containing the velocity
-     * information of the openMMContext. This method creates a Vec3Array that
+     * information of the context. This method creates a Vec3Array that
      * contains the three dimensional information of the velocities of the
      * atoms. This method then adds these values to a new double array v and
      * returns it to the method call
@@ -2411,7 +2477,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
 
     /**
      * getOpenMMAccelerations takes in a PointerByReference containing the force
-     * information of the openMMContext. This method creates a Vec3Array that
+     * information of the context. This method creates a Vec3Array that
      * contains the three dimensional information of the forces on the atoms.
      * This method then adds these values (divided by mass, effectively turning
      * them into accelerations) to a new double array a and returns it to the
@@ -2457,17 +2523,17 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
             c.x = 0.0 * OpenMM_NmPerAngstrom;
             c.y = 0.0 * OpenMM_NmPerAngstrom;
             c.z = crystal.c * OpenMM_NmPerAngstrom;
-            OpenMM_System_setDefaultPeriodicBoxVectors(openMMSystem, a, b, c);
+            OpenMM_System_setDefaultPeriodicBoxVectors(system, a, b, c);
         }
     }
 
     /**
-     * getIntegrator returns the integrator used for the openMMContext
+     * getIntegrator returns the integrator used for the context
      *
-     * @return openMMIntegrator
+     * @return integrator
      */
     public PointerByReference getIntegrator() {
-        return openMMIntegrator;
+        return integrator;
     }
 
     /**
@@ -2478,39 +2544,37 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      *
      * @param integrator
      * @param timeStep
-     * @param frictionCoeff
      * @param temperature
-     * @param collisionFreq
      */
     public void setIntegrator(String integrator, double timeStep, double temperature) {
-        OpenMM_Context_destroy(openMMContext);
+        OpenMM_Context_destroy(context);
         double dt = timeStep * 1.0e-3;
         switch (integrator) {
             case "LANGEVIN":
                 logger.log(Level.INFO, String.format("created langevin integrator"));
-                openMMIntegrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
+                this.integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
                 break;
             /*
             case "BROWNIAN":
-                openMMIntegrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
+                integrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
                 break;
             case "CUSTOM":
-                openMMIntegrator = OpenMM_CustomIntegrator_create(dt);
+                integrator = OpenMM_CustomIntegrator_create(dt);
                 break;
             case "COMPOUND":
-                openMMIntegrator = OpenMM_CompoundIntegrator_create();
+                integrator = OpenMM_CompoundIntegrator_create();
                 break;
              */
             case "VERLET":
             default:
-                openMMIntegrator = OpenMM_VerletIntegrator_create(dt);
+                this.integrator = OpenMM_VerletIntegrator_create(dt);
             //thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
-            //OpenMM_System_addForce(openMMSystem, thermostat);
+            //OpenMM_System_addForce(system, thermostat);
         }
         //logger.info(String.format(" Created %s OpenMM Integrator", integrator));
 
-        // Create a openMMContext.
-        openMMContext = OpenMM_Context_create_2(openMMSystem, openMMIntegrator, openMMPlatform);
+        // Create a context.
+        context = OpenMM_Context_create_2(system, this.integrator, platform);
 
         // Set initial positions.
         loadFFXPositionToOpenMM();
@@ -2519,20 +2583,20 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
         infoMask += OpenMM_State_Forces;
         infoMask += OpenMM_State_Energy;
 
-        openMMState = OpenMM_Context_getState(openMMContext, infoMask, enforcePBC);
-        openMMForces = OpenMM_State_getForces(openMMState);
-        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(openMMState) / OpenMM_KJPerKcal;
+        state = OpenMM_Context_getState(context, infoMask, enforcePBC);
+        forces = OpenMM_State_getForces(state);
+        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
         //logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
     }
 
     /**
-     * Returns the openMMContext created for the OpenMMForceFieldEnergy object
+     * Returns the context created for the ForceFieldEnergyOpenMM object
      *
-     * @return openMMContext
+     * @return context
      */
     public PointerByReference getContext() {
-        return openMMContext;
+        return context;
     }
 
     /**
@@ -2679,7 +2743,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      */
     @Override
     public void getdEdXdL(double gradients[]) {
-        // Note for OpenMMForceFieldEnergy this method is not implemented.
+        // Note for ForceFieldEnergyOpenMM this method is not implemented.
     }
 
     /**
@@ -2687,7 +2751,7 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
      */
     @Override
     public double getd2EdL2() {
-        // Note for OpenMMForceFieldEnergy this method is not implemented.
+        // Note for ForceFieldEnergyOpenMM this method is not implemented.
         return 0.0;
     }
 
@@ -2771,30 +2835,15 @@ public class OpenMMForceFieldEnergy extends ForceFieldEnergy {
     }
     
     public int calculateDegreesOfFreedom(){
-        int dof = 0;
-        
-        for (int i = 0; i < OpenMM_System_getNumParticles(openMMSystem); i++){
-            if (OpenMM_System_getParticleMass(openMMSystem, i) > 0){
-                dof += 3;
-            }
-        }
-        dof = dof - OpenMM_System_getNumConstraints(openMMSystem);
-        
-        /*for (int i = 0; i < OpenMM_System_getNumForces(openMMSystem); i++){
-            if (OpenMM_System_getForce(openMMSystem, i) == commRemover){
-                dof = dof - 3;
-                break;
-            }
-        }*/
+        int dof = numParticles * 3;
+        dof = dof - OpenMM_System_getNumConstraints(system);
         if (commRemover != null) {
             dof -= 3;
         }
-        
         return dof;
     }
     
     public int getNumParticles(){
-        int numParticles = OpenMM_System_getNumParticles(openMMSystem);
         return numParticles;
     }
 }

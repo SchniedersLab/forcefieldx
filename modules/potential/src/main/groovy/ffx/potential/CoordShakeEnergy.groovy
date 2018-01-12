@@ -110,8 +110,8 @@ class CoordShakeEnergy extends Script {
 
         def eFunct;
 
-        if (thePotential instanceof OpenMMForceFieldEnergy) {
-            OpenMMForceFieldEnergy ommE = (OpenMMForceFieldEnergy) thePotential;
+        if (thePotential instanceof ForceFieldEnergyOpenMM) {
+            ForceFieldEnergyOpenMM ommE = (ForceFieldEnergyOpenMM) thePotential;
             eFunct = { double[] coords -> return ommE.energyVsFFX(coords, true); };
         } else {
             eFunct = { double[] coords -> return thePotential.energy(coords, true) };

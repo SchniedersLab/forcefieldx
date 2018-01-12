@@ -11,7 +11,6 @@ import ffx.algorithms.Thermostat.Thermostats
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
-import ffx.potential.OpenMMForceFieldEnergy
 import ffx.potential.parameters.ForceField
 
 /**
@@ -201,7 +200,7 @@ class Dynamics extends Script {
         potential.energy(x, true);
 
         if (pressure > 0) {
-            if (potential instanceof OpenMMForceFieldEnergy) {
+            if (potential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
                 logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.");
             }
             logger.info(String.format(" Running NPT dynamics at pressure %7.4g", pressure));

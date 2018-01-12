@@ -58,7 +58,6 @@ import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.OpenMMForceFieldEnergy;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
@@ -152,9 +151,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         return dynamicsFactory(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator, defaultEngine(potentialEnergy));
         /*
-        if (potentialEnergy instanceof OpenMMForceFieldEnergy) {
-            OpenMMMolecularDynamics ommDynamics = new OpenMMMolecularDynamics(assembly,
-                    (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+        if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
+            MolecularDynamicsOpenMM ommDynamics = new MolecularDynamicsOpenMM(assembly,
+                    (ForceFieldEnergyOpenMM) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
             return ommDynamics;
         } else {
             MolecularDynamics mDynamics = new MolecularDynamics(assembly,
@@ -172,8 +171,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             Integrators requestedIntegrator, DynamicsEngine engine) {
         switch (engine) {
             case OPENMM:
-                return new OpenMMMolecularDynamics(assembly,
-                        (OpenMMForceFieldEnergy) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
+                return new MolecularDynamicsOpenMM(assembly,
+                        (ffx.potential.ForceFieldEnergyOpenMM) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
             case FFX:
             default:
                 return new MolecularDynamics(assembly,
@@ -191,7 +190,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 return DynamicsEngine.FFX;
             }
         } else {
-            if (potentialEnergy instanceof OpenMMForceFieldEnergy) {
+            if (potentialEnergy instanceof ffx.potential.ForceFieldEnergyOpenMM) {
                 return DynamicsEngine.OPENMM;
             } else {
                 return DynamicsEngine.FFX;
