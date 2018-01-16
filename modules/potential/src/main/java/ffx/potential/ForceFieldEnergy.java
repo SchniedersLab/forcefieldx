@@ -1923,9 +1923,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         double e = energy(true, verbose);
 
         // Try block already exists inside energy(boolean, boolean), so only
-        // need to try-catch getGradients.
+        // need to try-catch fillGradients.
         try {
-            getGradients(g);
+            fillGradients(g);
             /**
              * Scale the coordinates and gradients.
              */
@@ -1991,6 +1991,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param g an array of double.
      */
     public double[] getGradients(double g[]) {
+        return fillGradients(g);
+    }
+
+    /**
+     * Private method for internal use, so we don't have subclasses calling super.energy, and this class delegating to
+     * the subclass's getGradients method.
+     * @param g Gradient array to fill.
+     * @return Gradient array.
+     */
+    private double[] fillGradients(double[] g) {
         assert (g != null);
         double grad[] = new double[3];
         int n = getNumberOfVariables();

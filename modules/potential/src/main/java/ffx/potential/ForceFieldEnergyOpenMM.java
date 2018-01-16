@@ -2267,7 +2267,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         forces = OpenMM_State_getForces(state);
 
-        getGradients(g);
+        fillGradients(g);
         /**
          * Scale the coordinates and gradients.
          */
@@ -2299,6 +2299,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     @Override
     public double[] getGradients(double g[]) {
+        return fillGradients(g);
+    }
+
+    /**
+     * Private method for internal use, so we don't have subclasses calling super.energy, and this class delegating to
+     * the subclass's getGradients method.
+     * @param g Gradient array to fill.
+     * @return Gradient array.
+     */
+    public double[] fillGradients(double[] g) {
         assert (g != null);
         int n = getNumberOfVariables();
         if (g.length < n) {
