@@ -47,7 +47,7 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  *
  * @since 1.0
  */
-public class Adiabatic extends ffx.algorithms.thermostats.Thermostat {
+public class Adiabatic extends Thermostat {
 
     /**
      * <p>

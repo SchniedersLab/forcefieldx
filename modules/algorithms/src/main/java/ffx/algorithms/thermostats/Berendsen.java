@@ -54,7 +54,7 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  * 3684-3690 (1984)</a>
  *
  */
-public class Berendsen extends ffx.algorithms.thermostats.Thermostat {
+public class Berendsen extends Thermostat {
 
     /**
      * Berendsen time constant (psec).

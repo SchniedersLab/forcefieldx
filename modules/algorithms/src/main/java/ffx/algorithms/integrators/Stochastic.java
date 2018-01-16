@@ -51,7 +51,7 @@ import ffx.numerics.Potential;
  *
  * @since 1.0
  */
-public class Stochastic extends ffx.algorithms.integrators.Integrator {
+public class Stochastic extends Integrator {
 
     private double vfric[];
     private double vrand[];

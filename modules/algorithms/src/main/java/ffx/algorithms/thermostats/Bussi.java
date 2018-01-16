@@ -59,7 +59,7 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  *
  * @since 1.0
  */
-public class Bussi extends ffx.algorithms.thermostats.Thermostat {
+public class Bussi extends Thermostat {
 
     /**
      * Bussi thermostat time constant (psec).
