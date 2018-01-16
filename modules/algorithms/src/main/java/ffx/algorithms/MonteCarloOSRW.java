@@ -42,8 +42,8 @@ import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.algorithms.integrators.Integrator.Integrators;
-import ffx.algorithms.thermostats.Thermostat.Thermostats;
+import ffx.algorithms.integrators.IntegratorEnum;
+import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.algorithms.mc.LambdaMove;
 import ffx.algorithms.mc.MDMove;
@@ -106,7 +106,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      */
     public MonteCarloOSRW(Potential potentialEnergy, AbstractOSRW osrw,
             MolecularAssembly molecularAssembly, CompositeConfiguration properties,
-            AlgorithmListener listener, Thermostats requestedThermostat, Integrators requestedIntegrator) {
+            AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
         this.potential = potentialEnergy;
         this.osrw = osrw;
 

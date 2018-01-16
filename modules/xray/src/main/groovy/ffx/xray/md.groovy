@@ -38,9 +38,11 @@
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.integrators.Integrator.Integrators
+import ffx.algorithms.integrators.Integrator
+import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.xray.CrystalReciprocalSpace.SolventModel
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
@@ -64,11 +66,11 @@ double saveInterval = 0.1;
 // Temperature in degrees Kelvin.
 double temperature = 100.0;
 
-// Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = Thermostats.BERENDSEN;
+// ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+ThermostatEnum thermostat = ThermostatEnum.BERENDSEN;
 
-// Integrators [ BEEMAN, RESPA, STOCHASTIC]
-Integrators integrator = null;
+// IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC]
+IntegratorEnum integrator = IntegratorEnum.BEEMAN;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -155,22 +157,12 @@ if (options.t) {
     temperature = Double.parseDouble(options.t);
 }
 
-// Thermostat.
 if (options.b) {
-    try {
-        thermostat = Thermostats.valueOf(options.b.toUpperCase());
-    } catch (Exception e) {
-        thermostat = Thermostats.BUSSI;
-    }
+    thermostat = Thermostat.parseThermostat(options.b)
 }
 
-// Integrator.
 if (options.i) {
-    try {
-        integrator = Integrators.valueOf(options.i.toUpperCase());
-    } catch (Exception e) {
-        integrator = null;
-    }
+    integrator = Integrator.parseIntegrator(options.i)
 }
 
 logger.info("\n Running molecular dynmaics on " + modelfilename);

@@ -41,7 +41,8 @@
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.realspace.RealSpaceData
 import ffx.realspace.RealSpaceFile
 import ffx.xray.RefinementEnergy
@@ -62,8 +63,8 @@ double saveInterval = 0.1;
 // Temperature in degrees Kelvin.
 double temperature = 100.0;
 
-// Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = Thermostats.BERENDSEN;
+// ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+ThermostatEnum thermostat = ThermostatEnum.BERENDSEN;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -134,13 +135,8 @@ if (options.t) {
     temperature = Double.parseDouble(options.t);
 }
 
-// Thermostat.
 if (options.b) {
-    try {
-        thermostat = Thermostats.valueOf(options.b.toUpperCase());
-    } catch (Exception e) {
-        thermostat = Thermostats.BERENDSEN;
-    }
+    thermostat = Thermostat.parseThermostat(options.b)
 }
 
 

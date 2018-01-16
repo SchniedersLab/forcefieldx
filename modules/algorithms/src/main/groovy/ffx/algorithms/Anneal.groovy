@@ -6,8 +6,8 @@ import org.apache.commons.io.FilenameUtils
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
-import ffx.algorithms.integrators.Integrator.Integrators
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.thermostats.ThermostatEnum
 
 /**
  * The Anneal script.
@@ -17,24 +17,6 @@ import ffx.algorithms.thermostats.Thermostat.Thermostats
  * ffxc Anneal [options] &lt;filename&gt;
  */
 class Anneal extends Script {
-
-    private static parseThermo(String str) {
-        try {
-            return Thermostats.valueOf(str.toUpperCase())
-        } catch (Exception e) {
-            System.err.println(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
-            return Thermostats.BERENDSEN;
-        }
-    }
-
-    private static parseIntegrator(String str) {
-        try {
-            return Integrators.valueOf(str.toUpperCase())
-        } catch (Exception e) {
-            System.err.println(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
-            return Integrators.BEEMAN;
-        }
-    }
 
     /**
      * Options for the Anneal Script.
@@ -71,13 +53,13 @@ class Anneal extends Script {
         /**
          * -b or --thermostat sets the desired thermostat [Adiabatic, Berendsen, Bussi].
          */
-        @Option(shortName='t', longName='thermostat', convert = {s -> return parseThermo(s);}, defaultValue='Berendsen',
-                description='Thermostat: Adiabatic, Berendsen or Bussi.') Thermostats thermo
+        @Option(shortName='t', longName='thermostat', convert = {s -> return Thermostat.parseThermostat(s);}, defaultValue='Berendsen',
+                description='Thermostat: Adiabatic, Berendsen or Bussi.') ThermostatEnum thermo
         /**
          * -i or --integrator sets the desired integrator [Beeman, RESPA, Stochastic].
          */
-        @Option(shortName='i', longName='integrator', convert = {s -> return parseIntegrator(s);}, defaultValue='Beeman',
-                description='Integrator: Beeman, RESPA or Stochastic.') Integrators integrate
+        @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman',
+                description='Integrator: Beeman, RESPA or Stochastic.') IntegratorEnum integrate
         /**
          * The final argument should be a filename.
          */
@@ -121,11 +103,11 @@ class Anneal extends Script {
         // Load the time steps in femtoseconds.
         double timeStep = options.d
 
-        // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-        Thermostats thermostat = options.thermo;
+        // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+        ThermostatEnum thermostat = options.thermo;
 
-        // Integrators [ BEEMAN, RESPA, STOCHASTIC]
-        Integrators integrator = options.integrate;
+        // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC]
+        IntegratorEnum integrator = options.integrate;
 
         String filename = null;
         if (arguments != null && arguments.size() > 0) {

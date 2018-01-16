@@ -44,14 +44,14 @@ import edu.rit.mp.DoubleBuf
 import edu.rit.mp.IntegerBuf
 import edu.rit.pj.Comm
 
-import ffx.algorithms.integrators.Integrator.Integrators
 import ffx.algorithms.MCLoop
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.OSRW
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.SimulatedAnnealing
-import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.algorithms.TransitionTemperedOSRW
+import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom
@@ -80,11 +80,11 @@ double restartInterval = 1.0;
 // Number of molecular dynamics steps: default is 100 nanoseconds.
 int nSteps = 50000;
 
-// Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = Thermostats.BERENDSEN;
+// ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+ThermostatEnum thermostat = ThermostatEnum.BERENDSEN;
 
-// Integrators [ BEEMAN, RESPA, STOCHASTIC ]
-Integrators integrator = Integrators.BEEMAN;
+// IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC ]
+IntegratorEnum integrator = IntegratorEnum.BEEMAN;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -180,9 +180,9 @@ if (options.d) {
 // Integrator.
 if (options.i) {
     try {
-        integrator = Integrators.valueOf(options.i.toUpperCase());
+        integrator = IntegratorEnum.valueOf(options.i.toUpperCase());
     } catch (Exception e) {
-        integrator = Integrators.BEEMAN;
+        integrator = IntegratorEnum.BEEMAN;
     }
 }
 
@@ -488,11 +488,11 @@ if (runSimulatedAnnealing) {
     int steps = 267; //267 at 3
     // Time step in femtoseconds.
     timeStep = 3.0;
-    // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-    thermostat = Thermostats.BERENDSEN;
-    // Integrators [ BEEMAN, RESPA, STOCHASTIC]
+    // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+    thermostat = ThermostatEnum.BERENDSEN;
+    // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC]
     if (!options.i) {
-        integrator = Integrators.RESPA;
+        integrator = IntegratorEnum.RESPA;
     }
 
     SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, forceFieldEnergy, active.getProperties(), null, thermostat, integrator);

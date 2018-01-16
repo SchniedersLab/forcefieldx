@@ -8,8 +8,10 @@ package ffx.algorithms
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.integrators.Integrator.Integrators
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.integrators.Integrator
+import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.crystal.CrystalPotential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -33,11 +35,11 @@ double saveInterval = 2.0;
 // Temperature in degrees Kelvin.
 double temperature = 298.15;
 
-// Thermostats [ ANDERSON ]
-Thermostats thermostat = null;
+// ThermostatEnum [ ANDERSON ]
+ThermostatEnum thermostat = null;
 
-// Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET] for regular MolecularDynamics
-Integrators integrator = null;
+// IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET] for regular MolecularDynamics
+IntegratorEnum integrator = null;
 
 // Integrator string, sets integrator for MolecularDynamicsOpenMM
 //String stringIntegrator = "VERLET";
@@ -102,11 +104,7 @@ if (options.h) {
 
 // Thermostat.
 if (options.b) {
-    try {
-        thermostat = Thermostats.valueOf(options.b.toUpperCase());
-    } catch (Exception e) {
-        thermostat = null;
-    }
+    thermostat = Thermostat.parseThermostat(options.b);
 }
 
 // Load the time steps in femtoseconds.
@@ -119,12 +117,7 @@ if (options.z) {
 }
 
 if (options.i) {
-    try {
-        integrator = Integrators.valueOf(options.i.toUpperCase());
-    } catch (Exception e) {
-        logger.warning(String.format(" Exception in parsing integrator %s: %s", options.i, e.toString()));
-        integrator = null;
-    }
+    integrator = Integrator.parseIntegrator(options.i);
 }
 
 // Report interval in picoseconds.
