@@ -68,7 +68,7 @@ import edu.rit.pj.cluster.JobBackend;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Minimize;
-import ffx.algorithms.Thermostat;
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;

@@ -8,8 +8,8 @@ package ffx.algorithms
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.Integrator.Integrators
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.integrators.Integrator.Integrators
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.crystal.CrystalPotential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly

@@ -717,7 +717,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Propagate Lambda using Langevin dynamics.
      */
     protected void langevin() {
-        double rt2 = 2.0 * Thermostat.R * temperature * thetaFriction / dt;
+        double rt2 = 2.0 * ffx.algorithms.thermostats.Thermostat.R * temperature * thetaFriction / dt;
         double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() / randomConvert;
         //double randomForce = sqrt(rt2) * stochasticRandom.nextGaussian() * invRandomConvert;
         double dEdL = -dUdLambda * sin(2.0 * theta);

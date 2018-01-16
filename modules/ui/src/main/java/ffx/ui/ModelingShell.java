@@ -72,11 +72,11 @@ import org.codehaus.groovy.runtime.MethodClosure;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.Integrator.Integrators;
+import ffx.algorithms.integrators.Integrator.Integrators;
 import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.thermostats.Thermostat.Thermostats;
 import ffx.autoparm.Energy;
 import ffx.autoparm.Minimize_2;
 import ffx.autoparm.Poledit;

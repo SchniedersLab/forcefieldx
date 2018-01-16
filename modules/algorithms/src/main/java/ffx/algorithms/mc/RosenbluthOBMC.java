@@ -47,7 +47,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
 import ffx.algorithms.MonteCarloListener;
-import ffx.algorithms.Thermostat;
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;

@@ -34,7 +34,7 @@
                 </source>
                 <p>Finally, we use a Force Field X script to run the sampling.</p>
                 <source>
-<![CDATA[
+                    <![CDATA[
 // Coordinate file to open (can be XYZ or PDB)
 String fileName = "examples/watersmall.xyz";
 
@@ -74,7 +74,7 @@ double temperature = 300.0;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.thermostats.Thermostat.Thermostats;
 
 import ffx.potential.PotentialEnergy;
 import ffx.potential.bonded.Atom;

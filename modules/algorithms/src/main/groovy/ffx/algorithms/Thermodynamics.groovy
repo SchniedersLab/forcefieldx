@@ -11,8 +11,8 @@ import groovy.cli.Unparsed
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.Integrator.Integrators
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.integrators.Integrator.Integrators
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.crystal.Crystal
 import ffx.crystal.CrystalPotential
 import ffx.crystal.SymOp
@@ -110,11 +110,11 @@ class Thermodynamics extends Script {
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
-        @Option(shortName='b', longName='thermostat', convert = {s -> return Thermostat.parseThermostat(s);}, defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') Thermostats tstat;
+        @Option(shortName='b', longName='thermostat', convert = {s -> return ffx.algorithms.thermostats.Thermostat.parseThermostat(s);}, defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') Thermostats tstat;
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, or Stochastic (AKA Langevin dynamics).
          */
-        @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') Integrators integrator;
+        @Option(shortName='i', longName='integrator', convert = {s -> return ffx.algorithms.integrators.Integrator.parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') Integrators integrator;
         /**
          * -s1 or --start1 defines the first softcored atom for the first topology.
          */

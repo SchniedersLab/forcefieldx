@@ -35,37 +35,46 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.thermostats;
 
+import java.util.Random;
+
+import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential.VARIABLE_TYPE;
 
 /**
  * Thermostat a molecular dynamics trajectory to an external bath using the
- * Berendsen weak-coupling thermostat.
+ * Bussi, Donadio, and Parrinello method. This method is similar to Berendsen
+ * thermostat, but generates a canonical distribution.
  *
- * @author Michael J. Schnieders derived from TINKER temperature control by Alan
- * Grossfield and Jay Ponder
+ * @author Michael J. Schnieders
  *
- * @see <a href="http://link.aip.org/link/?JCP/81/3684"> H. J. C. Berendsen, J.
- * P. M. Postma, W. F. van Gunsteren, A. DiNola and J. R. Hauk, "Molecular
- * Dynamics with Coupling to an External Bath", Journal of Chemical Physics, 81,
- * 3684-3690 (1984)</a>
+ * Derived from TINKER temperature control by Alan Grossfield and Jay Ponder.
  *
+ * @see <a href="http://dx.doi.org/10.1016/j.cpc.2008.01.006"> G. Bussi and M.
+ * Parrinello, "Stochastic Thermostats: Comparison of Local and Global Schemes",
+ * Computer Physics Communications, 179, 26-29 (2008)</a>
+ *
+ * @since 1.0
  */
-public class Berendsen extends Thermostat {
+public class Bussi extends ffx.algorithms.thermostats.Thermostat {
 
     /**
-     * Berendsen time constant (psec).
+     * Bussi thermostat time constant (psec).
      */
     private double tau;
+    /**
+     * The random number generator used to perturb velocities.
+     */
+    private final Random bussiRandom;
 
     /**
      * <p>
-     * Constructor for Berendsen.</p>
+     * Constructor for Bussi.</p>
      *
-     * @param n a int.
+     * @param dof a int.
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
@@ -73,27 +82,29 @@ public class Berendsen extends Thermostat {
      * @param targetTemperature a double.
      * @param tau a double.
      */
-    public Berendsen(int n, double x[], double v[], double mass[],
-            VARIABLE_TYPE type[], double targetTemperature, double tau) {
-        super(n, x, v, mass, type, targetTemperature);
-        this.name = Thermostats.BERENDSEN;
+    public Bussi(int dof, double x[], double v[], double mass[],
+            VARIABLE_TYPE type[], double targetTemperature,
+            double tau) {
+        super(dof, x, v, mass, type, targetTemperature);
+        this.name = Thermostats.BUSSI;
         this.tau = tau;
+        this.bussiRandom = new Random();
     }
 
     /**
      * <p>
-     * Constructor for Berendsen.</p>
+     * Constructor for Bussi.</p>
      *
-     * @param n a int.
+     * @param dof a int.
      * @param x an array of double.
      * @param v an array of double.
      * @param mass an array of double.
      * @param type the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
      */
-    public Berendsen(int n, double x[], double v[], double mass[],
+    public Bussi(int dof, double x[], double v[], double mass[],
             VARIABLE_TYPE type[], double targetTemperature) {
-        this(n, x, v, mass, type, targetTemperature, 0.2e0);
+        this(dof, x, v, mass, type, targetTemperature, 0.2e0);
     }
 
     /**
@@ -121,14 +132,13 @@ public class Berendsen extends Thermostat {
      */
     @Override
     public String toString() {
-        return String.format(" Berendsen Thermostat (tau = %8.3f psec)", tau);
+        return String.format(" Bussi Thermostat (tau = %8.3f psec)", tau);
     }
 
     /**
      * {@inheritDoc}
      *
-     * No velocity modifications are made by the Berendsen method at the
-     * half-step.
+     * No velocity modifications are made by the Bussi method at the half-step.
      */
     @Override
     public void halfStep(double dt) {
@@ -142,8 +152,20 @@ public class Berendsen extends Thermostat {
      */
     @Override
     public void fullStep(double dt) {
-        double ratio = targetTemperature / currentTemperature;
-        double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
+        double expTau = exp(-dt / tau);
+        double tempRatio = targetTemperature / currentTemperature;
+        double rate = (1.0 - expTau) * tempRatio / dof;
+        double r = bussiRandom.nextGaussian();
+        double s = 0.0;
+        for (int i = 0; i < dof - 1; i++) {
+            double si = bussiRandom.nextGaussian();
+            s += si * si;
+        }
+        double scale = expTau + (s + r * r) * rate + 2.0 * r * sqrt(expTau * rate);
+        scale = sqrt(scale);
+        if (r + sqrt(expTau / rate) < 0.0) {
+            scale = -scale;
+        }
         for (int i = 0; i < nVariables; i++) {
             v[i] *= scale;
         }

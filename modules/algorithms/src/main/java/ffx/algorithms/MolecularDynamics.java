@@ -52,8 +52,8 @@ import static java.util.Arrays.fill;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.integrators.Integrator.Integrators;
+import ffx.algorithms.thermostats.Thermostat.Thermostats;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
@@ -80,8 +80,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private final DynamicsEngine engine = DynamicsEngine.FFX;
 
     private MonteCarloListener monteCarloListener;
-    private Thermostat thermostat;
-    private Integrator integrator;
+    private ffx.algorithms.thermostats.Thermostat thermostat;
+    private ffx.algorithms.integrators.Integrator integrator;
 
     private int printEsvFrequency = -1;
     private int removeCOMMotionFrequency = 100;
@@ -208,9 +208,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.Thermostat.Thermostats} object.
+     * {@link ffx.algorithms.thermostats.Thermostat.Thermostats} object.
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.Integrator.Integrators} object.
+     * {@link ffx.algorithms.integrators.Integrator.Integrators} object.
      */
     public MolecularDynamics(MolecularAssembly assembly,
             Potential potentialEnergy,
@@ -250,11 +250,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
         switch (requestedIntegrator) {
             case RESPA:
-                integrator = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
+                integrator = new ffx.algorithms.integrators.Respa(numberOfVariables, x, v, a, aPrevious, mass);
                 break;
             case STOCHASTIC:
                 double friction = properties.getDouble("friction", 91.0);
-                Stochastic stochastic = new Stochastic(friction, numberOfVariables, x, v, a, mass);
+                ffx.algorithms.integrators.Stochastic stochastic = new ffx.algorithms.integrators.Stochastic(friction, numberOfVariables, x, v, a, mass);
                 if (properties.containsKey("randomseed")) {
                     stochastic.setRandomSeed(properties.getInt("randomseed", 0));
                 }
@@ -267,11 +267,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 requestedThermostat = Thermostats.ADIABATIC;
                 break;
             case VELOCITYVERLET:
-                integrator = new VelocityVerlet(numberOfVariables, x, v, a, mass);
+                integrator = new ffx.algorithms.integrators.VelocityVerlet(numberOfVariables, x, v, a, mass);
                 break;
             case BEEMAN:
             default:
-                integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
+                integrator = new ffx.algorithms.integrators.BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
         }
 
         /**
@@ -290,15 +290,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
         switch (requestedThermostat) {
             case BERENDSEN:
                 double tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
+                thermostat = new ffx.algorithms.thermostats.Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
                 break;
             case BUSSI:
                 tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
+                thermostat = new ffx.algorithms.thermostats.Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
                 break;
             case ADIABATIC:
             default:
-                thermostat = new Adiabatic(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes());
+                thermostat = new ffx.algorithms.thermostats.Adiabatic(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes());
         }
 
         if (properties.containsKey("randomseed")) {
@@ -308,7 +308,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * For Stochastic dynamics, center of mass motion will not be removed.
          */
-        if (integrator instanceof Stochastic) {
+        if (integrator instanceof ffx.algorithms.integrators.Stochastic) {
             thermostat.setRemoveCenterOfMassMotion(false);
         }
 
@@ -358,9 +358,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * Setter for the field <code>thermostat</code>.</p>
      *
-     * @param thermostat a {@link ffx.algorithms.Thermostat} object.
+     * @param thermostat a {@link ffx.algorithms.thermostats.Thermostat} object.
      */
-    public void setThermostat(Thermostat thermostat) {
+    public void setThermostat(ffx.algorithms.thermostats.Thermostat thermostat) {
         this.thermostat = thermostat;
     }
 
@@ -368,9 +368,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * <p>
      * Getter for the field <code>thermostat</code>.</p>
      *
-     * @return a {@link ffx.algorithms.Thermostat} object.
+     * @return a {@link ffx.algorithms.thermostats.Thermostat} object.
      */
-    public Thermostat getThermostat() {
+    public ffx.algorithms.thermostats.Thermostat getThermostat() {
         return thermostat;
     }
 
@@ -699,13 +699,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
             return;
         }
 
-        if (integrator instanceof Stochastic) {
+        if (integrator instanceof ffx.algorithms.integrators.Stochastic) {
             if (constantPressure) {
                 logger.info(format("\n Stochastic dynamics in the NPT ensemble"));
             } else {
                 logger.info(format("\n Stochastic dynamics in the NVT ensemble"));
             }
-        } else if (!(thermostat instanceof Adiabatic)) {
+        } else if (!(thermostat instanceof ffx.algorithms.thermostats.Adiabatic)) {
             if (constantPressure) {
                 logger.info(format("\n Molecular dynamics in the NPT ensemble"));
             } else {
@@ -814,8 +814,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         thermostat.setTargetTemperature(targetTemperature);
         thermostat.setQuiet(quiet);
-        if (integrator instanceof Stochastic) {
-            Stochastic stochastic = (Stochastic) integrator;
+        if (integrator instanceof ffx.algorithms.integrators.Stochastic) {
+            ffx.algorithms.integrators.Stochastic stochastic = (ffx.algorithms.integrators.Stochastic) integrator;
             stochastic.setTemperature(targetTemperature);
         }
 
@@ -875,7 +875,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         if (!loadRestart || initialized) {
             for (int i = 0; i < numberOfVariables; i++) {
-                a[i] = -Thermostat.convert * grad[i] / mass[i];
+                a[i] = -ffx.algorithms.thermostats.Thermostat.convert * grad[i] / mass[i];
             }
             if (aPrevious != null) {
                 arraycopy(a, 0, aPrevious, 0, numberOfVariables);
@@ -930,8 +930,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Add the potential energy of the slow degrees of freedom.
              */
-            if (integrator instanceof Respa) {
-                Respa r = (Respa) integrator;
+            if (integrator instanceof ffx.algorithms.integrators.Respa) {
+                ffx.algorithms.integrators.Respa r = (ffx.algorithms.integrators.Respa) integrator;
                 currentPotentialEnergy += r.getHalfStepEnergy();
             }
 

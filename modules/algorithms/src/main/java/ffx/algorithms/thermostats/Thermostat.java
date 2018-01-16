@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.thermostats;
 
 import java.util.Random;
 import java.util.logging.Level;
@@ -412,7 +412,7 @@ public abstract class Thermostat {
      * @param remove If true, the center of mass motion will be removed.
      * @param print If true, the center of mass and momenta will be printed.
      */
-    protected void centerOfMassMotion(boolean remove, boolean print) {
+    public void centerOfMassMotion(boolean remove, boolean print) {
         totalMass = 0.0;
         for (int i = 0; i < 3; i++) {
             centerOfMass[i] = 0.0;
@@ -559,7 +559,7 @@ public abstract class Thermostat {
     /**
      * Compute the current temperature and kinetic energy of the system.
      */
-    protected final void kineticEnergy() {
+    public final void kineticEnergy() {
         double e = 0.0;
         for (int i = 0; i < nVariables; i++) {
             double velocity = v[i];

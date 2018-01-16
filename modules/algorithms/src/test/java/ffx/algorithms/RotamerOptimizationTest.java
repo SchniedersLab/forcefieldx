@@ -274,7 +274,13 @@ public class RotamerOptimizationTest {
             assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
         }
 
+        // ToDo: Test 3-Body Energy Eliminations.
 
+        // ToDo: Test self-energy use for rotamer pair eliminations.
+
+        // ToDo: Test pair-energy use for rotamer pair eliminations.
+
+        // ToDo: Test 3-Body use for rotamer pair eliminations.
     }
 
 }

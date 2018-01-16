@@ -42,8 +42,8 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.integrators.Integrator.Integrators;
+import ffx.algorithms.thermostats.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 
@@ -96,9 +96,9 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.Thermostat.Thermostats}
+     * {@link ffx.algorithms.thermostats.Thermostat.Thermostats}
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.Integrator.Integrators}
+     * {@link ffx.algorithms.integrators.Integrator.Integrators}
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
             Potential potentialEnergy,

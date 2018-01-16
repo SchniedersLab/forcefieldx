@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.MonteCarloListener;
-import ffx.algorithms.Thermostat;
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Residue;

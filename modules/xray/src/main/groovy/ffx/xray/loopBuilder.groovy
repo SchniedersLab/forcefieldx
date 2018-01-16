@@ -41,12 +41,12 @@ import org.apache.commons.io.FilenameUtils
 import edu.rit.mp.DoubleBuf
 import edu.rit.pj.Comm
 
-import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.integrators.Integrator.Integrators
 import ffx.algorithms.MCLoop
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.OSRW
 import ffx.algorithms.SimulatedAnnealing
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.algorithms.TransitionTemperedOSRW
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy

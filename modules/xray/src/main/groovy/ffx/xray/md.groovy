@@ -38,9 +38,9 @@
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.integrators.Integrator.Integrators
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.xray.CrystalReciprocalSpace.SolventModel
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy

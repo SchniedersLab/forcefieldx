@@ -65,8 +65,8 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPositions;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_getVelocities;
 
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.integrators.Integrator.Integrators;
+import ffx.algorithms.thermostats.Thermostat.Thermostats;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
@@ -77,8 +77,8 @@ import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
-import static ffx.algorithms.Thermostat.convert;
-import static ffx.algorithms.Thermostat.kB;
+import static ffx.algorithms.thermostats.Thermostat.convert;
+import static ffx.algorithms.thermostats.Thermostat.kB;
 
 /**
  * Runs Molecular Dynamics using OpenMM implementation

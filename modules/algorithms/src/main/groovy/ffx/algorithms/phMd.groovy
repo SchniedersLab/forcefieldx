@@ -40,10 +40,10 @@
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.integrators.Integrator.Integrators
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.PhMD
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3

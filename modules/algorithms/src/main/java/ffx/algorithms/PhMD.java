@@ -112,7 +112,7 @@ public class PhMD implements MonteCarloListener {
     /**
      * The MD thermostat.
      */
-    private final Thermostat thermostat;
+    private final ffx.algorithms.thermostats.Thermostat thermostat;
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */

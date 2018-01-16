@@ -68,7 +68,7 @@ public class MCLoop implements MonteCarloListener {
     /**
      * The MD thermostat.
      */
-    private final Thermostat thermostat;
+    private final ffx.algorithms.thermostats.Thermostat thermostat;
     /**
      * Boltzmann's constant is kcal/mol/Kelvin.
      */
@@ -131,7 +131,7 @@ public class MCLoop implements MonteCarloListener {
      * @param mcStepFrequency number of MD steps between switch attempts
      * @param thermostat the MD thermostat
      */
-    MCLoop(MolecularAssembly molAss, int mcStepFrequency, Thermostat thermostat, int firstResidue, int endResidue) {
+    MCLoop(MolecularAssembly molAss, int mcStepFrequency, ffx.algorithms.thermostats.Thermostat thermostat, int firstResidue, int endResidue) {
         numMovesAccepted = 0;
 
         this.molAss = molAss;

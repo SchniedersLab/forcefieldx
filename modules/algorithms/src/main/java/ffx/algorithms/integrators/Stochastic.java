@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.integrators;
 
 import java.util.Random;
 
@@ -51,7 +51,7 @@ import ffx.numerics.Potential;
  *
  * @since 1.0
  */
-public class Stochastic extends Integrator {
+public class Stochastic extends ffx.algorithms.integrators.Integrator {
 
     private double vfric[];
     private double vrand[];
@@ -195,7 +195,7 @@ public class Stochastic extends Integrator {
                 /**
                  * Compute random terms to thermostat the nonzero friction case.
                  */
-                double ktm = Thermostat.kB * temperature / m;
+                double ktm = ffx.algorithms.thermostats.Thermostat.kB * temperature / m;
                 double psig = sqrt(ktm * pterm) / friction;
                 double vsig = sqrt(ktm * vterm);
                 double rhoc = sqrt(1.0 - rho * rho);
@@ -225,7 +225,7 @@ public class Stochastic extends Integrator {
         }
         System.arraycopy(a, 0, aPrevious, 0, nVariables);
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -ffx.algorithms.thermostats.Thermostat.convert * gradient[i] / mass[i];
             v[i] += (0.5 * a[i] * vfric[i] + vrand[i]);
         }
     }
