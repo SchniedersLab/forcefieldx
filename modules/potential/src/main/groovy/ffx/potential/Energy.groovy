@@ -79,8 +79,17 @@ class Energy extends Script {
 
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
         MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        functions.energy(activeAssembly)
+        MolecularAssembly activeAssembly = assemblies[0];
+        ForceFieldEnergy pe = activeAssembly.getPotentialEnergy();
+        double[] x = new double[pe.getNumberOfVariables()];
+        pe.getCoordinates(x);
+        if (pe instanceof ForceFieldEnergyOpenMM) {
+            ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe;
+            ope.energyVsFFX(x, true);
+        } else {
+            pe.energy(x, true);
+        }
+        //functions.energy(activeAssembly)
     }
 }
 
