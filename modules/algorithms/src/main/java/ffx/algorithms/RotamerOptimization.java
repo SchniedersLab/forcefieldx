@@ -2520,6 +2520,9 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
+        //sortResidues(allResiduesList);
+        //sortResidues(residueList);
+
         // If -DignoreNA=true, then remove nucleic acids from residue list.
         if (ignoreNA) {
             for (int i = 0; i < residueList.size(); i++) {
@@ -4495,11 +4498,11 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Sorts a passed ArrayList of Residues by global index.
+     * Sorts a passed List of Residues by global index.
      *
-     * @param residues ArrayList of Residues to be sorted.
+     * @param residues List of Residues to be sorted.
      */
-    private void sortResidues(ArrayList<Residue> residues) {
+    private void sortResidues(List<Residue> residues) {
         int nResidues = residues.size();
         IndexIndexPair[] residueIndices = new IndexIndexPair[nResidues];
         for (int i = 0; i < nResidues; i++) {
@@ -4513,6 +4516,10 @@ public class RotamerOptimization implements Terminatable {
             int indexToGet = residueIndices[i].getReferenceIndex();
             residues.set(i, tempWindow.get(indexToGet));
         }
+        // This two-liner should have slightly different behavior of sorting first on chain ID, then on resnum.
+        // I hadn't noticed before, but we had nondeterministic behavior if you had multiple chains with identical residue numbers.
+        /*Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt((Residue r) -> { return allResiduesList.indexOf(r); });
+        residues.sort(comparator);*/
     }
 
     protected void applyEliminationCriteria(Residue residues[], boolean getEnergies, boolean verbose) {
@@ -4872,6 +4879,8 @@ public class RotamerOptimization implements Terminatable {
                     Thread.sleep(POLLING_FREQUENCY);
                 }
 
+                logger.info(String.format(" Number of self energies to calculate: %d", singlesMap.size()));
+
                 energyWorkerTeam.execute(singlesRegion);
                 long singlesTime = System.nanoTime() - energyStartTime;
                 logIfMaster(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
@@ -4915,6 +4924,8 @@ public class RotamerOptimization implements Terminatable {
                 while (!readyForPairs) {
                     Thread.sleep(POLLING_FREQUENCY);
                 }
+
+                logger.info(String.format(" Number of pair energies to calculate: %d", pairsMap.size()));
 
                 energyWorkerTeam.execute(pairsRegion);
                 long pairsTime = System.nanoTime() - (singlesTime + energyStartTime);
@@ -4972,6 +4983,9 @@ public class RotamerOptimization implements Terminatable {
                     while (!readyForTrimers) {
                         Thread.sleep(POLLING_FREQUENCY);
                     }
+
+                    logger.info(String.format(" Number of triple energies to calculate: %d", trimersMap.size()));
+
                     energyWorkerTeam.execute(triplesRegion);
                     triplesTime = System.nanoTime() - (pairsTime + singlesTime + energyStartTime);
                     logIfMaster(format(" Time for triple energies: %12.4g", (triplesTime * 1.0E-9)));
@@ -7595,11 +7609,8 @@ public class RotamerOptimization implements Terminatable {
                 int indexToGet = residueIndices[i].getReferenceIndex();
                 residues.set(i, tempWindow.get(indexToGet));
             }
-            /*residues = residues.parallelStream().
-                    map(r -> new ObjectPair<Residue, Integer>(r, allResiduesList.indexOf(r))).
-                    sorted().
-                    map(rip -> rip.getVal()).
-                    collect(Collectors.toCollection(ArrayList<Residue>::new));*/
+            /*Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt((Residue r) -> { return allResiduesList.indexOf(r); });
+            residues.sort(comparator);*/
         }
 
         /**
