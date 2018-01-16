@@ -42,8 +42,8 @@ import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.algorithms.Integrator.Integrators;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.integrators.Integrator.Integrators;
+import ffx.algorithms.thermostats.Thermostat.Thermostats;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.algorithms.mc.LambdaMove;
 import ffx.algorithms.mc.MDMove;

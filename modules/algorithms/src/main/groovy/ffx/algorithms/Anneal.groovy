@@ -6,8 +6,8 @@ import org.apache.commons.io.FilenameUtils
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
-import ffx.algorithms.Integrator.Integrators
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.integrators.Integrator.Integrators
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 
 /**
  * The Anneal script.

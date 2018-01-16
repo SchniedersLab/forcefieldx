@@ -40,11 +40,11 @@
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.integrators.Integrator.Integrators
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.PhDiscount
-import ffx.algorithms.Thermostat
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.potential.MolecularAssembly
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.extended.TitrationUtils

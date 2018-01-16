@@ -35,64 +35,60 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.thermostats;
 
-import ffx.numerics.Potential;
+import ffx.numerics.Potential.VARIABLE_TYPE;
 
 /**
- * Integrate Newton's equations of motion using a Velocity Verlet multistep
- * recursion formula.
+ * The Adiabatic thermostat is for NVE simulations and does not alter particle
+ * velocities.
  *
  * @author Michael J. Schnieders
  *
  * @since 1.0
  */
-public class VelocityVerlet extends Integrator {
+public class Adiabatic extends Thermostat {
 
     /**
-     * Constructor for VelocityVerlet.
+     * <p>
+     * Constructor for Adiabatic.</p>
      *
-     * @param nVariables number of Variables.
-     * @param x Cartesian coordinates (Angstroms).
-     * @param v Velocities.
-     * @param a Accelerations.
-     * @param mass Mass.
+     * @param n a int.
+     * @param x an array of double.
+     * @param v an array of double.
+     * @param mass an array of double.
+     * @param type the VARIABLE_TYPE of each variable.
      */
-    public VelocityVerlet(int nVariables, double x[], double v[], double a[],
-            double mass[]) {
-        super(nVariables, x, v, a, null, mass);
+    public Adiabatic(int n, double x[], double v[], double mass[], VARIABLE_TYPE type[]) {
+        super(n, x, v, mass, type, 0.0);
+        this.name = Thermostats.ADIABATIC;
     }
 
     /**
-     * Find half-step velocities and full-step positions.
+     * {@inheritDoc}
      */
     @Override
-    public void preForce(Potential potential) {
-        for (int i = 0; i < nVariables; i++) {
-            v[i] = v[i] + a[i] * dt_2;
-            x[i] = x[i] + v[i] * dt;
-        }
+    public String toString() {
+        return " Adiabatic thermostat";
     }
 
     /**
-     * Use Newton's second law to find accelerations and
-     * then full-step velocities.
+     * {@inheritDoc}
+     *
+     * No half-step velocity modifications are made.
      */
     @Override
-    public void postForce(double gradient[]) {
-        if (aPrevious == null || aPrevious.length < a.length) {
-            aPrevious = new double[a.length];
-        }
-        System.arraycopy(a, 0, aPrevious, 0, nVariables);
-        for (int i = 0; i < nVariables; i++) {
-            a[i] = -Thermostat.convert * gradient[i] / mass[i];
-            v[i] = v[i] + a[i] * dt_2;
-        }
+    public void halfStep(double dt) {
+        return;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * No full-step velocity modifications are made.
+     */
     @Override
-    public void setTimeStep(double dt) {
-        this.dt = dt;
-        dt_2 = dt * 0.5;
+    public void fullStep(double dt) {
+        return;
     }
 }

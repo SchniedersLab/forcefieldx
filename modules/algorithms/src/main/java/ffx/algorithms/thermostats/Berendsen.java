@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.thermostats;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 

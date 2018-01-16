@@ -35,10 +35,10 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.integrators;
 
 import ffx.numerics.Potential;
-import static ffx.algorithms.Thermostat.convert;
+import static ffx.algorithms.thermostats.Thermostat.convert;
 
 /**
  * Integrate Newton's equations of motion using a Beeman multistep recursion

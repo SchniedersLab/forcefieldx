@@ -51,7 +51,7 @@ import static java.util.Arrays.fill;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.Thermostat;
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -822,7 +822,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * <p>
      * Setter for the field <code>thermostat</code>.</p>
      *
-     * @param thermostat a {@link ffx.algorithms.Thermostat} object.
+     * @param thermostat a {@link ffx.algorithms.thermostats.Thermostat} object.
      */
     public void setThermostat(Thermostat thermostat) {
         this.thermostat = thermostat;
@@ -832,7 +832,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * <p>
      * Getter for the field <code>thermostat</code>.</p>
      *
-     * @return a {@link ffx.algorithms.Thermostat} object.
+     * @return a {@link ffx.algorithms.thermostats.Thermostat} object.
      */
     public Thermostat getThermostat() {
         return thermostat;

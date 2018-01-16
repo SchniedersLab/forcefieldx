@@ -83,7 +83,7 @@ public class PhDiscount implements MonteCarloListener {
     private final MolecularAssembly mola;
     private final ForceFieldEnergy ffe;
     private final MolecularDynamics molDyn;
-    private final Thermostat thermostat;
+    private final ffx.algorithms.thermostats.Thermostat thermostat;
     private final String originalFilename;
     private List<MultiResidue> titratingMultiResidues = new ArrayList<>();
     private final RotamerLibrary library = new RotamerLibrary(RotamerLibrary.ProteinLibrary.Richardson, false);

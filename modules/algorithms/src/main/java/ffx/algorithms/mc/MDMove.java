@@ -42,9 +42,9 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.Integrator.Integrators;
+import ffx.algorithms.integrators.Integrator.Integrators;
 import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.Thermostat.Thermostats;
+import ffx.algorithms.thermostats.Thermostat.Thermostats;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 

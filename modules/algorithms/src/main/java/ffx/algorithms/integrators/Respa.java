@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.integrators;
 
 import ffx.numerics.Potential;
 
@@ -111,7 +111,7 @@ public class Respa extends Integrator {
             potential.setEnergyTermState(Potential.STATE.FAST);
             halfStepEnergy = potential.energyAndGradient(x, gradient);
             for (int i = 0; i < nVariables; i++) {
-                aPrevious[i] = -Thermostat.convert * gradient[i] / mass[i];
+                aPrevious[i] = -ffx.algorithms.thermostats.Thermostat.convert * gradient[i] / mass[i];
                 v[i] += aPrevious[i] * dta;
                 x[i] += v[i] * dta_2;
             }
@@ -127,7 +127,7 @@ public class Respa extends Integrator {
     @Override
     public void postForce(double[] gradient) {
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -ffx.algorithms.thermostats.Thermostat.convert * gradient[i] / mass[i];
             v[i] += a[i] * dt_2;
         }
     }

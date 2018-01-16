@@ -105,7 +105,7 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
             CompositeConfiguration properties = Keyword.loadProperties(assembly.getFile());
             MolecularDynamics molecularDynamics = new MolecularDynamics(assembly,
                     assembly.getPotentialEnergy(), properties, null,
-                    Thermostat.Thermostats.BUSSI, Integrator.Integrators.BEEMAN);
+                    ffx.algorithms.thermostats.Thermostat.Thermostats.BUSSI, ffx.algorithms.integrators.Integrator.Integrators.BEEMAN);
             molecularDynamics.dynamic(nStep, timeStep, printInterval, saveInterval,
                     temperature, initVelocities, dyn);
         }

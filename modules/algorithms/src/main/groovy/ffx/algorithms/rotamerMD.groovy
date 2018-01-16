@@ -45,11 +45,11 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.Integrator.Integrators
+import ffx.algorithms.integrators.Integrator.Integrators
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.numerics.Potential
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue

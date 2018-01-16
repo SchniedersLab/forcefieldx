@@ -6,8 +6,8 @@ import org.apache.commons.io.FilenameUtils
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
-import ffx.algorithms.Integrator.Integrators
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.integrators.Integrator.Integrators
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
@@ -38,13 +38,13 @@ class Dynamics extends Script {
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
-        @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return Thermostat.parseThermostat(s); },
+        @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return ffx.algorithms.thermostats.Thermostat.parseThermostat(s); },
                 defaultValue = 'Berendsen', description = 'Thermostat: [Adiabatic / Berendsen / Bussi].')
         Thermostats tstat;
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, Velocity Verlet, or Stochastic (AKA Langevin dynamics).
          */
-        @Option(shortName = 'i', longName = 'integrator', convert = { s -> return Integrator.parseIntegrator(s); },
+        @Option(shortName = 'i', longName = 'integrator', convert = { s -> return ffx.algorithms.integrators.Integrator.parseIntegrator(s); },
                 defaultValue = 'Beeman', description = 'Integrator: [Beeman / Respa / Stochastic / VelocityVerlet ]')
         Integrators integrator;
         /**

@@ -41,7 +41,7 @@
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat.Thermostats
 import ffx.realspace.RealSpaceData
 import ffx.realspace.RealSpaceFile
 import ffx.xray.RefinementEnergy
