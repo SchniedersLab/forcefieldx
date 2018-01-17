@@ -2034,9 +2034,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
             }
 
-            int zaxis = 0;
-            int xaxis = 0;
-            int yaxis = 0;
+            //int zaxis = 0;
+            int zaxis = 1;
+            //int xaxis = 0;
+            int xaxis = 1;
+            //int yaxis = 0;
+            int yaxis = 1;
             int refAtoms[] = axisAtom[i];
             if (refAtoms != null) {
                 zaxis = refAtoms[0];
@@ -2046,6 +2049,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         yaxis = refAtoms[2];
                     }
                 }
+            } else{
+                axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
             }
 
             /**
