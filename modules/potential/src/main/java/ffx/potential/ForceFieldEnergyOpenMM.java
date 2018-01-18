@@ -491,10 +491,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (vdW != null) {
             VanDerWaalsForm vdwForm = vdW.getVDWForm();
             if (vdwForm.vdwType == LENNARD_JONES) {
-                logger.info(" very unwat.");
                 addFixedChargeNonBondedForce();
             } else {
-                logger.info(" adding amoeba because wat.");
                 // Add vdW Force.
                 addAmoebaVDWForce();
 
@@ -1826,19 +1824,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         // Update AMOEBA vdW parameters.
         if (amoebaVDWForce != null) {
             updateAmoebaVDWForce(atoms);
-            logger.info(" wat.");
         }
 
         // Update AMOEBA polarizable multipole parameters.
         if (amoebaMultipoleForce != null) {
             updateAmoebaMultipoleForce(atoms);
-            logger.info(" also wat.");
         }
 
         // Update GK force.
         if (amoebaGeneralizedKirkwoodForce != null) {
             updateAmoebaGeneralizedKirkwoodForce(atoms);
-            logger.info(" wat wat.");
         }
 
         // Update WCA Force.
@@ -1968,7 +1963,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             Atom atom = atoms[i];
             double useFactor = 1.0;
             if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
-                logger.info(" In updateGB for " + i);
                 //if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
