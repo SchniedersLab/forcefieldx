@@ -1454,17 +1454,30 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     break;
             }
 
+            double useFactor = 1.0;
+            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
+                //if (!atoms[i].getUse()) {
+                useFactor = 0.0;
+            }
+
+            double lambdaScale = lambda; // Should be 1.0 at this point.
+            if (!atom.applyLambda()) {
+                lambdaScale = 1.0;
+            }
+
+            useFactor *= lambdaScale;
+
             /**
              * Load local multipole coefficients.
              */
             for (int j = 0; j < 3; j++) {
-                OpenMM_DoubleArray_set(dipoles, j, multipoleType.dipole[j] * dipoleConversion);
+                OpenMM_DoubleArray_set(dipoles, j, multipoleType.dipole[j] * dipoleConversion * useFactor);
 
             }
             int l = 0;
             for (int j = 0; j < 3; j++) {
                 for (int k = 0; k < 3; k++) {
-                    OpenMM_DoubleArray_set(quadrupoles, l++, multipoleType.quadrupole[j][k] * quadrupoleConversion / 3.0);
+                    OpenMM_DoubleArray_set(quadrupoles, l++, multipoleType.quadrupole[j][k] * quadrupoleConversion * useFactor / 3.0);
                 }
             }
 
@@ -1490,11 +1503,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 logger.info(String.format(" Atom type %s", atom.getAtomType().toString()));
             }
 
+            double charge = multipoleType.charge * useFactor;
+
             /**
              * Add the multipole.
              */
             OpenMM_AmoebaMultipoleForce_addMultipole(amoebaMultipoleForce,
-                    multipoleType.charge, dipoles, quadrupoles,
+                    charge, dipoles, quadrupoles,
                     axisType, zaxis, xaxis, yaxis,
                     polarType.thole,
                     polarType.pdamp * dampingFactorConversion,
@@ -1892,7 +1907,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             double useFactor = 1.0;
-            if (!atoms[i].getUse()) {
+            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
+                //if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
 
@@ -1931,7 +1947,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             double useFactor = 1.0;
-            if (!atoms[i].getUse()) {
+            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
+                //if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
             double lambdaScale = lambda;
@@ -1984,7 +2001,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             PolarizeType polarType = atom.getPolarizeType();
             double useFactor = 1.0;
 
-            if (!atoms[i].getUse()) {
+            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
+                //if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
 
@@ -2081,7 +2099,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             double useFactor = 1.0;
-            if (!atoms[i].getUse()) {
+            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
+            //if (!atoms[i].getUse()) {
                 useFactor = 0.0;
             }
 
