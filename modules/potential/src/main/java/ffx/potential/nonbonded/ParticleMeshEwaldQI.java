@@ -702,7 +702,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         useDipoles = forceField.getBoolean(ForceFieldBoolean.USE_DIPOLES, true);
         useQuadrupoles = forceField.getBoolean(ForceFieldBoolean.USE_QUADRUPOLES, true);
         rotateMultipoles = forceField.getBoolean(ForceFieldBoolean.ROTATE_MULTIPOLES, true);
-        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
+        //lambdaTerm = forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false);
+        // If PME-specific lambda term not set, default to force field-wide lambda term.
+        lambdaTerm = forceField.getBoolean(ForceFieldBoolean.PME_LAMBDATERM, forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
 
         if (!crystal.aperiodic()) {
             off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);

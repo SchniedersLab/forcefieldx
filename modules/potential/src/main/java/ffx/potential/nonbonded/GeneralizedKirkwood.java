@@ -444,7 +444,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         cutoff = particleMeshEwald.getEwaldCutoff();
         cut2 = cutoff * cutoff;
 
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.GK_LAMBDATERM, forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false));
 
         initAtomArrays();
 
