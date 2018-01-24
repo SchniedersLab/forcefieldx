@@ -2427,6 +2427,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param numberOfVariables
      */
     public void setOpenMMPositions(double x[], int numberOfVariables) {
+        assert numberOfVariables == getNumberOfVariables();
         if (positions == null) {
             positions = OpenMM_Vec3Array_create(0);
         } else {
@@ -2452,6 +2453,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param numberOfVariables
      */
     public void setOpenMMVelocities(double v[], int numberOfVariables) {
+        assert numberOfVariables == getNumberOfVariables();
         if (velocities == null) {
             velocities = OpenMM_Vec3Array_create(0);
         } else {
@@ -2480,6 +2482,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @return x
      */
     public double[] getOpenMMPositions(PointerByReference positions, int numberOfVariables, double x[]) {
+        assert numberOfVariables == getNumberOfVariables();
         if (x == null || x.length < numberOfVariables) {
             x = new double[numberOfVariables];
         }
@@ -2509,6 +2512,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @return
      */
     public double[] getOpenMMVelocities(PointerByReference velocities, int numberOfVariables, double v[]) {
+        assert numberOfVariables == getNumberOfVariables();
         if (v == null || v.length < numberOfVariables) {
             v = new double[numberOfVariables];
         }
@@ -2539,6 +2543,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public double[] getOpenMMAccelerations(PointerByReference accelerations, int numberOfVariables,
             double[] mass, double[] a) {
+        assert numberOfVariables == getNumberOfVariables();
         if (a == null || a.length < numberOfVariables) {
             a = new double[numberOfVariables];
         }

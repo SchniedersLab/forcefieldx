@@ -442,11 +442,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                     forceFieldEnergyOpenMM.loadFFXPositionToOpenMM();
 
                     forceFieldEnergyOpenMM.setOpenMMVelocities(v, numberOfVariables);
-
-                    // molecularAssembly.getPotentialEnergy().setCrystal(crystal);
-
-                    forceFieldEnergyOpenMM.setOpenMMPositions(x, numParticles);
-                    forceFieldEnergyOpenMM.setOpenMMVelocities(v, numParticles);
                 }
             } else {
                 forceFieldEnergyOpenMM.loadFFXPositionToOpenMM();

@@ -99,7 +99,7 @@
             <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>pj</artifactId>
             <type>jar</type>
-            <version>${project.version}</version>
+            <version>${pj.version}</version>
         </dependency>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
