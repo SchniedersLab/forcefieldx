@@ -92,6 +92,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     private ExtendedSystem esvSystem;
     private DynamicsState dynamicsState;
     private double totalSimTime = 0.0;
+    private long time;
+    private long mdTime = 0;
     private boolean quiet = false;
 
     protected final MolecularAssembly molecularAssembly;
@@ -905,7 +907,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Integrate Newton's equations of motion for the requested number of
          * steps, unless early termination is requested.
          */
-        long time = System.nanoTime();
+        time = System.nanoTime();
         for (int step = 1; step <= nSteps; step++) {
             /* Notify MonteCarlo handlers such as PhMD or rotamer drivers. */
             if (monteCarloListener != null && mcNotification == MonteCarloNotification.EACH_STEP) {
@@ -994,6 +996,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
                  * Original print statement
                  */
                 time = System.nanoTime() - time;
+                mdTime = time;
                 logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
                         totalSimTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
@@ -1341,5 +1344,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
             return EnumSet.copyOf(platforms);
         }
     }
-
+    
+    public long getMDTime(){
+        return mdTime;
+    }
 }
