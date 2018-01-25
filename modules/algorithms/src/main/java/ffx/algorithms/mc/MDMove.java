@@ -122,5 +122,9 @@ public class MDMove implements MCMove {
             logger.severe(" The MD state could not be reverted.");
         }
     }
+    
+    public long getMDTime(){
+        return molecularDynamics.getMDTime();
+    }
 
 }

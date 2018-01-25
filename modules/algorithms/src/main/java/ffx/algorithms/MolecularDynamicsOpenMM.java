@@ -165,6 +165,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Number of Infinite Energy values.
      */
     private int numInfiniteEnergies = 0;
+    
+    private long mdTime = 0;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -309,6 +311,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             } else if (i % printFrequency == 0) {
                 double simTime = i * dt * 1.0e-3;
                 time += System.nanoTime();
+                mdTime = time;
                 logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.2f",
                         simTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
@@ -573,5 +576,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public DynamicsEngine getEngine() {
         return DynamicsEngine.OPENMM;
+    }
+    
+    /**
+     * Returns time spent calculating the molecular dynamics trajectory on the GPU
+     * @return 
+     */
+    @Override
+    public long getMDTime(){
+        return mdTime;
     }
 }

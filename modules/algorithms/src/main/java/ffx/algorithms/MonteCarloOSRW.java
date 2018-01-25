@@ -49,6 +49,8 @@ import ffx.algorithms.mc.LambdaMove;
 import ffx.algorithms.mc.MDMove;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import static ffx.algorithms.MolecularDynamics.NS2SEC;
+
 
 /**
  * Sample a thermodynamic path using the OSRW method, with the time-dependent
@@ -90,6 +92,8 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private MDMove mdMove;
     private int totalSteps = 10000000;
     private int stepsPerMove = 50;
+    //private long mdTime = 0;
+    private long totalMoveTime = 0;
 
     private LambdaMove lambdaMove;
 
@@ -208,6 +212,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
          * Test Lambda End-States.
          */
 
+        totalMoveTime = -System.nanoTime();
 
 
 
@@ -229,7 +234,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
             proposedEnergy += mdMove.getKineticEnergy();
-
+            //mdTime = mdMove.getMDTime();
+            //logger.info(String.format(" Time spent on MD move %8.2f", mdTime * NS2SEC));
+            
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 /**
                  * Accept MD move.
@@ -288,6 +295,10 @@ public class MonteCarloOSRW extends BoltzmannMC {
              */
             logger.info(format(" Adding bias at L=%6.4f and dU/dL=%16.8f.", lambda, currentdUdL));
             osrw.addBias(currentdUdL, coordinates, gradient);
+            totalMoveTime += System.nanoTime();
+            logger.info(String.format(" MCOSRW round time: %8.2f sec", totalMoveTime * NS2SEC));
+            //logger.info(String.format(" Latency in calculation is %8.2f sec", (totalMoveTime * NS2SEC) - (mdTime * NS2SEC)));
+            totalMoveTime = -System.nanoTime();
         }
     }
 
