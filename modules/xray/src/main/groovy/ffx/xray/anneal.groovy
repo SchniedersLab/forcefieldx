@@ -38,9 +38,11 @@
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.integrators.Integrator.Integrators
+import ffx.algorithms.integrators.Integrator
+import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.SimulatedAnnealing
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.xray.CrystalReciprocalSpace.SolventModel
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
@@ -67,11 +69,11 @@ int steps = 1000;
 // Time step in femtoseconds.
 double timeStep = 1.0;
 
-// Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = Thermostats.BERENDSEN;
+// ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+ThermostatEnum thermostat = ThermostatEnum.BERENDSEN;
 
-// Integrators [ BEEMAN, RESPA, STOCHASTIC]
-Integrators integrator = null;
+// IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC]
+IntegratorEnum integrator = null;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -155,22 +157,12 @@ if (options.f) {
     timeStep = Double.parseDouble(options.f);
 }
 
-// Thermostat.
 if (options.b) {
-    try {
-        thermostat = Thermostats.valueOf(options.b.toUpperCase());
-    } catch (Exception e) {
-        thermostat = Thermostats.BUSSI;
-    }
+    thermostat = Thermostat.parseThermostat(options.b)
 }
 
-// Integrator.
 if (options.i) {
-    try {
-        integrator = Integrators.valueOf(options.i.toUpperCase());
-    } catch (Exception e) {
-        integrator = null;
-    }
+    integrator = Integrator.parseIntegrator(options.i)
 }
 
 logger.info("\n Running simulated annealing on " + modelfilename);

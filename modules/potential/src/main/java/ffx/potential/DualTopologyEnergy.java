@@ -37,18 +37,21 @@
  */
 package ffx.potential;
 
-// PJ Imports
-
+// Core Java Imports
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.util.Arrays.fill;
 
+// Apache Imports
 import org.apache.commons.math3.util.FastMath;
 
+// PJ Imports
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
 
+// FFX Imports
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.numerics.PowerSwitch;
@@ -267,6 +270,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
      */
     private final double rgl2[];
     /**
+     * Returns true if we should unpin this atom. Replaces prior uses of atom.applyLambda(). Is often set to Atom::applyLambda.
+     */
+    private final Predicate<Atom> doUnpin;
+    /**
      * Square of the maximum distance permissible between two shared atoms.
      */
     private final double maxDisc2 = 0.09;
@@ -339,6 +346,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         doValenceRestraint1 = false;
         doValenceRestraint2 = false;
 
+        if (Boolean.parseBoolean(System.getProperty("doPinSoftcore", "false"))) {
+            doUnpin = (Atom a) -> false;
+        } else {
+            doUnpin = Atom::applyLambda;
+        }
+
         /**
          * Check that all atoms that are not undergoing alchemy are common to
          * both topologies.
@@ -351,7 +364,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             Atom a1 = atoms1[i];
             if (a1.isActive()) {
                 activeCount1++;
-                if (!a1.applyLambda()) {
+                if (!doUnpin.test(a1)) {
                     shared1++;
                 }
             }
@@ -360,7 +373,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             Atom a2 = atoms2[i];
             if (a2.isActive()) {
                 activeCount2++;
-                if (!a2.applyLambda()) {
+                if (!doUnpin.test(a2)) {
                     shared2++;
                 }
             }
@@ -398,11 +411,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         int i2 = 0;
         for (int i = 0; i < nShared; i++) {
             Atom a1 = atoms1[i1++];
-            while (a1.applyLambda()) {
+            while (doUnpin.test(a1)) {
                 a1 = atoms1[i1++];
             }
             Atom a2 = atoms2[i2++];
-            while (a2.applyLambda()) {
+            while (doUnpin.test(a2)) {
                 a2 = atoms2[i2++];
             }
             assert (a1.getX() == a2.getX());
@@ -444,7 +457,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < nActive1; i++) {
             Atom a = activeAtoms1[i];
             double m = a.getMass();
-            if (!a.applyLambda()) {
+            if (!doUnpin.test(a)) {
                 mass[commonIndex++] = m;
                 mass[commonIndex++] = m;
                 mass[commonIndex++] = m;
@@ -456,7 +469,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         for (int i = 0; i < nActive2; i++) {
             Atom a = activeAtoms2[i];
-            if (a.applyLambda()) {
+            if (doUnpin.test(a)) {
                 double m = a.getMass();
                 mass[softcoreIndex++] = m;
                 mass[softcoreIndex++] = m;
@@ -497,6 +510,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         this.doValenceRestraint2 = forceField2.getBoolean(
                 ForceField.ForceFieldBoolean.LAMBDA_VALENCE_RESTRAINTS, true);
 
+        if (Boolean.parseBoolean(System.getProperty("doPinSoftcore", "false"))) {
+            doUnpin = (Atom a) -> false;
+        } else {
+            doUnpin = Atom::applyLambda;
+        }
+
         /**
          * Check that all atoms that are not undergoing alchemy are common to
          * both topologies.
@@ -509,7 +528,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             Atom a1 = atoms1[i];
             if (a1.isActive()) {
                 activeCount1++;
-                if (!a1.applyLambda()) {
+                if (!doUnpin.test(a1)) {
                     shared1++;
                 }
             }
@@ -518,7 +537,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             Atom a2 = atoms2[i];
             if (a2.isActive()) {
                 activeCount2++;
-                if (!a2.applyLambda()) {
+                if (!doUnpin.test(a2)) {
                     shared2++;
                 }
             }
@@ -570,11 +589,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         int i2 = 0;
         for (int i = 0; i < nShared; i++) {
             Atom a1 = atoms1[i1++];
-            while (a1.applyLambda()) {
+            while (doUnpin.test(a1)) {
                 a1 = atoms1[i1++];
             }
             Atom a2 = atoms2[i2++];
-            while (a2.applyLambda()) {
+            while (doUnpin.test(a2)) {
                 a2 = atoms2[i2++];
             }
             assert (a1.getX() == a2.getX());
@@ -603,7 +622,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < nActive1; i++) {
             Atom a = activeAtoms1[i];
             double m = a.getMass();
-            if (!a.applyLambda()) {
+            if (!doUnpin.test(a)) {
                 mass[commonIndex++] = m;
                 mass[commonIndex++] = m;
                 mass[commonIndex++] = m;
@@ -616,7 +635,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         for (int i = 0; i < nActive2; i++) {
             Atom a = activeAtoms2[i];
-            if (a.applyLambda()) {
+            if (doUnpin.test(a)) {
                 double m = a.getMass();
                 mass[softcoreIndex++] = m;
                 mass[softcoreIndex++] = m;
@@ -747,7 +766,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         int index = 0;
         for (int i = 0; i < nActive1; i++) {
             Atom a = activeAtoms1[i];
-            if (!a.applyLambda()) {
+            if (!doUnpin.test(a)) {
                 g[indexCommon++] = f1L * g1[index] + f2L * rg1[index++];
                 g[indexCommon++] = f1L * g1[index] + f2L * rg1[index++];
                 g[indexCommon++] = f1L * g1[index] + f2L * rg1[index++];
@@ -764,7 +783,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         index = 0;
         for (int i = 0; i < nActive2; i++) {
             Atom a = activeAtoms2[i];
-            if (!a.applyLambda()) {
+            if (!doUnpin.test(a)) {
                 g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
                 g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
                 g[indexCommon++] += f2L * g2[index] + f1L * rg2[index++];
@@ -801,7 +820,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         int indexUnique = 3 * nShared;
         for (int i = 0; i < nActive1; i++) {
             Atom a = activeAtoms1[i];
-            if (!a.applyLambda()) {
+            if (!doUnpin.test(a)) {
                 x1[index++] = x[indexCommon++];
                 x1[index++] = x[indexCommon++];
                 x1[index++] = x[indexCommon++];
@@ -816,7 +835,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         indexCommon = 0;
         for (int i = 0; i < nActive2; i++) {
             Atom a = activeAtoms2[i];
-            if (!a.applyLambda()) {
+            if (!doUnpin.test(a)) {
                 x2[index++] = x[indexCommon++];
                 x2[index++] = x[indexCommon++];
                 x2[index++] = x[indexCommon++];
@@ -849,7 +868,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < nActive1; i++) {
             Atom a = activeAtoms1[i];
 
-            if (!a.applyLambda()) {
+            if (!doUnpin.test(a)) {
                 x[indexCommon++] = a.getX();
                 x[indexCommon++] = a.getY();
                 x[indexCommon++] = a.getZ();
@@ -862,7 +881,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         for (int i = 0; i < nActive2; i++) {
             Atom a = activeAtoms2[i];
-            if (a.applyLambda()) {
+            if (doUnpin.test(a)) {
                 x[indexUnique++] = a.getX();
                 x[indexUnique++] = a.getY();
                 x[indexUnique++] = a.getZ();
@@ -889,7 +908,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             for (int i = 0; i < nActive2; i++) {
                 Atom a = activeAtoms2[i];
                 double m = a.getMass();
-                if (!a.applyLambda()) {
+                if (!doUnpin.test(a)) {
                     mass[commonIndex++] = m;
                     mass[commonIndex++] = m;
                     mass[commonIndex++] = m;
@@ -900,7 +919,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             for (int i = 0; i < nActive1; i++) {
                 Atom a = activeAtoms1[i];
                 double m = a.getMass();
-                if (!a.applyLambda()) {
+                if (!doUnpin.test(a)) {
                     mass[commonIndex++] = m;
                     mass[commonIndex++] = m;
                     mass[commonIndex++] = m;
@@ -1045,7 +1064,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
          */
         for (int i = 0; i < nActive1; i++) {
             Atom a = activeAtoms1[i];
-            if (!a.applyLambda()) {
+            if (!doUnpin.test(a)) {
                 g[indexCommon++] = f1L * gl1[index] + dF1dL * g1[index]
                         + f2L * rgl1[index] + dF2dL * rg1[index++];
                 g[indexCommon++] = f1L * gl1[index] + dF1dL * g1[index]
@@ -1070,7 +1089,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < nActive2; i++) {
             Atom a = activeAtoms2[i];
             if (a.isActive()) {
-                if (!a.applyLambda()) {
+                if (!doUnpin.test(a)) {
                     g[indexCommon++] += (-f2L * gl2[index] + dF2dL * g2[index]
                             - f1L * rgl2[index] + dF1dL * rg2[index++]);
                     g[indexCommon++] += (-f2L * gl2[index] + dF2dL * g2[index]
@@ -1096,7 +1115,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         int indexUnique = 3 * nShared;
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 vel[0] = velocity[indexCommon++];
                 vel[1] = velocity[indexCommon++];
                 vel[2] = velocity[indexCommon++];
@@ -1111,7 +1130,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         indexCommon = 0;
         for (int i = 0; i < nActive2; i++) {
             Atom atom = activeAtoms2[i];
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 vel[0] = velocity[indexCommon++];
                 vel[1] = velocity[indexCommon++];
                 vel[2] = velocity[indexCommon++];
@@ -1131,7 +1150,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         int indexUnique = 3 * nShared;
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 accel[0] = acceleration[indexCommon++];
                 accel[1] = acceleration[indexCommon++];
                 accel[2] = acceleration[indexCommon++];
@@ -1145,7 +1164,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         indexCommon = 0;
         for (int i = 0; i < nActive2; i++) {
             Atom atom = activeAtoms2[i];
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 accel[0] = acceleration[indexCommon++];
                 accel[1] = acceleration[indexCommon++];
                 accel[2] = acceleration[indexCommon++];
@@ -1165,7 +1184,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         int indexUnique = 3 * nShared;
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 prev[0] = previousAcceleration[indexCommon++];
                 prev[1] = previousAcceleration[indexCommon++];
                 prev[2] = previousAcceleration[indexCommon++];
@@ -1179,7 +1198,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         indexCommon = 0;
         for (int i = 0; i < nActive2; i++) {
             Atom atom = activeAtoms2[i];
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 prev[0] = previousAcceleration[indexCommon++];
                 prev[1] = previousAcceleration[indexCommon++];
                 prev[2] = previousAcceleration[indexCommon++];
@@ -1203,7 +1222,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
             atom.getVelocity(vel);
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 velocity[indexCommon++] = vel[0];
                 velocity[indexCommon++] = vel[1];
                 velocity[indexCommon++] = vel[2];
@@ -1216,7 +1235,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         for (int i = 0; i < nActive2; i++) {
             Atom atom = activeAtoms2[i];
-            if (atom.applyLambda()) {
+            if (doUnpin.test(atom)) {
                 atom.getVelocity(vel);
                 velocity[indexUnique++] = vel[0];
                 velocity[indexUnique++] = vel[1];
@@ -1238,7 +1257,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
             atom.getAcceleration(accel);
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 acceleration[indexCommon++] = accel[0];
                 acceleration[indexCommon++] = accel[1];
                 acceleration[indexCommon++] = accel[2];
@@ -1251,7 +1270,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         for (int i = 0; i < nActive2; i++) {
             Atom atom = activeAtoms2[i];
-            if (atom.applyLambda()) {
+            if (doUnpin.test(atom)) {
                 atom.getAcceleration(accel);
                 acceleration[indexUnique++] = accel[0];
                 acceleration[indexUnique++] = accel[1];
@@ -1273,7 +1292,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < nActive1; i++) {
             Atom atom = activeAtoms1[i];
             atom.getPreviousAcceleration(prev);
-            if (!atom.applyLambda()) {
+            if (!doUnpin.test(atom)) {
                 previousAcceleration[indexCommon++] = prev[0];
                 previousAcceleration[indexCommon++] = prev[1];
                 previousAcceleration[indexCommon++] = prev[2];
@@ -1286,7 +1305,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         for (int i = 0; i < nActive2; i++) {
             Atom atom = activeAtoms2[i];
-            if (atom.applyLambda()) {
+            if (doUnpin.test(atom)) {
                 atom.getPreviousAcceleration(prev);
                 previousAcceleration[indexUnique++] = prev[0];
                 previousAcceleration[indexUnique++] = prev[1];

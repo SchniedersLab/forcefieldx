@@ -188,6 +188,34 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.UREYBRAD, ureyBradleyTypes);
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
         forceFieldTypes.put(ForceFieldType.RELATIVESOLV, relativeSolvationTypes);
+
+        trueImpliedBoolean(ForceFieldBoolean.LAMBDATERM, ForceFieldBoolean.VDW_LAMBDATERM, ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
+    }
+
+    /**
+     * If some set of other ForceFieldBooleans implies another ForceFieldBoolean is true, set that implied
+     * ForceFieldBoolean to true. First designed for LAMBDATERM, which is implied by any of VDW_LAMBDATERM,
+     * PME_LAMBDATERM, or GK_LAMBDATERM.
+     *
+     * @param toSet Boolean to set true if otherBooleans true.
+     * @param otherBooleans Booleans that imply toSet is true.
+     * @return If toSet is true.
+     */
+    private boolean trueImpliedBoolean(ForceFieldBoolean toSet, ForceFieldBoolean... otherBooleans) {
+        // Short-circuit if it's already true.
+        if (getBoolean(toSet, false)) {
+            return true;
+        }
+
+        // Check all the other booleans that imply toSet.
+        for (ForceFieldBoolean otherBool : otherBooleans) {
+            if (getBoolean(otherBool, false)) {
+                addForceFieldBoolean(toSet, true);
+                logger.info(String.format(" Setting implied boolean %s true due to boolean %s", toSet.toString(), otherBool.toString()));
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1546,6 +1574,8 @@ public class ForceField {
         LAMBDA_VALENCE_RESTRAINTS, LAMBDA_TORSIONS, RECIPTERM, BORN_USE_ALL,
         CHECK_ALL_NODE_CHARGES, GK_USEFITRADII, GK_VERBOSERADII, PRINT_ON_FAILURE,
         DISABLE_NEIGHBOR_UPDATES, ENFORCE_PBC,
+        /* Term-specific flags for softcoring. Any will imply LAMBDATERM is true. */
+        PME_LAMBDATERM, GK_LAMBDATERM, VDW_LAMBDATERM,
         /* Flag to set Hydrogen bonds to rigid*/
         RIGID_HYDROGEN
     }

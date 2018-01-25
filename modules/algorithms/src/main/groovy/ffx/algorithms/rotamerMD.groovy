@@ -45,11 +45,13 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.integrators.Integrator.Integrators
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.RotamerOptimization.Direction
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.integrators.Integrator
+import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.numerics.Potential
 import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
@@ -98,8 +100,8 @@ int forceResiduesEnd = -1;
 double superpositionThreshold = 0.1;
 double singletonClashThreshold = 20.0;
 double pairClashThreshold = 50.0;
-Thermostats thermostat = null;
-Integrators integrator = null;
+ThermostatEnum thermostat = null;
+IntegratorEnum integrator = null;
 String fileType = "PDB";
 double restartFrequency = 10000;
 int nSteps = 1000;
@@ -232,20 +234,12 @@ if (options.mT) {
 
 // Thermostat.
 if (options.mB) {
-    try {
-        thermostat = Thermostats.valueOf(options.mB.toUpperCase());
-    } catch (Exception e) {
-        thermostat = null;
-    }
+    thermostat = Thermostat.parseThermostat(options.b)
 }
 
 // Integrator.
 if (options.mI) {
-    try {
-        integrator = Integrators.valueOf(options.mI.toUpperCase());
-    } catch (Exception e) {
-        integrator = null;
-    }
+    integrator = Integrator.parseIntegrator(options.i)
 }
 
 // Implements different start/stop behavior for box, non-box optimizations.

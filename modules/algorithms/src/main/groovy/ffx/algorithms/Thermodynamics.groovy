@@ -11,8 +11,10 @@ import groovy.cli.Unparsed
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.integrators.Integrator.Integrators
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.integrators.Integrator
+import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.crystal.Crystal
 import ffx.crystal.CrystalPotential
 import ffx.crystal.SymOp
@@ -110,11 +112,11 @@ class Thermodynamics extends Script {
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
-        @Option(shortName='b', longName='thermostat', convert = {s -> return ffx.algorithms.thermostats.Thermostat.parseThermostat(s);}, defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') Thermostats tstat;
+        @Option(shortName='b', longName='thermostat', convert = {s -> return Thermostat.parseThermostat(s);}, defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') ThermostatEnum tstat;
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, or Stochastic (AKA Langevin dynamics).
          */
-        @Option(shortName='i', longName='integrator', convert = {s -> return ffx.algorithms.integrators.Integrator.parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') Integrators integrator;
+        @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') IntegratorEnum integrator;
         /**
          * -s1 or --start1 defines the first softcored atom for the first topology.
          */
@@ -1011,7 +1013,7 @@ class Thermodynamics extends Script {
 
         if (options.mc) {
             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-                topologies[0].getProperties(), null, Thermostats.ADIABATIC, Integrators.VELOCITYVERLET);
+                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, IntegratorEnum.VELOCITYVERLET);
 
             if (options.nEquil > 0) {
                 logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");

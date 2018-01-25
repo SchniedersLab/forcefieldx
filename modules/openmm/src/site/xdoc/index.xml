@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>OpenMM Java Wrapper Home Page</title>
         <author email="hernan-bernabe@uiowa.edu">Hernan V. Bernabe</author>
@@ -11,39 +11,97 @@
         <section name="OpenMM Introduction">
             <p>
                 The OpenMM module contain Java Wrappers for the OpenMM API automatically generated using Jnaerator.
-                
-                1) Generation of OpenMM Wrappers
-                Ensure that the latest version of OpenMM is installed on your machine. For example, for our installation we downloaded anaconda and used the OpenMM packages included. 
-                Use command java -jar "jnaerator-jar" "configfile" with the appropriate jnaerator.jar file and the appropriate configuration file in the desired 
-                directory to create the OpenMM wrappers. The jnaerator.jar is a binary file that helps to generate the wrappers and is included in this package.
-                The configuration file contains the various flags that will be used to set up the wrappers as well as information about where to locate the wrapper
-                libraries for set up. Important flags include: -runtime which sets the runtime library that will be used to generate the wrapper classes, 
-                in this case JNA, -direct which tells the JNAerator to use the fastest direct call convention for library generation, -skipDeprecated which skips
-                the generation of any deprecated members, -mode which specifies the output mode for the JNAerator, -package which sets the java package where all the
-                generated output will reside (our package is called simtk.openmm), -library which sets the name of the output library. Importantly, after the library
-                flag you must specifiy (ie set the path to) where the CWrapper.h files are located. There are two libraries we use to generate our wrapper classes for OpenMM.
-                An example of setting up the library name and path to the library is as follows:
-                -library OpenMM
-                /Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/include/OpenMMCWrapper.h
-                
-                note: the OpenMM package used here was included in the latest Anaconda downlaod package: Version 5.0.1 dated January 22nd 2018
-                
-                for additional documentation on flags avaialable to edit the configuration file visit https://github.com/nativelibs4java/JNAerator/wiki/Command-Line-Options-And-Environment-Variables
-                
-                2) Environment Variable Set Up
-                After the generation of the OpenMM libraries two environment variables will need to be set in the .bash_profile in order to properly use the OpenMM software. 
-                For instance, the JNA_LIBRARY_PATH variable will have to point to the location of the lib subdirectory of the OpenMM installation package. The second environment
-                variable that will need to be configured is the OPENMM_PLUGIN_DIR variable, this variable needs to point to the location of the plugins subdirectory of the
-                OpenMM installation package. An example of setting one of these environment variables correctly can be seen below:
-                export JNA_LIBRARY_PATH="/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/lib"
-                note: the OpenMM package used here was included in the latest Anaconda downlaod package: Version 5.0.1 dated January 22nd 2018
-                
-                3) Example Of Using OpenMM Under The Hood With FFX:
-                There are few algorithms in the FFX package that can use OpenMM as part of the background calculation software. To use OpenMM as the background calculation
-                the platform flag must be set to OMM. An example of this can be seen below using the Energy algorithm:
-                ffxc -Dplatform=OMM Energy yourpdb.pdb
-                note: yourpdb.pdb will be replaced with the name of the pdb structure you wish to run the algorithm on.
             </p>
+            <subsection name="Generation of the Java OpenMM Wrappers using Jnaerator">
+                <p>
+                    Ensure that the latest version of OpenMM is installed on your machine. For example, using Anaconda
+                    the command is
+                </p>
+                <source>conda install -c omnia openmm</source>
+                <p>
+                    The following Jnaerator command can then be used
+                </p>
+                <source>java -jar jnaerator-0.12-shaded.jar config.jnaerator</source>
+                <p>
+                    where the contents of "config.jnaerator" are given by
+                </p>
+                <source>
+-limitComments
+
+-runtime JNA
+
+-direct
+
+-skipDeprecated
+
+-mode Jar
+
+-jar openmm-7.1.1.jar
+
+-package simtk.openmm
+
+-library OpenMM
+/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/include/OpenMMCWrapper.h
+
+-library AmoebaOpenMM
+/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/include/AmoebaOpenMMCWrapper.h
+                </source>
+                <p>
+                    The configuration file contains the various flags needed to set up generation of the wrappers as
+                    well as information about where to locate the OpenMM C header files.
+                </p>
+                <p>
+                    Important flags include:
+                    <ul>
+                        <li>-runtime sets the runtime library that will be used to generate the wrapper classes,
+                            in this case JNA
+                        </li>
+                        <li>-direct tells the JNAerator to use the fastest direct call convention
+                            for library generation
+                        </li>
+                        <li>-skipDeprecated skips the generation of any deprecated members</li>
+                        <li>-mode specifies the output mode for the JNAerator</li>
+                        <li>-package sets the java package where all the generated output will reside (our package
+                            is called simtk.openmm)
+                        </li>
+                        <li>-library sets the name of the output library. Importantly, after the library
+                            flag you must specifiy (ie set the path to) where the CWrapper.h files are located. There
+                            are two libraries we use to generate our wrapper classes for OpenMM.
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    For additional documentation on flags available to edit the configuration file visit the
+                    <a href="https://github.com/nativelibs4java/JNAerator/wiki/Command-Line-Options-And-Environment-Variables">JNAerator Wiki.</a>
+                </p>
+            </subsection>
+            <subsection name="Environment Variable Set Up">
+                <p>
+                    To use the OpenMM Java wrappers, two environment variables need to be set (e.g. in .bash_profile)
+                    in order to invoke the OpenMM libraries from within a Java program.
+                    First, the JNA_LIBRARY_PATH variable needs to point to the location of the lib
+                    subdirectory of the OpenMM installation package.
+                </p>
+                <source>export JNA_LIBRARY_PATH="/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/lib"</source>
+                <p>
+                    Second, the OPENMM_PLUGIN_DIR variable needs to point to the location of the plugins subdirectory of
+                    the
+                    OpenMM installation package.
+                </p>
+                <source>To Do.</source>
+            </subsection>
+            <subsection name="Using FFX-OpenMM">
+                <p>
+                    There are a number of algorithms in the FFX package that can use OpenMM under the hood if the
+                    "platform" flag
+                    is set to OMM. An example of this can be seen below using the Energy script:
+                </p>
+                <source>ffxc -Dplatform=OMM Energy yourpdb.pdb</source>
+                <p>
+                    where yourpdb.pdb will be replaced with the name of the pdb structure you wish to run the
+                    algorithm on.
+                </p>
+            </subsection>
         </section>
     </body>
 </document>

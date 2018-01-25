@@ -65,8 +65,8 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPositions;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_getVelocities;
 
-import ffx.algorithms.integrators.Integrator.Integrators;
-import ffx.algorithms.thermostats.Thermostat.Thermostats;
+import ffx.algorithms.integrators.IntegratorEnum;
+import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
@@ -124,11 +124,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     /**
      * Integrator Type.
      */
-    private final Integrators integratorType;
+    private final IntegratorEnum integratorType;
     /**
      * Thermostat Type.
      */
-    private final Thermostats thermostatType;
+    private final ThermostatEnum thermostatType;
     /**
      * Integrator String.
      */
@@ -165,6 +165,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Number of Infinite Energy values.
      */
     private int numInfiniteEnergies = 0;
+    
+    private long mdTime = 0;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -182,7 +184,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * routines
      */
     public MolecularDynamicsOpenMM(MolecularAssembly assembly, ForceFieldEnergyOpenMM forceFieldEnergyOpenMM,
-                                   CompositeConfiguration properties, AlgorithmListener listener, Thermostats thermostat, Integrators integratorMD) {
+                                   CompositeConfiguration properties, AlgorithmListener listener,
+                                   ThermostatEnum thermostat, IntegratorEnum integratorMD) {
         super(assembly, forceFieldEnergyOpenMM, properties, listener, thermostat, integratorMD);
 
         /**
@@ -308,6 +311,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             } else if (i % printFrequency == 0) {
                 double simTime = i * dt * 1.0e-3;
                 time += System.nanoTime();
+                mdTime = time;
                 logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.2f",
                         simTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
@@ -495,7 +499,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         logger.info("");
     }
 
-    public final void integratorToString(Integrators integrator) {
+    public final void integratorToString(IntegratorEnum integrator) {
         if (integrator == null) {
             integratorString = "VERLET";
             logger.info(String.format(" No specified integrator, will use Verlet"));
@@ -519,7 +523,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     private void thermostatToString() {
-        if (integratorType != null && integratorType == Integrators.STOCHASTIC) {
+        if (integratorType != null && integratorType == IntegratorEnum.STOCHASTIC) {
             logger.fine(" Ignoring requested thermostat due to Langevin dynamics.");
             thermostatString = "NVE";
             return;
@@ -572,5 +576,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public DynamicsEngine getEngine() {
         return DynamicsEngine.OPENMM;
+    }
+    
+    /**
+     * Returns time spent calculating the molecular dynamics trajectory on the GPU
+     * @return 
+     */
+    @Override
+    public long getMDTime(){
+        return mdTime;
     }
 }

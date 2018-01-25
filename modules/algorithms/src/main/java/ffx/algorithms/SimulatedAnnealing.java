@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -42,8 +42,8 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
-import ffx.algorithms.integrators.Integrator.Integrators;
-import ffx.algorithms.thermostats.Thermostat.Thermostats;
+import ffx.algorithms.integrators.IntegratorEnum;
+import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 
@@ -67,6 +67,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     private boolean targetTemperaturesPresent = false;
     private double[] targetTemperatures;
     private double printInterval = 0.01;
+
     /**
      * <p>
      * Constructor for SimulatedAnnealing.</p>
@@ -78,12 +79,12 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
-            Potential potentialEnergy,
-            CompositeConfiguration properties,
-            AlgorithmListener listener) {
+                              Potential potentialEnergy,
+                              CompositeConfiguration properties,
+                              AlgorithmListener listener) {
 
         this(assembly, potentialEnergy, properties, listener,
-                Thermostats.BERENDSEN, Integrators.BEEMAN);
+                ThermostatEnum.BERENDSEN, IntegratorEnum.BEEMAN);
     }
 
     /**
@@ -96,16 +97,16 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * {@link org.apache.commons.configuration.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
-     * {@link ffx.algorithms.thermostats.Thermostat.Thermostats}
+     * {@link ffx.algorithms.thermostats.ThermostatEnum}
      * @param requestedIntegrator a
-     * {@link ffx.algorithms.integrators.Integrator.Integrators}
+     * {@link ffx.algorithms.integrators.IntegratorEnum}
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
-            Potential potentialEnergy,
-            CompositeConfiguration properties,
-            AlgorithmListener listener,
-            Thermostats requestedThermostat,
-            Integrators requestedIntegrator) {
+                              Potential potentialEnergy,
+                              CompositeConfiguration properties,
+                              AlgorithmListener listener,
+                              ThermostatEnum requestedThermostat,
+                              IntegratorEnum requestedIntegrator) {
 
         molecularDynamics = new MolecularDynamics(assembly,
                 potentialEnergy, properties,
@@ -125,9 +126,9 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * @param mdSteps a int.
      */
     public void anneal(double highTemperature,
-            double lowTemperature,
-            int annealingSteps,
-            int mdSteps) {
+                       double lowTemperature,
+                       int annealingSteps,
+                       int mdSteps) {
         anneal(highTemperature, lowTemperature, annealingSteps, mdSteps, 1.0);
     }
 
@@ -142,10 +143,10 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * @param timeStep a double
      */
     public void anneal(double highTemperature,
-            double lowTemperature,
-            int annealingSteps,
-            int mdSteps,
-            double timeStep) {
+                       double lowTemperature,
+                       int annealingSteps,
+                       int mdSteps,
+                       double timeStep) {
 
         /**
          * Return if already running; Could happen if two threads call dynamic
@@ -205,8 +206,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     public void annealToTargetValues(double[] targetTemperatures,
-            int mdSteps,
-            double timeStep) {
+                                     int mdSteps,
+                                     double timeStep) {
 
         targetTemperaturesPresent = true;
         this.targetTemperatures = targetTemperatures;
@@ -275,10 +276,10 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
     }
 
     //Set print interval to report thermodyanamics (psec)
-    public void setPrintInterval(double printInterval){
-        this.printInterval=printInterval;
+    public void setPrintInterval(double printInterval) {
+        this.printInterval = printInterval;
     }
-    
+
     /**
      * {@inheritDoc}
      */

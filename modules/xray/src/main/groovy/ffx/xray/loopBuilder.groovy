@@ -41,12 +41,12 @@ import org.apache.commons.io.FilenameUtils
 import edu.rit.mp.DoubleBuf
 import edu.rit.pj.Comm
 
-import ffx.algorithms.integrators.Integrator.Integrators
+import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.MCLoop
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.OSRW
 import ffx.algorithms.SimulatedAnnealing
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.algorithms.TransitionTemperedOSRW
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -81,11 +81,11 @@ double restartInterval = 1.0;
 // Number of molecular dynamics steps: default is 100 nanoseconds.
 int nSteps = 50000;
 
-// Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = Thermostats.BERENDSEN;
+// ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+ThermostatEnum thermostat = ThermostatEnum.BERENDSEN;
 
-// Integrators [ BEEMAN, RESPA, STOCHASTIC ]
-Integrators integrator = Integrators.RESPA;
+// IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC ]
+IntegratorEnum integrator = IntegratorEnum.RESPA;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -506,10 +506,10 @@ if (runSimulatedAnnealing) {
     int steps = 267; //267 at 3
     // Time step in femtoseconds.
     timeStep = 3.0;
-    // Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-    thermostat = Thermostats.ADIABATIC;
-    // Integrators [ BEEMAN, RESPA, STOCHASTIC]
-    integrator = Integrators.STOCHASTIC;
+    // ThermostatEnum[ ADIABATIC, BERENDSEN, BUSSI ]
+    thermostat = ThermostatEnum.ADIABATIC;
+    // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC]
+    integrator = IntegratorEnum.STOCHASTIC;
 
     refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
     SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, refinementEnergy,
