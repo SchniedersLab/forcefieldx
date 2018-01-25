@@ -354,6 +354,14 @@ public class RotamerOptimization implements Terminatable {
      * If greater than or equal to 0, test the specified residue.
      */
     int testPairEnergyEliminations = -1;
+    
+    /**
+     * Test Triple-Energy Elimination.
+     * 
+     * If greater than or equal to 0, test the specified residues.
+     */
+    int testTripleEnergyEliminations1 = -1;
+    int testTripleEnergyEliminations2 = -1;
 
     /**
      * Parallel Java Variables.
@@ -1982,8 +1990,90 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
-        }
+        }      
     }
+      
+    /**
+     * Test the self-energy elimination by setting
+     * self and 2-body interactions to zero. 
+     * Two residues are at fixed rotamers and all 
+     * rotamer interactions with those two residues 
+     * are calculated.
+     * @param residues
+     * @param resID1 The residue number for one of two fixed residues.
+     * @param resID2 The second residue number for one of two fixed residues.
+     */
+    public void testTripleEnergyElimination(Residue residues[], int resID1, int resID2) {
+        int nRes = residues.length;
+
+        if (resID1 >= nRes) {
+            return;
+        }
+        if (resID2 >= nRes){ 
+            return;
+        }
+        if (resID1 == resID2){
+            return;
+        }
+
+        for (int i = 0; i < nRes; i++) {
+            Residue resI = residues[i];
+            Rotamer[] rotI = resI.getRotamers(library);
+            int nI = rotI.length;
+            for (int ri = 0; ri < nI; ri++) {
+                try {
+                    selfEnergy[i][ri] = 0.0;
+                } catch (Exception e) {
+                    // catch NPE.
+                }
+                for (int j = i + 1; j < nRes; j++) {
+                    Residue resJ = residues[j];
+                    Rotamer[] rotJ = resJ.getRotamers(library);
+                    int nJ = rotJ.length;
+                    for (int rj = 0; rj < nJ; rj++) {
+                        if (i != resID1 && j != resID1) {
+                            try {
+                                twoBodyEnergy[i][ri][j][rj] = 0.0;
+                            } catch (Exception e) {
+                                // catch NPE.
+                            }
+                        }
+                        if (threeBodyTerm) {
+                            for (int k = j + 1; k < nRes; k++) {
+                                Residue resK = residues[k];
+                                Rotamer[] rotK = resK.getRotamers(library);
+                                int nK = rotK.length;
+                                for (int rk = 0; rk < nK; rk++) {
+                                    
+                                    if(i != resID1 && j != resID1 && k != resID1) {
+                                        try {
+                                            threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                        } catch (Exception e) {
+                                         // catch NPE.
+                                        }
+                                    }
+                                    if(i != resID2 && j != resID2 && k != resID2) {
+                                        try {
+                                            threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                        } catch (Exception e) {
+                                         // catch NPE.
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        
+    }
+    
+    
+    
+    
+    
 
     /**
      * Method intended to decompose energies down to quad energies. Mostly for
@@ -2949,11 +3039,22 @@ public class RotamerOptimization implements Terminatable {
     public void setTestSelfEnergyEliminations(boolean testSelfEnergyEliminations) {
         this.testSelfEnergyEliminations = testSelfEnergyEliminations;
         testPairEnergyEliminations = -1;
+        testTripleEnergyEliminations1 = -1;
+        testTripleEnergyEliminations2 = -1;
     }
 
     public void setTestPairEnergyEliminations(int testPairEnergyEliminations) {
         this.testPairEnergyEliminations = testPairEnergyEliminations;
         testSelfEnergyEliminations = false;
+        testTripleEnergyEliminations1 = -1;
+        testTripleEnergyEliminations2 = -1;
+    }
+    
+    public void setTestTripleEnergyEliminations(int testTripleEnergyEliminations1, int testTripleEnergyEliminations2){
+        this.testTripleEnergyEliminations1 = testTripleEnergyEliminations1;
+        this.testTripleEnergyEliminations2 = testTripleEnergyEliminations2;
+        testSelfEnergyEliminations = false;
+        testPairEnergyEliminations = -1;
     }
 
     private double independent(List<Residue> residues) {
@@ -4643,6 +4744,8 @@ public class RotamerOptimization implements Terminatable {
             testSelfEnergyElimination(residues);
         } else if (testPairEnergyEliminations > -1) {
             testPairEnergyElimination(residues, testPairEnergyEliminations);
+        } else if (testTripleEnergyEliminations1 > -1 && testTripleEnergyEliminations2 > -1){
+            testTripleEnergyElimination(residues, testTripleEnergyEliminations1, testTripleEnergyEliminations2);
         }
 
         // testSelfEnergyElimination(residues);
