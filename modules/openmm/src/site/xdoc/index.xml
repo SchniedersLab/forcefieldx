@@ -85,9 +85,9 @@
                 <source>export JNA_LIBRARY_PATH="/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/lib"</source>
                 <p>
                     Second, the OPENMM_PLUGIN_DIR variable needs to point to the location of the plugins subdirectory of
-                    the
-                    OpenMM installation package.
+                    the plugins subdirectory of the OpenMM installation package. 
                 </p>
+                <source>export OPENMM_PLUGIN_DIR="/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/lib/plugins"</source>
                 <source>To Do.</source>
             </subsection>
             <subsection name="Using FFX-OpenMM">
