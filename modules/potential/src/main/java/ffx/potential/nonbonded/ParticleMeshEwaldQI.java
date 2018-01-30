@@ -6099,6 +6099,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     @Override
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
+        if (!lambdaTerm) {
+            return;
+        }
         this.lambda = lambda;
 
         if (!initSoftCore) {
