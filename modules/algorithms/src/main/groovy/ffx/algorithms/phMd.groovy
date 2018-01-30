@@ -40,10 +40,12 @@
 
 import org.apache.commons.io.FilenameUtils
 
-import ffx.algorithms.integrators.Integrator.Integrators
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.PhMD
-import ffx.algorithms.thermostats.Thermostat.Thermostats
+import ffx.algorithms.integrators.Integrator
+import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3
@@ -64,11 +66,11 @@ double saveInterval = 0.1;
 // Temperature in degrees Kelvin.
 double temperature = 298.15;
 
-// Thermostats [ ADIABATIC, BERENDSEN, BUSSI ]
-Thermostats thermostat = null;
+// ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+ThermostatEnum thermostat = null;
 
-// Integrators [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET]
-Integrators integrator = null;
+// IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET]
+IntegratorEnum integrator = null;
 
 // Reset velocities (ignored if a restart file is given)
 boolean initVelocities = true;
@@ -197,21 +199,13 @@ if (options.t) {
 if (options.p) {
     System.setProperty("polarization", options.p);
 }
+
 if (options.b) {
-    try {
-        thermostat = Thermostats.valueOf(options.b.toUpperCase());
-    } catch (Exception e) {
-        logger.warning("Thermostat selection invalid.");
-        return usage();
-    }
+    thermostat = Thermostat.parseThermostat(options.b)
 }
+
 if (options.i) {
-    try {
-        integrator = Integrators.valueOf(options.i.toUpperCase());
-    } catch (Exception e) {
-        logger.warning("Integrator selection invalid.");
-        return usage();
-    }
+    integrator = Integrator.parseIntegrator(options.i)
 }
 
 List<String> arguments = options.arguments();

@@ -61,7 +61,7 @@ public class Adiabatic extends Thermostat {
      */
     public Adiabatic(int n, double x[], double v[], double mass[], VARIABLE_TYPE type[]) {
         super(n, x, v, mass, type, 0.0);
-        this.name = Thermostats.ADIABATIC;
+        this.name = ThermostatEnum.ADIABATIC;
     }
 
     /**

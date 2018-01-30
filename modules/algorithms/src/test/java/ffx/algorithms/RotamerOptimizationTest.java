@@ -82,6 +82,10 @@ public class RotamerOptimizationTest {
                         true,           // Do Pair-Energy Opt.
                         5,              // Pair residue
                         1280.865248,    // Expected Pair-Energy.
+                        true,           // Do Trimer-Energy Opt.
+                        5,              // Trimer residue 1.
+                        6,              // Trimer residue 2.
+                        1280.865247,    // Expected trimer energy.
                         1.0e-3          // Energy Tolerance.
                 },
                 {
@@ -99,6 +103,10 @@ public class RotamerOptimizationTest {
                         true,           // Do Pair-Energy Opt.
                         5,              // Pair residue
                         1280.865248,    // Expected Pair-Energy.
+                        true,           // Do Trimer-Energy Opt.
+                        5,              // Trimer residue 1.
+                        6,              // Trimer residue 2.
+                        1280.865247,    // Expected trimer energy.
                         1.0e-3          // Energy Tolerance.
                 },
                 {
@@ -116,6 +124,10 @@ public class RotamerOptimizationTest {
                         true,           // Do Pair-Energy Opt.
                         5,              // Pair residue
                         -563.929018,    // Expected Pair-Energy.
+                        true,           // Do Trimer-Energy Opt.
+                        5,              // Trimer residue 1.
+                        6,              // Trimer residue 2.
+                        -563.929017,    // Expected trimer energy.
                         1.0e-3          // Energy Tolerance.
                 },
                 {
@@ -133,6 +145,31 @@ public class RotamerOptimizationTest {
                         true,           // Do Pair-Energy Opt.
                         5,              // Pair residue.
                         2433.067837,    // Expected Pair-Energy.
+                        true,           // Do Trimer-Energy Opt.
+                        5,              // Trimer residue 1.
+                        6,              // Trimer residue 2.
+                        2433.067837,    // Expected trimer energy.
+                        1.0e-3          // Energy Tolerance.
+                },
+                {
+                        "Trpcage Direct (Goldstein)",
+                        "ffx/algorithms/structures/trpcage.pdb",
+                        "ffx/algorithms/structures/trpcage.direct.3body.restart",
+                        1,              // Pruning Level.
+                        true,           // Goldstein Elimination.
+                        true,           // Use 3-body Enegeries.
+                        true,           // Use Original Rotamers.
+                        true,           // Do Overall Opt.
+                        -628.143879,    // Expected Energy.
+                        true,           // Do Self-Energy Opt.
+                        22086.367273,   // Expected Self-Energy.
+                        true,           // Do Pair-Energy Opt.
+                        5,              // Pair residue.
+                        1280.865247,    // Expected Pair-Energy.
+                        true,           // Do Trimer-Energy Opt.
+                        5,              // Trimer residue 1.
+                        6,              // Trimer residue 2.
+                        1276.608834,    // Expected trimer energy.
                         1.0e-3          // Energy Tolerance.
                 }
         });
@@ -152,6 +189,10 @@ public class RotamerOptimizationTest {
     boolean doPairOpt;
     int pairResidue;
     double expectedPairEnergy;
+    boolean doTripleOpt;
+    int tripleResidue1;
+    int tripleResidue2;
+    double expectedTripleEnergy;
     double tolerance;
     File structure;
     File restartFile;
@@ -172,6 +213,10 @@ public class RotamerOptimizationTest {
                                    boolean doPairOpt,
                                    int pairResidue,
                                    double expectedPairEnergy,
+                                   boolean doTripleOpt,
+                                   int tripleResidue1,
+                                   int tripleResidue2,
+                                   double expectedTripleEnergy,
                                    double tolerance) {
         this.info = info;
         this.filename = filename;
@@ -187,6 +232,10 @@ public class RotamerOptimizationTest {
         this.doPairOpt = doPairOpt;
         this.pairResidue = pairResidue;
         this.expectedPairEnergy = expectedPairEnergy;
+        this.doTripleOpt = doTripleOpt;
+        this.tripleResidue1 = tripleResidue1;
+        this.tripleResidue2 = tripleResidue2;
+        this.expectedTripleEnergy = expectedTripleEnergy;
         this.tolerance = tolerance;
     }
 
@@ -259,22 +308,31 @@ public class RotamerOptimizationTest {
         double energy = 0.0;
         if (doOverallOpt) {
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            //System.out.println("The expected overall energy is: " + energy);
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
 
         if (doSelfOpt) {
             rotamerOptimization.setTestSelfEnergyEliminations(true);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            //System.out.println("The expected self energy is: " + energy);
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
         }
 
         if (doPairOpt) {
             rotamerOptimization.setTestPairEnergyEliminations(pairResidue);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            //System.out.println("The expected pair energy is: " + energy);
             assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
         }
-
+        
         // ToDo: Test 3-Body Energy Eliminations.
+        if (doTripleOpt) {
+            rotamerOptimization.setTestTripleEnergyEliminations(tripleResidue1, tripleResidue2);
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            //System.out.println("The expected trimer energy is: " + energy);
+            assertEquals(info + " Triple-Energy", expectedTripleEnergy, energy, tolerance);
+        }
 
         // ToDo: Test self-energy use for rotamer pair eliminations.
 

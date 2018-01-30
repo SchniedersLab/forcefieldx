@@ -55,25 +55,17 @@ public abstract class Integrator {
     private static final Logger logger = Logger.getLogger(Integrator.class.getName());
 
     /**
-     * An enumeration of available integrators.
-     */
-    public enum Integrators {
-
-        BEEMAN, RESPA, STOCHASTIC, VELOCITYVERLET
-    };
-
-    /**
-     * Parse an integrator String into an instance of the Integrators enum.
+     * Parse an integrator String into an instance of the IntegratorEnum enum.
      *
      * @param str Integrator string.
      * @return Integrator enum.
      */
-    public static Integrators parseIntegrator(String str) {
+    public static IntegratorEnum parseIntegrator(String str) {
         try {
-            return Integrators.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
+            return IntegratorEnum.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
         } catch (Exception e) {
             logger.info(String.format(" Could not parse %s as an integrator; defaulting to Beeman.", str));
-            return Integrators.BEEMAN;
+            return IntegratorEnum.BEEMAN;
         }
     }
 

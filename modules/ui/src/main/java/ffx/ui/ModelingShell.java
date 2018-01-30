@@ -72,11 +72,11 @@ import org.codehaus.groovy.runtime.MethodClosure;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.integrators.Integrator.Integrators;
 import ffx.algorithms.Minimize;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
-import ffx.algorithms.thermostats.Thermostat.Thermostats;
+import ffx.algorithms.integrators.IntegratorEnum;
+import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.autoparm.Energy;
 import ffx.autoparm.Minimize_2;
 import ffx.autoparm.Poledit;
@@ -552,7 +552,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             MolecularDynamics molecularDynamics = new MolecularDynamics(active,
                     active.getPotentialEnergy(),
                     active.getProperties(),
-                    this, Thermostats.BUSSI, Integrators.BEEMAN);
+                    this, ThermostatEnum.BUSSI, IntegratorEnum.BEEMAN);
             terminatableAlgorithm = molecularDynamics;
             molecularDynamics.dynamic(nStep, timeStep, printInterval,
                     saveInterval, temperature, initVelocities, dyn);

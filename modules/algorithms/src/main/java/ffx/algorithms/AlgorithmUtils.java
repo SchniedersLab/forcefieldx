@@ -42,6 +42,8 @@ import java.util.logging.Logger;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
+import ffx.algorithms.integrators.IntegratorEnum;
+import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsUtils;
@@ -105,7 +107,7 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
             CompositeConfiguration properties = Keyword.loadProperties(assembly.getFile());
             MolecularDynamics molecularDynamics = new MolecularDynamics(assembly,
                     assembly.getPotentialEnergy(), properties, null,
-                    ffx.algorithms.thermostats.Thermostat.Thermostats.BUSSI, ffx.algorithms.integrators.Integrator.Integrators.BEEMAN);
+                    ThermostatEnum.BUSSI, IntegratorEnum.BEEMAN);
             molecularDynamics.dynamic(nStep, timeStep, printInterval, saveInterval,
                     temperature, initVelocities, dyn);
         }

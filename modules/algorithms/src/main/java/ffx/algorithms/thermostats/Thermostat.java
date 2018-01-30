@@ -62,25 +62,17 @@ public abstract class Thermostat {
     private static final Logger logger = Logger.getLogger(Thermostat.class.getName());
 
     /**
-     * An enumeration of available Thermostats.
-     */
-    public enum Thermostats {
-
-        ADIABATIC, BERENDSEN, BUSSI;
-    };
-
-    /**
      * Parse a string into a Thermostat enumeration.
      *
      * @param str Thermostat String.
-     * @return An instance of the Thermostats enum.
+     * @return An instance of the ThermostatEnum.
      */
-    public static Thermostats parseThermostat(String str) {
+    public static ThermostatEnum parseThermostat(String str) {
         try {
-            return Thermostats.valueOf(str.toUpperCase());
+            return ThermostatEnum.valueOf(str.toUpperCase());
         } catch (Exception e) {
             logger.info(String.format(" Could not parse %s as a thermostat; defaulting to Berendsen.", str));
-            return Thermostats.BERENDSEN;
+            return ThermostatEnum.BERENDSEN;
         }
     }
 
@@ -100,7 +92,7 @@ public abstract class Thermostat {
     /**
      * The identity of this Thermostat.
      */
-    protected Thermostats name;
+    protected ThermostatEnum name;
     /**
      * The target temperature that this thermostat should maintain.
      */
