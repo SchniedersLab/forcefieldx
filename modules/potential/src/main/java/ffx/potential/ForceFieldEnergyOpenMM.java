@@ -230,6 +230,8 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_System_getNumConstraints;
 import static simtk.openmm.OpenMMLibrary.OpenMM_System_getNumParticles;
 import static simtk.openmm.OpenMMLibrary.OpenMM_System_getParticleMass;
 import static simtk.openmm.OpenMMLibrary.OpenMM_System_setDefaultPeriodicBoxVectors;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_setVirtualSite;
+import static simtk.openmm.OpenMMLibrary.OpenMM_TwoParticleAverageSite_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_append;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_get;
@@ -1380,6 +1382,38 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_IntArray_destroy(exclusions);
         logger.log(Level.INFO, " Added van der Waals force.");
     }
+
+    /**
+     * Experimental. Virtual hydrogen sites require creation of new particles, which then need to be handled (ignored?)
+     * for the multiple force.
+     */
+    private void createVirtualHydrogenSites() {
+
+        VanDerWaals vdW = super.getVdwNode();
+        if (vdW == null) {
+            return;
+        }
+        int ired[] = vdW.getReductionIndex();
+
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            VDWType vdwType = atom.getVDWType();
+            if (vdwType.reductionFactor < 1.0) {
+                double factor = vdwType.reductionFactor;
+                // Create the virtual site.
+                PointerByReference virtualSite = OpenMM_TwoParticleAverageSite_create(i, ired[i], factor, 1.0 - factor);
+                // Create a massless particle for the hydrogen vdW site.
+                int id = OpenMM_System_addParticle(system, 0.0);
+                // Denote the massless particle is a virtual site
+                OpenMM_System_setVirtualSite(system, id, virtualSite);
+            }
+        }
+
+        //
+    }
+
 
     private void addAmoebaMultipoleForce() {
         ParticleMeshEwald pme = super.getPmeNode();

@@ -12,6 +12,8 @@ matrix:
       jdk: oraclejdk9
     - os: osx
       osx_image: xcode8.3
+    - os: osx
+      osx_image: xcode9.2
 
 cache:
   directories:
@@ -20,9 +22,11 @@ cache:
 notifications:
   email:
     recipients:
+      michael-schnieders@uiowa.edu
       jacob-litman@uiowa.edu
-      stephen-lucore@uiowa.edu
     on_success: change
     on_failure: always
 
 script: mvn test -B -DskipTests=false -Dpj.nt=2
+
+
