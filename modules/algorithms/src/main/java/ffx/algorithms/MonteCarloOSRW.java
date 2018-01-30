@@ -199,6 +199,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * 5.) Add to the bias.
      */
     public void sample() {
+
+        totalMoveTime = -System.nanoTime();
+
         int n = potential.getNumberOfVariables();
         double[] coordinates = new double[n];
         double[] proposedCoordinates = new double[n];
@@ -207,14 +210,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
         int numMoves = totalSteps / stepsPerMove;
         acceptLambda = 0;
         acceptMD = 0;
-
-        /**
-         * Test Lambda End-States.
-         */
-
-        totalMoveTime = -System.nanoTime();
-
-
 
         /**
          * Initialize MC move instances.
@@ -243,14 +238,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
                  */
                 acceptMD++;
                 double percent = (acceptMD * 100.0) / (imove + 1);
-                logger.info(String.format(" MC MD step %d:     Accepted E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC MD step %d:     Accepted E(%8.3f)=%12.4f -> E(%8.3f)=%12.4f (%5.1f)",
                         imove + 1, currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 currentEnergy = proposedEnergy;
                 newCoordinates = proposedCoordinates;
 
             } else {
                 double percent = (acceptMD * 100.0) / (imove + 1);
-                logger.info(String.format(" MC MD step %d:     Rejected E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC MD step %d:     Rejected E(%8.3f)=%12.4f -> E(%8.3f)=%12.4f (%5.1f)",
                         imove + 1, currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 mdMove.revertMove();
                 newCoordinates = coordinates;
@@ -278,12 +273,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 acceptLambda++;
                 double percent = (acceptLambda * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step %d: Accepted E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC Lambda step %d: Accepted E(%8.3f)=%12.4f -> E(%8.3f)=%12.4f (%5.1f)",
                         imove + 1, currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 currentdUdL = proposeddUdL;
             } else {
                 double percent = (acceptLambda * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step %d: Rejected E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC Lambda step %d: Rejected E(%8.3f)=%12.4f -> E(%8.3f)=%12.4f (%5.1f)",
                         imove + 1, currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 lambdaMove.revertMove();
                 potential.getCoordinates(coordinates);
