@@ -1,4 +1,3 @@
-
 package ffx.algorithms
 
 import org.apache.commons.io.FilenameUtils
@@ -6,12 +5,14 @@ import org.apache.commons.io.FilenameUtils
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
-import ffx.algorithms.integrators.IntegratorEnum
-import ffx.algorithms.thermostats.ThermostatEnum
+import edu.rit.pj.Comm
 
+import ffx.algorithms.integrators.Integrator
+import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.thermostats.Thermostat
+import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
 import ffx.potential.parameters.ForceField
 
 /**
@@ -35,7 +36,8 @@ class Dynamics extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.') boolean help;
+        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
+        boolean help;
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
@@ -115,6 +117,12 @@ class Dynamics extends Script {
         @Option(shortName = 'f', longName = 'file', defaultValue = 'PDB',
                 description = 'Choose file type to write [PDB/XYZ].')
         String fileType;
+        /**
+         * -r or --repEx to execute temperature replica exchange.
+         */
+        @Option(shortName = 'x', longName = 'repEx', defaultValue = 'false',
+                description = 'Execute temperature replica exchange')
+        boolean repEx;
 
         /**
          * The final argument(s) should be one or more filenames.
@@ -176,6 +184,9 @@ class Dynamics extends Script {
         // Integrator.
         integrator = options.integrator
 
+        // RepEx
+        repEx = options.repEx;
+
         List<String> arguments = options.filenames;
 
         String modelfilename = null;
@@ -188,6 +199,10 @@ class Dynamics extends Script {
         } else {
             modelfilename = active.getFile();
         }
+
+        File structureFile = new File(FilenameUtils.normalize(modelfilename));
+        structureFile = new File(structureFile.getAbsolutePath());
+        String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
 
         Potential potential = active.getPotentialEnergy();
         logger.info(" Starting energy (before .dyn restart loaded):");
@@ -205,9 +220,8 @@ class Dynamics extends Script {
                 logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.");
             }
             logger.info(String.format(" Running NPT dynamics at pressure %7.4g", pressure));
-            MolecularAssembly molecAssem = active; // Why this is needed is utterly inexplicable to me.
-            CrystalPotential cpot = (CrystalPotential) potential;
-            Barostat barostat = new Barostat(molecAssem, cpot);
+            CrystalPotential crystalPotential = (CrystalPotential) potential;
+            Barostat barostat = new Barostat(active, crystalPotential);
             barostat.setPressure(pressure);
             barostat.setMaxDensity(maxDensity);
             barostat.setMinDensity(minDensity);
@@ -217,18 +231,47 @@ class Dynamics extends Script {
             potential = barostat;
         }
 
-        logger.info("\n Running molecular dynamics on " + modelfilename);
+        Comm world = Comm.world();
+        size = world.size();
 
-        // Restart File
-        File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
-        if (!dyn.exists()) {
-            dyn = null;
+        if (!repEx || size < 2) {
+            logger.info("\n Running molecular dynamics on " + modelfilename);
+            // Restart File
+            File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
+            if (!dyn.exists()) {
+                dyn = null;
+            }
+            MolecularDynamics molDyn = new MolecularDynamics(active, potential, active.getProperties(), sh, thermostat, integrator);
+            molDyn.setFileType(fileType);
+            molDyn.setRestartFrequency(restartFrequency);
+            molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
+        } else {
+            logger.info("\n Running replica exchange molecular dynamics on " + modelfilename);
+            rank = world.rank();
+            File rankDirectory = new File(structureFile.getParent() + File.separator
+                    + Integer.toString(rank));
+            if (!rankDirectory.exists()) {
+                rankDirectory.mkdir();
+            }
+            withRankName = rankDirectory.getPath() + File.separator + baseFilename;
+            dyn = new File(withRankName + ".dyn");
+            if (!dyn.exists()) {
+                dyn = null;
+            }
+            MolecularDynamics molecularDynamics = new MolecularDynamics(active, potential, active.getProperties(), sh, thermostat, integrator);
+            molecularDynamics.setFileType(fileType);
+            molecularDynamics.setRestartFrequency(restartFrequency);
+            ReplicaExchange replicaExchange = new ReplicaExchange(molecularDynamics, sh, temperature);
+
+            int totalSteps = nSteps;
+            int nSteps = 100;
+            int cycles = totalSteps / nSteps;
+            if (cycles <= 0) {
+                cycles = 1;
+            }
+
+            replicaExchange.sample(cycles, nSteps, timeStep, printInterval, saveInterval);
         }
-
-        MolecularDynamics molDyn = new MolecularDynamics(active, potential, active.getProperties(), sh, thermostat, integrator);
-        molDyn.setFileType(fileType);
-        molDyn.setRestartFrequency(restartFrequency);
-        molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
     }
 }
 

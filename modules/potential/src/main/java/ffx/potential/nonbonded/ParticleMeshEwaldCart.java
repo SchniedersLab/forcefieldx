@@ -801,9 +801,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
              * A value of 0.0 is also admissible for when ExtendedSystem is
              * scaling multipoles rather than softcoring them.
              */
-            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 2.0);
+            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 3.0);
             if (permLambdaExponent < 0.0) {
-                logger.warning("Invalid value for permanent-lambda-exponent (<0.0); reverting to 2.0");
+                logger.warning("Invalid value for permanent-lambda-exponent (<0.0); reverting to 3.0");
                 permLambdaExponent = 3.0;
             }
             /**
@@ -6639,6 +6639,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     @Override
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
+        if (!lambdaTerm) {
+            return;
+        }
         this.lambda = lambda;
 
         if (!initSoftCore) {
