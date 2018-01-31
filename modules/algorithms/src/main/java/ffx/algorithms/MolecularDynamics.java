@@ -1358,4 +1358,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public long getMDTime(){
         return mdTime;
     }
+    
+    public double getStartingTotalEnergy(){
+        return 0.0;
+    }
+    
+    public double getEndTotalEnergy(){
+        return 0.0;
+    }
 }
