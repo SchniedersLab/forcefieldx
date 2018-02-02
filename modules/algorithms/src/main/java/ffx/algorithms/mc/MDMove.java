@@ -47,6 +47,7 @@ import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import static java.lang.Math.abs;
 
 /**
  * Use MD as a coordinate based MC move.
@@ -62,13 +63,18 @@ public class MDMove implements MCMove {
     private double printInterval = 0.05;
     private double temperature = 298.15;
     private boolean initVelocities = true;
+    private int mdMoveCounter = 0;
+    private double energyDriftTotalAbs;
+    private double energyDriftTotalNet;
+    private double energyDriftAverageAbs;
+    private double energyDriftAverageNet;
 
     private final double saveInterval = 10000.0;
     private final MolecularDynamics molecularDynamics;
 
     public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
-                  CompositeConfiguration properties, AlgorithmListener listener,
-                  ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+            CompositeConfiguration properties, AlgorithmListener listener,
+            ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
 
         molecularDynamics = MolecularDynamics.dynamicsFactory(assembly,
                 potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
@@ -82,7 +88,6 @@ public class MDMove implements MCMove {
 
         molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
         molecularDynamics.setQuiet(true);
-
 
     }
 
@@ -102,7 +107,16 @@ public class MDMove implements MCMove {
 
     @Override
     public void move() {
+        mdMoveCounter++;
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
+        
+        if (molecularDynamics instanceof ffx.algorithms.MolecularDynamicsOpenMM) {
+            energyDriftTotalNet += molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
+            energyDriftAverageNet = energyDriftTotalNet/mdMoveCounter;
+            energyDriftTotalAbs += abs(molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy());
+            energyDriftAverageAbs = energyDriftTotalAbs/mdMoveCounter;
+            logger.info(String.format(" Mean signed and unsigned energy drift: %8.4f and %8.4f", energyDriftAverageNet, energyDriftAverageAbs));
+        }
     }
 
     public double getKineticEnergy() {
@@ -113,7 +127,6 @@ public class MDMove implements MCMove {
         return molecularDynamics.getPotentialEnergy();
     }
 
-
     @Override
     public void revertMove() {
         try {
@@ -122,8 +135,8 @@ public class MDMove implements MCMove {
             logger.severe(" The MD state could not be reverted.");
         }
     }
-    
-    public long getMDTime(){
+
+    public long getMDTime() {
         return molecularDynamics.getMDTime();
     }
 

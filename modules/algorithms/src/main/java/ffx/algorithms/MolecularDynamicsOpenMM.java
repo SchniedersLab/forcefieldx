@@ -167,6 +167,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     private int numInfiniteEnergies = 0;
     
     private long mdTime = 0;
+    
+    private double startingTotalEnergy;
+    
+    private double endTotalEnergy;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -308,6 +312,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.info(format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
                 logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
                         "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+                
+                startingTotalEnergy = currentTotalEnergy;
+                
             } else if (i % printFrequency == 0) {
                 double simTime = i * dt * 1.0e-3;
                 time += System.nanoTime();
@@ -315,6 +322,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.2f",
                         simTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
+                
+                endTotalEnergy = currentTotalEnergy;
+                
                 time = -System.nanoTime();
             }
 
@@ -450,8 +460,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             } else {
                 forceFieldEnergyOpenMM.loadFFXPositionToOpenMM();
                 if (initVelocities) {
-                    int randomNumber = random.nextInt();
-                    OpenMM_Context_setVelocitiesToTemperature(context, temperature, randomNumber);
+                    getThermostat().setTargetTemperature(targetTemperature);
+                    getThermostat().maxwell();
+                    forceFieldEnergyOpenMM.setOpenMMVelocities(v, numberOfVariables);
+                    //int randomNumber = random.nextInt();
+                    //OpenMM_Context_setVelocitiesToTemperature(context, temperature, randomNumber);
                 }
             }
         }
@@ -585,5 +598,15 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public long getMDTime(){
         return mdTime;
+    }
+    
+    @Override
+    public double getStartingTotalEnergy(){
+        return startingTotalEnergy;
+    }
+    
+    @Override
+    public double getEndTotalEnergy(){
+        return endTotalEnergy;
     }
 }

@@ -50,6 +50,7 @@ import ffx.algorithms.mc.MDMove;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import static ffx.algorithms.MolecularDynamics.NS2SEC;
+import static java.lang.Math.abs;
 
 
 /**
@@ -96,6 +97,11 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private long totalMoveTime = 0;
 
     private LambdaMove lambdaMove;
+    
+    private double energyDriftTotal;
+    private double energyDriftMean;
+    
+    
 
     private boolean equilibration = false;
 
@@ -229,6 +235,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
             proposedEnergy += mdMove.getKineticEnergy();
+
             //mdTime = mdMove.getMDTime();
             //logger.info(String.format(" Time spent on MD move %8.2f", mdTime * NS2SEC));
             
