@@ -153,6 +153,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private final double bondiScale;
     /**
+     * Global adjustment to Born radii.
+     */
+    private final double globalRadiiScale;
+    /**
      * Cavitation surface tension coefficient (kcal/mol/A^2).
      */
     private final double surfaceTension;
@@ -362,6 +366,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
         bondiScale = bondiScaleValue;
+
+        globalRadiiScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_GLOBAL_RADIISCALE, 1.0);
+        if (globalRadiiScale != 1.0) {
+            logger.info(String.format(" (GK) All non-overridden radii are scaled by factor: %.6f", globalRadiiScale));
+        }
 
         String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
         if (radiiProp != null) {
@@ -782,6 +791,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 bondiFactor = radiiByNumberMap.get(atomNumber);
                 logger.info(String.format(" (GK) Scaling Atom number %d, %3s-%-4s, with factor %.2f",
                         atomNumber, atoms[i].getResidueName(), atoms[i].getName(), bondiFactor));
+            }
+
+            if (!radiiOverride.containsKey(atomType.type)) {
+                bondiFactor *= globalRadiiScale;
+            } else {
+                logger.fine(String.format(" Not scaling atom type %d", atomType.type));
             }
 
             baseRadiusWithBondi[i] = baseRadius[i] * bondiFactor;
