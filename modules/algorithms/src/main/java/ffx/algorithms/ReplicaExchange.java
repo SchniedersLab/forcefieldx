@@ -93,8 +93,12 @@ public class ReplicaExchange implements Terminatable {
     private final DoubleBuf parametersBuf[];
     private DoubleBuf myParametersBuf;
 
+    private int temp2Rank[];
+    private int rank2Temp[];
     private double temperatures[];
     private double lowTemperature;
+
+    private int acceptedCount[];
 
     /**
      * ReplicaExchange constructor.
@@ -120,8 +124,11 @@ public class ReplicaExchange implements Terminatable {
 
         nReplicas = numProc;
         temperatures = new double[nReplicas];
+        temp2Rank = new int[nReplicas];
+        rank2Temp = new int[nReplicas];
+        acceptedCount = new int[nReplicas];
 
-        setExponentialTemperatureLadder(lowTemperature, 0.01);
+        setExponentialTemperatureLadder(lowTemperature, 0.05);
 
         random = new Random();
         random.setSeed(0);
@@ -149,6 +156,8 @@ public class ReplicaExchange implements Terminatable {
     public void setExponentialTemperatureLadder(double lowTemperature, double exponent) {
         for (int i = 0; i < nReplicas; i++) {
             temperatures[i] = lowTemperature * exp(exponent * i);
+            temp2Rank[i] = i;
+            rank2Temp[i] = i;
         }
     }
 
@@ -166,46 +175,65 @@ public class ReplicaExchange implements Terminatable {
 
             dynamic(nSteps, timeStep, printInterval, saveInterval);
             logger.info(String.format(" Applying exchange condition for cycle %d.", i));
-            exchange();
+            exchange(i);
         }
     }
 
     /**
      * All processes complete the exchanges identically given the same Random number seed.
      */
-    private void exchange() {
+    private void exchange(int cycle) {
         for (int i = 0; i < nReplicas - 1; i++) {
-            double tempA = parameters[i][0];
-            double tempB = parameters[i + 1][0];
+
+            int i1 = temp2Rank[i];
+            int i2 = temp2Rank[i+1];
+
+            double tempA = parameters[i1][0];
+            double tempB = parameters[i2][0];
             double betaA = Thermostat.convert / (tempA * Thermostat.kB);
             double betaB = Thermostat.convert / (tempB * Thermostat.kB);
-            double energyA = parameters[i][1];
-            double energyB = parameters[i + 1][1];
+            double energyA = parameters[i1][1];
+            double energyB = parameters[i2][1];
             /**
              * Compute the change in energy over kT (E/kT) for the Metropolis
              * criteria.
              */
             double deltaE = (energyA - energyB) * (betaB - betaA);
 
-            logger.info(String.format(" RepEx attempt for systems %d and %d (dE=%10.4f)", i, i + 1, deltaE));
-
             /**
              * If the Metropolis criteria is satisfied, do the switch.
              */
             if (deltaE < 0.0 || random.nextDouble() < exp(-deltaE)) {
+                acceptedCount[i]++;
+
                 /**
                  * Swap temperature and energy values.
                  */
-                temperatures[i] = tempB;
-                temperatures[i + 1] = tempA;
+                parameters[i1][0] = tempB;
+                parameters[i2][0] = tempA;
 
-                parameters[i][0] = tempB;
-                parameters[i + 1][0] = tempA;
+                parameters[i1][1] = energyB;
+                parameters[i2][1] = energyA;
 
-                parameters[i][1] = energyB;
-                parameters[i + 1][1] = energyA;
+                /**
+                 * Map temperatures to process ranks.
+                 */
+                temp2Rank[i] = i2;
+                temp2Rank[i+1] = i1;
 
-                logger.info(String.format(" Exchanged systems %d and %d.", i, i + 1));
+                /**
+                 * Map ranks to temperatures.
+                 */
+                rank2Temp[i1] = i + 1;
+                rank2Temp[i2] = i;
+
+                double acceptance = acceptedCount[i] * 100.0 / (cycle + 1);
+                logger.info(String.format(" RepEx accepted (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
+                        acceptance, tempA, i1, tempB, i2, deltaE));
+            } else {
+                double acceptance = acceptedCount[i] * 100.0 / (cycle + 1);
+                logger.info(String.format(" RepEx rejected (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
+                        acceptance, tempA, i1, tempB, i2, deltaE));
             }
         }
     }
@@ -222,16 +250,18 @@ public class ReplicaExchange implements Terminatable {
     private void dynamic(final int nSteps, final double timeStep, final double printInterval,
                          final double saveInterval) {
 
+        int i = rank2Temp[rank];
+
         /**
          * Start this processes MolecularDynamics instance sampling.
          */
         boolean initVelocities = true;
-        replica.dynamic(nSteps, timeStep, printInterval, saveInterval, temperatures[rank], initVelocities, null);
+        replica.dynamic(nSteps, timeStep, printInterval, saveInterval, temperatures[i], initVelocities, null);
 
         /**
          * Update this ranks' parameter array to be consistent with the dynamics.
          */
-        myParameters[0] = temperatures[rank];
+        myParameters[0] = temperatures[i];
         myParameters[1] = replica.currentPotentialEnergy;
 
         /**

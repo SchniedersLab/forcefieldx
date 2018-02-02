@@ -566,6 +566,28 @@ public class MolecularDynamics implements Runnable, Terminatable {
             saveRestartFileFrequency = (int) (restartFrequency / this.dt);
         }
 
+        assemblyInfo();
+
+        String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
+
+        if (dyn == null) {
+            this.restartFile = new File(firstFileName + ".dyn");
+            loadRestart = false;
+        } else {
+            this.restartFile = dyn;
+            loadRestart = true;
+        }
+
+        if (dynFilter == null) {
+            dynFilter = new DYNFilter(molecularAssembly.getName());
+        }
+
+        this.targetTemperature = temperature;
+        this.initVelocities = initVelocities;
+
+    }
+
+    protected void assemblyInfo() {
         assemblies.stream().parallel().forEach((ainfo) -> {
             MolecularAssembly mola = ainfo.getAssembly();
             CompositeConfiguration aprops = ainfo.props;
@@ -591,24 +613,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
             }
         });
-
-        String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
-
-        if (dyn == null) {
-            this.restartFile = new File(firstFileName + ".dyn");
-            loadRestart = false;
-        } else {
-            this.restartFile = dyn;
-            loadRestart = true;
-        }
-
-        if (dynFilter == null) {
-            dynFilter = new DYNFilter(molecularAssembly.getName());
-        }
-
-        this.targetTemperature = temperature;
-        this.initVelocities = initVelocities;
-
     }
 
     /**

@@ -44,6 +44,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.integrators.IntegratorEnum;
 import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.MolecularDynamicsOpenMM;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
