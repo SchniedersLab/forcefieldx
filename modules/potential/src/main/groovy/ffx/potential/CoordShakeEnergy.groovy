@@ -42,6 +42,15 @@ class CoordShakeEnergy extends Script {
          */
         @Option(shortName='l', longName='lambda', defaultValue='-1', description='Lambda value') double initialLambda;
         /**
+         * -s or --start sets the first atom to move.
+         */
+        @Option(shortName='s', longName='start', defaultValue='1', description='Starting atom to test') int start;
+        /**
+         * -f or --final sets the last atom to move.
+         */
+        @Option(shortName='f', longName='final', defaultValue='-1', description='Last atom to test') int last;
+
+        /**
          * The final argument(s) should be one or more filenames.
          */
         @Unparsed List<String> filenames
@@ -125,9 +134,17 @@ class CoordShakeEnergy extends Script {
 
         def axes = ["X","Y","Z"];
         double[] atomXYZ = new double[3];
+        int firstAt = options.start - 1;
+        int lastAt = options.last;
+        if (lastAt < 0 || lastAt > atoms.length) {
+            lastAt = atoms.length;
+        }
+
         for (int i = 0; i < 3; i++) {
             logger.info(String.format(" Moving atoms +1 unit in %s", axes[i]));
-            for (Atom atom : atoms) {
+            //for (Atom atom : atoms) {
+            for (int j = firstAt; j < lastAt; j++) {
+                Atom atom = atoms[j];
                 atom.getXYZ(atomXYZ);
                 atomXYZ[i] += options.dX;
                 atom.setXYZ(atomXYZ);
@@ -136,7 +153,9 @@ class CoordShakeEnergy extends Script {
             eFunct(x);
 
             logger.info(String.format(" Moving atoms -1 unit in %s", axes[i]));
-            for (Atom atom : atoms) {
+            //for (Atom atom : atoms) {
+            for (int j = firstAt; j < lastAt; j++) {
+                Atom atom = atoms[j];
                 atom.getXYZ(atomXYZ);
                 atomXYZ[i] -= (2.0 * options.dX);
                 atom.setXYZ(atomXYZ);
@@ -144,7 +163,9 @@ class CoordShakeEnergy extends Script {
             thePotential.getCoordinates(x);
             eFunct(x);
 
-            for (Atom atom : atoms) {
+            //for (Atom atom : atoms) {
+            for (int j = firstAt; j < lastAt; j++) {
+                Atom atom = atoms[j];
                 atom.getXYZ(atomXYZ);
                 atomXYZ[i] += options.dX;
                 atom.setXYZ(atomXYZ);
