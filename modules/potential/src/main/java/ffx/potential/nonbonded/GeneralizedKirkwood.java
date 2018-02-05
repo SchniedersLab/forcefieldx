@@ -468,6 +468,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(" GK lambda term set to false.");
         }
 
+        // If PME is using softcore and polarization, GK must also be softcored.
+        if (!lambdaTerm && particleMeshEwald.getPolarizationType() != Polarization.NONE) {
+            if (forceField.getBoolean(ForceField.ForceFieldBoolean.PME_LAMBDATERM, forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false))) {
+                logger.info(" If PME is using softcoring and polarization, GK must also be softcored. Setting GK lambda term to true.");
+                lambdaTerm = true;
+            }
+        }
+
         int threadCount = parallelTeam.getThreadCount();
         bornRadiiRegion = new BornRadiiRegion(threadCount);
         permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount);
@@ -1084,7 +1092,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
     }
 
-    public void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
+    void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
         if (lambdaTerm) {
             this.lPow = lPow;
             this.dlPow = dlPow;
@@ -1094,9 +1102,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * If the lambdaTerm flag is false, lambda must be set to one.
              */
             this.lambda = 1.0;
-            lPow = 1.0;
-            dlPow = 0.0;
-            dl2Pow = 0.0;
+            this.lPow = 1.0;
+            this.dlPow = 0.0;
+            this.dl2Pow = 0.0;
         }
     }
 

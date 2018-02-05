@@ -189,6 +189,7 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
         forceFieldTypes.put(ForceFieldType.RELATIVESOLV, relativeSolvationTypes);
 
+        trueImpliedBoolean(ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
         trueImpliedBoolean(ForceFieldBoolean.LAMBDATERM, ForceFieldBoolean.VDW_LAMBDATERM, ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
     }
 
