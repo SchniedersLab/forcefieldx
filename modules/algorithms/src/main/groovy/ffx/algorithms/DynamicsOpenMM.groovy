@@ -65,7 +65,7 @@ class DynamicsOpenMM extends Script{
         /**
          * -f or --file Choose the file type to write [PDB/XYZ].
          */
-        @Option(shortName = 'f', longName = 'file', defaultValue = 'PDB',
+        @Option(shortName = 'f', longName = 'file', defaultValue = 'XYZ',
             description = 'Choose file type to write [PDB/XYZ].')
         String fileType;
         /**
