@@ -278,6 +278,7 @@ public abstract class Thermostat {
             sb.append(format(" Current temperature:          %7.2f Kelvin\n", currentTemperature));
             sb.append(format(" Number of variables:          %7d\n", nVariables));
             sb.append(format(" Number of degrees of freedom: %7d\n", dof));
+            sb.append(format(" Kinetic Energy:               %7.2f\n", currentKineticEnergy));
             sb.append(format(" kT per degree of freedom:     %7.2f\n", convert * currentKineticEnergy / (dof * kT)));
             logger.log(level, sb.toString());
         }
@@ -353,6 +354,9 @@ public abstract class Thermostat {
      * distribution.
      */
     public void maxwell(double targetTemperature) {
+
+        setTargetTemperature(targetTemperature);
+
         for (int i = 0; i < nVariables; i++) {
             double m = mass[i];
             v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
@@ -377,7 +381,7 @@ public abstract class Thermostat {
          *
          * Scale the velocities to enforce the target temperature.
          */
-        double scale = Math.sqrt(targetTemperature / currentTemperature);
+        double scale = sqrt(targetTemperature / currentTemperature);
         for (int i = 0; i < nVariables; i++) {
             v[i] *= scale;
         }

@@ -44,6 +44,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.integrators.IntegratorEnum;
 import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.MolecularDynamicsOpenMM;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
@@ -68,6 +69,12 @@ public class MDMove implements MCMove {
     private double energyDriftTotalNet;
     private double energyDriftAverageAbs;
     private double energyDriftAverageNet;
+    private double dt;
+    private int intervalSteps;
+    private double normalizedEnergyDriftAbs;
+    private double normalizedEnergyDriftNet;
+    private int natoms;
+
 
     private final double saveInterval = 10000.0;
     private final MolecularDynamics molecularDynamics;
@@ -116,6 +123,12 @@ public class MDMove implements MCMove {
             energyDriftTotalAbs += abs(molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy());
             energyDriftAverageAbs = energyDriftTotalAbs/mdMoveCounter;
             logger.info(String.format(" Mean signed and unsigned energy drift: %8.4f and %8.4f", energyDriftAverageNet, energyDriftAverageAbs));
+            dt = molecularDynamics.getTimeStep();
+            intervalSteps = molecularDynamics.getIntervalSteps();
+            natoms = molecularDynamics.getNumAtoms();
+            normalizedEnergyDriftNet = (energyDriftAverageNet/(dt*intervalSteps*natoms)) * 1000;
+            normalizedEnergyDriftAbs = (energyDriftAverageAbs/(dt*intervalSteps*natoms)) * 1000;
+            logger.info(String.format(" Mean singed and unsigned energy drift per picosecond per atom: %8.4f and %8.4f", normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
         }
     }
 

@@ -93,15 +93,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private MDMove mdMove;
     private int totalSteps = 10000000;
     private int stepsPerMove = 50;
-    //private long mdTime = 0;
     private long totalMoveTime = 0;
 
     private LambdaMove lambdaMove;
-    
-    private double energyDriftTotal;
-    private double energyDriftMean;
-    
-    
 
     private boolean equilibration = false;
 
