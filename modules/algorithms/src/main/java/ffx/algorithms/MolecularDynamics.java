@@ -1370,4 +1370,17 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public double getEndTotalEnergy(){
         return 0.0;
     }
+    
+    public double getTimeStep(){
+        return dt;
+    }
+    
+    public int getIntervalSteps(){
+        return 1;
+    }
+    
+    public int getNumAtoms(){
+        return 1;
+    }
+    
 }

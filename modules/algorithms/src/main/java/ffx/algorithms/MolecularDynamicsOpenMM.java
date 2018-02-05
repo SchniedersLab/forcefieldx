@@ -158,6 +158,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     private double startingTotalEnergy;
     
     private double endTotalEnergy;
+    
+    private int natoms;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -478,6 +480,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             }
             setOpenMMState();
         }
+        
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        natoms = atoms.length;
 
         int i = 0;
         running = false;
@@ -588,5 +593,20 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public double getEndTotalEnergy(){
         return endTotalEnergy;
+    }
+    
+    @Override
+    public double getTimeStep(){
+        return dt;
+    }
+    
+    @Override
+    public int getIntervalSteps(){
+        return intervalSteps;
+    }
+    
+    @Override
+    public int getNumAtoms(){
+        return natoms;
     }
 }
