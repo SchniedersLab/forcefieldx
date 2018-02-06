@@ -123,6 +123,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private static final double DEFAULT_BONDI_SCALE = 1.15;
     /**
+     * Default overlap scale factor.
+     */
+    private static final double DEFAULT_OVERLAP_SCALE = 0.69;
+    /**
      * Set of force fields for which we have fitted GK/GB radii.
      */
     private static final Set<String> fittedForceFields;
@@ -402,7 +406,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        double defaultOverlapScale = (doUseFitRadii && hasFittedRadii) ? solventRadii.getOverlapScale() : 0.60;
+        double defaultOverlapScale = (doUseFitRadii && hasFittedRadii) ? solventRadii.getOverlapScale() : DEFAULT_OVERLAP_SCALE;
         double hydrogenOverlap;
         try {
             hydrogenOverlap = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE);
@@ -611,8 +615,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fill(use, true);
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
-//            overlapScale[i] = 0.69;   // Original value based on small molecule parameterization.
-            overlapScale[i] = 0.60;     // New default value based on 2016 amino acid GK parameterization.
+            overlapScale[i] = DEFAULT_OVERLAP_SCALE;   // Original value based on small molecule parameterization.
+            //overlapScale[i] = 0.60;     // New default value based on 2016 amino acid GK parameterization.
             if (useFittedRadii) {
                 overlapScale[i] = solventRadii.getOverlapScale();
             }
@@ -1209,7 +1213,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (sum <= 0.0) {
                         sum = PI4_3 * 1.0e-9;
                         born[i] = 1.0 / pow(sum / PI4_3, THIRD);
-                        // logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
+                        logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
                         continue;
                     }
                     born[i] = 1.0 / pow(sum / PI4_3, THIRD);
@@ -1219,7 +1223,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         continue;
                     }
                     if (Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
-                        // logger.info(format(" NaN / Infinite: Resetting Base Radii %d %12.6f", i, baseRi));
+                        logger.info(format(" NaN / Infinite: Resetting Base Radii %d %12.6f", i, baseRi));
                         born[i] = baseRi;
                     }
                 }
