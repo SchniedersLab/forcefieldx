@@ -317,6 +317,8 @@ public class RotamerOptimizationTest {
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected self energy is: " + energy);
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
+
+            // ToDo: Check that optimized rotamers are equivalent to the lowest self-energy of each residue.
         }
 
         if (doPairOpt) {
@@ -324,15 +326,20 @@ public class RotamerOptimizationTest {
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected pair energy is: " + energy);
             assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
+
+            // ToDo: Check that optimized rotamers are equivalent to the lowest pair-energy of each residue with the "pairResidue".
+
         }
-        
-        // ToDo: Test 3-Body Energy Eliminations.
+
         if (doTripleOpt) {
             rotamerOptimization.setTestTripleEnergyEliminations(tripleResidue1, tripleResidue2);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected trimer energy is: " + energy);
             assertEquals(info + " Triple-Energy", expectedTripleEnergy, energy, tolerance);
+
+            // ToDo: Check that optimized rotamers are equivalent to the lowest 3-body energy of each residue with the tripleResidue1 and 2.
         }
+
 
         // ToDo: Test self-energy use for rotamer pair eliminations.
 
