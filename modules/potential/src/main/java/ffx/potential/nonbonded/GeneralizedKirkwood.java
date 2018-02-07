@@ -127,6 +127,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private static final double DEFAULT_OVERLAP_SCALE = 0.69;
     /**
+     * Default surface tension for apolar models with explicit dispersion terms.
+     */
+    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.08;
+    /**
+     * Default surface tension for apolar models without explicit dispersion terms.
+     * This is lower than CAVDISP, since the favorable dispersion term is implicitly included.
+     */
+    private static final double DEFAULT_CAV_SURFACE_TENSION = 0.0049;
+    /**
      * Set of force fields for which we have fitted GK/GB radii.
      */
     private static final Set<String> fittedForceFields;
@@ -135,8 +144,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fittedForceFields = new HashSet<>();
         /**
          * AMOEBA-PROTEIN-2013 and AMBER99SB as fitted by Stephen D. LuCore.
-         * AMBER99SB-TIP3F is an alias for AMBER99SB, just with different
-         * explicit-solvent parameters (no re-fitting of GB parameters).
+         * Various tweaks to both force fields also use the same radii.
          */
         String[] fitted = {"AMOEBA-PROTEIN-2013", "AMOEBA-DIRECT-2013", "AMOEBA-FIXED-2013", "AMBER99SB", "AMBER99SB-TIP3F"};
         fittedForceFields.addAll(Arrays.asList(fitted));
@@ -487,19 +495,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
         gkEnergyRegion = new GKEnergyRegion(threadCount);
         bornGradRegion = new BornCRRegion(threadCount);
 
-        double tensionDefault = 0.08;
+        double tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
         switch (nonPolar) {
             case CAV:
                 cavitationRegion = new CavitationRegion(threadCount);
-                tensionDefault = 0.0049;
+                tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 dispersionRegion = null;
                 break;
             case CAV_DISP:
                 cavitationRegion = new CavitationRegion(threadCount);
-                tensionDefault = 0.080;
+                tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 dispersionRegion = new DispersionRegion(threadCount);
                 break;
             case BORN_CAV_DISP:
+                // TODO: Check this. I'm unsure about this apolar model.
+                tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 cavitationRegion = null;
                 dispersionRegion = new DispersionRegion(threadCount);
                 break;
@@ -507,6 +517,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             case BORN_SOLV:
             case NONE:
             default:
+                tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 cavitationRegion = null;
                 dispersionRegion = null;
                 break;
