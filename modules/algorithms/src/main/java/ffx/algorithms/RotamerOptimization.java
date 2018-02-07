@@ -343,6 +343,7 @@ public class RotamerOptimization implements Terminatable {
     private ArrayList<Residue> allResiduesList = null;
     private Residue allResiduesArray[] = null;
     private int numResidues = 0;
+    private int optimum[];
 
     /**
      * Test Self-Energy Elimination.
@@ -724,6 +725,10 @@ public class RotamerOptimization implements Terminatable {
 
         allAssemblies = new ArrayList<>();
         allAssemblies.add(molecularAssembly);
+    }
+
+    public void setMaxRotCheckDepth(int maxRotCheckDepth) {
+        this.maxRotCheckDepth = maxRotCheckDepth;
     }
 
     public RotamerOptimization(MolecularAssembly molecularAssembly, Potential potential,
@@ -2507,6 +2512,10 @@ public class RotamerOptimization implements Terminatable {
         return residueList;
     }
 
+    public int[] getOptimumRotamers() {
+        return optimum;
+    }
+
     public void setResidues(ArrayList<Residue> residueList) {
         this.residueList = residueList;
     }
@@ -3176,12 +3185,14 @@ public class RotamerOptimization implements Terminatable {
         Residue residues[] = residueList.toArray(new Residue[residueList.size()]);
         int nResidues = residues.length;
         int currentRotamers[] = new int[nResidues];
-        int optimum[] = new int[nResidues];
+
         int iterations = 0;
         boolean finalTry = false;
         int bestEnsembleTargetDiffThusFar = Integer.MAX_VALUE;
         double bestBufferThusFar = ensembleBuffer;
         double startingBuffer = ensembleBuffer;
+
+        optimum = new int[nResidues];
 
         if (ensembleEnergy > 0.0) {
             ensembleBuffer = ensembleEnergy;
@@ -6508,6 +6519,7 @@ public class RotamerOptimization implements Terminatable {
             double minPairDiff = 0.0;
             double minTripleDiff = 0.0;
             int rjEvals = 0;
+
             // Loop over the rotamers for residue j.
             for (int rj = 0; rj < nrj; rj++) {
                 if (check(j, rj)) {
@@ -6519,21 +6531,14 @@ public class RotamerOptimization implements Terminatable {
                 //    continue;
                 // }
 
-
                 double pairI = pair(i, riA, j, rj);
                 double pairJ = pair(i, riB, j, rj);
-                double pairDiff = pair(i, riA, j, rj) - pair(i, riB, j, rj);
-
-                /**
-                 if (abs(pairI) > 1.0e4 && abs(pairJ) > 1.0e4) {
-                 logIfMaster(format(" Goldstein difference [(%7s,%2d),(%7s-%2d)] %12.4f - [(%7s-%2d),(%7s-%2d)] %12.4f = %12.4f",
-                 resi, riA, resj, rj, pairI, resi, riB, resj, rj, pairJ, pairDiff));
-                 } */
+                double pairDiff = pairI - pairJ;
 
                 rjEvals++;
 
-                double tripleDiff = 0.0;
                 // Include three-body interactions.
+                double tripleDiff = 0.0;
                 if (threeBodyTerm) {
                     for (int k = 0; k < nres; k++) {
                         if (k == i || k == j) {
@@ -6594,15 +6599,14 @@ public class RotamerOptimization implements Terminatable {
                         selfDiff, sumPairDiff, sumTripleDiff));
                 return true;
             }
-        }
-/*        else {
-            if (i == 80) {
-                logIfMaster(format("  Rotamer (%7s,%2d) not eliminated by (%7s,%2d): %12.4f < %6.4f.",
-                        resi, riA, resi, riB, goldsteinEnergy, ensembleBuffer));
-                logIfMaster(format("   Self: %12.4f, Pairs: %12.4f, Triples: %12.4f.",
-                        selfDiff, sumPairDiff, sumTripleDiff));
-            }
-        }*/
+
+
+        } /** else {
+            logIfMaster(format("  NO Rotamer elimination of (%7s,%2d) by (%7s,%2d): %12.4f < %6.4f.",
+                    resi, riA, resi, riB, goldsteinEnergy, ensembleBuffer));
+            logIfMaster(format("   Self: %12.4f, Pairs: %12.4f, Triples: %12.4f.",
+                    selfDiff, sumPairDiff, sumTripleDiff));
+        } */
 
         return false;
     }
@@ -7084,7 +7088,7 @@ public class RotamerOptimization implements Terminatable {
         }
 
         // Return false if either rotamer is not valid.
-        if (maxRotCheckDepth > 0 && (!validRotamer(residues, i, ri) || !validRotamer(residues, j, rj))) {
+        if (!validRotamer(residues, i, ri) || !validRotamer(residues, j, rj)) {
             return false;
         }
 
@@ -7093,7 +7097,7 @@ public class RotamerOptimization implements Terminatable {
             return false;
         }
 
-        if (maxRotCheckDepth > 2) {
+        if (maxRotCheckDepth > 1) {
             // Loop over all residues to check for valid triples.
             int n = residues.length;
             for (int k = 0; k < n; k++) {
@@ -7182,7 +7186,7 @@ public class RotamerOptimization implements Terminatable {
         return tripleCount;
     }
 
-    private double self(int i, int ri) {
+    public double self(int i, int ri) {
         try {
             return selfEnergy[i][ri];
         } catch (NullPointerException npe) {
@@ -7191,7 +7195,7 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
-    private double pair(int i, int ri, int j, int rj) {
+    public double pair(int i, int ri, int j, int rj) {
         if (j < i) {
             int ii = i;
             int iri = ri;
@@ -7208,7 +7212,7 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
-    private double triple(int i, int ri, int j, int rj, int k, int rk) {
+    public double triple(int i, int ri, int j, int rj, int k, int rk) {
         if (!threeBodyTerm) {
             return 0.0;
         }
