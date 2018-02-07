@@ -313,7 +313,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     /**
      * Power on L in front of the pairwise multipole potential.
      */
-    private double permLambdaExponent = 1.0;
+    private double permLambdaExponent = 3.0;
     /**
      * Start turning on polarization later in the Lambda path to prevent SCF
      * convergence problems when atoms nearly overlap.
@@ -792,10 +792,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
              * beginning of the permanent schedule. Choosing a power of 3 or
              * greater ensures a smooth dU/dL and d2U/dL2 over the schedule.
              */
-            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 2.0);
+            permLambdaExponent = forceField.getDouble(ForceFieldDouble.PERMANENT_LAMBDA_EXPONENT, 3.0);
             if (permLambdaExponent < 0.0) {
-                logger.warning("Invalid value for permanent-lambda-exponent (<0.0); reverting to 2.0");
-                permLambdaExponent = 2.0;
+                logger.warning("Invalid value for permanent-lambda-exponent (<0.0); reverting to 3.0");
+                permLambdaExponent = 3.0;
             }
             /**
              * A POLARIZATION_LAMBDA_EXPONENT of 2 gives a non-zero d2U/dL2 at
@@ -6099,6 +6099,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     @Override
     public void setLambda(double lambda) {
         assert (lambda >= 0.0 && lambda <= 1.0);
+        if (!lambdaTerm) {
+            return;
+        }
         this.lambda = lambda;
 
         if (!initSoftCore) {

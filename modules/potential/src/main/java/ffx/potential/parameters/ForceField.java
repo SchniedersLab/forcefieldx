@@ -189,6 +189,7 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
         forceFieldTypes.put(ForceFieldType.RELATIVESOLV, relativeSolvationTypes);
 
+        trueImpliedBoolean(ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
         trueImpliedBoolean(ForceFieldBoolean.LAMBDATERM, ForceFieldBoolean.VDW_LAMBDATERM, ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
     }
 
@@ -1536,7 +1537,7 @@ public class ForceField {
         POLARIZATION_LAMBDA_START, POLARIZATION_LAMBDA_END,
         DUAL_TOPOLOGY_LAMBDA_EXPONENT,
         /* Generalized Kirkwood dielectric and debugging */
-        GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE, GK_HYDROGEN_OVERLAPSCALE,
+        GK_EPSILON, GK_OVERLAPSCALE, GK_BONDIOVERRIDE, GK_HYDROGEN_OVERLAPSCALE, GK_GLOBAL_RADIISCALE,
         /* Miscellaneous */
         RIGID_SCALE, RESTRAINT_K, PROBE_RADIUS, BORNAI, SURFACE_TENSION, TORSIONUNIT, IMPTORUNIT, TORSION_SCALE, MAX_DEBUG_GRADIENT,
         /* OpenMM finite-difference lambda step size */

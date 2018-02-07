@@ -123,6 +123,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private static final double DEFAULT_BONDI_SCALE = 1.15;
     /**
+     * Default overlap scale factor.
+     */
+    private static final double DEFAULT_OVERLAP_SCALE = 0.69;
+    /**
+     * Default surface tension for apolar models with explicit dispersion terms.
+     */
+    private static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.08;
+    /**
+     * Default surface tension for apolar models without explicit dispersion terms.
+     * This is lower than CAVDISP, since the favorable dispersion term is implicitly included.
+     */
+    private static final double DEFAULT_CAV_SURFACE_TENSION = 0.0049;
+    /**
      * Set of force fields for which we have fitted GK/GB radii.
      */
     private static final Set<String> fittedForceFields;
@@ -131,8 +144,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fittedForceFields = new HashSet<>();
         /**
          * AMOEBA-PROTEIN-2013 and AMBER99SB as fitted by Stephen D. LuCore.
-         * AMBER99SB-TIP3F is an alias for AMBER99SB, just with different
-         * explicit-solvent parameters (no re-fitting of GB parameters).
+         * Various tweaks to both force fields also use the same radii.
          */
         String[] fitted = {"AMOEBA-PROTEIN-2013", "AMOEBA-DIRECT-2013", "AMOEBA-FIXED-2013", "AMBER99SB", "AMBER99SB-TIP3F"};
         fittedForceFields.addAll(Arrays.asList(fitted));
@@ -152,6 +164,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Empirical scaling of the Bondi radii.
      */
     private final double bondiScale;
+    /**
+     * Global adjustment to Born radii.
+     */
+    private final double globalRadiiScale;
     /**
      * Cavitation surface tension coefficient (kcal/mol/A^2).
      */
@@ -363,6 +379,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
         bondiScale = bondiScaleValue;
 
+        globalRadiiScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_GLOBAL_RADIISCALE, 1.0);
+        if (globalRadiiScale != 1.0) {
+            logger.info(String.format(" (GK) All non-overridden radii are scaled by factor: %.6f", globalRadiiScale));
+        }
+
         String radiiProp = forceField.getString(ForceField.ForceFieldString.GK_RADIIOVERRIDE, null);
         if (radiiProp != null) {
             String tokens[] = radiiProp.split("A");
@@ -393,7 +414,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        double defaultOverlapScale = (doUseFitRadii && hasFittedRadii) ? solventRadii.getOverlapScale() : 0.60;
+        double defaultOverlapScale = (doUseFitRadii && hasFittedRadii) ? solventRadii.getOverlapScale() : DEFAULT_OVERLAP_SCALE;
         double hydrogenOverlap;
         try {
             hydrogenOverlap = forceField.getDouble(ForceField.ForceFieldDouble.GK_HYDROGEN_OVERLAPSCALE);
@@ -459,6 +480,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(" GK lambda term set to false.");
         }
 
+        // If PME is using softcore and polarization, GK must also be softcored.
+        if (!lambdaTerm && particleMeshEwald.getPolarizationType() != Polarization.NONE) {
+            if (forceField.getBoolean(ForceField.ForceFieldBoolean.PME_LAMBDATERM, forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false))) {
+                logger.info(" If PME is using softcoring and polarization, GK must also be softcored. Setting GK lambda term to true.");
+                lambdaTerm = true;
+            }
+        }
+
         int threadCount = parallelTeam.getThreadCount();
         bornRadiiRegion = new BornRadiiRegion(threadCount);
         permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount);
@@ -466,19 +495,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
         gkEnergyRegion = new GKEnergyRegion(threadCount);
         bornGradRegion = new BornCRRegion(threadCount);
 
-        double tensionDefault = 0.08;
+        double tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
         switch (nonPolar) {
             case CAV:
                 cavitationRegion = new CavitationRegion(threadCount);
-                tensionDefault = 0.0049;
+                tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 dispersionRegion = null;
                 break;
             case CAV_DISP:
                 cavitationRegion = new CavitationRegion(threadCount);
-                tensionDefault = 0.080;
+                tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 dispersionRegion = new DispersionRegion(threadCount);
                 break;
             case BORN_CAV_DISP:
+                // TODO: Check this. I'm unsure about this apolar model.
+                tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 cavitationRegion = null;
                 dispersionRegion = new DispersionRegion(threadCount);
                 break;
@@ -486,6 +517,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             case BORN_SOLV:
             case NONE:
             default:
+                tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 cavitationRegion = null;
                 dispersionRegion = null;
                 break;
@@ -594,8 +626,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         fill(use, true);
         for (int i = 0; i < nAtoms; i++) {
             baseRadius[i] = 2.0;
-//            overlapScale[i] = 0.69;   // Original value based on small molecule parameterization.
-            overlapScale[i] = 0.60;     // New default value based on 2016 amino acid GK parameterization.
+            overlapScale[i] = DEFAULT_OVERLAP_SCALE;   // Original value based on small molecule parameterization.
+            //overlapScale[i] = 0.60;     // New default value based on 2016 amino acid GK parameterization.
             if (useFittedRadii) {
                 overlapScale[i] = solventRadii.getOverlapScale();
             }
@@ -782,6 +814,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 bondiFactor = radiiByNumberMap.get(atomNumber);
                 logger.info(String.format(" (GK) Scaling Atom number %d, %3s-%-4s, with factor %.2f",
                         atomNumber, atoms[i].getResidueName(), atoms[i].getName(), bondiFactor));
+            }
+
+            if (!radiiOverride.containsKey(atomType.type)) {
+                bondiFactor *= globalRadiiScale;
+            } else {
+                logger.fine(String.format(" Not scaling atom type %d", atomType.type));
             }
 
             baseRadiusWithBondi[i] = baseRadius[i] * bondiFactor;
@@ -1069,7 +1107,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
     }
 
-    public void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
+    void setLambdaFunction(double lPow, double dlPow, double dl2Pow) {
         if (lambdaTerm) {
             this.lPow = lPow;
             this.dlPow = dlPow;
@@ -1079,9 +1117,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * If the lambdaTerm flag is false, lambda must be set to one.
              */
             this.lambda = 1.0;
-            lPow = 1.0;
-            dlPow = 0.0;
-            dl2Pow = 0.0;
+            this.lPow = 1.0;
+            this.dlPow = 0.0;
+            this.dl2Pow = 0.0;
         }
     }
 
@@ -1186,7 +1224,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (sum <= 0.0) {
                         sum = PI4_3 * 1.0e-9;
                         born[i] = 1.0 / pow(sum / PI4_3, THIRD);
-                        // logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
+                        logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
                         continue;
                     }
                     born[i] = 1.0 / pow(sum / PI4_3, THIRD);
@@ -1196,7 +1234,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         continue;
                     }
                     if (Double.isInfinite(born[i]) || Double.isNaN(born[i])) {
-                        // logger.info(format(" NaN / Infinite: Resetting Base Radii %d %12.6f", i, baseRi));
+                        logger.info(format(" NaN / Infinite: Resetting Base Radii %d %12.6f", i, baseRi));
                         born[i] = baseRi;
                     }
                 }

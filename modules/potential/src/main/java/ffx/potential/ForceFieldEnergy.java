@@ -727,6 +727,51 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         molecularAssembly.setPotential(this);
 
+        // Add restrain-bond records. If no restrain-distance records exist, the empty array will be returned.
+        String[] bondRestraints = molecularAssembly.getProperties().getStringArray("restrain-distance");
+        for (String bondRest : bondRestraints) {
+            try {
+                String[] toks = bondRest.split("\\s+");
+                if (toks.length < 2) {
+                    throw new IllegalArgumentException(String.format(" restrain-distance value %s could not be parsed!", bondRest));
+                }
+                int at1 = Integer.parseInt(toks[0]) - 1;
+                int at2 = Integer.parseInt(toks[1]) - 1;
+
+                double forceConst = 100.0;
+                Atom a1 = atoms[at1];
+                Atom a2 = atoms[at2];
+
+                if (toks.length > 2) {
+                    forceConst = Double.parseDouble(toks[2]);
+                }
+                double dist;
+                switch (toks.length) {
+                    case 3:
+                        double[] xyz1 = new double[3];
+                        xyz1 = a1.getXYZ(xyz1);
+                        double[] xyz2 = new double[3];
+                        xyz2 = a2.getXYZ(xyz2);
+                        dist = crystal.minDistOverSymOps(xyz1, xyz2);
+                        break;
+                    case 4:
+                        dist = Double.parseDouble(toks[3]);
+                        break;
+                    case 5:
+                        dist = Double.parseDouble(toks[3]) + Double.parseDouble(toks[4]);
+                        dist *= 0.5;
+                        logger.info(String.format(" restrain-distance term %s not properly supported, as FFX currently lacks flat-bottom wells. Setting equilibrium distance to arithmetic mean %10.4g", bondRest, dist));
+                        break;
+                    default:
+                        throw new IllegalArgumentException(String.format(" restrain-distance value %s could not be parsed!", bondRest));
+                }
+
+                setRestraintBond(a1, a2, dist, forceConst);
+            } catch (Exception ex) {
+                logger.info(String.format(" Exception in parsing restrain-distance: %s", ex.toString()));
+            }
+        }
+
         if (noHeader) {
             logger.setLevel(logger.getParent().getLevel());
         }

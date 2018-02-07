@@ -230,8 +230,11 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_System_getNumConstraints;
 import static simtk.openmm.OpenMMLibrary.OpenMM_System_getNumParticles;
 import static simtk.openmm.OpenMMLibrary.OpenMM_System_getParticleMass;
 import static simtk.openmm.OpenMMLibrary.OpenMM_System_setDefaultPeriodicBoxVectors;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_setVirtualSite;
+import static simtk.openmm.OpenMMLibrary.OpenMM_TwoParticleAverageSite_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_append;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_destroy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_get;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_resize;
 import static simtk.openmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
@@ -513,7 +516,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         context = OpenMM_Context_create_2(system, integrator, ForceFieldEnergyOpenMM.platform);
 
         // Set initial positions.
-        loadFFXPositionToOpenMM();
+        double x[] = new double[numParticles * 3];
+        int index = 0;
+        Atom atoms[] = molecularAssembly.getAtomArray();
+        for (int i=0; i<numParticles; i++) {
+            Atom atom = atoms[i];
+            x[index] = atom.getX();
+            x[index + 1] = atom.getY();
+            x[index + 2] = atom.getZ();
+            index += 3;
+        }
+        setOpenMMPositions(x, numParticles * 3);
 
         int infoMask = OpenMM_State_Positions;
         infoMask += OpenMM_State_Forces;
@@ -1381,6 +1394,38 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         logger.log(Level.INFO, " Added van der Waals force.");
     }
 
+    /**
+     * Experimental. Virtual hydrogen sites require creation of new particles, which then need to be handled (ignored?)
+     * for the multiple force.
+     */
+    private void createVirtualHydrogenSites() {
+
+        VanDerWaals vdW = super.getVdwNode();
+        if (vdW == null) {
+            return;
+        }
+        int ired[] = vdW.getReductionIndex();
+
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            VDWType vdwType = atom.getVDWType();
+            if (vdwType.reductionFactor < 1.0) {
+                double factor = vdwType.reductionFactor;
+                // Create the virtual site.
+                PointerByReference virtualSite = OpenMM_TwoParticleAverageSite_create(i, ired[i], factor, 1.0 - factor);
+                // Create a massless particle for the hydrogen vdW site.
+                int id = OpenMM_System_addParticle(system, 0.0);
+                // Denote the massless particle is a virtual site
+                OpenMM_System_setVirtualSite(system, id, virtualSite);
+            }
+        }
+
+        //
+    }
+
+
     private void addAmoebaMultipoleForce() {
         ParticleMeshEwald pme = super.getPmeNode();
         if (pme == null) {
@@ -2247,7 +2292,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
         setCoordinates(x);
-        loadFFXPositionToOpenMM();
+        setOpenMMPositions(x, x.length);
 
         int infoMask = OpenMM_State_Energy;
         state = OpenMM_Context_getState(context, infoMask, enforcePBC);
@@ -2292,7 +2337,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
         setCoordinates(x);
-        loadFFXPositionToOpenMM();
+        setOpenMMPositions(x, x.length);
 
         int infoMask = OpenMM_State_Energy;
         infoMask += OpenMM_State_Forces;
@@ -2326,7 +2371,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public void setCrystal(Crystal crystal) {
         super.setCrystal(crystal);
         setDefaultPeriodicBoxVectors();
-        loadFFXPositionToOpenMM();
+
+        //loadFFXPositionToOpenMM();
     }
 
     /**
@@ -2395,30 +2441,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * Loads positions into OpenMM from the FFX data structure.
-     */
-    public final void loadFFXPositionToOpenMM() {
-        if (positions == null) {
-            positions = OpenMM_Vec3Array_create(0);
-        } else {
-            OpenMM_Vec3Array_resize(positions, 0);
-        }
-        Atom[] atoms = molecularAssembly.getAtomArray();
-        int nAtoms = atoms.length;
-        OpenMM_Vec3.ByValue posInNm = new OpenMM_Vec3.ByValue();
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            posInNm.x = atom.getX() * OpenMM_NmPerAngstrom;
-            posInNm.y = atom.getY() * OpenMM_NmPerAngstrom;
-            posInNm.z = atom.getZ() * OpenMM_NmPerAngstrom;
-            OpenMM_Vec3Array_append(positions, posInNm);
-        }
-
-        // Load positions into the context.
-        OpenMM_Context_setPositions(context, positions);
-    }
-
-    /**
      * setOpenMMPositions takes in an array of doubles generated by the DYN
      * reader method and appends these values to a Vec3Array. Finally this
      * method sets the created Vec3Array as the positions of the context.
@@ -2440,7 +2462,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             pos.z = x[i + 2] * OpenMM_NmPerAngstrom;
             OpenMM_Vec3Array_append(positions, pos);
         }
-
         OpenMM_Context_setPositions(context, positions);
     }
 
@@ -2524,7 +2545,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             v[offset] = vel.x * OpenMM_AngstromsPerNm;
             v[offset + 1] = vel.y * OpenMM_AngstromsPerNm;
             v[offset + 2] = vel.z * OpenMM_AngstromsPerNm;
-        }    
+            Atom atom = atoms[i];
+            double velocity[] = {v[offset], v[offset + 1], v[offset + 2]};
+            atom.setVelocity(velocity);
+        }
         return v;
     }
 
@@ -2536,13 +2560,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * them into accelerations) to a new double array a and returns it to the
      * method call
      *
-     * @param accelerations
+     * @param forces
      * @param numberOfVariables
      * @param mass
      * @return
      */
-    public double[] getOpenMMAccelerations(PointerByReference accelerations, int numberOfVariables,
-            double[] mass, double[] a) {
+    public double[] getOpenMMAccelerations(PointerByReference forces, int numberOfVariables, double[] mass, double[] a) {
         assert numberOfVariables == getNumberOfVariables();
         if (a == null || a.length < numberOfVariables) {
             a = new double[numberOfVariables];
@@ -2551,10 +2574,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             int offset = i * 3;
-            OpenMM_Vec3 acc = OpenMM_Vec3Array_get(accelerations, i);
+            OpenMM_Vec3 acc = OpenMM_Vec3Array_get(forces, i);
             a[offset] = (acc.x * 10.0) / mass[i];
             a[offset + 1] = (acc.y * 10.0) / mass[i + 1];
             a[offset + 2] = (acc.z * 10.0) / mass[i + 2];
+            Atom atom = atoms[i];
+            double acceleration[] = {a[offset], a[offset + 1], a[offset + 2]};
+            atom.setAcceleration(acceleration);
         }
         return a;
     }
@@ -2600,13 +2626,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param timeStep
      * @param temperature
      */
-    public void setIntegrator(String integrator, double timeStep, double temperature) {
+    public void setIntegrator(String integratorString, double timeStep, double temperature) {
         OpenMM_Context_destroy(context);
         double dt = timeStep * 1.0e-3;
-        switch (integrator) {
+        switch (integratorString) {
             case "LANGEVIN":
-                logger.log(Level.INFO, String.format("created langevin integrator"));
-                this.integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
+                logger.log(Level.INFO, String.format(" Created Langevin integrator with time step %6.3e (psec).", dt));
+                integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
                 break;
             /*
             case "BROWNIAN":
@@ -2621,27 +2647,25 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
              */
             case "VERLET":
             default:
-                this.integrator = OpenMM_VerletIntegrator_create(dt);
-            //thermostat = OpenMM_AndersenThermostat_create(temperature, collisionFreq);
-            //OpenMM_System_addForce(system, thermostat);
+                logger.log(Level.INFO, String.format(" Created Verlet integrator with time step %6.3e (psec).", dt));
+                integrator = OpenMM_VerletIntegrator_create(dt);
         }
-        //logger.info(String.format(" Created %s OpenMM Integrator", integrator));
 
         // Create a context.
-        context = OpenMM_Context_create_2(system, this.integrator, platform);
+        context = OpenMM_Context_create_2(system, integrator, platform);
 
         // Set initial positions.
-        loadFFXPositionToOpenMM();
-
-        int infoMask = OpenMM_State_Positions;
-        infoMask += OpenMM_State_Forces;
-        infoMask += OpenMM_State_Energy;
-
-        state = OpenMM_Context_getState(context, infoMask, enforcePBC);
-        forces = OpenMM_State_getForces(state);
-        double openMMPotentialEnergy = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
-
-        //logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
+        double x[] = new double[numParticles * 3];
+        int index = 0;
+        Atom atoms[] = molecularAssembly.getAtomArray();
+        for (int i=0; i<numParticles; i++) {
+            Atom atom = atoms[i];
+            x[index] = atom.getX();
+            x[index + 1] = atom.getY();
+            x[index + 2] = atom.getZ();
+            index += 3;
+        }
+        setOpenMMPositions(x, numParticles * 3);
     }
 
     /**

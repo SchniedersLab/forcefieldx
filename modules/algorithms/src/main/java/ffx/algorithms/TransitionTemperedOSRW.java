@@ -589,7 +589,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         if (energyCount % osrwOptimizationFrequency == 0) {
             logger.info(String.format(" OSRW Minimization (Step %d)", energyCount));
 
-            // Set Lambda value to 1.0.
+            // Set the underlying Potential's Lambda value to 1.0.
             lambdaInterface.setLambda(1.0);
 
             potential.setEnergyTermState(Potential.STATE.BOTH);
@@ -628,7 +628,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 logger.info(format(" TT-OSRW sampling will continue."));
             }
 
-            // Reset lambda value.
+            // Set the underlying Potential's Lambda value back to current lambda value.
             lambdaInterface.setLambda(lambda);
 
             // Remove the scaling of coordinates & gradient set by the minimizer.

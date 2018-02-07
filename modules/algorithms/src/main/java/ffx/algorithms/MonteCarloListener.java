@@ -38,13 +38,13 @@
 package ffx.algorithms;
 
 /**
- * The AlgorithmListener will be notified at regular intervals during an
- * algorithm. This interface is useful for updating the user interface or
+ * The MonteCarloListener will be notified at regular intervals during an
+ * MC algorithm. This interface is useful for updating the user interface or
  * terminating the algorithm.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public interface MonteCarloListener {
 
@@ -54,7 +54,7 @@ public interface MonteCarloListener {
 	 * 
 	 * Temperature argument is necessary since Potentials package cannot import Thermostat/MD.
      *
-     * @param active The system the algorithm is operating on.
+     * @param temperature The Metropolis Monte Carlo temperature.
      * @return A return of <code>true</code> indicates the algorithm continues.
      */
     public abstract boolean mcUpdate(double temperature);

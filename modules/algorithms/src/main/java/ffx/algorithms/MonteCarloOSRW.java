@@ -50,6 +50,7 @@ import ffx.algorithms.mc.MDMove;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import static ffx.algorithms.MolecularDynamics.NS2SEC;
+import static java.lang.Math.abs;
 
 
 /**
@@ -92,7 +93,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private MDMove mdMove;
     private int totalSteps = 10000000;
     private int stepsPerMove = 50;
-    //private long mdTime = 0;
     private long totalMoveTime = 0;
 
     private LambdaMove lambdaMove;
@@ -199,6 +199,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * 5.) Add to the bias.
      */
     public void sample() {
+
+        totalMoveTime = -System.nanoTime();
+
         int n = potential.getNumberOfVariables();
         double[] coordinates = new double[n];
         double[] proposedCoordinates = new double[n];
@@ -207,14 +210,6 @@ public class MonteCarloOSRW extends BoltzmannMC {
         int numMoves = totalSteps / stepsPerMove;
         acceptLambda = 0;
         acceptMD = 0;
-
-        /**
-         * Test Lambda End-States.
-         */
-
-        totalMoveTime = -System.nanoTime();
-
-
 
         /**
          * Initialize MC move instances.
@@ -234,6 +229,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
             double proposedEnergy = osrw.energyAndGradient(proposedCoordinates, gradient);
             double proposeddUdL = osrw.getForceFielddEdL();
             proposedEnergy += mdMove.getKineticEnergy();
+
             //mdTime = mdMove.getMDTime();
             //logger.info(String.format(" Time spent on MD move %8.2f", mdTime * NS2SEC));
             
@@ -243,14 +239,14 @@ public class MonteCarloOSRW extends BoltzmannMC {
                  */
                 acceptMD++;
                 double percent = (acceptMD * 100.0) / (imove + 1);
-                logger.info(String.format(" MC MD step %d:     Accepted E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC MD step %d:     Accepted E(%8.3f)=%12.4f -> E(%8.3f)=%12.4f (%5.1f)",
                         imove + 1, currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 currentEnergy = proposedEnergy;
                 newCoordinates = proposedCoordinates;
 
             } else {
                 double percent = (acceptMD * 100.0) / (imove + 1);
-                logger.info(String.format(" MC MD step %d:     Rejected E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC MD step %d:     Rejected E(%8.3f)=%12.4f -> E(%8.3f)=%12.4f (%5.1f)",
                         imove + 1, currentdUdL, currentEnergy, proposeddUdL, proposedEnergy, percent));
                 mdMove.revertMove();
                 newCoordinates = coordinates;
@@ -278,12 +274,12 @@ public class MonteCarloOSRW extends BoltzmannMC {
             if (evaluateMove(currentEnergy, proposedEnergy)) {
                 acceptLambda++;
                 double percent = (acceptLambda * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step %d: Accepted E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC Lambda step %d: Accepted E(%8.3f)=%12.4f -> E(%8.3f)=%12.4f (%5.1f)",
                         imove + 1, currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 currentdUdL = proposeddUdL;
             } else {
                 double percent = (acceptLambda * 100.0) / (imove + 1);
-                logger.info(String.format(" MC Lambda step %d: Rejected E(%8.3f)=%12.6f -> E(%8.3f)=%12.6f (%5.1f)",
+                logger.info(String.format(" MC Lambda step %d: Rejected E(%8.3f)=%12.4f -> E(%8.3f)=%12.4f (%5.1f)",
                         imove + 1, currentLambda, currentEnergy, proposedLambda, proposedEnergy, percent));
                 lambdaMove.revertMove();
                 potential.getCoordinates(coordinates);

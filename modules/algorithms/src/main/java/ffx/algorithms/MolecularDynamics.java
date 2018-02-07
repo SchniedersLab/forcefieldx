@@ -566,6 +566,28 @@ public class MolecularDynamics implements Runnable, Terminatable {
             saveRestartFileFrequency = (int) (restartFrequency / this.dt);
         }
 
+        assemblyInfo();
+
+        String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
+
+        if (dyn == null) {
+            this.restartFile = new File(firstFileName + ".dyn");
+            loadRestart = false;
+        } else {
+            this.restartFile = dyn;
+            loadRestart = true;
+        }
+
+        if (dynFilter == null) {
+            dynFilter = new DYNFilter(molecularAssembly.getName());
+        }
+
+        this.targetTemperature = temperature;
+        this.initVelocities = initVelocities;
+
+    }
+
+    protected void assemblyInfo() {
         assemblies.stream().parallel().forEach((ainfo) -> {
             MolecularAssembly mola = ainfo.getAssembly();
             CompositeConfiguration aprops = ainfo.props;
@@ -591,24 +613,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
             }
         });
-
-        String firstFileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath());
-
-        if (dyn == null) {
-            this.restartFile = new File(firstFileName + ".dyn");
-            loadRestart = false;
-        } else {
-            this.restartFile = dyn;
-            loadRestart = true;
-        }
-
-        if (dynFilter == null) {
-            dynFilter = new DYNFilter(molecularAssembly.getName());
-        }
-
-        this.targetTemperature = temperature;
-        this.initVelocities = initVelocities;
-
     }
 
     /**
@@ -1358,4 +1362,25 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public long getMDTime(){
         return mdTime;
     }
+    
+    public double getStartingTotalEnergy(){
+        return 0.0;
+    }
+    
+    public double getEndTotalEnergy(){
+        return 0.0;
+    }
+    
+    public double getTimeStep(){
+        return dt;
+    }
+    
+    public int getIntervalSteps(){
+        return 1;
+    }
+    
+    public int getNumAtoms(){
+        return 1;
+    }
+    
 }

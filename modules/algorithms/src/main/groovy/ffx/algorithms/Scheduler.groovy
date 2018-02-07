@@ -130,7 +130,7 @@ class Scheduler extends Script {
         StringBuffer sb = new StringBuffer();
         sb.append("# Force Field X Cluster Configuration File\n");
         sb.append("cluster Force Field X TACC Cluster\n");
-        sb.append("logfile ffx-Scheduler.log\n");
+        sb.append("logfile ffx-scheduler.log\n");
         sb.append("webhost 127.0.0.1\n");
         sb.append("webport 8080\n");
         sb.append("schedulerhost localhost\n");
