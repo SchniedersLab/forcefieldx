@@ -75,83 +75,82 @@ public class RotamerOptimizationTest {
                         true,           // Goldstein Elimination.
                         false,          // Use 3-body Enegeries.
                         true,           // Use Original Rotamers.
-                        false,           // Do Overall Opt.
-                        -628.143879,   // Expected Energy.
+                        false,          // Do Overall Opt.
+                        -628.143879,    // Expected Energy.
                         true,           // Do Self-Energy Opt.
                         22086.367273,   // Expected Self-Energy.
-                        true,           // Do Pair-Energy Opt.
+                        false,          // Do Pair-Energy Opt.
                         5,              // Pair residue
                         1280.865248,    // Expected Pair-Energy.
-                        true,           // Do Trimer-Energy Opt.
+                        false,          // Do Trimer-Energy Opt.
                         5,              // Trimer residue 1.
                         6,              // Trimer residue 2.
-                        1280.865247,    // Expected trimer energy.
+                        0.0,            // Expected trimer energy.
                         1.0e-3          // Energy Tolerance.
-                },
-                /**
-                {
-                "Trpcage Direct with Orig Rot (DEE, Prune=1)",
-                "ffx/algorithms/structures/trpcage.pdb",
-                "ffx/algorithms/structures/trpcage.direct.orig.restart",
-                1,              // Pruning Level.
-                false,          // Goldstein Elimination.
-                false,          // Use 3-body Enegeries.
-                true,           // Use Original Rotamers.
-                false,          // Do Overall Opt. (false because DEE leaves too many permutations)
-                -628.143879,    // Expected Energy.
-                true,           // Do Self-Energy Opt.
-                22086.367273,   // Expected Self-Energy.
-                true,           // Do Pair-Energy Opt.
-                5,              // Pair residue
-                1280.865248,    // Expected Pair-Energy.
-                true,           // Do Trimer-Energy Opt.
-                5,              // Trimer residue 1.
-                6,              // Trimer residue 2.
-                1280.865247,    // Expected trimer energy.
-                1.0e-3          // Energy Tolerance.
-                },
-                {
-                "Trpcage Direct (Goldstein)",
-                "ffx/algorithms/structures/trpcage.pdb",
-                "ffx/algorithms/structures/trpcage.direct.restart",
-                1,              // Pruning Level.
-                true,           // Goldstein Elimination.
-                false,          // Use 3-body Enegeries.
-                false,          // Use Original Rotamers.
-                true,           // Do Overall Opt.
-                -386.555625,    // Expected Energy.
-                true,           // Do Self-Energy Opt.
-                20622.950231,   // Expected Self-Energy.
-                true,           // Do Pair-Energy Opt.
-                5,              // Pair residue.
-                2433.067837,    // Expected Pair-Energy.
-                true,           // Do Trimer-Energy Opt.
-                5,              // Trimer residue 1.
-                6,              // Trimer residue 2.
-                2433.067837,    // Expected trimer energy.
-                1.0e-3          // Energy Tolerance.
-                },
-                {
-                "Trpcage Direct (Goldstein)",
-                "ffx/algorithms/structures/trpcage.pdb",
-                "ffx/algorithms/structures/trpcage.direct.3body.restart",
-                1,              // Pruning Level.
-                true,           // Goldstein Elimination.
-                true,           // Use 3-body Enegeries.
-                true,           // Use Original Rotamers.
-                true,           // Do Overall Opt.
-                -628.143879,    // Expected Energy.
-                true,           // Do Self-Energy Opt.
-                22086.367273,   // Expected Self-Energy.
-                true,           // Do Pair-Energy Opt.
-                5,              // Pair residue.
-                1280.865247,    // Expected Pair-Energy.
-                true,           // Do Trimer-Energy Opt.
-                5,              // Trimer residue 1.
-                6,              // Trimer residue 2.
-                1276.608834,    // Expected trimer energy.
-                1.0e-3          // Energy Tolerance.
-                } */
+                } /**
+        {
+        "Trpcage Direct with Orig Rot (DEE, Prune=1)",
+        "ffx/algorithms/structures/trpcage.pdb",
+        "ffx/algorithms/structures/trpcage.direct.orig.restart",
+        1,              // Pruning Level.
+        false,          // Goldstein Elimination.
+        false,          // Use 3-body Enegeries.
+        true,           // Use Original Rotamers.
+        false,          // Do Overall Opt. (false because DEE leaves too many permutations)
+        -628.143879,    // Expected Energy.
+        true,           // Do Self-Energy Opt.
+        22086.367273,   // Expected Self-Energy.
+        true,           // Do Pair-Energy Opt.
+        5,              // Pair residue
+        1280.865248,    // Expected Pair-Energy.
+        false,          // Do Trimer-Energy Opt.
+        5,              // Trimer residue 1.
+        6,              // Trimer residue 2.
+        0.0,            // Expected trimer energy.
+        1.0e-3          // Energy Tolerance.
+        },
+        {
+        "Trpcage Direct with Orig Rot (DEE, Prune=2)",
+        "ffx/algorithms/structures/trpcage.pdb",
+        "ffx/algorithms/structures/trpcage.direct.orig.restart",
+        2,              // Pruning Level.
+        false,          // Goldstein Elimination.
+        false,          // Use 3-body Enegeries.
+        true,           // Use Original Rotamers.
+        true,           // Do Overall Opt. (false because DEE leaves too many permutations)
+        -628.143879,    // Expected Energy.
+        true,           // Do Self-Energy Opt.
+        -616.237522,    // Expected Self-Energy.
+        true,           // Do Pair-Energy Opt.
+        5,              // Pair residue
+        -563.929018,    // Expected Pair-Energy.
+        false,          // Do Trimer-Energy Opt.
+        5,              // Trimer residue 1.
+        6,              // Trimer residue 2.
+        0.0,            // Expected trimer energy.
+        1.0e-3          // Energy Tolerance.
+        },
+        {
+        "Trpcage Direct (Goldstein)",
+        "ffx/algorithms/structures/trpcage.pdb",
+        "ffx/algorithms/structures/trpcage.direct.3body.restart",
+        1,              // Pruning Level.
+        true,           // Goldstein Elimination.
+        true,           // Use 3-body Enegeries.
+        true,           // Use Original Rotamers.
+        true,           // Do Overall Opt.
+        -628.143879,    // Expected Energy.
+        true,           // Do Self-Energy Opt.
+        22086.367273,   // Expected Self-Energy.
+        true,           // Do Pair-Energy Opt.
+        5,              // Pair residue.
+        1280.865247,    // Expected Pair-Energy.
+        true,           // Do Trimer-Energy Opt.
+        5,              // Trimer residue 1.
+        6,              // Trimer residue 2.
+        1276.608834,    // Expected trimer energy.
+        1.0e-3          // Energy Tolerance.
+        } */
         });
     }
 
@@ -287,16 +286,16 @@ public class RotamerOptimizationTest {
 
         double energy = 0.0;
         if (doOverallOpt) {
+            rotamerOptimization.turnRotamerPairEliminationOff();
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-            //System.out.println("The expected overall energy is: " + energy);
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
 
         int nRes = residueList.size();
         if (doSelfOpt) {
+            rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestSelfEnergyEliminations(true);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-            //System.out.println("The expected self energy is: " + energy);
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
 
             // Check that optimized rotamers are equivalent to the lowest self-energy of each residue.
@@ -321,6 +320,7 @@ public class RotamerOptimizationTest {
         }
 
         if (doPairOpt) {
+            rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestPairEnergyEliminations(pairResidue);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected pair energy is: " + energy);
@@ -385,21 +385,109 @@ public class RotamerOptimizationTest {
             }
         }
 
+        // ToDo: Test 3-Body Energy Eliminations.
         if (doTripleOpt) {
+            rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestTripleEnergyEliminations(tripleResidue1, tripleResidue2);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-            //System.out.println("The expected trimer energy is: " + energy);
             assertEquals(info + " Triple-Energy", expectedTripleEnergy, energy, tolerance);
 
             // ToDo: Check that optimized rotamers are equivalent to the lowest 3-body energy of each residue with the tripleResidue1 and 2.
         }
+    } 
+    
+ 
+    /*
+    @Test
+    public void testPairEnergyElimination() {
+        // Load the test system.
+        load();
+
+        // Initialize Parallel Java
+        try {
+            String args[] = new String[0];
+            Comm.init(args);
+        } catch (Exception e) {
+            String message = String.format(" Exception starting up the Parallel Java communication layer.");
+            logger.log(Level.WARNING, message, e.toString());
+            message = String.format(" Skipping rotamer optimization test.");
+            logger.log(Level.WARNING, message, e.toString());
+            return;
+        }
+
+        // Run the optimization.
+        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
+        rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+        rLib.setUseOrigCoordsRotamer(useOriginalRotamers);
+
+        int counter = 1;
+        int allStartResID = 1;
+        ArrayList<Residue> residueList = new ArrayList<Residue>();
+        Polymer[] polymers = molecularAssembly.getChains();
+        int nPolymers = polymers.length;
+        for (int p = 0; p < nPolymers; p++) {
+            Polymer polymer = polymers[p];
+            ArrayList<Residue> residues = polymer.getResidues();
+            int nResidues = residues.size();
+            for (int i = 0; i < nResidues; i++) {
+                Residue residue = residues.get(i);
+                Rotamer[] rotamers = residue.getRotamers(rLib);
+                if (rotamers != null) {
+                    int nrot = rotamers.length;
+                    if (nrot == 1) {
+                        RotamerLibrary.applyRotamer(residue, rotamers[0]);
+                    }
+                    if (counter >= allStartResID) {
+                        residueList.add(residue);
+                    }
+                }
+                counter++;
+            }
+        }
+
+        RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
+        rotamerOptimization.setThreeBodyEnergy(useThreeBody);
+        rotamerOptimization.setUseGoldstein(useGoldstein);
+        rotamerOptimization.setPruning(pruningLevel);
+        rotamerOptimization.setEnergyRestartFile(restartFile);
+        rotamerOptimization.setResidues(residueList);
+
+        System.out.println("BEGINNING PAIR ELIMINATION TEST");
+        double energy = 0.0;
+        if (doOverallOpt) {
+            rotamerOptimization.turnRotamerSingleEliminationOff();
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            System.out.println("The expected overall energy is: " + energy);
+            //assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
+        }
 
 
         // ToDo: Test self-energy use for rotamer pair eliminations.
+        if (doSelfOpt) {
+            rotamerOptimization.turnRotamerSingleEliminationOff();
+            rotamerOptimization.setTestSelfEnergyEliminations(true);
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            System.out.println("The expected self energy is: " + energy);
+            //assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
+        } 
 
         // ToDo: Test pair-energy use for rotamer pair eliminations.
-
+        if (doPairOpt) {
+            rotamerOptimization.turnRotamerSingleEliminationOff();
+            rotamerOptimization.setTestPairEnergyEliminations(pairResidue);
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            System.out.println("The expected pair energy is: " + energy);
+            //assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
+        }
+        
         // ToDo: Test 3-Body use for rotamer pair eliminations.
-    }
+       if (doTripleOpt) {
+            rotamerOptimization.turnRotamerSingleEliminationOff();
+            rotamerOptimization.setTestTripleEnergyEliminations(tripleResidue1, tripleResidue2);
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            System.out.println("The expected trimer energy is: " + energy);
+            //assertEquals(info + " Triple-Energy", expectedTripleEnergy, energy, tolerance);
+        }
+    } */
 
 }
