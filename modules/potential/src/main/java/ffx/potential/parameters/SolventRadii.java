@@ -539,9 +539,9 @@ public class SolventRadii {
         amoebapro13ByAtomtype.put(212,1.525);
 
         // Magnesium
-        amoebapro13ByAtomtype.put(255, 0.7563);
+        amoebapro13ByAtomtype.put(255, 0.7566);
         // Calcium
-        amoebapro13ByAtomtype.put(256, 0.9237);
+        amoebapro13ByAtomtype.put(256, 0.9242);
     }
     
     static {
@@ -662,9 +662,9 @@ public class SolventRadii {
         amber99sbByAtomtype.put(26, 1.15);
 
         // Magnesium
-        amber99sbByAtomtype.put(2008, 0.7563);
+        amber99sbByAtomtype.put(2008, 0.7566);
         // Calcium
-        amber99sbByAtomtype.put(2009, 0.9237);
+        amber99sbByAtomtype.put(2009, 0.9242);
     }
     
 }
