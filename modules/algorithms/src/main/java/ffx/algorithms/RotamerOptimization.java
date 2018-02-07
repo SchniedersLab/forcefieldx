@@ -185,6 +185,19 @@ public class RotamerOptimization implements Terminatable {
      * stringent Dead-End Elimination criteria.
      */
     private boolean useGoldstein = true;
+    
+    /**
+     * ONLY FOR UNIT TEST. DEFAULT VALUE IS TRUE.
+     * Turns off the singles elimination criterion.
+     */
+    private boolean selfEliminationOn = true;
+    
+    /**
+     * ONLY FOR UNIT TEST. DEFAULT VALUE IS TRUE.
+     * Turns off the pairs elimination criterion.  
+     */
+    private boolean pairEliminationOn = true;
+    
     /**
      * The number of most-favorable structures to include as output.
      */
@@ -4622,6 +4635,23 @@ public class RotamerOptimization implements Terminatable {
         /*Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt((Residue r) -> { return allResiduesList.indexOf(r); });
         residues.sort(comparator);*/
     }
+    
+    /**
+     * ONLY FOR UNIT TESTING. Sets a boolean to turn the self elimination criteria off.
+     */
+    public void turnRotamerSingleEliminationOff(){
+        System.out.println("TURNING SINGLE ELIMINATION OFF.");
+        selfEliminationOn = false;
+    }
+    
+    /**
+     * ONLY FOR UNIT TESTING. Sets a boolean to turn the pair elimination criteria off. 
+     */
+    public void turnRotamerPairEliminationOff(){
+        System.out.println("TURNING PAIR ELIMINATION OFF.");
+        pairEliminationOn = false;
+    }
+    
 
     protected void applyEliminationCriteria(Residue residues[], boolean getEnergies, boolean verbose) {
         Level prevLevel = logger.getLevel();
@@ -4636,42 +4666,50 @@ public class RotamerOptimization implements Terminatable {
             boolean pairEliminated = true;
             while (pairEliminated) {
                 if (useGoldstein) {
-                    i++;
-                    logIfMaster(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
-                    // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
-                    while (goldsteinDriver(residues)) {
+                    if (selfEliminationOn) {
                         i++;
-                        logIfMaster(this.toString());
-                        logIfMaster(format("\n Iteration %d: Applying Single Rotamer Goldstein DEE conditions ", i));
+                        logIfMaster(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
+                        // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
+                        while (goldsteinDriver(residues)) {
+                            i++;
+                            logIfMaster(this.toString());
+                            logIfMaster(format("\n Iteration %d: Applying Single Rotamer Goldstein DEE conditions ", i));
+                        }
                     }
-                    i++;
-                    logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
-                    // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
-                    pairEliminated = false;
-                    while (goldsteinPairDriver(residues)) {
-                        pairEliminated = true;
+                    if (pairEliminationOn){
                         i++;
-                        logIfMaster(this.toString());
                         logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
+                        // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
+                        pairEliminated = false;
+                        while (goldsteinPairDriver(residues)) {
+                            pairEliminated = true;
+                            i++;
+                            logIfMaster(this.toString());
+                            logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
+                        }
                     }
                 } else {
-                    i++;
-                    logIfMaster(format("\n Iteration %d: Applying Single DEE conditions ", i));
-                    // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
-                    while (deeRotamerElimination(residues)) {
+                    if (selfEliminationOn) {
                         i++;
-                        logIfMaster(toString());
-                        logIfMaster(format("\n Iteration %d: Applying Single Rotamer DEE conditions ", i));
+                        logIfMaster(format("\n Iteration %d: Applying Single DEE conditions ", i));
+                        // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
+                        while (deeRotamerElimination(residues)) {
+                            i++;
+                            logIfMaster(toString());
+                            logIfMaster(format("\n Iteration %d: Applying Single Rotamer DEE conditions ", i));
+                        }
                     }
-                    i++;
-                    logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
-                    // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
-                    pairEliminated = false;
-                    while (deeRotamerPairElimination(residues)) {
-                        pairEliminated = true;
+                    if (pairEliminationOn) {
                         i++;
-                        logIfMaster(toString());
                         logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
+                        // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
+                        pairEliminated = false;
+                        while (deeRotamerPairElimination(residues)) {
+                            pairEliminated = true;
+                            i++;
+                            logIfMaster(toString());
+                            logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
+                        }
                     }
                 }
                 validateDEE(residues);
@@ -4764,41 +4802,49 @@ public class RotamerOptimization implements Terminatable {
         while (pairEliminated) {
             if (useGoldstein) {
                 pairEliminated = false;
-                i++;
-                logIfMaster(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
-                // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
-                while (goldsteinDriver(residues)) {
+                if (selfEliminationOn) {
                     i++;
-                    logIfMaster(this.toString());
-                    logIfMaster(format("\n Iteration %d: Applying Single Rotamer Goldstein DEE conditions ", i));
+                    logIfMaster(format("\n Iteration %d: Applying Single Goldstein DEE conditions ", i));
+                    // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
+                    while (goldsteinDriver(residues)) {
+                        i++;
+                        logIfMaster(this.toString());
+                        logIfMaster(format("\n Iteration %d: Applying Single Rotamer Goldstein DEE conditions ", i));
+                    }
                 }
-                i++;
-                logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
-                // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
-                while (goldsteinPairDriver(residues)) {
-                    pairEliminated = true;
+                if (pairEliminationOn) {
                     i++;
-                    logIfMaster(this.toString());
                     logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
+                    // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
+                    while (goldsteinPairDriver(residues)) {
+                        pairEliminated = true;
+                        i++;
+                        logIfMaster(this.toString());
+                        logIfMaster(format("\n Iteration %d: Applying Rotamer Pair Goldstein DEE conditions ", i));
+                    }
                 }
             } else {
-                i++;
-                logIfMaster(format("\n Iteration %d: Applying Single DEE conditions ", i));
-                // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
-                while (deeRotamerElimination(residues)) {
+                if (selfEliminationOn) {
                     i++;
-                    logIfMaster(toString());
-                    logIfMaster(format("\n Iteration %d: Applying Single Rotamer DEE conditions ", i));
+                    logIfMaster(format("\n Iteration %d: Applying Single DEE conditions ", i));
+                    // While there are eliminated rotamers, repeatedly apply single rotamer elimination.
+                    while (deeRotamerElimination(residues)) {
+                        i++;
+                        logIfMaster(toString());
+                        logIfMaster(format("\n Iteration %d: Applying Single Rotamer DEE conditions ", i));
+                    }
                 }
-                i++;
-                logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
-                // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
-                pairEliminated = false;
-                while (deeRotamerPairElimination(residues)) {
-                    pairEliminated = true;
+                if (pairEliminationOn) {
                     i++;
-                    logIfMaster(toString());
                     logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
+                    // While there are eliminated rotamer pairs, repeatedly apply rotamer pair elimination.
+                    pairEliminated = false;
+                    while (deeRotamerPairElimination(residues)) {
+                        pairEliminated = true;
+                        i++;
+                        logIfMaster(toString());
+                        logIfMaster(format("\n Iteration %d: Applying Rotamer Pair DEE conditions ", i));
+                    }
                 }
             }
             validateDEE(residues);
