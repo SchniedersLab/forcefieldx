@@ -393,10 +393,19 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         this.restartFile = dyn;
         this.initVelocities = initVelocities;
 
+        switch (thermostatType) {
+            case BUSSI:
+            case BERENDSEN:
+                logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
+                forceFieldEnergyOpenMM.addAndersenThermostat(temperature);
+                break;
+        }
+
         /**
          * Convert the print interval to a print frequency.
          */
         printFrequency = 100;
+        printInterval *= 1000; // dT is in fsec, so convert printInterval to fsec.
         if (printInterval >= this.dt) {
             printFrequency = (int) (printInterval / this.dt);
         }

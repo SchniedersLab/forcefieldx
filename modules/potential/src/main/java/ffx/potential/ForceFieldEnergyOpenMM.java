@@ -418,6 +418,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Whether to enforce periodic boundary conditions when obtaining new States.
      */
     public final int enforcePBC;
+    /**
+     * OpenMM thermostat, likely an Andersen thermostat.
+     */
+    private PointerByReference ommThermostat = null;
 
     /**
      * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an
@@ -604,13 +608,27 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          OpenMM_Platform_destroy(currentPlatform);
          } */
 
+        String defaultPrecision = "single";
+        String precision = molecularAssembly.getForceField().getString(ForceField.ForceFieldString.PRECISION, defaultPrecision).toLowerCase();
+        switch (precision) {
+            case "double":
+            case "mixed":
+            case "single":
+                logger.info(String.format(" Using precision level %s", precision));
+                break;
+            default:
+                logger.info(String.format(" Could not interpret precision level %s, defaulting to %s", precision, defaultPrecision));
+                precision = defaultPrecision;
+                break;
+        }
+
         if (cuda && requestedPlatform != Platform.OMM_REF) {
             platform = OpenMM_Platform_getPlatformByName("CUDA");
-            OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("precision"), pointerForString("mixed"));
-            logger.info(" Selected OpenMM AMOEBA CUDA Plaform");
+            OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("Precision"), pointerForString(precision));
+            logger.info(" Selected OpenMM AMOEBA CUDA Platform");
         } else {
             platform = OpenMM_Platform_getPlatformByName("Reference");
-            logger.info(" Selected OpenMM AMOEBA Reference Plaform");
+            logger.info(" Selected OpenMM AMOEBA Reference Platform");
         }
     }
 
@@ -729,13 +747,25 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * Add an Andersen thermostat to the system. Note: does not check if one already exists.
+     * Add an Andersen thermostat to the system.
+     * @param targetTemp Target temperature in Kelvins.
+     */
+    public void addAndersenThermostat(double targetTemp) {
+        addAndersenThermostat(targetTemp, collisionFreq);
+    }
+
+    /**
+     * Add an Andersen thermostat to the system.
      * @param targetTemp Target temperature in Kelvins.
      * @param collisionFreq Collision frequency in 1/psec
      */
     public void addAndersenThermostat(double targetTemp, double collisionFreq) {
-        PointerByReference aThermo = OpenMMLibrary.OpenMM_AndersenThermostat_create(targetTemp, collisionFreq);
-        OpenMM_System_addForce(system, aThermo);
+        if (ommThermostat == null) {
+            ommThermostat = OpenMMLibrary.OpenMM_AndersenThermostat_create(targetTemp, collisionFreq);
+            OpenMM_System_addForce(system, ommThermostat);
+        } else {
+            logger.info(" Attempted to add a second thermostat to an OpenMM force field!");
+        }
     }
 
     private void addBondForce() {
@@ -2627,7 +2657,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * is used with Strings as the variable to determine between Lengevin,
      * Brownian, Custom, Compound and Verlet integrator
      *
-     * @param integrator
+     * @param integratorString
      * @param timeStep
      * @param temperature
      */
