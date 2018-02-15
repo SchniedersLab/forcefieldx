@@ -610,6 +610,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         String defaultPrecision = "single";
         String precision = molecularAssembly.getForceField().getString(ForceField.ForceFieldString.PRECISION, defaultPrecision).toLowerCase();
+        precision = precision.replace("-precision", "");
         switch (precision) {
             case "double":
             case "mixed":
