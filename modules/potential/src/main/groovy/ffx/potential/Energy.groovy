@@ -27,7 +27,11 @@ class Energy extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
+        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
+        /**
+         * -g or --gradient to print out gradients.
+         */
+        @Option(shortName='g', longName='gradient', description='Print out atomic gradients as well as energy.') boolean gradient;
         /**
          * The final argument(s) should be one or more filenames.
          */
@@ -81,9 +85,33 @@ class Energy extends Script {
         MolecularAssembly[] assemblies = functions.open(modelFilename)
         MolecularAssembly activeAssembly = assemblies[0];
         ForceFieldEnergy pe = activeAssembly.getPotentialEnergy();
-        double[] x = new double[pe.getNumberOfVariables()];
+
+        int nVars = pe.getNumberOfVariables();
+        double[] x = new double[nVars];
         pe.getCoordinates(x);
-        if (pe instanceof ForceFieldEnergyOpenMM) {
+
+        if (options.gradient) {
+            double[] g = new double[nVars];
+            int nAts = nVars / 3;
+            if (pe instanceof ForceFieldEnergyOpenMM) {
+                double[] gOMM = new double[nVars];
+                ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe;
+                ope.energyAndGradVsFFX(x, g, gOMM, true);
+                for (int i = 0; i < nAts; i++) {
+                    int i3 = 3*i;
+                    logger.info(String.format(" Atom %d OpenMM gradient:      %14.9g %14.9g %14.9g",
+                            i, gOMM[i3], gOMM[i3+1], gOMM[i3+2]));
+                    logger.info(String.format(" Atom %d gradient discrepancy: %14.9g %14.9g %14.9g",
+                            i, gOMM[i3]-g[i3], gOMM[i3+1]-g[i3+1], gOMM[i3+2]-g[i3+2]));
+                }
+            } else {
+                pe.energyAndGradient(x, g, true);
+            }
+            for (int i = 0; i < nAts; i++) {
+                int i3 = 3*i;
+                logger.info(String.format(" Atom %d FFX gradient:         %14.9g %14.9g %14.9g", i, g[i3], g[i3+1], g[i3+2]));
+            }
+        } else if (pe instanceof ForceFieldEnergyOpenMM) {
             ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe;
             ope.energyVsFFX(x, true);
         } else {
