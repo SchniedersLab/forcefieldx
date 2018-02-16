@@ -608,7 +608,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
          OpenMM_Platform_destroy(currentPlatform);
          } */
 
-        String defaultPrecision = "single";
+        String defaultPrecision = "mixed";
         String precision = molecularAssembly.getForceField().getString(ForceField.ForceFieldString.PRECISION, defaultPrecision).toLowerCase();
         precision = precision.replace("-precision", "");
         switch (precision) {
