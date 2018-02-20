@@ -37,6 +37,9 @@
  */
 package ffx.potential;
 
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -49,6 +52,7 @@ import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -273,6 +277,8 @@ import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
@@ -2380,6 +2386,28 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+
+
+        if (maxDebugGradient < Double.MAX_VALUE) {
+            boolean extremeGrad = Arrays.stream(g).anyMatch((double gi) -> {
+                return (gi > maxDebugGradient || gi < -maxDebugGradient);
+            });
+            if (extremeGrad) {
+                File origFile = molecularAssembly.getFile();
+                String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                        ofPattern("yyyy_MM_dd-HH_mm_ss"));
+
+                String filename = String.format("%s-LARGEGRAD-%s.pdb",
+                        FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                        timeString);
+                PotentialsFunctions ef = new PotentialsUtils();
+                filename = ef.versionFile(filename);
+
+                logger.warning(String.format(" Excessively large gradients detected; printing snapshot to file %s", filename));
+                ef.saveAsPDB(molecularAssembly, new File(filename));
+                molecularAssembly.setFile(origFile);
+            }
+        }
 
         if (verbose) {
             logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));

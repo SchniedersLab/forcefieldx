@@ -237,7 +237,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double comRestraintEnergy;
     private double esvBias;
     private double totalEnergy;
-    private final double maxDebugGradient;
+    protected final double maxDebugGradient;
     private long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
     private long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
     private long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
