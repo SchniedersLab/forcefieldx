@@ -8466,7 +8466,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residues to prune rotamers over.
      */
-    private void pruneSingleClashes(Residue residues[]) {
+    public void pruneSingleClashes(Residue residues[]) {
         if (!pruneClashes) {
             return;
         }
@@ -8515,7 +8515,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residues whose rotamers are to be pruned.
      */
-    private void prunePairClashes(Residue residues[]) {
+    public void prunePairClashes(Residue residues[]) {
         if (!prunePairClashes) {
             return;
         }

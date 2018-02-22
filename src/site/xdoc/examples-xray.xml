@@ -72,7 +72,7 @@
             </subsection>
             <subsection name="Scaling data/fitting sigmaA parameters/MTZ output">
                 <p>The
-                    <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/scaleBulk.groovy">xray.scaleBulk</a>
+                    <a href="https://github.com/mjschnie/ffx/blob/master/modules/xray/src/main/groovy/ffx/xray/scaleBulk.groovy">xray.scaleBulk</a>
                     script will perform anisotropic scaling,
                     fit a bulk solvent and compute crystallographic statistics (such
                     as R/Rfree) and write out a MTZ file, without modifying the input
@@ -155,7 +155,7 @@
                 </p>
                 <p>For example, to carry out simulated annealing followed by
                     coordinate and then B-factor refinement, the provided
-                    <a href="http://kenai.com/projects/ffx/sources/source/content/modules/xray/src/main/groovy/ffx/xray/anneal.groovy">xray.anneal</a>
+                    <a href="https://github.com/mjschnie/ffx/blob/master/modules/xray/src/main/groovy/ffx/xray/anneal.groovy">xray.anneal</a>
                     script should suffice. The job can be run
                     by providing the atomic coordinates and structure factors:
                 </p>
@@ -197,7 +197,7 @@
             <subsection name="Scripts relevant to diffraction data">
                 <p>As mentioned, several scripts are provided for use.  They
                     can be found here:
-                    <a href="http://kenai.com/projects/ffx/sources/source/show/modules/xray/src/main/groovy/ffx">included diffraction data scripts</a>
+                    <a href="https://github.com/mjschnie/ffx/tree/master/modules/xray/src/main/groovy/ffx">included diffraction data scripts</a>
                     And consists of:
                 </p>
                 <ol>

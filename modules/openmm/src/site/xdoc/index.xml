@@ -4,78 +4,22 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>OpenMM Java Wrapper Home Page</title>
+        <title>Java Wrappers for the OpenMM C API Home Page</title>
         <author email="hernan-bernabe@uiowa.edu">Hernan V. Bernabe</author>
     </properties>
     <body>
-        <section name="OpenMM Introduction">
+        <section name="Java Wrappers for the OpenMM C API">
             <p>
-                The OpenMM module contain Java Wrappers for the OpenMM API automatically generated using Jnaerator.
+                Force Field X makes use of OpenMM via Java wrappers for the OpenMM C API.
             </p>
-            <subsection name="Generation of the Java OpenMM Wrappers using Jnaerator">
-                <p>
-                    Ensure that the latest version of OpenMM is installed on your machine. For example, using Anaconda
-                    the command is
-                </p>
-                <source>conda install -c omnia openmm</source>
-                <p>
-                    The following Jnaerator command can then be used
-                </p>
-                <source>java -jar jnaerator-0.12-shaded.jar config.jnaerator</source>
-                <p>
-                    where the contents of "config.jnaerator" are given by
-                </p>
-                <source>
--limitComments
-
--runtime JNA
-
--direct
-
--skipDeprecated
-
--mode Jar
-
--jar openmm-7.1.1.jar
-
--package simtk.openmm
-
--library OpenMM
-/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/include/OpenMMCWrapper.h
-
--library AmoebaOpenMM
-/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/include/AmoebaOpenMMCWrapper.h
-                </source>
-                <p>
-                    The configuration file contains the various flags needed to set up generation of the wrappers as
-                    well as information about where to locate the OpenMM C header files.
-                </p>
-                <p>
-                    Important flags include:
-                    <ul>
-                        <li>-runtime sets the runtime library that will be used to generate the wrapper classes,
-                            in this case JNA
-                        </li>
-                        <li>-direct tells the JNAerator to use the fastest direct call convention
-                            for library generation
-                        </li>
-                        <li>-skipDeprecated skips the generation of any deprecated members</li>
-                        <li>-mode specifies the output mode for the JNAerator</li>
-                        <li>-package sets the java package where all the generated output will reside (our package
-                            is called simtk.openmm)
-                        </li>
-                        <li>-library sets the name of the output library. Importantly, after the library
-                            flag you must specifiy (ie set the path to) where the CWrapper.h files are located. There
-                            are two libraries we use to generate our wrapper classes for OpenMM.
-                        </li>
-                    </ul>
-                </p>
-                <p>
-                    For additional documentation on flags available to edit the configuration file visit the
-                    <a href="https://github.com/nativelibs4java/JNAerator/wiki/Command-Line-Options-And-Environment-Variables">JNAerator Wiki.</a>
-                </p>
-            </subsection>
-            <subsection name="Environment Variable Set Up">
+            <p>
+                The wrappers are automatically generated using Jnaerator and are available on Github in case
+                they may be useful to others:
+            </p>
+            <p>
+                <a href="https://github.com/mjschnie/openmm-java-wrappers">Java Wrappers for the OpenMM C API</a>
+            </p>
+            <subsection name="Environment Variables needed to use OpenMM within Force Field X">
                 <p>
                     To use the OpenMM Java wrappers, two environment variables need to be set (e.g. in .bash_profile)
                     in order to invoke the OpenMM libraries from within a Java program.
@@ -88,9 +32,8 @@
                     the plugins subdirectory of the OpenMM installation package. 
                 </p>
                 <source>export OPENMM_PLUGIN_DIR="/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/lib/plugins"</source>
-                <source>To Do.</source>
             </subsection>
-            <subsection name="Using FFX-OpenMM">
+            <subsection name="An Example Force Field X Energy Command Calling OpenMM">
                 <p>
                     There are a number of algorithms in the FFX package that can use OpenMM under the hood if the
                     "platform" flag

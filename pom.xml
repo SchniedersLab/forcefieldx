@@ -32,29 +32,6 @@
         </notifiers>
     </ciManagement>
     <inceptionYear>2001</inceptionYear>
-    <mailingLists>
-        <mailingList>
-            <name>FFX Announcements</name>
-            <archive>http://kenai.com/projects/ffx/lists/announce/archive</archive>
-            <post>http://kenai.com/projects/ffx/lists/announce/compose</post>
-            <subscribe>http://kenai.com/projects/ffx/lists</subscribe>
-            <unsubscribe>http://kenai.com/projects/ffx/lists</unsubscribe>
-        </mailingList>
-        <mailingList>
-            <name>Users Mailing List</name>
-            <archive>http://kenai.com/projects/ffx/lists/issues/archive</archive>
-            <post>http://kenai.com/projects/ffx/lists/issues/compose</post>
-            <subscribe>http://kenai.com/projects/ffx/lists</subscribe>
-            <unsubscribe>http://kenai.com/projects/ffx/lists</unsubscribe>
-        </mailingList>
-        <mailingList>
-            <name>Developers Mailing List</name>
-            <archive>http://kenai.com/projects/ffx/lists/commits/archive</archive>
-            <post>http://kenai.com/projects/ffx/lists/commits/compose</post>
-            <subscribe>http://kenai.com/projects/ffx/lists</subscribe>
-            <unsubscribe>http://kenai.com/projects/ffx/lists</unsubscribe>
-        </mailingList>
-    </mailingLists>
     <developers>
         <developer>
             <id>michael.schnieders</id>
@@ -976,16 +953,9 @@
                     <aggregate>true</aggregate>
                 </configuration>
             </plugin>
-            <plugin>
+            <!-- plugin>
                 <artifactId>maven-changes-plugin</artifactId>
                 <version>2.12.1</version>
-                <configuration>
-                    <aggregated>true</aggregated>
-                    <webUser>${kenai.user.name}</webUser>
-                    <webPassword>${kenai.password}</webPassword>
-                    <statusIds>Open, In Progress, Reopened, Resolved, Closed</statusIds>
-                    <resolutionIds>Unresolved, Fixed, Won't Fix, Duplicate, Incomplete, Cannot Reproduce</resolutionIds>
-                </configuration>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -994,7 +964,7 @@
                         </reports>
                     </reportSet>
                 </reportSets>
-            </plugin>
+            </plugin -->
             <!-- plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-changelog-plugin</artifactId>
@@ -1118,7 +1088,6 @@
     </properties>
     <modules>
         <module>modules/algorithms</module>
-        <module>modules/autoparm</module>
         <module>modules/crystal</module>
         <module>modules/numerics</module>
         <module>modules/openmm</module>
