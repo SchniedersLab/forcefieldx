@@ -38,8 +38,6 @@
 package ffx.algorithms;
 
 import java.io.File;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -74,8 +72,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
-import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils;
+
 import static ffx.algorithms.thermostats.Thermostat.convert;
 import static ffx.algorithms.thermostats.Thermostat.kB;
 
@@ -133,10 +130,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private String integratorString;
     /**
-     * Dynamics State. ToDo: the DynamicsState logic can probably be made consistent with an OpenMM State.
-     */
-    private DynamicsState lastState = new DynamicsState();
-    /**
      * Number of OpenMM MD steps per iteration.
      */
     private int intervalSteps;
@@ -148,10 +141,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Run time.
      */
     private long time;
-    /**
-     * Number of Infinite Energy values.
-     */
-    private int numInfiniteEnergies = 0;
     
     private long mdTime = 0;
     
@@ -160,6 +149,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     private double endTotalEnergy;
     
     private int natoms;
+    // A change in potential energy exceeding 1E6 kcal/mol triggers a warning and snapshot dump.
+    private double defaultDeltaPEThresh = 1.0E6;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -290,45 +281,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private void updateFromOpenMM(int i, boolean running) {
 
+        double priorPE = currentPotentialEnergy;
         getOpenMMState();
-
-        if (!Double.isFinite(currentPotentialEnergy)) {
-            logger.warning(" Non-finite energy returned by OpenMM: simulation probably unstable.");
-            DynamicsState thisState = new DynamicsState();
-            thisState.storeState();
-            lastState.revertState();
-
-            File origFile = molecularAssembly.getFile();
-            String timeString = LocalDateTime.now().format(DateTimeFormatter.
-                    ofPattern("yyyy_MM_dd-HH_mm_ss"));
-
-            String filename = String.format("%s-LAST-%s.pdb",
-                    FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
-                    timeString);
-
-            PotentialsFunctions ef = new PotentialsUtils();
-            filename = ef.versionFile(filename);
-            logger.info(String.format(" Writing before-error snapshot to file %s", filename));
-            ef.saveAsPDB(molecularAssembly, new File(filename));
-            molecularAssembly.setFile(origFile);
-
-            thisState.revertState();
-
-            filename = String.format("%s-ERROR-%s.pdb",
-                    FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
-                    timeString);
-
-            filename = ef.versionFile(filename);
-            logger.info(String.format(" Writing after-error snapshot to file %s", filename));
-            ef.saveAsPDB(molecularAssembly, new File(filename));
-            molecularAssembly.setFile(origFile);
-            // Logging and printing here.
-            if (numInfiniteEnergies++ > 200) {
-                logger.severe(String.format(" %d infinite energies experienced; shutting down FFX", numInfiniteEnergies));
-            }
-        }
-
-        lastState.storeState();
+        detectAtypicalEnergy(priorPE, defaultDeltaPEThresh);
 
         if (running) {
             if (i == 0) {
