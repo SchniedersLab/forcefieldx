@@ -217,7 +217,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected double gLdEdL = 0.0;
 
     /**
-     * Gas constant (in Kcal/mole/Kelvin).
+     * Gas constant (in Kcal/mol/Kelvin).
      */
     public static final double R = 1.9872066e-3;
     private double theta;
@@ -247,7 +247,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * Temperature in Kelvin.
      */
-    protected double temperature;
+    protected double temperature = 298.15;
     /**
      * Interval between adding a count to the Recursion kernel in steps.
      */
@@ -461,8 +461,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
         }
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
-        biasMag = properties.getDouble("bias-gaussian-mag", 0.002);
-        dL = properties.getDouble("lambda-bin-width", 0.005);
+        biasMag = properties.getDouble("bias-gaussian-mag", 0.050);
+        dL = properties.getDouble("lambda-bin-width", 0.050);
         dFL = properties.getDouble("flambda-bin-width", 2.0);
 
         /**
@@ -516,7 +516,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
          * Log OSRW parameters.
          */
         logger.info("\n Orthogonal Space Random Walk Parameters");
-        logger.info(String.format("  Gaussian Bias Magnitude:       %6.4f (kcal/mole)", biasMag));
+        logger.info(String.format("  Gaussian Bias Magnitude:       %6.4f (kcal/mol)", biasMag));
         logger.info(String.format("  Gaussian Bias Cutoff:           %6d bins", biasCutoff));
         logger.info(String.format("  Print Interval:                 %6.3f psec", printInterval));
         logger.info(String.format("  Save Interval:                  %6.3f psec", checkpointInterval));
@@ -689,12 +689,13 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
-     * Set the OSRW Gaussian biasing potential magnitude (kcal/mole).
+     * Set the OSRW Gaussian biasing potential magnitude (kcal/mol).
      *
-     * @param biasMag Gaussian biasing potential magnitude (kcal/mole)
+     * @param biasMag Gaussian biasing potential magnitude (kcal/mol)
      */
     public void setBiasMagnitude(double biasMag) {
         this.biasMag = biasMag;
+        logger.info(String.format("  Reset Gaussian Bias Magnitude: %6.4f (kcal/mol)", biasMag));
     }
 
     /**

@@ -38,6 +38,8 @@
 package ffx.algorithms;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -49,6 +51,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
+import org.apache.commons.collections.queue.CircularFifoQueue;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -73,6 +76,8 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
 
 /**
  * Run NVE or NVT molecular dynamics.
@@ -134,6 +139,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
     protected boolean saveSnapshotAsPDB = true;
     protected String fileType = "XYZ";
     protected static final double NS2SEC = 1e-9;
+
+    /**
+     * Keep some old coordinate snapshots around.
+     */
+    private int numSnapshotsToKeep = 0;
+    // Circular FIFO queues will simply discard old elements.
+    private CircularFifoQueue<DynamicsState> lastSnapshots;
+    // A change in potential energy exceeding 1E6 kcal/mol triggers a warning and snapshot dump.
+    private double defaultDeltaPEThresh = 1.0E6;
 
     private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
 
@@ -323,6 +337,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (integrator instanceof Stochastic) {
             thermostat.setRemoveCenterOfMassMotion(false);
         }
+
+        numSnapshotsToKeep = properties.getInteger("dynamicsSnapshotMemory", 0);
+        // Cannot construct a CircularFifoQueue of zero length.
+        lastSnapshots = new CircularFifoQueue<>(Math.max(numSnapshotsToKeep, 1));
 
         done = true;
     }
@@ -938,10 +956,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
              */
             integrator.preForce(potential);
 
+            double priorPE = currentPotentialEnergy;
             /**
              * Compute the potential energy and gradients.
              */
             currentPotentialEnergy = potential.energyAndGradient(x, grad);
+
+            detectAtypicalEnergy(priorPE, defaultDeltaPEThresh);
 
             /**
              * Add the potential energy of the slow degrees of freedom.
@@ -1102,6 +1123,66 @@ public class MolecularDynamics implements Runnable, Terminatable {
         if (monteCarloListener != null && mcNotification == MonteCarloNotification.AFTER_DYNAMICS) {
             monteCarloListener.mcUpdate(thermostat.getCurrentTemperature());
         }
+    }
+
+    /**
+     * Detects grossly atypical potential energy values that are likely incorrect,
+     * and writes snapshots to disc. "Grossly atypical" is defined as: greater
+     * than 1.0E100 kcal/mol, less than -1.0E100 kcal/mol, non-finite (NaN/infinite),
+     * or exceeding specified delta from the prior potential energy.
+     *
+     * After prior snapshots have been written to disc, the queue they are stored on
+     * is now empty, preventing printing of duplicate snapshots.
+     *
+     * @param priorPE Potential energy prior to this step.
+     * @param delPEThresh If potential energy changes by this much, trigger a snapshot write.
+     * @return True if atypical energy detected.
+     */
+    protected boolean detectAtypicalEnergy(double priorPE, double delPEThresh) {
+
+        // If not keeping snapshots, disable functionality.
+        if (numSnapshotsToKeep < 1) {
+            return false;
+        }
+
+        double deltaPE = currentPotentialEnergy - priorPE;
+
+        DynamicsState currState = new DynamicsState();
+        currState.storeState();
+        lastSnapshots.add(currState);
+
+        double maxPEThresh = 1.0E100; // 1.0E100 kcal/mol is well into the territory of the absurd.
+        double absPE = Math.abs(currentPotentialEnergy);
+
+        if (absPE > maxPEThresh || !Double.isFinite(currentPotentialEnergy) || Math.abs(deltaPE) > delPEThresh) {
+            logger.info(String.format(" Unusual potential energy %12.5g detected, writing snapshots.", currentPotentialEnergy));
+            int numSnaps = lastSnapshots.size();
+
+            File origFile = molecularAssembly.getFile();
+            String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                    ofPattern("HH_mm_ss"));
+            PotentialsFunctions ef = new PotentialsUtils();
+
+            String filename = String.format("%s-%s-SNAP.pdb",
+                    FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                    timeString);
+
+            for (int is = 0; is < numSnaps; is++) {
+                DynamicsState oldState = lastSnapshots.poll();
+                oldState.revertState();
+
+                ef.saveAsPDB(molecularAssembly, new File(ef.versionFile(filename)));
+            }
+
+            molecularAssembly.setFile(origFile);
+            currState.revertState(); // May be unnecessary, thanks to the current state always being last on the queue.
+
+            if (absPE > 1.0E100 || !Double.isFinite(currentPotentialEnergy)) {
+                logger.severe(String.format(" Dynamics exiting with atypical potential energy of %12.5g", currentPotentialEnergy));
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

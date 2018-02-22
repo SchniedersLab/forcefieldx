@@ -1507,7 +1507,8 @@ public class ForceField {
         VDW_SCHEDULE,
         GK_RADIIOVERRIDE,
         GK_RADIIBYNUMBER,
-		PLATFORM;
+		PLATFORM,
+        PRECISION /* Only meaningful for OpenMM; Java is always double-precision */;
     }
 
     public enum ForceFieldDouble {

@@ -828,7 +828,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         // Resets verboseRadii; reduces logging messages when mutating MultiResidues.
-        verboseRadii = false;
+        //verboseRadii = false;
 
         if (dispersionRegion != null) {
             dispersionRegion.init();
@@ -1229,6 +1229,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         continue;
                     }
                     born[i] = 1.0 / pow(sum / PI4_3, THIRD);
+                    if (verboseRadii) {
+                        logger.info(String.format(" Atom %s Born radius %14.8g", atoms[i], born[i]));
+                    }
                     if (born[i] < baseRi) {
                         // logger.info(format(" Less than base radii; resetting to %d %12.6f", i, baseRi));
                         born[i] = baseRi;
@@ -1239,6 +1242,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         born[i] = baseRi;
                     }
                 }
+            }
+            if (verboseRadii) {
+                // This could get very verbose if printed at each step.
+                logger.info(" Disabling verbose radii printing.");
+                verboseRadii = false;
             }
         }
 
