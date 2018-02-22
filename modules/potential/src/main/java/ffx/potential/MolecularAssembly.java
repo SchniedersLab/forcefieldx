@@ -1862,7 +1862,9 @@ public class MolecularAssembly extends MSGroup {
     }
 
     private void moveIntoUnitCell(MSNode[] groups) {
-        moveIntoUnitCell(Arrays.asList(groups));
+        if (groups != null && groups.length > 0) {
+            moveIntoUnitCell(Arrays.asList(groups));
+        }
     }
 
     /**

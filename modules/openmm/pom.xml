@@ -12,8 +12,8 @@
     </parent>
     <groupId>simtk</groupId>
     <artifactId>openmm</artifactId>
-    <version>7.1.1</version>
-    <packaging>jar</packaging>
+    <version>7.2.0</version>
+    <packaging>pom</packaging>
     <name>OpenMM Java Wrappers</name>
     <description>Java wrappers for the OpenMM API.</description>
     <dependencies>

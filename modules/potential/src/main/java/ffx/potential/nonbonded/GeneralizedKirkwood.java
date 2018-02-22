@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -109,11 +109,14 @@ import static ffx.potential.parameters.MultipoleType.t200;
  * Schnieders and J. W. Ponder, Polarizable atomic multipole solutes in a
  * generalized Kirkwood continuum, Journal of Chemical Theory and Computation
  * 2007, 3, (6), 2083-2097.</a><br>
- *
  */
 public class GeneralizedKirkwood implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
+    /**
+     * Empirical constant that controls the GK cross-term.
+     */
+    private static final double gkc = 2.455;
     /**
      * Permittivity of water at STP.
      */
@@ -121,7 +124,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Default bondi scale factor.
      */
-    private static final double DEFAULT_BONDI_SCALE = 1.15;
+    private static final double DEFAULT_BONDI_SCALE = 1.03;
     /**
      * Default overlap scale factor.
      */
@@ -156,10 +159,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final double fc;
     private final double fd;
     private final double fq;
-    /**
-     * Empirical constant that controls the GK cross-term.
-     */
-    private static final double gkc = 2.455;
+
     /**
      * Empirical scaling of the Bondi radii.
      */
@@ -314,16 +314,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * <p>
      * Constructor for GeneralizedKirkwood.</p>
      *
-     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param forceField        a {@link ffx.potential.parameters.ForceField} object.
+     * @param atoms             an array of {@link ffx.potential.bonded.Atom} objects.
      * @param particleMeshEwald a
-     * {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
-     * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
+     *                          {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+     * @param crystal           a {@link ffx.crystal.Crystal} object.
+     * @param parallelTeam      a {@link edu.rit.pj.ParallelTeam} object.
      */
     public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
-            ParticleMeshEwald particleMeshEwald, Crystal crystal,
-            ParallelTeam parallelTeam) {
+                               ParticleMeshEwald particleMeshEwald, Crystal crystal,
+                               ParallelTeam parallelTeam) {
 
         this.forceField = forceField;
         this.atoms = atoms;
@@ -544,6 +544,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * Returns the dielectric offset (in Angstroms).
+     *
      * @return Currently: 0.09 Angstroms.
      */
     public double getDielecOffset() {
@@ -827,7 +828,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
 
         // Resets verboseRadii; reduces logging messages when mutating MultiResidues.
-        verboseRadii = false;
+        //verboseRadii = false;
 
         if (dispersionRegion != null) {
             dispersionRegion.init();
@@ -905,7 +906,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * solvationEnergy</p>
      *
      * @param gradient a boolean.
-     * @param print a boolean.
+     * @param print    a boolean.
      * @return a double.
      */
     public double solvationEnergy(boolean gradient, boolean print) {
@@ -1228,6 +1229,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         continue;
                     }
                     born[i] = 1.0 / pow(sum / PI4_3, THIRD);
+                    if (verboseRadii) {
+                        logger.info(String.format(" Atom %s Born radius %14.8g", atoms[i], born[i]));
+                    }
                     if (born[i] < baseRi) {
                         // logger.info(format(" Less than base radii; resetting to %d %12.6f", i, baseRi));
                         born[i] = baseRi;
@@ -1238,6 +1242,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         born[i] = baseRi;
                     }
                 }
+            }
+            if (verboseRadii) {
+                // This could get very verbose if printed at each step.
+                logger.info(" Disabling verbose radii printing.");
+                verboseRadii = false;
             }
         }
 
@@ -1270,6 +1279,60 @@ public class GeneralizedKirkwood implements LambdaInterface {
             public void finish() {
                 sharedBorn.reduce(localBorn, DoubleOp.SUM);
                 ecavTot.addAndGet(ecav);
+            }
+
+            /**
+             * Use pairwise descreening to compute integral of 1/r^6.
+             *
+             * @param r            atomic separation.
+             * @param r2           atomic separation squared.
+             * @param radius       base radius of the atom being descreened.
+             * @param scaledRadius scaled raduis of the atom doing the descreening.
+             * @return this contribution to the descreening integral.
+             */
+            private double integral(double r, double r2, double radius, double scaledRadius) {
+                double integral = 0.0;
+
+                // Descreen only if atom I does not engulf atom K.
+                if (radius < r + scaledRadius) {
+                    // Atom i is engulfed by atom k.
+                    if (radius + r < scaledRadius) {
+                        final double lower = radius;
+                        final double upper = scaledRadius - r;
+                        integral = (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
+                    }
+
+                    // Upper integration bound is always the same.
+                    double upper = r + scaledRadius;
+
+                    // Lower integration bound depends on atoms sizes and separation.
+                    double lower;
+                    if (radius + r < scaledRadius) {
+                        // Atom i is engulfed by atom k.
+                        lower = scaledRadius - r;
+                    } else if (r < radius + scaledRadius) {
+                        // Atoms are overlapped, begin integration from ri.
+                        lower = radius;
+                    } else {
+                        // No overlap between atoms.
+                        lower = r - scaledRadius;
+                    }
+
+                    double l2 = lower * lower;
+                    double l4 = l2 * l2;
+                    double lr = lower * r;
+                    double l4r = l4 * r;
+                    double u2 = upper * upper;
+                    double u4 = u2 * u2;
+                    double ur = upper * r;
+                    double u4r = u4 * r;
+                    double scaledRk2 = scaledRadius * scaledRadius;
+                    double term = (3.0 * (r2 - scaledRk2) + 6.0 * u2 - 8.0 * ur) / u4r
+                            - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
+                    integral -= PI_12 * term;
+                }
+
+                return integral;
             }
 
             @Override
@@ -1310,73 +1373,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             final double r = sqrt(r2);
 
                             // Atom i being descreeened by atom k.
-                            final double scaledRk = baseRk * overlapScale[k];
-                            final double scaledRk2 = scaledRk * scaledRk;
-                            // Atom i is engulfed by atom k.
-                            if (baseRi + r < scaledRk) {
-                                final double lower = baseRi;
-                                final double upper = scaledRk - r;
-                                localBorn[i] += (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
-                            }
-                            // Upper integration bound is always the same.
-                            double upper = r + scaledRk;
-                            // Lower integration bound depends on atoms sizes and separation.
-                            double lower;
-                            if (baseRi + r < scaledRk) {
-                                // Atom i is engulfed by atom k.
-                                lower = scaledRk - r;
-                            } else if (r < baseRi + scaledRk) {
-                                // Atoms are overlapped, begin integration from ri.
-                                lower = baseRi;
-                            } else {
-                                // No overlap between atoms.
-                                lower = r - scaledRk;
-                            }
-                            double l2 = lower * lower;
-                            double l4 = l2 * l2;
-                            double lr = lower * r;
-                            double l4r = l4 * r;
-                            double u2 = upper * upper;
-                            double u4 = u2 * u2;
-                            double ur = upper * r;
-                            double u4r = u4 * r;
-                            double term = (3.0 * (r2 - scaledRk2) + 6.0 * u2 - 8.0 * ur) / u4r
-                                    - (3.0 * (r2 - scaledRk2) + 6.0 * l2 - 8.0 * lr) / l4r;
-                            localBorn[i] -= PI_12 * term;
+                            double scaledRk = baseRk * overlapScale[k];
+                            localBorn[i] += integral(r, r2, baseRi, scaledRk);
 
                             // Atom k being descreeened by atom i.
-                            final double scaledRi = baseRi * overlapScale[i];
-                            final double scaledRi2 = scaledRi * scaledRi;
-                            // Atom k is engulfed by atom i.
-                            if (baseRk + r < scaledRi) {
-                                lower = baseRk;
-                                upper = scaledRi - r;
-                                localBorn[k] += (PI4_3 * (1.0 / (upper * upper * upper) - 1.0 / (lower * lower * lower)));
-                            }
-                            // Upper integration bound is always the same.
-                            upper = r + scaledRi;
-                            // Lower integration bound depends on atoms sizes and separation.
-                            if (baseRk + r < scaledRi) {
-                                // Atom k is engulfed by atom i.
-                                lower = scaledRi - r;
-                            } else if (r < baseRk + scaledRi) {
-                                // Atoms are overlapped, begin integration from rk.
-                                lower = baseRk;
-                            } else {
-                                // No overlap between atoms.
-                                lower = r - scaledRi;
-                            }
-                            l2 = lower * lower;
-                            l4 = l2 * l2;
-                            lr = lower * r;
-                            l4r = l4 * r;
-                            u2 = upper * upper;
-                            u4 = u2 * u2;
-                            ur = upper * r;
-                            u4r = u4 * r;
-                            term = (3.0 * (r2 - scaledRi2) + 6.0 * u2 - 8.0 * ur) / u4r
-                                    - (3.0 * (r2 - scaledRi2) + 6.0 * l2 - 8.0 * lr) / l4r;
-                            localBorn[k] -= PI_12 * term;
+                            double scaledRi = baseRi * overlapScale[i];
+                            localBorn[k] += integral(r, r2, baseRk, scaledRi);
                         }
                     }
                 }
@@ -3669,6 +3671,88 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
             }
 
+            /**
+             * Use pairwise descreening to compute derivative of the integral of 1/r^6 with respect to r.
+             *
+             * @param r            separation distance.
+             * @param r2           separation distance squared.
+             * @param radius       base radius of descreened atom.
+             * @param scaledRadius scaled radius descreening atom.
+             * @return the derivative.
+             */
+            public double integralDerivative(double r, double r2, double radius, double scaledRadius) {
+                double de = 0.0;
+                // Descreen only if the descreened atom does not engulf the descreener.
+                if (radius < r + scaledRadius) {
+                    // Atom i is engulfed by atom k.
+                    if (radius + r < scaledRadius) {
+                        double uik = scaledRadius - r;
+                        double uik2 = uik * uik;
+                        double uik4 = uik2 * uik2;
+                        de = -4.0 * PI / uik4;
+                    }
+
+                    // Lower integration bound depends on atoms sizes and separation.
+                    double sk2 = scaledRadius * scaledRadius;
+                    if (radius + r < scaledRadius) {
+                        // Atom i is engulfed by atom k.
+                        double lik = scaledRadius - r;
+                        double lik2 = lik * lik;
+                        double lik4 = lik2 * lik2;
+                        de = de + 0.25 * PI * (sk2 - 4.0 * scaledRadius * r + 17.0 * r2) / (r2 * lik4);
+                    } else if (r < radius + scaledRadius) {
+                        // Atoms are overlapped, begin integration from ri.
+                        double lik = radius;
+                        double lik2 = lik * lik;
+                        double lik4 = lik2 * lik2;
+                        de = de + 0.25 * PI * (2.0 * radius * radius - sk2 - r2) / (r2 * lik4);
+                    } else {
+                        // No overlap between atoms.
+                        double lik = r - scaledRadius;
+                        double lik2 = lik * lik;
+                        double lik4 = lik2 * lik2;
+                        de = de + 0.25 * PI * (sk2 - 4.0 * scaledRadius * r + r2) / (r2 * lik4);
+                    }
+                    // Upper integration bound is always the same.
+                    double uik = r + scaledRadius;
+                    double uik2 = uik * uik;
+                    double uik4 = uik2 * uik2;
+                    de = de - 0.25 * PI * (sk2 + 4.0 * scaledRadius * r + r2) / (r2 * uik4);
+                }
+
+                return de;
+            }
+
+            /**
+             * Accumulate a contribution to the gradient and dU/dX/dL.
+             *
+             * @param i  index of atom i.
+             * @param k  index of atom k.
+             * @param dE partial derivative of the energy with respect to R.
+             * @param xr x-component of the separation vector.
+             * @param yr y-component of the separation vector.
+             * @param zr z-component of the separation vector.
+             */
+            private void incrementGradient(int i, int k, double dE, double xr, double yr, double zr) {
+                double dedx = dE * xr;
+                double dedy = dE * yr;
+                double dedz = dE * zr;
+                gX[i] += lPow * dedx;
+                gY[i] += lPow * dedy;
+                gZ[i] += lPow * dedz;
+                gX[k] -= lPow * dedx;
+                gY[k] -= lPow * dedy;
+                gZ[k] -= lPow * dedz;
+                if (lambdaTerm) {
+                    lgX[i] += dlPow * dedx;
+                    lgY[i] += dlPow * dedy;
+                    lgZ[i] += dlPow * dedz;
+                    lgX[k] -= dlPow * dedx;
+                    lgY[k] -= dlPow * dedy;
+                    lgZ[k] -= dlPow * dedz;
+                }
+            }
+
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
@@ -3702,117 +3786,25 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             final double xr = dx_local[0];
                             final double yr = dx_local[1];
                             final double zr = dx_local[2];
+                            final double r = sqrt(r2);
 
                             // Atom i being descreeened by atom k.
                             final double sk = rk * overlapScale[k];
-                            final double sk2 = sk * sk;
-                            final double r = sqrt(r2);
-                            double de = 0.0;
-                            // Atom i is engulfed by atom k.
-                            if (ri + r < sk) {
-                                final double uik = sk - r;
-                                de = -4.0 * PI / pow(uik, 4);
-                            }
-                            // Lower integration bound depends on atoms sizes and separation.
-                            if (ri + r < sk) {
-                                // Atom i is engulfed by atom k.
-                                final double lik = sk - r;
-                                double lik4 = pow(lik, 4);
-                                de = de + 0.25 * PI * (sk2 - 4.0 * sk * r + 17.0 * r2) / (r2 * lik4);
-                            } else if (r < ri + sk) {
-                                // Atoms are overlapped, begin integration from ri.
-                                double lik = ri;
-                                double lik4 = pow(lik, 4);
-                                de = de + 0.25 * PI * (2.0 * ri * ri - sk2 - r2) / (r2 * lik4);
-                            } else {
-                                // No overlap between atoms.
-                                double lik = r - sk;
-                                double lik4 = pow(lik, 4);
-                                de = de + 0.25 * PI * (sk2 - 4.0 * sk * r + r2) / (r2 * lik4);
-                            }
-                            // Upper integration bound is always the same.
-                            double uik = r + sk;
-                            double uik4 = pow(uik, 4);
-                            de = de - 0.25 * PI * (sk2 + 4.0 * sk * r + r2) / (r2 * uik4);
-
+                            double de = integralDerivative(r, r2, ri, sk);
                             double dbr = termi * de / r;
                             de = dbr * sharedBornGrad.get(i);
-                            /**
-                             * Increment the overall derivatives.
-                             */
-                            double dedx = de * xr;
-                            double dedy = de * yr;
-                            double dedz = de * zr;
-                            gX[i] += lPow * dedx;
-                            gY[i] += lPow * dedy;
-                            gZ[i] += lPow * dedz;
-                            gX[k] -= lPow * dedx;
-                            gY[k] -= lPow * dedy;
-                            gZ[k] -= lPow * dedz;
-                            if (lambdaTerm) {
-                                lgX[i] += dlPow * dedx;
-                                lgY[i] += dlPow * dedy;
-                                lgZ[i] += dlPow * dedz;
-                                lgX[k] -= dlPow * dedx;
-                                lgY[k] -= dlPow * dedy;
-                                lgZ[k] -= dlPow * dedz;
-                            }
+                            incrementGradient(i, k, de, xr, yr, zr);
 
                             // Atom k being descreeened by atom i.
                             double rbk = born[k];
                             double termk = PI4_3 / (rbk * rbk * rbk);
                             termk = factor / pow(termk, (4.0 * THIRD));
+
                             final double si = ri * overlapScale[i];
-                            final double si2 = si * si;
-                            de = 0.0;
-                            // Atom i is engulfed by atom k.
-                            if (rk + r < si) {
-                                uik = si - r;
-                                de = -4.0 * PI / pow(uik, 4);
-                            }
-                            // Lower integration bound depends on atoms sizes and separation.
-                            if (rk + r < si) {
-                                // Atom i is engulfed by atom k.
-                                final double lik = si - r;
-                                double lik4 = pow(lik, 4);
-                                de = de + 0.25 * PI * (si2 - 4.0 * si * r + 17.0 * r2) / (r2 * lik4);
-                            } else if (r < rk + si) {
-                                // Atoms are overlapped, begin integration from ri.
-                                double lik = rk;
-                                double lik4 = pow(lik, 4);
-                                de = de + 0.25 * PI * (2.0 * rk * rk - si2 - r2) / (r2 * lik4);
-                            } else {
-                                // No overlap between atoms.
-                                double lik = r - si;
-                                double lik4 = pow(lik, 4);
-                                de = de + 0.25 * PI * (si2 - 4.0 * si * r + r2) / (r2 * lik4);
-                            }
-                            // Upper integration bound is always the same.
-                            uik = r + si;
-                            uik4 = pow(uik, 4);
-                            de = de - 0.25 * PI * (si2 + 4.0 * si * r + r2) / (r2 * uik4);
+                            de = integralDerivative(r, r2, rk, si);
                             dbr = termk * de / r;
                             de = dbr * sharedBornGrad.get(k);
-                            /**
-                             * Increment the overall derivatives.
-                             */
-                            dedx = de * xr;
-                            dedy = de * yr;
-                            dedz = de * zr;
-                            gX[i] += lPow * dedx;
-                            gY[i] += lPow * dedy;
-                            gZ[i] += lPow * dedz;
-                            gX[k] -= lPow * dedx;
-                            gY[k] -= lPow * dedy;
-                            gZ[k] -= lPow * dedz;
-                            if (lambdaTerm) {
-                                lgX[i] += dlPow * dedx;
-                                lgY[i] += dlPow * dedy;
-                                lgZ[i] += dlPow * dedz;
-                                lgX[k] -= dlPow * dedx;
-                                lgY[k] -= dlPow * dedy;
-                                lgZ[k] -= dlPow * dedz;
-                            }
+                            incrementGradient(i, k, de, xr, yr, zr);
                         }
                     }
                 }
@@ -4697,7 +4689,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
 
             public void surface(double xi, double yi, double zi, double rri, double rri2,
-                    double rrisq, double wght, boolean moved, int ir) {
+                                double rrisq, double wght, boolean moved, int ir) {
 
                 ib = 0;
                 int jb = 0;
@@ -5148,7 +5140,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param arclen
              */
             public boolean independentBoundaries(int k, double exang,
-                    int jb, int ir, double arclen) {
+                                                 int jb, int ir, double arclen) {
                 int m = kout[i];
                 kout[i] = -1;
                 j = j + 1;
@@ -8772,7 +8764,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * center.
              */
             public void gendot(int ndots[], double dots[][], double radius,
-                    double xcenter, double ycenter, double zcenter) {
+                               double xcenter, double ycenter, double zcenter) {
                 int nequat = (int) sqrt(PI * (double) ndots[0]);
                 int nvert = nequat / 2;
                 if (nvert < 0) {
@@ -8809,7 +8801,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * specified circle and plane.
              */
             public boolean cirpln(double circen[], double cirrad, double cirvec[], double plncen[],
-                    double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
+                                  double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
                 double cpvect[] = new double[3];
                 double pnt1[] = new double[3];
                 double vect1[] = new double[3];

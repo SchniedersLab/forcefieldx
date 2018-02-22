@@ -5,25 +5,19 @@
     xsi:schemaLocation="http://maven.apache.org/DECORATION/1.7.0 http://maven.apache.org/xsd/decoration-1.7.0.xsd">
     <version position="right" />
     <publishDate position="right" format="MMM dd yyyy" />
-    <!-- skin>
-        <groupId>lt.velykis.maven.skins</groupId>
-        <artifactId>reflow-maven-skin</artifactId>
-        <version>1.1.1</version>
-    </skin -->
     <skin>
         <groupId>org.apache.maven.skins</groupId>
         <artifactId>maven-fluido-skin</artifactId>
-        <version>1.6</version>
+        <version>1.7</version>
     </skin>
     <poweredBy>
         <logo
             target="_blank"
             name="Force Field X Development"
-            href="http://kenai.com/projects/ffx"
+            href="https://github.com/mjschnie/ffx"
             img="/images/icon90.png"
         />
     </poweredBy>
-    <!-- googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId -->
     <bannerLeft>
         <name>
             <![CDATA[
@@ -59,7 +53,9 @@
                 <href>/index.html</href>
             </topBarIcon>
             <navBarStyle>navbar-inverse</navBarStyle>
-            <googleSearch/>
+            <googleSearch>
+                <sitesearch/>
+            </googleSearch>
             <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
             <copyrightClass>pull-right</copyrightClass>
             <gitHub>
@@ -79,9 +75,13 @@
             <breadcrumbDivider>»</breadcrumbDivider>
         </fluidoSkin>
     </custom>
+
+    <!-- googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId -->
+
     <body>
         <head>
             <![CDATA[
+                <!-- Global site tag (gtag.js) - Google Analytics -->
                 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-12576019-1"></script>
                 <script>
                     window.dataLayer = window.dataLayer || [];
@@ -151,5 +151,6 @@
             <item name="X-Ray Refinement" href="modules/xray/index.html"/>
         </menu>
         <menu name="Project Info" ref="reports"/>
+
     </body>
 </project>

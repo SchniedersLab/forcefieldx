@@ -118,7 +118,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      * is about 2 to 4 kT.
      */
     private double temperingFactor = 8.0;
-    private double deltaT = temperingFactor * R * 298.0;
+    private double deltaT = temperingFactor * R * temperature;
     /**
      * The Dama et al. transition-tempering weight: temperingWeight =
      * exp(-max(G(L,F_L))/deltaT)
