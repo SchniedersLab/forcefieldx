@@ -77,9 +77,9 @@ public class RotamerOptimizationTest {
                         true,                   // Use Original Rotamers.
                         true,                   // Do Overall Opt.
                         -208.7299423233922,     // Expected Energy.
-                        true,                   // Do Self-Energy Opt.
+                        false,                   // Do Self-Energy Opt.
                         1.0E100,                // Expected Self-Energy.
-                        true,                   // Do Pair-Energy Opt.
+                        false,                   // Do Pair-Energy Opt.
                         5,                      // Pair residue
                         0.0,                    // Expected Pair-Energy.
                         false,                  // Do Trimer-Energy Opt.
