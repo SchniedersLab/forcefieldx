@@ -210,7 +210,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * 1D PMF with respect to lambda F(L).
      */
-    protected final double FLambda[];
+    protected double FLambda[];
     /**
      * Magnitude of the 2D orthogonal space bias G(L,dE/dL).
      */
@@ -462,7 +462,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
         biasCutoff = properties.getInt("lambda-bias-cutoff", 5);
         biasMag = properties.getDouble("bias-gaussian-mag", 0.050);
-        dL = properties.getDouble("lambda-bin-width", 0.050);
+        dL = properties.getDouble("lambda-bin-width", 0.005);
         dFL = properties.getDouble("flambda-bin-width", 2.0);
 
         /**
