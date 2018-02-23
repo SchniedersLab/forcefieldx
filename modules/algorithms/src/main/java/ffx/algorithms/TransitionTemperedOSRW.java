@@ -1236,6 +1236,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 countInterval = Integer.parseInt(readLine().split(" +")[1]);
 
                 lambdaBins = Integer.parseInt(readLine().split(" +")[1]);
+                FLambda = new double[lambdaBins];
                 dL = 1.0 / (lambdaBins - 1);
                 dL_2 = dL / 2.0;
 
