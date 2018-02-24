@@ -77,7 +77,7 @@ public class RotamerOptimizationTest {
                         true,                   // Use Original Rotamers.
                         true,                   // Do Overall Opt.
                         -208.7299423233922,     // Expected Energy.
-                        false,                   // Do Self-Energy Opt.
+                        true,                   // Do Self-Energy Opt.
                         1.0E100,                // Expected Self-Energy.
                         false,                   // Do Pair-Energy Opt.
                         5,                      // Pair residue
@@ -87,8 +87,8 @@ public class RotamerOptimizationTest {
                         6,                      // Trimer residue 2.
                         0.0,                    // Expected trimer energy.
                         1.0e-3                  // Energy Tolerance.
-                    }/*,
-                    {
+                    },
+                    /*{
                         "Chignolin Direct with Orig Rot (Goldstein)",
                         "ffx/algorithms/structures/5awl.pdb",
                         "ffx/algorithms/structures/5awl.direct.orig.prun1.restart",
@@ -109,7 +109,7 @@ public class RotamerOptimizationTest {
                         0.0,                    // Expected trimer energy.
                         1.0e-3                  // Energy Tolerance.
                     }/*,
-                    /*{
+                   /* {
                         "Chignolin Direct with Orig Rot (Goldstein)",
                         "ffx/algorithms/structures/5awl.pdb",
                         "ffx/algorithms/structures/5awl.direct.orig.prun2.restart",
@@ -121,7 +121,7 @@ public class RotamerOptimizationTest {
                         -208.72994232339218,    // Expected Energy.
                         true,                   // Do Self-Energy Opt.
                         -201.19341910515593,    // Expected Self-Energy.
-                        false,                  // Do Pair-Energy Opt.
+                        true,                   // Do Pair-Energy Opt.
                         5,                      // Pair residue
                         0.0,                    // Expected Pair-Energy.
                         false,                  // Do Trimer-Energy Opt.
@@ -129,23 +129,23 @@ public class RotamerOptimizationTest {
                         6,                      // Trimer residue 2.
                         0.0,                    // Expected trimer energy.
                         1.0e-3                  // Energy Tolerance.
-                    },
-                   {
+                    },*/
+                   /*{
                         "Chignolin Direct with Orig Rot (Goldstein)",
                         "ffx/algorithms/structures/5awl.pdb",
                         "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.restart",
-                        2,                      // Pruning Level.
+                        1,                      // Pruning Level.
                         true,                   // Goldstein Elimination.
                         true,                   // Use 3-body Energies.
                         true,                   // Use Original Rotamers.
-                        true,                   // Do Overall Opt.
-                        -208.72994232339215,    // Expected Energy.
-                        true,                   // Do Self-Energy Opt.
+                        false,                   // Do Overall Opt.
+                        1.0E100,                // Expected Energy.
+                        false,                   // Do Self-Energy Opt.
                         1.0E100,                // Expected Self-Energy.
-                        false,                  // Do Pair-Energy Opt.
+                        false,                   // Do Pair-Energy Opt.
                         5,                      // Pair residue
                         0.0,                    // Expected Pair-Energy.
-                        false,                   // Do Trimer-Energy Opt.
+                        true,                  // Do Trimer-Energy Opt.
                         5,                      // Trimer residue 1.
                         6,                      // Trimer residue 2.
                         0.0,                    // Expected trimer energy.
@@ -154,27 +154,27 @@ public class RotamerOptimizationTest {
                
  
                                  
-                /** {
-                        "Trpcage Direct with Orig Rot (Goldstein)",
-                        "ffx/algorithms/structures/trpcage.pdb",
-                        "ffx/algorithms/structures/trpcage.direct.orig.restart",
-                        0,              // Pruning Level.
-                        true,           // Goldstein Elimination.
-                        false,          // Use 3-body Energies.
-                        true,           // Use Original Rotamers.
-                        false,          // Do Overall Opt.
-                        -628.143879,    // Expected Energy.
-                        true,           // Do Self-Energy Opt.
-                        22086.367273,   // Expected Self-Energy.
-                        false,          // Do Pair-Energy Opt.
-                        5,              // Pair residue
-                        1280.865248,    // Expected Pair-Energy.
-                        false,          // Do Trimer-Energy Opt.
-                        5,              // Trimer residue 1.
-                        6,              // Trimer residue 2.
-                        0.0,            // Expected trimer energy.
-                        1.0e-3          // Energy Tolerance.
-                }, 
+        /** {
+        "Trpcage Direct with Orig Rot (Goldstein)",
+        "ffx/algorithms/structures/trpcage.pdb",
+        "ffx/algorithms/structures/trpcage.direct.orig.restart",
+        0,              // Pruning Level.
+        true,           // Goldstein Elimination.
+        false,          // Use 3-body Energies.
+        true,           // Use Original Rotamers.
+        false,          // Do Overall Opt.
+        -628.143879,    // Expected Energy.
+        true,           // Do Self-Energy Opt.
+        22086.367273,   // Expected Self-Energy.
+        false,          // Do Pair-Energy Opt.
+        5,              // Pair residue
+        1280.865248,    // Expected Pair-Energy.
+        false,          // Do Trimer-Energy Opt.
+        5,              // Trimer residue 1.
+        6,              // Trimer residue 2.
+        0.0,            // Expected trimer energy.
+        1.0e-3          // Energy Tolerance.
+        }, 
         {
         "Trpcage Direct with Orig Rot (DEE, Prune=1)",
         "ffx/algorithms/structures/trpcage.pdb",
@@ -375,7 +375,6 @@ public class RotamerOptimizationTest {
         if (doOverallOpt) {
             rotamerOptimization.turnRotamerPairEliminationOff();
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-            System.out.println("The expected overall energy is: " + energy);
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
 
@@ -384,7 +383,6 @@ public class RotamerOptimizationTest {
             rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestSelfEnergyEliminations(true);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-            System.out.println("The expected self energy is: " + energy);
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
 
             // Check that optimized rotamers are equivalent to the lowest self-energy of each residue.
@@ -425,7 +423,6 @@ public class RotamerOptimizationTest {
             rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestPairEnergyEliminations(pairResidue);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-            System.out.println("The expected pair energy is: " + energy);
 
             // Check that optimized rotamers are equivalent to the lowest pair-energy sum for the "pairResidue".
             int optimum[] = rotamerOptimization.getOptimumRotamers();
@@ -448,15 +445,9 @@ public class RotamerOptimizationTest {
                     Residue resJ = residueList.get(j);
                     Rotamer[] rotJ = resJ.getRotamers(rLib);
                     int nRot = rotJ.length;
-                    if(rotamerOptimization.check(pairResidue, ri, j, 0)){
-                        continue;
-                    }
-                   // Check to make sure low energy rotamer isn't null.
-                   int rotCounter = 0;
-                   while(rotamerOptimization.check(pairResidue, ri, j, rotCounter) && rotCounter < nRot){
-                       rotCounter++;
-                   } 
-                    double lowEnergy = rotamerOptimization.pair(pairResidue, ri, j, rotCounter);
+                    
+                    double lowEnergy = rotamerOptimization.pair(pairResidue, ri, j, 0);
+
                     for (int rj = 1; rj < nRot; rj++) {
                         if (rotamerOptimization.check(j, rj) || rotamerOptimization.check(pairResidue, ri, j, rj)) {
                             continue;
@@ -516,7 +507,7 @@ public class RotamerOptimizationTest {
             rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestTripleEnergyEliminations(tripleResidue1, tripleResidue2);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
-            System.out.println("The expected pair energy is: " + energy);
+            System.out.println("The expected triple energy is: " + energy);
             assertEquals(info + " Triple-Energy", expectedTripleEnergy, energy, tolerance);
 
             // ToDo: Check that optimized rotamers are equivalent to the lowest 3-body energy of each residue with the tripleResidue1 and 2.
