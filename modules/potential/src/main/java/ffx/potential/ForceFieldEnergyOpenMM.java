@@ -628,11 +628,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 precision = defaultPrecision;
                 break;
         }
+        int deviceID = molecularAssembly.getForceField().getInteger(ForceField.ForceFieldInteger.CUDA_DEVICE, 0);
+        String deviceIDString = Integer.toString(deviceID);
 
         if (cuda && requestedPlatform != Platform.OMM_REF) {
             platform = OpenMM_Platform_getPlatformByName("CUDA");
+            OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("CudaDeviceIndex"),  pointerForString(deviceIDString));
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("Precision"), pointerForString(precision));
-            logger.info(" Selected OpenMM AMOEBA CUDA Platform");
+            logger.info(String.format(" Selected OpenMM AMOEBA CUDA Platform (Device ID: %d)", deviceID));
         } else {
             platform = OpenMM_Platform_getPlatformByName("Reference");
             logger.info(" Selected OpenMM AMOEBA Reference Platform");

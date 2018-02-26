@@ -187,12 +187,6 @@
         </dependency>
         <dependency>
             <groupId>edu.uiowa.eng.ffx</groupId>
-            <artifactId>autoparm</artifactId>
-            <version>${project.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>edu.uiowa.eng.ffx</groupId>
             <artifactId>pj</artifactId>
             <type>jar</type>
             <version>${pj.version}</version>
