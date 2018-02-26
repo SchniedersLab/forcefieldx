@@ -973,6 +973,10 @@ public final class Utilities {
                 if (carbonyl == null) {
                     return null;
                 }
+                Atom alphaCarbon = findAlphaCarbon(currentAtom);
+                if (alphaCarbon == null) {
+                    return null;
+                }
                 // Avoid more than 3 carbons in a row (phenyl groups, etc.)
             } else if (anum == 6) {
                 Atom a;
@@ -1024,8 +1028,7 @@ public final class Utilities {
             if (nextAtom != previousAtom && !path.contains(nextAtom)) {
                 newPolymer = findPolymer(atoms, nextAtom, path);
                 if (newPolymer != null) {
-                    // Check to see if the Polymers contain any of the same
-                    // atoms
+                    // Check to see if the Polymers contain any of the same atoms,
                     // and if so, use the shorter Polymer (avoids loops)
                     if (haveCommonAtom(newPolymer, maxPolymer)) {
                         if (newPolymer.size() < maxPolymer.size()) {
