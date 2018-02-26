@@ -76,6 +76,7 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
@@ -901,7 +902,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
          * Compute the current potential energy.
          */
         potential.setScaling(null);
-        currentPotentialEnergy = potential.energyAndGradient(x, grad);
+        try {
+            currentPotentialEnergy = potential.energyAndGradient(x, grad);
+        } catch (EnergyException ex) {
+            writeStoredSnapshots();
+            throw ex;
+        }
 
         /**
          * Initialize current and previous accelerations, unless they were just
@@ -1156,33 +1162,38 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
         if (absPE > maxPEThresh || !Double.isFinite(currentPotentialEnergy) || Math.abs(deltaPE) > delPEThresh) {
             logger.info(String.format(" Unusual potential energy %12.5g detected, writing snapshots.", currentPotentialEnergy));
-            int numSnaps = lastSnapshots.size();
-
-            File origFile = molecularAssembly.getFile();
-            String timeString = LocalDateTime.now().format(DateTimeFormatter.
-                    ofPattern("HH_mm_ss"));
-            PotentialsFunctions ef = new PotentialsUtils();
-
-            String filename = String.format("%s-%s-SNAP.pdb",
-                    FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
-                    timeString);
-
-            for (int is = 0; is < numSnaps; is++) {
-                DynamicsState oldState = lastSnapshots.poll();
-                oldState.revertState();
-
-                ef.saveAsPDB(molecularAssembly, new File(ef.versionFile(filename)));
-            }
-
-            molecularAssembly.setFile(origFile);
+            writeStoredSnapshots();
             currState.revertState(); // May be unnecessary, thanks to the current state always being last on the queue.
-
             if (absPE > 1.0E100 || !Double.isFinite(currentPotentialEnergy)) {
                 logger.severe(String.format(" Dynamics exiting with atypical potential energy of %12.5g", currentPotentialEnergy));
             }
             return true;
         }
         return false;
+    }
+
+    /**
+     * Performs the inner loop of writing snapshots to disk; used by both detectAtypicalEnergy and a try-catch in dynamics.
+     */
+    private void writeStoredSnapshots() {
+        int numSnaps = lastSnapshots.size();
+
+        File origFile = molecularAssembly.getFile();
+        String timeString = LocalDateTime.now().format(DateTimeFormatter.
+                ofPattern("HH_mm_ss"));
+        PotentialsFunctions ef = new PotentialsUtils();
+
+        String filename = String.format("%s-%s-SNAP.pdb",
+                FilenameUtils.removeExtension(molecularAssembly.getFile().getName()),
+                timeString);
+
+        for (int is = 0; is < numSnaps; is++) {
+            DynamicsState oldState = lastSnapshots.poll();
+            oldState.revertState();
+
+            ef.saveAsPDB(molecularAssembly, new File(ef.versionFile(filename)));
+        }
+        molecularAssembly.setFile(origFile);
     }
 
     /**
