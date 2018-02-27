@@ -52,6 +52,8 @@ import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
+import edu.rit.pj.Comm;
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -629,10 +631,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 break;
         }
 
+        Comm world = Comm.world();
+        int size = world.size();
+        int defDeviceIndex = 0;
+        if (size > 1) {
+            int rank = world.rank();
+            CompositeConfiguration props = molecularAssembly.getProperties();
+            // 0/no-arg would indicate "just put everything on device specified by CUDA_DEVICE".
+            // TODO: Get the number of CUDA devices from the CUDA API as the alternate default.
+            int numCudaDevices = props.getInt("numCudaDevices", 0);
+            if (numCudaDevices > 0) {
+                defDeviceIndex = rank % numCudaDevices;
+                logger.info(String.format(" Placing energy from rank %d on device %d", rank, defDeviceIndex));
+            }
+        }
+
+        int deviceID = molecularAssembly.getForceField().getInteger(ForceField.ForceFieldInteger.CUDA_DEVICE, defDeviceIndex);
+        String deviceIDString = Integer.toString(deviceID);
+
         if (cuda && requestedPlatform != Platform.OMM_REF) {
             platform = OpenMM_Platform_getPlatformByName("CUDA");
+            OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("CudaDeviceIndex"),  pointerForString(deviceIDString));
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("Precision"), pointerForString(precision));
-            logger.info(" Selected OpenMM AMOEBA CUDA Platform");
+            logger.info(String.format(" Selected OpenMM AMOEBA CUDA Platform (Device ID: %d)", deviceID));
         } else {
             platform = OpenMM_Platform_getPlatformByName("Reference");
             logger.info(" Selected OpenMM AMOEBA Reference Platform");

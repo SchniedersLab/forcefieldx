@@ -1560,7 +1560,8 @@ public class ForceField {
         LIGAND_START,
         LIGAND_STOP,
         SCF_CYCLES,
-        SCF_PREDICTOR_ORDER
+        SCF_PREDICTOR_ORDER,
+        CUDA_DEVICE
     }
 
     public enum ForceFieldBoolean {

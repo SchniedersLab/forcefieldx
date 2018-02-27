@@ -77,11 +77,6 @@ import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.integrators.IntegratorEnum;
 import ffx.algorithms.thermostats.ThermostatEnum;
-import ffx.autoparm.Energy;
-import ffx.autoparm.Minimize_2;
-import ffx.autoparm.Poledit;
-import ffx.autoparm.Potential2;
-import ffx.autoparm.Superpose;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -430,24 +425,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
 
     /**
      * <p>
-     * analyze</p>
-     *
-     * @param xyzfname a {@link java.lang.String} object.
-     * @param keyfile a {@link java.lang.String} object.
-     * @param options a {@link java.lang.String} object.
-     */
-    public void analyze(String xyzfname, String keyfile, String options) {
-        try {
-            Energy e = new Energy(xyzfname, keyfile, options);
-            e.energy(false, true);
-        } catch (IOException e) {
-            String message = " Exception running analyze.";
-            logger.log(Level.INFO, message, e);
-        }
-    }
-
-    /**
-     * <p>
      * minimize</p>
      *
      * @param eps a double.
@@ -473,60 +450,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             logger.info(" No active system to minimize.");
         }
         return null;
-    }
-
-    /**
-     * <p>
-     * minimize_2</p>
-     *
-     * @param xyzf a {@link java.lang.String} object.
-     * @param eps a double.
-     * @param keyfile a {@link java.lang.String} object.
-     * @return a {@link ffx.numerics.Potential} object.
-     */
-    public Potential minimize_2(String xyzf, double eps, String keyfile) {
-        Potential potential = null;
-        if (interrupted) {
-            logger.info(" Algorithm interrupted - skipping minimization.");
-            return null;
-        }
-        if (terminatableAlgorithm != null) {
-            logger.info(" Algorithm already running - skipping minimization.");
-            return null;
-        }
-        Minimize_2 minimize;
-        try {
-            minimize = new Minimize_2(xyzf, keyfile);
-            terminatableAlgorithm = minimize;
-            potential = minimize.minimize(eps);
-            terminatableAlgorithm = null;
-        } catch (IOException e) {
-            String message = " Exception running minimize_2.";
-            logger.log(Level.INFO, message, e);
-        }
-        return potential;
-    }
-
-    /**
-     * <p>
-     * superpose</p>
-     *
-     * @param file1 a {@link java.lang.String} object.
-     * @param file2 a {@link java.lang.String} object.
-     */
-    public void superpose(String file1, String file2) {
-        Superpose s = new Superpose(file1, file2);
-    }
-
-    /**
-     * <p>
-     * poledit</p>
-     *
-     * @param gdmaoutfname a {@link java.lang.String} object.
-     * @param peditinfname a {@link java.lang.String} object.
-     */
-    public void poledit(String gdmaoutfname, String peditinfname) {
-        Poledit p = new Poledit(gdmaoutfname, peditinfname);
     }
 
     /**
@@ -557,33 +480,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             molecularDynamics.dynamic(nStep, timeStep, printInterval,
                     saveInterval, temperature, initVelocities, dyn);
             terminatableAlgorithm = null;
-        }
-    }
-
-    /**
-     * <p>
-     * potential</p>
-     *
-     * @param choice a {@link java.lang.Integer} object.
-     * @param fname a {@link java.lang.String} object.
-     * @param eps a {@link java.lang.Double} object.
-     */
-    public void potential(Integer choice, String fname, Double eps) {
-        if (interrupted) {
-            logger.info(" Algorithm interrupted - skipping minimization.");
-        }
-        if (terminatableAlgorithm != null) {
-            logger.info(" Algorithm already running - skipping minimization.");
-        }
-        try {
-            if (choice == 1) {
-                Potential2 p = new Potential2(choice.intValue(), null, fname, null);
-            } else if (choice > 1 && choice < 5) {
-                Potential2 p = new Potential2(choice.intValue(), fname, null, eps);
-            }
-
-        } catch (IOException e) {
-            logger.warning(e.getMessage());
         }
     }
 

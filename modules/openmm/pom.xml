@@ -10,17 +10,10 @@
         <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>simtk</groupId>
+    <groupId>ffx</groupId>
     <artifactId>openmm</artifactId>
-    <version>7.2.0</version>
+    <!--version>${ffx.version}</version-->
     <packaging>pom</packaging>
     <name>OpenMM Java Wrappers</name>
     <description>Java wrappers for the OpenMM API.</description>
-    <dependencies>
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>${jna.version}</version>
-        </dependency>
-    </dependencies>
 </project>
