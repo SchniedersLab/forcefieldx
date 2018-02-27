@@ -966,7 +966,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
             /**
              * Compute the potential energy and gradients.
              */
-            currentPotentialEnergy = potential.energyAndGradient(x, grad);
+            try {
+                currentPotentialEnergy = potential.energyAndGradient(x, grad);
+            } catch (EnergyException ex) {
+                writeStoredSnapshots();
+                throw ex;
+            }
 
             detectAtypicalEnergy(priorPE, defaultDeltaPEThresh);
 
