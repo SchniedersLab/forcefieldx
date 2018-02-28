@@ -53,6 +53,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
 import edu.rit.pj.Comm;
+import ffx.potential.bonded.*;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
@@ -159,101 +160,17 @@ import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KJPerKcal;
 import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
 import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_NmPerAngstrom;
 import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_RadiansPerDegree;
-import static simtk.openmm.OpenMMLibrary.OpenMM_BondArray_append;
-import static simtk.openmm.OpenMMLibrary.OpenMM_BondArray_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_BondArray_destroy;
+import static simtk.openmm.OpenMMLibrary.*;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CMMotionRemover_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Context_create_2;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Context_destroy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Context_getState;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Context_setPositions;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Context_setVelocities;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomExternalForce_addGlobalParameter;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomExternalForce_addParticle;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomExternalForce_addPerParticleParameter;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomExternalForce_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_ParticlePair;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_ParticlePairNoExclusions;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_SingleParticle;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addComputedValue;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addEnergyTerm;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addGlobalParameter;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addParticle;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addPerParticleParameter;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_setCutoffDistance;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_setParticleParameters;
-import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_updateParametersInContext;
-import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_append;
-import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_destroy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_resize;
-import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_set;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Force_setForceGroup;
-import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_append;
-import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_destroy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_resize;
-import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_set;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Integrator_destroy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_LangevinIntegrator_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_addParticle;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_createExceptionsFromBonds;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setCutoffDistance;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setNonbondedMethod;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setPMEParameters;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setParticleParameters;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setSwitchingDistance;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setUseDispersionCorrection;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setUseSwitchingFunction;
-import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_updateParametersInContext;
-import static simtk.openmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_addTorsion;
-import static simtk.openmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getDefaultPluginsDirectory;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getNumPlatforms;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getOpenMMVersion;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getPlatformByName;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getPluginLoadFailures;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_loadPluginsFromDirectory;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_destroy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_getForces;
-import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_StringArray_destroy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_StringArray_get;
-import static simtk.openmm.OpenMMLibrary.OpenMM_StringArray_getSize;
-import static simtk.openmm.OpenMMLibrary.OpenMM_System_addConstraint;
-import static simtk.openmm.OpenMMLibrary.OpenMM_System_addForce;
-import static simtk.openmm.OpenMMLibrary.OpenMM_System_addParticle;
-import static simtk.openmm.OpenMMLibrary.OpenMM_System_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_System_destroy;
-import static simtk.openmm.OpenMMLibrary.OpenMM_System_getNumConstraints;
-import static simtk.openmm.OpenMMLibrary.OpenMM_System_setDefaultPeriodicBoxVectors;
-import static simtk.openmm.OpenMMLibrary.OpenMM_System_setVirtualSite;
-import static simtk.openmm.OpenMMLibrary.OpenMM_TwoParticleAverageSite_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_append;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_create;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_get;
-import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_resize;
-import static simtk.openmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
 
 import ffx.crystal.Crystal;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.ImproperTorsion;
-import ffx.potential.bonded.OutOfPlaneBend;
-import ffx.potential.bonded.PiOrbitalTorsion;
-import ffx.potential.bonded.StretchBend;
-import ffx.potential.bonded.Torsion;
-import ffx.potential.bonded.TorsionTorsion;
-import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
@@ -403,6 +320,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private PointerByReference customGBForce = null;
     /**
+     * OpenMM harmonic bond force, used for harmonic bond restraints.
+     */
+    private PointerByReference harmonicBondForce = null;
+    /**
      * Langevin friction coefficient.
      */
     private double frictionCoeff;
@@ -497,6 +418,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Add coordinate restraints.
         addHarmonicRestraintForce();
+
+        // Add bond restraints.
+        addRestraintBonds();
 
         VanDerWaals vdW = super.getVdwNode();
         if (vdW != null) {
@@ -1909,6 +1833,33 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_DoubleArray_destroy(xyzOrigArray);
 
             OpenMM_System_addForce(system, theRestraint);
+        }
+    }
+
+    /**
+     * Adds restraint bonds, if any.
+     */
+    private void addRestraintBonds() {
+        List<RestraintBond> restraintBonds = super.getRestraintBonds();
+
+        if (restraintBonds != null && !restraintBonds.isEmpty()) {
+            harmonicBondForce = (harmonicBondForce == null) ? OpenMM_HarmonicBondForce_create() : harmonicBondForce;
+            // OpenMM's HarmonicBondForce class uses k, not 1/2*k as does FFX.
+            double kParameterConversion = BondType.units * 2.0 * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+
+            for (RestraintBond rbond : super.getRestraintBonds()) {
+                Atom[] ats = rbond.getAtomArray();
+                int at0 = ats[0].getXyzIndex() - 1;
+                int at1 = ats[1].getXyzIndex() - 1;
+                BondType bType = rbond.getBondType();
+
+                double forceConst = bType.forceConstant * kParameterConversion;
+                double equilDist = bType.distance * OpenMM_NmPerAngstrom;
+                logger.info(String.format(" Adding restraint-bond %d-%d at %10.5f k %10.5f", at0, at1, equilDist, forceConst));
+                OpenMM_HarmonicBondForce_addBond(harmonicBondForce, at0, at1, equilDist, forceConst);
+                logger.info(String.format(" Adding restraint-bond %d-%d at %10.5f k %10.5f", at0, at1, equilDist, forceConst));
+            }
+            OpenMM_System_addForce(system, harmonicBondForce);
         }
     }
 

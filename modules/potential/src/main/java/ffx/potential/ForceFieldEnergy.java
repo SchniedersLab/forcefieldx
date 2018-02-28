@@ -2771,6 +2771,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return new ArrayList<>(coordRestraints);
     }
 
+    protected List<RestraintBond> getRestraintBonds() {
+        return Arrays.asList(restraintBonds);
+    }
+
     public int getSolvationInteractions() {
         return nGKInteractions;
     }
