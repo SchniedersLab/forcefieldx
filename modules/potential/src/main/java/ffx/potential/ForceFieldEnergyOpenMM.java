@@ -351,6 +351,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * OpenMM thermostat, likely an Andersen thermostat.
      */
     private PointerByReference ommThermostat = null;
+    
+    private PointerByReference fixedChargeSoftcore = null;
 
     /**
      * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an
@@ -2157,6 +2159,213 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(quadrupoles);
 
         OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, context);
+    }
+    
+    private void fixedChargeSoftcore(){
+        
+        VanDerWaals vdW = super.getVdwNode();
+        if (vdW == null) {
+            return;
+        }
+        /**
+         * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
+         * for epsilon is supported.
+         */
+        VanDerWaalsForm vdwForm = vdW.getVDWForm();
+        if (vdwForm.vdwType != LENNARD_JONES
+                || vdwForm.radiusRule != ARITHMETIC
+                || vdwForm.epsilonRule != GEOMETRIC) {
+            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            return;
+        }
+        
+        fixedChargeSoftcore = OpenMM_NonbondedForce_create();
+        
+                /**
+         * OpenMM vdW force requires a diameter (i.e. not radius).
+         */
+        double radScale = 1.0;
+        if (vdwForm.radiusSize == RADIUS) {
+            radScale = 2.0;
+        }
+        /**
+         * OpenMM vdw force requires atomic sigma values (i.e. not r-min).
+         */
+        if (vdwForm.radiusType == R_MIN) {
+            radScale /= 1.122462048309372981;
+        }
+
+                /**
+         * Add particles.
+         */
+        Atom[] atoms = molecularAssembly.getAtomArray();
+        int nAtoms = atoms.length;
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            double charge = 0.0;
+            MultipoleType multipoleType = atom.getMultipoleType();
+            if (multipoleType != null) {
+                charge = multipoleType.charge;
+            }
+            VDWType vdwType = atom.getVDWType();
+            double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+            double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+            
+            //Set eps to 0.0 like in Chodera's code
+            eps *= 0.0;
+
+            double useFactor = 1.0;
+            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
+                useFactor = 0.0;
+            }
+
+            double lambdaScale = lambda; // Should be 1.0 at this point.
+            if (!atom.applyLambda()) {
+                lambdaScale = 1.0;
+            }
+
+            useFactor *= lambdaScale;
+
+            OpenMM_NonbondedForce_addParticle(fixedChargeSoftcore, charge * useFactor, sigma, eps);
+        }
+        
+        //Input parameters
+        /**
+         * Define 1-4 scale factors.
+         */
+        double lj14Scale = vdwForm.getScale14();
+        double coulomb14Scale = 1.0 / 1.2;
+
+        ParticleMeshEwald pme = super.getPmeNode();
+        Bond bonds[] = super.getBonds();
+        if (bonds != null && bonds.length > 0) {
+            int nBonds = bonds.length;
+            PointerByReference bondArray;
+            bondArray = OpenMM_BondArray_create(0);
+            for (int i = 0; i < nBonds; i++) {
+                Bond bond = bonds[i];
+                int i1 = bond.getAtom(0).getXyzIndex() - 1;
+                int i2 = bond.getAtom(1).getXyzIndex() - 1;
+                OpenMM_BondArray_append(bondArray, i1, i2);
+            }
+            if (pme != null) {
+                coulomb14Scale = pme.getScale14();
+            }
+            OpenMM_NonbondedForce_createExceptionsFromBonds(fixedChargeSoftcore, bondArray, coulomb14Scale, lj14Scale);
+            OpenMM_BondArray_destroy(bondArray);
+        }
+
+        Crystal crystal = super.getCrystal();
+        if (crystal.aperiodic()) {
+            OpenMM_NonbondedForce_setNonbondedMethod(fixedChargeSoftcore,
+                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_NoCutoff);
+        } else {
+            OpenMM_NonbondedForce_setNonbondedMethod(fixedChargeSoftcore,
+                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_PME);
+            if (pme != null) {
+                // Units of the Ewald coefficient are A^-1; Multiply by AngstromsPerNM to convert to (Nm^-1).
+                double aEwald = OpenMM_AngstromsPerNm * pme.getEwaldCoefficient();
+                int nx = pme.getReciprocalSpace().getXDim();
+                int ny = pme.getReciprocalSpace().getYDim();
+                int nz = pme.getReciprocalSpace().getZDim();
+                OpenMM_NonbondedForce_setPMEParameters(fixedChargeSoftcore, aEwald, nx, ny, nz);
+            }
+        }
+
+        NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
+        double off = nonbondedCutoff.off;
+        double cut = nonbondedCutoff.cut;
+        OpenMM_NonbondedForce_setCutoffDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * off);
+
+        OpenMM_NonbondedForce_setUseSwitchingFunction(fixedChargeSoftcore, OpenMM_True);
+        if (cut == off) {
+            logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
+            if (cut == Double.MAX_VALUE || cut == Double.POSITIVE_INFINITY) {
+                logger.info(" Detected infinite or max-value cutoff; setting cut to 1E+40 for OpenMM.");
+                cut = 1E40;
+            } else {
+                logger.info(String.format(" Detected cut %8.4g == off %8.4g; scaling cut to 0.99 of off for OpenMM.", cut, off));
+                cut *= 0.99;
+            }
+        }
+        OpenMM_NonbondedForce_setSwitchingDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * cut);
+
+        OpenMM_NonbondedForce_setUseDispersionCorrection(fixedChargeSoftcore, OpenMM_False);
+
+        OpenMM_Force_setForceGroup(fixedChargeSoftcore, 1);
+        
+        //Add force
+        OpenMM_System_addForce(system, fixedChargeSoftcore);
+        logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force."));
+
+        GeneralizedKirkwood gk = super.getGK();
+        if (gk != null) {
+            addCustomGBForce();
+        }
+        
+        
+        //Softcore potential
+        String energyExpression = "4*epsilon*lambda*x*(x-1.0);";
+        energyExpression += "x = 1.0/(alpha*(1.0-lambda) + (r/sigma)^6);";
+        energyExpression += "epsilon = sqrt(epsilon1*epsilon2);";
+        energyExpression += "sigma = 0.5*(sigma1 + sigma2);";
+        energyExpression += "lambda = lambda1*lambda2;";
+        
+        fixedChargeSoftcore = OpenMM_CustomNonbondedForce_create(energyExpression);
+        double alpha = 0.5;
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "alpha", alpha);
+        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "sigma");
+        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "epsilon");
+        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "lambda");
+        
+        //For loops to assign new scaled interaction
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            double charge = 0.0;
+            MultipoleType multipoleType = atom.getMultipoleType();
+            if (multipoleType != null) {
+                charge = multipoleType.charge;
+            }
+            VDWType vdwType = atom.getVDWType();
+            double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+            double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+
+            double useFactor = 1.0;
+            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
+                useFactor = 0.0;
+            }
+
+            double lambdaScale = lambda; // Should be 1.0 at this point.
+            if (!atom.applyLambda()) {
+                lambdaScale = 1.0;
+            }
+
+            useFactor *= lambdaScale;
+
+            OpenMM_NonbondedForce_addParticle(fixedChargeSoftcore, charge * useFactor, sigma, eps);
+        }
+        
+        //These statements are repeated in Chodera code. I am not sure if this makes a difference
+        
+        if (crystal.aperiodic()) {
+            OpenMM_NonbondedForce_setNonbondedMethod(fixedChargeSoftcore,
+                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_NoCutoff);
+        } else {
+            OpenMM_NonbondedForce_setNonbondedMethod(fixedChargeSoftcore,
+                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_PME);
+            if (pme != null) {
+                // Units of the Ewald coefficient are A^-1; Multiply by AngstromsPerNM to convert to (Nm^-1).
+                double aEwald = OpenMM_AngstromsPerNm * pme.getEwaldCoefficient();
+                int nx = pme.getReciprocalSpace().getXDim();
+                int ny = pme.getReciprocalSpace().getYDim();
+                int nz = pme.getReciprocalSpace().getZDim();
+                OpenMM_NonbondedForce_setPMEParameters(fixedChargeSoftcore, aEwald, nx, ny, nz);
+            }
+        }
+        
+        OpenMM_NonbondedForce_setCutoffDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * off);
+          
+        OpenMM_System_addForce(system, fixedChargeSoftcore);
     }
 
     /**
