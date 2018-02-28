@@ -1855,9 +1855,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
                 double forceConst = bType.forceConstant * kParameterConversion;
                 double equilDist = bType.distance * OpenMM_NmPerAngstrom;
-                logger.info(String.format(" Adding restraint-bond %d-%d at %10.5f k %10.5f", at0, at1, equilDist, forceConst));
                 OpenMM_HarmonicBondForce_addBond(harmonicBondForce, at0, at1, equilDist, forceConst);
-                logger.info(String.format(" Adding restraint-bond %d-%d at %10.5f k %10.5f", at0, at1, equilDist, forceConst));
             }
             OpenMM_System_addForce(system, harmonicBondForce);
         }
