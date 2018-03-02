@@ -2267,13 +2267,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      *      ToDo: Add two sets of interaction groups. 1) Alchemical with Alchemcial. 2) Alchemical with Non-Alchemical.
      */
-
     private void fixedChargeSoftcore() {
 
         VanDerWaals vdW = super.getVdwNode();
         if (vdW == null) {
             return;
         }
+
         /**
          * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean for epsilon is supported.
          */
@@ -2294,17 +2294,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         stericsEnergyExpression += "U_sterics = (lambda_sterics^softcore_a)*4*epsilon*x*(x-1.0);";
         stericsEnergyExpression += "x = (sigma/reff_sterics)^6;";
         // Effective softcore distance for sterics.
-        stericsEnergyExpression += "reff_sterics = sigma*((softcore_alpha*(1.0-lambda_sterics)^softcore_b + (r/sigma)^softcore_c))^(1/softcore_c);";
+        stericsEnergyExpression += "reff_sterics = sigma*((softcore_a*(1.0-lambda_sterics)^softcore_b + (r/sigma)^softcore_c))^(1/softcore_c);";
         // Define energy expression for sterics.
         String energyExpression = stericsEnergyExpression + stericsMixingRules;
 
         fixedChargeSoftcore = OpenMM_CustomNonbondedForce_create(energyExpression);
 
-        double alpha = 0.5;
-        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "alpha", alpha);
+        // ToDo: change the Parameters to reflect what we need for the energy expression above.
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "lambda_sterics", 1.0);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "softcore_a", 1.0);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "softcore_b", 1.0);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "softcore_c", 1.0);
         OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "sigma");
         OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "epsilon");
-        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "lambda");
 
         /**
          * OpenMM vdW force requires a diameter (i.e. not radius).
@@ -2327,62 +2329,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            double charge = 0.0;
-
-            /**
-            MultipoleType multipoleType = atom.getMultipoleType();
-            if (multipoleType != null) {
-                charge = multipoleType.charge;
-            } */
 
             VDWType vdwType = atom.getVDWType();
             double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
-
-            //Set eps to 0.0 like in Chodera's code
-            eps *= 0.0;
-
-            double useFactor = 1.0;
-            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
-                useFactor = 0.0;
-            }
-
-            double lambdaScale = lambda; // Should be 1.0 at this point.
-            if (!atom.applyLambda()) {
-                lambdaScale = 1.0;
-            }
-
-            useFactor *= lambdaScale;
-
-            OpenMM_NonbondedForce_addParticle(fixedChargeSoftcore, charge * useFactor, sigma, eps);
+            // ToDo: Add particles and per-particle parameters (sigma and eps)
         }
 
-        //Input parameters
-        /**
-         * Define 1-4 scale factors.
-         */
-        double lj14Scale = vdwForm.getScale14();
-        double coulomb14Scale = 1.0 / 1.2;
-
-        ParticleMeshEwald pme = super.getPmeNode();
-        Bond bonds[] = super.getBonds();
-        if (bonds != null && bonds.length > 0) {
-            int nBonds = bonds.length;
-            PointerByReference bondArray;
-            bondArray = OpenMM_BondArray_create(0);
-            for (int i = 0; i < nBonds; i++) {
-                Bond bond = bonds[i];
-                int i1 = bond.getAtom(0).getXyzIndex() - 1;
-                int i2 = bond.getAtom(1).getXyzIndex() - 1;
-                OpenMM_BondArray_append(bondArray, i1, i2);
-            }
-            if (pme != null) {
-                coulomb14Scale = pme.getScale14();
-            }
-            OpenMM_NonbondedForce_createExceptionsFromBonds(fixedChargeSoftcore, bondArray, coulomb14Scale, lj14Scale);
-            OpenMM_BondArray_destroy(bondArray);
-        }
-
+        // ToDo: Use CustomNonbondedForce API.
         Crystal crystal = super.getCrystal();
         if (crystal.aperiodic()) {
             OpenMM_NonbondedForce_setNonbondedMethod(fixedChargeSoftcore,
@@ -2390,22 +2344,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         } else {
             OpenMM_NonbondedForce_setNonbondedMethod(fixedChargeSoftcore,
                     OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_PME);
-            if (pme != null) {
-                // Units of the Ewald coefficient are A^-1; Multiply by AngstromsPerNM to convert to (Nm^-1).
-                double aEwald = OpenMM_AngstromsPerNm * pme.getEwaldCoefficient();
-                int nx = pme.getReciprocalSpace().getXDim();
-                int ny = pme.getReciprocalSpace().getYDim();
-                int nz = pme.getReciprocalSpace().getZDim();
-                OpenMM_NonbondedForce_setPMEParameters(fixedChargeSoftcore, aEwald, nx, ny, nz);
-            }
         }
 
         NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
         double off = nonbondedCutoff.off;
         double cut = nonbondedCutoff.cut;
-        OpenMM_NonbondedForce_setCutoffDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * off);
 
+        // ToDo: Use CustomNonbondedForce API.
+        OpenMM_NonbondedForce_setCutoffDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * off);
         OpenMM_NonbondedForce_setUseSwitchingFunction(fixedChargeSoftcore, OpenMM_True);
+
         if (cut == off) {
             logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
             if (cut == Double.MAX_VALUE || cut == Double.POSITIVE_INFINITY) {
@@ -2416,6 +2364,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 cut *= 0.99;
             }
         }
+
+        // ToDo: Use CustomNonbondedForce API.
         OpenMM_NonbondedForce_setSwitchingDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * cut);
         OpenMM_NonbondedForce_setUseDispersionCorrection(fixedChargeSoftcore, OpenMM_False);
         OpenMM_Force_setForceGroup(fixedChargeSoftcore, 1);
