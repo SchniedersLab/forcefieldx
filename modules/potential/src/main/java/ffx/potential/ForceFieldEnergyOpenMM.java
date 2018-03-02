@@ -52,12 +52,12 @@ import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
-import edu.rit.pj.Comm;
-import ffx.potential.bonded.*;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import edu.rit.pj.Comm;
 
 import simtk.openmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
 import simtk.openmm.OpenMMLibrary;
@@ -160,17 +160,107 @@ import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KJPerKcal;
 import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
 import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_NmPerAngstrom;
 import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_RadiansPerDegree;
-import static simtk.openmm.OpenMMLibrary.*;
+import static simtk.openmm.OpenMMLibrary.OpenMM_BondArray_append;
+import static simtk.openmm.OpenMMLibrary.OpenMM_BondArray_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_BondArray_destroy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CMMotionRemover_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Context_create_2;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Context_destroy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Context_getState;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Context_setPositions;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Context_setVelocities;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomExternalForce_addGlobalParameter;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomExternalForce_addParticle;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomExternalForce_addPerParticleParameter;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomExternalForce_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_ParticlePair;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_ParticlePairNoExclusions;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_SingleParticle;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addComputedValue;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addEnergyTerm;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addGlobalParameter;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addParticle;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_addPerParticleParameter;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_setCutoffDistance;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_setParticleParameters;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_updateParametersInContext;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addGlobalParameter;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addPerParticleParameter;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_append;
+import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_destroy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_resize;
+import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_set;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Force_setForceGroup;
+import static simtk.openmm.OpenMMLibrary.OpenMM_HarmonicBondForce_addBond;
+import static simtk.openmm.OpenMMLibrary.OpenMM_HarmonicBondForce_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_append;
+import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_destroy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_resize;
+import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_set;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Integrator_destroy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_LangevinIntegrator_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_addParticle;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_createExceptionsFromBonds;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setCutoffDistance;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setNonbondedMethod;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setPMEParameters;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setParticleParameters;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setSwitchingDistance;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setUseDispersionCorrection;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setUseSwitchingFunction;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_updateParametersInContext;
+import static simtk.openmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_addTorsion;
+import static simtk.openmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getDefaultPluginsDirectory;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getNumPlatforms;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getOpenMMVersion;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getPlatformByName;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_getPluginLoadFailures;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_loadPluginsFromDirectory;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_destroy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_getForces;
+import static simtk.openmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_StringArray_destroy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_StringArray_get;
+import static simtk.openmm.OpenMMLibrary.OpenMM_StringArray_getSize;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_addConstraint;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_addForce;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_addParticle;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_destroy;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_getNumConstraints;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_setDefaultPeriodicBoxVectors;
+import static simtk.openmm.OpenMMLibrary.OpenMM_System_setVirtualSite;
+import static simtk.openmm.OpenMMLibrary.OpenMM_TwoParticleAverageSite_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_append;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_create;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_get;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Vec3Array_resize;
+import static simtk.openmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
 
 import ffx.crystal.Crystal;
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.ImproperTorsion;
+import ffx.potential.bonded.OutOfPlaneBend;
+import ffx.potential.bonded.PiOrbitalTorsion;
+import ffx.potential.bonded.RestraintBond;
+import ffx.potential.bonded.StretchBend;
+import ffx.potential.bonded.Torsion;
+import ffx.potential.bonded.TorsionTorsion;
+import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
@@ -208,7 +298,6 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
  * Compute the potential energy and derivatives using OpenMM.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
@@ -351,7 +440,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * OpenMM thermostat, likely an Andersen thermostat.
      */
     private PointerByReference ommThermostat = null;
-    
+
     private PointerByReference fixedChargeSoftcore = null;
 
     /**
@@ -360,8 +449,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param molecularAssembly Assembly to construct energy for.
      * @param requestedPlatform requested OpenMM platform to be used.
-     * @param restraints Harmonic coordinate restraints.
-     * @param nThreads Number of threads to use in the super class ForceFieldEnergy instance.
+     * @param restraints        Harmonic coordinate restraints.
+     * @param nThreads          Number of threads to use in the super class ForceFieldEnergy instance.
      */
     protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform, List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
@@ -705,6 +794,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /**
      * Add an Andersen thermostat to the system.
+     *
      * @param targetTemp Target temperature in Kelvins.
      */
     public void addAndersenThermostat(double targetTemp) {
@@ -713,7 +803,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /**
      * Add an Andersen thermostat to the system.
-     * @param targetTemp Target temperature in Kelvins.
+     *
+     * @param targetTemp    Target temperature in Kelvins.
      * @param collisionFreq Collision frequency in 1/psec
      */
     public void addAndersenThermostat(double targetTemp, double collisionFreq) {
@@ -1875,7 +1966,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Update fixed charge non-bonded parameters.
         if (fixedChargeNonBondedForce != null) {
-            updateFixedChargeNonBondedForce(atoms);
+            updateFixedChargeNonBondedForce(atoms, false);
         }
 
         // Update fixed charge GB parameters.
@@ -1946,8 +2037,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Updates the fixed-charge non-bonded force for change in Use flags.
      *
      * @param atoms Array of all Atoms in the system
+     * @param zeroEpsForLambdaAtoms If true, set Eps to zero for Lambda atoms (ToDo: implement this flag).
+     *
      */
-    private void updateFixedChargeNonBondedForce(Atom[] atoms) {
+    private void updateFixedChargeNonBondedForce(Atom[] atoms, boolean zeroEpsForLambdaAtoms) {
         VanDerWaals vdW = super.getVdwNode();
         /**
          * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
@@ -2163,16 +2256,26 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, context);
     }
-    
-    private void fixedChargeSoftcore(){
-        
+
+
+    /**
+     * 1.) Handle interactions between non-alchemical atoms with our default OpenMM NonBondedForce.
+     *      Note that alchemical atoms must have eps=0 to turn them off in this force.
+     *
+     * 2.) Handle interactions between alchemical atoms and mixed non-alchemical <-> alchemical interactions
+     *      with an OpenMM CustomNonBondedForce.
+     *
+     *      ToDo: Add two sets of interaction groups. 1) Alchemical with Alchemcial. 2) Alchemical with Non-Alchemical.
+     */
+
+    private void fixedChargeSoftcore() {
+
         VanDerWaals vdW = super.getVdwNode();
         if (vdW == null) {
             return;
         }
         /**
-         * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
-         * for epsilon is supported.
+         * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean for epsilon is supported.
          */
         VanDerWaalsForm vdwForm = vdW.getVDWForm();
         if (vdwForm.vdwType != LENNARD_JONES
@@ -2181,10 +2284,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
             return;
         }
-        
-        fixedChargeSoftcore = OpenMM_NonbondedForce_create();
-        
-                /**
+
+        // Sterics mixing rules.
+        String stericsMixingRules = "epsilon = sqrt(epsilon1*epsilon2);";
+        stericsMixingRules += "sigma = 0.5*(sigma1 + sigma2);";
+
+        // Soft-core Lennard-Jones.
+        String stericsEnergyExpression = "U_sterics;";
+        stericsEnergyExpression += "U_sterics = (lambda_sterics^softcore_a)*4*epsilon*x*(x-1.0);";
+        stericsEnergyExpression += "x = (sigma/reff_sterics)^6;";
+        // Effective softcore distance for sterics.
+        stericsEnergyExpression += "reff_sterics = sigma*((softcore_alpha*(1.0-lambda_sterics)^softcore_b + (r/sigma)^softcore_c))^(1/softcore_c);";
+        // Define energy expression for sterics.
+        String energyExpression = stericsEnergyExpression + stericsMixingRules;
+
+        fixedChargeSoftcore = OpenMM_CustomNonbondedForce_create(energyExpression);
+
+        double alpha = 0.5;
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "alpha", alpha);
+        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "sigma");
+        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "epsilon");
+        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "lambda");
+
+        /**
          * OpenMM vdW force requires a diameter (i.e. not radius).
          */
         double radScale = 1.0;
@@ -2198,7 +2320,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             radScale /= 1.122462048309372981;
         }
 
-                /**
+        /**
          * Add particles.
          */
         Atom[] atoms = molecularAssembly.getAtomArray();
@@ -2206,14 +2328,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
             double charge = 0.0;
+
+            /**
             MultipoleType multipoleType = atom.getMultipoleType();
             if (multipoleType != null) {
                 charge = multipoleType.charge;
-            }
+            } */
+
             VDWType vdwType = atom.getVDWType();
             double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
-            
+
             //Set eps to 0.0 like in Chodera's code
             eps *= 0.0;
 
@@ -2231,7 +2356,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
             OpenMM_NonbondedForce_addParticle(fixedChargeSoftcore, charge * useFactor, sigma, eps);
         }
-        
+
         //Input parameters
         /**
          * Define 1-4 scale factors.
@@ -2292,83 +2417,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
         OpenMM_NonbondedForce_setSwitchingDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * cut);
-
         OpenMM_NonbondedForce_setUseDispersionCorrection(fixedChargeSoftcore, OpenMM_False);
-
         OpenMM_Force_setForceGroup(fixedChargeSoftcore, 1);
-        
+
         //Add force
         OpenMM_System_addForce(system, fixedChargeSoftcore);
         logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force."));
 
         GeneralizedKirkwood gk = super.getGK();
         if (gk != null) {
+            logger.severe(" OpenMM alchemical methods are not supported for GB.");
             addCustomGBForce();
         }
-        
-        
-        //Softcore potential
-        String energyExpression = "4*epsilon*lambda*x*(x-1.0);";
-        energyExpression += "x = 1.0/(alpha*(1.0-lambda) + (r/sigma)^6);";
-        energyExpression += "epsilon = sqrt(epsilon1*epsilon2);";
-        energyExpression += "sigma = 0.5*(sigma1 + sigma2);";
-        energyExpression += "lambda = lambda1*lambda2;";
-        
-        fixedChargeSoftcore = OpenMM_CustomNonbondedForce_create(energyExpression);
-        double alpha = 0.5;
-        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "alpha", alpha);
-        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "sigma");
-        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "epsilon");
-        OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "lambda");
-        
-        //For loops to assign new scaled interaction
-        for (int i = 0; i < nAtoms; i++) {
-            Atom atom = atoms[i];
-            double charge = 0.0;
-            MultipoleType multipoleType = atom.getMultipoleType();
-            if (multipoleType != null) {
-                charge = multipoleType.charge;
-            }
-            VDWType vdwType = atom.getVDWType();
-            double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
-            double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
-
-            double useFactor = 1.0;
-            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
-                useFactor = 0.0;
-            }
-
-            double lambdaScale = lambda; // Should be 1.0 at this point.
-            if (!atom.applyLambda()) {
-                lambdaScale = 1.0;
-            }
-
-            useFactor *= lambdaScale;
-
-            OpenMM_NonbondedForce_addParticle(fixedChargeSoftcore, charge * useFactor, sigma, eps);
-        }
-        
-        //These statements are repeated in Chodera code. I am not sure if this makes a difference
-        
-        if (crystal.aperiodic()) {
-            OpenMM_NonbondedForce_setNonbondedMethod(fixedChargeSoftcore,
-                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_NoCutoff);
-        } else {
-            OpenMM_NonbondedForce_setNonbondedMethod(fixedChargeSoftcore,
-                    OpenMM_NonbondedForce_NonbondedMethod.OpenMM_NonbondedForce_PME);
-            if (pme != null) {
-                // Units of the Ewald coefficient are A^-1; Multiply by AngstromsPerNM to convert to (Nm^-1).
-                double aEwald = OpenMM_AngstromsPerNm * pme.getEwaldCoefficient();
-                int nx = pme.getReciprocalSpace().getXDim();
-                int ny = pme.getReciprocalSpace().getYDim();
-                int nz = pme.getReciprocalSpace().getZDim();
-                OpenMM_NonbondedForce_setPMEParameters(fixedChargeSoftcore, aEwald, nx, ny, nz);
-            }
-        }
-        
-        OpenMM_NonbondedForce_setCutoffDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * off);
-          
-        OpenMM_System_addForce(system, fixedChargeSoftcore);
     }
 
     /**
@@ -2455,7 +2515,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Evaluates energy both with OpenMM and reference potential, and returns
      * the difference FFX-OpenMM.
      *
-     * @param x Coordinate array
+     * @param x       Coordinate array
      * @param verbose
      * @return Energy discrepancy
      */
@@ -2469,9 +2529,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Evaluates energy and gradients both with OpenMM and reference potential,
      * and returns the difference FFX-OpenMM.
      *
-     * @param x Coordinate array
-     * @param gFFX Array for FFX gradients to be stored in
-     * @param gOMM Array for OpenMM gradients to be stored in
+     * @param x       Coordinate array
+     * @param gFFX    Array for FFX gradients to be stored in
+     * @param gOMM    Array for OpenMM gradients to be stored in
      * @param verbose
      * @return Energy discrepancy
      */
@@ -2636,6 +2696,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Private method for internal use, so we don't have subclasses calling super.energy, and this class delegating to
      * the subclass's getGradients method.
+     *
      * @param g Gradient array to fill.
      * @return Gradient array.
      */
