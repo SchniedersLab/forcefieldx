@@ -2303,22 +2303,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         String stericsMixingRules = "epsilon = sqrt(epsilon1*epsilon2);";
         stericsMixingRules += "sigma = 0.5*(sigma1 + sigma2);";
 
-        // Soft-core Lennard-Jones.
+        // Softcore Lennard-Jones, with a form equivalent to that used in FFX VanDerWaals class.
         String stericsEnergyExpression = "U_sterics;";
-        stericsEnergyExpression += "U_sterics = (lambda_sterics^softcore_a)*4*epsilon*x*(x-1.0);";
-        stericsEnergyExpression += "x = (sigma/reff_sterics)^6;";
+        stericsEnergyExpression += "U_sterics = (lambda^beta)*4*epsilon*x*(x-1.0);";
+        stericsEnergyExpression += "x = (1.0/reff)^6;";
         // Effective softcore distance for sterics.
-        stericsEnergyExpression += "reff_sterics = sigma*((softcore_a*(1.0-lambda_sterics)^softcore_b + (r/sigma)^softcore_c))^(1/softcore_c);";
+        stericsEnergyExpression += "reff = (alpha*(1.0-lambda)^2.0 + (r/sigma));";
         // Define energy expression for sterics.
         String energyExpression = stericsEnergyExpression + stericsMixingRules;
 
         fixedChargeSoftcore = OpenMM_CustomNonbondedForce_create(energyExpression);
 
-        // ToDo: change the Parameters to reflect what we need for the energy expression above.
-        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "lambda_sterics", 1.0);
-        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "softcore_a", 1.0);
-        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "softcore_b", 1.0);
-        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "softcore_c", 1.0);
+        // Get the Alpha and Beta constants from the VanDerWaals instance.
+        double alpha = vdW.getAlpha();
+        double beta = vdW.getBeta();
+
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "lambda", 1.0);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "alpha", alpha);
+        OpenMM_CustomNonbondedForce_addGlobalParameter(fixedChargeSoftcore, "beta", beta);
         OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "sigma");
         OpenMM_CustomNonbondedForce_addPerParticleParameter(fixedChargeSoftcore, "epsilon");
 
@@ -2378,13 +2380,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
+        // ToDo: Create and add 1) Alchemical with Alchemical and 2) Alchemical with Non-Alchemical interaction groups.
+
         OpenMM_CustomNonbondedForce_setSwitchingDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * cut);
         OpenMM_CustomNonbondedForce_setUseDispersionCorrection(fixedChargeSoftcore, OpenMM_False);
         OpenMM_Force_setForceGroup(fixedChargeSoftcore, 1);
 
-        //Add force
+        // Add force
         OpenMM_System_addForce(system, fixedChargeSoftcore);
-        logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force."));
+        logger.log(Level.INFO, String.format(" Added fixed charge softcore sterics force."));
 
         GeneralizedKirkwood gk = super.getGK();
         if (gk != null) {
