@@ -77,12 +77,12 @@ public class RotamerOptimizationTest {
                         false,                  // Use 3-body Energies.
                         true,                   // Use Original Rotamers.
                         true,                   // Do Overall Opt.
-                        91032.25842333832,      // Expected Energy.
+                        -203.10632181492687,    // Expected Energy.
                         true,                   // Do Self-Energy Opt.
                         -203.10632181492687,    // Expected Self-Energy.
                         true,                   // Do Pair-Energy Opt.
                         1,                      // Pair residue
-                        0.0,                    // Expected Pair-Energy.
+                        1018.8163922682276,     // Expected Pair-Energy.
                         false,                  // Do Trimer-Energy Opt.
                         1,                      // Trimer residue 1.
                         2,                      // Trimer residue 2.
@@ -104,7 +104,7 @@ public class RotamerOptimizationTest {
                         -203.10632181492687,    // Expected Self-Energy.
                         true,                   // Do Pair-Energy Opt.
                         1,                      // Pair residue
-                        0.0,                    // Expected Pair-Energy.
+                        -186.71062663844978,    // Expected Pair-Energy.
                         false,                  // Do Trimer-Energy Opt.
                         1,                      // Trimer residue 1.
                         2,                      // Trimer residue 2.
@@ -126,13 +126,13 @@ public class RotamerOptimizationTest {
                         -203.10632181492687,    // Expected Self-Energy.
                         true,                   // Do Pair-Energy Opt.
                         1,                      // Pair residue
-                        0.0,                    // Expected Pair-Energy.
+                        -186.71062663844978,    // Expected Pair-Energy.
                         false,                  // Do Trimer-Energy Opt.
                         1,                      // Trimer residue 1.
                         2,                      // Trimer residue 2.
                         0.0,                    // Expected trimer energy.
                         1.0e-3                  // Energy Tolerance.
-                    },
+                    }/*,
                     {   "Chignolin Direct with Orig Rot (Goldstein)",
                         "ffx/algorithms/structures/5awl.pdb",
                         "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
@@ -142,19 +142,19 @@ public class RotamerOptimizationTest {
                         true,                   // Goldstein Elimination.
                         true,                   // Use 3-body Energies.
                         true,                   // Use Original Rotamers.
-                        true,                   // Do Overall Opt.
+                        false,                  // Do Overall Opt.
                         -203.10632181492687,    // Expected Energy.
-                        false,                  // Do Self-Energy Opt.
-                        1.0E100,                // Expected Self-Energy.
-                        false,                  // Do Pair-Energy Opt.
+                        true,                   // Do Self-Energy Opt.
+                        -203.10632181492687,    // Expected Self-Energy.
+                        true,                   // Do Pair-Energy Opt.
                         1,                      // Pair residue
-                        0.0,                    // Expected Pair-Energy.
-                        false,                  // Do Trimer-Energy Opt.
+                        -186.71062663844978,    // Expected Pair-Energy.
+                        true,                   // Do Trimer-Energy Opt.
                         1,                      // Trimer residue 1.
                         2,                      // Trimer residue 2.
-                        0.0,                    // Expected trimer energy.
+                        -186.71062663844978,    // Expected trimer energy.
                         1.0e-3                  // Energy Tolerance.
-                    }
+                    }*/
                
                 
                                  
@@ -379,10 +379,11 @@ public class RotamerOptimizationTest {
         rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
 
-        double energy = 0.0;
+        double energy;
         if (doOverallOpt) {
             rotamerOptimization.turnRotamerPairEliminationOff();
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            //System.out.println("The expected overall energy is: " + energy);
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
 
@@ -391,11 +392,17 @@ public class RotamerOptimizationTest {
             rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestSelfEnergyEliminations(true);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            //System.out.println("The expected self is: " + energy);
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
-
+         
             // Check that optimized rotamers are equivalent to the lowest self-energy of each residue.
             int optimum[] = rotamerOptimization.getOptimumRotamers();
-
+            
+            //Re-fill eliminatedSingles so that no rotamers are eliminated.
+            for (int row = 0; row<rotamerOptimization.eliminatedSingles.length; row++){
+                Arrays.fill(rotamerOptimization.eliminatedSingles[row], false);
+            }
+            
             // Loop over all residues
             for (int i = 0; i < nRes; i++) {
                 Residue res = residueList.get(i);
@@ -406,7 +413,7 @@ public class RotamerOptimizationTest {
                 while(rotamerOptimization.check(i, rotCounter) && rotCounter < nRot){
                     rotCounter++;
                 }
-                               
+                
                 double lowEnergy = rotamerOptimization.self(i, rotCounter);
                 int bestRot = rotCounter;
                 for (int ri = 1; ri < nRot; ri++) {                  
@@ -422,13 +429,15 @@ public class RotamerOptimizationTest {
                     }
                 }
                 assertEquals(String.format(" %s Self-Energy of residue %d", info, i), optimum[i], bestRot);
-            }
+            }           
         }
        
         if (doPairOpt) {
             rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestPairEnergyEliminations(pairResidue);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            //System.out.println("The expected pair energy is: " + energy);
+            assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
 
             // Check that optimized rotamers are equivalent to the lowest pair-energy sum for the "pairResidue".
             int optimum[] = rotamerOptimization.getOptimumRotamers();
@@ -454,8 +463,6 @@ public class RotamerOptimizationTest {
                     Residue resJ = residueList.get(j);
                     Rotamer[] rotJ = resJ.getRotamers(rLib);
                     int nRot = rotJ.length;
-
-                    System.out.println("1, "+ri+","+j+","+"0");
                     
                     int rj = 0;
                     while (rotamerOptimization.check(j, rj) || rotamerOptimization.check(pairResidue, ri, j, rj)) {
@@ -531,19 +538,19 @@ public class RotamerOptimizationTest {
 
             // ToDo: Check that optimized rotamers are equivalent to the lowest 3-body energy of each residue with the tripleResidue1 and 2.
         }
-    } 
+    }
     
     
     
     
     
  
-    /*
+  /*  
     @Test
     public void testPairEnergyElimination() {
         // Load the test system.
         load();
-
+        
         // Initialize Parallel Java
         try {
             String args[] = new String[0];
@@ -562,15 +569,13 @@ public class RotamerOptimizationTest {
         rLib.setUseOrigCoordsRotamer(useOriginalRotamers);
 
         int counter = 1;
-        int allStartResID = 1;
         ArrayList<Residue> residueList = new ArrayList<Residue>();
         Polymer[] polymers = molecularAssembly.getChains();
         int nPolymers = polymers.length;
         for (int p = 0; p < nPolymers; p++) {
             Polymer polymer = polymers[p];
             ArrayList<Residue> residues = polymer.getResidues();
-            int nResidues = residues.size();
-            for (int i = 0; i < nResidues; i++) {
+            for (int i = 0; i < endResID; i++) {
                 Residue residue = residues.get(i);
                 Rotamer[] rotamers = residue.getRotamers(rLib);
                 if (rotamers != null) {
@@ -578,14 +583,14 @@ public class RotamerOptimizationTest {
                     if (nrot == 1) {
                         RotamerLibrary.applyRotamer(residue, rotamers[0]);
                     }
-                    if (counter >= allStartResID) {
+                    if (counter >= startResID) {
                         residueList.add(residue);
                     }
                 }
                 counter++;
             }
         }
-
+        
         RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
         rotamerOptimization.setThreeBodyEnergy(useThreeBody);
         rotamerOptimization.setUseGoldstein(useGoldstein);
@@ -593,8 +598,7 @@ public class RotamerOptimizationTest {
         rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
 
-        System.out.println("BEGINNING PAIR ELIMINATION TEST");
-        double energy = 0.0;
+        double energy;
         if (doOverallOpt) {
             rotamerOptimization.turnRotamerSingleEliminationOff();
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
