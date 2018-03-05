@@ -172,11 +172,11 @@ public class VanDerWaals implements MaskingInterface,
      */
     private double lambda = 1.0;
     /**
-     * Exponent on lambda.
+     * Exponent on lambda (beta).
      */
     private double vdwLambdaExponent = 1.0;
     /**
-     * Offset in Angstroms.
+     * Offset in Angstroms (alpha).
      */
     private double vdwLambdaAlpha = 0.5;
     /**
@@ -481,6 +481,14 @@ public class VanDerWaals implements MaskingInterface,
             logger.info(format("    Softcore Alpha:                       %5.3f", vdwLambdaAlpha));
             logger.info(format("    Lambda Exponent:                      %5.3f", vdwLambdaExponent));
         }
+    }
+
+    public double getAlpha() {
+        return vdwLambdaAlpha;
+    }
+
+    public double getBeta() {
+        return vdwLambdaExponent;
     }
 
     /**

@@ -172,7 +172,7 @@ class DynamicsOpenMM extends Script{
             moldyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
         }
         else{
-            logger.severe(" Could not start OpenMM molecular dynamics");
+            logger.severe(" Could not start OpenMM molecular dynamics.");
         }
 
     }

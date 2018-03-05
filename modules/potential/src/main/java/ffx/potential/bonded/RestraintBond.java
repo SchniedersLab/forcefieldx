@@ -705,6 +705,10 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
         return energy;
     }
 
+    public BondType getBondType() {
+        return bondType;
+    }
+
     /**
      * Log details for this Bond energy term.
      */
