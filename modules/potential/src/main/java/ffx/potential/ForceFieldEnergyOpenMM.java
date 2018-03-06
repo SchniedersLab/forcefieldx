@@ -1525,7 +1525,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         //
     }
 
-
     private void addAmoebaMultipoleForce() {
         ParticleMeshEwald pme = super.getPmeNode();
         if (pme == null) {
@@ -2273,7 +2272,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaMultipoleForce_updateParametersInContext(amoebaMultipoleForce, context);
     }
 
-
     /**
      * 1.) Handle interactions between non-alchemical atoms with our default OpenMM NonBondedForce.
      *      Note that alchemical atoms must have eps=0 to turn them off in this force.
@@ -2373,7 +2371,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomNonbondedForce_setCutoffDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * off);
         OpenMM_CustomNonbondedForce_setUseSwitchingFunction(fixedChargeSoftcore, OpenMM_True);
         OpenMM_CustomNonbondedForce_setSwitchingDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * cut);
-        OpenMM_CustomNonbondedForce_setUseDispersionCorrection(fixedChargeSoftcore, OpenMM_False);
 
         if (cut == off) {
             logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
@@ -2610,7 +2607,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
-
 
         if (maxDebugGradient < Double.MAX_VALUE) {
             boolean extremeGrad = Arrays.stream(g).anyMatch((double gi) -> {
@@ -3213,7 +3209,4 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return numParticles;
     }
 
-    private void OpenMM_CustomNonbondedForce_setUseDispersionCorrection(PointerByReference fixedChargeSoftcore, int OpenMM_False) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 }

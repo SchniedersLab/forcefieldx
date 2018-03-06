@@ -842,6 +842,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         return openMMEnergy;
                     } catch (Exception ex) {
                         logger.warning(format(" Exception creating ForceFieldEnergyOpenMM: %s", ex));
+                        ex.printStackTrace();
+
                         ForceFieldEnergy ffxEnergy = assembly.getPotentialEnergy();
                         if (ffxEnergy == null) {
                             ffxEnergy = new ForceFieldEnergy(assembly, restraints, numThreads);
@@ -2772,7 +2774,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     protected List<RestraintBond> getRestraintBonds() {
-        return Arrays.asList(restraintBonds);
+        if (restraintBonds != null && restraintBonds.length > 0) {
+            return Arrays.asList(restraintBonds);
+        } else {
+            return null;
+        }
     }
 
     public int getSolvationInteractions() {
