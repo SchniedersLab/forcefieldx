@@ -527,23 +527,112 @@ public class RotamerOptimizationTest {
             }
         }
       
-        // ToDo: Test 3-Body Energy Eliminations.
+        //Test 3-Body Energy Eliminations.
         if (doTripleOpt) {
-            System.out.println("Doing Triple Optimization.");
             rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestTripleEnergyEliminations(tripleResidue1, tripleResidue2);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             System.out.println("The expected triple energy is: " + energy);
             assertEquals(info + " Triple-Energy", expectedTripleEnergy, energy, tolerance);
 
-            // ToDo: Check that optimized rotamers are equivalent to the lowest 3-body energy of each residue with the tripleResidue1 and 2.
+            //Check that optimized rotamers are equivalent to the lowest 3-body energy of each residue with the tripleResidue1 and 2.
+            int optimum[] = rotamerOptimization.getOptimumRotamers();
+
+            //fix residue 1 and gets its rotamers
+            Residue resI = residueList.get(tripleResidue1);
+            Rotamer rotI[] = resI.getRotamers(rLib);
+            int ni = rotI.length;
+
+            //fix residue 2 and get its rotamers
+            Residue resJ = residueList.get(tripleResidue2);
+            Rotamer rotJ[] = resJ.getRotamers(rLib);
+            int nj = rotJ.length;
+
+            double minEnergyIJ = Double.POSITIVE_INFINITY;
+            int bestRotI = -1;
+            int bestRotJ = -1;
+
+            for (int ri = 0; ri < ni; ri++) { //loop through rot I
+                if (rotamerOptimization.check(tripleResidue1, ri)) {
+                    continue;
+                }
+                for (int rj = 0; rj < nj; rj++) { //loop through rot J
+                    if (rotamerOptimization.check(tripleResidue2, rj) || rotamerOptimization.check(tripleResidue1, ri, tripleResidue2, rj)) {
+                        continue;
+                    }
+                    double currentEnergy = 0.0;
+                    for (int k = 0; k < nRes; k++) { //loop through all other residues
+                        if (k == tripleResidue1 || k == tripleResidue2) {
+                            continue;
+                        }
+                        Residue resK = residueList.get(k);
+                        Rotamer rotK[] = resK.getRotamers(rLib);
+                        int nk = rotK.length;
+
+                        int rkStart = 0;
+                        while (rotamerOptimization.check(k, rkStart) || rotamerOptimization.check(tripleResidue1, ri, k, rkStart) || rotamerOptimization.check(tripleResidue2, rj, k, rkStart)) {
+                            if (++rkStart >= nk) {
+                                logger.warning("RJ is too large.");
+                            }
+                        }
+
+                        double lowEnergy = rotamerOptimization.triple(tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
+                        for (int rk = rkStart; rk < nk; rk++) {
+                            double tripleEnergy = rotamerOptimization.triple(tripleResidue1, ri, tripleResidue2, rj, k, rk);
+                            if (tripleEnergy < lowEnergy) {
+                                lowEnergy = tripleEnergy;
+                            }
+                        }
+                        currentEnergy += lowEnergy; //adds lowest energy conformation of residue k to that of the rotamer I
+                    }
+                    if (currentEnergy < minEnergyIJ) {
+                        minEnergyIJ = currentEnergy;
+                        bestRotI = ri;
+                        bestRotJ = rj;
+                    }
+                }
+            }
+
+            assertEquals(String.format(" %s Best three-body energy sum for residue %d is with rotamer %d at %10.4f.",
+                    info, tripleResidue1, bestRotI, minEnergyIJ),
+                    optimum[tripleResidue1], bestRotI);
+
+            assertEquals(String.format(" %s Best three-body energy sum for residue %d is with rotamer %d at %10.4f.",
+                    info, tripleResidue2, bestRotJ, minEnergyIJ),
+                    optimum[tripleResidue2], bestRotJ);
+
+            //loop over the residues to find the best rotamer per residue given bestRotI and bestRotJ
+            for (int k = 0; k < nRes; k++) {
+                if (k == tripleResidue1 || k == tripleResidue2) {
+                    continue;
+                }
+                Residue resK = residueList.get(k);
+                Rotamer rotK[] = resK.getRotamers(rLib);
+                int nk = rotK.length;
+
+                int rotCounter = 0;
+                while (rotamerOptimization.check(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.check(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
+                    rotCounter++;
+                }
+                double lowEnergy = rotamerOptimization.triple(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
+                int bestRotK = rotCounter;
+                for (int rk = 1; rk < nk; rk++) {
+                    if (rotamerOptimization.check(k, rk) || rotamerOptimization.check(tripleResidue1, bestRotI, k, rk) || rotamerOptimization.check(tripleResidue2, bestRotJ, k, rk)) {
+                        continue;
+                    } else {
+                        double tripleEnergy = rotamerOptimization.triple(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
+                        if (tripleEnergy < lowEnergy) {
+                            lowEnergy = tripleEnergy;
+                            bestRotK = rk;
+                        }
+                    }
+                }
+                assertEquals(String.format(" %s Triple-Energy of residue (%d,%d) and residue (%d,%d) with residue %d",
+                        info, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k), optimum[k], bestRotK);
+            }
         }
+
     }
-    
-    
-    
-    
-    
  
   /*  
     @Test
