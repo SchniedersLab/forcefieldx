@@ -2280,8 +2280,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * 2.) Handle interactions between alchemical atoms and mixed non-alchemical <-> alchemical interactions
      *      with an OpenMM CustomNonBondedForce.
-     *
-     *      ToDo: Add two sets of interaction groups. 1) Alchemical with Alchemcial. 2) Alchemical with Non-Alchemical.
      */
     private void fixedChargeSoftcore() {
 
@@ -2340,7 +2338,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             radScale /= 1.122462048309372981;
         }
 
-        
         /**
          * Add particles.
          */
@@ -2356,10 +2353,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             PointerByReference particleParameters = OpenMM_DoubleArray_create(0);
             OpenMM_DoubleArray_append(particleParameters, sigma);
             OpenMM_DoubleArray_append(particleParameters, eps);
-            
             OpenMM_CustomNonbondedForce_addParticle(fixedChargeSoftcore, particleParameters);
             OpenMM_DoubleArray_destroy(particleParameters);
-            // ToDo: Add particles and per-particle parameters (sigma and eps)
         }
 
         Crystal crystal = super.getCrystal();
@@ -2377,6 +2372,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_CustomNonbondedForce_setCutoffDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * off);
         OpenMM_CustomNonbondedForce_setUseSwitchingFunction(fixedChargeSoftcore, OpenMM_True);
+        OpenMM_CustomNonbondedForce_setSwitchingDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * cut);
+        OpenMM_CustomNonbondedForce_setUseDispersionCorrection(fixedChargeSoftcore, OpenMM_False);
 
         if (cut == off) {
             logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
@@ -2389,36 +2386,23 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
-        // ToDo: Create and add 1) Alchemical with Alchemical and 2) Alchemical with Non-Alchemical interaction groups.
-        
         PointerByReference aaInteractionGroup = OpenMM_IntArray_create(0);
         PointerByReference naInteractionGroup = OpenMM_IntArray_create(0);
-        
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            
-            if(atom.applyLambda()){
+            if (atom.applyLambda()){
                 OpenMM_IntArray_append(aaInteractionGroup, i);
-            }
-            
-            else {
+            } else {
                 OpenMM_IntArray_append(naInteractionGroup, i);
             }
         }
-        
         OpenMM_CustomNonbondedForce_addInteractionGroup(fixedChargeSoftcore, aaInteractionGroup, aaInteractionGroup);
         OpenMM_CustomNonbondedForce_addInteractionGroup(fixedChargeSoftcore, aaInteractionGroup, naInteractionGroup);
-        
-        
         OpenMM_IntArray_destroy(aaInteractionGroup);
         OpenMM_IntArray_destroy(naInteractionGroup);
-        
 
-        OpenMM_CustomNonbondedForce_setSwitchingDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * cut);
-        OpenMM_CustomNonbondedForce_setUseDispersionCorrection(fixedChargeSoftcore, OpenMM_False);
+        // Specify force group and add force.
         OpenMM_Force_setForceGroup(fixedChargeSoftcore, 1);
-
-        // Add force
         OpenMM_System_addForce(system, fixedChargeSoftcore);
         logger.log(Level.INFO, String.format(" Added fixed charge softcore sterics force."));
 

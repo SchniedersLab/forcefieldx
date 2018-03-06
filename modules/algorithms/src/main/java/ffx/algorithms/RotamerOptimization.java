@@ -2057,12 +2057,18 @@ public class RotamerOptimization implements Terminatable {
                     Rotamer[] rotJ = resJ.getRotamers(library);
                     int nJ = rotJ.length;
                     for (int rj = 0; rj < nJ; rj++) {
+                        /**
                         if (i != resID1 && j != resID1) {
                             try {
                                 twoBodyEnergy[i][ri][j][rj] = 0.0;
                             } catch (Exception e) {
                                 // catch NPE.
                             }
+                        } */
+                        try {
+                            twoBodyEnergy[i][ri][j][rj] = 0.0;
+                        } catch (Exception e) {
+                            // catch NPE.
                         }
                         if (threeBodyTerm) {
                             for (int k = j + 1; k < nRes; k++) {
@@ -2095,11 +2101,6 @@ public class RotamerOptimization implements Terminatable {
         
         
     }
-    
-    
-    
-    
-    
 
     /**
      * Method intended to decompose energies down to quad energies. Mostly for
@@ -3387,7 +3388,11 @@ public class RotamerOptimization implements Terminatable {
                         int rj = optimum[j];
                         for (int k = j + 1; k < nResidues; k++) {
                             int rk = optimum[k];
-                            sumTrimerEnergy += triple(i, ri, j, rj, k, rk);
+                            try {
+                                sumTrimerEnergy += triple(i, ri, j, rj, k, rk);
+                            } catch (Exception ex) {
+                                logger.warning(ex.toString());
+                            }
                         }
                     }
                 }
@@ -3622,12 +3627,16 @@ public class RotamerOptimization implements Terminatable {
                     int rj = optimum[j];
                     for (int k = j + 1; k < nResidues; k++) {
                         int rk = optimum[k];
-                        double triple = triple(i, ri, j, rj, k, rk);
-                        double thirdTrip = triple / 3.0;
-                        residueEnergy[i] += thirdTrip;
-                        residueEnergy[j] += thirdTrip;
-                        residueEnergy[k] += thirdTrip;
-                        sumTrimerEnergy += triple;
+                        try {
+                            double triple = triple(i, ri, j, rj, k, rk);
+                            double thirdTrip = triple / 3.0;
+                            residueEnergy[i] += thirdTrip;
+                            residueEnergy[j] += thirdTrip;
+                            residueEnergy[k] += thirdTrip;
+                            sumTrimerEnergy += triple;
+                        } catch (Exception ex) {
+                            logger.warning(ex.toString());
+                        }
                     }
                 }
             }
@@ -8069,7 +8078,7 @@ public class RotamerOptimization implements Terminatable {
                 }
                 logIfMaster(" Loaded pair energies from restart file."); 
                 
-                //Pre-Prune if pair-energy is Double.NaN.
+                // Pre-Prune if pair-energy is Double.NaN.
                 // Loop over first residue.
                 for (int i = 0; i < nResidues - 1; i++) {
                     Residue resi = residues[i];
