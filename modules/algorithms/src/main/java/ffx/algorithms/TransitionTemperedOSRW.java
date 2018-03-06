@@ -956,7 +956,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         double val1 = 0;
 
         // If we cannot guarantee that dUdL is exactly 0 at the endpoints, interpolate.
-        if (lambdaInterface.dEdLZeroAtEnds()) {
+        if (!lambdaInterface.dEdLZeroAtEnds()) {
             double recipSlopeLen = 1.0 / (dL * 0.75);
 
             double slope = dUdLs[0] - dUdLs[1];
