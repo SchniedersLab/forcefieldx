@@ -317,11 +317,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
         switch (requestedThermostat) {
             case BERENDSEN:
                 double tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
+                thermostat = new Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), targetTemperature, tau);
                 break;
             case BUSSI:
                 tau = properties.getDouble("tau-temperature", 0.2);
-                thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), 300.0, tau);
+                thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), targetTemperature, tau);
                 break;
             case ADIABATIC:
             default:
