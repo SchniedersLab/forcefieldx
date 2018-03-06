@@ -189,6 +189,8 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_setParticleParamet
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomGBForce_updateParametersInContext;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addGlobalParameter;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addPerParticleParameter;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addParticle;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addInteractionGroup;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_append;
 import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_create;
@@ -2350,6 +2352,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             VDWType vdwType = atom.getVDWType();
             double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+            
+            PointerByReference particleParameters = OpenMM_DoubleArray_create(0);
+            OpenMM_DoubleArray_append(particleParameters, sigma);
+            OpenMM_DoubleArray_append(particleParameters, eps);
+            
+            OpenMM_CustomNonbondedForce_addParticle(fixedChargeSoftcore, particleParameters);
+            OpenMM_DoubleArray_destroy(particleParameters);
             // ToDo: Add particles and per-particle parameters (sigma and eps)
         }
 
@@ -2381,6 +2390,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // ToDo: Create and add 1) Alchemical with Alchemical and 2) Alchemical with Non-Alchemical interaction groups.
+        
+        PointerByReference aaInteractionGroup = OpenMM_IntArray_create(0);
+        PointerByReference naInteractionGroup = OpenMM_IntArray_create(0);
+        
+        for (int i = 0; i < nAtoms; i++) {
+            Atom atom = atoms[i];
+            
+            if(atom.applyLambda()){
+                OpenMM_IntArray_append(aaInteractionGroup, i);
+            }
+            
+            else {
+                OpenMM_IntArray_append(naInteractionGroup, i);
+            }
+        }
+        
+        OpenMM_CustomNonbondedForce_addInteractionGroup(fixedChargeSoftcore, aaInteractionGroup, aaInteractionGroup);
+        OpenMM_CustomNonbondedForce_addInteractionGroup(fixedChargeSoftcore, aaInteractionGroup, naInteractionGroup);
+        
+        
+        OpenMM_IntArray_destroy(aaInteractionGroup);
+        OpenMM_IntArray_destroy(naInteractionGroup);
+        
 
         OpenMM_CustomNonbondedForce_setSwitchingDistance(fixedChargeSoftcore, OpenMM_NmPerAngstrom * cut);
         OpenMM_CustomNonbondedForce_setUseDispersionCorrection(fixedChargeSoftcore, OpenMM_False);
