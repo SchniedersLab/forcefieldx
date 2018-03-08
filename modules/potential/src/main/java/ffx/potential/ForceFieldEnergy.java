@@ -161,7 +161,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private int nImproperTorsions;
     private int nPiOrbitalTorsions;
     private int nTorsionTorsions;
-    private int nRestraintBonds;
+    private int nRestraintBonds = 0;
     private int nVanDerWaalInteractions;
     private int nPermanentInteractions;
     private int nGKInteractions;
@@ -2403,9 +2403,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
         rb.setBondType((new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
-        nRestraintBonds = 1;
-        restraintBonds = new RestraintBond[nRestraintBonds];
-        restraintBonds[0] = rb;
+        // As long as we continue to add elements one-at-a-time to an array, this code will continue to be ugly.
+        RestraintBond[] newRbs = new RestraintBond[++nRestraintBonds];
+        if (restraintBonds != null && restraintBonds.length != 0) {
+            System.arraycopy(restraintBonds, 0, newRbs, 0, (nRestraintBonds - 1));
+        }
+        newRbs[nRestraintBonds - 1] = rb;
+        restraintBonds = newRbs;
         rb.energy(false);
         rb.log();
     }
