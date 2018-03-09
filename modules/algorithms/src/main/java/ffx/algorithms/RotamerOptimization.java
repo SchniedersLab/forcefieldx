@@ -312,6 +312,19 @@ public class RotamerOptimization implements Terminatable {
      */
     private boolean eliminatedPairs[][][][];
     /**
+     * False unless JUnit testing.
+     */
+    private boolean testing = false;
+    /**
+     * *
+     * Pruned rotamers. Only for JUnit testing purposes.
+     */
+    protected boolean onlyPrunedSingles[][];
+    /**
+     * Pruned rotamer pairs. Only for JUnit testing purposes.
+     */
+    protected boolean onlyPrunedPairs[][][][];
+    /**
      * An array of atomic coordinates (length 3 * the number of atoms).
      */
     private double x[] = null;
@@ -3067,7 +3080,13 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
+    
+    public void setTestOverallOpt(boolean testing){
+        this.testing = testing;
+    }
+    
     public void setTestSelfEnergyEliminations(boolean testSelfEnergyEliminations) {
+        this.testing = true;
         this.testSelfEnergyEliminations = testSelfEnergyEliminations;
         testPairEnergyEliminations = -1;
         testTripleEnergyEliminations1 = -1;
@@ -3075,6 +3094,7 @@ public class RotamerOptimization implements Terminatable {
     }
 
     public void setTestPairEnergyEliminations(int testPairEnergyEliminations) {
+        this.testing = true;
         this.testPairEnergyEliminations = testPairEnergyEliminations;
         testSelfEnergyEliminations = false;
         testTripleEnergyEliminations1 = -1;
@@ -3082,6 +3102,7 @@ public class RotamerOptimization implements Terminatable {
     }
     
     public void setTestTripleEnergyEliminations(int testTripleEnergyEliminations1, int testTripleEnergyEliminations2){
+        this.testing = true;
         this.testTripleEnergyEliminations1 = testTripleEnergyEliminations1;
         this.testTripleEnergyEliminations2 = testTripleEnergyEliminations2;
         testSelfEnergyEliminations = false;
@@ -4807,7 +4828,32 @@ public class RotamerOptimization implements Terminatable {
         }
 
         rotamerEnergies(residues);
-
+        
+        if (testing) {
+            int nres = residues.length;
+            onlyPrunedSingles = new boolean[nres][];
+            onlyPrunedPairs = new boolean[nres][][][];
+            for (int i = 0; i < nres; i++) {
+                Residue residuei = residues[i];
+                Rotamer rotamersi[] = residuei.getRotamers(library);
+                int lenri = rotamersi.length;  // Length rotamers i
+                onlyPrunedSingles[i] = new boolean[lenri];
+                onlyPrunedSingles[i] = Arrays.copyOf(eliminatedSingles[i], eliminatedSingles[i].length);
+                onlyPrunedPairs[i] = new boolean[lenri][][];
+                // Loop over the set of rotamers for residue i.
+                for (int ri = 0; ri < lenri; ri++) {
+                    onlyPrunedPairs[i][ri] = new boolean[nres][];
+                    for (int j = i + 1; j < nres; j++) {
+                        Residue residuej = residues[j];
+                        Rotamer rotamersj[] = residuej.getRotamers(library);
+                        int lenrj = rotamersj.length;
+                        onlyPrunedPairs[i][ri][j] = new boolean[lenrj];
+                        onlyPrunedPairs[i][ri][j] = Arrays.copyOf(eliminatedPairs[i][ri][j], eliminatedPairs[i][ri][j].length);
+                    }
+                }
+            }
+        }
+        
         if (testSelfEnergyEliminations) {
             testSelfEnergyElimination(residues);
         } else if (testPairEnergyEliminations > -1) {
@@ -4826,7 +4872,7 @@ public class RotamerOptimization implements Terminatable {
         if (pruneClashes) {
             validateDEE(residues);
         }
-
+        
         int i = 0;
         boolean pairEliminated = true;
         while (pairEliminated) {
@@ -7446,6 +7492,22 @@ public class RotamerOptimization implements Terminatable {
             rj = iri;
         }
         return eliminatedPairs[i][ri][j][rj];
+    }
+    
+    protected boolean checkPrunedPairs(int i, int ri, int j, int rj){
+        if (onlyPrunedPairs == null) {
+            return false;
+        }
+        
+        if (j < i) {
+            int ii = i;
+            int iri = ri;
+            i = j;
+            ri = rj;
+            j = ii;
+            rj = iri;
+        }
+        return onlyPrunedPairs[i][ri][j][rj];
     }
 
     /**

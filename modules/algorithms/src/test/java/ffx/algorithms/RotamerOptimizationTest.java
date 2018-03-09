@@ -67,7 +67,7 @@ public class RotamerOptimizationTest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                /** {   "Chignolin Direct with Orig Rot (Goldstein)",
+               {"Chignolin Direct with Orig Rot (Goldstein)",
                 "ffx/algorithms/structures/5awl.pdb",
                 "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
                 1,                      // Start Residue.
@@ -88,8 +88,8 @@ public class RotamerOptimizationTest {
                 2,                      // Trimer residue 2.
                 0.0,                    // Expected trimer energy.
                 1.0e-3                  // Energy Tolerance.
-                },
-                {   "Chignolin Direct with Orig Rot (Goldstein)",
+            },
+            {"Chignolin Direct with Orig Rot (Goldstein)",
                 "ffx/algorithms/structures/5awl.pdb",
                 "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
                 1,                      // Start Residue.
@@ -110,8 +110,8 @@ public class RotamerOptimizationTest {
                 2,                      // Trimer residue 2.
                 0.0,                    // Expected trimer energy.
                 1.0e-3                  // Energy Tolerance.
-                },
-                {   "Chignolin Direct with Orig Rot (Goldstein)",
+            },
+            {"Chignolin Direct with Orig Rot (Goldstein)",
                 "ffx/algorithms/structures/5awl.pdb",
                 "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
                 1,                      // Start Residue.
@@ -132,29 +132,29 @@ public class RotamerOptimizationTest {
                 2,                      // Trimer residue 2.
                 0.0,                    // Expected trimer energy.
                 1.0e-3                  // Energy Tolerance.
-                },*/
-                {"Chignolin Direct with Orig Rot (Goldstein)",
-                        "ffx/algorithms/structures/5awl.pdb",
-                        "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
-                        1,                      // Start Residue.
-                        4,                      // End Residue.
-                        1,                      // Pruning Level.
-                        true,                   // Goldstein Elimination.
-                        true,                   // Use 3-body Energies.
-                        true,                   // Use Original Rotamers.
-                        true,                   // Do Overall Opt.
-                        -203.10632181492687,    // Expected Energy.
-                        true,                   // Do Self-Energy Opt.
-                        -203.10632181492687,    // Expected Self-Energy.
-                        true,                   // Do Pair-Energy Opt.
-                        1,                      // Pair residue
-                        -186.71062663844978,    // Expected Pair-Energy.
-                        true,                   // Do Trimer-Energy Opt.
-                        1,                      // Trimer residue 1.
-                        2,                      // Trimer residue 2.
-                        -197.51830687083316,    // Expected trimer energy.
-                        1.0e-3                  // Energy Tolerance.
-                }
+            },
+            {"Chignolin Direct with Orig Rot (Goldstein)",
+                "ffx/algorithms/structures/5awl.pdb",
+                "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
+                1,                      // Start Residue.
+                4,                      // End Residue.
+                1,                      // Pruning Level.
+                true,                   // Goldstein Elimination.
+                true,                   // Use 3-body Energies.
+                true,                   // Use Original Rotamers.
+                true,                   // Do Overall Opt.
+                -203.10632181492687,    // Expected Energy.
+                true,                   // Do Self-Energy Opt.
+                -203.10632181492687,    // Expected Self-Energy.
+                true,                   // Do Pair-Energy Opt.
+                1,                      // Pair residue
+                -186.71062663844978,    // Expected Pair-Energy.
+                true,                   // Do Trimer-Energy Opt.
+                1,                      // Trimer residue 1.
+                2,                      // Trimer residue 2.
+                -197.51830687083316,    // Expected trimer energy.
+                1.0e-3                  // Energy Tolerance.
+            }
 
 
                 /** {
@@ -377,19 +377,20 @@ public class RotamerOptimizationTest {
         rotamerOptimization.setPruning(pruningLevel);
         rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
-
+        
         double energy;
+        int nRes = residueList.size();
         if (doOverallOpt) {
             rotamerOptimization.turnRotamerPairEliminationOff();
-            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            rotamerOptimization.setTestOverallOpt(true);
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);          
             //System.out.println("The expected overall energy is: " + energy);
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
-
-        int nRes = residueList.size();
+     
         if (doSelfOpt) {
             rotamerOptimization.turnRotamerPairEliminationOff();
-            rotamerOptimization.setTestSelfEnergyEliminations(true);
+            rotamerOptimization.setTestSelfEnergyEliminations(true); 
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected self is: " + energy);
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
@@ -398,9 +399,9 @@ public class RotamerOptimizationTest {
             int optimum[] = rotamerOptimization.getOptimumRotamers();
 
             //Re-fill eliminatedSingles so that no rotamers are eliminated.
-            for (int row = 0; row < rotamerOptimization.eliminatedSingles.length; row++) {
-                Arrays.fill(rotamerOptimization.eliminatedSingles[row], false);
-            }
+           /* for (int row = 0; row < rotamerOptimization.onlyPrunedSingles.length; row++) {
+                Arrays.fill(rotamerOptimization.onlyPrunedSingles[row], false);
+            }*/
 
             // Loop over all residues
             for (int i = 0; i < nRes; i++) {
@@ -409,14 +410,16 @@ public class RotamerOptimizationTest {
                 int nRot = rotI.length;
 
                 int rotCounter = 0;
-                while (rotamerOptimization.check(i, rotCounter) && rotCounter < nRot) {
+                //while (rotamerOptimization.check(i, rotCounter) && rotCounter < nRot && rotamerOptimization.onlyPrunedSingles[i][rotCounter]) {
+                while (rotCounter < nRot && rotamerOptimization.onlyPrunedSingles[i][rotCounter]) {
                     rotCounter++;
                 }
 
                 double lowEnergy = rotamerOptimization.self(i, rotCounter);
                 int bestRot = rotCounter;
                 for (int ri = 1; ri < nRot; ri++) {
-                    if (rotamerOptimization.check(i, ri)) {
+                    //if (rotamerOptimization.check(i, ri)) {
+                    if (rotamerOptimization.onlyPrunedSingles[i][ri]) {
                         continue;
                     } else {
                         double selfEnergy = rotamerOptimization.self(i, ri);
@@ -450,7 +453,8 @@ public class RotamerOptimizationTest {
             // Loop over the pairResidue rotamers to find its lowest energy rotamer.
             for (int ri = 0; ri < ni; ri++) {
                 double energyForRi = 0.0;
-                if (rotamerOptimization.check(pairResidue, ri)) {
+                //if (rotamerOptimization.check(pairResidue, ri)) {
+                if (rotamerOptimization.onlyPrunedSingles[pairResidue][ri]) {
                     continue;
                 }
                 // Loop over residue J
@@ -463,7 +467,8 @@ public class RotamerOptimizationTest {
                     int nRot = rotJ.length;
 
                     int rj = 0;
-                    while (rotamerOptimization.check(j, rj) || rotamerOptimization.check(pairResidue, ri, j, rj)) {
+                    //while (rotamerOptimization.check(j, rj) || rotamerOptimization.check(pairResidue, ri, j, rj)) {
+                    while (rotamerOptimization.onlyPrunedSingles[j][rj] || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
                         if (++rj >= nRot) {
                             logger.warning("RJ is too large.");
                         }
@@ -472,7 +477,8 @@ public class RotamerOptimizationTest {
                     double lowEnergy = rotamerOptimization.pair(pairResidue, ri, j, rj);
 
                     for (rj = 1; rj < nRot; rj++) {
-                        if (rotamerOptimization.check(j, rj) || rotamerOptimization.check(pairResidue, ri, j, rj)) {
+                        //if (rotamerOptimization.check(j, rj) || rotamerOptimization.check(pairResidue, ri, j, rj)) {
+                        if (rotamerOptimization.onlyPrunedSingles[j][rj] || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
                             continue;
                         } else {
                             double pairEnergy = rotamerOptimization.pair(pairResidue, ri, j, rj);
@@ -502,14 +508,16 @@ public class RotamerOptimizationTest {
                 int nRotJ = rotJ.length;
 
                 int rotCounter = 0;
-                while (rotamerOptimization.check(pairResidue, bestRotI, j, rotCounter) && rotCounter < nRotJ) {
+                //while (rotamerOptimization.check(pairResidue, bestRotI, j, rotCounter) && rotCounter < nRotJ) {
+                while (rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rotCounter) && rotCounter < nRotJ) {
                     rotCounter++;
                 }
 
                 double lowEnergy = rotamerOptimization.pair(pairResidue, bestRotI, j, rotCounter);
                 int bestRotJ = rotCounter;
                 for (int rj = 1; rj < nRotJ; rj++) {
-                    if (rotamerOptimization.check(j, rj) || rotamerOptimization.check(pairResidue, bestRotI, j, rj)) {
+                    //if (rotamerOptimization.check(j, rj) || rotamerOptimization.check(pairResidue, bestRotI, j, rj)) {
+                    if (rotamerOptimization.onlyPrunedSingles[j][rj] || rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
                         continue;
                     } else {
                         double pairEnergy = rotamerOptimization.pair(pairResidue, bestRotI, j, rj);
@@ -559,7 +567,8 @@ public class RotamerOptimizationTest {
                     continue;
                 }
                 for (int rj = 0; rj < nj; rj++) { //loop through rot J
-                    if (rotamerOptimization.check(tripleResidue2, rj) || rotamerOptimization.check(tripleResidue1, ri, tripleResidue2, rj)) {
+                    //if (rotamerOptimization.check(tripleResidue2, rj) || rotamerOptimization.check(tripleResidue1, ri, tripleResidue2, rj)) {
+                    if(rotamerOptimization.onlyPrunedSingles[tripleResidue2][rj] || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)){
                         continue;
                     }
                     double currentEnergy = 0.0;
@@ -572,7 +581,8 @@ public class RotamerOptimizationTest {
                         int nk = rotK.length;
 
                         int rkStart = 0;
-                        while (rotamerOptimization.check(k, rkStart) || rotamerOptimization.check(tripleResidue1, ri, k, rkStart) || rotamerOptimization.check(tripleResidue2, rj, k, rkStart)) {
+                        //while (rotamerOptimization.check(k, rkStart) || rotamerOptimization.check(tripleResidue1, ri, k, rkStart) || rotamerOptimization.check(tripleResidue2, rj, k, rkStart)) {
+                        while(rotamerOptimization.onlyPrunedSingles[k][rkStart] || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
                             if (++rkStart >= nk) {
                                 logger.warning("RJ is too large.");
                             }
@@ -580,9 +590,13 @@ public class RotamerOptimizationTest {
 
                         double lowEnergy = rotamerOptimization.triple(tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
-                            double tripleEnergy = rotamerOptimization.triple(tripleResidue1, ri, tripleResidue2, rj, k, rk);
-                            if (tripleEnergy < lowEnergy) {
-                                lowEnergy = tripleEnergy;
+                            if (rotamerOptimization.onlyPrunedSingles[k][rk] || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
+                                continue;
+                            } else {
+                                double tripleEnergy = rotamerOptimization.triple(tripleResidue1, ri, tripleResidue2, rj, k, rk);
+                                if (tripleEnergy < lowEnergy) {
+                                    lowEnergy = tripleEnergy;
+                                }   
                             }
                         }
                         currentEnergy += lowEnergy; //adds lowest energy conformation of residue k to that of the rotamer I
@@ -613,13 +627,15 @@ public class RotamerOptimizationTest {
                 int nk = rotK.length;
 
                 int rotCounter = 0;
-                while (rotamerOptimization.check(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.check(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
+                //while (rotamerOptimization.check(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.check(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
+                while( rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) &&  rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {   
                     rotCounter++;
                 }
                 double lowEnergy = rotamerOptimization.triple(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {
-                    if (rotamerOptimization.check(k, rk) || rotamerOptimization.check(tripleResidue1, bestRotI, k, rk) || rotamerOptimization.check(tripleResidue2, bestRotJ, k, rk)) {
+                    //if (rotamerOptimization.check(k, rk) || rotamerOptimization.check(tripleResidue1, bestRotI, k, rk) || rotamerOptimization.check(tripleResidue2, bestRotJ, k, rk)) {
+                    if (rotamerOptimization.onlyPrunedSingles[k][rk] || rotamerOptimization.checkPrunedPairs(tripleResidue1,bestRotI,k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2,bestRotJ,k,rk)) {    
                         continue;
                     } else {
                         double tripleEnergy = rotamerOptimization.triple(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
