@@ -525,7 +525,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     public final void updateIntegrator() {
         logger.info(String.format(" Updating OpenMM Integrator with step size %8.3f and target temperature %8.3f.", dt, targetTemperature));
-        forceFieldEnergyOpenMM.setIntegrator(integratorString, dt, targetTemperature);
+        forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature);
         integrator = forceFieldEnergyOpenMM.getIntegrator();
         context = forceFieldEnergyOpenMM.getContext();
     }
