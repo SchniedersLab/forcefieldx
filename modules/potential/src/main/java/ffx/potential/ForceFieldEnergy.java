@@ -161,7 +161,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private int nImproperTorsions;
     private int nPiOrbitalTorsions;
     private int nTorsionTorsions;
-    private int nRestraintBonds;
+    private int nRestraintBonds = 0;
     private int nVanDerWaalInteractions;
     private int nPermanentInteractions;
     private int nGKInteractions;
@@ -1825,45 +1825,49 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      */
     @Override
     public void setLambda(double lambda) {
-        if (lambda <= 1.0 && lambda >= 0.0) {
-            this.lambda = lambda;
-            if (vanderWaalsTerm) {
-                vanderWaals.setLambda(lambda);
-            }
-            if (multipoleTerm) {
-                particleMeshEwald.setLambda(lambda);
-            }
-            if (restraintBondTerm && restraintBonds != null) {
-                for (int i = 0; i < restraintBonds.length; i++) {
-                    restraintBonds[i].setLambda(lambda);
+        if (lambdaTerm) {
+            if (lambda <= 1.0 && lambda >= 0.0) {
+                this.lambda = lambda;
+                if (vanderWaalsTerm) {
+                    vanderWaals.setLambda(lambda);
                 }
-            }
-            if (ncsTerm && ncsRestraint != null) {
-                ncsRestraint.setLambda(lambda);
-            }
-            if (restrainTerm && !coordRestraints.isEmpty()) {
-                //autoCoordRestraint.setLambda(lambda);
-                for (CoordRestraint restraint : coordRestraints) {
-                    restraint.setLambda(lambda);
+                if (multipoleTerm) {
+                    particleMeshEwald.setLambda(lambda);
                 }
-            }
-            if (comTerm && comRestraint != null) {
-                comRestraint.setLambda(lambda);
-            }
-            if (lambdaTorsions) {
-                for (int i = 0; i < nTorsions; i++) {
-                    torsions[i].setLambda(lambda);
+                if (restraintBondTerm && restraintBonds != null) {
+                    for (int i = 0; i < restraintBonds.length; i++) {
+                        restraintBonds[i].setLambda(lambda);
+                    }
                 }
-                for (int i = 0; i < nPiOrbitalTorsions; i++) {
-                    piOrbitalTorsions[i].setLambda(lambda);
+                if (ncsTerm && ncsRestraint != null) {
+                    ncsRestraint.setLambda(lambda);
                 }
-                for (int i = 0; i < nTorsionTorsions; i++) {
-                    torsionTorsions[i].setLambda(lambda);
+                if (restrainTerm && !coordRestraints.isEmpty()) {
+                    //autoCoordRestraint.setLambda(lambda);
+                    for (CoordRestraint restraint : coordRestraints) {
+                        restraint.setLambda(lambda);
+                    }
                 }
+                if (comTerm && comRestraint != null) {
+                    comRestraint.setLambda(lambda);
+                }
+                if (lambdaTorsions) {
+                    for (int i = 0; i < nTorsions; i++) {
+                        torsions[i].setLambda(lambda);
+                    }
+                    for (int i = 0; i < nPiOrbitalTorsions; i++) {
+                        piOrbitalTorsions[i].setLambda(lambda);
+                    }
+                    for (int i = 0; i < nTorsionTorsions; i++) {
+                        torsionTorsions[i].setLambda(lambda);
+                    }
+                }
+            } else {
+                String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
+                logger.warning(message);
             }
         } else {
-            String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
-            logger.warning(message);
+            logger.fine(" Attempting to set a lambda value on a ForceFieldEnergy with lambdaterm false.");
         }
     }
 
@@ -2399,9 +2403,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
         rb.setBondType((new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
-        nRestraintBonds = 1;
-        restraintBonds = new RestraintBond[nRestraintBonds];
-        restraintBonds[0] = rb;
+        // As long as we continue to add elements one-at-a-time to an array, this code will continue to be ugly.
+        RestraintBond[] newRbs = new RestraintBond[++nRestraintBonds];
+        if (restraintBonds != null && restraintBonds.length != 0) {
+            System.arraycopy(restraintBonds, 0, newRbs, 0, (nRestraintBonds - 1));
+        }
+        newRbs[nRestraintBonds - 1] = rb;
+        restraintBonds = newRbs;
         rb.energy(false);
         rb.log();
     }

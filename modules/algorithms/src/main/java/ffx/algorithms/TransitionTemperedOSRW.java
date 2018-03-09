@@ -704,16 +704,26 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
          */
         double vL = cLambda * dL;
         double vFL = minFLambda + cF_Lambda * dFL + dFL_2;
+
         /**
          * Set the variances for the Gaussian bias.
          */
         double Ls2 = 2.0 * dL * 2.0 * dL;
         double FLs2 = 2.0 * dFL * 2.0 * dFL;
+        /**
+         * Variances are only used when dividing by twice their value, so pre-compute!
+         */
+        double invLs2 = 0.5 / Ls2;
+        double invFLs2 = 0.5 / FLs2;
+
         double sum = 0.0;
         for (int iL = -biasCutoff; iL <= biasCutoff; iL++) {
             int Lcenter = cLambda + iL;
             double deltaL = vL - Lcenter * dL;
             double deltaL2 = deltaL * deltaL;
+
+            // Pre-compute the lambda-width exponent.
+            double L2exp = exp(-deltaL2 * invLs2);
 
             // Mirror condition for Lambda counts.
             int lcount = Lcenter;
@@ -746,8 +756,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                 double deltaFL2 = deltaFL * deltaFL;
                 double weight = mirrorFactor * recursionKernel[lcount][FLcenter];
                 if (weight > 0) {
-                    double e = weight * biasMag * exp(-deltaL2 / (2.0 * Ls2))
-                            * exp(-deltaFL2 / (2.0 * FLs2));
+                    double e = weight * biasMag * L2exp
+                            * exp(-deltaFL2 * invFLs2);
                     sum += e;
                 }
             }
@@ -827,6 +837,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
         double freeEnergy = 0.0;
         double minFL = Double.MAX_VALUE;
         totalWeight = 0;
+        double beta = 1.0 / (R * temperature);
         StringBuilder stringBuilder = new StringBuilder();
         if (print) {
             stringBuilder.append(" Weight    Lambda Bins    F_Lambda Bins   <   F_L  >  Max F_L     dG        G\n");
@@ -870,7 +881,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     if (kernel > maxBias) {
                         maxBias = kernel;
                     }
-                    double weight = exp(kernel / (R * temperature));
+                    double weight = exp(kernel * beta);
                     ensembleAverageFLambda += currentFLambda * weight;
                     partitionFunction += weight;
                     lambdaCount += recursionKernel[iL][jFL];

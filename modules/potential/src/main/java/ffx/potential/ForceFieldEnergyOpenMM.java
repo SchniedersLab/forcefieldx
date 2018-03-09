@@ -2561,13 +2561,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     @Override
     public void setLambda(double lambda) {
-        if (lambda >= 0.0 && lambda <= 1.0) {
-            this.lambda = lambda;
-            super.setLambda(lambda);
-            updateParameters();
+        if (lambdaTerm) {
+            if (lambda >= 0.0 && lambda <= 1.0) {
+                this.lambda = lambda;
+                super.setLambda(lambda);
+                updateParameters();
+            } else {
+                String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
+                logger.warning(message);
+            }
         } else {
-            String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
-            logger.warning(message);
+            logger.fine(" Attempting to set a lambda value on a ForceFieldEnergyOpenMM with lambdaterm false.");
         }
     }
 
