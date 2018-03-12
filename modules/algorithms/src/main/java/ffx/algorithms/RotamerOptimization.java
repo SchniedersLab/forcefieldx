@@ -1978,10 +1978,10 @@ public class RotamerOptimization implements Terminatable {
             }
         }
     }
-
+    
     /**
-     * Test the self-energy elimination by setting
-     * 2-body and 3-body interactions to zero.
+     * Test the elimination criteria by setting
+     * self and 3-body interactions to zero.
      */
     public void testPairEnergyElimination(Residue residues[], int resID) {
         int nRes = residues.length;
@@ -2033,7 +2033,7 @@ public class RotamerOptimization implements Terminatable {
     }
       
     /**
-     * Test the self-energy elimination by setting
+     * Test the elimination criteria by setting
      * self and 2-body interactions to zero. 
      * Two residues are at fixed rotamers and all 
      * rotamer interactions with those two residues 
@@ -7494,6 +7494,27 @@ public class RotamerOptimization implements Terminatable {
         return eliminatedPairs[i][ri][j][rj];
     }
     
+    /**
+     * Check for pruned rotamer; true if eliminated. Only used during testing.
+     * @param i
+     * @param ri
+     * @return 
+     */
+    protected boolean checkPrunedSingles(int i, int ri) {
+        if (onlyPrunedSingles == null) {
+            return false;
+        }
+        return onlyPrunedSingles[i][ri];
+    }
+    
+    /**
+     * Check for pruned rotamer pair; true if eliminated. Only used during testing.
+     * @param i Residue i.
+     * @param ri Rotamer ri.
+     * @param j Residue j.
+     * @param rj Rotamer rj.
+     * @return 
+     */
     protected boolean checkPrunedPairs(int i, int ri, int j, int rj){
         if (onlyPrunedPairs == null) {
             return false;
