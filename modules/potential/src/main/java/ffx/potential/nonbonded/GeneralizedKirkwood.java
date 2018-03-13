@@ -1225,7 +1225,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (sum <= 0.0) {
                         sum = PI4_3 * 1.0e-9;
                         born[i] = 1.0 / pow(sum / PI4_3, THIRD);
-                        logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
+                        //logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
+                        logger.log(GK_WARN_LEVEL, format(" I < 0; Resetting %d to %12.6f", i, born[i]));
                         continue;
                     }
                     born[i] = 1.0 / pow(sum / PI4_3, THIRD);
