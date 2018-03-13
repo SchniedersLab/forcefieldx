@@ -49,6 +49,7 @@ import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import static java.lang.Math.abs;
+import static java.lang.String.format;
 
 /**
  * Use MD as a coordinate based MC move.
@@ -59,9 +60,21 @@ public class MDMove implements MCMove {
 
     private static final Logger logger = Logger.getLogger(MDMove.class.getName());
 
+    /**
+     * Number of MD steps per move.
+     */
     private int mdSteps = 50;
+    /**
+     * Time step in femtoseconds.
+     */
     private double timeStep = 1.0;
+    /**
+     * Print interval in picoseconds.
+     */
     private double printInterval = 0.05;
+    /**
+     * Temperature in Kelvin.
+     */
     private double temperature = 298.15;
     private boolean initVelocities = true;
     private int mdMoveCounter = 0;
@@ -109,12 +122,13 @@ public class MDMove implements MCMove {
     public void setMDParameters(int mdSteps, double timeStep) {
         this.mdSteps = mdSteps;
         this.timeStep = timeStep;
-        printInterval = mdSteps * timeStep;
+        printInterval = mdSteps * timeStep / 1000;
     }
 
     @Override
     public void move() {
         mdMoveCounter++;
+
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
         
         if (molecularDynamics instanceof ffx.algorithms.MolecularDynamicsOpenMM) {
@@ -122,13 +136,16 @@ public class MDMove implements MCMove {
             energyDriftAverageNet = energyDriftTotalNet/mdMoveCounter;
             energyDriftTotalAbs += abs(molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy());
             energyDriftAverageAbs = energyDriftTotalAbs/mdMoveCounter;
-            logger.info(String.format(" Mean signed and unsigned energy drift: %8.4f and %8.4f", energyDriftAverageNet, energyDriftAverageAbs));
+            logger.info(format(" Mean signed/unsigned energy drift:                   %8.4f/%8.4f",
+                    energyDriftAverageNet, energyDriftAverageAbs));
+
             dt = molecularDynamics.getTimeStep();
             intervalSteps = molecularDynamics.getIntervalSteps();
             natoms = molecularDynamics.getNumAtoms();
             normalizedEnergyDriftNet = (energyDriftAverageNet/(dt*intervalSteps*natoms)) * 1000;
             normalizedEnergyDriftAbs = (energyDriftAverageAbs/(dt*intervalSteps*natoms)) * 1000;
-            logger.info(String.format(" Mean singed and unsigned energy drift per picosecond per atom: %8.4f and %8.4f", normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
+            logger.info(format(" Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",
+                    normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
         }
     }
 

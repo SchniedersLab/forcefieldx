@@ -51,11 +51,13 @@ import static java.lang.String.format;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.DoubleByReference;
+import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
+import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.Comm;
@@ -221,8 +223,11 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_LangevinIntegrator_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_addParticle;
 import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_createExceptionsFromBonds;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_getExceptionParameters;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_getNumExceptions;
 import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_getParticleParameters;
 import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setCutoffDistance;
+import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setExceptionParameters;
 import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setNonbondedMethod;
 import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setPMEParameters;
 import static simtk.openmm.OpenMMLibrary.OpenMM_NonbondedForce_setParticleParameters;
@@ -327,10 +332,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * States.
      */
     public final int enforcePBC;
-    String integratorString = "VERLET";
-    double timeStep = 1.0;
-    double temperature = 298.15;
-    boolean softcoreCreated = false;
+
+    private String integratorString = "VERLET";
+    private double timeStep = 1.0;
+    private double temperature = 298.15;
+
     /**
      * OpenMM Platform.
      */
@@ -434,7 +440,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Fixed charge softcore vdW force.
      */
+    boolean softcoreCreated = false;
     private PointerByReference fixedChargeSoftcore = null;
+
+    private boolean chargeExclusion[];
+    private boolean vdWExclusion[];
+    private double exceptionChargeProd[];
+    private double exceptionEps[];
 
     /**
      * OpenMM Custom GB Force.
@@ -455,10 +467,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Value of the state variable Lambda.
      */
+    private boolean pmeLambdaTerm = false;
+    private boolean vdwLambdaTerm = false;
     private double lambda = 1.0;
-
-    private boolean elecLambdaTerm = false;
-    private boolean vdwLambdaTerm = true;
     private double vdwdUdL = 0.0;
 
     /**
@@ -474,7 +485,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private PointerByReference ommThermostat = null;
 
-    private boolean zeroEpsForLambdaAtoms = false;
     private boolean doOpenMMdEdL = false;
     private boolean doFFXdEdL = true;
     private boolean testdEdL = true;
@@ -599,9 +609,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", openMMPotentialEnergy));
         fdDLambda = forceField.getDouble(ForceFieldDouble.FD_DLAMBDA, 0.001);
-        zeroEpsForLambdaAtoms = forceField.getBoolean(ForceFieldBoolean.ZERO_EPS, false);
 
         OpenMM_State_destroy(state);
+
+        pmeLambdaTerm = forceField.getBoolean(ForceFieldBoolean.PME_LAMBDATERM,
+                forceField.getBoolean(ForceFieldBoolean.LAMBDATERM, false));
+
+        vdwLambdaTerm = forceField.getBoolean(ForceFieldBoolean.VDW_LAMBDATERM, false);
+
+        /**
+         * Currently, electrostatics and vdW cannot undergo alchemical changes simultaneously. Softcore vdW is
+         * given priority.
+         */
+        if (vdwLambdaTerm) {
+            pmeLambdaTerm = false;
+        }
+
+        if (pmeLambdaTerm || vdwLambdaTerm) {
+            lambdaTerm = true;
+        }
+
+        logger.info(format(" vdwLambdaTerm %s", vdwLambdaTerm));
+        logger.info(format(" pmeLambdaTerm %s", pmeLambdaTerm));
+        logger.info(format(" lambdaTerm %s", lambdaTerm));
     }
 
     /**
@@ -646,12 +676,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         /**
          * Extra logging to print out plugins that failed to load.
          */
-        if (logger.isLoggable(Level.INFO)) {
+        if (logger.isLoggable(Level.FINE)) {
             PointerByReference pluginFailers = OpenMM_Platform_getPluginLoadFailures();
             int numFailures = OpenMM_StringArray_getSize(pluginFailers);
             for (int i = 0; i < numFailures; i++) {
                 String pluginString = stringFromArray(pluginFailers, i);
-                logger.log(Level.INFO, " Plugin load failure: {0}", pluginString);
+                logger.log(Level.FINE, " Plugin load failure: {0}", pluginString);
             }
             OpenMM_StringArray_destroy(pluginFailers);
         }
@@ -701,11 +731,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         if (cuda && requestedPlatform != Platform.OMM_REF) {
             platform = OpenMM_Platform_getPlatformByName("CUDA");
-
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("CudaDeviceIndex"), pointerForString(deviceIDString));
-
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("Precision"), pointerForString(precision));
-
             logger.info(String.format(" Selected OpenMM AMOEBA CUDA Platform (Device ID: %d)", deviceID));
         } else {
             platform = OpenMM_Platform_getPlatformByName("Reference");
@@ -730,6 +757,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         this.temperature = temperature;
 
         OpenMM_Context_destroy(context);
+
         double dt = timeStep * 1.0e-3;
         switch (integratorString) {
             case "LANGEVIN":
@@ -767,7 +795,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             x[index + 2] = atom.getZ();
             index += 3;
         }
+
         setOpenMMPositions(x, numParticles * 3);
+    }
+
+    public String getIntegratorString() {
+        return integratorString;
+    }
+
+    public double getTemperature() {
+        return temperature;
+    }
+
+    public double getTimeStep() {
+        return timeStep;
     }
 
     /**
@@ -1291,6 +1332,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (vdwForm.vdwType != LENNARD_JONES
                 || vdwForm.radiusRule != ARITHMETIC
                 || vdwForm.epsilonRule != GEOMETRIC) {
+            logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
+            logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
+            logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
             logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
             return;
         }
@@ -1318,29 +1362,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            double charge = 0.0;
-            MultipoleType multipoleType = atom.getMultipoleType();
-            if (multipoleType != null) {
-                charge = multipoleType.charge;
-            }
+
             VDWType vdwType = atom.getVDWType();
             double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
             double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
 
-            double useFactor = 1.0;
-            if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
-                useFactor = 0.0;
+            double charge = 0.0;
+            MultipoleType multipoleType = atom.getMultipoleType();
+            if (multipoleType != null && atoms[i].getElectrostatics()) {
+                charge = multipoleType.charge;
             }
 
-            double lambdaScale = lambda; // Should be 1.0 at this point.
-            if (!atom.applyLambda()) {
-                lambdaScale = 1.0;
-            }
-
-            useFactor *= lambdaScale;
-
-            OpenMM_NonbondedForce_addParticle(fixedChargeNonBondedForce, charge * useFactor, sigma, eps);
+            OpenMM_NonbondedForce_addParticle(fixedChargeNonBondedForce, charge, sigma, eps);
         }
+
         /**
          * Define 1-4 scale factors.
          */
@@ -1363,8 +1398,41 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 coulomb14Scale = pme.getScale14();
             }
             OpenMM_NonbondedForce_createExceptionsFromBonds(fixedChargeNonBondedForce, bondArray, coulomb14Scale, lj14Scale);
+
             OpenMM_BondArray_destroy(bondArray);
+
+            int num = OpenMM_NonbondedForce_getNumExceptions(fixedChargeNonBondedForce);
+            chargeExclusion = new boolean[num];
+            vdWExclusion = new boolean[num];
+            exceptionChargeProd = new double[num];
+            exceptionEps = new double[num];
+
+            IntByReference particle1 = new IntByReference();
+            IntByReference particle2 = new IntByReference();
+            DoubleByReference chargeProd = new DoubleByReference();
+            DoubleByReference sigma = new DoubleByReference();
+            DoubleByReference eps = new DoubleByReference();
+
+            for (int i = 0; i < num; i++) {
+                OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i,
+                        particle1, particle2, chargeProd, sigma, eps);
+                if (abs(chargeProd.getValue()) > 0.0) {
+                    chargeExclusion[i] = false;
+                    exceptionChargeProd[i] = chargeProd.getValue();
+                } else {
+                    exceptionChargeProd[i] = 0.0;
+                    chargeExclusion[i] = true;
+                }
+                if (abs(eps.getValue()) > 0.0) {
+                    vdWExclusion[i] = false;
+                    exceptionEps[i] = eps.getValue();
+                } else {
+                    vdWExclusion[i] = true;
+                    exceptionEps[i] = 0.0;
+                }
+            }
         }
+
 
         Crystal crystal = super.getCrystal();
         if (crystal.aperiodic()) {
@@ -1382,29 +1450,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 int nz = pme.getReciprocalSpace().getZDim();
                 OpenMM_NonbondedForce_setPMEParameters(fixedChargeNonBondedForce, aEwald, nx, ny, nz);
             }
-        }
 
-        NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
-        double off = nonbondedCutoff.off;
-        double cut = nonbondedCutoff.cut;
-        OpenMM_NonbondedForce_setCutoffDistance(fixedChargeNonBondedForce, OpenMM_NmPerAngstrom * off);
-
-        OpenMM_NonbondedForce_setUseSwitchingFunction(fixedChargeNonBondedForce, OpenMM_True);
-        if (cut == off) {
-            logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
-            if (cut == Double.MAX_VALUE || cut == Double.POSITIVE_INFINITY) {
-                logger.info(" Detected infinite or max-value cutoff; setting cut to 1E+40 for OpenMM.");
-                cut = 1E40;
-            } else {
-                logger.info(String.format(" Detected cut %8.4g == off %8.4g; scaling cut to 0.99 of off for OpenMM.", cut, off));
-                cut *= 0.99;
+            NonbondedCutoff nonbondedCutoff = vdW.getNonbondedCutoff();
+            double off = nonbondedCutoff.off;
+            double cut = nonbondedCutoff.cut;
+            OpenMM_NonbondedForce_setCutoffDistance(fixedChargeNonBondedForce, OpenMM_NmPerAngstrom * off);
+            OpenMM_NonbondedForce_setUseSwitchingFunction(fixedChargeNonBondedForce, OpenMM_True);
+            if (cut == off) {
+                logger.warning(" OpenMM does not properly handle cutoffs where cut == off!");
+                if (cut == Double.MAX_VALUE || cut == Double.POSITIVE_INFINITY) {
+                    logger.info(" Detected infinite or max-value cutoff; setting cut to 1E+40 for OpenMM.");
+                    cut = 1E40;
+                } else {
+                    logger.info(String.format(" Detected cut %8.4g == off %8.4g; scaling cut to 0.99 of off for OpenMM.", cut, off));
+                    cut *= 0.99;
+                }
             }
+            OpenMM_NonbondedForce_setSwitchingDistance(fixedChargeNonBondedForce, OpenMM_NmPerAngstrom * cut);
         }
-        OpenMM_NonbondedForce_setSwitchingDistance(fixedChargeNonBondedForce, OpenMM_NmPerAngstrom * cut);
 
         OpenMM_NonbondedForce_setUseDispersionCorrection(fixedChargeNonBondedForce, OpenMM_False);
 
         // OpenMM_Force_setForceGroup(fixedChargeNonBondedForce, 1);
+
         OpenMM_System_addForce(system, fixedChargeNonBondedForce);
         logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force."));
 
@@ -1437,6 +1505,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (vdwForm.vdwType != LENNARD_JONES
                 || vdwForm.radiusRule != ARITHMETIC
                 || vdwForm.epsilonRule != GEOMETRIC) {
+            logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
+            logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
+            logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
             logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
             return;
         }
@@ -1531,8 +1602,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_System_addForce(system, fixedChargeSoftcore);
         logger.log(Level.INFO, String.format(" Added fixed charge softcore sterics force."));
-
-        zeroEpsForLambdaAtoms = true;
 
         GeneralizedKirkwood gk = super.getGK();
         if (gk != null) {
@@ -2179,22 +2248,25 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Update parameters if the Use flags changed.
      */
     private void updateParameters() {
-
         Atom[] atoms = molecularAssembly.getAtomArray();
 
-        if (!softcoreCreated) {
-            addCustomNonbondedSoftcoreForce();
-            // Reset the context.
-            createContext(integratorString, timeStep, temperature);
-            OpenMM_Context_setParameter(context, "vdw_lambda", lambda);
-            softcoreCreated = true;
-        } else {
-            OpenMM_Context_setParameter(context, "vdw_lambda", lambda);
+        if (vdwLambdaTerm) {
+            if (!softcoreCreated) {
+                addCustomNonbondedSoftcoreForce();
+                // Reset the context.
+                createContext(integratorString, timeStep, temperature);
+                OpenMM_Context_setParameter(context, "vdw_lambda", lambda);
+                softcoreCreated = true;
+                double energy = energy();
+                logger.info(format(" OpenMM Energy (L=%6.3f): %16.8f", lambda, energy));
+            } else {
+                OpenMM_Context_setParameter(context, "vdw_lambda", lambda);
+            }
         }
 
         // Update fixed charge non-bonded parameters.
         if (fixedChargeNonBondedForce != null) {
-            updateFixedChargeNonBondedForce(atoms, zeroEpsForLambdaAtoms);
+            updateFixedChargeNonBondedForce(atoms, vdwLambdaTerm);
         }
 
         // Update fixed charge GB parameters.
@@ -2264,11 +2336,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Updates the fixed-charge non-bonded force for change in Use flags.
      *
-     * @param atoms                 Array of all Atoms in the system
-     * @param zeroEpsForLambdaAtoms If true, set Eps to zero for Lambda atoms
-     *                              (ToDo: implement this flag).
+     * @param atoms         Array of all Atoms in the system
+     * @param vdwLambdaTerm If true, set charges and eps values to zero for Lambda atoms
      */
-    private void updateFixedChargeNonBondedForce(Atom[] atoms, boolean zeroEpsForLambdaAtoms) {
+    private void updateFixedChargeNonBondedForce(Atom[] atoms, boolean vdwLambdaTerm) {
         VanDerWaals vdW = super.getVdwNode();
         /**
          * Only 6-12 LJ with arithmetic mean to define sigma and geometric mean
@@ -2302,37 +2373,101 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            double useFactor = 1.0;
-            if (!atoms[i].getUse()) {
-                //if (!atoms[i].getUse()) {
-                useFactor = 0.0;
-            }
+            boolean applyLambda = atom.applyLambda();
 
-            double electro = atoms[i].getElectrostatics() ? 1.0 : 0.0;
-
-            double lambdaScale = lambda;
-            if (!atom.applyLambda()) {
-                lambdaScale = 1.0;
-            }
-
-            useFactor *= lambdaScale;
-
-            double charge = 0.0;
+            double charge = Double.MIN_VALUE;
             MultipoleType multipoleType = atom.getMultipoleType();
-            if (multipoleType != null) {
-                charge = multipoleType.charge * useFactor;
+            if (multipoleType != null && atoms[i].getElectrostatics()) {
+                charge = multipoleType.charge;
+                if (lambdaTerm && applyLambda) {
+                    charge *= lambda;
+                }
             }
+
             VDWType vdwType = atom.getVDWType();
             double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
-            double eps = OpenMM_KJPerKcal * vdwType.wellDepth * useFactor;
+            double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
 
-            if (zeroEpsForLambdaAtoms && atom.applyLambda()) {
+            if ((vdwLambdaTerm && applyLambda) || !atoms[i].getUse()) {
                 eps = 0.0;
                 charge = 0.0;
             }
 
-            OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge * electro, sigma, eps);
+            OpenMM_NonbondedForce_setParticleParameters(fixedChargeNonBondedForce, i, charge, sigma, eps);
         }
+
+        // OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, context);
+
+        /**
+         * Update Exceptions.
+         */
+        IntByReference particle1 = new IntByReference();
+        IntByReference particle2 = new IntByReference();
+        DoubleByReference chargeProd = new DoubleByReference();
+        DoubleByReference sigma = new DoubleByReference();
+        DoubleByReference eps = new DoubleByReference();
+
+        int numExceptions = OpenMM_NonbondedForce_getNumExceptions(fixedChargeNonBondedForce);
+
+        for (int i = 0; i < numExceptions; i++) {
+
+            /**
+             * Only update exceptions.
+             */
+            if (chargeExclusion[i] && vdWExclusion[i]) {
+                continue;
+            }
+
+            OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i,
+                    particle1, particle2, chargeProd, sigma, eps);
+
+            int i1 = particle1.getValue();
+            int i2 = particle2.getValue();
+
+            double qq = exceptionChargeProd[i];
+            double epsilon = exceptionEps[i];
+
+            Atom atom1 = atoms[i1];
+            Atom atom2 = atoms[i2];
+
+            double lambdaValue = lambda;
+            if (lambda == 0.0) {
+                lambdaValue = 1.0e-6;
+            }
+
+            if (atom1.applyLambda()) {
+                qq *= lambdaValue;
+                if (vdwLambdaTerm) {
+                    epsilon = 1.0e-6;
+                    qq = 1.0e-6;
+                }
+            }
+
+            if (atom2.applyLambda()) {
+                qq *= lambdaValue;
+                if (vdwLambdaTerm) {
+                    epsilon = 1.0e-6;
+                    qq = 1.0e-6;
+                }
+            }
+
+            if (!atom1.getUse() || !atom2.getUse()) {
+                qq = 1.0e-6;
+                epsilon = 1.0e-6;
+            }
+
+            OpenMM_NonbondedForce_setExceptionParameters(fixedChargeNonBondedForce, i,
+                    i1, i2, qq, sigma.getValue(), epsilon);
+
+            /**
+             logger.info(format(" B Exception %d %d %d q=%10.8f s=%10.8f e=%10.8f.", i, i1, i2,
+             chargeProd.getValue(), sigma.getValue(), eps.getValue()));
+
+             logger.info(format(" E Exception %d %d %d q=%10.8f s=%10.8f e=%10.8f.", i, i1, i2,
+             qq, sigma.getValue(), epsilon));
+             */
+        }
+
         OpenMM_NonbondedForce_updateParametersInContext(fixedChargeNonBondedForce, context);
     }
 
@@ -2567,7 +2702,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 super.setLambda(lambda);
                 updateParameters();
             } else {
-                String message = String.format("Lambda value %8.3f is not in the range [0..1].", lambda);
+                String message = format(" Lambda value %8.3f is not in the range [0..1].", lambda);
                 logger.warning(message);
             }
         } else {
@@ -2689,15 +2824,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         int infoMask = OpenMM_State_Energy;
         infoMask += OpenMM_State_Forces;
-        infoMask += OpenMM_State_ParameterDerivatives;
+
+        if (vdwLambdaTerm) {
+            infoMask += OpenMM_State_ParameterDerivatives;
+        }
 
         state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
 
-        PointerByReference parameterArray = OpenMM_State_getEnergyParameterDerivatives(state);
-        int numDerives = OpenMM_ParameterArray_getSize(parameterArray);
-        if (numDerives > 0) {
-            vdwdUdL = OpenMM_ParameterArray_get(parameterArray, pointerForString("vdw_lambda")) / OpenMM_KJPerKcal;
+        if (vdwLambdaTerm) {
+            PointerByReference parameterArray = OpenMM_State_getEnergyParameterDerivatives(state);
+            int numDerives = OpenMM_ParameterArray_getSize(parameterArray);
+            if (numDerives > 0) {
+                vdwdUdL = OpenMM_ParameterArray_get(parameterArray, pointerForString("vdw_lambda")) / OpenMM_KJPerKcal;
+            }
         }
 
         if (maxDebugGradient < Double.MAX_VALUE) {
@@ -3119,7 +3259,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double[] x = new double[getNumberOfVariables()];
         getCoordinates(x);
 
-        // Test OpenMM at L=0 and L=1.
+        // Test OpenMM at L=0.5 and L=1.
         setLambda(0.0);
         double openMMEnergyZero = energy(x);
         setLambda(1.0);
@@ -3135,8 +3275,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         setLambda(currentLambda);
 
-        logger.info(format(" OpenMM Energy at L=0: %16.8f and L=1: %16.8f", openMMEnergyZero, openMMEnergyOne));
-        logger.info(format(" FFX Energy    at L=0: %16.8f and L=1: %16.8f", ffxEnergyZero, ffxEnergyOne));
+        logger.info(format(" OpenMM Energy at L=0.0: %16.8f and L=1: %16.8f", openMMEnergyZero, openMMEnergyOne));
+        logger.info(format(" FFX Energy    at L=0.0: %16.8f and L=1: %16.8f", ffxEnergyZero, ffxEnergyOne));
     }
 
     /**

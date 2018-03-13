@@ -695,7 +695,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     public void setBiasMagnitude(double biasMag) {
         this.biasMag = biasMag;
-        logger.info(String.format("  Reset Gaussian Bias Magnitude: %6.4f (kcal/mol)", biasMag));
+        logger.info(String.format(" Gaussian Bias Magnitude: %6.4f (kcal/mol)", biasMag));
     }
 
     /**

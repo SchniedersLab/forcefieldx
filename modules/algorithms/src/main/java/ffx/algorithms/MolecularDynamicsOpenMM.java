@@ -182,28 +182,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         integratorType = integratorMD;
         running = false;
         integratorToString(integratorMD);
-        updateIntegrator();
-    }
-
-    /**
-     * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
-     * extended system variables. Will throw an UnsupportedOperationException.
-     *
-     * @param system
-     * @param printFrequency
-     */
-    @Override
-    public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
-        throw new UnsupportedOperationException(" MolecularDynamicsOpenMM does not support extended system variables!");
-    }
-
-    /**
-     * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
-     * extended system variables. Will throw an UnsupportedOperationException.
-     */
-    @Override
-    public void detachExtendedSystem() {
-        throw new UnsupportedOperationException(" MolecularDynamicsOpenMM does not support extended system variables!");
+        updateContext();
     }
 
     /**
@@ -223,6 +202,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     private void getOpenMMState() {
         context = forceFieldEnergyOpenMM.getContext();
+
         int infoMask = OpenMM_State_Positions + OpenMM_State_Velocities + OpenMM_State_Forces + OpenMM_State_Energy;
         PointerByReference state = OpenMM_Context_getState(context, infoMask, forceFieldEnergyOpenMM.enforcePBC);
 
@@ -291,9 +271,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.info(format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
                 logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
                         "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
-                
                 startingTotalEnergy = currentTotalEnergy;
-                
             } else if (i % printFrequency == 0) {
                 double simTime = i * dt * 1.0e-3;
                 time += System.nanoTime();
@@ -330,9 +308,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
              */
             if (restartFrequency > 0 && i % (restartFrequency * 1000) == 0 && i != 0) {
                 if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
-                    logger.info(String.format(" Wrote dynamics restart file to " + restartFile.getName()));
+                    logger.info(format(" Wrote dynamics restart file to " + restartFile.getName()));
                 } else {
-                    logger.info(String.format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
+                    logger.info(format(" Writing dynamics restart file to " + restartFile.getName() + " failed"));
                 }
             }
         }
@@ -354,15 +332,17 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
                 forceFieldEnergyOpenMM.addAndersenThermostat(temperature);
                 break;
+             default:
+                    // No thermostat.
         }
 
         /**
          * Convert the print interval to a print frequency.
          */
         printFrequency = 100;
-        printInterval *= 1000; // dT is in fsec, so convert printInterval to fsec.
-        if (printInterval >= this.dt) {
-            printFrequency = (int) (printInterval / this.dt);
+        printInterval *= 1000; // Time step is in fsec, so convert printInterval to fsec.
+        if (printInterval >= dt) {
+            printFrequency = (int) (printInterval / dt);
         }
 
         /**
@@ -467,7 +447,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      */
     @Override
     public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
-        init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
+
+        this.init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
 
         storeState();
 
@@ -492,7 +473,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             i += intervalSteps;
         }
         updateFromOpenMM(i, running);
-        logger.info("");
     }
 
     public final void integratorToString(IntegratorEnum integrator) {
@@ -502,20 +482,18 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         } else {
             switch (integratorType) {
                 case STOCHASTIC:
-                    this.integratorString = "LANGEVIN";
+                    integratorString = "LANGEVIN";
                     break;
                 case VELOCITYVERLET:
-                    this.integratorString = "VERLET";
+                    integratorString = "VERLET";
                     break;
                 default:
-                    this.integratorString = "VERLET";
+                    integratorString = "VERLET";
                     logger.warning(String.format(" Integrator %s incompatible with "
-                            + "OpenMM MD integration; defaulting to %s", integratorType, this.integratorString));
+                            + "OpenMM MD integration; defaulting to %s", integratorType, integratorString));
                     break;
             }
         }
-
-        logger.info(String.format(" Created %s integrator", this.integratorString));
     }
 
     public void setIntervalSteps(int intervalSteps) {
@@ -523,11 +501,19 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         logger.info(String.format(" Interval Steps set at %d", intervalSteps));
     }
 
-    public final void updateIntegrator() {
-        logger.info(String.format(" Updating OpenMM Integrator with step size %8.3f and target temperature %8.3f.", dt, targetTemperature));
-        forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature);
-        integrator = forceFieldEnergyOpenMM.getIntegrator();
-        context = forceFieldEnergyOpenMM.getContext();
+    public final void updateContext() {
+        String currentIntegrator = forceFieldEnergyOpenMM.getIntegratorString();
+        double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
+        double currentTemperature = forceFieldEnergyOpenMM.getTemperature();
+        if (currentTemperature != targetTemperature || currentTimeStp != dt || !currentIntegrator.equalsIgnoreCase(integratorString)) {
+            logger.info(String.format(" Creating OpenMM Context with step size %8.3f and target temperature %8.3f.", dt, targetTemperature));
+            forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature);
+            integrator = forceFieldEnergyOpenMM.getIntegrator();
+            context = forceFieldEnergyOpenMM.getContext();
+        } else {
+            integrator = forceFieldEnergyOpenMM.getIntegrator();
+            context = forceFieldEnergyOpenMM.getContext();
+        }
     }
 
     /**
@@ -572,5 +558,26 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public int getNumAtoms(){
         return natoms;
+    }
+
+    /**
+     * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
+     * extended system variables. Will throw an UnsupportedOperationException.
+     *
+     * @param system
+     * @param printFrequency
+     */
+    @Override
+    public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
+        throw new UnsupportedOperationException(" MolecularDynamicsOpenMM does not support extended system variables!");
+    }
+
+    /**
+     * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
+     * extended system variables. Will throw an UnsupportedOperationException.
+     */
+    @Override
+    public void detachExtendedSystem() {
+        throw new UnsupportedOperationException(" MolecularDynamicsOpenMM does not support extended system variables!");
     }
 }

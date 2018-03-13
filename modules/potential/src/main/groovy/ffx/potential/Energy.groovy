@@ -4,6 +4,7 @@ package ffx.potential
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
+import ffx.potential.bonded.Atom
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
@@ -32,6 +33,14 @@ class Energy extends Script {
          * -g or --gradient to print out gradients.
          */
         @Option(shortName='g', longName='gradient', description='Print out atomic gradients as well as energy.') boolean gradient;
+        /**
+         * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
+         */
+        @Option(shortName='es1', longName='noElecStart1', defaultValue='1', description='Starting no-electrostatics atom for 1st topology') int es1;
+        /**
+         * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
+         */
+        @Option(shortName='ef1', longName='noElecFinal1', defaultValue='-1', description='Final no-electrostatics atom for 1st topology') int ef1;
         /**
          * The final argument(s) should be one or more filenames.
          */
@@ -85,6 +94,21 @@ class Energy extends Script {
         MolecularAssembly[] assemblies = functions.open(modelFilename)
         MolecularAssembly activeAssembly = assemblies[0];
         ForceFieldEnergy pe = activeAssembly.getPotentialEnergy();
+
+        Atom[] atoms = activeAssembly.getAtomArray();
+
+        // Apply the no electrostatics atom selection
+        int noElecStart = options.es1;
+        noElecStart = (noElecStart < 1) ? 1 : noElecStart;
+
+        int noElecStop = options.ef1;
+        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
+
+        for (int i = noElecStart; i <= noElecStop; i++) {
+            Atom ai = atoms[i - 1];
+            ai.setElectrostatics(false);
+            ai.print();
+        }
 
         int nVars = pe.getNumberOfVariables();
         double[] x = new double[nVars];

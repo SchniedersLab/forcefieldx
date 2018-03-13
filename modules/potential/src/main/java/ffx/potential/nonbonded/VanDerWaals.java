@@ -346,7 +346,9 @@ public class VanDerWaals implements MaskingInterface,
          */
         //lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false);
         // If PME-specific lambda term not set, default to force field-wide lambda term.
-        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.VDW_LAMBDATERM, forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false));
+
+        lambdaTerm = forceField.getBoolean(ForceField.ForceFieldBoolean.VDW_LAMBDATERM,
+                forceField.getBoolean(ForceField.ForceFieldBoolean.LAMBDATERM, false));
         if (lambdaTerm) {
             shareddEdL = new SharedDouble();
             sharedd2EdL2 = new SharedDouble();
