@@ -266,6 +266,11 @@ class ManyBody extends Script {
             useOrigCoordsRotamer = true;
         }
 
+        // By default, rotamer optimization should silence GK warnings, because occasionally we will have unreasonable configurations.
+        if (System.getProperty("gk-suppressWarnings") == null) {
+            System.setProperty("gk-suppressWarnings", "true");
+        }
+
         /**
          * Chain, Residue and/or Box selections.
          */

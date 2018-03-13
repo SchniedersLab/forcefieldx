@@ -1978,10 +1978,10 @@ public class RotamerOptimization implements Terminatable {
             }
         }
     }
-
+    
     /**
-     * Test the self-energy elimination by setting
-     * 2-body and 3-body interactions to zero.
+     * Test the elimination criteria by setting
+     * self and 3-body interactions to zero.
      */
     public void testPairEnergyElimination(Residue residues[], int resID) {
         int nRes = residues.length;
@@ -2033,7 +2033,7 @@ public class RotamerOptimization implements Terminatable {
     }
       
     /**
-     * Test the self-energy elimination by setting
+     * Test the elimination criteria by setting
      * self and 2-body interactions to zero. 
      * Two residues are at fixed rotamers and all 
      * rotamer interactions with those two residues 
@@ -6608,6 +6608,14 @@ public class RotamerOptimization implements Terminatable {
         return eliminated;
     }
 
+    /**
+     * Attemps to eliminate rotamer riA based on riB.
+     * @param residues
+     * @param i
+     * @param riA Rotamer to attempt elimination of.
+     * @param riB Rotamer to attempt elimination by.
+     * @return If riA was eliminated.
+     */
     private boolean goldsteinElimination(Residue residues[], int i, int riA, int riB) {
         int nres = residues.length;
         Residue resi = residues[i];
@@ -6638,10 +6646,17 @@ public class RotamerOptimization implements Terminatable {
                     continue;
                 }
 
-                // This following is NOT checked in Osprey.
-                // if (check(i, riA, j, rj) ||  check(i, riB, j, rj)) {
-                //    continue;
-                // }
+                if (check(i, riA, j, rj)) {
+                    continue; // This is not a part of configuration space accessible to riA.
+                }
+                if (check(i, riB, j, rj)) {
+                    /**
+                     * This is a part of configuration space where riA is valid but not riB.
+                     * Thus, if j,rj is part of the GMEC, riB is inconsistent with it.
+                     * Thus, riB cannot be used to eliminate riA.
+                     */
+                    return false;
+                }
 
                 double pairI = pair(i, riA, j, rj);
                 double pairJ = pair(i, riB, j, rj);
@@ -6662,13 +6677,22 @@ public class RotamerOptimization implements Terminatable {
                         int rkEvals = 0;
                         double minForResK = Double.MAX_VALUE;
                         for (int rk = 0; rk < nrk; rk++) {
+                            /**
+                             * If k,rk or j,rj-k,rk are not a part of valid configuration space, continue.
+                             * If i,riA-k,rk or i,riA-j,rj-k,rk are not valid for riA, continue.
+                             */
                             if (check(k, rk) || check(j, rj, k, rk) || check(i, riA, k, rk)) {
+                                // Not yet implemented: check(i, riA, j, rj, k, rk) because no triples get eliminated.
                                 continue;
                             }
-                            // By anaology, the following is NOT checked in Osprey.
-                            // if (check(i, riB, k, rk)) {
-                            //     continue;
-                            // }
+                            /**
+                             * If i,riB-k,rk or i,riB-j,rj-k,rk are invalid for riB, there is some
+                             * part of configuration space for which riA is valid but not riB.
+                             */
+                            if (check(i, riB, k, rk)) {
+                                // Not yet implemented: check(i, riB, j, rj, k, rk).
+                                return false;
+                            }
 
                             rkEvals++;
                             double e = triple(i, riA, j, rj, k, rk) - triple(i, riB, j, rj, k, rk);
@@ -6830,6 +6854,63 @@ public class RotamerOptimization implements Terminatable {
         return eliminated;
     }
 
+    private boolean newGoldsteinPairsDriver(Residue[] residues) {
+        int nRes = residues.length;
+        boolean eliminated = false;
+
+        // First, generate pairs riA-rjC.
+        for (int i = 0; i < (nRes - 1); i++) {
+            Residue resi = residues[i];
+            Rotamer[] rotsi = residues[i].getRotamers(library);
+            int lenri = rotsi.length;
+
+            for (int riA = 0; riA < lenri; i++) {
+                // Don't try to eliminate that which is already eliminated.
+                if (check(i, riA)) {
+                    continue;
+                }
+                for (int j = i+1; j < nRes; j++) {
+                    Residue resj = residues[j];
+                    Rotamer[] rotsj = residues[j].getRotamers(library);
+                    int lenrj = rotsj.length;
+                    for (int rjC = 0; rjC < lenri; rjC++) {
+                        // Again, no point in eliminating the already-eliminated.
+                        if (check(j, rjC) || check(i, riA, j, rjC)) {
+                            continue;
+                        }
+                        boolean breakOut = false;
+                        // Now, generate pairs riB-rjD. If any pair riB-rjD eliminates riA-rjC, break out of the loop.
+                        for (int riB = riA; riB < lenri; riB++) {
+                            if (breakOut) {
+                                break;
+                            }
+                            if (check(i, riB)) {
+                                continue;
+                            }
+                            for (int rjD = rjC; rjD < lenrj; rjD++) {
+                                if (breakOut) {
+                                    break;
+                                }
+                                // Do not attempt eliminating with an eliminated pair.
+                                if (check(j, rjD) || check(i, riB, j, rjD)) {
+                                    continue;
+                                }
+                                // Do not attempt to eliminate a pair with itself.
+                                if (riA == riB && rjC == rjD) {
+                                    continue;
+                                } if (goldsteinPairElimination(residues, i, riA, riB, j, rjC, rjD)) {
+                                    breakOut = true;
+                                    eliminated = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return eliminated;
+    }
+
     /**
      * Attempt to eliminate rotamer pair (ResI-RotA, ResJ-RotC) using (ResI-RotB, ResJ-RotD).
      *
@@ -6901,6 +6982,16 @@ public class RotamerOptimization implements Terminatable {
             goldsteinRotamerPairLoop = new GoldsteinRotamerPairLoop[nThreads];
         }
 
+        /**
+         * Initializes a ParallelRegion to attempt the elimination of riA,rjC by riB,rjD.
+         * @param residues
+         * @param i First residue of the pair.
+         * @param riA First member of the pair to attempt eliminating.
+         * @param riB First member of the pair to try eliminating by.
+         * @param j Second residue of the pair.
+         * @param rjC Second member of the pair to attempt eliminating.
+         * @param rjD Second member of the pair to try eliminating by.
+         */
         public void init(Residue residues[], int i, int riA, int riB, int j, int rjC, int rjD) {
             this.residues = residues;
             this.i = i;
@@ -7494,6 +7585,27 @@ public class RotamerOptimization implements Terminatable {
         return eliminatedPairs[i][ri][j][rj];
     }
     
+    /**
+     * Check for pruned rotamer; true if eliminated. Only used during testing.
+     * @param i
+     * @param ri
+     * @return 
+     */
+    protected boolean checkPrunedSingles(int i, int ri) {
+        if (onlyPrunedSingles == null) {
+            return false;
+        }
+        return onlyPrunedSingles[i][ri];
+    }
+    
+    /**
+     * Check for pruned rotamer pair; true if eliminated. Only used during testing.
+     * @param i Residue i.
+     * @param ri Rotamer ri.
+     * @param j Residue j.
+     * @param rj Rotamer rj.
+     * @return 
+     */
     protected boolean checkPrunedPairs(int i, int ri, int j, int rj){
         if (onlyPrunedPairs == null) {
             return false;
