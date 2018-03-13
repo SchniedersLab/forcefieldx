@@ -9020,7 +9020,7 @@ public class RotamerOptimization implements Terminatable {
                             eliminateRotamer(residues, i, ri, false);
                             selfEnergy = Double.NaN;
                             time += System.nanoTime();
-                            logger.info(format("Self %7s %-2d: pruned from simulation (unreasonable conformation)", resi, ri));
+                            logger.info(format(" Self %7s %-2d:\t    pruned in %6.4f (sec).", resi, ri, time * 1.0e-9));
                             //logger.info(format(" Self %7s %-2d: set to %10.6g (unreasonable conformation) in %6.4f (sec).", resi, ri, selfEnergy, time * 1.0e-9));
                         }
                         singlesEnergyCounter++;
@@ -9172,7 +9172,7 @@ public class RotamerOptimization implements Terminatable {
                         if (dist < superpositionThreshold) {
                             twoBodyEnergy = Double.NaN;
                             //twoBodyEnergy = 1.0E100;
-                            logger.info(format(" Pair %7s %-2d, %7s %-2d:   set to Double.NaN at %13.6f Ang < %5.3f Ang",
+                            logger.info(format(" Pair %7s %-2d, %7s %-2d:\t    NaN at %13.6f Ang < %5.3f Ang",
                                     resi, ri, resj, rj, dist, superpositionThreshold));
                         } else {
                             String distString = (dist < Double.MAX_VALUE) ? format("%10.3f", dist) : format("     large");
@@ -9185,7 +9185,7 @@ public class RotamerOptimization implements Terminatable {
                                 eliminateRotamerPair(residues, i, ri, j, rj, print);
                                 twoBodyEnergy = Double.NaN; 
                                 time += System.nanoTime();
-                                logger.info(format("Pair %7s %-2d, %7s %-2d: pruned from simulation (unreasonable conformation)", resi, ri, resj, rj));
+                                logger.info(format(" Pair %7s %-2d, %7s %-2d:\t    pruned     at %s (Ang) in %6.4f (sec). ", resi, ri, resj, rj, distString, time * 1.0e-9));
                                 //logger.info(format(" Pair %7s %-2d, %7s %-2d: set to %10.6g (unreasonable conformation) at %s (Ang) in %6.4f (sec).",
                                 //        resi, ri, resj, rj, twoBodyEnergy, distString, time * 1.0e-9));
                             }
@@ -9201,8 +9201,8 @@ public class RotamerOptimization implements Terminatable {
                             twoBodyEnergy = Double.NaN;
                             //twoBodyEnergy = 1E100;
                             time += System.nanoTime();
-                            logger.info(format(" Pair %7s %-2d, %7s %-2d: set to %10.6g (unreasonable conformation) in %6.4f (sec).",
-                                    resi, ri, resj, rj, twoBodyEnergy, time * 1.0e-9));
+                            logger.info(format(" Pair %7s %-2d, %7s %-2d:\t    NaN     in %6.4f (sec).",
+                                    resi, ri, resj, rj, time * 1.0e-9));
                         }
                         pairsEnergyCounter++;
                     }
@@ -9371,7 +9371,7 @@ public class RotamerOptimization implements Terminatable {
                         if (dist < superpositionThreshold) {
                             threeBodyEnergy = Double.NaN;
                             //threeBodyEnergy = 1.0E100;
-                            logger.info(format(" Trimer %7s %-2d, %7s %-2d, %7s %-2d:   set to Double.NaN at %13.6f Ang < %5.3f Ang.",
+                            logger.info(format(" Trimer %7s %-2d, %7s %-2d, %7s %-2d:\t    NaN      at %13.6f Ang < %5.3f Ang.",
                                     resi, ri, resj, rj, resk, rk, dist, superpositionThreshold));
                         } else {
                             long time = -System.nanoTime();
@@ -9405,8 +9405,8 @@ public class RotamerOptimization implements Terminatable {
                                     threeBodyEnergy = Double.NaN;
                                     //threeBodyEnergy = 1E100;
                                     time += System.nanoTime();
-                                    logger.info(format(" Trimer %7s %-2d, %7s %-2d, %7s %-2d: set to %10.6g (unreasonable conformation) at %s (Ang) in %6.4f (sec).",
-                                            resi, ri, resj, rj, resk, rk, threeBodyEnergy, distString, time * 1.0e-9));
+                                    logger.info(format(" Trimer %7s %-2d, %7s %-2d, %7s %-2d:\t    NaN      at %s (Ang) in %6.4f (sec).",
+                                            resi, ri, resj, rj, resk, rk, distString, time * 1.0e-9));
 
                                 }
                                 triplesEnergyCounter++;
