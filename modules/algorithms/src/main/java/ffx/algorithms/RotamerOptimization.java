@@ -6854,40 +6854,57 @@ public class RotamerOptimization implements Terminatable {
         return eliminated;
     }
 
+    /**
+     * Version of goldsteinPairsDriver that makes more sense to a particular coder trying to debug pairs elimination.
+     * The primary difference is removal of some debugging code, plus looping over riA, rjC, riB, rjD instead of
+     * riA, riB, rjC, rjD. Probably not to be used for production runs.
+     *
+     * Currently appears to function identically to the original driver method.
+     *
+     * @param residues
+     * @return If any rotamer pairs were eliminated.
+     */
     private boolean newGoldsteinPairsDriver(Residue[] residues) {
         int nRes = residues.length;
         boolean eliminated = false;
 
         // First, generate pairs riA-rjC.
-        for (int i = 0; i < (nRes - 1); i++) {
+        for (int i = 0; i < nRes; i++) {
             Residue resi = residues[i];
-            Rotamer[] rotsi = residues[i].getRotamers(library);
+            Rotamer[] rotsi = resi.getRotamers(library);
             int lenri = rotsi.length;
 
-            for (int riA = 0; riA < lenri; i++) {
+            for (int riA = 0; riA < lenri; riA++) {
                 // Don't try to eliminate that which is already eliminated.
                 if (check(i, riA)) {
                     continue;
                 }
-                for (int j = i+1; j < nRes; j++) {
+
+                // Residue j can be any other residue, including ones before residue i.
+                for (int j = 0; j < nRes; j++) {
+                    // Residue j must be distinct from i.
+                    if (i == j) {
+                        continue;
+                    }
                     Residue resj = residues[j];
-                    Rotamer[] rotsj = residues[j].getRotamers(library);
+                    Rotamer[] rotsj = resj.getRotamers(library);
                     int lenrj = rotsj.length;
-                    for (int rjC = 0; rjC < lenri; rjC++) {
+                    for (int rjC = 0; rjC < lenrj; rjC++) {
                         // Again, no point in eliminating the already-eliminated.
                         if (check(j, rjC) || check(i, riA, j, rjC)) {
                             continue;
                         }
                         boolean breakOut = false;
+
                         // Now, generate pairs riB-rjD. If any pair riB-rjD eliminates riA-rjC, break out of the loop.
-                        for (int riB = riA; riB < lenri; riB++) {
+                        for (int riB = 0; riB < lenri; riB++) {
                             if (breakOut) {
                                 break;
                             }
                             if (check(i, riB)) {
                                 continue;
                             }
-                            for (int rjD = rjC; rjD < lenrj; rjD++) {
+                            for (int rjD = 0; rjD < lenrj; rjD++) {
                                 if (breakOut) {
                                     break;
                                 }
@@ -6898,7 +6915,8 @@ public class RotamerOptimization implements Terminatable {
                                 // Do not attempt to eliminate a pair with itself.
                                 if (riA == riB && rjC == rjD) {
                                     continue;
-                                } if (goldsteinPairElimination(residues, i, riA, riB, j, rjC, rjD)) {
+                                }
+                                if (goldsteinPairElimination(residues, i, riA, riB, j, rjC, rjD)) {
                                     breakOut = true;
                                     eliminated = true;
                                 }
@@ -6946,6 +6964,10 @@ public class RotamerOptimization implements Terminatable {
             logger.log(Level.WARNING, " Exception in GoldsteinPairRegion.", e);
         }
         // goldsteinEnergy += goldsteinPairSumOverK(residues, 0, nres-1, i, riA, riB, j, rjC, rjD);
+        if (missedResidues != null && !missedResidues.isEmpty()) {
+            logIfMaster(format(" Skipping energy comparison due to a missed residue: i %d riA %d riB %d j %d rjC %d rjD %d", i, riA, riB, j, rjC, rjD), Level.FINE);
+            return false;
+        }
 
         if (goldsteinEnergy > ensembleBuffer) {
             if (missedResidues.isEmpty()) {
@@ -7054,7 +7076,19 @@ public class RotamerOptimization implements Terminatable {
 
             @Override
             public void run(int lb, int ub) throws Exception {
-                sumOverK += goldsteinPairSumOverK(residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues);
+                if (blockedResidues.isEmpty()) {
+                    //sumOverK += goldsteinPairSumOverK(residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues);
+                    double locSumOverK = goldsteinPairSumOverK(residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues);
+
+                    // Should be redundant checks.
+                    if (Double.isFinite(locSumOverK) && blockedResidues.isEmpty()) {
+                        sumOverK += locSumOverK;
+                    } else {
+                        sumOverK = 0;
+                    }
+                } else {
+                    logIfMaster(format(" Skipping %d to %d because we cannot eliminate", lb, ub), Level.FINE);
+                }
             }
         }
     }
@@ -7079,14 +7113,21 @@ public class RotamerOptimization implements Terminatable {
                 if (check(k, rk)) {
                     continue;
                 }
-                // These are not checked in Osprey.
-                /**
-                 if (check(i, riA, k, rk) || check(j, rjC, k, rk) || check(i, riB, k, rk) || check(j, rjD, k, rk)) {
-                 continue;
-                 } */
+                // Continue if k,rk invalid for riA/rjC.
+                if (check(i, riA, k, rk) || check(j, rjC, k, rk)) {
+                    // Not implemented: check(i, riA, j, rjC, k, rk).
+                    continue;
+                }
+                // Return false if k,rk invalid for riB/rjD.
+                if (check(i, riB, k, rk) || check(j, rjD, k, rk)) {
+                    blockedResidues.add(resk);
+                    return Double.NaN;
+                }
+
                 rkEvals++;
-                double currentResK = pair(i, riA, k, rk) + pair(j, rjC, k, rk)
-                        - pair(i, riB, k, rk) - pair(j, rjD, k, rk);
+                /*double currentResK = pair(i, riA, k, rk) + pair(j, rjC, k, rk)
+                        - pair(i, riB, k, rk) - pair(j, rjD, k, rk);*/
+                double currentResK = pair(i, riA, k, rk) - pair(i, riB, k, rk) + pair(j, rjC, k, rk) - pair(j, rjD, k, rk);
                 // Include 3-body effects.
                 if (threeBodyTerm) {
                     double sumOverL = (triple(i, riA, j, rjC, k, rk) - triple(i, riB, j, rjD, k, rk));
@@ -7102,17 +7143,28 @@ public class RotamerOptimization implements Terminatable {
                         double minForResL = Double.MAX_VALUE;
                         // Loop over rotamers for residue l.
                         for (int rl = 0; rl < nrl; rl++) {
-                            if (check(l, rl) || check(i, riA, l, rl)
+                            /*if (check(l, rl) || check(i, riA, l, rl)
                                     || check(k, rk, l, rl) || check(i, riB, l, rl)) {
                                 continue;
+                            }*/
+                            // If not a part of valid phase space for riA/rjC, continue.
+                            if (check(l, rl) || check(k, rk, l, rl) || check(i, riA, l, rl) || check(j, rjC, l, rl)) {
+                                // Not implemented: check(i, riA, j, rjC, l, rl) || check(i, riA, k, rk, l, rl) || check(j, rjC, k, rk, l, rl) || check(i, riA, j, rjC, k, rk, l, rl)
+                                continue;
+                            }
+                            if (check(i, riB, l, rl) || check(j, rjD, l, rl)) {
+                                // Not implemented: check(i, riB, j, rjD, l, rl) || check(i, riB, k, rk, l, rl) || check(j, rjD, k, rk, l, rl) || check(i, riB, j, rjD, k, rk, l, rl)
+                                blockedResidues.add(residuel);
+                                return Double.NaN;
                             }
                             // By analogy, the following are not checked in Osprey.
                             //if (check(j, rjC, l, rl) || check(j, rjD, l, rl)) {
                             //    continue;
                             //}
                             rlEvaluations++;
-                            double e = triple(i, riA, k, rk, l, rl) + triple(j, rjC, k, rk, l, rl)
-                                    - triple(i, riB, k, rk, l, rl) - triple(j, rjD, k, rk, l, rl);
+                            /*double e = triple(i, riA, k, rk, l, rl) + triple(j, rjC, k, rk, l, rl)
+                                    - triple(i, riB, k, rk, l, rl) - triple(j, rjD, k, rk, l, rl);*/
+                            double e = triple(i, riA, k, rk, l, rl) - triple(i, riB, k, rk, l, rl) + triple(j, rjC, k, rk, l, rl) - triple(j, rjD, k, rk, l, rl);
                             if (e < minForResL) {
                                 minForResL = e;
                             }
