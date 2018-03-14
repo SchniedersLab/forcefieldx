@@ -94,6 +94,7 @@ class Cart2Frac extends Script {
             }
         }
 
+        filename = modelFilename;
         String ext = FilenameUtils.getExtension(filename);
         filename = FilenameUtils.removeExtension(filename);
         if (ext.toUpperCase().contains("XYZ")) {
