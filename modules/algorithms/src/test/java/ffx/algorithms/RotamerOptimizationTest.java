@@ -67,7 +67,7 @@ public class RotamerOptimizationTest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-               {"Chignolin Direct with Orig Rot (Goldstein)",
+               {"Chignolin Direct with Orig Rot - No Pruning (Goldstein)",
                 "ffx/algorithms/structures/5awl.pdb",
                 "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
                 1,                      // Start Residue.
@@ -89,7 +89,7 @@ public class RotamerOptimizationTest {
                 0.0,                    // Expected trimer energy.
                 1.0e-3                  // Energy Tolerance.
             },
-            {"Chignolin Direct with Orig Rot (Goldstein)",
+            {"Chignolin Direct with Orig Rot - Singles Pruning (Goldstein)",
                 "ffx/algorithms/structures/5awl.pdb",
                 "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
                 1,                      // Start Residue.
@@ -111,7 +111,7 @@ public class RotamerOptimizationTest {
                 0.0,                    // Expected trimer energy.
                 1.0e-3                  // Energy Tolerance.
             },
-            {"Chignolin Direct with Orig Rot (Goldstein)",
+            {"Chignolin Direct with Orig Rot - Pairs Pruning (Goldstein)",
                 "ffx/algorithms/structures/5awl.pdb",
                 "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
                 1,                      // Start Residue.
@@ -133,7 +133,7 @@ public class RotamerOptimizationTest {
                 0.0,                    // Expected trimer energy.
                 1.0e-3                  // Energy Tolerance.
             },
-            {"Chignolin Direct with Orig Rot (Goldstein)",
+            {"Chignolin Direct with Orig Rot - 3-body (Goldstein)",
                 "ffx/algorithms/structures/5awl.pdb",
                 "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
                 1,                      // Start Residue.
@@ -829,7 +829,15 @@ public class RotamerOptimizationTest {
                         }
                     }
                 }
-                assertEquals(String.format(" %s Pair-Energy of residue (%d,%d) with residue %d", info, pairResidue, bestRotI, j), optimum[j], bestRotJ);
+                if (bestRotJ != optimum[j]) {
+                    // Check if pair energies are equal.
+                    if (lowEnergy == rotamerOptimization.pair(pairResidue, bestRotI, j, optimum[j])) {
+                        logger.warning(String.format(" Identical pair energies for %s: resi %d-%d, resj %d, best rotamer J %d, optimum J %d, pair energy (both) %10.6f", info, pairResidue, bestRotI, j, bestRotJ, optimum[j], lowEnergy));
+                    } else {
+                        assertEquals(String.format(" %s Pair-Energy of residue (%d,%d) with residue %d", info, pairResidue, bestRotI, j), optimum[j], bestRotJ);
+                    }
+                }
+                //assertEquals(String.format(" %s Pair-Energy of residue (%d,%d) with residue %d", info, pairResidue, bestRotI, j), optimum[j], bestRotJ);
             } 
         }
         
