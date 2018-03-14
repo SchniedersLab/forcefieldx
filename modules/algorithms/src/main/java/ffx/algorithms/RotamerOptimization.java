@@ -3270,6 +3270,7 @@ public class RotamerOptimization implements Terminatable {
             }
             dryRun(residues, 0, currentRotamers);
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
+            double afterPairElim = singletonPermutations - pairTotalElimination;
             if (evaluatedPermutations == 0) {
                 logger.severe(" No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
             }
@@ -3291,10 +3292,13 @@ public class RotamerOptimization implements Terminatable {
                 ensembleFilter = new PDBFilter(new File(ensembleFile.getName()), molecularAssembly, null, null);
                 logger.info(format(" Ensemble file: %s", ensembleFile.getName()));
             }
-            logIfMaster(format(" Number of permutations without DEE conditions: %10.4e.", permutations));
-            logIfMaster(format(" Number of permutations after singleton eliminations: %10.4e.", singletonPermutations));
-            logIfMaster(format(" Number of permutations removed by pairwise eliminations: %10.4e.", pairTotalElimination));
-            logIfMaster(format(" Number of permutations remaining: %10.4e.", (double) evaluatedPermutations));
+            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Condition", "|", "Number of Permutations Left", "|", "Other", "|"));
+            logIfMaster(format("%s", "-----------------------------------------------------------------------------------------"));
+            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "No Elimination", "|", permutations, "|", "0.0", "|"));
+            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Single Elimination", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
+            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Pair Elimination", "|", afterPairElim, "|", pairTotalElimination, "|"));
+            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Single and Pair Elimination", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
+            logIfMaster(format("%s", "-----------------------------------------------------------------------------------------\n"));
 
             double e;
             if (useMonteCarlo()) {
@@ -3493,10 +3497,12 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
 
-            logIfMaster(format(" Collecting permutations."));
+            logIfMaster(format("%65s", "Collecting Permutations"));
+            logIfMaster(format("%s", "-----------------------------------------------------------------------------------------"));
             dryRun(residues, 0, currentRotamers);
 
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
+            double afterPairElim = singletonPermutations - pairTotalElimination;
             currentEnsemble = (int) evaluatedPermutations;
             if (ensembleNumber == 1 && currentEnsemble == 0) {
                 logger.severe(" No valid path through rotamer space found; try recomputing without pruning or using ensemble.");
@@ -3523,10 +3529,13 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(format(" Ensemble Search Stats: (buffer: %5.3f, current: %d, target: %d)", ensembleBuffer, currentEnsemble, ensembleNumber));
             }
             if (ensembleNumber == 1 || finalTry) {
-                logIfMaster(format(" Number of permutations without DEE conditions: %10.4e.", permutations));
-                logIfMaster(format(" Number of permutations after singleton eliminations: %10.4e.", singletonPermutations));
-                logIfMaster(format(" Number of permutations removed by pairwise eliminations: %10.4e.", pairTotalElimination));
-                logIfMaster(format(" Number of permutations remaining: %10.4e.", (double) evaluatedPermutations));
+                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Condition", "|", "Number of Permutations Left", "|", "Other", "|"));
+                logIfMaster(format("%s", "-----------------------------------------------------------------------------------------"));
+                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "No Elimination", "|", permutations, "|", "0.0", "|"));
+                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Single Elimination", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
+                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Pair Elimination", "|", afterPairElim, "|", pairTotalElimination, "|"));
+                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Single and Pair Elimination", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
+                logIfMaster(format("%s", "-----------------------------------------------------------------------------------------\n"));
                 break;
             }
             if (Math.abs(currentEnsemble - ensembleNumber) < bestEnsembleTargetDiffThusFar) {
@@ -8940,7 +8949,6 @@ public class RotamerOptimization implements Terminatable {
         private final Residue residues[];
         private final int nResidues;
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
-        private int singlesEnergyCounter;
 
         public SinglesEnergyRegion(int nt, Residue residues[]) {
             energyLoop = new SinglesEnergyLoop();
@@ -8950,7 +8958,6 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void start() {
-            singlesEnergyCounter = 0;
             /**
              * Setup and compute backbone energy.
              */
@@ -9024,8 +9031,6 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
-
-            logger.info(format(" Self-energy count: %d.", singlesEnergyCounter));
         }
 
         private class SinglesEnergyLoop extends WorkerIteration<Integer> {
@@ -9075,7 +9080,6 @@ public class RotamerOptimization implements Terminatable {
                             logger.info(format(" Self %7s %-2d:\t    pruned in %6.4f (sec).", resi, ri, time * 1.0e-9));
                             //logger.info(format(" Self %7s %-2d: set to %10.6g (unreasonable conformation) in %6.4f (sec).", resi, ri, selfEnergy, time * 1.0e-9));
                         }
-                        singlesEnergyCounter++;
                     }
 
                     // Revert residues and turn off atoms.
@@ -9101,7 +9105,6 @@ public class RotamerOptimization implements Terminatable {
         private final Residue residues[];
         private final int nResidues;
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
-        private int pairsEnergyCounter;
 
         public PairsEnergyRegion(int nt, Residue residues[]) {
             energyLoop = new PairsEnergyLoop();
@@ -9111,7 +9114,6 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void start() {
-            pairsEnergyCounter = 0;
         }
 
         @Override
@@ -9171,7 +9173,6 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
-            logger.info(format(" Pairs Energy Count: %d", pairsEnergyCounter));
         }
 
         private class PairsEnergyLoop extends WorkerIteration<Integer> {
@@ -9241,7 +9242,6 @@ public class RotamerOptimization implements Terminatable {
                                 //logger.info(format(" Pair %7s %-2d, %7s %-2d: set to %10.6g (unreasonable conformation) at %s (Ang) in %6.4f (sec).",
                                 //        resi, ri, resj, rj, twoBodyEnergy, distString, time * 1.0e-9));
                             }
-                            pairsEnergyCounter++;
                         }
                     } else {
                         try {
@@ -9256,7 +9256,6 @@ public class RotamerOptimization implements Terminatable {
                             logger.info(format(" Pair %7s %-2d, %7s %-2d:\t    NaN     in %6.4f (sec).",
                                     resi, ri, resj, rj, time * 1.0e-9));
                         }
-                        pairsEnergyCounter++;
                     }
 
                     // Get energy and broadcast it.
@@ -9288,7 +9287,6 @@ public class RotamerOptimization implements Terminatable {
         private final int nResidues;
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
         private double localDistanceMatrix[][][][];
-        private int triplesEnergyCounter;
 
         public TriplesEnergyRegion(int nt, Residue residues[]) {
             energyLoop = new TriplesEnergyLoop();
@@ -9299,7 +9297,6 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void start() {
-            triplesEnergyCounter = 0;
             if (distance <= 0) {
                 logger.info(" Calculating local distance matrix using non-eliminated rotamers.");
                 // TODO: check on the location of this call - might need to be done per trimer-job
@@ -9369,7 +9366,6 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
-            logger.info(format(" Triples Energy Count: %d", triplesEnergyCounter));
         }
 
         private class TriplesEnergyLoop extends WorkerIteration<Integer> {
@@ -9461,7 +9457,6 @@ public class RotamerOptimization implements Terminatable {
                                             resi, ri, resj, rj, resk, rk, distString, time * 1.0e-9));
 
                                 }
-                                triplesEnergyCounter++;
                             }
 
                             // Revert rotamers and turn off atoms.
@@ -9500,7 +9495,6 @@ public class RotamerOptimization implements Terminatable {
         private final int nResidues;
         private final boolean useOrigCoordsRot = library.getUsingOrigCoordsRotamer();
         private double localDistanceMatrix[][][][];
-        private int quadsEnergyCounter;
 
         public QuadsEnergyRegion(int nt, Residue residues[]) {
             energyLoop = new QuadsEnergyLoop();
@@ -9511,7 +9505,6 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public void start() {
-            quadsEnergyCounter = 0;
             if (distance <= 0) {
                 logger.info(" Calculating local distance matrix using non-eliminated rotamers.");
                 // TODO: check on the location of this call - might need to be done per quad-job
@@ -9529,7 +9522,6 @@ public class RotamerOptimization implements Terminatable {
         @Override
         public void finish() {
             // no "I'm finished" signal for quads
-            logger.info(format(" Quads Energy Count: %d", quadsEnergyCounter));
         }
 
         private class QuadsEnergyLoop extends WorkerIteration<Integer> {
@@ -9664,7 +9656,6 @@ public class RotamerOptimization implements Terminatable {
                                     logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: set to %10.6g (unreasonable conformation) at %s Ang.",
                                             resi, ri, resj, rj, resk, rk, resl, rl, quadEnergy, distString));
                                 }
-                                quadsEnergyCounter++;
                             }
 
                             // Revert rotamers and turn off atoms.
