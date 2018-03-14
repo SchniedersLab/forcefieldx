@@ -3292,13 +3292,13 @@ public class RotamerOptimization implements Terminatable {
                 ensembleFilter = new PDBFilter(new File(ensembleFile.getName()), molecularAssembly, null, null);
                 logger.info(format(" Ensemble file: %s", ensembleFile.getName()));
             }
-            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Condition", "|", "Number of Permutations Left", "|", "Other", "|"));
-            logIfMaster(format("%s", "-----------------------------------------------------------------------------------------"));
-            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "No Elimination", "|", permutations, "|", "0.0", "|"));
-            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Single Elimination", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
-            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Pair Elimination", "|", afterPairElim, "|", pairTotalElimination, "|"));
-            logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Single and Pair Elimination", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
-            logIfMaster(format("%s", "-----------------------------------------------------------------------------------------\n"));
+            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Condition", "|", "Number of Permutations Left", "|", "Removed", "|"));
+            logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------"));
+            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "No Eliminations", "|", permutations, "|", "", "|"));
+            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single Eliminations", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
+            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Pair Eliminations", "|", afterPairElim, "|", pairTotalElimination, "|"));
+            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single and Pair Eliminations", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
+            logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------\n"));
 
             double e;
             if (useMonteCarlo()) {
@@ -3498,7 +3498,7 @@ public class RotamerOptimization implements Terminatable {
             }
 
             logIfMaster(format("%65s", "Collecting Permutations"));
-            logIfMaster(format("%s", "-----------------------------------------------------------------------------------------"));
+            logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------"));
             dryRun(residues, 0, currentRotamers);
 
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
@@ -3529,13 +3529,13 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(format(" Ensemble Search Stats: (buffer: %5.3f, current: %d, target: %d)", ensembleBuffer, currentEnsemble, ensembleNumber));
             }
             if (ensembleNumber == 1 || finalTry) {
-                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Condition", "|", "Number of Permutations Left", "|", "Other", "|"));
-                logIfMaster(format("%s", "-----------------------------------------------------------------------------------------"));
-                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "No Elimination", "|", permutations, "|", "0.0", "|"));
-                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Single Elimination", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
-                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Pair Elimination", "|", afterPairElim, "|", pairTotalElimination, "|"));
-                logIfMaster(format("%30s %5s %30s %5s %10s %5s", "Single and Pair Elimination", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
-                logIfMaster(format("%s", "-----------------------------------------------------------------------------------------\n"));
+                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Condition", "|", "Number of Permutations Left", "|", "Number of Permutations Removed", "|"));
+                logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------"));
+                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "No Eliminations", "|", permutations, "|", "", "|"));
+                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single Eliminations", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
+                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Pair Eliminations", "|", afterPairElim, "|", pairTotalElimination, "|"));
+                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single and Pair Eliminations", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
+                logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------\n"));
                 break;
             }
             if (Math.abs(currentEnsemble - ensembleNumber) < bestEnsembleTargetDiffThusFar) {
@@ -6613,6 +6613,9 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
+        }
+        if(eliminated == false){
+            System.out.println("No more single rotamers to eliminate.");
         }
         return eliminated;
     }
