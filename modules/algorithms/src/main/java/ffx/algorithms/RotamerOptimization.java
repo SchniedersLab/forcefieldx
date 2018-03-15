@@ -1224,11 +1224,21 @@ public class RotamerOptimization implements Terminatable {
                             comparisonEnergy - approximateEnergy, lowEnergy));
                 } else {
                     if (threeBodyTerm) {
-                        logIfMaster(format(" %6e 3-Body: %12.4f (%12.4f)",
-                                (double) evaluatedPermutations, approximateEnergy, lowEnergy));
+                        logIfMaster(format(" Energy contributions:"));
+                        logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+                        logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Type", "|", "Energy", "|", "Lowest Possible Energy", "|"));
+                        logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+                        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", "Permutation:", "|", approximateEnergy, "|", lowEnergy, "|"));
+                        //logIfMaster(format(" %6e 3-Body: %12.4f (%12.4f)",
+                        //       (double) evaluatedPermutations, approximateEnergy, lowEnergy));
                     } else {
-                        logIfMaster(format(" %6e 2-Body: %12.4f (%12.4f)",
-                                (double) evaluatedPermutations, approximateEnergy, lowEnergy));
+                        logIfMaster(format(" Energy contributions:"));
+                        logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+                        logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Type", "|", "Energy", "|", "Lowest Possible Energy", "|"));
+                        logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+                        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", "Permutation:", "|", approximateEnergy, "|", lowEnergy, "|"));
+                        //logIfMaster(format(" %6e 2-Body: %12.4f (%12.4f)",
+                        //        (double) evaluatedPermutations, approximateEnergy, lowEnergy));
                     }
                 }
             }
@@ -3293,12 +3303,12 @@ public class RotamerOptimization implements Terminatable {
                 logger.info(format(" Ensemble file: %s", ensembleFile.getName()));
             }
             logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Condition", "|", "Number of Permutations Left", "|", "Removed", "|"));
-            logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------"));
+            logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------"));
             logIfMaster(format("%30s %5s %30s %5s %30s %5s", "No Eliminations", "|", permutations, "|", "", "|"));
             logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single Eliminations", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
             logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Pair Eliminations", "|", afterPairElim, "|", pairTotalElimination, "|"));
             logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single and Pair Eliminations", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
-            logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------\n"));
+            logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------\n"));
 
             double e;
             if (useMonteCarlo()) {
@@ -3365,15 +3375,19 @@ public class RotamerOptimization implements Terminatable {
                 ensembleStates.sort(null);
             }
 
-            logIfMaster("\n Final rotamers:");
+            logIfMaster(format(" Final rotamers:"));
+            logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
+            logIfMaster(format("%14s %3s %10s %3s %9s %3s %9s %3s %9s %3s", "Residue", "|", "Chi 1", "|", "Chi 2", "|", "Chi 3", "|", "Chi 4", "|"));
+            logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
             for (int i = 0; i < nResidues; i++) {
                 Residue residue = residues[i];
                 Rotamer[] rotamers = residue.getRotamers(library);
                 int ri = optimum[i];
                 Rotamer rotamer = rotamers[ri];
-                logIfMaster(format(" %c (%7s,2d) %s", residue.getChainID(), residue, ri, rotamer.toAngleString()));
+                logIfMaster(format(" %c (%7s,2d) | %s", residue.getChainID(), residue, ri, rotamer.toAngleString()));
                 RotamerLibrary.applyRotamer(residue, rotamer);
             }
+            logIfMaster(format("%s", " --------------------------------------------------------------------------------------------\n"));
 
             double sumSelfEnergy = 0;
             double sumPairEnergy = 0;
@@ -3401,8 +3415,12 @@ public class RotamerOptimization implements Terminatable {
                 e = Double.NaN;
                 logger.severe(String.format(" Exception %s in calculating current energy at the end of triples", ex.toString()));
             }
-            logIfMaster(format(" Self Energy:   %16.8f", sumSelfEnergy));
-            logIfMaster(format(" Pair Energy:   %16.8f", sumPairEnergy));
+
+            
+            logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Type", "|", "Energy", "|", "Lowest Possible Energy", "|"));
+            logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Self:", "|", sumSelfEnergy, "|", "", "|"));
+            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Pair:", "|", sumPairEnergy, "|", "", "|"));
 
             double approximateEnergy = backboneEnergy + sumSelfEnergy + sumPairEnergy;
 
@@ -3423,13 +3441,14 @@ public class RotamerOptimization implements Terminatable {
                 }
                 approximateEnergy += sumTrimerEnergy;
                 double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - sumTrimerEnergy - backboneEnergy;
-                logIfMaster(format(" Trimer Energy: %16.8f", sumTrimerEnergy));
-                logIfMaster(format(" Neglected:     %16.8f", higherOrderEnergy));
+                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Trimer:", "|", sumTrimerEnergy, "|", "", "|"));
+                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
             } else {
                 double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - backboneEnergy;
-                logIfMaster(format(" Neglected:     %16.8f", higherOrderEnergy));
+                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
             }
-            logIfMaster(format(" Approximate Energy:     %16.8f", approximateEnergy));
+            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Approximate:", "|", approximateEnergy, "|", "", "|"));
+            logIfMaster(format("%s", " ----------------------------------------------------------------------------------\n"));
             return e;
         }
 
@@ -3497,8 +3516,8 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
 
-            logIfMaster(format("%65s", "Collecting Permutations"));
-            logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------"));
+            logIfMaster(format(" Collecting Permutations:"));
+            logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------"));
             dryRun(residues, 0, currentRotamers);
 
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
@@ -3530,12 +3549,12 @@ public class RotamerOptimization implements Terminatable {
             }
             if (ensembleNumber == 1 || finalTry) {
                 logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Condition", "|", "Number of Permutations Left", "|", "Number of Permutations Removed", "|"));
-                logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------"));
+                logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------"));
                 logIfMaster(format("%30s %5s %30s %5s %30s %5s", "No Eliminations", "|", permutations, "|", "", "|"));
                 logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single Eliminations", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
                 logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Pair Eliminations", "|", afterPairElim, "|", pairTotalElimination, "|"));
                 logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single and Pair Eliminations", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
-                logIfMaster(format("%s", " ------------------------------------------------------------------------------------------------------------\n"));
+                logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------\n"));
                 break;
             }
             if (Math.abs(currentEnsemble - ensembleNumber) < bestEnsembleTargetDiffThusFar) {
@@ -3643,9 +3662,9 @@ public class RotamerOptimization implements Terminatable {
         } catch (ArithmeticException ex) {
             logger.severe(String.format(" Exception %s in calculating current energy at the end of self and pairs", ex.toString()));
         }
-        logIfMaster(format(" Backbone Energy:    %16.8f.", backboneEnergy));
-        logIfMaster(format(" Self Energy:        %16.8f (Lowest possible: %16.8f).", sumSelfEnergy, sumLowSelfEnergy));
-        logIfMaster(format(" Pair Energy:        %16.8f (Lowest possible: %16.8f).", sumPairEnergy, sumLowPairEnergy));
+        logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Backbone:", "|", backboneEnergy, "|", "", "|"));
+        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", "Self:", "|", sumSelfEnergy, "|", sumLowSelfEnergy, "|"));
+        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", "Pair:", "|", sumPairEnergy, "|", sumLowPairEnergy, "|"));
 
         double approximateEnergy = backboneEnergy + sumSelfEnergy + sumPairEnergy;
 
@@ -3672,26 +3691,30 @@ public class RotamerOptimization implements Terminatable {
             }
             approximateEnergy += sumTrimerEnergy;
             double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - sumTrimerEnergy - backboneEnergy;
-            logIfMaster(format(" Trimer Energy:      %16.8f", sumTrimerEnergy));
-            logIfMaster(format(" Neglected:          %16.8f", higherOrderEnergy));
+            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Trimer:", "|", sumTrimerEnergy, "|", "", "|"));
+            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
         } else {
             double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - backboneEnergy;
-            logIfMaster(format(" Neglected:          %16.8f", higherOrderEnergy));
+            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
         }
 
-        logIfMaster(format(" Approximate Energy: %16.8f", approximateEnergy));
+        logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Approximate:", "|",approximateEnergy, "|", "", "|"));
+        logIfMaster(format("%s", " ----------------------------------------------------------------------------------\n"));
 
-        logIfMaster("\n Final rotamers:");
+        logIfMaster(format(" Final rotamers:"));
+        logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
+        logIfMaster(format("%17s %3s %10s %3s %9s %3s %9s %3s %9s %3s %10s %3s", "Residue", "|", "Chi 1", "|", "Chi 2", "|", "Chi 3", "|", "Chi 4", "|", "Energy", "|"));
+        logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
         for (int i = 0; i < nResidues; i++) {
             Residue residue = residues[i];
             Rotamer[] rotamers = residue.getRotamers(library);
             int ri = optimum[i];
             Rotamer rotamer = rotamers[ri];
-            logIfMaster(format(" %3d %c (%7s,%2d) %s %12.4f",
+            logIfMaster(format(" %3d %c (%7s,%2d) | %s %12.4f |",
                     i + 1, residue.getChainID(), residue, ri, rotamer.toAngleString(), residueEnergy[i]));
             RotamerLibrary.applyRotamer(residue, rotamer);
         }
-
+        logIfMaster(format("%s", " --------------------------------------------------------------------------------------------\n"));
         return e;
     }
 
@@ -6615,7 +6638,7 @@ public class RotamerOptimization implements Terminatable {
             }
         }
         if(eliminated == false){
-            System.out.println("No more single rotamers to eliminate.");
+            logIfMaster(" No more single rotamers to eliminate.");
         }
         return eliminated;
     }
@@ -6863,6 +6886,9 @@ public class RotamerOptimization implements Terminatable {
                 } // End inner loop over residue i's rotamers.
             } // End outer loop over residue i's rotamers.
         } // End loop over residue i.
+        if (eliminated == false){
+            logIfMaster(" No more rotamer pairs to eliminate.");
+        }
         return eliminated;
     }
 
