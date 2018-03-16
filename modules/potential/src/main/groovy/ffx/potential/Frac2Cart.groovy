@@ -11,13 +11,13 @@ import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
 /**
- * The FracToCart script converts from Fractional to Cartesian coordinates.
+ * The Frac2Cart script converts from Fractional to Cartesian coordinates.
  * <br>
  * Usage:
  * <br>
- * ffxc FracToCart &lt;filename&gt;
+ * ffxc Frac2Cart &lt;filename&gt;
  */
-class FracToCart extends Script {
+class Frac2Cart extends Script {
 
     /**
      * Options for the FracToCart Script.
@@ -43,7 +43,7 @@ class FracToCart extends Script {
     def run() {
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc FracToCart <filename>', header:' Options:');
+        def cli = new CliBuilder(usage:' ffxc Frac2Cart <filename>', header:' Options:');
         def options = new Options()
         cli.parseFromInstance(options, args)
         if (options.help) {
@@ -79,7 +79,7 @@ class FracToCart extends Script {
 
         // Loop over each system.
         for (int i=0; i<assemblies.length; i++) {
-            system = systems[i];
+            system = assemblies[i];
             Crystal crystal = system.getCrystal().getUnitCell();
 
             List<Atom> atoms = system.getAtomList();
@@ -93,7 +93,8 @@ class FracToCart extends Script {
                 atom.moveTo(cart);
             }
         }
-
+        
+        filename = modelFilename;
         String ext = FilenameUtils.getExtension(filename);
         filename = FilenameUtils.removeExtension(filename);
         if (ext.toUpperCase().contains("XYZ")) {
