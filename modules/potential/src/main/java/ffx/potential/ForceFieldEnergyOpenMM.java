@@ -629,9 +629,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             lambdaTerm = true;
         }
 
+        /**
         logger.info(format(" vdwLambdaTerm %s", vdwLambdaTerm));
         logger.info(format(" pmeLambdaTerm %s", pmeLambdaTerm));
         logger.info(format(" lambdaTerm %s", lambdaTerm));
+         */
     }
 
     /**
@@ -2248,6 +2250,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Update parameters if the Use flags changed.
      */
     private void updateParameters() {
+
         Atom[] atoms = molecularAssembly.getAtomArray();
 
         if (vdwLambdaTerm) {
@@ -2774,12 +2777,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 x[i] /= optimizationScaling[i];
             }
         }
+
         setCoordinates(x);
         setOpenMMPositions(x, x.length);
 
         int infoMask = OpenMM_State_Energy;
         state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+        OpenMM_State_destroy(state);
 
         if (verbose) {
             logger.log(Level.INFO, String.format(" OpenMM Energy: %14.10g", e));
@@ -2795,7 +2800,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
-        OpenMM_State_destroy(state);
+
         return e;
     }
 
