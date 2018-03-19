@@ -309,7 +309,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>2.17</version>
+                    <version>3.0.0</version>
                     <inherited>true</inherited>
                 </plugin>
                 <plugin>
@@ -386,7 +386,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.8</version>
+                    <version>3.9</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-project-info-reports-plugin</artifactId>
@@ -406,11 +406,11 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.20.1</version>
+                    <version>2.21.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>2.20.1</version>
+                    <version>2.21.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
@@ -512,7 +512,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M1</version>
                 <executions>
                     <execution>
                         <id>enforce-versions</id>
@@ -537,29 +536,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.4.1</version>
-                <executions>
-                    <execution>
-                        <id>enforce-java</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireJavaVersion>
-                                    <version>1.8</version>
-                                </requireJavaVersion>
-                                <requireMavenVersion>
-                                    <version>3.2</version>
-                                </requireMavenVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -592,24 +568,6 @@
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
                 <inherited>true</inherited>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.wagon</groupId>
-                        <artifactId>wagon-webdav-jackrabbit</artifactId>
-                        <version>2.12</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>lt.velykis.maven.skins</groupId>
-                        <artifactId>reflow-velocity-tools</artifactId>
-                        <version>1.1.1</version>
-                    </dependency>
-                    <!-- Reflow skin requires Velocity >= 1.7  -->
-                    <dependency>
-                        <groupId>org.apache.velocity</groupId>
-                        <artifactId>velocity</artifactId>
-                        <version>1.7</version>
-                    </dependency>
-                </dependencies>
                 <configuration>
                     <generateSitemap>true</generateSitemap>
                 </configuration>
@@ -728,25 +686,6 @@
                     </execution>
                 </executions>
             </plugin -->
-            <!--<plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <inherited>false</inherited>
-                <artifactId>buildnumber-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>create</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <doCheck>false</doCheck>
-                    <doUpdate>false</doUpdate>
-                    <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
-                    <revisionOnScmFailure>revisionNotFound</revisionOnScmFailure>
-                </configuration>
-            </plugin>-->
             <plugin>
                 <groupId>ru.concerteza.buildnumber</groupId>
                 <inherited>false</inherited>
@@ -865,17 +804,6 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-        <!-- repository>
-            <name>Codehaus SNAPSHOTS</name>
-            <id>codehaus.snapshots</id>
-            <url>https://oss.jfrog.org/artifactory/oss-snapshot-local</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository -->
     </repositories>
     <reporting>
         <plugins>
@@ -948,7 +876,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.20.1</version>
+                <version>2.21.0</version>
                 <configuration>
                     <aggregate>true</aggregate>
                 </configuration>
@@ -976,13 +904,14 @@
             </plugin>
             <plugin>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.8</version>
+                <version>3.9.0</version>
                 <configuration>
                     <linkXRef>true</linkXRef>
                     <minimumTokens>500</minimumTokens>
                     <aggregate>true</aggregate>
                     <targetJdk>1.8</targetJdk>
                     <minimumPriority>2</minimumPriority>
+                    <analysisCache>true</analysisCache>
                 </configuration>
                 <reportSets>
                     <reportSet>
@@ -995,7 +924,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
+                <version>3.0.0</version>
                 <configuration>
                     <goal>checkstyle-aggregate</goal>
                     <!-- configLocation>config/sun_checks.xml</configLocation -->
@@ -1020,7 +949,7 @@
     <distributionManagement>
         <downloadUrl>http://ffx.biochem.uiowa.edu/download.html</downloadUrl>
         <site>
-            <id>Kenai</id>
+            <id>Website</id>
             <name>Force Field X Website Deploy Location</name>
             <url>${website.repo}</url>
         </site>
@@ -1073,6 +1002,7 @@
         <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.5</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
+        <commons-collections4.version>4.1</commons-collections4.version>
         <groovy-all.version>2.5.0.1-SNAPSHOT</groovy-all.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.6.0</java3d.version>
