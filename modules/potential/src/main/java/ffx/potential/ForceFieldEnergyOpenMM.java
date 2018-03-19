@@ -317,6 +317,7 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_TYPE.R_MIN;
 import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
+import static simtk.openmm.OpenMMLibrary.OpenMM_Context_getParameter;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomBondForce_addBond;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomBondForce_addEnergyParameterDerivative;
 import static simtk.openmm.OpenMMLibrary.OpenMM_CustomBondForce_addGlobalParameter;
@@ -1630,7 +1631,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         // Not entirely sure how to initialize this portion
         alchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
         
-        // nonAlchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
+        nonAlchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
         // allStericsForce = (alchemicalAlchemicalStericsForce + nonAlchemicalAlchemicalStericsForce);
 
         // Can be reduced to two lines if I can figure out how to combine the two custom bonded sterics forces
@@ -1640,8 +1641,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomBondForce_addGlobalParameter(alchemicalAlchemicalStericsForce, "alpha", alpha);
         OpenMM_CustomBondForce_addGlobalParameter(alchemicalAlchemicalStericsForce, "beta", beta);
         
-        //OpenMM_CustomBondForce_addPerBondParameter(nonAlchemicalAlchemicalStericsForce, "sigma");
-        //OpenMM_CustomBondForce_addPerBondParameter(nonAlchemicalAlchemicalStericsForce, "epsilon");
+        OpenMM_CustomBondForce_addPerBondParameter(nonAlchemicalAlchemicalStericsForce, "rmin");
+        OpenMM_CustomBondForce_addPerBondParameter(nonAlchemicalAlchemicalStericsForce, "epsilon");
+        OpenMM_CustomBondForce_addGlobalParameter(nonAlchemicalAlchemicalStericsForce, "vdw_lambda", 1.0);
+        OpenMM_CustomBondForce_addGlobalParameter(nonAlchemicalAlchemicalStericsForce, "alpha", alpha);
+        OpenMM_CustomBondForce_addGlobalParameter(nonAlchemicalAlchemicalStericsForce, "beta", beta);
 
         int range = OpenMM_NonbondedForce_getNumExceptions(fixedChargeNonBondedForce);
 
@@ -1678,12 +1682,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 oneAlchemical = true;
             }
 
-            //logger.info(String.format( " about to enter bothAlchemical if statement"));
-            
             if (bothAlchemical) {
                 if (epsException) {
                     PointerByReference bondParameters = OpenMM_DoubleArray_create(0);
-                    //OpenMM_DoubleArray_append(bondParameters, charge.getValue());
                     OpenMM_DoubleArray_append(bondParameters, sigma.getValue() * 1.122462048309372981);
                     OpenMM_DoubleArray_append(bondParameters, eps.getValue());
                     OpenMM_CustomBondForce_addBond(alchemicalAlchemicalStericsForce, atomi.getValue(), atomj.getValue(), bondParameters);
@@ -1691,22 +1692,35 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
             } 
             
-            /**  
+            
             else if (oneAlchemical){
                 if(epsException){
                     PointerByReference bondParameters = OpenMM_DoubleArray_create(0);
-                    OpenMM_DoubleArray_append(bondParameters, sigma.getValue());
+                    OpenMM_DoubleArray_append(bondParameters, sigma.getValue() * 1.122462048309372981);
                     OpenMM_DoubleArray_append(bondParameters, eps.getValue());
                     OpenMM_CustomBondForce_addBond(nonAlchemicalAlchemicalStericsForce, atomi.getValue(), atomj.getValue(), bondParameters);
                     OpenMM_DoubleArray_destroy(bondParameters);
                 }
-            } */
+            } 
         }
         
-         OpenMM_CustomBondForce_addEnergyParameterDerivative(alchemicalAlchemicalStericsForce, "vdw_lambda");
+        /**
+        for (int i = 0; i < range; i++){
+            OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i, atomi, atomj, charge, sigma, eps);
+            
+            Atom atom1 = atoms[atomi.getValue()];
+            Atom atom2 = atoms[atomj.getValue()];
+            
+            if (atom1.applyLambda() || atom2.applyLambda()){
+                OpenMM_NonbondedForce_setExceptionParameters(fixedChargeNonBondedForce, i, atomi.getValue(), atomj.getValue(), abs(0.0*charge.getValue()), sigma.getValue(), abs(0.0*eps.getValue()));
+            }
+        } */
+        
+        OpenMM_CustomBondForce_addEnergyParameterDerivative(alchemicalAlchemicalStericsForce, "vdw_lambda");
+        OpenMM_CustomBondForce_addEnergyParameterDerivative(nonAlchemicalAlchemicalStericsForce, "vdw_lambda");
         
         OpenMM_System_addForce(system, alchemicalAlchemicalStericsForce);
-        
+        OpenMM_System_addForce(system, nonAlchemicalAlchemicalStericsForce);
 
     }
 
