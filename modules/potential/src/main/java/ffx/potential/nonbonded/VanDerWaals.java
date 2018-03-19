@@ -492,6 +492,18 @@ public class VanDerWaals implements MaskingInterface,
     public double getBeta() {
         return vdwLambdaExponent;
     }
+    
+    public int[][] getBondMask() {
+        return bondMask;
+    }
+    
+    public int[][] getAngleMask() {
+        return angleMask;
+    }
+    
+    public int[][] getTorsionMask() {
+        return torsionMask;
+    }
 
     /**
      * Allocate coordinate arrays and set up reduction indices and values.
