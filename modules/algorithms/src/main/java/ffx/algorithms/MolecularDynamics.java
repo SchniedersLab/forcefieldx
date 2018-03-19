@@ -51,7 +51,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
-import org.apache.commons.collections.queue.CircularFifoQueue;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 

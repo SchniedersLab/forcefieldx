@@ -74,6 +74,12 @@
             <version>${commons-io.version}</version>
         </dependency>
         <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <type>jar</type>
+            <version>${commons-collections4.version}</version>
+        </dependency>
+        <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
             <type>jar</type>
