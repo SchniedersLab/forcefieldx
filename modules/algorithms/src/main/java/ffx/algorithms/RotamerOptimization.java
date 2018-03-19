@@ -73,6 +73,7 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.WorkerIntegerForLoop;
 import edu.rit.pj.WorkerIteration;
 import edu.rit.pj.WorkerRegion;
 import edu.rit.pj.WorkerTeam;
@@ -93,7 +94,6 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NeighborList;
-import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.IndexIndexPair;
@@ -5770,19 +5770,13 @@ public class RotamerOptimization implements Terminatable {
     }
 
     private double computeSelfEnergy(Residue[] residues, int i, int ri) {
-        if (residues == null) {
-            return 0.0;
-        }
+
         int nRes = residues.length;
         if (i < 0 || i >= nRes) {
             return 0.0;
         }
         Residue residue = residues[i];
         Rotamer rotamers[] = residue.getRotamers(library);
-        int ni = rotamers.length;
-        if (ri < 0 || ri >= ni) {
-            return 0.0;
-        }
         turnOffAllResidues(residues);
         turnOnAtoms(residue);
         RotamerLibrary.applyRotamer(residue, rotamers[ri]);
@@ -5797,28 +5791,14 @@ public class RotamerOptimization implements Terminatable {
     }
 
     private double computeTwoBodyEnergy(Residue[] residues, int i, int ri, int j, int rj) {
-        if (residues == null) {
-            return 0.0;
-        }
-        int nRes = residues.length;
-        if (i < 0 || i >= nRes) {
-            return 0.0;
-        }
+
         Residue residueI = residues[i];
         Rotamer rotamersI[] = residueI.getRotamers(library);
         int ni = rotamersI.length;
-        if (ri < 0 || ri >= ni) {
-            return 0.0;
-        }
         Residue residueJ = residues[j];
         Rotamer rotamersJ[] = residueJ.getRotamers(library);
-        int nj = rotamersJ.length;
-        if (rj < 0 || rj >= nj) {
-            return 0.0;
-        }
 
         turnOffAllResidues(residues);
-
         turnOnAtoms(residueI);
         turnOnAtoms(residueJ);
         RotamerLibrary.applyRotamer(residueI, rotamersI[ri]);
@@ -9376,7 +9356,7 @@ public class RotamerOptimization implements Terminatable {
         @Override
         public void run() throws Exception {
             if (!keySet.isEmpty()) {
-                execute(keySet.iterator(), energyLoop);
+                execute(0, keySet.size() - 1, energyLoop);
             }
         }
 
@@ -9424,47 +9404,53 @@ public class RotamerOptimization implements Terminatable {
         /**
          * Currently the "loop" only computes a single self energy.
          */
-        private class SelfEnergyLoop extends WorkerIteration<Integer> {
+        private class SelfEnergyLoop extends WorkerIntegerForLoop {
 
             @Override
-            public void run(Integer key) {
-                if (!keySet.contains(key)) {
-                    return;
-                }
+            public IntegerSchedule schedule() {
+                return IntegerSchedule.guided();
+                // /return IntegerSchedule.dynamic(1);
+            }
 
-                Integer job[] = selfEnergyMap.get(key);
-                int i = job[0];
-                int ri = job[1];
+            @Override
+            public void run(int lb, int ub) {
 
-                if (check(i, ri)) {
-                    return;
-                }
+                for (int key = lb; key <= ub; key++) {
 
-                long time = -System.nanoTime();
-                double selfEnergy = 0.0;
-                if (!skipEnergies) {
-                    try {
-                        selfEnergy = computeSelfEnergy(residues, i, ri);
-                        time += System.nanoTime();
-                        logger.info(format(" Self %7s %-2d: %s in %6.4f (sec).", residues[i], ri,
-                                formatEnergy(selfEnergy), time * 1.0e-9));
-                    } catch (ArithmeticException ex) {
-                        eliminateRotamer(residues, i, ri, false);
-                        selfEnergy = Double.NaN;
-                        time += System.nanoTime();
-                        logger.info(format(" Self %7s %-2d:\t    pruned in %6.4f (sec).", residues[i], ri, time * 1.0e-9));
+                    Integer job[] = selfEnergyMap.get(key);
+                    int i = job[0];
+                    int ri = job[1];
+
+                    if (check(i, ri)) {
+                        continue;
                     }
-                }
 
-                // Broadcast the result.
-                double anEnergy[] = new double[3];
-                anEnergy[0] = i;
-                anEnergy[1] = ri;
-                anEnergy[2] = selfEnergy;
-                DoubleBuf anEnergyBuf = DoubleBuf.buffer(anEnergy);
-                multicastBuf(anEnergyBuf);
-                if (algorithmListener != null) {
-                    algorithmListener.algorithmUpdate(molecularAssembly);
+                    long time = -System.nanoTime();
+                    double selfEnergy = 0.0;
+                    if (!skipEnergies) {
+                        try {
+                            selfEnergy = computeSelfEnergy(residues, i, ri);
+                            time += System.nanoTime();
+                            logger.info(format(" Self %7s %-2d: %s in %6.4f (sec).", residues[i], ri,
+                                    formatEnergy(selfEnergy), time * 1.0e-9));
+                        } catch (ArithmeticException ex) {
+                            eliminateRotamer(residues, i, ri, false);
+                            selfEnergy = Double.NaN;
+                            time += System.nanoTime();
+                            logger.info(format(" Self %7s %-2d:\t    pruned in %6.4f (sec).", residues[i], ri, time * 1.0e-9));
+                        }
+                    }
+
+                    // Broadcast the result.
+                    double anEnergy[] = new double[3];
+                    anEnergy[0] = i;
+                    anEnergy[1] = ri;
+                    anEnergy[2] = selfEnergy;
+                    DoubleBuf anEnergyBuf = DoubleBuf.buffer(anEnergy);
+                    multicastBuf(anEnergyBuf);
+                    if (algorithmListener != null) {
+                        algorithmListener.algorithmUpdate(molecularAssembly);
+                    }
                 }
             }
         }
@@ -9550,71 +9536,74 @@ public class RotamerOptimization implements Terminatable {
                 /**
                  * Compute the pair-energy for each pair of rotamers using a pair-level job indexing method.
                  */
-                for (int jobKey = key; jobKey <= key; jobKey++) {
-                    if (!twoBodyEnergyMap.keySet().contains(jobKey)) {
-                        continue;
-                    }
-                    Integer job[] = twoBodyEnergyMap.get(jobKey);
-                    int i = job[0];
-                    int ri = job[1];
-                    int j = job[2];
-                    int rj = job[3];
-                    if (check(i, ri) || check(j, rj) || check(i, ri, j, rj)) {
-                        continue;
-                    }
+                if (!twoBodyEnergyMap.keySet().contains(key)) {
+                    return;
+                }
 
-                    Residue residueI = residues[i];
-                    Residue residueJ = residues[j];
+                Integer job[] = twoBodyEnergyMap.get(key);
+                int i = job[0];
+                int ri = job[1];
+                int j = job[2];
+                int rj = job[3];
 
-                    double twoBodyEnergy = 0.0;
-                    long time = -System.nanoTime();
+                if (check(i, ri) || check(j, rj) || check(i, ri, j, rj)) {
+                    return;
+                }
 
-                    if (!skipEnergies) {
-                        double dist = Double.MAX_VALUE;
-                        String distString = format("     large");
-                        if (distanceMatrix != null) {
-                            int indexI = allResiduesList.indexOf(residueI);
-                            int indexJ = allResiduesList.indexOf(residueJ);
-                            dist = checkDistanceMatrix(indexI, ri, indexJ, rj);
-                            if (dist < Double.MAX_VALUE) {
-                                distString = format("%10.3f", dist);
-                            }
+                Residue residueI = residues[i];
+                Residue residueJ = residues[j];
+
+                double twoBodyEnergy = 0.0;
+                long time = -System.nanoTime();
+
+                if (!skipEnergies) {
+
+                    double dist = Double.MAX_VALUE;
+                    String distString = format("     large");
+                    if (distanceMatrix != null) {
+                        int indexI = allResiduesList.indexOf(residueI);
+                        int indexJ = allResiduesList.indexOf(residueJ);
+                        dist = checkDistanceMatrix(indexI, ri, indexJ, rj);
+                        if (dist < Double.MAX_VALUE) {
+                            distString = format("%10.3f", dist);
                         }
-                        if (dist < superpositionThreshold) {
-                            // Set the energy to NaN for superposed atoms.
-                            twoBodyEnergy = Double.NaN;
-                            logger.info(format(" Pair %7s %-2d, %7s %-2d:\t    NaN at %13.6f Ang < %5.3f Ang",
-                                    residueI, ri, residueJ, rj, dist, superpositionThreshold));
-                        } else if (dist > twoBodyCutoffDist) {
-                            // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
-                            twoBodyEnergy = 0.0;
+                    }
+
+                    if (dist < superpositionThreshold) {
+                        // Set the energy to NaN for superposed atoms.
+                        twoBodyEnergy = Double.NaN;
+                        logger.info(format(" Pair %7s %-2d, %7s %-2d:\t    NaN at %13.6f Ang < %5.3f Ang",
+                                residueI, ri, residueJ, rj, dist, superpositionThreshold));
+                    } else if (dist > twoBodyCutoffDist) {
+                        // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
+                        twoBodyEnergy = 0.0;
+                        logger.info(format(" Pair %7s %-2d, %7s %-2d: %s at %s (Ang) in %6.4f (sec).",
+                                residueI, ri, residueJ, rj, formatEnergy(twoBodyEnergy), distString, time * 1.0e-9));
+                    } else {
+                        try {
+                            twoBodyEnergy = computeTwoBodyEnergy(residues, i, ri, j, rj);
+                            time += System.nanoTime();
                             logger.info(format(" Pair %7s %-2d, %7s %-2d: %s at %s (Ang) in %6.4f (sec).",
                                     residueI, ri, residueJ, rj, formatEnergy(twoBodyEnergy), distString, time * 1.0e-9));
-                        } else {
-                            try {
-                                twoBodyEnergy = computeTwoBodyEnergy(residues, i, ri, j, rj);
-                                time += System.nanoTime();
-                                logger.info(format(" Pair %7s %-2d, %7s %-2d: %s at %s (Ang) in %6.4f (sec).",
-                                        residueI, ri, residueJ, rj, formatEnergy(twoBodyEnergy), distString, time * 1.0e-9));
-                            } catch (ArithmeticException ex) {
-                                twoBodyEnergy = Double.NaN;
-                                time += System.nanoTime();
-                                logger.info(format(" Pair %7s %-2d, %7s %-2d:              NaN at %s (Ang) in %6.4f (sec).",
-                                        residueI, ri, residueJ, rj, distString, time * 1.0e-9));
-                            }
+                        } catch (ArithmeticException ex) {
+                            twoBodyEnergy = Double.NaN;
+                            time += System.nanoTime();
+                            logger.info(format(" Pair %7s %-2d, %7s %-2d:              NaN at %s (Ang) in %6.4f (sec).",
+                                    residueI, ri, residueJ, rj, distString, time * 1.0e-9));
                         }
                     }
+                }
 
-                    // Broadcast the energy.
-                    double commEnergy[] = {i, ri, j, rj, twoBodyEnergy};
-                    DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
-                    multicastBuf(commEnergyBuf);
+                // Broadcast the energy.
+                double commEnergy[] = {i, ri, j, rj, twoBodyEnergy};
+                DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
+                multicastBuf(commEnergyBuf);
 
-                    if (algorithmListener != null) {
-                        algorithmListener.algorithmUpdate(molecularAssembly);
-                    }
+                if (algorithmListener != null) {
+                    algorithmListener.algorithmUpdate(molecularAssembly);
                 }
             }
+
         }
     }
 
@@ -9695,88 +9684,86 @@ public class RotamerOptimization implements Terminatable {
             @Override
             public void run(Integer key) {
                 // Trimer-level job indexing method
-                for (int jobKey = key; jobKey <= key; jobKey++) {
-                    if (!threeBodyEnergyMap.keySet().contains(jobKey)) {
-                        continue;
-                    }
-                    Integer job[] = threeBodyEnergyMap.get(jobKey);
+                if (!threeBodyEnergyMap.keySet().contains(key)) {
+                    return;
+                }
+                Integer job[] = threeBodyEnergyMap.get(key);
 
-                    int i = job[0];
-                    int ri = job[1];
-                    int j = job[2];
-                    int rj = job[3];
-                    int k = job[4];
-                    int rk = job[5];
-                    if ((check(i, ri) || check(j, rj) || check(k, rk)
-                            || check(i, ri, j, rj) || check(i, ri, k, rk) || check(j, rj, k, rk))) {
-                        continue;
-                    }
+                int i = job[0];
+                int ri = job[1];
+                int j = job[2];
+                int rj = job[3];
+                int k = job[4];
+                int rk = job[5];
+                if ((check(i, ri) || check(j, rj) || check(k, rk)
+                        || check(i, ri, j, rj) || check(i, ri, k, rk) || check(j, rj, k, rk))) {
+                    return;
+                }
 
-                    Residue residueI = residues[i];
-                    Residue residueJ = residues[j];
-                    Residue residueK = residues[k];
+                Residue residueI = residues[i];
+                Residue residueJ = residues[j];
+                Residue residueK = residues[k];
 
-                    double threeBodyEnergy = 0.0;
-                    long time = -System.nanoTime();
+                double threeBodyEnergy = 0.0;
+                long time = -System.nanoTime();
 
-                    if (!skipEnergies) {
-                        double dist = Double.MAX_VALUE;
-                        String distString = format("     large");
+                if (!skipEnergies) {
+                    double dist = Double.MAX_VALUE;
+                    String distString = format("     large");
 
-                        if (distanceMatrix != null) {
-                            int indexI = allResiduesList.indexOf(residueI);
-                            int indexJ = allResiduesList.indexOf(residueJ);
-                            int indexK = allResiduesList.indexOf(residueK);
-                            double dIJ = checkDistanceMatrix(indexI, ri, indexJ, rj);
-                            double dIK = checkDistanceMatrix(indexI, ri, indexK, rk);
-                            double dKJ = checkDistanceMatrix(indexJ, rj, indexK, rk);
-                            dist = sqrt(dIJ * dIJ + dIK * dIK + dKJ * dKJ);
-                            if (dist < Double.MAX_VALUE) {
-                                distString = format("%10.3f", dist);
-                            }
+                    if (distanceMatrix != null) {
+                        int indexI = allResiduesList.indexOf(residueI);
+                        int indexJ = allResiduesList.indexOf(residueJ);
+                        int indexK = allResiduesList.indexOf(residueK);
+                        double dIJ = checkDistanceMatrix(indexI, ri, indexJ, rj);
+                        double dIK = checkDistanceMatrix(indexI, ri, indexK, rk);
+                        double dKJ = checkDistanceMatrix(indexJ, rj, indexK, rk);
+                        dist = sqrt(dIJ * dIJ + dIK * dIK + dKJ * dKJ);
+                        if (dist < Double.MAX_VALUE) {
+                            distString = format("%10.3f", dist);
                         }
+                    }
 
-                        if (dist < superpositionThreshold) {
-                            threeBodyEnergy = Double.NaN;
-                            logger.info(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d:\t    NaN      at %13.6f Ang < %5.3f Ang.",
-                                    residueI, ri, residueJ, rj, residueK, rk, dist, superpositionThreshold));
-                        } else if (threeBodyCutoff && (dist > threeBodyCutoffDist)) {
-                            // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
-                            threeBodyEnergy = 0.0;
+                    if (dist < superpositionThreshold) {
+                        threeBodyEnergy = Double.NaN;
+                        logger.info(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d:\t    NaN      at %13.6f Ang < %5.3f Ang.",
+                                residueI, ri, residueJ, rj, residueK, rk, dist, superpositionThreshold));
+                    } else if (threeBodyCutoff && (dist > threeBodyCutoffDist)) {
+                        // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
+                        threeBodyEnergy = 0.0;
+                        time += System.nanoTime();
+                        logger.fine(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d: %s at %s (Ang) in %6.4f (sec).",
+                                residueI, ri, residueJ, rj, residueK, rk,
+                                formatEnergy(threeBodyEnergy), distString, time * 1.0e-9));
+                    } else {
+                        try {
+                            threeBodyEnergy = computeTripleEnergy(residues, i, ri, j, rj, k, rk);
                             time += System.nanoTime();
-                            logger.fine(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d: %s at %s (Ang) in %6.4f (sec).",
+                            logger.info(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d: %s at %s (Ang) in %6.4f (sec).",
                                     residueI, ri, residueJ, rj, residueK, rk,
                                     formatEnergy(threeBodyEnergy), distString, time * 1.0e-9));
-                        } else {
-                            try {
-                                threeBodyEnergy = computeTripleEnergy(residues, i, ri, j, rj, k, rk);
-                                time += System.nanoTime();
-                                logger.info(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d: %s at %s (Ang) in %6.4f (sec).",
-                                        residueI, ri, residueJ, rj, residueK, rk,
-                                        formatEnergy(threeBodyEnergy), distString, time * 1.0e-9));
-                            } catch (ArithmeticException ex) {
-                                threeBodyEnergy = Double.NaN;
-                                time += System.nanoTime();
-                                logger.info(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d:\t    NaN      at %s (Ang) in %6.4f (sec).",
-                                        residueI, ri, residueJ, rj, residueK, rk, distString, time * 1.0e-9));
-                            }
+                        } catch (ArithmeticException ex) {
+                            threeBodyEnergy = Double.NaN;
+                            time += System.nanoTime();
+                            logger.info(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d:\t    NaN      at %s (Ang) in %6.4f (sec).",
+                                    residueI, ri, residueJ, rj, residueK, rk, distString, time * 1.0e-9));
                         }
                     }
+                }
 
-                    double commEnergy[] = new double[7];
-                    commEnergy[0] = i;
-                    commEnergy[1] = ri;
-                    commEnergy[2] = j;
-                    commEnergy[3] = rj;
-                    commEnergy[4] = k;
-                    commEnergy[5] = rk;
-                    commEnergy[6] = threeBodyEnergy;
-                    DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
-                    multicastBuf(commEnergyBuf);
+                double commEnergy[] = new double[7];
+                commEnergy[0] = i;
+                commEnergy[1] = ri;
+                commEnergy[2] = j;
+                commEnergy[3] = rj;
+                commEnergy[4] = k;
+                commEnergy[5] = rk;
+                commEnergy[6] = threeBodyEnergy;
+                DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
+                multicastBuf(commEnergyBuf);
 
-                    if (algorithmListener != null) {
-                        algorithmListener.algorithmUpdate(molecularAssembly);
-                    }
+                if (algorithmListener != null) {
+                    algorithmListener.algorithmUpdate(molecularAssembly);
                 }
             }
         }
