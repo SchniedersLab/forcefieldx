@@ -8628,6 +8628,21 @@ public class RotamerOptimization implements Terminatable {
                     pruneSingleClashes(residues);
                 }
             }
+
+            /**
+             * Remap to sequential integer keys.
+             */
+            Set<Integer> keys = selfEnergyMap.keySet();
+            HashMap<Integer, Integer[]> tempMap = new HashMap<>();
+            int count = 0;
+            for (int key : keys ) {
+                tempMap.put(count, selfEnergyMap.get(key));
+                count++;
+            }
+            selfEnergyMap.clear();
+            selfEnergyMap.putAll(tempMap);
+
+
             if (loaded >= 2) {
                 if (selfEnergyMap.size() > 0) {
                     logIfMaster(" Double-check that parameters match original run due to missing self-energies.");
@@ -8739,6 +8754,20 @@ public class RotamerOptimization implements Terminatable {
                     prunePairClashes(residues);
                 }
             }
+
+            /**
+             * Remap to sequential integer keys.
+             */
+            keys = twoBodyEnergyMap.keySet();
+            tempMap = new HashMap<>();
+            count = 0;
+            for (int key : keys ) {
+                    tempMap.put(count, twoBodyEnergyMap.get(key));
+                    count++;
+            }
+            twoBodyEnergyMap.clear();
+            twoBodyEnergyMap.putAll(tempMap);
+
             if (loaded >= 3) {
                 if (twoBodyEnergyMap.size() > 0) {
                     if (master) {
@@ -8847,10 +8876,27 @@ public class RotamerOptimization implements Terminatable {
                 }
                 logIfMaster(" Loaded trimer energies from restart file.");
             }
+
+            /**
+             * Remap to sequential integer keys.
+             */
+            keys = threeBodyEnergyMap.keySet();
+            tempMap = new HashMap<>();
+            count = 0;
+            for (int key : keys ) {
+                tempMap.put(count, threeBodyEnergyMap.get(key));
+                count++;
+            }
+            threeBodyEnergyMap.clear();
+            threeBodyEnergyMap.putAll(tempMap);
+
             return loaded;
         } catch (IOException ex) {
             logger.log(Level.WARNING, "Exception while loading energy restart file.", ex);
         }
+
+
+
         return 0;
     }
 
@@ -9569,6 +9615,12 @@ public class RotamerOptimization implements Terminatable {
 
                 for (int key = lb; key <= ub; key++) {
                     Integer job[] = twoBodyEnergyMap.get(key);
+
+                    /**
+                    if (job == null) {
+                        continue;
+                    } */
+
                     int i = job[0];
                     int ri = job[1];
                     int j = job[2];
