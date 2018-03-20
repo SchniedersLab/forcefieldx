@@ -2019,7 +2019,7 @@ public class RotamerOptimization implements Terminatable {
         if (abs(energy) < 1.0e6) {
             return format("%16.8f", energy);
         } else {
-            return format("%16.8e", energy);
+            return format("*%15.4e", energy);
         }
         // TODO: Possibly replace with %16.8g, which so far as I know, is equivalent.
     }
