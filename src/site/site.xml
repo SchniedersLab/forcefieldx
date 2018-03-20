@@ -93,8 +93,8 @@
             ]]>
         </head>
         <!-- links>
-            <item name="Biochem." href="http://www.medicine.uiowa.edu/biochemistry"/>
-            <item name="BME"  href="http://www.engineering.uiowa.edu/bme"/>
+            <item name="UI Biochemisty" href="http://www.medicine.uiowa.edu/biochemistry"/>
+            <item name="UI Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
             <item name="CBCB" href="https://genome.uiowa.edu/home"/>
             <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
             <item name="IVR"  href="http://ivr.uiowa.edu"/>
@@ -135,12 +135,10 @@
             </item>
             <item name="License" href="/license.html"/>
             <item name="FFX Team" href="/team-list.html"/>
-            <!-- item name="Launch Webstart" href="/webstart.html"/ -->
         </menu>
         <menu name="Modules" inherit="top">
             <item name="Modules" href="/modules.html"/>
             <item name="Algorithms"  href="modules/algorithms/index.html"/>
-            <!--item name="Automatic Parameterization"  href="modules/autoparm/index.html"/ -->
             <item name="Crystal" href="modules/crystal/index.html"/>
             <item name="Numerics" href="modules/numerics/index.html"/>
             <item name="OpenMM Wrappers" href="modules/openmm/index.html"/>

@@ -49,6 +49,15 @@
                                 and/or CryoEM) and the polarizable AMOEBA force field.
                             </li>
                         </ul>
+                    </td>
+                    <td>
+                        <p align="left">
+                            <img height="1126" width="1500" src="images/rotamer.png" alt="Rotamer"/>
+                        </p>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
                         <h4>The Force Field X Code and Manual</h4>
                         <p>
                             The FFX code is parallelized for clusters of many-core nodes using an open (GPL v. 3),
@@ -65,9 +74,15 @@
                             and provides a few <a href="examples.html">examples</a> with more on the way.
                         </p>
                     </td>
-                    <td bgcolor="white">
-                        <p align="left">
-                            <img src="images/rotamer.png" alt="Rotamer"/>
+                    <td>
+                        <h4>Support for Force Field X</h4>
+                        <p>
+                            Development of Force Field X has been supported by NSF grants CHE 1404147 and CHE 1751688,
+                            and by NIH grants R01 DK110023 and R01 DC012049.
+                        </p>
+                        <p>
+                            <img height="150" width="150" src="images/NSF.png" alt="NSF"/>
+                            <img height="150" width="150" src="images/NIH.png" alt="NIH"/>
                         </p>
                     </td>
                 </tr>
