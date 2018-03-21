@@ -76,7 +76,6 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.WorkerIntegerForLoop;
-import edu.rit.pj.WorkerIteration;
 import edu.rit.pj.WorkerRegion;
 import edu.rit.pj.WorkerTeam;
 import edu.rit.pj.reduction.SharedDouble;
@@ -8632,16 +8631,7 @@ public class RotamerOptimization implements Terminatable {
             /**
              * Remap to sequential integer keys.
              */
-            Set<Integer> keys = selfEnergyMap.keySet();
-            HashMap<Integer, Integer[]> tempMap = new HashMap<>();
-            int count = 0;
-            for (int key : keys ) {
-                tempMap.put(count, selfEnergyMap.get(key));
-                count++;
-            }
-            selfEnergyMap.clear();
-            selfEnergyMap.putAll(tempMap);
-
+            condenseEnergyMap(selfEnergyMap);
 
             if (loaded >= 2) {
                 if (selfEnergyMap.size() > 0) {
@@ -8758,15 +8748,7 @@ public class RotamerOptimization implements Terminatable {
             /**
              * Remap to sequential integer keys.
              */
-            keys = twoBodyEnergyMap.keySet();
-            tempMap = new HashMap<>();
-            count = 0;
-            for (int key : keys ) {
-                    tempMap.put(count, twoBodyEnergyMap.get(key));
-                    count++;
-            }
-            twoBodyEnergyMap.clear();
-            twoBodyEnergyMap.putAll(tempMap);
+            condenseEnergyMap(twoBodyEnergyMap);
 
             if (loaded >= 3) {
                 if (twoBodyEnergyMap.size() > 0) {
@@ -8880,24 +8862,26 @@ public class RotamerOptimization implements Terminatable {
             /**
              * Remap to sequential integer keys.
              */
-            keys = threeBodyEnergyMap.keySet();
-            tempMap = new HashMap<>();
-            count = 0;
-            for (int key : keys ) {
-                tempMap.put(count, threeBodyEnergyMap.get(key));
-                count++;
-            }
-            threeBodyEnergyMap.clear();
-            threeBodyEnergyMap.putAll(tempMap);
+            condenseEnergyMap(threeBodyEnergyMap);
 
             return loaded;
         } catch (IOException ex) {
             logger.log(Level.WARNING, "Exception while loading energy restart file.", ex);
         }
-
-
-
+        
         return 0;
+    }
+
+    private void condenseEnergyMap(HashMap<Integer, Integer[]> energyMap ) {
+        Set<Integer> keys = energyMap.keySet();
+        HashMap<Integer, Integer[]> tempMap = new HashMap<>();
+        int count = 0;
+        for (int key : keys ) {
+            tempMap.put(count, energyMap.get(key));
+            count++;
+        }
+        energyMap.clear();
+        energyMap.putAll(tempMap);
     }
 
     /**
