@@ -412,7 +412,6 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Parallel Java Variables.
      */
-    private boolean parallelEnergies = true;
     private ReceiveThread receiveThread;
     private EnergyWriterThread energyWriterThread;
     private boolean selfsDone = false, pairsDone = false, trimersDone = false, quadsDone = false;
@@ -4963,14 +4962,17 @@ public class RotamerOptimization implements Terminatable {
      * @return template energy
      */
     private double rotamerEnergies(Residue residues[]) {
+
         if (residues == null) {
             logger.warning(" Attempt to compute rotamer energies for an empty array of residues.");
             return 0.0;
         }
+
         int nResidues = residues.length;
         Atom atoms[] = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         allocateEliminationMemory(residues);
+
         /**
          * Initialize all atoms to be used.
          */
@@ -4978,230 +4980,225 @@ public class RotamerOptimization implements Terminatable {
             atoms[i].setUse(true);
         }
 
-        if (parallelEnergies) {
-            if (!usingBoxOptimization) {
-                energiesToWrite = Collections.synchronizedList(new ArrayList<String>());
-                receiveThread = new ReceiveThread(residues);
-                receiveThread.start();
-                if (master && writeEnergyRestart && printFiles) {
-                    energyWriterThread = new EnergyWriterThread(receiveThread);
-                    energyWriterThread.start();
+        if (!usingBoxOptimization) {
+            energiesToWrite = Collections.synchronizedList(new ArrayList<String>());
+            receiveThread = new ReceiveThread(residues);
+            receiveThread.start();
+            if (master && writeEnergyRestart && printFiles) {
+                energyWriterThread = new EnergyWriterThread(receiveThread);
+                energyWriterThread.start();
+            }
+        }
+        int loaded = 0;
+        if (loadEnergyRestart) {
+            if (usingBoxOptimization) {
+                loaded = loadEnergyRestart(energyRestartFile, residues, boxLoadIndex, boxLoadCellIndices);
+            } else {
+                loaded = loadEnergyRestart(energyRestartFile, residues);
+            }
+        }
+
+        long energyStartTime = System.nanoTime();
+        SelfEnergyRegion singlesRegion = new SelfEnergyRegion(residues);
+        TwoBodyEnergyRegion pairsRegion = new TwoBodyEnergyRegion(residues);
+        ThreeBodyEnergyRegion triplesRegion = new ThreeBodyEnergyRegion(residues);
+        QuadsEnergyRegion quadsRegion = new QuadsEnergyRegion(residues);
+
+        try {
+            if (loaded < 1) {
+                selfEnergyMap.clear();
+                // allocate selfEnergy
+                int singleJobIndex = 0;
+                selfEnergy = new double[nResidues][];
+                for (int i = 0; i < nResidues; i++) {
+                    Residue resi = residues[i];
+                    Rotamer roti[] = resi.getRotamers(library);
+                    selfEnergy[i] = new double[roti.length];
+                    for (int ri = 0; ri < roti.length; ri++) {
+                        if (!check(i, ri)) {
+                            Integer selfJob[] = {i, ri};
+                            if (decomposeOriginal && ri != 0) {
+                                continue;
+                            }
+                            selfEnergyMap.put(singleJobIndex++, selfJob);
+                        }
+                    }
                 }
             }
-            int loaded = 0;
-            if (loadEnergyRestart) {
-                if (usingBoxOptimization) {
-                    loaded = loadEnergyRestart(energyRestartFile, residues, boxLoadIndex, boxLoadCellIndices);
-                } else {
-                    loaded = loadEnergyRestart(energyRestartFile, residues);
-                }
+            // broadcast that this proc is done with startup and allocation; ready for singles
+            boolean thisProcReady = true;
+            BooleanBuf thisProcReadyBuf = BooleanBuf.buffer(thisProcReady);
+            multicastBuf(thisProcReadyBuf);
+            // launch parallel singles calculation
+            while (!readyForSingles) {
+                Thread.sleep(POLLING_FREQUENCY);
             }
 
-            long energyStartTime = System.nanoTime();
-            SelfEnergyRegion singlesRegion = new SelfEnergyRegion(residues);
-            TwoBodyEnergyRegion pairsRegion = new TwoBodyEnergyRegion(residues);
-            ThreeBodyEnergyRegion triplesRegion = new ThreeBodyEnergyRegion(residues);
-            QuadsEnergyRegion quadsRegion = new QuadsEnergyRegion(residues);
+            logger.info(String.format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
 
-            try {
-                if (loaded < 1) {
-                    selfEnergyMap.clear();
-                    // allocate selfEnergy
-                    int singleJobIndex = 0;
-                    selfEnergy = new double[nResidues][];
-                    for (int i = 0; i < nResidues; i++) {
-                        Residue resi = residues[i];
-                        Rotamer roti[] = resi.getRotamers(library);
-                        selfEnergy[i] = new double[roti.length];
-                        for (int ri = 0; ri < roti.length; ri++) {
-                            if (!check(i, ri)) {
-                                Integer selfJob[] = {i, ri};
-                                if (decomposeOriginal && ri != 0) {
+            energyWorkerTeam.execute(singlesRegion);
+            long singlesTime = System.nanoTime() - energyStartTime;
+            logIfMaster(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
+
+            if (loaded < 2) {
+                twoBodyEnergyMap.clear();
+                // allocate twoBodyEnergy and create jobs
+                int pairJobIndex = 0;
+                twoBodyEnergy = new double[nResidues][][][];
+                for (int i = 0; i < nResidues; i++) {
+                    Residue resi = residues[i];
+                    Rotamer roti[] = resi.getRotamers(library);
+                    twoBodyEnergy[i] = new double[roti.length][][];
+                    for (int ri = 0; ri < roti.length; ri++) {
+                        if (check(i, ri)) {
+                            continue;
+                        }
+                        twoBodyEnergy[i][ri] = new double[nResidues][];
+                        for (int j = i + 1; j < nResidues; j++) {
+                            Residue resj = residues[j];
+                            Rotamer rotj[] = resj.getRotamers(library);
+                            twoBodyEnergy[i][ri][j] = new double[rotj.length];
+                            for (int rj = 0; rj < rotj.length; rj++) {
+                                if (checkToJ(i, ri, j, rj)) {
                                     continue;
                                 }
-                                selfEnergyMap.put(singleJobIndex++, selfJob);
+                                Integer pairJob[] = {i, ri, j, rj};
+                                if (decomposeOriginal && (ri != 0 || rj != 0)) {
+                                    continue;
+                                }
+                                twoBodyEnergyMap.put(pairJobIndex++, pairJob);
                             }
                         }
                     }
                 }
-                // broadcast that this proc is done with startup and allocation; ready for singles
-                boolean thisProcReady = true;
-                BooleanBuf thisProcReadyBuf = BooleanBuf.buffer(thisProcReady);
-                multicastBuf(thisProcReadyBuf);
-                // launch parallel singles calculation
-                while (!readyForSingles) {
-                    Thread.sleep(POLLING_FREQUENCY);
-                }
+            }
 
-                logger.info(String.format(" Number of self energies to calculate: %d", selfEnergyMap.size()));
+            // broadcast that this proc is done with pruning and allocation; ready for pairs
+            multicastBuf(thisProcReadyBuf);
+            // launch parallel twoBody calculation
+            while (!readyForPairs) {
+                Thread.sleep(POLLING_FREQUENCY);
+            }
 
-                energyWorkerTeam.execute(singlesRegion);
-                long singlesTime = System.nanoTime() - energyStartTime;
-                logIfMaster(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
+            logger.info(String.format(" Number of pair energies to calculate: %d", twoBodyEnergyMap.size()));
 
-                if (loaded < 2) {
-                    twoBodyEnergyMap.clear();
-                    // allocate twoBodyEnergy and create jobs
-                    int pairJobIndex = 0;
-                    twoBodyEnergy = new double[nResidues][][][];
+            energyWorkerTeam.execute(pairsRegion);
+            long pairsTime = System.nanoTime() - (singlesTime + energyStartTime);
+            long triplesTime = 0;
+            long quadsTime = 0;
+            logIfMaster(format(" Time for pair energies:   %12.4g", (pairsTime * 1.0E-9)));
+
+            if (threeBodyTerm) {
+                if (loaded < 3) {
+                    threeBodyEnergyMap.clear();
+                    // allocate threeBodyEnergy and create jobs
+                    int trimerJobIndex = 0;
+                    threeBodyEnergy = new double[nResidues][][][][][];
                     for (int i = 0; i < nResidues; i++) {
                         Residue resi = residues[i];
                         Rotamer roti[] = resi.getRotamers(library);
-                        twoBodyEnergy[i] = new double[roti.length][][];
+                        threeBodyEnergy[i] = new double[roti.length][][][][];
                         for (int ri = 0; ri < roti.length; ri++) {
                             if (check(i, ri)) {
                                 continue;
                             }
-                            twoBodyEnergy[i][ri] = new double[nResidues][];
+                            threeBodyEnergy[i][ri] = new double[nResidues][][][];
                             for (int j = i + 1; j < nResidues; j++) {
                                 Residue resj = residues[j];
                                 Rotamer rotj[] = resj.getRotamers(library);
-                                twoBodyEnergy[i][ri][j] = new double[rotj.length];
+                                threeBodyEnergy[i][ri][j] = new double[rotj.length][][];
                                 for (int rj = 0; rj < rotj.length; rj++) {
                                     if (checkToJ(i, ri, j, rj)) {
                                         continue;
                                     }
-                                    Integer pairJob[] = {i, ri, j, rj};
-                                    if (decomposeOriginal && (ri != 0 || rj != 0)) {
-                                        continue;
-                                    }
-                                    twoBodyEnergyMap.put(pairJobIndex++, pairJob);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // broadcast that this proc is done with pruning and allocation; ready for pairs
-                multicastBuf(thisProcReadyBuf);
-                // launch parallel twoBody calculation
-                while (!readyForPairs) {
-                    Thread.sleep(POLLING_FREQUENCY);
-                }
-
-                logger.info(String.format(" Number of pair energies to calculate: %d", twoBodyEnergyMap.size()));
-
-                energyWorkerTeam.execute(pairsRegion);
-                long pairsTime = System.nanoTime() - (singlesTime + energyStartTime);
-                long triplesTime = 0;
-                long quadsTime = 0;
-                logIfMaster(format(" Time for pair energies:   %12.4g", (pairsTime * 1.0E-9)));
-
-                if (threeBodyTerm) {
-                    if (loaded < 3) {
-                        threeBodyEnergyMap.clear();
-                        // allocate threeBodyEnergy and create jobs
-                        int trimerJobIndex = 0;
-                        threeBodyEnergy = new double[nResidues][][][][][];
-                        for (int i = 0; i < nResidues; i++) {
-                            Residue resi = residues[i];
-                            Rotamer roti[] = resi.getRotamers(library);
-                            threeBodyEnergy[i] = new double[roti.length][][][][];
-                            for (int ri = 0; ri < roti.length; ri++) {
-                                if (check(i, ri)) {
-                                    continue;
-                                }
-                                threeBodyEnergy[i][ri] = new double[nResidues][][][];
-                                for (int j = i + 1; j < nResidues; j++) {
-                                    Residue resj = residues[j];
-                                    Rotamer rotj[] = resj.getRotamers(library);
-                                    threeBodyEnergy[i][ri][j] = new double[rotj.length][][];
-                                    for (int rj = 0; rj < rotj.length; rj++) {
-                                        if (checkToJ(i, ri, j, rj)) {
-                                            continue;
-                                        }
-                                        threeBodyEnergy[i][ri][j][rj] = new double[nResidues][];
-                                        for (int k = j + 1; k < nResidues; k++) {
-                                            Residue resk = residues[k];
-                                            Rotamer rotk[] = resk.getRotamers(library);
-                                            threeBodyEnergy[i][ri][j][rj][k] = new double[rotk.length];
-                                            for (int rk = 0; rk < rotk.length; rk++) {
-                                                if (checkToK(i, ri, j, rj, k, rk)) {
-                                                    continue;
-                                                }
-                                                Integer trimerJob[] = {i, ri, j, rj, k, rk};
-                                                if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
-                                                    continue;
-                                                }
-                                                threeBodyEnergyMap.put(trimerJobIndex++, trimerJob);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // broadcast that this proc is done with pruning and allocation; ready for trimers
-                    multicastBuf(thisProcReadyBuf);
-                    // launch parallel threeBody calculation
-                    while (!readyForTrimers) {
-                        Thread.sleep(POLLING_FREQUENCY);
-                    }
-
-                    logger.info(String.format(" Number of triple energies to calculate: %d", threeBodyEnergyMap.size()));
-
-                    energyWorkerTeam.execute(triplesRegion);
-                    triplesTime = System.nanoTime() - (pairsTime + singlesTime + energyStartTime);
-                    logIfMaster(format(" Time for triple energies: %12.4g", (triplesTime * 1.0E-9)));
-                }
-
-                if (computeQuads) {
-                    logger.info(" Creating quad jobs...");
-                    quadsMap.clear();
-                    boolean maxedOut = false;
-                    // create quad jobs (no memory allocation)
-                    int quadJobIndex = 0;
-                    for (int i = 0; i < nResidues; i++) {
-                        Residue resi = residues[i];
-                        Rotamer roti[] = resi.getRotamers(library);
-                        for (int ri = 0; ri < roti.length; ri++) {
-                            if (check(i, ri)) {
-                                continue;
-                            }
-                            for (int j = i + 1; j < nResidues; j++) {
-                                Residue resj = residues[j];
-                                Rotamer rotj[] = resj.getRotamers(library);
-                                for (int rj = 0; rj < rotj.length; rj++) {
-                                    /*if (check(j, rj) || check(i, ri, j, rj)) {
-                                        continue;
-                                    }*/
-                                    if (checkToJ(i, ri, j, rj)) {
-                                        continue;
-                                    }
+                                    threeBodyEnergy[i][ri][j][rj] = new double[nResidues][];
                                     for (int k = j + 1; k < nResidues; k++) {
                                         Residue resk = residues[k];
                                         Rotamer rotk[] = resk.getRotamers(library);
+                                        threeBodyEnergy[i][ri][j][rj][k] = new double[rotk.length];
                                         for (int rk = 0; rk < rotk.length; rk++) {
-                                            /*if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk) || check(i, ri, j, rj, k, rk)) {
-                                                continue;
-                                            }*/
                                             if (checkToK(i, ri, j, rj, k, rk)) {
                                                 continue;
                                             }
-                                            for (int l = k + 1; l < nResidues; l++) {
-                                                Residue resl = residues[l];
-                                                Rotamer rotl[] = resl.getRotamers(library);
-                                                for (int rl = 0; rl < rotl.length; rl++) {
+                                            Integer trimerJob[] = {i, ri, j, rj, k, rk};
+                                            if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
+                                                continue;
+                                            }
+                                            threeBodyEnergyMap.put(trimerJobIndex++, trimerJob);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // broadcast that this proc is done with pruning and allocation; ready for trimers
+                multicastBuf(thisProcReadyBuf);
+                // launch parallel threeBody calculation
+                while (!readyForTrimers) {
+                    Thread.sleep(POLLING_FREQUENCY);
+                }
+
+                logger.info(String.format(" Number of triple energies to calculate: %d", threeBodyEnergyMap.size()));
+
+                energyWorkerTeam.execute(triplesRegion);
+                triplesTime = System.nanoTime() - (pairsTime + singlesTime + energyStartTime);
+                logIfMaster(format(" Time for triple energies: %12.4g", (triplesTime * 1.0E-9)));
+            }
+
+            if (computeQuads) {
+                logger.info(" Creating quad jobs...");
+                quadsMap.clear();
+                boolean maxedOut = false;
+                // create quad jobs (no memory allocation)
+                int quadJobIndex = 0;
+                for (int i = 0; i < nResidues; i++) {
+                    Residue resi = residues[i];
+                    Rotamer roti[] = resi.getRotamers(library);
+                    for (int ri = 0; ri < roti.length; ri++) {
+                        if (check(i, ri)) {
+                            continue;
+                        }
+                        for (int j = i + 1; j < nResidues; j++) {
+                            Residue resj = residues[j];
+                            Rotamer rotj[] = resj.getRotamers(library);
+                            for (int rj = 0; rj < rotj.length; rj++) {
+                                    /*if (check(j, rj) || check(i, ri, j, rj)) {
+                                        continue;
+                                    }*/
+                                if (checkToJ(i, ri, j, rj)) {
+                                    continue;
+                                }
+                                for (int k = j + 1; k < nResidues; k++) {
+                                    Residue resk = residues[k];
+                                    Rotamer rotk[] = resk.getRotamers(library);
+                                    for (int rk = 0; rk < rotk.length; rk++) {
+                                            /*if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk) || check(i, ri, j, rj, k, rk)) {
+                                                continue;
+                                            }*/
+                                        if (checkToK(i, ri, j, rj, k, rk)) {
+                                            continue;
+                                        }
+                                        for (int l = k + 1; l < nResidues; l++) {
+                                            Residue resl = residues[l];
+                                            Rotamer rotl[] = resl.getRotamers(library);
+                                            for (int rl = 0; rl < rotl.length; rl++) {
                                                     /*if (check(l, rl) || check(i, ri, l, rl) ||
                                                             check(j, rj, l, rl) || check(k, rk, l, rl) ||
                                                             check(i, ri, j, rj, l, rl) || check(i, ri, k, rk, l, rl) ||
                                                             check(j, rj, k, rk, l, rl)) {
                                                         continue;
                                                     }*/
-                                                    if (checkToL(i, ri, j, rj, k, rk, l, rl)) {
-                                                        continue;
-                                                    }
-                                                    Integer quadJob[] = {i, ri, j, rj, k, rk, l, rl};
-                                                    if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0 || rl != 0)) {
-                                                        continue;
-                                                    }
-                                                    quadsMap.put(quadJobIndex++, quadJob);
-                                                    if (quadsMap.size() > quadMaxout) {
-                                                        maxedOut = true;
-                                                        break;
-                                                    }
+                                                if (checkToL(i, ri, j, rj, k, rk, l, rl)) {
+                                                    continue;
                                                 }
-                                                if (maxedOut) {
+                                                Integer quadJob[] = {i, ri, j, rj, k, rk, l, rl};
+                                                if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0 || rl != 0)) {
+                                                    continue;
+                                                }
+                                                quadsMap.put(quadJobIndex++, quadJob);
+                                                if (quadsMap.size() > quadMaxout) {
+                                                    maxedOut = true;
                                                     break;
                                                 }
                                             }
@@ -5229,133 +5226,102 @@ public class RotamerOptimization implements Terminatable {
                             break;
                         }
                     }
-
-                    // broadcast that this proc is done with pruning and allocation; ready for quads
-//                    logger.info(format(" Proc %d broadcasting ready for quads.", world.rank()));
-                    multicastBuf(thisProcReadyBuf);
-                    // launch parallel threeBody calculation
-                    int waiting = 0;
-                    while (!readyForQuads) {
-                        Thread.sleep(POLLING_FREQUENCY);
+                    if (maxedOut) {
+                        break;
                     }
-
-                    logger.info(format(" Running quads: %d jobs.", quadsMap.size()));
-                    energyWorkerTeam.execute(quadsRegion);
-                    quadsTime = System.nanoTime() - (triplesTime + pairsTime + singlesTime + energyStartTime);
-                    logIfMaster(format(" Time for quad energies:   %12.4g", quadsTime * 1.0E-9));
                 }
-                long allTime = singlesTime + pairsTime + triplesTime + quadsTime;
-                logIfMaster(format(" Time for all energies:    %12.4g", allTime * 1.0E-9));
-            } catch (Exception ex) {
-                String message = " Exception computing rotamer energies in parallel.";
-                logger.log(Level.SEVERE, message, ex);
-            } finally {
-                // stop receive and energyWriter threads
-                // receiveThread.die();
-            }
 
-            // Turn on all atoms.
-            for (int i = 0; i < atoms.length; i++) {
-                atoms[i].setUse(true);
-            }
-            // Print the energy with all rotamers in their default conformation.
-            if (verboseEnergies && master) {
-                try {
-                    double defaultEnergy = currentEnergy(residues);
-                    logger.info(format(" Energy of the system with rotamers in their default conformation: %s",
-                            formatEnergy(defaultEnergy)));
-                } catch (ArithmeticException ex) {
-                    logger.severe(String.format(" Exception %s in calculating default energy; FFX shutting down", ex.toString()));
+                // broadcast that this proc is done with pruning and allocation; ready for quads
+//                    logger.info(format(" Proc %d broadcasting ready for quads.", world.rank()));
+                multicastBuf(thisProcReadyBuf);
+                // launch parallel threeBody calculation
+                int waiting = 0;
+                while (!readyForQuads) {
+                    Thread.sleep(POLLING_FREQUENCY);
                 }
+
+                logger.info(format(" Running quads: %d jobs.", quadsMap.size()));
+                energyWorkerTeam.execute(quadsRegion);
+                quadsTime = System.nanoTime() - (triplesTime + pairsTime + singlesTime + energyStartTime);
+                logIfMaster(format(" Time for quad energies:   %12.4g", quadsTime * 1.0E-9));
             }
-            return backboneEnergy;
-        }   // endif(parallelEnergies)
-        throw new UnsupportedOperationException(" Non-parallel energy evaluations no longer supported!");
+            long allTime = singlesTime + pairsTime + triplesTime + quadsTime;
+            logIfMaster(format(" Time for all energies:    %12.4g", allTime * 1.0E-9));
+        } catch (Exception ex) {
+            String message = " Exception computing rotamer energies in parallel.";
+            logger.log(Level.SEVERE, message, ex);
+        }
+
+        // Turn on all atoms.
+        for (int i = 0; i < atoms.length; i++) {
+            atoms[i].setUse(true);
+        }
+        // Print the energy with all rotamers in their default conformation.
+        if (verboseEnergies && master) {
+            try {
+                double defaultEnergy = currentEnergy(residues);
+                logger.info(format(" Energy of the system with rotamers in their default conformation: %s",
+                        formatEnergy(defaultEnergy)));
+            } catch (ArithmeticException ex) {
+                logger.severe(String.format(" Exception %s in calculating default energy; FFX shutting down", ex.toString()));
+            }
+        }
+        return backboneEnergy;
     }
 
     private double computeBackboneEnergy(Residue[] residues) throws ArithmeticException {
-        if (residues == null) {
-            return 0.0;
-        }
         turnOffAllResidues(residues);
-        // Checked above this level.
         return currentEnergy(residues);
     }
 
     private double computeSelfEnergy(Residue[] residues, int i, int ri) {
-
-        int nRes = residues.length;
-        if (i < 0 || i >= nRes) {
-            return 0.0;
-        }
         Residue residue = residues[i];
         Rotamer rotamers[] = residue.getRotamers(library);
         turnOffAllResidues(residues);
         turnOnAtoms(residue);
         RotamerLibrary.applyRotamer(residue, rotamers[ri]);
-
-        // Unchecked call; would check above this level if this method was used.
-        double energy = currentEnergy(residues) - backboneEnergy;
-
-        RotamerLibrary.applyRotamer(residue, rotamers[0]);
-        turnOffAtoms(residue);
+        double energy;
+        try {
+            energy = currentEnergy(residues) - backboneEnergy;
+        } finally {
+            // Revert if the currentEnergy call throws an exception.
+            RotamerLibrary.applyRotamer(residue, rotamers[0]);
+            turnOffAtoms(residue);
+        }
 
         return energy;
     }
 
     private double computeTwoBodyEnergy(Residue[] residues, int i, int ri, int j, int rj) {
-
         Residue residueI = residues[i];
-        Rotamer rotamersI[] = residueI.getRotamers(library);
-        int ni = rotamersI.length;
         Residue residueJ = residues[j];
+        Rotamer rotamersI[] = residueI.getRotamers(library);
         Rotamer rotamersJ[] = residueJ.getRotamers(library);
-
         turnOffAllResidues(residues);
         turnOnAtoms(residueI);
         turnOnAtoms(residueJ);
         RotamerLibrary.applyRotamer(residueI, rotamersI[ri]);
         RotamerLibrary.applyRotamer(residueJ, rotamersJ[rj]);
-
-        // Unchecked call; would check above this level if this method was used.
-        double energy = currentEnergy(residues) - backboneEnergy - self(i, ri) - self(j, rj);
-
-        turnOffAtoms(residueI);
-        turnOffAtoms(residueJ);
-        RotamerLibrary.applyRotamer(residueI, rotamersI[0]);
-        RotamerLibrary.applyRotamer(residueJ, rotamersJ[0]);
-
+        double energy;
+        try {
+            energy = currentEnergy(residues) - backboneEnergy - self(i, ri) - self(j, rj);
+        } finally {
+            // Revert if the currentEnergy call throws an exception.
+            turnOffAtoms(residueI);
+            turnOffAtoms(residueJ);
+            RotamerLibrary.applyRotamer(residueI, rotamersI[0]);
+            RotamerLibrary.applyRotamer(residueJ, rotamersJ[0]);
+        }
         return energy;
     }
 
     private double computeTripleEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
-        if (residues == null) {
-            return 0.0;
-        }
-        int nRes = residues.length;
-        if (i < 0 || i >= nRes) {
-            return 0.0;
-        }
         Residue residueI = residues[i];
-        Rotamer rotamersI[] = residueI.getRotamers(library);
-        int ni = rotamersI.length;
-        if (ri < 0 || ri >= ni) {
-            return 0.0;
-        }
-
         Residue residueJ = residues[j];
-        Rotamer rotamersJ[] = residueJ.getRotamers(library);
-        int nj = rotamersJ.length;
-        if (rj < 0 || rj >= nj) {
-            return 0.0;
-        }
         Residue residueK = residues[k];
+        Rotamer rotamersI[] = residueI.getRotamers(library);
+        Rotamer rotamersJ[] = residueJ.getRotamers(library);
         Rotamer rotamersK[] = residueK.getRotamers(library);
-        int nk = rotamersK.length;
-        if (rk < 0 || rk >= nk) {
-            return 0.0;
-        }
-
         turnOffAllResidues(residues);
         turnOnAtoms(residueI);
         turnOnAtoms(residueJ);
@@ -5363,18 +5329,19 @@ public class RotamerOptimization implements Terminatable {
         RotamerLibrary.applyRotamer(residueI, rotamersI[ri]);
         RotamerLibrary.applyRotamer(residueJ, rotamersJ[rj]);
         RotamerLibrary.applyRotamer(residueK, rotamersK[rk]);
-
-        // Unchecked call; would check above this level if this method was used.
-        double energy = currentEnergy(residues) - backboneEnergy - self(i, ri) - self(j, rj) - self(k, rk)
-                - pair(i, ri, j, rj) - pair(i, ri, k, rk) - pair(j, rj, k, rk);
-
-        turnOffAtoms(residueI);
-        turnOffAtoms(residueJ);
-        turnOffAtoms(residueK);
-        RotamerLibrary.applyRotamer(residueI, rotamersI[0]);
-        RotamerLibrary.applyRotamer(residueJ, rotamersJ[0]);
-        RotamerLibrary.applyRotamer(residueK, rotamersK[0]);
-
+        double energy;
+        try {
+            energy = currentEnergy(residues) - backboneEnergy - self(i, ri) - self(j, rj) - self(k, rk)
+                    - pair(i, ri, j, rj) - pair(i, ri, k, rk) - pair(j, rj, k, rk);
+        } finally {
+            // Revert if the currentEnergy call throws an exception.
+            turnOffAtoms(residueI);
+            turnOffAtoms(residueJ);
+            turnOffAtoms(residueK);
+            RotamerLibrary.applyRotamer(residueI, rotamersI[0]);
+            RotamerLibrary.applyRotamer(residueJ, rotamersJ[0]);
+            RotamerLibrary.applyRotamer(residueK, rotamersK[0]);
+        }
         return energy;
     }
 
@@ -5567,136 +5534,6 @@ public class RotamerOptimization implements Terminatable {
                 logger.warning(format(" Exception shutting down parallel team for the distance matrix: %s", ex.toString()));
             }
         }
-    }
-
-    /**
-     * Fills a local distance matrix based on residues passed to the method,
-     * using only their non-eliminated Rotamers.
-     *
-     * @param residues            Residues to create a distance matrix for
-     * @param localDistanceMatrix Array to be filled.
-     */
-    private void localSequentialDistanceMatrix(Residue[] residues, double[][][][] localDistanceMatrix) {
-        Crystal crystal = molecularAssembly.getCrystal();
-        ArrayList<Residue> residuesList = new ArrayList<>();
-        residuesList.addAll(Arrays.asList(residues));
-        ResidueState[] originalCoordinates = ResidueState.storeAllCoordinates(residuesList);
-
-        int nSymm = crystal.spaceGroup.getNumberOfSymOps();
-        int nResidues = residues.length;
-        /**
-         * The flag isDistant is used to skip over the ri loop if r-j distance
-         * is above the 25 A center-to-center cutoff (ri, rj could not possibly
-         * be within 9 A of each other).
-         */
-        boolean[][] isDistant = new boolean[nResidues][nResidues];
-        // Allocate memory and initialize isDistant.
-        for (int i = 0; i < nResidues; i++) {
-            Residue residuei = residues[i];
-            Rotamer[] rotamersi = residuei.getRotamers(library);
-            if (rotamersi == null) {
-                continue;
-            }
-            int lengthRi = rotamersi.length;
-            localDistanceMatrix[i] = new double[lengthRi][][];
-            for (int ri = 0; ri < lengthRi; ri++) {
-                if (check(i, ri)) {
-                    continue;
-                }
-                localDistanceMatrix[i][ri] = new double[nResidues][];
-                for (int j = 0; j < nResidues; j++) {
-                    if (i == j) {
-                        continue;
-                    }
-                    Residue residuej = residues[j];
-                    Rotamer[] rotamersj = residuej.getRotamers(library);
-                    if (rotamersj == null) {
-                        continue;
-                    }
-                    int lengthRj = rotamersj.length;
-                    localDistanceMatrix[i][ri][j] = new double[lengthRj];
-                    for (int rj = 0; rj < lengthRj; rj++) {
-                        localDistanceMatrix[i][ri][j][rj] = Double.MAX_VALUE;
-                    }
-                }
-            }
-        }
-        // Loop over symmetry operators.
-        for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
-            SymOp symOp = crystal.spaceGroup.getSymOp(iSymOp);
-            for (int i = 0; i < nResidues; i++) {
-                fill(isDistant[i], false);
-            }
-            /**
-             * Loop over residues i. Testing showed no i-j vs. j-i discrepancies
-             * over symmetry operators.
-             */
-            for (int i = 0; i < (nResidues - 1); i++) {
-                Residue residuei = residues[i];
-                Rotamer rotamersi[] = residuei.getRotamers(library);
-                if (rotamersi == null) {
-                    continue;
-                }
-                int lengthRi = rotamersi.length;
-                Atom atomi = residuei.getReferenceAtom();
-                double[] refCoordsi = new double[3];
-                atomi.getXYZ(refCoordsi);
-                // Loop over Residue i's rotamers
-                for (int ri = 0; ri < lengthRi; ri++) {
-                    if (check(i, ri)) {
-                        continue;
-                    }
-                    Rotamer rotameri = rotamersi[ri];
-                    RotamerLibrary.applyRotamer(residuei, rotameri);
-                    double xi[][] = residuei.storeCoordinateArray();
-                    // Loop over other residues j.
-                    for (int j = (i + 1); j < nResidues; j++) {
-                        if (i == j || isDistant[i][j]) {
-                            continue;
-                        }
-                        Residue residuej = residues[j];
-                        Rotamer rotamersj[] = residuej.getRotamers(library);
-                        if (rotamersj == null) {
-                            continue;
-                        }
-                        int lengthRj = rotamersj.length;
-                        /**
-                         * Use reference atoms for a quick distance check,
-                         * before looping over rj.
-                         */
-                        Atom atomj = residuej.getReferenceAtom();
-                        double[] refCoordsj = new double[3];
-                        atomj.getXYZ(refCoordsj);
-                        crystal.applySymOp(refCoordsj, refCoordsj, symOp);
-                        // dijRef is short for dijReferenceAtoms.
-                        double[] dijRef = new double[3];
-                        for (int k = 0; k < dijRef.length; k++) {
-                            dijRef[k] = (refCoordsj[k] - refCoordsi[k]);
-                        }
-                        double dijSquare = crystal.image(dijRef);
-                        // Corresponds to a distance of 25 A.
-                        if (dijSquare > 625) {
-                            isDistant[i][j] = true;
-                            continue;
-                        }
-                        // Loop over the neighbor's rotamers
-                        for (int rj = 0; rj < lengthRj; rj++) {
-                            if (check(j, rj) || check(i, ri, j, rj)) {
-                                continue;
-                            }
-                            Rotamer rotamerj = rotamersj[rj];
-                            RotamerLibrary.applyRotamer(residuej, rotamerj);
-                            double xj[][] = residuej.storeCoordinateArray();
-                            double r = interResidueDistance(xi, xj, symOp);
-                            if (r < localDistanceMatrix[i][ri][j][rj]) {
-                                localDistanceMatrix[i][ri][j][rj] = r;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        ResidueState.revertAllCoordinates(residuesList, originalCoordinates);
     }
 
     /**
@@ -7970,10 +7807,6 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
-    public void setParallelEnergies(boolean set) {
-        this.parallelEnergies = set;
-    }
-
     public void setEnergyRestartFile(File file) {
         loadEnergyRestart = true;
         energyRestartFile = file;
@@ -9105,7 +8938,7 @@ public class RotamerOptimization implements Terminatable {
             boolean die = false;
             List<String> writing = new ArrayList<>();
             while (!die) {
-                if (receiveThread.getState() == java.lang.Thread.State.TERMINATED) {
+                if (receiveThread.getState() == State.TERMINATED) {
                     die = true;
                 }
                 if (energiesToWrite.size() >= writeFrequency || die) {
@@ -9127,7 +8960,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                         bw.flush();
                     } catch (IOException ex) {
-                        logger.log(Level.SEVERE, "Exception writing energy restart file.", ex);
+                        logger.log(Level.SEVERE, " Exception writing energy restart file.", ex);
                     }
                     writing.clear();
                 }
@@ -9135,7 +8968,7 @@ public class RotamerOptimization implements Terminatable {
             try {
                 bw.close();
             } catch (IOException ex) {
-                logger.log(Level.SEVERE, "Exception while closing energy restart file.", ex);
+                logger.log(Level.SEVERE, " Exception while closing energy restart file.", ex);
             }
             if (verbose) {
                 logger.info(" EnergyWriterThread shutting down.");
@@ -9156,11 +8989,6 @@ public class RotamerOptimization implements Terminatable {
             incPairBuf = DoubleBuf.buffer(incPair);
             incTriple = new double[7];
             incTripleBuf = DoubleBuf.buffer(incTriple);
-        }
-
-        public void die() {
-            logger.info(" ReceiveThread registered die() command.");
-            alive = false;
         }
 
         @Override
@@ -9275,7 +9103,6 @@ public class RotamerOptimization implements Terminatable {
                 // Barrier; wait for everyone to be done pruning and allocating threeBodyEnergy arrays before computing trimers.
                 procsDone = 0;
                 while (alive) {
-                    readyForNext = false;
                     try {
                         CommStatus cs = world.receive(null, readyForNextBuf);
                         if (cs.length > 0) {
@@ -9328,7 +9155,6 @@ public class RotamerOptimization implements Terminatable {
                 // Barrier; wait for everyone to be done pruning before starting quad energies.
                 procsDone = 0;
                 while (alive) {
-                    readyForNext = false;
                     try {
                         CommStatus cs = world.receive(null, readyForNextBuf);
                         if (cs.length > 0) {
