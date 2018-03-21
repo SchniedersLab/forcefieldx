@@ -504,7 +504,6 @@ class ManyBody extends Script {
         rotamerOptimization.setBoxInclusionCriterion(boxInclusionCriterion);
         rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
         rotamerOptimization.setMonteCarlo(monteCarlo, nMCSteps);
-        rotamerOptimization.setVideoWriter(videoWriteVideo);
 
         if (useEnergyRestart) {
             rotamerOptimization.setEnergyRestartFile(energyRestartFile);

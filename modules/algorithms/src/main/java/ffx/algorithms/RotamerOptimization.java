@@ -10068,7 +10068,7 @@ public class RotamerOptimization implements Terminatable {
 
         @Override
         public String toString() {
-            return "Rotamer moves utlizing a rotamer energy matrix";
+            return "Rotamer moves utilizing a rotamer energy matrix";
         }
     }
 }
