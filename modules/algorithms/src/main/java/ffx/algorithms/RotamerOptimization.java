@@ -8271,7 +8271,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residues to prune rotamers over.
      */
-    public void pruneSingleClashes(Residue residues[]) {
+    private void pruneSingleClashes(Residue residues[]) {
         if (!pruneClashes) {
             return;
         }
@@ -8320,39 +8320,45 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residues whose rotamers are to be pruned.
      */
-    public void prunePairClashes(Residue residues[]) {
+    private void prunePairClashes(Residue residues[]) {
         if (!prunePairClashes) {
             return;
         }
         int nResidues = residues.length;
-        // Loop over first residue.
+
         for (int i = 0; i < nResidues - 1; i++) {
             Residue resi = residues[i];
-            Rotamer[] roti = resi.getRotamers(library);
-            int ni = roti.length;
-            // Loop over second residue.
-            for (int j = i + 1; j < nResidues; j++) {
+            Rotamer[] rotsi = resi.getRotamers(library);
+            int lenri = rotsi.length;
+            for (int j = i+1; j < nResidues; j++) {
                 Residue resj = residues[j];
-                Rotamer[] rotj = resj.getRotamers(library);
-                int nj = rotj.length;
+                Rotamer[] rotsj = resj.getRotamers(library);
+                int lenrj = rotsj.length;
+                
                 double minPair = Double.MAX_VALUE;
-                // Loop over the rotamers for residue i.
-                for (int ri = 0; ri < ni; ri++) {
-                    if (!validRotamer(residues, i, ri)) {
+                int minRI = -1;
+                int minRJ = -1;
+
+                for (int ri = 0; ri < lenri; ri++) {
+                    if (check(i, ri)) {
                         continue;
                     }
-                    // Loop over rotamers for residue j.
-                    for (int rj = 0; rj < nj; rj++) {
-                        if (!validRotamer(residues, j, rj) || check(i, ri, j, rj)) {
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        if (check(j, rj) || check(i, ri, j, rj)) {
                             continue;
                         }
                         double pairEnergy = pair(i, ri, j, rj) + self(i, ri) + self(j, rj);
-                        if (minPair > pairEnergy) {
+                        assert Double.isFinite(pairEnergy);
+                        if (pairEnergy < minPair) {
                             minPair = pairEnergy;
+                            minRI = ri;
+                            minRJ = rj;
                         }
                     }
                 }
+                assert (minRI >= 0 && minRJ >= 0); // Otherwise, i and j are not on a well-packed backbone.
 
+                // Calculate all the modifiers to the pair clash elimination threshold.
                 double threshold = pairClashThreshold;
                 if (resi instanceof MultiResidue) {
                     threshold += multiResPairClashAddn;
@@ -8375,56 +8381,27 @@ public class RotamerOptimization implements Terminatable {
                                 + "found less than zero or more than two nucleic acid residues in a pair of"
                                 + " residues. This result should be impossible.");
                 }
-                threshold += minPair;
+                double toEliminate = threshold + minPair;
 
-                // Check for elimination of any rotamer ri.
-                for (int ri = 0; ri < ni; ri++) {
-                    if (!validRotamer(residues, i, ri)) {
+                for (int ri = 0; ri < lenri; ri++) {
+                    if (check(i, ri)) {
                         continue;
                     }
-
-                    double eliminate = Double.MAX_VALUE;
-                    for (int rj = 0; rj < nj; rj++) {
-                        if (!validRotamer(residues, j, rj) || check(i, ri, j, rj)) {
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        if (check(j, rj) || check(i, ri, j, rj)) {
                             continue;
                         }
                         double pairEnergy = pair(i, ri, j, rj) + self(i, ri) + self(j, rj);
-                        if (pairEnergy < eliminate) {
-                            eliminate = pairEnergy;
-                        }
-                    }
-                    if (eliminate > threshold) {
-                        if (eliminateRotamer(residues, i, ri, print)) {
-                            logIfMaster(format(
-                                    "  Rotamer (%7s,%2d) pruned by clashes with all %7s rotamers %s >> %s.",
-                                    resi, ri, resj, formatEnergy(eliminate), formatEnergy(minPair)));
+                        assert Double.isFinite(pairEnergy);
+                        if (pairEnergy > toEliminate) {
+                            logIfMaster(format(" Pruning pair %s-%d %s-%d by %s-%d %s-%d; energy %s > " +
+                                    "%s + %s", resi, ri, resj, rj, resi, minRI, resj, minRJ,
+                                    formatEnergy(pairEnergy), formatEnergy(threshold), formatEnergy(minPair)));
                         }
                     }
                 }
 
-                // Check for elimination of any rotamer rj.
-                for (int rj = 0; rj < nj; rj++) {
-                    if (!validRotamer(residues, j, rj)) {
-                        continue;
-                    }
-
-                    double eliminate = Double.MAX_VALUE;
-                    for (int ri = 0; ri < ni; ri++) {
-                        if (!validRotamer(residues, i, ri) || check(i, ri, j, rj)) {
-                            continue;
-                        }
-                        double pairEnergy = pair(i, ri, j, rj) + self(i, ri) + self(j, rj);
-                        if (pairEnergy < eliminate) {
-                            eliminate = pairEnergy;
-                        }
-                    }
-                    if (eliminate > threshold) {
-                        eliminateRotamer(residues, j, rj, print);
-                        logIfMaster(format(
-                                "  Rotamer (%7s,%2d) pruned by clashes with all %7s rotamers %s >> %s.",
-                                resj, rj, resi, formatEnergy(eliminate), formatEnergy(minPair)));
-                    }
-                }
+                pairsToSingleElimination(residues, i, j);
             }
         }
     }
