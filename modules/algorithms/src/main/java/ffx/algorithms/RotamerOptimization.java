@@ -1243,26 +1243,18 @@ public class RotamerOptimization implements Terminatable {
                             (double) evaluatedPermutations, comparisonEnergy, approximateEnergy,
                             comparisonEnergy - approximateEnergy, lowEnergy));
                 } else {
-                    if (threeBodyTerm) {
-                        logIfMaster(format(" Energy contributions:"));
-                        logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
-                        logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Type", "|", "Energy", "|", "Lowest Possible Energy", "|"));
-                        logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
-                        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", "Permutation:", "|", approximateEnergy, "|", lowEnergy, "|"));
+                    if (threeBodyTerm) {;
+                        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", evaluatedPermutations, "|", approximateEnergy, "|", lowEnergy, "|"));
                         //logIfMaster(format(" %6e 3-Body: %12.4f (%12.4f)",
                         //       (double) evaluatedPermutations, approximateEnergy, lowEnergy));
                     } else {
-                        logIfMaster(format(" Energy contributions:"));
-                        logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
-                        logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Type", "|", "Energy", "|", "Lowest Possible Energy", "|"));
-                        logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
-                        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", "Permutation:", "|", approximateEnergy, "|", lowEnergy, "|"));
+                        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", evaluatedPermutations, "|", approximateEnergy, "|", lowEnergy, "|"));
                         //logIfMaster(format(" %6e 2-Body: %12.4f (%12.4f)",
                         //        (double) evaluatedPermutations, approximateEnergy, lowEnergy));
                     }
                 }
             }
-
+            
             ensembleStates.sort(null);
         }
         return currentEnergy;
@@ -3249,6 +3241,11 @@ public class RotamerOptimization implements Terminatable {
             logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single and Pair Eliminations", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
             logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------\n"));
 
+            logIfMaster(format(" Energy of permutations:"));
+            logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+            logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Permutation", "|", "Energy", "|", "Lowest Possible Energy", "|"));
+            logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+            
             double e;
             if (useMonteCarlo()) {
                 firstValidPerm(residues, 0, currentRotamers);
@@ -3494,6 +3491,12 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Pair Eliminations", "|", afterPairElim, "|", pairTotalElimination, "|"));
                 logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single and Pair Eliminations", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
                 logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------\n"));
+                
+                logIfMaster(format(" Energy of permutations:"));
+                logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+                logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Permutation", "|", "Energy", "|", "Lowest Possible Energy", "|"));
+                logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+                
                 break;
             }
             if (Math.abs(currentEnsemble - ensembleNumber) < bestEnsembleTargetDiffThusFar) {
@@ -3540,6 +3543,13 @@ public class RotamerOptimization implements Terminatable {
 
         double sumSelfEnergy = 0;
         double sumLowSelfEnergy = 0;
+        logIfMaster(format("%s", " ----------------------------------------------------------------------------------\n"));
+        
+        logIfMaster(format(" Energy contributions:"));
+        logIfMaster(format("%s", " -------------------------------------------------------------------------------------"));
+        logIfMaster(format(" %15s %5s %25s %5s %25s %5s", "Type", "|", "Energy", "|", "Lowest Possible Energy", "|"));
+        logIfMaster(format("%s", " -------------------------------------------------------------------------------------"));
+        
         for (int i = 0; i < nResidues; i++) {
             int ri = optimum[i];
             Residue residue = residues[i];
@@ -3552,8 +3562,7 @@ public class RotamerOptimization implements Terminatable {
             double lowest = lowestSelfEnergy(residues, i);
             sumLowSelfEnergy += lowest;
             if (self - lowest > 10.0) {
-                logIfMaster(format(" Self-Energy (%7s,%2d): %12.4f (Lowest: %12.4f).",
-                        residues[i], ri, self, lowest));
+                logIfMaster(format(" %15s %5s %25f %5s %25f %5s", "Self (" + residues[i] + "," + ri + "):", "|", self, "|", lowest, "|"));
             }
         }
 
@@ -3586,8 +3595,7 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
             if (sumPairEnergyI - sumLowPairEnergyI > 10.0) {
-                logIfMaster(format(" Total Pair Energy (%7s,%2d):        %12.4f (Lowest: %12.4f).",
-                        residues[i], ri, sumPairEnergyI, sumLowPairEnergyI));
+                logIfMaster(format(" %15s %5s %25f %5s %25f %5s", "Self (" + residues[i] + "," + ri + "):", "|", sumPairEnergyI, "|", sumLowPairEnergyI, "|"));
                 sb.trimToSize();
                 if (!sb.toString().isEmpty()) {
                     logIfMaster(sb.toString());
@@ -3601,9 +3609,9 @@ public class RotamerOptimization implements Terminatable {
         } catch (ArithmeticException ex) {
             logger.severe(String.format(" Exception %s in calculating current energy at the end of self and pairs", ex.toString()));
         }
-        logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Backbone:", "|", backboneEnergy, "|", "", "|"));
-        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", "Self:", "|", sumSelfEnergy, "|", sumLowSelfEnergy, "|"));
-        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", "Pair:", "|", sumPairEnergy, "|", sumLowPairEnergy, "|"));
+        logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Backbone:", "|", backboneEnergy, "|", "", "|"));
+        logIfMaster(format(" %15s %5s %25f %5s %25f %5s", "Self:", "|", sumSelfEnergy, "|", sumLowSelfEnergy, "|"));
+        logIfMaster(format(" %15s %5s %25f %5s %25f %5s", "Pair:", "|", sumPairEnergy, "|", sumLowPairEnergy, "|"));
 
         double approximateEnergy = backboneEnergy + sumSelfEnergy + sumPairEnergy;
 
@@ -3630,15 +3638,15 @@ public class RotamerOptimization implements Terminatable {
             }
             approximateEnergy += sumTrimerEnergy;
             double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - sumTrimerEnergy - backboneEnergy;
-            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Trimer:", "|", sumTrimerEnergy, "|", "", "|"));
-            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
+            logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Trimer:", "|", sumTrimerEnergy, "|", "", "|"));
+            logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
         } else {
             double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - backboneEnergy;
-            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
+            logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
         }
 
-        logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Approximate:", "|", approximateEnergy, "|", "", "|"));
-        logIfMaster(format("%s", " ----------------------------------------------------------------------------------\n"));
+        logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Approximate:", "|", approximateEnergy, "|", "", "|"));
+        logIfMaster(format("%s", " -------------------------------------------------------------------------------------\n"));
 
         logIfMaster(format(" Final rotamers:"));
         logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
@@ -8326,7 +8334,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residues to prune rotamers over.
      */
-    public void pruneSingleClashes(Residue residues[]) {
+    private void pruneSingleClashes(Residue residues[]) {
         if (!pruneClashes) {
             return;
         }
@@ -8375,39 +8383,45 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues Residues whose rotamers are to be pruned.
      */
-    public void prunePairClashes(Residue residues[]) {
+    private void prunePairClashes(Residue residues[]) {
         if (!prunePairClashes) {
             return;
         }
         int nResidues = residues.length;
-        // Loop over first residue.
+
         for (int i = 0; i < nResidues - 1; i++) {
             Residue resi = residues[i];
-            Rotamer[] roti = resi.getRotamers(library);
-            int ni = roti.length;
-            // Loop over second residue.
-            for (int j = i + 1; j < nResidues; j++) {
+            Rotamer[] rotsi = resi.getRotamers(library);
+            int lenri = rotsi.length;
+            for (int j = i+1; j < nResidues; j++) {
                 Residue resj = residues[j];
-                Rotamer[] rotj = resj.getRotamers(library);
-                int nj = rotj.length;
+                Rotamer[] rotsj = resj.getRotamers(library);
+                int lenrj = rotsj.length;
+
                 double minPair = Double.MAX_VALUE;
-                // Loop over the rotamers for residue i.
-                for (int ri = 0; ri < ni; ri++) {
-                    if (!validRotamer(residues, i, ri)) {
+                int minRI = -1;
+                int minRJ = -1;
+
+                for (int ri = 0; ri < lenri; ri++) {
+                    if (check(i, ri)) {
                         continue;
                     }
-                    // Loop over rotamers for residue j.
-                    for (int rj = 0; rj < nj; rj++) {
-                        if (!validRotamer(residues, j, rj) || check(i, ri, j, rj)) {
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        if (check(j, rj) || check(i, ri, j, rj)) {
                             continue;
                         }
                         double pairEnergy = get2Body(i, ri, j, rj) + getSelf(i, ri) + getSelf(j, rj);
-                        if (minPair > pairEnergy) {
+                        assert Double.isFinite(pairEnergy);
+                        if (pairEnergy < minPair) {
                             minPair = pairEnergy;
+                            minRI = ri;
+                            minRJ = rj;
                         }
                     }
                 }
+                assert (minRI >= 0 && minRJ >= 0); // Otherwise, i and j are not on a well-packed backbone.
 
+                // Calculate all the modifiers to the pair clash elimination threshold.
                 double threshold = pairClashThreshold;
                 if (resi instanceof MultiResidue) {
                     threshold += multiResPairClashAddn;
@@ -8430,56 +8444,26 @@ public class RotamerOptimization implements Terminatable {
                                 + "found less than zero or more than two nucleic acid residues in a pair of"
                                 + " residues. This result should be impossible.");
                 }
-                threshold += minPair;
+                double toEliminate = threshold + minPair;
 
-                // Check for elimination of any rotamer ri.
-                for (int ri = 0; ri < ni; ri++) {
-                    if (!validRotamer(residues, i, ri)) {
+                for (int ri = 0; ri < lenri; ri++) {
+                    if (check(i, ri)) {
                         continue;
                     }
-
-                    double eliminate = Double.MAX_VALUE;
-                    for (int rj = 0; rj < nj; rj++) {
-                        if (!validRotamer(residues, j, rj) || check(i, ri, j, rj)) {
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        if (check(j, rj) || check(i, ri, j, rj)) {
                             continue;
                         }
                         double pairEnergy = get2Body(i, ri, j, rj) + getSelf(i, ri) + getSelf(j, rj);
-                        if (pairEnergy < eliminate) {
-                            eliminate = pairEnergy;
-                        }
-                    }
-                    if (eliminate > threshold) {
-                        if (eliminateRotamer(residues, i, ri, print)) {
-                            logIfMaster(format(
-                                    "  Rotamer (%7s,%2d) pruned by clashes with all %7s rotamers %s >> %s.",
-                                    resi, ri, resj, formatEnergy(eliminate), formatEnergy(minPair)));
+                        assert Double.isFinite(pairEnergy);
+                        if (pairEnergy > toEliminate) {
+                            logIfMaster(format(" Pruning pair %s-%d %s-%d by %s-%d %s-%d; energy %s > " +
+                                    "%s + %s", resi, ri, resj, rj, resi, minRI, resj, minRJ,
+                                    formatEnergy(pairEnergy), formatEnergy(threshold), formatEnergy(minPair)));
                         }
                     }
                 }
-
-                // Check for elimination of any rotamer rj.
-                for (int rj = 0; rj < nj; rj++) {
-                    if (!validRotamer(residues, j, rj)) {
-                        continue;
-                    }
-
-                    double eliminate = Double.MAX_VALUE;
-                    for (int ri = 0; ri < ni; ri++) {
-                        if (!validRotamer(residues, i, ri) || check(i, ri, j, rj)) {
-                            continue;
-                        }
-                        double pairEnergy = get2Body(i, ri, j, rj) + getSelf(i, ri) + getSelf(j, rj);
-                        if (pairEnergy < eliminate) {
-                            eliminate = pairEnergy;
-                        }
-                    }
-                    if (eliminate > threshold) {
-                        eliminateRotamer(residues, j, rj, print);
-                        logIfMaster(format(
-                                "  Rotamer (%7s,%2d) pruned by clashes with all %7s rotamers %s >> %s.",
-                                resj, rj, resi, formatEnergy(eliminate), formatEnergy(minPair)));
-                    }
-                }
+                pairsToSingleElimination(residues, i, j);
             }
         }
     }
