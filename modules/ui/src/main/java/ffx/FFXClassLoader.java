@@ -132,6 +132,7 @@ public class FFXClassLoader extends URLClassLoader {
             "commons-beanutils/commons-beanutils.jar",
             "commons-cli/commons-cli.jar",
             "commons-collections/commons-collections.jar",
+            "commons-collections/commons-collections4.jar",
             "commons-configuration/commons-configuration.jar",
             "commons-digester/commons-digester.jar",
             "commons-io/commons-io.jar",
