@@ -8334,7 +8334,7 @@ public class RotamerOptimization implements Terminatable {
                 Residue resj = residues[j];
                 Rotamer[] rotsj = resj.getRotamers(library);
                 int lenrj = rotsj.length;
-                
+
                 double minPair = Double.MAX_VALUE;
                 int minRI = -1;
                 int minRJ = -1;
