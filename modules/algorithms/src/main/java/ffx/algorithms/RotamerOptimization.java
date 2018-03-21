@@ -63,6 +63,7 @@ import static java.util.Arrays.fill;
 
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.BooleanBuf;
@@ -5302,7 +5303,7 @@ public class RotamerOptimization implements Terminatable {
         return energy;
     }
 
-    private double computeTripleEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
+    private double computeThreeBodyEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
         turnOffAllResidues(residues);
         turnOnResidue(residues[i], ri);
         turnOnResidue(residues[j], rj);
@@ -5316,6 +5317,30 @@ public class RotamerOptimization implements Terminatable {
             turnOffResidue(residues[i]);
             turnOffResidue(residues[j]);
             turnOffResidue(residues[k]);
+        }
+        return energy;
+    }
+
+    private double computeFourBodyEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+        turnOffAllResidues(residues);
+        turnOnResidue(residues[i], ri);
+        turnOnResidue(residues[j], rj);
+        turnOnResidue(residues[k], rk);
+        turnOnResidue(residues[l], rl);
+        double energy;
+        try {
+            energy = currentEnergy(residues) - backboneEnergy
+                    - self(i, ri) - self(j, rj) - self(k, rk) - self(l, rl)
+                    - pair(i, ri, j, rj) - pair(i, ri, k, rk) - pair(i, ri, l, rl)
+                    - pair(j, rj, k, rk) - pair(j, rj, l, rl) - pair(k, rk, l, rl)
+                    - triple(i, ri, j, rj, k, rk) - triple(i, ri, j, rj, l, rl) - triple(i, ri, k, rk, l, rl) - triple(j, rj, k, rk, l, rl);
+
+        } finally {
+            // Revert if the currentEnergy call throws an exception.
+            turnOffResidue(residues[i]);
+            turnOffResidue(residues[j]);
+            turnOffResidue(residues[k]);
+            turnOffResidue(residues[l]);
         }
         return energy;
     }
@@ -9545,20 +9570,23 @@ public class RotamerOptimization implements Terminatable {
                     int indexK = allResiduesList.indexOf(residueK);
                     double dIJ = checkDistanceMatrix(indexI, ri, indexJ, rj);
                     double dIK = checkDistanceMatrix(indexI, ri, indexK, rk);
-                    double dKJ = checkDistanceMatrix(indexJ, rj, indexK, rk);
+                    double dJK = checkDistanceMatrix(indexJ, rj, indexK, rk);
 
                     // Compute the RMS 3-Body distance.
-                    double dist = sqrt((dIJ * dIJ + dIK * dIK + dKJ * dKJ) / 3.0);
+                    double dist = sqrt((dIJ * dIJ + dIK * dIK + dJK * dJK) / 3.0);
+                    // Compute the minimum separation distance.
+                    double minDist = min(dIJ, min(dIK, dJK));
+
                     String distString = format("     large");
                     if (dist < Double.MAX_VALUE) {
                         distString = format("%10.3f", dist);
                     }
 
                     double threeBodyEnergy = 0.0;
-                    if (dist < superpositionThreshold) {
+                    if (minDist < superpositionThreshold) {
                         threeBodyEnergy = Double.NaN;
                         logger.info(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d:\t    NaN      at %13.6f Ang < %5.3f Ang.",
-                                residueI, ri, residueJ, rj, residueK, rk, dist, superpositionThreshold));
+                                residueI, ri, residueJ, rj, residueK, rk, minDist, superpositionThreshold));
                     } else if (threeBodyCutoff && (dist > threeBodyCutoffDist)) {
                         // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                         threeBodyEnergy = 0.0;
@@ -9568,7 +9596,7 @@ public class RotamerOptimization implements Terminatable {
                                 formatEnergy(threeBodyEnergy), distString, time * 1.0e-9));
                     } else {
                         try {
-                            threeBodyEnergy = computeTripleEnergy(residues, i, ri, j, rj, k, rk);
+                            threeBodyEnergy = computeThreeBodyEnergy(residues, i, ri, j, rj, k, rk);
                             time += System.nanoTime();
                             logger.info(format(" 3-Body %7s %-2d, %7s %-2d, %7s %-2d: %s at %s (Ang) in %6.4f (sec).",
                                     residueI, ri, residueJ, rj, residueK, rk,
@@ -9629,7 +9657,7 @@ public class RotamerOptimization implements Terminatable {
             @Override
             public void run(int lb, int ub) {
                 for (int key = lb; key <= ub; key++) {
-
+                    long time = -System.nanoTime();
                     if (!quadsMap.keySet().contains(key)) {
                         continue;
                     }
@@ -9653,117 +9681,87 @@ public class RotamerOptimization implements Terminatable {
                     }
 
                     Residue resi = residues[i];
-                    Rotamer roti = resi.getRotamers(library)[ri];
                     Residue resj = residues[j];
-                    Rotamer rotj = resj.getRotamers(library)[rj];
                     Residue resk = residues[k];
-                    Rotamer rotk = resk.getRotamers(library)[rk];
                     Residue resl = residues[l];
-                    Rotamer rotl = resl.getRotamers(library)[rl];
-                    ResidueState resiOriginalCoordinates = (resi.getResidueType() == NA ? resi.storeState() : null);
-                    ResidueState resjOriginalCoordinates = (resj.getResidueType() == NA ? resj.storeState() : null);
-                    ResidueState reskOriginalCoordinates = (resk.getResidueType() == NA ? resk.storeState() : null);
-                    ResidueState reslOriginalCoordinates = (resl.getResidueType() == NA ? resl.storeState() : null);
 
-                    int indexOfI = allResiduesList.indexOf(resi);
-                    int indexOfJ = allResiduesList.indexOf(resj);
-                    int indexOfK = allResiduesList.indexOf(resk);
-                    int indexOfL = allResiduesList.indexOf(resl);
-                    double dij, dik, djk, dil, djl, dkl;
-                    List<Residue> rList = Arrays.asList(new Residue[]{resi, resj, resk, resl});
-
+                    int indexOfI = allResiduesList.indexOf(residues[i]);
+                    int indexOfJ = allResiduesList.indexOf(residues[j]);
+                    int indexOfK = allResiduesList.indexOf(residues[k]);
+                    int indexOfL = allResiduesList.indexOf(residues[l]);
                     // Distance matrix is asymmetric, but in present implementation i < j < k.
-                    dij = checkDistanceMatrix(indexOfI, ri, indexOfJ, rj);
-                    dik = checkDistanceMatrix(indexOfI, ri, indexOfK, rk);
-                    dil = checkDistanceMatrix(indexOfI, ri, indexOfL, rl);
-                    djk = checkDistanceMatrix(indexOfJ, rj, indexOfK, rk);
-                    djl = checkDistanceMatrix(indexOfJ, rj, indexOfL, rl);
-                    dkl = checkDistanceMatrix(indexOfK, rk, indexOfL, rl);
+                    double dij = checkDistanceMatrix(indexOfI, ri, indexOfJ, rj);
+                    double dik = checkDistanceMatrix(indexOfI, ri, indexOfK, rk);
+                    double dil = checkDistanceMatrix(indexOfI, ri, indexOfL, rl);
+                    double djk = checkDistanceMatrix(indexOfJ, rj, indexOfK, rk);
+                    double djl = checkDistanceMatrix(indexOfJ, rj, indexOfL, rl);
+                    double dkl = checkDistanceMatrix(indexOfK, rk, indexOfL, rl);
 
                     // Compute the RMS 4-Body distance.
-                    double dist = sqrt((dij * dij + dik * dik + djk * djk + dil * dil + djl * djl + dkl * dkl) / 6.0);
+                    double dist = sqrt((dij * dij + dik * dik + dil * dil + djk * djk + djl * djl + dkl * dkl) / 6.0);
+                    double minDist = min(dij, min(dik, min(dil, min(djk, min(djl, dkl)))));
 
-                    double quadEnergy;
-                    if (!quadCutoff || (dist < quadCutoffDist)) {
-                        if (dist < superpositionThreshold) {
-                            quadEnergy = Double.NaN;
-                            logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d:   set to Double.NaN at %13.6f Ang < %5.3f Ang.",
-                                    resi, ri, resj, rj, resk, rk, resl, rl, dist, superpositionThreshold));
-                        } else {
-                            // turn on, apply rotamers
-                            turnOnAtoms(resi);
-                            turnOnAtoms(resj);
-                            turnOnAtoms(resk);
-                            turnOnAtoms(resl);
-                            RotamerLibrary.applyRotamer(resi, roti);
-                            RotamerLibrary.applyRotamer(resj, rotj);
-                            RotamerLibrary.applyRotamer(resk, rotk);
-                            RotamerLibrary.applyRotamer(resl, rotl);
-                            if (algorithmListener != null) {
-                                algorithmListener.algorithmUpdate(molecularAssembly);
-                            }
+                    String distString = format("     large");
+                    if (dist < Double.MAX_VALUE) {
+                        distString = format("%10.3f", dist);
+                    }
 
-                            String distString = (dist < Double.MAX_VALUE) ? format("%10.3f", dist) : format("     large");
-                            try {
-                                quadEnergy = currentEnergy(rList)
-                                        - self(i, ri) - self(j, rj) - self(k, rk) - self(l, rl)
-                                        - pair(i, ri, j, rj) - pair(i, ri, k, rk) - pair(i, ri, l, rl)
-                                        - pair(j, rj, k, rk) - pair(j, rj, l, rl) - pair(k, rk, l, rl)
-                                        - triple(i, ri, j, rj, k, rk) - triple(i, ri, j, rj, l, rl) - triple(i, ri, k, rk, l, rl) - triple(j, rj, k, rk, l, rl)
-                                        - backboneEnergy;
-                                if (Math.abs(quadEnergy) > 1.0) {
-                                    StringBuilder sb = new StringBuilder();
-                                    sb.append(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %s at %s Ang.\n",
-                                            resi, ri, resj, rj, resk, rk, resl, rl, formatEnergy(quadEnergy), distString));
-                                    sb.append(format("   Explain: (ref %d) \n", key));
-                                    sb.append(format("     Self %3d %3d:                  %.3f\n", i, ri, self(i, ri)));
-                                    sb.append(format("     Self %3d %3d:                  %.3f\n", j, rj, self(j, rj)));
-                                    sb.append(format("     Self %3d %3d:                  %.3f\n", k, rk, self(k, rk)));
-                                    sb.append(format("     Self %3d %3d:                  %.3f\n", l, rl, self(l, rl)));
-                                    sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, j, rj, pair(i, ri, j, rj)));
-                                    sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, k, rk, pair(i, ri, k, rk)));
-                                    sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, l, rl, pair(i, ri, l, rl)));
-                                    sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, k, rk, pair(j, rj, k, rk)));
-                                    sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, l, rl, pair(j, rj, l, rl)));
-                                    sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", k, rk, l, rl, pair(k, rk, l, rl)));
-                                    sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, k, rk, triple(i, ri, j, rj, k, rk)));
-                                    sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, l, rl, triple(i, ri, j, rj, l, rl)));
-                                    sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, k, rk, l, rl, triple(i, ri, k, rk, l, rl)));
-                                    sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", j, rj, k, rk, l, rl, triple(j, rj, k, rk, l, rl)));
-                                    sb.append(format("     backbone:                      %.3f\n", backboneEnergy));
-                                    sb.append(format("     quadEnergy:                 %.3f\n", quadEnergy));
-                                    sb.append(format("     --s--\n"));
-                                    sb.append(format("     Active residues:\n"));
-                                    for (int debug = 0; debug < residues.length; debug++) {
-                                        if (residues[debug].getSideChainAtoms().get(0).getUse()) {
-                                            sb.append(format("       %s\n", residues[debug].toString()));
-                                        }
-                                    }
-                                    sb.append(format("     --f--\n"));
-                                    logger.info(sb.toString());
-                                } else {
-                                    logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %s at %s Ang.",
-                                            resi, ri, resj, rj, resk, rk, resl, rl, formatEnergy(quadEnergy), distString));
-                                }
-                            } catch (ArithmeticException ex) {
-                                quadEnergy = Double.NaN;
-                                logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: set to NaN (unreasonable conformation) at %s Ang.",
-                                        resi, ri, resj, rj, resk, rk, resl, rl, distString));
-                            }
-
-
-                            // Revert rotamers and turn off atoms.
-                            revertResidue(resi, resiOriginalCoordinates, resi.getRotamers(library)[0]);
-                            revertResidue(resj, resjOriginalCoordinates, resj.getRotamers(library)[0]);
-                            revertResidue(resk, reskOriginalCoordinates, resk.getRotamers(library)[0]);
-                            revertResidue(resl, reslOriginalCoordinates, resl.getRotamers(library)[0]);
-                        }
+                    double fourBodyEnergy = 0.0;
+                    if (minDist < superpositionThreshold) {
+                        fourBodyEnergy = Double.NaN;
+                        logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d:   set to NaN at %13.6f Ang < %5.3f Ang.",
+                                residues[i], ri, residues[j], rj, residues[k], rk, residues[l], rl, minDist, superpositionThreshold));
+                    } else if (quadCutoff && (dist < quadCutoffDist)) {
+                        // Set the 4-body energy to 0.0 for separation distances larger than the 4-body cutoff.
+                        fourBodyEnergy = 0.0;
+                        time += System.nanoTime();
+                        logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %s at %s Ang.",
+                                resi, ri, resj, rj, resk, rk, resl, rl, formatEnergy(fourBodyEnergy), distString));
                     } else {
-                        logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %s at %10.3f Ang.",
-                                resi, ri, resj, rj, resk, rk, resl, rl, formatEnergy(0.0), quadCutoffDist));
+                        try {
+                            fourBodyEnergy = computeFourBodyEnergy(residues, i, ri, j, rj, k, rk, l, rl);
+                            time += System.nanoTime();
+                            logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %s at %s Ang.",
+                                    resi, ri, resj, rj, resk, rk, resl, rl, formatEnergy(fourBodyEnergy), distString));
+                            if (abs(fourBodyEnergy) > 1.0) {
+                                StringBuilder sb = new StringBuilder();
+                                sb.append(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: %s at %s Ang.\n",
+                                        resi, ri, resj, rj, resk, rk, resl, rl, formatEnergy(fourBodyEnergy), distString));
+                                sb.append(format("   Explain: (ref %d) \n", key));
+                                sb.append(format("     Self %3d %3d:                  %.3f\n", i, ri, self(i, ri)));
+                                sb.append(format("     Self %3d %3d:                  %.3f\n", j, rj, self(j, rj)));
+                                sb.append(format("     Self %3d %3d:                  %.3f\n", k, rk, self(k, rk)));
+                                sb.append(format("     Self %3d %3d:                  %.3f\n", l, rl, self(l, rl)));
+                                sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, j, rj, pair(i, ri, j, rj)));
+                                sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, k, rk, pair(i, ri, k, rk)));
+                                sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", i, ri, l, rl, pair(i, ri, l, rl)));
+                                sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, k, rk, pair(j, rj, k, rk)));
+                                sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, l, rl, pair(j, rj, l, rl)));
+                                sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", k, rk, l, rl, pair(k, rk, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, k, rk, triple(i, ri, j, rj, k, rk)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, l, rl, triple(i, ri, j, rj, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, k, rk, l, rl, triple(i, ri, k, rk, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", j, rj, k, rk, l, rl, triple(j, rj, k, rk, l, rl)));
+                                sb.append(format("     backbone:                      %.3f\n", backboneEnergy));
+                                sb.append(format("     quadEnergy:                 %.3f\n", fourBodyEnergy));
+                                sb.append(format("     --s--\n"));
+                                sb.append(format("     Active residues:\n"));
+                                for (int debug = 0; debug < residues.length; debug++) {
+                                    if (residues[debug].getSideChainAtoms().get(0).getUse()) {
+                                        sb.append(format("       %s\n", residues[debug].toString()));
+                                    }
+                                }
+                                sb.append(format("     --f--\n"));
+                                logger.info(sb.toString());
+                            }
+                        } catch (ArithmeticException ex) {
+                            fourBodyEnergy = Double.NaN;
+                            time += System.nanoTime();
+                            logger.info(format(" Quad %7s %-2d, %7s %-2d, %7s %-2d, %7s %-2d: NaN at %s Ang.",
+                                    resi, ri, resj, rj, resk, rk, resl, rl, distString));
+                        }
                     }
                 }
-
             }
         }
     }
