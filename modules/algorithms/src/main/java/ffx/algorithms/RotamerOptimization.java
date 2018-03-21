@@ -5269,11 +5269,31 @@ public class RotamerOptimization implements Terminatable {
         return backboneEnergy;
     }
 
+    /**
+     * Computes the environment/backbone energy, defined as energy with all sidechains
+     * under consideration turned off in their 0th rotamer.
+     *
+     * @param residues Residues under optimization.
+     * @return Backbone energy Eenv/bb.
+     * @throws ArithmeticException If an exception in calculating energy is found.
+     */
     private double computeBackboneEnergy(Residue[] residues) throws ArithmeticException {
         turnOffAllResidues(residues);
+        for (Residue residue : residues) {
+            RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
+        }
         return currentEnergy(residues);
     }
 
+    /**
+     * Computes a self energy, defined as energy with all sidechains but one turned off, minus
+     * the backbone energy.
+     *
+     * @param residues Residues under optimization.
+     * @param i A residue index.
+     * @param ri A rotamer index for residue i.
+     * @return Eself(ri)=E1(ri)-Eenv/bb.
+     */
     private double computeSelfEnergy(Residue[] residues, int i, int ri) {
         Residue residue = residues[i];
         Rotamer rotamers[] = residue.getRotamers(library);
@@ -5292,6 +5312,16 @@ public class RotamerOptimization implements Terminatable {
         return energy;
     }
 
+    /**
+     * Computes a pair energy, defined as energy with all sidechains
+     * but two turned off, minus the sum of backbone and component self energies.
+     * @param residues Residues under optimization.
+     * @param i A residue index.
+     * @param ri A rotamer index for residue i.
+     * @param j A residue index j!=i.
+     * @param rj A rotamer index for residue j.
+     * @return Epair(ri,rj)=E2(ri,rj)-Eself(ri)-Eself(rj)-Eenv/bb.
+     */
     private double computeTwoBodyEnergy(Residue[] residues, int i, int ri, int j, int rj) {
         Residue residueI = residues[i];
         Residue residueJ = residues[j];
@@ -5315,6 +5345,18 @@ public class RotamerOptimization implements Terminatable {
         return energy;
     }
 
+    /**
+     * Computes a triple energy, defined as energy with all sidechains
+     * but three turned off, minus the sum of backbone and component self/pair energies.
+     * @param residues Residues under optimization.
+     * @param i A residue index.
+     * @param ri A rotamer index for residue i.
+     * @param j A residue index j!=i.
+     * @param rj A rotamer index for residue j.
+     * @param k A residue index k!=j k!=i.
+     * @param rk A rotamer index for residue k.
+     * @return Etri(ri,rj)=E3(ri,rj,rk)-Epair(ri,rj)-Epair(ri,rk)-Epair(rj,rk)-Eself(ri)-Eself(rj)-Eself(rk)-Eenv/bb.
+     */
     private double computeTripleEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
         Residue residueI = residues[i];
         Residue residueJ = residues[j];
