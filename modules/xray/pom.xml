@@ -16,7 +16,7 @@
     <name>X-Ray Refinement</name>
     <organization>
         <name>Timothy D. Fenn</name>
-        <url>http://ffx.eng.uiowa.edu</url>
+        <url>http://ffx.biochem.uiowa.edu</url>
     </organization>
     <description>
         The X-ray Refinement module includes support for reading/writing of MTZ files,
@@ -31,7 +31,7 @@
             <name>Timothy D. Fenn</name>
             <email>tim.fenn@gmail.com</email>
             <organization>Scientist at Merck</organization>
-            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
+            <organizationUrl>http://ffx.biochem.uiowa.edu</organizationUrl>
             <roles>
                 <role>Chief Crystallographer</role>
             </roles>

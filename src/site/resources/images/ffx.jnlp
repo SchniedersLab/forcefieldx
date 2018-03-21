@@ -4,7 +4,7 @@
     <information>
         <title>Force Field X</title>
         <vendor>Michael J. Schnieders</vendor>
-        <homepage href="http://ffx.eng.uiowa.edu"/>
+        <homepage href="http://ffx.biochem.uiowa.edu"/>
         <description>Software for Molecular Biophysics</description>
         <icon href="images/icon128.png"/>
         <offline-allowed/>

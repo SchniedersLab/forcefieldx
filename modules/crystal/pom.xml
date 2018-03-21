@@ -24,7 +24,7 @@
             <name>Timothy D. Fenn</name>
             <email>tim.fenn@gmail.com</email>
             <organization>Scientist at Merck</organization>
-            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
+            <organizationUrl>http://ffx.biochem.uiowa.edu</organizationUrl>
             <roles>
                 <role>Chief Crystallographer</role>
             </roles>
@@ -34,9 +34,9 @@
             <id>michael.schnieders</id>
             <name>Michael J. Schnieders</name>
             <email>michael-schnieders@uiowa.edu</email>
-            <url>http://ffx.eng.uiowa.edu</url>
+            <url>http://ffx.biochem.uiowa.edu</url>
             <organization>Assistant Professor, The U. of Iowa</organization>
-            <organizationUrl>http://ffx.eng.uiowa.edu</organizationUrl>
+            <organizationUrl>http://ffx.biochem.uiowa.edu</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>
             </roles>
