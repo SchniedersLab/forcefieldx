@@ -5295,18 +5295,13 @@ public class RotamerOptimization implements Terminatable {
      * @return Eself(ri)=E1(ri)-Eenv/bb.
      */
     private double computeSelfEnergy(Residue[] residues, int i, int ri) {
-        Residue residue = residues[i];
-        Rotamer rotamers[] = residue.getRotamers(library);
         turnOffAllResidues(residues);
-        turnOnAtoms(residue);
-        RotamerLibrary.applyRotamer(residue, rotamers[ri]);
+        turnOnResidue(residues[i], ri);
         double energy;
         try {
             energy = currentEnergy(residues) - backboneEnergy;
         } finally {
-            // Revert if the currentEnergy call throws an exception.
-            RotamerLibrary.applyRotamer(residue, rotamers[0]);
-            turnOffAtoms(residue);
+            turnOffResidue(residues[i]);
         }
 
         return energy;
@@ -5323,24 +5318,16 @@ public class RotamerOptimization implements Terminatable {
      * @return Epair(ri,rj)=E2(ri,rj)-Eself(ri)-Eself(rj)-Eenv/bb.
      */
     private double computeTwoBodyEnergy(Residue[] residues, int i, int ri, int j, int rj) {
-        Residue residueI = residues[i];
-        Residue residueJ = residues[j];
-        Rotamer rotamersI[] = residueI.getRotamers(library);
-        Rotamer rotamersJ[] = residueJ.getRotamers(library);
         turnOffAllResidues(residues);
-        turnOnAtoms(residueI);
-        turnOnAtoms(residueJ);
-        RotamerLibrary.applyRotamer(residueI, rotamersI[ri]);
-        RotamerLibrary.applyRotamer(residueJ, rotamersJ[rj]);
+        turnOnResidue(residues[i], ri);
+        turnOnResidue(residues[j], rj);
         double energy;
         try {
             energy = currentEnergy(residues) - backboneEnergy - self(i, ri) - self(j, rj);
         } finally {
             // Revert if the currentEnergy call throws an exception.
-            turnOffAtoms(residueI);
-            turnOffAtoms(residueJ);
-            RotamerLibrary.applyRotamer(residueI, rotamersI[0]);
-            RotamerLibrary.applyRotamer(residueJ, rotamersJ[0]);
+            turnOffResidue(residues[i]);
+            turnOffResidue(residues[j]);
         }
         return energy;
     }
@@ -5358,33 +5345,33 @@ public class RotamerOptimization implements Terminatable {
      * @return Etri(ri,rj)=E3(ri,rj,rk)-Epair(ri,rj)-Epair(ri,rk)-Epair(rj,rk)-Eself(ri)-Eself(rj)-Eself(rk)-Eenv/bb.
      */
     private double computeTripleEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
-        Residue residueI = residues[i];
-        Residue residueJ = residues[j];
-        Residue residueK = residues[k];
-        Rotamer rotamersI[] = residueI.getRotamers(library);
-        Rotamer rotamersJ[] = residueJ.getRotamers(library);
-        Rotamer rotamersK[] = residueK.getRotamers(library);
         turnOffAllResidues(residues);
-        turnOnAtoms(residueI);
-        turnOnAtoms(residueJ);
-        turnOnAtoms(residueK);
-        RotamerLibrary.applyRotamer(residueI, rotamersI[ri]);
-        RotamerLibrary.applyRotamer(residueJ, rotamersJ[rj]);
-        RotamerLibrary.applyRotamer(residueK, rotamersK[rk]);
+        turnOnResidue(residues[i], ri);
+        turnOnResidue(residues[j], rj);
+        turnOnResidue(residues[k], rk);
         double energy;
         try {
             energy = currentEnergy(residues) - backboneEnergy - self(i, ri) - self(j, rj) - self(k, rk)
                     - pair(i, ri, j, rj) - pair(i, ri, k, rk) - pair(j, rj, k, rk);
         } finally {
             // Revert if the currentEnergy call throws an exception.
-            turnOffAtoms(residueI);
-            turnOffAtoms(residueJ);
-            turnOffAtoms(residueK);
-            RotamerLibrary.applyRotamer(residueI, rotamersI[0]);
-            RotamerLibrary.applyRotamer(residueJ, rotamersJ[0]);
-            RotamerLibrary.applyRotamer(residueK, rotamersK[0]);
+            turnOffResidue(residues[i]);
+            turnOffResidue(residues[j]);
+            turnOffResidue(residues[k]);
         }
         return energy;
+    }
+
+    private void turnOnResidue(Residue residue, int ri) {
+        turnOnAtoms(residue);
+        Rotamer rotamers[] = residue.getRotamers(library);
+        RotamerLibrary.applyRotamer(residue, rotamers[ri]);
+    }
+
+    private void turnOffResidue(Residue residue) {
+        turnOffAtoms(residue);
+        Rotamer rotamers[] = residue.getRotamers(library);
+        RotamerLibrary.applyRotamer(residue, rotamers[0]);
     }
 
     private void turnOffAllResidues(Residue[] residues) {
@@ -5393,7 +5380,7 @@ public class RotamerOptimization implements Terminatable {
         }
         int nRes = residues.length;
         for (int i = 0; i < nRes; i++) {
-            turnOffAtoms(residues[i]);
+            turnOffResidue(residues[i]);
         }
     }
 
