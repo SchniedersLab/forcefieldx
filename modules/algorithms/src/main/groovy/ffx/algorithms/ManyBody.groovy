@@ -185,12 +185,6 @@ class ManyBody extends Script {
                 description = 'Choose a list of individual residues to optimize (eg. A11,A24,B40).')
         String listResidues
         /**
-         * -vW or --videoWriter Prototype video snapshot output, which skips energy calculations.
-         */
-        @Option(shortName = 'vW', longName = 'videoWriter',
-                description = 'Prototype video snapshot output, which skips energy calculation.')
-        boolean videoWriter
-        /**
          * -sO or --sequence Choose a list of individual residues to sequence optimize (example: A2.A3.A5).
          */
         @Option(shortName = 'sO', longName = 'sequence', defaultValue = 'none',
@@ -402,7 +396,6 @@ class ManyBody extends Script {
         String forceResidues = options.forceResidues
         int forceResiduesStart = -1
         int forceResiduesEnd = -1;
-        boolean videoWriteVideo = options.videoWriter
 
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 

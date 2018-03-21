@@ -153,7 +153,7 @@ cli.sO(longOpt:'sequenceOptimization', args:1, argName: '-1', 'Choose a list of 
 cli.tO(longOpt:'titrationOptimization', args:1, argName: '-1', 'Choose a list of individual residues to titrate (protonation state optimization).');
 cli.nt(longOpt:'nucleicCorrectionThreshold', args:1, argName: '0', 'Nucleic acid Rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).');
 cli.mn(longOpt:'minimumAcceptedNARotamers', args:1, argName: '10', 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.');
-cli.li(longOpt:'printLargeInteractions', args:2, valueSeparator: ',' as char, argName: '0.0,0.0', 'Prints a summary of pair and trimer absolute energies larger than [arg] kcal.')
+cli.li(longOpt:'printLargeInteractions', args:2, valueSeparator: ',' as char, argName: '0.0,0.0', 'Prints a summary of 2-body and 3-body absolute energies larger than [arg] kcal.')
 cli.mc(longOpt: 'monteCarlo', args:1, argName: '-1', 'If set, follow DEE with n Monte Carlo steps (if fewer permutations remaining, enumerates all remaining instead).');
 
 def options = cli.parse(args);

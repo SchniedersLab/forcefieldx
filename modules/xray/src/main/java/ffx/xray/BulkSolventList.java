@@ -590,7 +590,7 @@ public class BulkSolventList extends ParallelRegion {
             int start = cellStart[iSymm][pairCellIndex];
             final int pairStop = start + cellCount[iSymm][pairCellIndex];
             final double pair[][] = coordinates[iSymm];
-            // Loop over atoms in the "pair" cell.
+            // Loop over atoms in the pair cell.
             for (int j = start; j < pairStop; j++) {
                 final int aj = pairList[j];
                 // If this atom is already selected, continue.
