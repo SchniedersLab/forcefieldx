@@ -2359,6 +2359,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     if (funct.hasFlatBottom()) {
                         OpenMM_CustomBondForce_addPerBondParameter(theForce, "fb");
                     }
+
+                    // Wholly untested code.
+                    switch (funct) {
+                        case QUARTIC:
+                        case FLAT_BOTTOM_QUARTIC:
+                            OpenMM_CustomBondForce_addGlobalParameter(theForce, "cubic",
+                                    BondType.cubic / OpenMM_NmPerAngstrom);
+                            OpenMM_CustomBondForce_addGlobalParameter(theForce, "quartic",
+                                    BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+                            break;
+                        default:
+                            break;
+                    }
+
                     /*
                      * In theory: if the function is the AMOEBA form, would need to
                      * add global parameters cubic and quartic.
