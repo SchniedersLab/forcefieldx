@@ -375,7 +375,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * existing property. Essentially sets the default value of printOnFailure
      * for an algorithm. For example, rotamer optimization will generally run
      * into force field issues in the normal course of execution as it tries
-     * unphysical self and pair configurations, so the algorithm should not
+     * unphysical self and 2-Body configurations, so the algorithm should not
      * print out a large number of error PDBs.
      *
      * @param onFail To set

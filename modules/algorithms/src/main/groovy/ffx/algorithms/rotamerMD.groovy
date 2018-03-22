@@ -151,9 +151,9 @@ cli.bL(longOpt: 'approxBoxLength', args: 1, argName: '0.0', 'Approximate side le
 //cli.bO(longOpt: 'boxOrder', args: 1, argName: 'IncreasingZYX', 'Order of boxes optimized. Options: Random, IncreasingZYX, DecreasingZYX, IncreasingXYZ, DecreasingXYZ, File (specify file name). Presently, always uses default behavior.');
 cli.bC(longOpt: 'boxInclusionCriterion', args: 1, argName: '1', 'Criterion to use for adding residues to boxes. (1) uses C alpha only (N1/9 for nucleic acids). (2) uses any atom. (3) uses any rotamer');
 cli.fR(longOpt: 'forceResidues', args: 1, argName: '-1,-1', 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.');
-cli.sT(longOpt: 'superpositionThreshold', args: 1, argName: '0.1', 'Sets the maximum atom-atom distance (Angstroms) which will cause a pair or triple energy to be defaulted to 1.0E100 kcal/mol.');
+cli.sT(longOpt: 'superpositionThreshold', args: 1, argName: '0.1', 'Sets the maximum atom-atom distance (Angstroms) which will cause a 2-Body or 3-Body energy to be defaulted to 1.0E100 kcal/mol.');
 cli.sC(longOpt: 'singletonClashThreshold', args: 1, argName: '20.0', 'Sets the threshold for singleton pruning.');
-cli.pC(longOpt: 'pairClashThreshold', args: 1, argName: '50.0', 'Sets the threshold for pair pruning');
+cli.pC(longOpt: 'pairClashThreshold', args: 1, argName: '50.0', 'Sets the threshold for 2-body pruning');
 cli.mB(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.mD(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
 cli.mI(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic]');

@@ -907,7 +907,7 @@
                 <artifactId>maven-linkcheck-plugin</artifactId>
                 <version>1.2</version>
             </plugin>
-            <plugin>
+            <!-- plugin>
                 <artifactId>maven-pmd-plugin</artifactId>
                 <version>3.9.0</version>
                 <configuration>
@@ -916,7 +916,6 @@
                     <aggregate>true</aggregate>
                     <targetJdk>1.8</targetJdk>
                     <minimumPriority>2</minimumPriority>
-                    <analysisCache>true</analysisCache>
                 </configuration>
                 <reportSets>
                     <reportSet>
@@ -926,20 +925,19 @@
                         </reports>
                     </reportSet>
                 </reportSets>
-            </plugin>
-            <plugin>
+            </plugin -->
+            <!-- plugin>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
                     <goal>checkstyle-aggregate</goal>
-                    <!-- configLocation>config/sun_checks.xml</configLocation -->
                 </configuration>
-            </plugin>
-            <plugin>
+            </plugin -->
+            <!-- plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>jdepend-maven-plugin</artifactId>
                 <version>2.0</version>
-            </plugin>
+            </plugin -->
             <!-- plugin>
               <groupId>com.atlassian.maven.plugins</groupId>
               <artifactId>maven-clover2-plugin</artifactId>
