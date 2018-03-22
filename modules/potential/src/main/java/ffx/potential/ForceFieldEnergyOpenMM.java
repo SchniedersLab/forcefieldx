@@ -42,8 +42,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -472,9 +474,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private PointerByReference customGBForce = null;
     /**
-     * OpenMM harmonic bond force, used for harmonic bond restraints.
+     * Map from bond functional forms to the restraint-bonds using that functional form.
+     * The PointerByReference should point to a CustomBondForce.
      */
-    private PointerByReference harmonicBondForce = null;
+    private final Map<BondType.BondFunction, PointerByReference> restraintForces = new HashMap<>();
     /**
      * Langevin friction coefficient.
      */
@@ -2340,21 +2343,43 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         List<RestraintBond> restraintBonds = super.getRestraintBonds();
 
         if (restraintBonds != null && !restraintBonds.isEmpty()) {
-            harmonicBondForce = (harmonicBondForce == null) ? OpenMM_HarmonicBondForce_create() : harmonicBondForce;
             // OpenMM's HarmonicBondForce class uses k, not 1/2*k as does FFX.
             double kParameterConversion = BondType.units * 2.0 * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
             for (RestraintBond rbond : super.getRestraintBonds()) {
-                Atom[] ats = rbond.getAtomArray();
-                int at0 = ats[0].getXyzIndex() - 1;
-                int at1 = ats[1].getXyzIndex() - 1;
-                BondType bType = rbond.getBondType();
-
+                PointerByReference theForce; // Is not a valid substitute for a targeting computer.
+                BondType bType = rbond.bondType;
+                BondType.BondFunction funct = bType.bondFunction;
+                if (restraintForces.containsKey(funct)) {
+                    theForce = restraintForces.get(funct);
+                } else {
+                    theForce = OpenMM_CustomBondForce_create(funct.toMathematicalForm());
+                    OpenMM_CustomBondForce_addPerBondParameter(theForce, "k");
+                    OpenMM_CustomBondForce_addPerBondParameter(theForce, "r0");
+                    if (funct.hasFlatBottom()) {
+                        OpenMM_CustomBondForce_addPerBondParameter(theForce, "fb");
+                    }
+                    /*
+                     * In theory: if the function is the AMOEBA form, would need to
+                     * add global parameters cubic and quartic.
+                     */
+                    OpenMM_System_addForce(system, theForce);
+                }
                 double forceConst = bType.forceConstant * kParameterConversion;
                 double equilDist = bType.distance * OpenMM_NmPerAngstrom;
-                OpenMM_HarmonicBondForce_addBond(harmonicBondForce, at0, at1, equilDist, forceConst);
+                Atom[] ats = rbond.getAtomArray();
+                int at1 = ats[0].getXyzIndex() - 1;
+                int at2 = ats[1].getXyzIndex() - 1;
+
+                PointerByReference bondParams = OpenMM_DoubleArray_create(0);
+                OpenMM_DoubleArray_append(bondParams, forceConst);
+                OpenMM_DoubleArray_append(bondParams, equilDist);
+                if (funct.hasFlatBottom()) {
+                    OpenMM_DoubleArray_append(bondParams, bType.flatBottomRadius * OpenMM_NmPerAngstrom);
+                }
+                OpenMM_CustomBondForce_addBond(theForce, at1, at2, bondParams);
+                OpenMM_DoubleArray_destroy(bondParams);
             }
-            OpenMM_System_addForce(system, harmonicBondForce);
         }
     }
 

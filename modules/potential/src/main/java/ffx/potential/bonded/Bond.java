@@ -660,17 +660,12 @@ public class Bond extends BondedTerm {
 
         // dv is deviation from ideal
         double dv = value - bondType.distance;
-        switch (bondType.bondFunction) {
-            case FLAT_BOTTOM_HARMONIC:
-            case FLAT_BOTTOM_QUARTIC:
-                if (dv > 0) {
-                    dv = Math.max(0, dv - bondType.flatBottomRadius);
-                } else if (dv < 0) {
-                    dv = Math.min(0, dv + bondType.flatBottomRadius);
-                }
-                // Else, dv remains zero; we are exactly at equilibrium distance.
-                break;
-            // Default: no adjustments to dv needed.
+        if (bondType.bondFunction.hasFlatBottom()) {
+            if (dv > 0) {
+                dv = Math.max(0, dv - bondType.flatBottomRadius);
+            } else if (dv < 0) {
+                dv = Math.min(0, dv + bondType.flatBottomRadius);
+            } // Else, no adjustments needed.
         }
         double dv2 = dv * dv;
 

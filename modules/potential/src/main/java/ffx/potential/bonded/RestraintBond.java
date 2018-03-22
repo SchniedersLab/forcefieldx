@@ -658,18 +658,12 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
 
         value = r(v10);
         double dv = value - bondType.distance;
-        switch (bondType.bondFunction) {
-            case FLAT_BOTTOM_QUARTIC:
-                throw new IllegalArgumentException(" Restraint-bonds are currently restricted to HARMONIC or FLAT_BOTTOM_HARMONIC bond types!");
-            case FLAT_BOTTOM_HARMONIC:
-                if (dv > 0) {
-                    dv = Math.max(0, dv - bondType.flatBottomRadius);
-                } else if (dv < 0) {
-                    dv = Math.min(0, dv + bondType.flatBottomRadius);
-                }
-                // Else, dv remains zero; we are exactly at equilibrium distance.
-                break;
-            // Default: no adjustments to dv needed.
+        if (bondType.bondFunction.hasFlatBottom()) {
+            if (dv > 0) {
+                dv = Math.max(0, dv - bondType.flatBottomRadius);
+            } else if (dv < 0) {
+                dv = Math.min(0, dv + bondType.flatBottomRadius);
+            } // Else, no adjustments needed.
         }
 
         double dv2 = dv * dv;

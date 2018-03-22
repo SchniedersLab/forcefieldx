@@ -62,13 +62,25 @@ public final class BondType extends BaseType implements Comparator<String> {
     public enum BondFunction {
         // Typical bond functions.
         HARMONIC("0.5*k*(r-r0)^2"), QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=r-r0"),
+
         // Usually only for restraints.
-        FLAT_BOTTOM_HARMONIC("0.5*k*dv^2;dv=step(dv)*step(dv-fb)*(dv-fb)+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0"),
-        FLAT_BOTTOM_QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=step(dv)*step(dv-fb)*(dv-fb)+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0");
+        FLAT_BOTTOM_HARMONIC("0.5*k*dv^2;dv=step(dv)*step(dv-fb)*(dv-fb)" +
+                "+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0", true),
+        FLAT_BOTTOM_QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);" +
+                "dv=step(dv)*step(dv-fb)*(dv-fb)+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0", true);
 
         private final String mathematicalForm;
+
+        // If we start to accumulate more features, consider making a BondFunctionFeature enum and having an EnumSet contained by this enum.
+        private final boolean hasFlatBottom;
+
         BondFunction(String mathForm) {
+            this(mathForm, false);
+        }
+
+        BondFunction(String mathForm, boolean flatBottom) {
             this.mathematicalForm = mathForm;
+            this.hasFlatBottom = flatBottom;
         }
 
         /**
@@ -77,6 +89,14 @@ public final class BondType extends BaseType implements Comparator<String> {
          */
         public String toMathematicalForm() {
             return mathematicalForm;
+        }
+
+        /**
+         * Returns whether or not this BondFunction has a flat bottom.
+         * @return Flat bottom.
+         */
+        public boolean hasFlatBottom() {
+            return hasFlatBottom;
         }
     }
 
