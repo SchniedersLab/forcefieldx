@@ -55,9 +55,29 @@ public final class BondType extends BaseType implements Comparator<String> {
 
     private static final Logger logger = Logger.getLogger(BondType.class.getName());
 
+    /**
+     * Describes the function used by the bond.
+     * Currently supported: harmonic and quartic with flat-bottom variants.
+     */
     public enum BondFunction {
+        // Typical bond functions.
+        HARMONIC("0.5*k*(r-r0)^2"), QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=r-r0"),
+        // Usually only for restraints.
+        FLAT_BOTTOM_HARMONIC("0.5*k*dv^2;dv=step(dv)*step(dv-fb)*(dv-fb)+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0"),
+        FLAT_BOTTOM_QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=step(dv)*step(dv-fb)*(dv-fb)+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0");
 
-        HARMONIC, QUARTIC
+        private final String mathematicalForm;
+        BondFunction(String mathForm) {
+            this.mathematicalForm = mathForm;
+        }
+
+        /**
+         * Returns the form of this bond as a mathematical expression parsable by OpenMM.
+         * @return A string describing mathematical form.
+         */
+        public String toMathematicalForm() {
+            return mathematicalForm;
+        }
     }
 
     /**
@@ -72,6 +92,11 @@ public final class BondType extends BaseType implements Comparator<String> {
      * Equilibrium separation (Angstroms).
      */
     public final double distance;
+    /**
+     * Radius of a flat bottom where energy and force is 0; typically used for restraints.
+     * Will almost always be 0.
+     */
+    public final double flatBottomRadius;
 
     public final BondFunction bondFunction;
 
@@ -84,11 +109,25 @@ public final class BondType extends BaseType implements Comparator<String> {
      * @param bondFunction the BondFunction type to apply.
      */
     public BondType(int atomClasses[], double forceConstant, double distance, BondFunction bondFunction) {
+        this(atomClasses, forceConstant, distance, bondFunction, 0.0);
+    }
+
+    /**
+     * BondType constructor.
+     *
+     * @param atomClasses int[]
+     * @param forceConstant double
+     * @param distance double
+     * @param bondFunction the BondFunction type to apply.
+     */
+    public BondType(int atomClasses[], double forceConstant, double distance, BondFunction bondFunction, double flatBottomRadius) {
         super(ForceFieldType.BOND, sortKey(atomClasses));
         this.atomClasses = atomClasses;
         this.forceConstant = forceConstant;
         this.distance = distance;
         this.bondFunction = bondFunction;
+        this.flatBottomRadius = flatBottomRadius;
+        assert (flatBottomRadius == 0 || bondFunction == BondFunction.FLAT_BOTTOM_HARMONIC);
     }
 
     /**

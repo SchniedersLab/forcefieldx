@@ -656,19 +656,36 @@ public class Bond extends BondedTerm {
 
         diff(atom0.getXYZ(a0), atom1.getXYZ(a1), v10);
         value = r(v10);
-        double dv = value - bondType.distance;
-        double dv2 = dv * dv;
         double prefactor = units * rigidScale * bondType.forceConstant * esvLambda;
 
+        // dv is deviation from ideal
+        double dv = value - bondType.distance;
         switch (bondType.bondFunction) {
-            case QUARTIC: {
+            case FLAT_BOTTOM_HARMONIC:
+            case FLAT_BOTTOM_QUARTIC:
+                if (dv > 0) {
+                    dv = Math.max(0, dv - bondType.flatBottomRadius);
+                } else if (dv < 0) {
+                    dv = Math.min(0, dv + bondType.flatBottomRadius);
+                }
+                // Else, dv remains zero; we are exactly at equilibrium distance.
+                break;
+            // Default: no adjustments to dv needed.
+        }
+        double dv2 = dv * dv;
+
+        switch (bondType.bondFunction) {
+            case QUARTIC:
+            case FLAT_BOTTOM_QUARTIC: {
                 energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2);
                 if (gradient) {
+                    // Compute the magnitude of the gradient.
                     double deddt = 2.0 * prefactor * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
                     double de = 0.0;
                     if (value > 0.0) {
                         de = deddt / value;
                     }
+                    // Give the gradient a vector.
                     scalar(v10, de, g0);
                     // atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
                     // atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
@@ -684,15 +701,19 @@ public class Bond extends BondedTerm {
                 break;
             }
             case HARMONIC:
+            case FLAT_BOTTOM_HARMONIC:
             default: {
                 energy = prefactor * dv2;
                 if (gradient) {
+                    // Compute the magnitude of the gradient.
                     double deddt = 2.0 * prefactor * dv;
                     double de = 0.0;
                     if (value > 0.0) {
                         de = deddt / value;
                     }
+                    // Give the gradient a vector.
                     scalar(v10, de, g0);
+
                     // atom0.addToXYZGradient(g0[0], g0[1], g0[2]);
                     // atom1.addToXYZGradient(-g0[0], -g0[1], -g0[2]);
                     int i0 = atom0.getIndex() - 1;

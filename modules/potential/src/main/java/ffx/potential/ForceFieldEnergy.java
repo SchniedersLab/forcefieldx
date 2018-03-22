@@ -739,6 +739,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 int at2 = Integer.parseInt(toks[1]) - 1;
 
                 double forceConst = 100.0;
+                double flatBottomRadius = 0;
                 Atom a1 = atoms[at1];
                 Atom a2 = atoms[at2];
 
@@ -758,15 +759,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         dist = Double.parseDouble(toks[3]);
                         break;
                     case 5:
-                        dist = Double.parseDouble(toks[3]) + Double.parseDouble(toks[4]);
-                        dist *= 0.5;
-                        logger.info(String.format(" restrain-distance term %s not properly supported, as FFX currently lacks flat-bottom wells. Setting equilibrium distance to arithmetic mean %10.4g", bondRest, dist));
+                        double minDist = Double.parseDouble(toks[3]);
+                        double maxDist = Double.parseDouble(toks[4]);
+                        dist = 0.5 * (minDist + maxDist);
+                        flatBottomRadius = 0.5 * Math.abs(maxDist - minDist);
                         break;
                     default:
                         throw new IllegalArgumentException(String.format(" restrain-distance value %s could not be parsed!", bondRest));
                 }
 
-                setRestraintBond(a1, a2, dist, forceConst);
+                setRestraintBond(a1, a2, dist, forceConst, flatBottomRadius);
             } catch (Exception ex) {
                 logger.info(String.format(" Exception in parsing restrain-distance: %s", ex.toString()));
             }
@@ -2399,10 +2401,28 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
      * @param forceConstant the force constant in kcal/mole
      */
     public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant) {
+        setRestraintBond(a1, a2, distance, forceConstant, 0);
+    }
+
+    /**
+     * <p>
+     * setRestraintBond</p>
+     *
+     * @param a1 a {@link ffx.potential.bonded.Atom} object.
+     * @param a2 a {@link ffx.potential.bonded.Atom} object.
+     * @param distance a double.
+     * @param forceConstant the force constant in kcal/mole.
+     * @param flatBottom Radius of a flat-bottom potential in Angstroms.
+     */
+    public void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant, double flatBottom) {
         restraintBondTerm = true;
         RestraintBond rb = new RestraintBond(a1, a2, crystal);
         int classes[] = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
-        rb.setBondType((new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
+        if (flatBottom != 0) {
+            rb.setBondType(new BondType(classes, forceConstant, distance, BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom));
+        } else {
+            rb.setBondType((new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
+        }
         // As long as we continue to add elements one-at-a-time to an array, this code will continue to be ugly.
         RestraintBond[] newRbs = new RestraintBond[++nRestraintBonds];
         if (restraintBonds != null && restraintBonds.length != 0) {
