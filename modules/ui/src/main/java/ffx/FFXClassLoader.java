@@ -121,13 +121,8 @@ public class FFXClassLoader extends URLClassLoader {
             "java3d/j3dutils.jar",
             "java3d/j3dvrml.jar",
             "java3d/vecmath.jar",
-            // JOGAMP GLUEGEN, JOGL and JOCL v. 2.2.0
-            "org.jogamp.gluegen/gluegen-rt.jar",
-            "org.jogamp.gluegen/gluegen-rt-main.jar",
-            "org.jogamp.jogl/jogl-all.jar",
-            "org.jogamp.jogl/jogl-all-main.jar",
-            "org.jogamp.jocl/jocl.jar",
-            "org.jogamp.jocl/jocl-main.jar",
+            // JOGAMP Fat Jar (includes GLUEGEN, JOGL and JOCL)
+            "org.jogamp/jogamp-fat.jar",
             // Apache Commons
             "commons-beanutils/commons-beanutils.jar",
             "commons-cli/commons-cli.jar",

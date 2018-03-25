@@ -1190,10 +1190,7 @@ public class Comm {
                 System.exit(0);
             } catch (JobSchedulerException exc) {
                 // We were not able to contact the Job Scheduler.
-                System.err.println(" No Job Scheduler at "
-                        + PJProperties.getPjHost() + ":"
-                        + PJProperties.getPjPort()
-                        + ", running in this (one) process");
+                // System.err.println(" No Job Scheduler at " + PJProperties.getPjHost() + ":" + PJProperties.getPjPort() + ", running in this (one) process");
 
                 // Set up world communicator.
                 theWorldCommunicator

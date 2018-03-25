@@ -1053,8 +1053,8 @@ public final class MainPanel extends JPanel implements ActionListener,
             + "        with linking exception and is hosted by the Schnieders Lab \n"
             + "        at The University of Iowa.\n"
             + "\n"
-            + "        For publications please see http://ffx.biochem.uiowa.edu/publications.html \n"
-            + "        For the GPL v.3 license see http://ffx.biochem.uiowa.edu/license.html \n";
+            + "        For publications see    http://ffx.biochem.uiowa.edu/publications.html \n"
+            + "        For the GPL v.3 license http://ffx.biochem.uiowa.edu/license.html \n";
 
     private void initAbout() {
         aboutTextArea = new JTextArea();
