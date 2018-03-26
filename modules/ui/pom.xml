@@ -228,12 +228,6 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>macosx</groupId>
-            <artifactId>AppleJavaExtensions</artifactId>
-            <type>jar</type>
-            <version>${apple-java-extensions.version}</version>
-        </dependency>
-        <dependency>
             <groupId>javax.help</groupId>
             <artifactId>javahelp</artifactId>
             <type>jar</type>
@@ -267,6 +261,12 @@
             <groupId>org.biojava</groupId>
             <artifactId>biojava3-structure</artifactId>
             <version>${biojava.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>mrj</groupId>
+            <artifactId>MRJToolkitStubs</artifactId>
+            <version>${MRJToolkitStubs.version}</version>
             <type>jar</type>
         </dependency>
     </dependencies>
