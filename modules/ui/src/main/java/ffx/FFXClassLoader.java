@@ -114,9 +114,11 @@ public class FFXClassLoader extends URLClassLoader {
             "edu.uiowa.eng.ffx/xray-ext.jar",
             // Groovy
             "org.codehaus.groovy/groovy-all.jar",
+            // MRJ Toolkit for OS X"
+            "mrj/MRJToolkitStubs.jar",
             // CUDA
             "jcuda/jcuda-all.jar",
-            // Java3D 1.6.2 (depends on JOGL v. 2.2.0)
+            // Java3D 1.6.0 (depends on JOGL v. 2.3.0)
             "java3d/j3dcore.jar",
             "java3d/j3dutils.jar",
             "java3d/j3dvrml.jar",
@@ -174,8 +176,6 @@ public class FFXClassLoader extends URLClassLoader {
             //ebi.beam Libraries
             "uk.ac.ebi.beam/beam-core.jar",
             "uk.ac.ebi.beam/beam-func.jar",
-            // Mac OS X Extensions
-            "macosx/AppleJavaExtensions.jar",
             // Java Help
             "javax.help/javahelp.jar",
             // BioJava

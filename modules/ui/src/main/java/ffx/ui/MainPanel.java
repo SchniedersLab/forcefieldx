@@ -1117,9 +1117,26 @@ public final class MainPanel extends JPanel implements ActionListener,
         statusPanel.add(energyLabel);
         if (!GraphicsEnvironment.isHeadless()) {
             GraphicsConfigTemplate3D template3D = new GraphicsConfigTemplate3D();
-            template3D.setDoubleBuffer(GraphicsConfigTemplate.PREFERRED);
-            GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getBestConfiguration(template3D);
-            graphicsCanvas = new GraphicsCanvas(gc, this);
+            // template3D.setDoubleBuffer(GraphicsConfigTemplate.PREFERRED);
+            GraphicsConfiguration gc = null;
+            try {
+                gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getBestConfiguration(template3D);
+                // gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+            } catch (Exception e){
+                e.fillInStackTrace();
+                e.printStackTrace();
+                logger.log(Level.SEVERE,
+                        " Exception encountered when trying to get the best GraphicsConfiguration", e);
+            }
+
+            try {
+                graphicsCanvas = new GraphicsCanvas(gc, this);
+            } catch (Exception e){
+                e.fillInStackTrace();
+                e.printStackTrace();
+                logger.log(Level.SEVERE,
+                        " Exception encountered when trying to create the GraphicsCanvas", e);
+            }
             graphicsPanel = new GraphicsPanel(graphicsCanvas, statusPanel);
         }
         // Initialize various Panels

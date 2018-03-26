@@ -998,7 +998,7 @@
         <skipSurefireReport>false</skipSurefireReport>
         <skipTests>true</skipTests>
         <!-- Specify versions of Dependencies to Use -->
-        <apple-java-extensions.version>1.6</apple-java-extensions.version>
+        <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
         <commons-cli.version>1.4</commons-cli.version>
         <!-- Commons Configuration 2.1 is available, but is not backwards compatible with 1.10 -->
         <commons-configuration.version>1.10</commons-configuration.version>

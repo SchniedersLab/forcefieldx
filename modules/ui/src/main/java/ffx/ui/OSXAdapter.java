@@ -37,19 +37,14 @@
  */
 package ffx.ui;
 
-import javax.swing.ImageIcon;
-
 import java.io.File;
-import java.util.List;
 import java.util.logging.Logger;
 
-import com.apple.eawt.AboutHandler;
-import com.apple.eawt.AppEvent;
-import com.apple.eawt.Application;
-import com.apple.eawt.OpenFilesHandler;
-import com.apple.eawt.PreferencesHandler;
-import com.apple.eawt.QuitHandler;
-import com.apple.eawt.QuitResponse;
+import com.apple.mrj.MRJAboutHandler;
+import com.apple.mrj.MRJOpenDocumentHandler;
+import com.apple.mrj.MRJQuitHandler;
+import com.apple.mrj.MRJPrefsHandler;
+import com.apple.mrj.MRJApplicationUtils;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -61,28 +56,25 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @author Michael J. Schnieders
  *
  */
-public class OSXAdapter implements AboutHandler, OpenFilesHandler,
-        QuitHandler, PreferencesHandler {
+public class OSXAdapter implements MRJAboutHandler, MRJOpenDocumentHandler,
+        MRJQuitHandler,  MRJPrefsHandler {
 
     private final MainPanel mainPanel;
-    private final Application application;
     private static final Logger logger = Logger.getLogger(OSXAdapter.class.getName());
 
     public OSXAdapter(MainPanel m) {
         mainPanel = m;
-        application = Application.getApplication();
-        application.setOpenFileHandler(this);
-        application.setQuitHandler(this);
 
-        application.setPreferencesHandler(this);
-        application.setEnabledPreferencesMenu(true);
+        MRJApplicationUtils.registerAboutHandler(this);
+        MRJApplicationUtils.registerOpenDocumentHandler(this);
+        MRJApplicationUtils.registerPrefsHandler(this);
+        MRJApplicationUtils.registerQuitHandler(this);
 
-        application.setAboutHandler(this);
-        application.setEnabledAboutMenu(true);
-
+        /**
         ImageIcon icon = new ImageIcon(m.getClass().getClassLoader().getResource("ffx/ui/icons/icon64.png"));
         application.setDockIconImage(icon.getImage());
         application.setDockIconBadge("FFX");
+         */
     }
 
     /**
@@ -90,36 +82,29 @@ public class OSXAdapter implements AboutHandler, OpenFilesHandler,
      */
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append(application).toString();
+        return new ToStringBuilder(this).toString();
     }
 
+
     @Override
-    public void handleAbout(AppEvent.AboutEvent ae) {
+    public void handleAbout() {
         if (mainPanel != null) {
             mainPanel.about();
         }
     }
 
     @Override
-    public void openFiles(AppEvent.OpenFilesEvent ofe) {
-        List<File> files = ofe.getFiles();
-        if (files == null) {
+    public void handleOpenFile(File file) {
+        if (file == null) {
             return;
         }
-
-        String filenames[] = new String[files.size()];
-        int index = 0;
-        for (File file : files) {
-            filenames[index++] = file.getAbsolutePath();
-        }
-
         if (mainPanel != null) {
-            mainPanel.open(filenames);
+            mainPanel.open(file.getAbsolutePath());
         }
     }
 
     @Override
-    public void handleQuitRequestWith(AppEvent.QuitEvent qe, QuitResponse qr) {
+    public void handleQuit() {
         if (mainPanel != null) {
             mainPanel.exit();
         } else {
@@ -128,7 +113,7 @@ public class OSXAdapter implements AboutHandler, OpenFilesHandler,
     }
 
     @Override
-    public void handlePreferences(AppEvent.PreferencesEvent pe) {
+    public void handlePrefs() {
         if (mainPanel != null) {
             mainPanel.getGraphics3D().preferences();
         }
@@ -139,19 +124,23 @@ public class OSXAdapter implements AboutHandler, OpenFilesHandler,
      * do these need to be set to be recognized?
      */
     public static void setOSXProperties() {
+
+        // Apple MRJ Flags
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "Force Field X");
+        System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
+        System.setProperty("com.apple.mrj.application.live-resize", "true");
+
+        // Apple OS X Flags
+        System.setProperty("com.apple.macos.smallTabs","true");
+        System.setProperty("com.apple.macos.useScreenMenuBar", "true");
+
+        // -Xdock:name="Force Field X"
+
+        // Apple AWT flags.
         System.setProperty("apple.awt.brushMetalLook", "true");
         System.setProperty("apple.awt.graphics.EnableQ2DX", "true");
         System.setProperty("apple.awt.showGrowBox", "true");
         System.setProperty("apple.awt.textantialiasing", "true");
 
-        System.setProperty("apple.laf.useScreenMenuBar", "true");
-
-        System.setProperty("apple.macos.smallTabs", "true");
-
-        System.setProperty("apple.mrj.application.apple.menu.about.name", "Force Field X");
-        System.setProperty("apple.mrj.application.growbox.intrudes", "false");
-        System.setProperty("apple.mrj.application.live-resize", "true");
-
-        // -Xdock:name="Force Field X"
     }
 }
