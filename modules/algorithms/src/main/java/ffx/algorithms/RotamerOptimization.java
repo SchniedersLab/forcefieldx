@@ -6582,86 +6582,6 @@ public class RotamerOptimization implements Terminatable {
         return true;
     }
 
-    /**
-     * Find the min/max of the 3-body energy.
-     *
-     * @param residues The residue array.
-     * @param minMax   The bound on the 3-body energy (minMax[0] = min, minMax[1]
-     *                 = max.
-     * @param i        Residue i
-     * @param ri       Rotamer ri of Residue i
-     * @param j        Residue j
-     * @param rj       Rotamer rj of Residue j
-     * @param k        Residue k
-     * @return true if this term is valid.
-     */
-    private boolean minMax3BodySum(Residue[] residues, double minMax[], int i, int ri, int j, int rj, int k, int rk) {
-        int nres = residues.length;
-        double minSum = 0.0;
-        double maxSum = 0.0;
-        for (int l = 0; l < nres; l++) {
-            if (l == i || l == j || l == k) {
-                continue;
-            }
-            Residue residuel = residues[l];
-            Rotamer[] rotamersl = residuel.getRotamers(library);
-            int lenrl = rotamersl.length;
-            double currentMin = Double.MAX_VALUE;
-            double currentMax = Double.MIN_VALUE;
-            // Loop over the third residues' rotamers.
-            boolean valid = false;
-            for (int rl = 0; rl < lenrl; rl++) {
-                if (check(l, rl) || check(k, rk, l, rl)) {
-                    // Not a part of any remaining valid phase space.
-                    continue;
-                }
-                valid = true;
-
-                // (TODO - get4Body returns 0.0 now)
-                // double quadEnergy = get4Body(i, ri, j, rj, k, rk, l, rl);
-                double quadEnergy = 0.0;
-
-                double current;
-                // Collect the 3-body energies and 4-body energy
-                if (check(i, ri, l, rl) || check(j, rj, l, rl)) {
-                    current = Double.NaN;
-                } else {
-                    current = get3Body(i, ri, k, rk, l, rl) + get3Body(j, rj, k, rk, l, rl) + quadEnergy;
-                }
-
-                if (Double.isFinite(current) && current < currentMin) {
-                    currentMin = current;
-                } // Else, have not found a new minimum.
-
-                if (Double.isFinite(current) && Double.isFinite(currentMax)) {
-                    if (current > currentMax) {
-                        currentMax = current;
-                    } // Else, have not found a new finite max.
-                } else { // Our max is non-finite.
-                    currentMax = Double.NaN;
-                }
-            }
-            // Must find at least 1 valid rotamer.
-            if (!valid) {
-                return false;
-            }
-            if (currentMin != Double.MAX_VALUE && Double.isFinite(minSum)) {
-                minSum += currentMin;
-            } else {
-                minSum = Double.NaN;
-            }
-            if (Double.isFinite(maxSum) && Double.isFinite(currentMax)) {
-                maxSum += currentMax;
-            } else {
-                maxSum = Double.NaN;
-            }
-        }
-        minMax[0] = minSum;
-        minMax[1] = maxSum;
-        return Double.isFinite(minMax[0]) && (minMax[0] != Double.MAX_VALUE);
-        //return true;
-    }
-
     private boolean goldsteinDriver(Residue[] residues) {
         int nres = residues.length;
         // A flag to indicate if a rotamer is eliminated.
@@ -6839,168 +6759,12 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * The Goldstein Rotamer Pair driver routine generates pairs of rotamers to
-     * be evaluated by the 3-body form of the Goldstein criteria.
+     * Finds and eliminates rotamer pairs according to the many-body Goldstein pairs criterion.
      *
-     * @param residues The list of residues to be optimized.
-     * @return true if a residue is eliminated.
-     */
-    private boolean goldsteinPairDriver(Residue[] residues) {
-        int nres = residues.length;
-        // A flag to indicate if any more rotamers or rotamer pairs were eliminated.
-        boolean eliminated = false;
-        // Loop over residue i.
-        for (int i = 0; i < nres; i++) {
-            Residue resi = residues[i];
-            Rotamer roti[] = resi.getRotamers(library);
-            int nri = roti.length;
-            // Loop over the set of rotamers for residue i.
-            boolean validA = false;
-            for (int riA = 0; riA < nri; riA++) {
-                if (!validRotamer(residues, i, riA)) {
-                    if (riA == nri - 1 && !validA) {
-                        logger.info(format(" No valid rotamers remain for %7s.", resi));
-                        return false;
-                    }
-                    continue;
-                } else {
-                    validA = true;
-                }
-                // A 2nd loop over the set of rotamers for residue i.
-                boolean validB = false;
-                for (int riB = 0; riB < nri; riB++) {
-                    if (!validRotamer(residues, i, riB)) {
-                        if (riB == nri - 1 && !validB) {
-                            logger.info(format(" No valid rotamers remain for %7s.", resi));
-                            return false;
-                        }
-                        continue;
-                    } else {
-                        validB = true;
-                    }
-                    // Loop over residue j.
-                    for (int j = 0; j < nres; j++) {
-                        if (j == i) {
-                            continue;
-                        }
-                        Residue resj = residues[j];
-                        Rotamer rotj[] = resj.getRotamers(library);
-                        int nrj = rotj.length;
-                        // Loop over the set of rotamers for residue j.
-                        boolean breakOut = false;
-                        boolean validC = false;
-                        for (int rjC = 0; rjC < nrj; rjC++) {
-                            if (breakOut) {
-                                break;
-                            }
-                            if (!validRotamer(residues, j, rjC)) {
-                                if (rjC == nrj - 1 && !validC) {
-                                    logger.info(format(" No valid rotamers remain for %7s.", resj));
-                                    return false;
-                                }
-                                continue;
-                            } else {
-                                validC = true;
-                            }
-                            // A 2nd loop over the set of rotamers for residue j.
-                            boolean validD = false;
-                            for (int rjD = 0; rjD < nrj; rjD++) {
-                                if (breakOut) {
-                                    break;
-                                }
-
-                                if (!validRotamer(residues, j, rjD)) {
-                                    if (rjD == nrj - 1 && !validD) {
-                                        logger.info(format(" No valid rotamers remain for %7s.", resj));
-                                        return false;
-                                    }
-                                    continue;
-                                } else {
-                                    validD = true;
-                                }
-
-                                // At least one rotamer of the eliminating rotamer pair must be different.
-                                if (riA == riB && rjC == rjD) {
-                                    continue;
-                                }
-                                if (!validRotamerPair(residues, i, riA, j, rjC)) {
-                                    continue;
-                                }
-                                /**
-                                 * if (!validRotamerPair(residues, i, riB, j,
-                                 * rjD)) { continue; }
-                                 */
-                                // Try to eliminate R_i(riA) & R_j(rjC) using R_i(riB) & R_j(rjD)
-                                if (goldsteinPairElimination(residues, i, riA, riB, j, rjC, rjD)) {
-                                    eliminated = true;
-                                    breakOut = true;
-                                }
-                            } // End inner loop over residue j's rotamers.
-                        } // End outer loop over residue j's rotamers.
-                        // Break out here if R_i(riA) & R_j(rjC) are eliminated (no need to eliminate twice).
-                    } // End loop over residue j.
-                } // End inner loop over residue i's rotamers.
-            } // End outer loop over residue i's rotamers.
-        } // End loop over residue i.
-
-        // Now, check if there are any cases of ri having no valid ri-rj pairs for some j.
-        // If so, we can singles-eliminate ri.
-        /*for (int i = 0; i < nres; i++) {
-            Residue resi = residues[i];
-            Rotamer[] rotsi = resi.getRotamers(library);
-            int lenri = rotsi.length;
-            for (int ri = 0; ri < lenri; ri++) {
-                if (check(i, ri)) {
-                    continue;
-                }
-                for (int j = 0; j < nres; j++) {
-                    if (j == i) {
-                        continue;
-                    }
-                    boolean remainingPair = false;
-                    Residue resj = residues[j];
-                    Rotamer[] rotsj = resj.getRotamers(library);
-                    int lenrj = rotsj.length;
-                    for (int rj = 0; rj < lenrj; rj++) {
-                        if (!check(j, rj) && !check(i, ri, j, rj)) {
-                            remainingPair = true;
-                            break;
-                        }
-                    }
-                    if (!remainingPair) {
-                        if (eliminateRotamer(residues, i, ri, print)) {
-                            eliminated = true;
-                            logIfMaster(format(" Eliminating rotamer %s-%d with no remaining pairs to residue %s.", resi, ri, resj));
-                            break;
-                        } else {
-                            logIfMaster(format(" Already eliminated rotamer %s-%d with no remaining pairs to residue %s.", resi, ri, resj), Level.WARNING);
-                        }
-                    }
-                }
-            }
-        }*/
-        if (allPairsToSingleEliminations(residues)) {
-            eliminated = true;
-        }
-        if (eliminated == false) {
-            logIfMaster(" No more rotamer pairs to eliminate.");
-        }
-        return eliminated;
-    }
-
-    /**
-     * Version of goldsteinPairsDriver that makes more sense to a particular
-     * coder trying to debug pairs elimination. The primary difference is
-     * removal of some debugging code, plus looping over riA, rjC, riB, rjD
-     * instead of riA, riB, rjC, rjD. Probably not to be used for production
-     * runs.
-     * <p>
-     * Currently appears to function identically to the original driver method.
-     *
-     * @param residues
+     * @param residues Residues under consideration.
      * @return If any rotamer pairs were eliminated.
      */
-    private boolean newGoldsteinPairsDriver(Residue[] residues) {
+    private boolean goldsteinPairDriver(Residue[] residues) {
         int nRes = residues.length;
         boolean eliminated = false;
 
@@ -7058,6 +6822,9 @@ public class RotamerOptimization implements Terminatable {
                                 }
                             }
                         }
+                    }
+                    if (pairsToSingleElimination(residues, i, j)) {
+                        eliminated = true;
                     }
                 }
             }
