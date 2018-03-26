@@ -2372,11 +2372,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         default:
                             break;
                     }
-
-                    /*
-                     * In theory: if the function is the AMOEBA form, would need to
-                     * add global parameters cubic and quartic.
-                     */
                     OpenMM_System_addForce(system, theForce);
                 }
                 double forceConst = bType.forceConstant * kParameterConversion;

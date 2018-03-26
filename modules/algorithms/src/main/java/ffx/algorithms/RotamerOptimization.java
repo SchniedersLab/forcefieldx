@@ -6013,13 +6013,12 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Proposed alteration to the DEE pair elimination driver. Permits enabling
-     * by riA != riB.
+     * Rotamer pair elimination driver for many-body Dead End Elimination. Generally less effective than Goldstein.
      *
      * @param residues Residues under consideration.
      * @return If at least one pair eliminated.
      */
-    private boolean newDeeRotamerPairElimination(Residue[] residues) {
+    private boolean deeRotamerPairElimination(Residue[] residues) {
         int nres = residues.length;
         boolean eliminated = false;
 
@@ -6436,140 +6435,6 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Elimination of rotamer pairs by the original Dead-End Elimination
-     * algorithm.
-     *
-     * @param residues Residues under consideration.
-     * @return If rotamer pairs could be eliminated.
-     */
-    private boolean deeRotamerPairElimination(Residue[] residues) {
-        if (true) {
-            return newDeeRotamerPairElimination(residues);
-        }
-
-        // TODO: Decide if we want to just delete this method in favor of newDeeRotamerPairElimination.
-        int nres = residues.length;
-        double minMax[] = new double[2];
-        // A flag to indicate if any more rotamers or rotamer pairs were eliminated.
-        boolean eliminated = false;
-
-        double maxEnergyDoubles[] = null;
-        double minEnergyDoubles[] = null;
-
-        // Loop over residues.
-        for (int i = 0; i < nres; i++) {
-            Residue residuei = residues[i];
-            Rotamer rotamersi[] = residuei.getRotamers(library);
-            int lenri = rotamersi.length;
-            // Loop over the set of rotamers for residue i.
-            for (int ri = 0; ri < lenri; ri++) {
-                // Check for an eliminated single.
-                if (check(i, ri)) {
-                    continue;
-                }
-                for (int j = i + 1; j < nres; j++) {
-                    Residue residuej = residues[j];
-                    Rotamer rotamersj[] = residuej.getRotamers(library);
-                    int lenrj = rotamersj.length;
-
-                    if (maxEnergyDoubles == null || maxEnergyDoubles.length < lenrj) {
-                        maxEnergyDoubles = new double[lenrj];
-                        minEnergyDoubles = new double[lenrj];
-                    }
-
-                    // Loop over residue j's rotamers.
-                    for (int rj = 0; rj < lenrj; rj++) {
-                        // Check for an eliminated single or pair.
-                        if (check(j, rj) || check(i, ri, j, rj)) {
-                            continue;
-                        }
-                        // Start the min/max summation with the 2-body and self-energies.
-                        minEnergyDoubles[rj] = selfEnergy[i][ri] + selfEnergy[j][rj] + get2Body(i, ri, j, rj);
-                        maxEnergyDoubles[rj] = minEnergyDoubles[rj];
-                        // Loop over the third residue.
-                        for (int k = 0; k < nres; k++) {
-                            if (k == i || k == j) {
-                                continue;
-                            }
-                            if (minMaxTripleEnergy(residues, minMax, i, ri, j, rj, k)) {
-                                if (Double.isFinite(minMax[0]) && Double.isFinite(minEnergyDoubles[rj])) {
-                                    minEnergyDoubles[rj] += minMax[0];
-                                } else {
-                                    // Else, there is an issue with the i-ri-j-rj 2-Body, and it should wind up getting eliminated.
-                                    minEnergyDoubles[rj] = Double.NaN;
-                                }
-                                if (Double.isFinite(minMax[1]) && Double.isFinite(maxEnergyDoubles[rj])) {
-                                    maxEnergyDoubles[rj] += minMax[1];
-                                } else {
-                                    // Else, i-ri-j-rj can badly clash with something and is unlikely to be used for elimination.
-                                    maxEnergyDoubles[rj] = Double.NaN;
-                                }
-                            } else {
-                                Residue residuek = residues[k];
-                                logger.info(format(" Inconsistent rotamer triple: %s %d, %s %d, %s.",
-                                        residuei, ri, residuej, rj, residuek));
-                                eliminateRotamerPair(residues, i, ri, j, rj, print);
-                            }
-                        }
-                    }
-
-                    /**
-                     * Apply the double elimination criteria to the rotamer pair
-                     * by determining the most favorable maximum energy.
-                     */
-                    double pairEliminationEnergy = Double.MAX_VALUE;
-                    for (int rj = 0; rj < lenrj; rj++) {
-                        if (check(j, rj) || check(i, ri, j, rj)) {
-                            continue;
-                        }
-                        if (Double.isFinite(maxEnergyDoubles[rj]) && maxEnergyDoubles[rj] < pairEliminationEnergy) {
-                            pairEliminationEnergy = maxEnergyDoubles[rj];
-                        }
-                    }
-
-                    if (pairEliminationEnergy == Double.MAX_VALUE) {
-                        // Branch taken if every i,ri,j,rj conflicts with something, and nothing's available to eliminate by.
-                        logIfMaster(" Could not eliminate any i,ri,j,rj because pairEliminationEnergy was never set!", Level.FINE);
-                    } else {
-                        /**
-                         * Eliminate rotamer pairs whose minimum energy is
-                         * higher than the worst case for an alternative pair.
-                         */
-                        for (int rj = 0; rj < lenrj; rj++) {
-                            if (check(j, rj) || check(i, ri, j, rj)) {
-                                continue;
-                            }
-                            if (!Double.isFinite(minEnergyDoubles[rj]) || minEnergyDoubles[rj] > pairEliminationEnergy + ensembleBuffer) {
-                                logger.info(format(" Eliminating rotamer pair: %s %d, %s %d (%s > %s + %6.6f)",
-                                        residuei, ri, residuej, rj,
-                                        formatEnergy(minEnergyDoubles[rj]),
-                                        formatEnergy(pairEliminationEnergy), ensembleBuffer));
-                                if (eliminateRotamerPair(residues, i, ri, j, rj, print)) {
-                                    eliminated = true;
-                                }
-                                // Check if any of i's rotamers are left to interact with residue j's rotamer rj?
-                                boolean singleton = true;
-                                for (int rii = 0; rii < lenri; rii++) {
-                                    if (!check(i, rii, j, rj)) {
-                                        singleton = false;
-                                    }
-                                }
-                                // If not, then this rotamer is completely eliminated.
-                                if (singleton) {
-                                    if (eliminateRotamer(residues, j, rj, print)) {
-                                        eliminated = true;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return eliminated;
-    }
-
-    /**
      * Computes the maximum and minimum energy i,ri might have with j, and
      * optionally (if three-body energies in use) third residues k.
      * <p>
@@ -6645,93 +6510,6 @@ public class RotamerOptimization implements Terminatable {
         // It would indicate i,ri clashes with something in every possible configuration.
         minMax[0] = (minMax[0] == Double.MAX_VALUE) ? Double.NaN : minMax[0];
         // minMax[1] always gets set, unless somehow everything turns up as Double.MIN_VALUE.
-        return valid;
-    }
-
-    private boolean minMaxTripleEnergy(Residue[] residues, double minMax[], int i, int ri, int j, int rj, int k) {
-        Residue residuek = residues[k];
-        Rotamer[] romatersk = residuek.getRotamers(library);
-        int lenrk = romatersk.length;
-        boolean valid = false;
-        minMax[0] = Double.MAX_VALUE;
-        minMax[1] = Double.MIN_VALUE;
-        // Loop over the third residues' rotamers.
-        for (int rk = 0; rk < lenrk; rk++) {
-            // Check for an eliminated single or eliminated pair.
-            if (check(k, rk)) {
-                // In theory: check k,rk with all ri or all rj to see if k,rk inconsistent with i or j.
-                // In practice: k,rk should have been eliminated by then.
-                continue;
-            }
-            valid = true;
-
-            double currMax;
-            if (check(i, ri, k, rk)) {
-                currMax = Double.NaN;
-            } else {
-                currMax = get2Body(i, ri, k, rk);
-            }
-            if (check(j, rj, k, rk) || !Double.isFinite(currMax)) {
-                currMax = Double.NaN;
-            } else {
-                currMax += get2Body(j, rj, k, rk);
-            }
-            double currMin = currMax;
-
-            if (threeBodyTerm && Double.isFinite(currMax)) {
-                // Update the current min and max with the i,ri,j,rj,k,rk 3-Body energy.
-                // In theory: check(i, ri, j, rj, k, rk) and set to NaN if true.
-                currMax += get3Body(i, ri, j, rj, k, rk);
-                currMin = currMax;
-                double minMaxTriple[] = new double[2];
-                /**
-                 * Loop over residue l to sum the min/max 3-Body energy returns
-                 * Sum_l [ min_rl [E_3(i,ri,k,rk,l,rl) + E_3(j,rj,k,rk,l,rl)]]
-                 */
-                boolean valid3Body = minMax3BodySum(residues, minMaxTriple, i, ri, j, rj, k, rk);
-                if (!valid3Body) {
-                    continue;
-                }
-                if (Double.isFinite(currMin) && Double.isFinite(minMaxTriple[0])) {
-                    currMin += minMaxTriple[0];
-                } else {
-                    currMin = Double.NaN;
-                }
-                if (Double.isFinite(currMax) && Double.isFinite(minMaxTriple[1])) {
-                    currMax += minMaxTriple[1];
-                } else {
-                    currMax = Double.NaN;
-                }
-
-                if (Double.isFinite(currMin) && currMin < minMax[0]) {
-                    minMax[0] = currMin;
-                } // Else, we have not found a new minimum.
-
-                if (Double.isFinite(currMax) && Double.isFinite(minMax[1])) {
-                    if (currMax > minMax[1]) {
-                        minMax[1] = currMax;
-                    } // Otherwise, we have not found a new finite maximum.
-                } else {
-                    // Our maximum is non-finite.
-                    minMax[1] = Double.NaN;
-                }
-
-            } else {
-                // Nothing might have gotten eliminated, so everything guaranteed (TM) finite.
-                if (currMin < minMax[0]) {
-                    minMax[0] = currMin;
-                }
-                if (currMax > minMax[1]) {
-                    minMax[1] = currMax;
-                }
-            }
-        }
-        if (!valid) {
-            assert minMax[0] == Double.MAX_VALUE;
-            minMax[0] = Double.NaN;
-            assert minMax[1] == Double.NaN;
-            minMax[1] = Double.NaN;
-        }
         return valid;
     }
 

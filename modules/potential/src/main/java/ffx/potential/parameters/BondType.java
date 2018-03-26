@@ -61,7 +61,7 @@ public final class BondType extends BaseType implements Comparator<String> {
      */
     public enum BondFunction {
         // Typical bond functions.
-        HARMONIC("0.5*k*(r-r0)^2"), QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=r-r0"),
+        HARMONIC("0.5*k*(r-r0)^2", false), QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);dv=r-r0", false),
 
         // Usually only for restraints.
         FLAT_BOTTOM_HARMONIC("0.5*k*dv^2;dv=step(dv)*step(dv-fb)*(dv-fb)" +
