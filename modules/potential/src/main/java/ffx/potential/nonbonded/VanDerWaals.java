@@ -317,6 +317,11 @@ public class VanDerWaals implements MaskingInterface,
     private final VanDerWaalsForm vdwForm;
     private final NonbondedCutoff nonbondedCutoff;
     private final MultiplicativeSwitch multiplicativeSwitch;
+    
+    /**
+     * VanDerWaals cutoff.
+     */
+    double vdwcut;
 
     /**
      * The VanDerWaals class constructor.
@@ -427,7 +432,6 @@ public class VanDerWaals implements MaskingInterface,
 
             off = cut;
         } else {
-            double vdwcut;
             if (!crystal.aperiodic()) {
                 vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 12.0);
             } else {
@@ -896,6 +900,11 @@ public class VanDerWaals implements MaskingInterface,
      */
     public double getBuffer() {
         return nonbondedCutoff.buff;
+    }
+    
+    
+    public double getVDWcutoff(){
+        return vdwcut;
     }
 
     /**
