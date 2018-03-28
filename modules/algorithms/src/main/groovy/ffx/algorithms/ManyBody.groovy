@@ -254,11 +254,7 @@ class ManyBody extends Script {
         boolean revert = !options.noRevert
         boolean useOrigCoordsRotamer = !options.original
         boolean verboseEnergies = options.verbose
-        boolean decomposeOriginal = options.decompose
-        if (decomposeOriginal) {
-            algorithm = 0;
-            useOrigCoordsRotamer = true;
-        }
+        boolean decomposeOriginal = options.decompose;
 
         // By default, rotamer optimization should silence GK warnings, because occasionally we will have unreasonable configurations.
         if (System.getProperty("gk-suppressWarnings") == null) {
@@ -674,28 +670,7 @@ class ManyBody extends Script {
 
         if (decomposeOriginal) {
             rLib.setUseOrigCoordsRotamer(true);
-            boolean doQuadsInParallel = true;
-            if (!options.listResidues.equalsIgnoreCase('none')) {
-                rotamerOptimization.decomposeOriginal(residueList.toArray(new Residue[0]));
-            } else if (!doQuadsInParallel) {
-                String quadsProp = System.getProperty("evalQuad");
-                if (quadsProp != null && quadsProp.equalsIgnoreCase("true")) {
-                    Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-
-                    int numQuadsNew = prop("ro.numQuads", 0);
-                    boolean quadsPropNew = (numQuadsNew > 0);
-                    double quadsCutoffNew = prop("ro.quadCutoff", 5.0);
-
-                    rotamerOptimization.decomposeOriginalQuads(quadsCutoff, numQuads);
-                }
-            } else {
-                rotamerOptimization.decomposeOriginalParallel();
-            }
-            if (master) {
-                logger.info(String.format("\n"));
-                energy();
-            }
-            return;
+            rotamerOptimization.setDecomposeOriginal(true);
         }
 
         if (algorithm == 1) {
