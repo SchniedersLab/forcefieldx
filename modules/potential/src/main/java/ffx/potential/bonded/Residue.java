@@ -1087,6 +1087,27 @@ public class Residue extends MSGroup {
     private String shortString = null;
 
     /**
+     * Formats this residue with some optional inclusions.
+     *
+     * [residue type]-[chain ID]ResNumber-Name.
+     *
+     * @param addResType Include the residue type
+     * @param addChainID Include the chain ID.
+     * @return A descriptive string.
+     */
+    public String toFormattedString(boolean addResType, boolean addChainID) {
+        StringBuilder sb = new StringBuilder();
+        if (addResType) {
+            sb.append(residueType.toString()).append("-");
+        }
+        if (addChainID) {
+            sb.append(chainID);
+        }
+        sb.append(toString());
+        return sb.toString();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override

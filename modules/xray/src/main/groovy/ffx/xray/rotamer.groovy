@@ -393,7 +393,6 @@ if (options.o) {
 if (options.dO) {
     decomposeOriginal = Boolean.parseBoolean(options.dO);
     if (decomposeOriginal) {
-        algorithm = 0;
         useOrigCoordsRotamer = true;
     }
 }
@@ -779,55 +778,7 @@ RotamerLibrary.measureRotamers(residueList, false);
 
 if (decomposeOriginal) {
     rLib.setUseOrigCoordsRotamer(true);
-    boolean doQuadsInParallel = true;
-    if (options.lR) {
-        rotamerOptimization.decomposeOriginal(residueList.toArray(new Residue[0]));
-    } else if (!doQuadsInParallel) {
-        String quadsProp = System.getProperty("evalQuad");
-        if (quadsProp != null && quadsProp.equalsIgnoreCase("true")) {
-            Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-
-            String quadsCutoffProp = System.getProperty("quadCutoff");
-            double quadsCutoff = 5.0;
-            if (quadsCutoffProp != null) {
-                try {
-                    quadsCutoff = Double.parseDouble(quadsCutoffProp);
-                } catch (Exception ex) {
-                    logger.warning(String.format(" Exception in parsing quads cutoff: %s", ex));
-                }
-                quadsCutoff = quadsCutoff <= 0 ? 5.0 : quadsCutoff;
-            }
-
-            String quadsEvalProperty = System.getProperty("numQuads");
-            int numQuads = 1000000;
-            if (quadsEvalProperty != null) {
-                try {
-                    numQuads = Integer.parseInt(System.getProperty("numQuads"));
-                } catch (Exception ex) {
-                    logger.warning(String.format(" Exception in parsing number of quads to evaluate: %s", ex));
-                }
-                numQuads = numQuads <= 0 ? 1000000 : numQuads;
-            }
-
-            rotamerOptimization.decomposeOriginalQuads(quadsCutoff, numQuads);
-        }
-    } else if (options.x) {
-        Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-        //rotamerOptimization.decomposeOriginal(residueArray);
-        rotamerOptimization.decomposeOriginalParallel();
-    } else {
-        Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-        //rotamerOptimization.decomposeOriginal(residueArray);
-        rotamerOptimization.decomposeOriginalParallel();
-    }
-    if (master) {
-        logger.info(String.format("\n"));
-        energy();
-        if (largePairCutoff > 0.0 || largeTrimerCutoff > 0.0) {
-            rotamerOptimization.printLargeInteractions(largePairCutoff,largeTrimerCutoff,true);
-        }
-    }
-    return;
+    rotamerOptimization.setDecomposeOriginal(true);
 }
 
 if (algorithm == 1) {

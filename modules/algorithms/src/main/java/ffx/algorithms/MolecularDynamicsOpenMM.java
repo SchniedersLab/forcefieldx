@@ -425,6 +425,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             setOpenMMState();
         }
         
+        saveSnapshotAsPDB = true;
+        if (fileType.equalsIgnoreCase("XYZ")) {
+            saveSnapshotAsPDB = false;
+            logger.info("Snapshots will be saved as XYZ");
+        } else if (!fileType.equalsIgnoreCase("PDB")) {
+            logger.warning("Snapshot file type unrecognized; saving snaphshots as PDB.\n");
+        }
+        
         Atom[] atoms = molecularAssembly.getAtomArray();
         natoms = atoms.length;
 
@@ -558,6 +566,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public int getNumAtoms(){
         return natoms;
+    }
+    
+    @Override
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
     }
 
     /**
