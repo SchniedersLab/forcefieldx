@@ -48,6 +48,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -97,7 +98,6 @@ import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NeighborList;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.DoubleIndexPair;
-import ffx.utilities.IndexIndexPair;
 import ffx.utilities.ObjectPair;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
@@ -1678,6 +1678,8 @@ public class RotamerOptimization implements Terminatable {
      * computing the entire energy matrix.
      */
     public void decomposeOriginal() {
+
+        // TODO: Re-visit decompose-original: likely simpler to force using original coordinates and eliminate any non-original rotamers.
         allResiduesList = new ArrayList<>();
         polymers = molecularAssembly.getChains();
         for (Polymer polymer : polymers) {
@@ -2832,8 +2834,9 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
-        //sortResidues(allResiduesList);
-        //sortResidues(residueList);
+        sortResidues(allResiduesList);
+        sortResidues(residueList);
+
         // If -DignoreNA=true, then remove nucleic acids from residue list.
         if (ignoreNA) {
             for (int i = 0; i < residueList.size(); i++) {
@@ -2919,7 +2922,7 @@ public class RotamerOptimization implements Terminatable {
             ArrayList<Residue> resList = new ArrayList<>();
             resList.addAll(Arrays.asList(residues));
             ResidueState[] origCoordinates = ResidueState.storeAllCoordinates(resList);
-            //double[][][] originalCoordinates = storeCoordinates(resList);
+
             for (int j = 0; j < residues.length; j++) {
                 Residue nucleicResidue = residues[j];
                 Rotamer[] rotamers = nucleicResidue.getRotamers(library);
@@ -2964,14 +2967,6 @@ public class RotamerOptimization implements Terminatable {
                 }
                 nucleicResidue.revertState(origCoordinates[j]);
                 //revertSingleResidueCoordinates(nucleicResidue, originalCoordinates[j]);
-                /*
-                 for (int i = 0; i < nAtoms; i++) {
-                 if (!begin[i].equals(atoms[i].toString())) {
-                 logger.info(" ERROR IN NA BACKBONE: " + begin[i]);
-                 logger.info(" ERROR IN NA BACKBONE: " + atoms[i].toString());
-                 logger.severe(" Good Bye");
-                 }
-                 } */
             }
         }
     }
@@ -4832,7 +4827,7 @@ public class RotamerOptimization implements Terminatable {
         }
         assignResiduesToCells(crystal, residues, cells);
         for (BoxOptCell cell : cells) {
-            cell.sortResidues();
+            cell.sortBoxResidues();
         }
         switch (direction) {
             case BACKWARD:
@@ -4937,23 +4932,8 @@ public class RotamerOptimization implements Terminatable {
      * @param residues List of Residues to be sorted.
      */
     private void sortResidues(List<Residue> residues) {
-        int nResidues = residues.size();
-        IndexIndexPair[] residueIndices = new IndexIndexPair[nResidues];
-        for (int i = 0; i < nResidues; i++) {
-            Residue residuei = residues.get(i);
-            int indexOfI = allResiduesList.indexOf(residuei);
-            residueIndices[i] = new IndexIndexPair(indexOfI, i);
-        }
-        Arrays.sort(residueIndices);
-        ArrayList<Residue> tempWindow = new ArrayList<>(residues);
-        for (int i = 0; i < nResidues; i++) {
-            int indexToGet = residueIndices[i].getReferenceIndex();
-            residues.set(i, tempWindow.get(indexToGet));
-        }
-        // This two-liner should have slightly different behavior of sorting first on chain ID, then on resnum.
-        // I hadn't noticed before, but we had nondeterministic behavior if you had multiple chains with identical residue numbers.
-        /*Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt((Residue r) -> { return allResiduesList.indexOf(r); });
-        residues.sort(comparator);*/
+        Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt(Residue::getResidueNumber);
+        residues.sort(comparator);
     }
 
     /**
@@ -6830,12 +6810,6 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
-        /**
-         * else { logIfMaster(format(" NO Rotamer elimination of (%7s,%2d) by
-         * (%7s,%2d): %12.4f < %6.4f.", resi, riA, resi, riB, goldsteinEnergy,
-         * ensembleBuffer)); logIfMaster(format(" Self: %12.4f, Pairs: %12.4f,
-         * Triples: %12.4f.", selfDiff, sumPairDiff, sumTripleDiff)); }
-         */
         return false;
     }
 
@@ -7159,29 +7133,6 @@ public class RotamerOptimization implements Terminatable {
             return IntStream.range(0, ni).toArray();
         }
 
-        // Initialize the count to 0.
-        // Loop over the rotamers for residue i.
-        /*for (int ri = 0; ri < ni; ri++) {
-            if (check(i, ri)) {
-                continue;
-            }
-            boolean valid = true;
-            if (maxRotCheckDepth > 1) {
-                // Check that rotamer ri has valid pairs with all other residues.
-                for (int j = 0; j < nRes; j++) {
-                    if (i == j) {
-                        continue;
-                    }
-                    if (rotamerPairCount(residues, i, ri, j) == 0) {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-            if (valid) {
-                validRots.add(ri);
-            }
-        }*/
         return IntStream.range(0, ni).filter((int ri) -> {
             if (check(i, ri)) {
                 return false;
@@ -8746,25 +8697,10 @@ public class RotamerOptimization implements Terminatable {
         }
 
         /**
-         * Sorts residues in the cell by index in allResiduesList. Identical to
-         * RotamerOptimization.sortResidues().
+         * Sorts residues in the box.
          */
-        public void sortResidues() {
-            int nResidues = residues.size();
-            IndexIndexPair[] residueIndices = new IndexIndexPair[nResidues];
-            for (int i = 0; i < nResidues; i++) {
-                Residue residuei = residues.get(i);
-                int indexOfI = allResiduesList.indexOf(residuei);
-                residueIndices[i] = new IndexIndexPair(indexOfI, i);
-            }
-            Arrays.sort(residueIndices);
-            ArrayList<Residue> tempWindow = new ArrayList<>(residues);
-            for (int i = 0; i < nResidues; i++) {
-                int indexToGet = residueIndices[i].getReferenceIndex();
-                residues.set(i, tempWindow.get(indexToGet));
-            }
-            /*Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt((Residue r) -> { return allResiduesList.indexOf(r); });
-            residues.sort(comparator);*/
+        public void sortBoxResidues() {
+            sortResidues(residues);
         }
 
         /**
