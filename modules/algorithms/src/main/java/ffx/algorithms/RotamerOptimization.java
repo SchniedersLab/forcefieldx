@@ -4724,7 +4724,7 @@ public class RotamerOptimization implements Terminatable {
         SelfEnergyRegion singlesRegion = new SelfEnergyRegion(residues);
         TwoBodyEnergyRegion pairsRegion = new TwoBodyEnergyRegion(residues);
         ThreeBodyEnergyRegion triplesRegion = new ThreeBodyEnergyRegion(residues);
-        ffx.algorithms.RotamerOptimization.FourBodyEnergyRegion quadsRegion = new ffx.algorithms.RotamerOptimization.FourBodyEnergyRegion(residues);
+        FourBodyEnergyRegion quadsRegion = new FourBodyEnergyRegion(residues);
 
         try {
             if (loaded < 1) {
@@ -6362,12 +6362,12 @@ public class RotamerOptimization implements Terminatable {
             if (missedResidues.isEmpty()) {
                 if (eliminateRotamerPair(residues, i, riA, j, rjC, print)) {
                     logIfMaster(format("  Pair elimination of [(%8s,%2d),(%8s,%2d)] by [(%8s,%2d),(%8s,%2d)]: %12.4f > %6.4f",
-                            residues[i], riA, residues[j].toFormattedString(false, true), rjC, residues[i].toFormattedString(false, true), riB, residues[j].toFormattedString(false, true), rjD, goldsteinEnergy, ensembleBuffer));
+                            residues[i].toFormattedString(false, true), riA, residues[j].toFormattedString(false, true), rjC, residues[i].toFormattedString(false, true), riB, residues[j].toFormattedString(false, true), rjD, goldsteinEnergy, ensembleBuffer));
                     return true;
                 }
             } else {
                 logIfMaster(format("  No Pair elimination of [(%8s,%2d),(%8s,%2d)] by [(%8s,%2d),(%8s,%2d)]: %12.4f > %6.4f",
-                        residues[i], riA, residues[j].toFormattedString(false, true), rjC, residues[i].toFormattedString(false, true), riB, residues[j].toFormattedString(false, true), rjD, goldsteinEnergy, ensembleBuffer));
+                        residues[i].toFormattedString(false, true), riA, residues[j].toFormattedString(false, true), rjC, residues[i].toFormattedString(false, true), riB, residues[j].toFormattedString(false, true), rjD, goldsteinEnergy, ensembleBuffer));
                 StringBuffer sb = new StringBuffer();
                 for (int m = 0; m < missedResidues.size(); m++) {
                     Residue residueM = missedResidues.get(m);
