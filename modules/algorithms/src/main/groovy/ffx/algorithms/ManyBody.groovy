@@ -220,6 +220,18 @@ class ManyBody extends Script {
         @Option(shortName = 'z', longName = 'revert',
                 description = 'Undo an unfavorable change.')
         boolean noRevert
+        /**
+         * -tC or --twoBodyCutoff Cutoff distance for two-body interactions.
+         */
+        @Option(shortName = 'tC', longName = 'twoBodyCutoff', defaultValue = '-1.0',
+                description = 'Cutoff distance for two body interactions.')
+        double twoBodyCutoff
+        /**
+         * -thC or --threeBodyCutoff Cutoff distance for three-body interactions.
+         */
+        @Option(shortName = 'thC', longName = 'threeBodyCutoff', defaultValue = '9.0',
+                description = 'Cutoff distance for three-body interactions.')
+        double threeBodyCutoff
 
         /**
          * The final argument(s) should be one or more filenames.
@@ -254,7 +266,12 @@ class ManyBody extends Script {
         boolean revert = !options.noRevert
         boolean useOrigCoordsRotamer = !options.original
         boolean verboseEnergies = options.verbose
-        boolean decomposeOriginal = options.decompose;
+        boolean decomposeOriginal = options.decompose
+        double twoBodyCutoff = options.twoBodyCutoff
+        double threeBodyCutoff = options.threeBodyCutoff
+        if (decomposeOriginal) {
+            useOrigCoordsRotamer = true;
+        }
 
         // By default, rotamer optimization should silence GK warnings, because occasionally we will have unreasonable configurations.
         if (System.getProperty("gk-suppressWarnings") == null) {
@@ -477,6 +494,8 @@ class ManyBody extends Script {
         active.getPotentialEnergy().setPrintOnFailure(false, false);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
+        rotamerOptimization.setTwoBodyCutoff(twoBodyCutoff);
+        rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
         rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
         rotamerOptimization.setUseGoldstein(useGoldstein);
         rotamerOptimization.setRevert(revert);

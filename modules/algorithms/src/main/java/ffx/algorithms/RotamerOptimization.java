@@ -178,7 +178,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Two-Body cutoff distance.
      */
-    protected double twoBodyCutoffDist = Double.MAX_VALUE;
+    protected double twoBodyCutoffDist;
     /**
      * Two-body energies for each pair of residues and pair of rotamers.
      * [residue1][rotamer1][residue2][rotamer2]
@@ -195,7 +195,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Three-body cutoff distance.
      */
-    private double threeBodyCutoffDist = 9.0;
+    private double threeBodyCutoffDist;
     /**
      * Trimer-energies for each trimer of rotamers.
      * [residue1][rotamer1][residue2][rotamer2][residue3][rotamer3]
@@ -3536,7 +3536,7 @@ public class RotamerOptimization implements Terminatable {
             }
             return dist;
         } else {
-            double minDist = Double.NaN;
+            double minDist = Double.MAX_VALUE;
             if (i > j) {
                 for (int rotJ = 0; rotJ < distanceMatrix[j].length; rotJ++) {
                     for (int rotI = 0; rotI < distanceMatrix[j][rotI][i].length; rotI++) {
@@ -7713,8 +7713,18 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
+    public void setTwoBodyCutoff(double twoBodyCutoffDist){
+        this.twoBodyCutoffDist = twoBodyCutoffDist;
+    }
+    
+    public void setThreeBodyCutoff(double threeBodyCutoffDist){
+        this.threeBodyCutoffDist = threeBodyCutoffDist;
+    }
     public void setTestOverallOpt(boolean testing) {
         this.testing = testing;
+        distanceMethod = DistanceMethod.ROTAMER;
+        setTwoBodyCutoff(Double.MAX_VALUE);
+        setThreeBodyCutoff(9.0);
     }
 
     public void setTestSelfEnergyEliminations(boolean testSelfEnergyEliminations) {
@@ -7723,6 +7733,9 @@ public class RotamerOptimization implements Terminatable {
         testPairEnergyEliminations = -1;
         testTripleEnergyEliminations1 = -1;
         testTripleEnergyEliminations2 = -1;
+        distanceMethod = DistanceMethod.ROTAMER;
+        setTwoBodyCutoff(Double.MAX_VALUE);
+        setThreeBodyCutoff(9.0);
     }
 
     public void setTestPairEnergyEliminations(int testPairEnergyEliminations) {
@@ -7731,6 +7744,9 @@ public class RotamerOptimization implements Terminatable {
         testSelfEnergyEliminations = false;
         testTripleEnergyEliminations1 = -1;
         testTripleEnergyEliminations2 = -1;
+        distanceMethod = DistanceMethod.ROTAMER;
+        setTwoBodyCutoff(Double.MAX_VALUE);
+        setThreeBodyCutoff(9.0);
     }
 
     public void setTestTripleEnergyEliminations(int testTripleEnergyEliminations1, int testTripleEnergyEliminations2) {
@@ -7739,6 +7755,9 @@ public class RotamerOptimization implements Terminatable {
         this.testTripleEnergyEliminations2 = testTripleEnergyEliminations2;
         testSelfEnergyEliminations = false;
         testPairEnergyEliminations = -1;
+        distanceMethod = DistanceMethod.ROTAMER;
+        setTwoBodyCutoff(Double.MAX_VALUE);
+        setThreeBodyCutoff(9.0);
     }
 
     public enum Algorithm {
