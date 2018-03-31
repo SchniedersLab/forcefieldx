@@ -220,6 +220,18 @@ class ManyBody extends Script {
         @Option(shortName = 'z', longName = 'revert',
                 description = 'Undo an unfavorable change.')
         boolean noRevert
+        /**
+         * -tC or --twoBodyCutoff Cutoff distance for two-body interactions.
+         */
+        @Option(shortName = 'tC', longName = 'twoBodyCutoff', defaultValue = '-1.0',
+                description = 'Cutoff distance for two body interactions.')
+        double twoBodyCutoff
+        /**
+         * -thC or --threeBodyCutoff Cutoff distance for three-body interactions.
+         */
+        @Option(shortName = 'thC', longName = 'threeBodyCutoff', defaultValue = '9.0',
+                description = 'Cutoff distance for three-body interactions.')
+        double threeBodyCutoff
 
         /**
          * The final argument(s) should be one or more filenames.
@@ -255,8 +267,9 @@ class ManyBody extends Script {
         boolean useOrigCoordsRotamer = !options.original
         boolean verboseEnergies = options.verbose
         boolean decomposeOriginal = options.decompose
+        double twoBodyCutoff = options.twoBodyCutoff
+        double threeBodyCutoff = options.threeBodyCutoff
         if (decomposeOriginal) {
-            algorithm = 0;
             useOrigCoordsRotamer = true;
         }
 
@@ -481,6 +494,8 @@ class ManyBody extends Script {
         active.getPotentialEnergy().setPrintOnFailure(false, false);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
+        rotamerOptimization.setTwoBodyCutoff(twoBodyCutoff);
+        rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
         rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
         rotamerOptimization.setUseGoldstein(useGoldstein);
         rotamerOptimization.setRevert(revert);
@@ -674,28 +689,7 @@ class ManyBody extends Script {
 
         if (decomposeOriginal) {
             rLib.setUseOrigCoordsRotamer(true);
-            boolean doQuadsInParallel = true;
-            if (!options.listResidues.equalsIgnoreCase('none')) {
-                rotamerOptimization.decomposeOriginal(residueList.toArray(new Residue[0]));
-            } else if (!doQuadsInParallel) {
-                String quadsProp = System.getProperty("evalQuad");
-                if (quadsProp != null && quadsProp.equalsIgnoreCase("true")) {
-                    Residue[] residueArray = residueList.toArray(new Residue[residueList.size()]);
-
-                    int numQuadsNew = prop("ro.numQuads", 0);
-                    boolean quadsPropNew = (numQuadsNew > 0);
-                    double quadsCutoffNew = prop("ro.quadCutoff", 5.0);
-
-                    rotamerOptimization.decomposeOriginalQuads(quadsCutoff, numQuads);
-                }
-            } else {
-                rotamerOptimization.decomposeOriginalParallel();
-            }
-            if (master) {
-                logger.info(String.format("\n"));
-                energy();
-            }
-            return;
+            rotamerOptimization.setDecomposeOriginal(true);
         }
 
         if (algorithm == 1) {

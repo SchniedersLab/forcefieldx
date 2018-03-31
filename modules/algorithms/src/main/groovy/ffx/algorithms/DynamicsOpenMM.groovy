@@ -168,6 +168,7 @@ class DynamicsOpenMM extends Script{
         MolecularDynamics moldyn = MolecularDynamics.dynamicsFactory(active, forceFieldEnergy, active.getProperties(), sh, thermostat, integrator)
         if (moldyn instanceof MolecularDynamicsOpenMM){
             moldyn.setRestartFrequency(restartFrequency);
+            moldyn.setFileType(fileType);
             moldyn.setIntervalSteps(intervalSteps);
             moldyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
         }

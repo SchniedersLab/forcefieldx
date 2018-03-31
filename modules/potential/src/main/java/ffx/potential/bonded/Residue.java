@@ -1087,6 +1087,27 @@ public class Residue extends MSGroup {
     private String shortString = null;
 
     /**
+     * Formats this residue with some optional inclusions.
+     *
+     * [residue type]-[chain ID]ResNumber-Name.
+     *
+     * @param addResType Include the residue type
+     * @param addChainID Include the chain ID.
+     * @return A descriptive string.
+     */
+    public String toFormattedString(boolean addResType, boolean addChainID) {
+        StringBuilder sb = new StringBuilder();
+        if (addResType) {
+            sb.append(residueType.toString()).append("-");
+        }
+        if (addChainID) {
+            sb.append(chainID);
+        }
+        sb.append(toString());
+        return sb.toString();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -1329,9 +1350,9 @@ public class Residue extends MSGroup {
 
     public enum AA {
 
-        GLYCINE, ALANINE, VALINE, LEUCINE, ILLUECINE, SERINE, THREONINE,
-        CYSTIENE, PROLINE, PHENYLALANINE, TYROSINE, TYPTOPHAN, ASPARTATE,
-        ASPARTAMINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
+        GLYCINE, ALANINE, VALINE, LEUCINE, ISOLEUCINE, SERINE, THREONINE,
+        CYSTEINE, PROLINE, PHENYLALANINE, TYROSINE, TRYPTOPHAN, ASPARTATE,
+        ASPARAGINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE,
         HISTIDINE;
     }
 

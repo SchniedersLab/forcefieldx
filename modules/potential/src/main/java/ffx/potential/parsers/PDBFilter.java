@@ -1334,7 +1334,8 @@ public final class PDBFilter extends SystemFilter {
                             List<Atom> cysAtoms = residue.getAtomList();
                             Atom SG1 = null;
                             for (Atom atom : cysAtoms) {
-                                if (atom.getName().equalsIgnoreCase("SG")) {
+                                String atName = atom.getName().toUpperCase();
+                                if (atName.equals("SG") || atName.equals("SH")) {
                                     SG1 = atom;
                                     break;
                                 }
