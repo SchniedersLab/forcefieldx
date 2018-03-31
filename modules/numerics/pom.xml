@@ -87,9 +87,9 @@
             <version>${jcuda.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.jogamp.jocl</groupId>
-            <artifactId>jocl</artifactId>
-            <version>${jocl.version}</version>
+            <groupId>org.jogamp</groupId>
+            <artifactId>jogamp-fat</artifactId>
+            <version>${jogamp-fat.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

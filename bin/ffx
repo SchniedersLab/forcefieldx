@@ -96,8 +96,8 @@ CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
 # These flags for for JDK 8.
 EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx1G -Xss1M"
 
-# Flags below are needed for JDK 9 and above.
-# EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx1G -Xss1M --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
+# Flags below are recommend for JDK 9 and above.
+EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx1G -Xss1M --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then

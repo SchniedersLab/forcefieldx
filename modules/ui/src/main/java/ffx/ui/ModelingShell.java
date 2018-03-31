@@ -145,6 +145,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         headless = java.awt.GraphicsEnvironment.isHeadless();
         initContext();
         loadPrefs();
+
     }
 
     /**
@@ -483,29 +484,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         }
     }
 
-    /*
-     @Override
-     public void runScript() {
-     runScript(null);
-     }
-
-     @Override
-     public void runScript(EventObject evt) {
-     scriptStartup();
-     super.runScript(evt);
-     }
-
-     @Override
-     public void runSelectedScript() {
-     runSelectedScript(null);
-     }
-
-     @Override
-     public void runSelectedScript(EventObject evt) {
-     scriptStartup();
-     super.runSelectedScript(evt);
-     }
-     */
     /**
      * {@inheritDoc}
      *
@@ -639,8 +617,8 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         } else if (string.equals("groovy> ")) {
             string = " ffx> ";
         }
-        super.appendOutputNl(string, style);
 
+        super.appendOutputNl(string, style);
         if (EventQueue.isDispatchThread()) {
             scroll();
         } else {

@@ -158,6 +158,7 @@ public class LogHandler extends Handler {
                 mainPanel.setExitType(ExitStatus.SEVERE);
                 mainPanel.exit();
             }
+
             ModelingShell shell = null;
             if (mainPanel != null) {
                 shell = mainPanel.getModelingShell();

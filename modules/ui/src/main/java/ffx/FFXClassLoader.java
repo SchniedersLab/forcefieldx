@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -65,7 +65,6 @@ import java.util.jar.JarFile;
  * JVMs.
  *
  * @author Michael J. Schnieders; derived from work by Emmanuel Puybaret
- *
  */
 public class FFXClassLoader extends URLClassLoader {
 
@@ -73,187 +72,138 @@ public class FFXClassLoader extends URLClassLoader {
     private final Map<String, String> extensionDlls = new HashMap<>();
     private JarFile[] extensionJars = null;
     private final String[] applicationPackages = {"ffx",
-        "javax.media.j3d",
-        "javax.vecmath",
-        "javax.media.opengl",
-        "com.sun.j3d",
-        "groovy",
-        "org.codehaus.groovy",
-        "org.apache.commons.cli",
-        "org.apache.commons.configuration",
-        "org.apache.commons.io",
-        "org.apache.commons.lang",
-        "org.apache.commons.lang3",
-        "org.apache.commons.math3",
-        "org.jogamp",
-        "org.openscience.cdk",
-        "edu.rit.pj",
-        "org.bridj",
-        "jcuda"};
+            "javax.media.j3d",
+            "javax.vecmath",
+            "javax.media.opengl",
+            "com.sun.j3d",
+            "groovy",
+            "org.codehaus.groovy",
+            "org.apache.commons.cli",
+            "org.apache.commons.configuration",
+            "org.apache.commons.io",
+            "org.apache.commons.lang",
+            "org.apache.commons.lang3",
+            "org.apache.commons.math3",
+            "org.jogamp",
+            "org.openscience.cdk",
+            "edu.rit.pj",
+            "org.bridj",
+            "jcuda"};
     static final List<String> FFX_FILES;
-    private static String gluegen = null;
-    private static String jogl = null;
-    private static String jocl = null;
-    private static String nativeExtension = null;
     private boolean extensionsLoaded = false;
 
     static {
         FFX_FILES = new ArrayList<>(Arrays.asList(new String[]{
-            "edu.uiowa.eng.ffx/algorithms.jar",
-            "edu.uiowa.eng.ffx/autoparm.jar",
-            "edu.uiowa.eng.ffx/binding.jar",
-            "edu.uiowa.eng.ffx/crystal.jar",
-            "edu.uiowa.eng.ffx/numerics.jar",
-            "edu.uiowa.eng.ffx/potential.jar",
-            "edu.uiowa.eng.ffx/ui.jar",
-            "edu.uiowa.eng.ffx/utilities.jar",
-            "edu.uiowa.eng.ffx/xray.jar",
-            "edu.uiowa.eng.ffx/pj.jar",
-            // Force Field X Extensions
-            "edu.uiowa.eng.ffx/algorithms-ext.jar",
-            "edu.uiowa.eng.ffx/xray-ext.jar",
-            // Groovy
-            "org.codehaus.groovy/groovy-all.jar",
-            // MRJ Toolkit for OS X"
-            "mrj/MRJToolkitStubs.jar",
-            // CUDA
-            "jcuda/jcuda-all.jar",
-            // Java3D 1.6.0 (depends on JOGL v. 2.3.0)
-            "java3d/j3dcore.jar",
-            "java3d/j3dutils.jar",
-            "java3d/j3dvrml.jar",
-            "java3d/vecmath.jar",
-            // JOGAMP Fat Jar (includes GLUEGEN, JOGL and JOCL)
-            "org.jogamp/jogamp-fat.jar",
-            // Apache Commons
-            "commons-beanutils/commons-beanutils.jar",
-            "commons-cli/commons-cli.jar",
-            "commons-collections/commons-collections.jar",
-            "commons-collections/commons-collections4.jar",
-            "commons-configuration/commons-configuration.jar",
-            "commons-digester/commons-digester.jar",
-            "commons-io/commons-io.jar",
-            "commons-lang/commons-lang.jar",
-            "commons-lang/commons-lang3.jar",
-            "commons-logging/commons-logging.jar",
-            "commons-math/commons-math3.jar",
-            // CDK Libraries
-            "org.openscience.cdk/cdk-interfaces.jar",
-            "org.openscience.cdk/cdk-ioformats.jar",
-            "org.openscience.cdk/cdk-standard.jar",
-            "org.openscience.cdk/cdk-qsarmolecular.jar",
-            "org.openscience.cdk/cdk-charges.jar",
-            "org.openscience.cdk/cdk-smarts.jar",
-            "org.openscience.cdk/cdk-reaction.jar",
-            "org.openscience.cdk/cdk-fragment.jar",
-            "org.openscience.cdk/cdk-dict.jar",
-            "org.openscience.cdk/cdk-qsar.jar",
-            "org.openscience.cdk/cdk-formula.jar",
-            "org.openscience.cdk/cdk-hash.jar",
-            "org.openscience.cdk/cdk-atomtype.jar",
-            "org.openscience.cdk/cdk-isomorphism.jar",
-            "org.openscience.cdk/cdk-valencycheck.jar",
-            "org.openscience.cdk/cdk-smiles.jar",
-            "org.openscience.cdk/",
-            "org.openscience.cdk/cdk-io.jar",
-            "org.openscience.cdk/cdk-core.jar",
-            "org.openscience.cdk/cdk-silent.jar",
-            "org.openscience.cdk/cdk-inchi.jar",
-            "org.openscience.cdk/cdk-builder3d.jar",
-            "org.openscience.cdk/cdk-forcefield.jar",
-            "org.openscience.cdk/cdk-sdg.jar",
-            "org.openscience.cdk/cdk-data.jar",
-            "org.openscience.cdk/cdk-extra.jar",
-            "org.openscience.cdk/cdk-smsd.jar",
-            "org.openscience.cdk/cdk-core.jar",
-            "org.openscience.cdk/cdk-dict.jar",
-            "org.openscience.cdk/cdk-formula.jar",
-            "org.openscience.cdk/cdk-interfaces.jar",
-            "org.openscience.cdk/cdk-ioformats.jar",
-            "org.openscience.cdk/cdk-standard.jar",
-            //Google Libraraies
-            "com.google.guava/guava.jar",
-            //ebi.beam Libraries
-            "uk.ac.ebi.beam/beam-core.jar",
-            "uk.ac.ebi.beam/beam-func.jar",
-            // Java Help
-            "javax.help/javahelp.jar",
-            // BioJava
-            "org.biojava/biojava3-core.jar",
-            "org.biojava/core.jar",
-            "org.biojava/bytecode.jar",
-            "org.biojava/biojava3-structure.jar",
-            "org.biojava/biojava3-alignment.jar",
-            "org.biojava/biojava3-phylo.jar",
-            // Lars Behnke's hierarchical-clustering-java
-            "com.apporiented/hierarchical-clustering.jar",
-            // OpenMM
-            "simtk/openmm.jar",
-            "net.java.dev.jna/jna.jar"
+                "edu.uiowa.eng.ffx/algorithms.jar",
+                "edu.uiowa.eng.ffx/autoparm.jar",
+                "edu.uiowa.eng.ffx/binding.jar",
+                "edu.uiowa.eng.ffx/crystal.jar",
+                "edu.uiowa.eng.ffx/numerics.jar",
+                "edu.uiowa.eng.ffx/potential.jar",
+                "edu.uiowa.eng.ffx/ui.jar",
+                "edu.uiowa.eng.ffx/utilities.jar",
+                "edu.uiowa.eng.ffx/xray.jar",
+                "edu.uiowa.eng.ffx/pj.jar",
+                // Force Field X Extensions
+                "edu.uiowa.eng.ffx/algorithms-ext.jar",
+                "edu.uiowa.eng.ffx/xray-ext.jar",
+                // Groovy
+                "org.codehaus.groovy/groovy-all.jar",
+                // MRJ Toolkit for OS X"
+                "mrj/MRJToolkitStubs.jar",
+                // CUDA
+                "jcuda/jcuda-all.jar",
+                // Java3D 1.6.0 (depends on JOGL v. 2.3.0)
+                "java3d/j3dcore.jar",
+                "java3d/j3dutils.jar",
+                "java3d/j3dvrml.jar",
+                "java3d/vecmath.jar",
+                // JOGAMP Fat Jar (includes GLUEGEN, JOGL and JOCL)
+                "org.jogamp/jogamp-fat.jar",
+                // Apache Commons
+                "commons-beanutils/commons-beanutils.jar",
+                "commons-cli/commons-cli.jar",
+                "commons-collections/commons-collections.jar",
+                "commons-collections/commons-collections4.jar",
+                "commons-configuration/commons-configuration.jar",
+                "commons-digester/commons-digester.jar",
+                "commons-io/commons-io.jar",
+                "commons-lang/commons-lang.jar",
+                "commons-lang/commons-lang3.jar",
+                "commons-logging/commons-logging.jar",
+                "commons-math/commons-math3.jar",
+                // CDK Libraries
+                "org.openscience.cdk/cdk-interfaces.jar",
+                "org.openscience.cdk/cdk-ioformats.jar",
+                "org.openscience.cdk/cdk-standard.jar",
+                "org.openscience.cdk/cdk-qsarmolecular.jar",
+                "org.openscience.cdk/cdk-charges.jar",
+                "org.openscience.cdk/cdk-smarts.jar",
+                "org.openscience.cdk/cdk-reaction.jar",
+                "org.openscience.cdk/cdk-fragment.jar",
+                "org.openscience.cdk/cdk-dict.jar",
+                "org.openscience.cdk/cdk-qsar.jar",
+                "org.openscience.cdk/cdk-formula.jar",
+                "org.openscience.cdk/cdk-hash.jar",
+                "org.openscience.cdk/cdk-atomtype.jar",
+                "org.openscience.cdk/cdk-isomorphism.jar",
+                "org.openscience.cdk/cdk-valencycheck.jar",
+                "org.openscience.cdk/cdk-smiles.jar",
+                "org.openscience.cdk/",
+                "org.openscience.cdk/cdk-io.jar",
+                "org.openscience.cdk/cdk-core.jar",
+                "org.openscience.cdk/cdk-silent.jar",
+                "org.openscience.cdk/cdk-inchi.jar",
+                "org.openscience.cdk/cdk-builder3d.jar",
+                "org.openscience.cdk/cdk-forcefield.jar",
+                "org.openscience.cdk/cdk-sdg.jar",
+                "org.openscience.cdk/cdk-data.jar",
+                "org.openscience.cdk/cdk-extra.jar",
+                "org.openscience.cdk/cdk-smsd.jar",
+                "org.openscience.cdk/cdk-core.jar",
+                "org.openscience.cdk/cdk-dict.jar",
+                "org.openscience.cdk/cdk-formula.jar",
+                "org.openscience.cdk/cdk-interfaces.jar",
+                "org.openscience.cdk/cdk-ioformats.jar",
+                "org.openscience.cdk/cdk-standard.jar",
+                //Google Libraraies
+                "com.google.guava/guava.jar",
+                //ebi.beam Libraries
+                "uk.ac.ebi.beam/beam-core.jar",
+                "uk.ac.ebi.beam/beam-func.jar",
+                // Java Help
+                "javax.help/javahelp.jar",
+                // BioJava
+                "org.biojava/biojava3-core.jar",
+                "org.biojava/core.jar",
+                "org.biojava/bytecode.jar",
+                "org.biojava/biojava3-structure.jar",
+                "org.biojava/biojava3-alignment.jar",
+                "org.biojava/biojava3-phylo.jar",
+                // Lars Behnke's hierarchical-clustering-java
+                "com.apporiented/hierarchical-clustering.jar",
+                // OpenMM
+                "simtk/openmm.jar",
+                "net.java.dev.jna/jna.jar"
         }));
 
         String osName = System.getProperty("os.name").toUpperCase();
         String osArch = System.getProperty("sun.arch.data.model");
         final boolean x8664 = "64".equals(osArch);
 
-        if ("MAC OS X".equals(osName)) {
-            nativeExtension = "-natives-macosx-universal.jar";
-            // Gluegen Runtime Universal Binaries
-            FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-macosx-universal.jar");
-            // JOGL Universal Binaries
-            FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-macosx-universal.jar");
-            // JOCL Universal Binaries
-            FFX_FILES.add("org.jogamp.jocl/jocl-natives-macosx-universal.jar");
-            if (x8664) {
-                // JCUDA
+        // JCUDA
+        if (x8664) {
+            if ("MAC OS X".equals(osName)) {
                 FFX_FILES.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
                 FFX_FILES.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
                 FFX_FILES.add("64-bit/libJCufft-apple-x86_64.jnilib");
-            }
-        } else if ("LINUX".equals(osName)) {
-            if (x8664) {
-                nativeExtension = "-natives-linux-amd64.jar";
-                FFX_FILES.add("64-bit/libJCufft-linux-x86_64.so");
-                // Gluegen Runtime
-                FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-linux-amd64.jar");
-                // JOGL
-                FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-linux-amd64.jar");
-                // JOCL
-                FFX_FILES.add("org.jogamp.jocl/jocl-natives-linux-amd64.jar");
-                // JCUDA
+            } else if ("LINUX".equals(osName)) {
                 FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
                 FFX_FILES.add("64-bit/libJCudaRuntime-linux-x86_64.so");
-            } else {
-                nativeExtension = "-natives-linux-i586.jar";
-                // Gluegen Runtime
-                FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-linux-i586.jar");
-                // JOGL
-                FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-linux-i586.jar");
-                // JOCL
-                FFX_FILES.add("org.jogamp.jocl/jocl-natives-linux-i586.jar");
-            }
-        } else if (osName.startsWith(
-                "WINDOWS")) {
-            if (x8664) {
-                nativeExtension = "-natives-windows-amd64.jar";
-                // Gluegen Runtime
-                FFX_FILES.add("org.jogamp.glugen/gluegen-rt-natives-windows-amd64.jar");
-                // JOGL
-                FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-windows-amd64.jar");
-                // JOCL
-                FFX_FILES.add("org.jogamp.jocl/jocl-natives-windows-amd64.jar");
-                // JCUDA
+            } else if (osName.startsWith("WINDOWS")) {
                 FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
                 FFX_FILES.add("64-bit/JCudaRuntime-linux-x86_64.dll");
                 FFX_FILES.add("64-bit/JCufft-linux-x86_64.dll");
-            } else {
-                nativeExtension = "-natives-windows-i586.jar";
-                // Gluegen Runtime
-                FFX_FILES.add("org.jogamp.gluegen/gluegen-rt-natives-windows-i586.jar");
-                // JOGL
-                FFX_FILES.add("org.jogamp.jogl/jogl-all-natives-windows-i586.jar");
-                // JOCL
-                FFX_FILES.add("org.jogamp.jocl/jocl-natives-windows-i586.jar");
             }
         }
     }
@@ -323,32 +273,25 @@ public class FFXClassLoader extends URLClassLoader {
     /**
      * Returns the file name of a temporary copy of <code>input</code> content.
      *
-     * @param input a {@link java.io.InputStream} object.
-     * @param name a {@link java.lang.String} object.
+     * @param input  a {@link java.io.InputStream} object.
+     * @param name   a {@link java.lang.String} object.
      * @param suffix a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
      * @throws java.io.IOException if any.
      */
     public static String copyInputStreamToTmpFile(final InputStream input,
-            String name, final String suffix) throws IOException {
+                                                  String name, final String suffix) throws IOException {
         File tmpFile = null;
 
-        if (name.contains("gluegen-rt") && name.contains("natives")) {
-            tmpFile = new File(gluegen + nativeExtension);
-        } else if (name.contains("jogl-all") && name.contains("natives")) {
-            tmpFile = new File(jogl + nativeExtension);
-        } else if (name.contains("jocl") && name.contains("natives")) {
-            tmpFile = new File(jocl + nativeExtension);
-        } else {
-            try {
-                name = "ffx." + name + ".";
-                tmpFile = File.createTempFile(name, suffix);
-            } catch (IOException e) {
-                System.out.println(" Could not extract a Force Field X library.");
-                System.err.println(e.toString());
-                System.exit(-1);
-            }
+        try {
+            name = "ffx." + name + ".";
+            tmpFile = File.createTempFile(name, suffix);
+        } catch (IOException e) {
+            System.out.println(" Could not extract a Force Field X library.");
+            System.err.println(e.toString());
+            System.exit(-1);
         }
+
 
         tmpFile.deleteOnExit();
 
@@ -374,7 +317,7 @@ public class FFXClassLoader extends URLClassLoader {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Finds and defines the given class among the extension JARs given in
      * constructor, then among resources.
      */
@@ -455,7 +398,7 @@ public class FFXClassLoader extends URLClassLoader {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns the library path of an extension DLL.
      */
     @Override
@@ -475,7 +418,7 @@ public class FFXClassLoader extends URLClassLoader {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns the URL of the given resource searching first if it exists among
      * the extension JARs given in constructor.
      */
@@ -508,7 +451,7 @@ public class FFXClassLoader extends URLClassLoader {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Loads a class with this class loader if its package belongs to
      * <code>applicationPackages</code> given in constructor.
      */
@@ -593,13 +536,6 @@ public class FFXClassLoader extends URLClassLoader {
                                 name, ".jar");
                         // Add extracted file to the extension jars list
                         extensionJarList.add(new JarFile(extensionJar, false));
-                        if (name.equals("gluegen-rt")) {
-                            gluegen = extensionJar.substring(0, extensionJar.length() - 4);
-                        } else if (name.equals("jogl-all")) {
-                            jogl = extensionJar.substring(0, extensionJar.length() - 4);
-                        } else if (name.equals("jocl")) {
-                            jocl = extensionJar.substring(0, extensionJar.length() - 4);
-                        }
                     } else if (extensionJarOrDll.endsWith(dllSuffix)) {
                         int start = lastSlashIndex + 1 + dllPrefix.length();
                         int end = extensionJarOrDll.indexOf(dllSuffix);
