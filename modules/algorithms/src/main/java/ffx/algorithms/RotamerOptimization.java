@@ -5272,8 +5272,17 @@ public class RotamerOptimization implements Terminatable {
             int nSymm = crystal.spaceGroup.getNumberOfSymOps();
             logger.info("\n Computing Residue Distance Matrix");
 
+            double nlistCutoff = Math.max(Math.max(distance, twoBodyCutoffDist), threeBodyCutoffDist);
+            /**
+             * I think this originated from the fact that side-chain
+             * (and later nucleic acid) atoms could be fairly distant
+             * from the reference atom.
+             */
+            double magicNumberBufferOfUnknownOrigin = 25.0;
+            nlistCutoff += magicNumberBufferOfUnknownOrigin;
+
             NeighborList neighborList = new NeighborList(null, crystal,
-                    atoms, distance + 25.0, 0.0, parallelTeam);
+                    atoms, nlistCutoff, 0.0, parallelTeam);
 
             // Expand coordinates
             double xyz[][] = new double[nSymm][3 * numResidues];
