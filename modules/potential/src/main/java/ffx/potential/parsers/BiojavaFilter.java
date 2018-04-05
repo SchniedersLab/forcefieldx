@@ -140,11 +140,11 @@ import static ffx.potential.bonded.NucleicAcidUtils.NA_H1;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H21;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H22;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H3;
-import static ffx.potential.bonded.NucleicAcidUtils.NA_H3T;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_HO3T;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H4;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H51;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H52;
-import static ffx.potential.bonded.NucleicAcidUtils.NA_H5T;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_HO5T;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_O2;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_O3;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_O4;
@@ -1091,7 +1091,7 @@ public class BiojavaFilter extends ConversionFilter {
      * Assign atom types for a nucleic acid polymer.
      *
      * @param residues
-     * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
+     * @throws MissingHeavyAtomException
      */
     private void assignNucleicAcidAtomTypes(List<Residue> residues)
             throws MissingHeavyAtomException, MissingAtomTypeException {
@@ -1294,7 +1294,7 @@ public class BiojavaFilter extends ConversionFilter {
              * Build the backbone hydrogen atoms.
              */
             if (position == FIRST_RESIDUE && phosphate == null) {
-                buildHydrogen(residue, "H5T", O5s, 1.00e0, C5s, 109.5e0, C4s, 180.0e0, 0, NA_H5T[naNumber]);
+                buildHydrogen(residue, "HO5\'", O5s, 1.00e0, C5s, 109.5e0, C4s, 180.0e0, 0, NA_HO5T[naNumber]);
             }
             buildHydrogen(residue, "H5\'1", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, 1, NA_H51[naNumber]);
             buildHydrogen(residue, "H5\'2", C5s, 1.09e0, O5s, 109.5e0, C4s, 109.5e0, -1, NA_H52[naNumber]);
@@ -1317,7 +1317,7 @@ public class BiojavaFilter extends ConversionFilter {
             }
             buildHydrogen(residue, "H1\'", C1s, 1.09e0, O4s, 109.5e0, C2s, 109.5e0, -1, NA_H1[naNumber]);
             if (position == LAST_RESIDUE || numberOfResidues == 1) {
-                buildHydrogen(residue, "H3T", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, NA_H3T[naNumber]);
+                buildHydrogen(residue, "HO3\'", O3s, 1.00e0, C3s, 109.5e0, C4s, 180.0e0, 0, NA_HO3T[naNumber]);
                 // Else, if it is terminated by a 3' phosphate cap:
                 // Will need to see how PDB would label a 3' phosphate cap.
             }
@@ -1369,7 +1369,7 @@ public class BiojavaFilter extends ConversionFilter {
      * @param residue The residue node.
      * @param C1s The CS* attachement atom.
      *
-     * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
+     * @throws MissingHeavyAtomException
      *
      * @since 1.0
      */
@@ -1784,7 +1784,7 @@ public class BiojavaFilter extends ConversionFilter {
      * @param aminoAcid
      * @param position
      * @param residue
-     * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
+     * @throws MissingHeavyAtomException
      */
     private void checkForMissingHeavyAtoms(int aminoAcidNumber, AminoAcid3 aminoAcid,
             ResiduePosition position, Residue residue) throws MissingHeavyAtomException {
@@ -1833,7 +1833,7 @@ public class BiojavaFilter extends ConversionFilter {
      *
      * @param residues The residues to assign atom types to.
      *
-     * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
+     * @throws MissingHeavyAtomException
      *
      * @since 1.0
      */

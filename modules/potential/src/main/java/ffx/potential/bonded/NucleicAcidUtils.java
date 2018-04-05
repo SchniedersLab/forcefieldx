@@ -38,7 +38,10 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -64,6 +67,22 @@ import static ffx.potential.bonded.ResidueEnumerations.nucleicAcidList;
 public class NucleicAcidUtils {
 
     private static final Logger logger = Logger.getLogger(NucleicAcidUtils.class.getName());
+
+    /**
+     * Substitutes from old PDB nucleic acid atom names to new ones.
+     */
+    private static final Map<String, String> newNucleicAcidAtomNames;
+    static {
+        Map<String, String> naAtomSubs = new HashMap<>();
+        naAtomSubs.put("HO'", "HO2\'");
+        naAtomSubs.put("H3T", "HO3\'");
+        naAtomSubs.put("H5\'1", "H5\'");
+        naAtomSubs.put("H5\'2", "H5\'\'");
+        naAtomSubs.put("H5T", "HO5\'");
+        naAtomSubs.put("H2\'1", "H2\'");
+        naAtomSubs.put("H2\'2", "H2\'\'");
+        newNucleicAcidAtomNames = Collections.unmodifiableMap(naAtomSubs);
+    }
 
     /**
      * Assign atom types for a nucleic acid polymer.
@@ -112,6 +131,7 @@ public class NucleicAcidUtils {
                 Atom atom = resAtoms.get(i);
                 String name = atom.getName();
                 name = name.replace('*', '\'');
+                name = newNucleicAcidAtomNames.getOrDefault(name, name);
                 //name = name.replace('D', 'H');
                 atom.setName(name);
             }
@@ -257,26 +277,27 @@ public class NucleicAcidUtils {
              * Build the backbone hydrogen atoms.
              */
             if (position == FIRST_RESIDUE && phosphate == null) {
-                buildHydrogen(residue, "H5T", sugarO5, 1.00e0, sugarC5, 109.5e0,
-                        sugarC4, 180.0e0, 0, NA_H5T[naNumber], forceField, bondList);
+                buildHydrogen(residue, "HO5\'", sugarO5, 1.00e0, sugarC5, 109.5e0,
+                        sugarC4, 180.0e0, 0, NA_HO5T[naNumber], forceField, bondList);
             }
-            buildHydrogen(residue, "H5\'1", sugarC5, 1.09e0, sugarO5, 109.5e0,
+            buildHydrogen(residue, "H5\'", sugarC5, 1.09e0, sugarO5, 109.5e0,
                     sugarC4, 109.5e0, 1, NA_H51[naNumber], forceField, bondList);
-            buildHydrogen(residue, "H5\'2", sugarC5, 1.09e0, sugarO5, 109.5e0,
+            buildHydrogen(residue, "H5\'\'", sugarC5, 1.09e0, sugarO5, 109.5e0,
                     sugarC4, 109.5e0, -1, NA_H52[naNumber], forceField, bondList);
             buildHydrogen(residue, "H4\'", sugarC4, 1.09e0, sugarC5, 109.5e0,
                     sugarC3, 109.5e0, -1, NA_H4[naNumber], forceField, bondList);
             buildHydrogen(residue, "H3\'", sugarC3, 1.09e0, sugarC4, 109.5e0,
                     sugarC2, 109.5e0, -1, NA_H3[naNumber], forceField, bondList);
             if (isDNA) {
-                buildHydrogen(residue, "H2\'1", sugarC2, 1.09e0, sugarC3, 109.5e0,
+                buildHydrogen(residue, "H2\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
                         sugarC1, 109.5e0, -1, NA_H21[naNumber], forceField, bondList);
-                buildHydrogen(residue, "H2\'2", sugarC2, 1.09e0, sugarC3, 109.5e0,
+                buildHydrogen(residue, "H2\'\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
                         sugarC1, 109.5e0, 1, NA_H22[naNumber], forceField, bondList);
             } else {
                 buildHydrogen(residue, "H2\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
                         sugarC1, 109.5e0, -1, NA_H21[naNumber], forceField, bondList);
                 // Add the NA_O2' Methyl for OMC and OMG
+                // Note: may be completely out-of-date with the current Chemical Component Dictionary.
                 if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
                     Atom CM2 = buildHeavy(residue, "CM2", sugarO2, 1427, forceField, bondList);
                     Atom HM21 = buildHydrogen(residue, "HM21", CM2, 1.08e0, sugarO2, 109.5e0,
@@ -286,15 +307,15 @@ public class NucleicAcidUtils {
                     buildHydrogen(residue, "HM23", CM2, 1.08e0, sugarO2, 109.5e0,
                             HM21, 109.5e0, -1, 1430, forceField, bondList);
                 } else {
-                    buildHydrogen(residue, "HO\'", sugarO2, 1.00e0, sugarC2, 109.5e0,
+                    buildHydrogen(residue, "HO2\'", sugarO2, 1.00e0, sugarC2, 109.5e0,
                             sugarC3, 180.0e0, 0, NA_H22[naNumber], forceField, bondList);
                 }
             }
             buildHydrogen(residue, "H1\'", sugarC1, 1.09e0, sugarO4, 109.5e0,
                     sugarC2, 109.5e0, -1, NA_H1[naNumber], forceField, bondList);
             if (position == LAST_RESIDUE || numberOfResidues == 1) {
-                buildHydrogen(residue, "H3T", sugarO3, 1.00e0, sugarC3, 109.5e0,
-                        sugarC4, 180.0e0, 0, NA_H3T[naNumber], forceField, bondList);
+                buildHydrogen(residue, "HO3\'", sugarO3, 1.00e0, sugarC3, 109.5e0,
+                        sugarC4, 180.0e0, 0, NA_HO3T[naNumber], forceField, bondList);
                 // Else, if it is terminated by a 3' phosphate cap:
                 // Will need to see how PDB would label a 3' phosphate cap.
             }
@@ -907,11 +928,13 @@ public class NucleicAcidUtils {
         1231, 1231, 1231, 1231, 1243, 1243, 1243, 1243, 0, 0, 0, 0,
         1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231
     };
-    public static final int[] NA_H5T = {
+    // Should be NA_HO5', but probably not a wise idea to have a ' in a name.
+    public static final int[] NA_HO5T = {
         1233, 1233, 1233, 1233, 1245, 1245, 1245, 1245, 0, 0, 0, 0,
         1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233
     };
-    public static final int[] NA_H3T = {
+    // Should be NA_HO3', but probably not a wise idea to have a ' in a name.
+    public static final int[] NA_HO3T = {
         1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0,
         1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238
     };
