@@ -256,7 +256,7 @@ public class NucleicAcidUtils {
             /**
              * Build the backbone hydrogen atoms.
              */
-            if (position == FIRST_RESIDUE && NA_P == null) {
+            if (position == FIRST_RESIDUE && phosphate == null) {
                 buildHydrogen(residue, "H5T", sugarO5, 1.00e0, sugarC5, 109.5e0,
                         sugarC4, 180.0e0, 0, NA_H5T[naNumber], forceField, bondList);
             }
