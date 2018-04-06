@@ -437,8 +437,6 @@ public class JobFrontend
             if (myNextRank != Np) {
                 System.err.println();
             }
-            System.err.println(String.format(" Underlying job backend process failure details: %s", exc.toString()));
-            exc.printStackTrace();
             terminateCancelJob(backendFailed(processinfo));
         }
     }
