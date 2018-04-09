@@ -567,8 +567,7 @@ public class Residue extends MSGroup {
                      * denoted with ' at the end. Note that we add the side chain
                      * atoms for NAs, instead of removing the backbone.
                      */
-                    if (name.contains("\'") || name.equals("P") || name.startsWith("OP") || name.equals("H5T")
-                            || name.equals("H3T")) {
+                    if (name.contains("\'") || name.equals("P") || name.startsWith("OP")) {
                         ret.add(atom);
                     }
                 }

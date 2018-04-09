@@ -978,7 +978,7 @@ public class RotamerLibrary {
                     }
                     return chi;
                 case NA:
-                    chi = new double[6];
+                    chi = new double[7];
                     try {
                         measureRotamer(residue, chi, print);
                     } catch (ArrayIndexOutOfBoundsException e) {
@@ -1083,12 +1083,12 @@ public class RotamerLibrary {
                 case DCY:
                 case DTY:
                     /*
-                     * If there is an H5T, measure alpha based on H5T.  Else,
+                     * If there is an HO5s, measure alpha based on HO5s.  Else,
                      * measure zeta (i-1) based on OP3 and alpha on P.
                      */
-                    Atom H5T = (Atom) residue.getAtomNode("H5T");
-                    if (H5T != null) {
-                        torsion = H5T.getTorsion(O5s, C5s, C4s);
+                    Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
+                    if (HO5s != null) {
+                        torsion = HO5s.getTorsion(O5s, C5s, C4s);
                         chi[4] = torsion.getValue();
                         if (print) {
                             logger.info(torsion.toString());
@@ -3575,7 +3575,7 @@ public class RotamerLibrary {
      * and angles.
      *
      * @param residue Residue.
-     * @param rotamer If 5' capped by H5T, uses chi5 to draw H5T.
+     * @param rotamer If 5' capped by HO5s, uses chi5 to draw HO5s.
      * @param prevResidue NA residue at the 5' end of residue.
      * @param isDeoxy If Residue is DNA; false means RNA.
      * @param is3sTerminal If Residue is at a 3' end.
@@ -3593,17 +3593,16 @@ public class RotamerLibrary {
 
         // Hydrogens attached to the sugar
         // Hydrogens in DNA.  Will be null in RNA.
-        Atom H2s1 = (Atom) residue.getAtomNode("H2\'1");
-        Atom H2s2 = (Atom) residue.getAtomNode("H2\'2");
+        Atom H2ss = (Atom) residue.getAtomNode("H2\'\'");
         // Hydrogens in RNA.  Will be null in DNA.
         Atom H2s = (Atom) residue.getAtomNode("H2\'");
-        Atom HOs = (Atom) residue.getAtomNode("HO\'");
+        Atom HO2s = (Atom) residue.getAtomNode("HO2\'");
         // Common hydrogens
         Atom H3s = (Atom) residue.getAtomNode("H3\'");
         Atom H4s = (Atom) residue.getAtomNode("H4\'");
         Atom H1s = (Atom) residue.getAtomNode("H1\'");
-        Atom H5s1 = (Atom) residue.getAtomNode("H5\'1");
-        Atom H5s2 = (Atom) residue.getAtomNode("H5\'2");
+        Atom H5s = (Atom) residue.getAtomNode("H5\'");
+        Atom H5ss = (Atom) residue.getAtomNode("H5\'\'");
 
         Atom C5s = (Atom) residue.getAtomNode("C5\'");
         Atom O5s = (Atom) residue.getAtomNode("O5\'");
@@ -3613,17 +3612,17 @@ public class RotamerLibrary {
 
         // Build atachments to C2'.
         if (isDeoxy) {
-            Bond C2s_H2s1 = C2s.getBond(H2s1);
-            double dC2s_H2s1 = C2s_H2s1.bondType.distance;
-            Angle C3s_C2s_H2s1 = C3s.getAngle(C2s, H2s1);
-            double dC3s_C2s_H2s1 = C3s_C2s_H2s1.angleType.angle[C3s_C2s_H2s1.nh];
-            intxyz(H2s1, C2s, dC2s_H2s1, C3s, dC3s_C2s_H2s1, C1s, 109.4, 1);
+            Bond C2s_H2s = C2s.getBond(H2s);
+            double dC2s_H2s = C2s_H2s.bondType.distance;
+            Angle C3s_C2s_H2s = C3s.getAngle(C2s, H2s);
+            double dC3s_C2s_H2s = C3s_C2s_H2s.angleType.angle[C3s_C2s_H2s.nh];
+            intxyz(H2s, C2s, dC2s_H2s, C3s, dC3s_C2s_H2s, C1s, 109.4, 1);
 
-            Bond C2s_H2s2 = C2s.getBond(H2s2);
-            double dC2s_H2s2 = C2s_H2s2.bondType.distance;
-            Angle C3s_C2s_H2s2 = C3s.getAngle(C2s, H2s2);
-            double dC3s_C2s_H2s2 = C3s_C2s_H2s2.angleType.angle[C3s_C2s_H2s2.nh];
-            intxyz(H2s2, C2s, dC2s_H2s2, C3s, dC3s_C2s_H2s2, C1s, 109.4, -1);
+            Bond C2s_H2ss = C2s.getBond(H2ss);
+            double dC2s_H2ss = C2s_H2ss.bondType.distance;
+            Angle C3s_C2s_H2ss = C3s.getAngle(C2s, H2ss);
+            double dC3s_C2s_H2ss = C3s_C2s_H2ss.angleType.angle[C3s_C2s_H2ss.nh];
+            intxyz(H2ss, C2s, dC2s_H2ss, C3s, dC3s_C2s_H2ss, C1s, 109.4, -1);
         } else {
             Bond C2s_H2s = C2s.getBond(H2s);
             double dC2s_H2s = C2s_H2s.bondType.distance;
@@ -3638,17 +3637,17 @@ public class RotamerLibrary {
             intxyz(O2s, C2s, dC2s_O2s, C3s, dC3s_C2s_O2s, C1s, 109.4, 1);
 
             /*
-             * The placement of HO' may eventually become a rotameric
+             * The placement of HO2' may eventually become a rotameric
              * function, but is presently being defaulted to 70 degrees.
              *
              * 70 degrees was just what I got from looking at 3ZD7 in
              * PyMol
              */
-            Bond O2s_HOs = O2s.getBond(HOs);
-            double dO2s_HOs = O2s_HOs.bondType.distance;
-            Angle C2s_O2s_HOs = C2s.getAngle(O2s, HOs);
-            double dC2s_O2s_HOs = C2s_O2s_HOs.angleType.angle[C2s_O2s_HOs.nh];
-            intxyz(HOs, O2s, dO2s_HOs, C2s, dC2s_O2s_HOs, C1s, 70, 0);
+            Bond O2s_HO2s = O2s.getBond(HO2s);
+            double dO2s_HO2s = O2s_HO2s.bondType.distance;
+            Angle C2s_O2s_HO2s = C2s.getAngle(O2s, HO2s);
+            double dC2s_O2s_HO2s = C2s_O2s_HO2s.angleType.angle[C2s_O2s_HO2s.nh];
+            intxyz(HO2s, O2s, dO2s_HO2s, C2s, dC2s_O2s_HO2s, C1s, 70, 0);
         }
 
         Bond C1s_H1s = C1s.getBond(H1s);
@@ -3669,61 +3668,28 @@ public class RotamerLibrary {
         double dC3s_C4s_H4s = C3s_C4s_H4s.angleType.angle[C3s_C4s_H4s.nh];
         intxyz(H4s, C4s, dC4s_H4s, C3s, dC3s_C4s_H4s, O4s, 109.4, -1);
 
-        Bond C5s_H5s1 = C5s.getBond(H5s1);
-        double dC5s_H5s1 = C5s_H5s1.bondType.distance;
-        Angle C4s_C5s_H5s1 = C4s.getAngle(C5s, H5s1);
-        double dC4s_C5s_H5s1 = C4s_C5s_H5s1.angleType.angle[C4s_C5s_H5s1.nh];
-        intxyz(H5s1, C5s, dC5s_H5s1, C4s, dC4s_C5s_H5s1, O5s, 109.4, -1);
+        Bond C5s_H5s = C5s.getBond(H5s);
+        double dC5s_H5s = C5s_H5s.bondType.distance;
+        Angle C4s_C5s_H5s = C4s.getAngle(C5s, H5s);
+        double dC4s_C5s_H5s = C4s_C5s_H5s.angleType.angle[C4s_C5s_H5s.nh];
+        intxyz(H5s, C5s, dC5s_H5s, C4s, dC4s_C5s_H5s, O5s, 109.4, -1);
 
-        Bond C5s_H5s2 = C5s.getBond(H5s2);
-        double dC5s_H5s2 = C5s_H5s2.bondType.distance;
-        Angle C4s_C5s_H5s2 = C4s.getAngle(C5s, H5s2);
-        double dC4s_C5s_H5s2 = C4s_C5s_H5s2.angleType.angle[C4s_C5s_H5s2.nh];
-        intxyz(H5s2, C5s, dC5s_H5s2, C4s, dC4s_C5s_H5s2, O5s, 109.4, 1);
+        Bond C5s_H5ss = C5s.getBond(H5ss);
+        double dC5s_H5ss = C5s_H5ss.bondType.distance;
+        Angle C4s_C5s_H5ss = C4s.getAngle(C5s, H5ss);
+        double dC4s_C5s_H5ss = C4s_C5s_H5ss.angleType.angle[C4s_C5s_H5ss.nh];
+        intxyz(H5ss, C5s, dC5s_H5ss, C4s, dC4s_C5s_H5ss, O5s, 109.4, 1);
 
         if (is3sTerminal) {
-            // TODO: Determine proper labels for 3' phosphate caps so they may
-            // be implemented.
-            Atom H3T = (Atom) residue.getAtomNode("H3T");
-            // if (H3T != null) {
-            Bond O3s_H3T = O3s.getBond(H3T);
-            double dO3s_H3T = O3s_H3T.bondType.distance;
-            Angle C3s_O3s_H3T = C3s.getAngle(O3s, H3T);
-            double dC3s_O3s_H3T = C3s_O3s_H3T.angleType.angle[C3s_O3s_H3T.nh];
-            // H3T defaulted to the antiperiplanar value of 180 degrees.
-            intxyz(H3T, O3s, dO3s_H3T, C3s, dC3s_O3s_H3T, C4s, 180, 0);
-            /* } else {
-             Atom P3sT = (Atom) residue.getAtomNode("Unknown");
-             Atom O3sT1 = (Atom) residue.getAtomNode("Unknown");
-             Atom O3sT2 = (Atom) residue.getAtomNode("Unknown");
-             Atom O3sT3 = (Atom) residue.getAtomNode("Unknown");
-             // Possibly one or two hydrogens as well.
-
-             Bond O3s_P3sT = O3s.getBond(P3sT);
-             double dO3s_P3sT = O3s_P3sT.bondType.distance;
-             Angle C3s_O3s_P3sT = C3s.getAngle(O3s, P3sT);
-             double dC3s_O3s_P3sT = C3s_O3s_P3sT.angleType.angle[C3s_O3s_P3sT.nh];
-             intxyz(P3sT, O3s, dO3s_P3sT, C3s, dC3s_O3s_P3sT, C4s, 180, 0);
-             // Again, antiperiplanar default of 180 degrees.
-
-             Bond P3sT_O3sT1 = P3sT.getBond(O3sT1);
-             double dP3sT_O3sT1 = P3sT_O3sT1.bondType.distance;
-             Angle O3s_P3sT_O3sT1 = O3s.getAngle(P3sT, O3sT1);
-             double dO3s_P3sT_O3sT1 = O3s_P3sT_O3sT1.angleType.angle[O3s_P3sT_O3sT1.nh];
-             intxyz(O3sT1, O3s, dP3sT_O3sT1, C3s, dO3s_P3sT_O3sT1, C4s, 180, 0);
-
-             Bond P3sT_O3sT2 = P3sT.getBond(O3sT2);
-             double dP3sT_O3sT2 = P3sT_O3sT2.bondType.distance;
-             Angle O3s_P3sT_O3sT2 = O3s.getAngle(P3sT, O3sT2);
-             double dO3s_P3sT_O3sT2 = O3s_P3sT_O3sT2.angleType.angle[O3s_P3sT_O3sT2.nh];
-             intxyz(O3sT2, O3s, dP3sT_O3sT2, C3s, dO3s_P3sT_O3sT2, O3sT1, 109.4, 1);
-
-             Bond P3sT_O3sT3 = P3sT.getBond(O3sT3);
-             double dP3sT_O3sT3 = P3sT_O3sT3.bondType.distance;
-             Angle O3s_P3sT_O3sT3 = O3s.getAngle(P3sT, O3sT3);
-             double dO3s_P3sT_O3sT3 = O3s_P3sT_O3sT3.angleType.angle[O3s_P3sT_O3sT3.nh];
-             intxyz(O3sT3, O3s, dP3sT_O3sT3, C3s, dO3s_P3sT_O3sT3, O3sT1, 109.4, -1);
-             } */
+            // TODO: Determine proper labels for 3' phosphate caps so they may be implemented.
+            Atom HO3s = (Atom) residue.getAtomNode("HO3\'");
+            // if (HO3s != null) {
+            Bond O3s_HO3s = O3s.getBond(HO3s);
+            double dO3s_HO3s = O3s_HO3s.bondType.distance;
+            Angle C3s_O3s_HO3s = C3s.getAngle(O3s, HO3s);
+            double dC3s_O3s_HO3s = C3s_O3s_HO3s.angleType.angle[C3s_O3s_HO3s.nh];
+            // HO3s defaulted to the antiperiplanar value of 180 degrees.
+            intxyz(HO3s, O3s, dO3s_HO3s, C3s, dC3s_O3s_HO3s, C4s, 180, 0);
         }
 
         if (P != null) {
@@ -3771,12 +3737,12 @@ public class RotamerLibrary {
                 OP2.moveTo(OP2XYZ);
             }
         } else {
-            Atom H5T = (Atom) residue.getAtomNode("H5T");
-            Bond O5s_H5T = O5s.getBond(H5T);
-            double dO5s_H5T = O5s_H5T.bondType.distance;
-            Angle C5s_O5s_H5T = C5s.getAngle(O5s, H5T);
-            double dC5s_O5s_H5T = C5s_O5s_H5T.angleType.angle[C5s_O5s_H5T.nh];
-            intxyz(H5T, O5s, dO5s_H5T, C5s, dC5s_O5s_H5T, C4s, rotamer.chi5, 0);
+            Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
+            Bond O5s_HO5s = O5s.getBond(HO5s);
+            double dO5s_HO5s = O5s_HO5s.bondType.distance;
+            Angle C5s_O5s_HO5s = C5s.getAngle(O5s, HO5s);
+            double dC5s_O5s_HO5s = C5s_O5s_HO5s.angleType.angle[C5s_O5s_HO5s.nh];
+            intxyz(HO5s, O5s, dO5s_HO5s, C5s, dC5s_O5s_HO5s, C4s, rotamer.chi5, 0);
         }
     }
 
@@ -3800,7 +3766,7 @@ public class RotamerLibrary {
          */
         Atom P = (Atom) residue.getAtomNode("P");
         Atom OP3 = (Atom) residue.getAtomNode("OP3");
-        Atom H5T = (Atom) residue.getAtomNode("H5T");
+        Atom HO5s = (Atom) residue.getAtomNode("HO5\'");
 
         Bond C4s_C5s = C4s.getBond(C5s);
         double dC4s_C5s = C4s_C5s.bondType.distance;
@@ -3815,13 +3781,13 @@ public class RotamerLibrary {
         intxyz(O5s, C5s, dC5s_O5s, C4s, dC4s_C5s_O5s, C3s, rotamer.chi6, 0);
 
         if (prevResidue == null) {
-            // If capped by H5T, draw H5T and return. Else, assume OP3 capped.
-            if (H5T != null) {
-                Bond O5s_H5T = O5s.getBond(H5T);
-                double dO5s_H5T = O5s_H5T.bondType.distance;
-                Angle C5s_O5s_H5T = C5s.getAngle(O5s, H5T);
-                double dC5s_O5s_H5T = C5s_O5s_H5T.angleType.angle[C5s_O5s_H5T.nh];
-                intxyz(H5T, O5s, dO5s_H5T, C5s, dC5s_O5s_H5T, C4s, rotamer.chi5, 0);
+            // If capped by HO5s, draw HO5s and return. Else, assume OP3 capped.
+            if (HO5s != null) {
+                Bond O5s_HO5s = O5s.getBond(HO5s);
+                double dO5s_HO5s = O5s_HO5s.bondType.distance;
+                Angle C5s_O5s_HO5s = C5s.getAngle(O5s, HO5s);
+                double dC5s_O5s_HO5s = C5s_O5s_HO5s.angleType.angle[C5s_O5s_HO5s.nh];
+                intxyz(HO5s, O5s, dO5s_HO5s, C5s, dC5s_O5s_HO5s, C4s, rotamer.chi5, 0);
             } else {
                 Bond O5s_P = O5s.getBond(P);
                 double dO5s_P = O5s_P.bondType.distance;

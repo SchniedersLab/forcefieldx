@@ -944,6 +944,7 @@ public class RotamerOptimization implements Terminatable {
                 for (Atom atom : atomList) {
                     atom.setUse(true);
                 }
+                break;
         }
     }
 
@@ -966,6 +967,7 @@ public class RotamerOptimization implements Terminatable {
                 for (Atom atom : atomList) {
                     atom.setUse(false);
                 }
+                break;
         }
     }
 
@@ -2077,23 +2079,15 @@ public class RotamerOptimization implements Terminatable {
         residueList = new ArrayList<>();
         for (int i = startResID; i <= finalResID; i++) {
             Residue residue = polymer.getResidue(i);
-            if (residue != null) {
+            if (residue == null) {
+                logger.warning(String.format(" Null residue %d for chain %c", i, polymer.getChainID()));
+            } else {
                 Rotamer[] rotamers = residue.getRotamers(library);
                 if (rotamers != null) {
-                    if (rotamers.length == 1) {
-                        switch (residue.getResidueType()) {
-                            case NA:
-                                residue.initializeDefaultAtomicCoordinates();
-                                break;
-                            case AA:
-                            default:
-                                RotamerLibrary.applyRotamer(residue, rotamers[0]);
-                                break;
-                        }
-                        if (addOrigRot) {
-                            residueList.add(residue);
-                        }
-                    } else {
+                    int lenri = rotamers.length;
+                    if (lenri > 1 || addOrigRot) {
+                        residue.initializeDefaultAtomicCoordinates();
+                        RotamerLibrary.applyRotamer(residue, rotamers[0]);
                         residueList.add(residue);
                     }
                 } else if (useForcedResidues && checkIfForced(i)) {
@@ -4455,36 +4449,8 @@ public class RotamerOptimization implements Terminatable {
     private void applyEliminationCriteria(Residue residues[]) {
         // allocateEliminationMemory is now called for all algorithms in rotamerEnergies method.
         //allocateEliminationMemory(residues);
-        /*
-         * Must pin 5' ends of nucleic acids which are attached to nucleic acids
-         * outside the window, to those prior residues' sugar puckers.  Then,
-         * if a correction threshold is set, eliminate rotamers with excessive
-         * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
-         */
-        boolean containsNA = false;
-        if (pruneClashes) {
-            for (Residue residue : residues) {
-                if (residue.getResidueType() == NA) {
-                    containsNA = true;
-                    break;
-                }
-            }
-        }
-        if (containsNA && pruneClashes) {
-            logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
-            int[] numEliminatedRotamers = reconcileNARotamersWithPriorResidues(residues);
-            // reconcileNARotamersWithSubsequentResidues(residues, numEliminatedRotamers);
-            // Uncertain if I want to actually do this, since it could return bad results
-            // if the input structure is no good.
-            if (verboseEnergies) {
-                try {
-                    logIfMaster(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
-                } catch (ArithmeticException ex) {
-                    logger.severe(String.format(" Exception %s in calculating beginning energy; FFX shutting down.", ex.toString()));
-                }
-            }
-            eliminateNABackboneRotamers(residues, numEliminatedRotamers);
-        } else if (verboseEnergies) {
+
+        if (verboseEnergies) {
             try {
                 logIfMaster(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
             } catch (ArithmeticException ex) {
@@ -4680,6 +4646,20 @@ public class RotamerOptimization implements Terminatable {
         Atom atoms[] = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         allocateEliminationMemory(residues);
+
+        boolean containsNA = Arrays.stream(residues).anyMatch((Residue r) -> r.getResidueType() == Residue.ResidueType.NA);
+
+        if (containsNA && pruneClashes) {
+            /*
+             * Must pin 5' ends of nucleic acids which are attached to nucleic acids
+             * outside the window, to those prior residues' sugar puckers.  Then,
+             * if a correction threshold is set, eliminate rotamers with excessive
+             * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
+             */
+            logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
+            int[] numEliminatedRotamers = reconcileNARotamersWithPriorResidues(residues);
+            eliminateNABackboneRotamers(residues, numEliminatedRotamers);
+        }
 
         if (decomposeOriginal) {
             assert library.getUsingOrigCoordsRotamer();
