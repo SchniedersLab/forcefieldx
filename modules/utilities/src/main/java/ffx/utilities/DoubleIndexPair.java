@@ -45,7 +45,7 @@ package ffx.utilities;
  *
  * @since 1.0
  */
-public class DoubleIndexPair implements Comparable {
+public class DoubleIndexPair implements Comparable<DoubleIndexPair> {
 
     private final int index;
     private final double doubleValue;
@@ -71,20 +71,10 @@ public class DoubleIndexPair implements Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
+    public int compareTo(DoubleIndexPair o) {
         if (o == null) {
             return 0;
         }
-        if (!(o instanceof DoubleIndexPair)) {
-            return 0;
-        }
-        DoubleIndexPair other = (DoubleIndexPair) o;
-        if (doubleValue < other.doubleValue) {
-            return -1;
-        } else if (doubleValue > other.doubleValue) {
-            return 1;
-        } else {
-            return 0;
-        }
+        return Double.compare(doubleValue, o.doubleValue);
     }
 }

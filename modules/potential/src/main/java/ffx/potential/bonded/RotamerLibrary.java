@@ -159,49 +159,9 @@ public class RotamerLibrary {
             case AA:
                 AminoAcid3 aa = AminoAcid3.valueOf(residue.getName());
                 return getRotamers(aa);
-                /*if (useOrigCoordsRotamer) {
-                    if (origCoordsCache.containsKey(residue)) {
-                        return origCoordsCache.get(residue);
-                    }
-                    Rotamer usual[] = getRotamers(aa);
-                    if (usual == null || usual.length == 0) {
-                        return null;
-                    }
-                    List<Rotamer> allRotamers = new ArrayList<>(Arrays.asList(usual));
-                    ResidueState originalState = residue.storeState();
-                    double chi[] = new double[4];
-                    measureAARotamer(residue, chi, false);
-                    Rotamer origCoordsRotamer = new Rotamer(aa, originalState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
-                    allRotamers.add(0, origCoordsRotamer);
-                    Rotamer ret[] = allRotamers.toArray(new Rotamer[1]);
-                    origCoordsCache.put(residue, ret);
-                    return ret;
-                } else {
-                    return getRotamers(aa);
-                }*/
             case NA:
                 NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
                 return getRotamers(na);
-                /*if (useOrigCoordsRotamer) {
-                    if (origCoordsCache.containsKey(residue)) {
-                        return origCoordsCache.get(residue);
-                    }
-                    Rotamer usual[] = getRotamers(na);
-                    if (usual == null || usual.length == 0) {
-                        return null;
-                    }
-                    List<Rotamer> allRotamers = new ArrayList<>(Arrays.asList(usual));
-                    ResidueState originalState = residue.storeState();
-                    double chi[] = new double[7];
-                    measureNARotamer(residue, chi, false);
-                    Rotamer origCoordsRotamer = new Rotamer(na, originalState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0, chi[6], 0);
-                    allRotamers.add(0, origCoordsRotamer);
-                    Rotamer ret[] = allRotamers.toArray(new Rotamer[1]);
-                    origCoordsCache.put(residue, ret);
-                    return ret;
-                } else {
-                    return getRotamers(na);
-                }*/
             default:
                 if (nonstdRotCache.containsKey(residue.getName().toUpperCase())) {
                     return nonstdRotCache.get(residue.getName().toUpperCase()).getRotamers();
@@ -1890,21 +1850,7 @@ public class RotamerLibrary {
      * @param rotamer the Rotamer defining the move.
      */
     public static void applyRotamer(Residue residue, Rotamer rotamer) {
-        residue.setRotamer(rotamer);
-        if (rotamer.isState) {
-            applyState(residue, rotamer);
-        } else {
-            switch (residue.getResidueType()) {
-                case AA:
-                    applyAARotamer(residue, rotamer);
-                    break;
-                case NA:
-                    applyNARotamer(residue, rotamer, 0, false);
-                    break;
-                default:
-                    break;
-            }
-        }
+        applyRotamer(residue, rotamer, false);
     }
 
     /**
@@ -1926,42 +1872,13 @@ public class RotamerLibrary {
                     applyAARotamer(residue, rotamer);
                     break;
                 case NA:
-                    applyNARotamer(residue, rotamer, 0, independent);
+                    applyNARotamer(residue, rotamer, independent);
                     break;
                 default:
                     break;
             }
         }
 
-    }
-
-    /**
-     * Applies a Rotamer to a nucleic acid Residue, and throws
-     * NACorrectionException if the Rotamer must be corrected too far to
-     * correctly join to Residue i-1.
-     *
-     * @param residue Residue.
-     * @param rotamer Rotamer to be applied to Residue.
-     * @param correctionThreshold Maximum acceptable backbone correction.
-     * @throws NACorrectionException If correction .GT.
-     * correctionThreshold.
-     */
-    public static void applyRotamer(Residue residue, Rotamer rotamer, double correctionThreshold) throws NACorrectionException {
-        residue.setRotamer(rotamer);
-        if (rotamer.isState) {
-            applyState(residue, rotamer);
-        } else {
-            switch (residue.getResidueType()) {
-                case AA:
-                    applyAARotamer(residue, rotamer);
-                    break;
-                case NA:
-                    applyNARotamer(residue, rotamer, correctionThreshold, false);
-                    break;
-                default:
-                    break;
-            }
-        }
     }
 
     /**
@@ -3357,12 +3274,7 @@ public class RotamerLibrary {
     }
 
     /**
-     * Applies a nucleic acid Rotamer, and throws NACorrectionException
- if the Rotamer must be corrected too far to correctly join to Residue
- i-1. correctionThreshold and independent are both special-case variables;
-     * a non-zero correctionThreshold is used to prune Rotamers with excessively
-     * large corrections, and independent disables the NA correction, presently
-     * only performed by saveRotamers.
+     * Applies a nucleic acid Rotamer, returning the magnitude of the correction applied to make residue i join i-1.
      *
      * Note that the independent flag is separate from DEE independence: DEE
      * independence is preserved by applying corrections based on a non-variable
@@ -3375,13 +3287,15 @@ public class RotamerLibrary {
      *
      * @param residue Residue.
      * @param rotamer Rotamer to be applied to Residue.
-     * @param correctionThreshold Maximum acceptable backbone correction.
      * @param independent Whether to draw NA rotamer independent of chain
      * context.
-     * @throws NACorrectionException If correction .GT.
-     * correctionThreshold.
+     * @return Magnitude of the correction vector.
      */
-    private static void applyNARotamer(Residue residue, Rotamer rotamer, double correctionThreshold, boolean independent) throws NACorrectionException {
+    public static double applyNARotamer(Residue residue, Rotamer rotamer, boolean independent) {
+        if (rotamer.isState) {
+            applyState(residue, rotamer);
+            return 0;
+        }
         NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
         Residue prevResidue = residue.getPreviousResidue();
         boolean is3sTerminal = false;  // 3' terminal
@@ -3432,13 +3346,16 @@ public class RotamerLibrary {
         // calls applySugarPucker instead of going through applyRotamer().
         applySugarPucker(residue, sugarPucker, isDeoxy, true);
         applyNABackbone(residue, rotamer, prevResidue);
+
+        double naCorrection = 0;
         if (prevResidue != null && !independent) {
-            applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, correctionThreshold, isDeoxy, is3sTerminal);
+            naCorrection = applyNACorrections(residue, prevResidue, rotamer, prevSugarPucker, isDeoxy, is3sTerminal);
         } /* else if (!independent) {
          startingResidueConsistencyCheck(residue, rotamer, correctionThreshold);
          } */
 
         applyNASideAtoms(residue, rotamer, prevResidue, isDeoxy, is3sTerminal, prevSugarPucker);
+        return naCorrection;
     }
 
     /**
@@ -3818,14 +3735,10 @@ public class RotamerLibrary {
      * @param prevResidue Residue 5' of residue.
      * @param rotamer Rotamer being applied to residue.
      * @param prevSugarPucker Expected sugar pucker of prevResidue.
-     * @param correctionThreshold Maximum allowable correction size (0 disables
-     * threshold).
-     * @throws NACorrectionException If correction magnitude .GT.
-     * correctionThreshold.
+     * @return The magnitude of any applied correction.
      */
-    private static void applyNACorrections(Residue residue, Residue prevResidue, Rotamer rotamer,
-            int prevSugarPucker, double correctionThreshold, boolean isDeoxy, boolean is3sTerminal)
-            throws NACorrectionException {
+    private static double applyNACorrections(Residue residue, Residue prevResidue, Rotamer rotamer,
+            int prevSugarPucker, boolean isDeoxy, boolean is3sTerminal) {
         // Backbone atoms of this residue to be adjusted
         Atom C3s = (Atom) residue.getAtomNode("C3\'");
         Atom O4s = (Atom) residue.getAtomNode("O4\'");
@@ -3883,16 +3796,9 @@ public class RotamerLibrary {
         C1s.move(corrections[6]);
         C2s.move(corrections[6]);
 
-        if (correctionThreshold != 0) {
-            double correctionMagnitude = ((corrections[5][0] * corrections[5][0])
-                    + (corrections[5][1] * corrections[5][1])
-                    + (corrections[5][2] * corrections[5][2]));
-            if (correctionMagnitude > (correctionThreshold * correctionThreshold)) {
-                correctionMagnitude = Math.sqrt(correctionMagnitude);
-                applyNASideAtoms(residue, rotamer, prevResidue, isDeoxy, is3sTerminal, prevSugarPucker);
-                throw new NACorrectionException(correctionThreshold, correctionMagnitude, residue, rotamer);
-            }
-        }
+        return ((corrections[5][0] * corrections[5][0])
+                + (corrections[5][1] * corrections[5][1])
+                + (corrections[5][2] * corrections[5][2]));
     }
 
     /**
