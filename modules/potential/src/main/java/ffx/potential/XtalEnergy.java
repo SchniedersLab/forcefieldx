@@ -39,6 +39,9 @@ package ffx.potential;
 
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
+import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
 import ffx.potential.bonded.Atom;
@@ -57,6 +60,7 @@ public class XtalEnergy implements Potential {
     private static final Logger logger = Logger.getLogger(XtalEnergy.class.getName());
 
     private final ForceFieldEnergy forceFieldEnergy;
+    private final MolecularAssembly molecularAssembly;
     private final Atom activeAtoms[];
     private final int nActive;
 
@@ -73,6 +77,7 @@ public class XtalEnergy implements Potential {
 
     public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly) {
         this.forceFieldEnergy = forceFieldEnergy;
+        this.molecularAssembly = molecularAssembly;
         Atom atoms[] = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
 
@@ -117,6 +122,7 @@ public class XtalEnergy implements Potential {
             mass[i] = 1.0;
             type[i] = VARIABLE_TYPE.OTHER;
         }
+
     }
 
     @Override
@@ -339,6 +345,172 @@ public class XtalEnergy implements Potential {
             index++;
             g[index] /= scaling[index];
         }
+    }
+
+    public void computeStressTensor(boolean verbose) {
+
+        double x[] = new double[getNumberOfVariables()];
+        getCoordinates(x);
+
+        forceFieldEnergy.energy(x, verbose);
+
+        FractionalMode currentFractionalMode = molecularAssembly.getFractionalMode();
+
+        molecularAssembly.setFractionalMode(FractionalMode.ATOM);
+        molecularAssembly.computeFractionalCOM();
+
+        double delta = 1.0e-6;
+        double strain[][] = new double[3][3];
+
+        strain[0][0] = dEdA(0, 0, delta, x);
+        strain[0][1] = dEdA(0, 1, delta, x);
+        strain[0][2] = dEdA(0, 2, delta, x);
+        strain[1][0] = dEdA(1, 0, delta, x);
+        strain[1][1] = dEdA(1, 1, delta, x);
+        strain[1][2] = dEdA(1, 2, delta, x);
+        strain[2][0] = dEdA(2, 0, delta, x);
+        strain[2][1] = dEdA(2, 1, delta, x);
+        strain[2][2] = dEdA(2, 2, delta, x);
+
+        logger.info(" The Strain and Stress Tensor code is under development.");
+
+        // Note that the Strain Tensor is not normalized for crystal size.
+        /**
+        logger.info(" Strain Tensor (kcal/mole) =");
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", strain[0][0], strain[0][1], strain[0][2]));
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", strain[1][0], strain[1][1], strain[1][2]));
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", strain[2][0], strain[2][1], strain[2][2]));
+         */
+
+        /**
+         * Conversion from kcal/mol/Ang^3 to Atm.
+         */
+        double PRESCON = 6.85684112e4;
+
+        /**
+         * Conversion from Atm to MPa.
+         */
+        double MPA = 101325 * 1.0e-6;
+
+        double stress[][] = new double[3][3];
+
+        for (int l=0; l<3; l++) {
+            for (int m=0; m<3; m++) {
+                stress[l][m] = strain[l][m] * PRESCON * MPA / crystal.volume;
+            }
+        }
+
+        logger.info(" Stress Tensor (MPa) =");
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", stress[0][0], stress[0][1], stress[0][2]));
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", stress[1][0], stress[1][1], stress[1][2]));
+        logger.info(format(" [ %16.8f %16.8f %16.8f ]", stress[2][0], stress[2][1], stress[2][2]));
+
+        double isotropicStrain = isotropic(delta, x);
+        double isotropicStress = isotropicStrain * PRESCON * MPA / crystal.volume;
+        logger.info(format(" Isotropic Stress (MPa) = %16.8f", isotropicStress));
+
+        // forceFieldEnergy.energy(x, verbose);
+        molecularAssembly.setFractionalMode(currentFractionalMode);
+    }
+
+    private double isotropic(double delta, double x[]) {
+
+        // Store current unit cell parameters.
+        double a = unitCell.a;
+        double b = unitCell.b;
+        double c = unitCell.c;
+        double alpha = unitCell.alpha;
+        double beta = unitCell.beta;
+        double gamma = unitCell.gamma;
+
+        // Expand the crystal.
+        double dStrain[][] = new double[3][3];
+        for (int i=0; i<3; i++) {
+            dStrain[i][i] = delta * 0.5;
+        }
+
+        if (!crystal.perturbCellVectors(dStrain)) {
+            return 0.0;
+        }
+
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        double eplus = forceFieldEnergy.energy(x);
+
+        // Change back.
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+
+        // Compress the crystal.
+        for (int i=0; i<3; i++){
+            dStrain[i][i] = -delta * 0.5;
+        }
+
+        if (!crystal.perturbCellVectors(dStrain)) {
+            return 0.0;
+        }
+
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        double eminus = forceFieldEnergy.energy(x);
+
+        // Change back.
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+
+        return (eplus - eminus) / delta;
+    }
+
+    private double dEdA(int ii, int jj, double delta, double x[]) {
+
+        // Store current unit cell parameters.
+        double a = unitCell.a;
+        double b = unitCell.b;
+        double c = unitCell.c;
+        double alpha = unitCell.alpha;
+        double beta = unitCell.beta;
+        double gamma = unitCell.gamma;
+
+        double dStrain[][] = new double[3][3];
+        dStrain[ii][jj] = delta / 4.0;
+        dStrain[jj][ii] += delta / 4.0;
+
+        try {
+            if (!crystal.perturbCellVectors(dStrain)) {
+                return 0.0;
+            }
+        } catch (Exception e) {
+            return 0.0;
+        }
+
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        double eplus = forceFieldEnergy.energy(x);
+
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+
+        dStrain = new double[3][3];
+        dStrain[ii][jj] = -delta / 4.0;
+        dStrain[jj][ii] -= delta / 4.0;
+
+        try {
+            if (!crystal.perturbCellVectors(dStrain)) {
+                return 0.0;
+            }
+        } catch (Exception e) {
+            return 0.0;
+        }
+
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        double eminus = forceFieldEnergy.energy(x);
+
+        // Change back.
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+
+        return (eplus - eminus) / delta;
     }
 
     /**

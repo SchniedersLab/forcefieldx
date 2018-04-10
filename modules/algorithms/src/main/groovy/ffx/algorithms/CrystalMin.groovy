@@ -1,31 +1,31 @@
 
+package ffx.algorithms
+
 import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
-import ffx.algorithms.CrystalMinimize
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.XtalEnergy
 
-
 /**
- * The CrystalMinimize script uses a limited-memory BFGS algorithm to minimize the
+ * The CrystalMin script uses a limited-memory BFGS algorithm to minimize the
  * energy of a crystal, including both coordinates and unit cell parameters.
  * <br>
  * Usage:
  * <br>
- * ffxc CrystalMinimize [options] &lt;filename&gt;
+ * ffxc CrystalMin [options] &lt;filename&gt;
  */
-class CrystalMinimize extends Script {
+class CrystalMin extends Script {
 
     /**
      * Options for the Minimize Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc CrystalMinimize [options] &lt;filename&gt;
+     * ffxc CrystalMin [options] &lt;filename&gt;
      */
     class Options {
         /**
@@ -37,6 +37,10 @@ class CrystalMinimize extends Script {
          */
         @Option(shortName='e', longName='eps', defaultValue='1.0', description='RMS gradient convergence criteria') double eps;
         /**
+         * -t or --tensor to print out partial derivatives of the energy with respect to unit cell parameters.
+         */
+        @Option(shortName='t', defaultValue='false', description='Compute partial derivatives of the energy with respect to unit cell parameters') boolean tensor;
+        /**
          * The final argument should be a filename.
          */
         @Unparsed List<String> filenames;
@@ -44,7 +48,7 @@ class CrystalMinimize extends Script {
 
     def run() {
 
-        def cli = new CliBuilder(usage: ' ffxc CrystalMinimize [options] <filename>', header: ' Options:');
+        def cli = new CliBuilder(usage: ' ffxc CrystalMin [options] <filename>', header: ' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);
@@ -68,7 +72,7 @@ class CrystalMinimize extends Script {
         logger.info("\n Running CrystalMinimize on " + filename);
         logger.info(" RMS gradient convergence criteria: " + eps);
 
-        MolecularAssembly molecularAssembly = aFuncts.open(filename);
+        MolecularAssembly molecularAssembly = (MolecularAssembly) aFuncts.open(filename);
 
         ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         XtalEnergy xtalEnergy = new XtalEnergy(forceFieldEnergy, molecularAssembly);
@@ -76,7 +80,11 @@ class CrystalMinimize extends Script {
         // Do the minimization
         CrystalMinimize crystalMinimize = new CrystalMinimize(molecularAssembly, xtalEnergy, sh);
 
-        double e = crystalMinimize.minimize(eps);
+        crystalMinimize.minimize(eps);
+
+        if (options.tensor) {
+            crystalMinimize.printTensor();
+        }
 
         String ext = FilenameUtils.getExtension(filename);
         filename = FilenameUtils.removeExtension(filename);
