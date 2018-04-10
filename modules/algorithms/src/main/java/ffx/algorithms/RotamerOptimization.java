@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
@@ -89,7 +90,6 @@ import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.NACorrectionException;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
@@ -178,7 +178,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Two-Body cutoff distance.
      */
-    protected double twoBodyCutoffDist;
+    protected double twoBodyCutoffDist = 0;
     /**
      * Two-body energies for each pair of residues and pair of rotamers.
      * [residue1][rotamer1][residue2][rotamer2]
@@ -672,6 +672,10 @@ public class RotamerOptimization implements Terminatable {
      * If greater than or equal to 0, test the specified residues.
      */
     private int testTripleEnergyEliminations2 = -1;
+    /**
+     * Holds onto the "default" low-correction-vector Rotamer for a nucleic acid Residue.
+     */
+    private Map<Residue, Rotamer> defaultNucleicRotamers;
 
     /**
      * RotamerOptimization constructor.
@@ -944,6 +948,7 @@ public class RotamerOptimization implements Terminatable {
                 for (Atom atom : atomList) {
                     atom.setUse(true);
                 }
+                break;
         }
     }
 
@@ -966,6 +971,7 @@ public class RotamerOptimization implements Terminatable {
                 for (Atom atom : atomList) {
                     atom.setUse(false);
                 }
+                break;
         }
     }
 
@@ -2077,23 +2083,18 @@ public class RotamerOptimization implements Terminatable {
         residueList = new ArrayList<>();
         for (int i = startResID; i <= finalResID; i++) {
             Residue residue = polymer.getResidue(i);
-            if (residue != null) {
+            if (residue == null) {
+                logger.warning(String.format(" Null residue %d for chain %c", i, polymer.getChainID()));
+            } else {
                 Rotamer[] rotamers = residue.getRotamers(library);
                 if (rotamers != null) {
-                    if (rotamers.length == 1) {
-                        switch (residue.getResidueType()) {
-                            case NA:
-                                residue.initializeDefaultAtomicCoordinates();
-                                break;
-                            case AA:
-                            default:
-                                RotamerLibrary.applyRotamer(residue, rotamers[0]);
-                                break;
+                    int lenri = rotamers.length;
+                    if (lenri > 1 || addOrigRot) {
+                        residue.initializeDefaultAtomicCoordinates();
+                        // The default rotamers map hasn't yet been initialized.
+                        if (residue.getResidueType() == Residue.ResidueType.AA) {
+                            RotamerLibrary.applyRotamer(residue, rotamers[0]);
                         }
-                        if (addOrigRot) {
-                            residueList.add(residue);
-                        }
-                    } else {
                         residueList.add(residue);
                     }
                 } else if (useForcedResidues && checkIfForced(i)) {
@@ -2308,80 +2309,61 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Eliminates NA backbone rotamers with corrections greater than threshold.
-     * The int[] parameter allows the method to know how many Rotamers for each
-     * residue have previously been pruned; currently, this means any Rotamer
-     * pruned by reconcileNARotamersWithPriorResidues.
+     * Eliminates NA backbone rotamers with corrections greater than threshold,
+     * and sets the "default" rotamer with the minimal correction.
      * <p>
-     * A nucleic correction threshold of 0 skips the entire method; this check
-     * is presently being performed inside the method in case it is called again
-     * at some point.
+     * A nucleic correction threshold <= 0 will cause
      *
      * @param residues Residues to eliminate bad backbone rotamers over.
-     * @param numEliminatedRotamers Number of previously eliminated rotamers per
-     * residue.
      */
-    private void eliminateNABackboneRotamers(Residue[] residues, int[] numEliminatedRotamers) {
-        /**
-         * Initialize all atoms to be used.
-         */
-        /* Atom atoms[] = molecularAssembly.getAtomArray();
-         int nAtoms = atoms.length;
-         String begin[] = new String[nAtoms];
-         for (int i = 0; i < nAtoms; i++) {
-         begin[i] = atoms[i].toString();
-         } */
-        if (nucleicCorrectionThreshold != 0) {
+    private void eliminateNABackboneRotamers(Residue[] residues) {
+        double eliminateBy = Double.MAX_VALUE;
+        if (nucleicCorrectionThreshold > 0) {
+            eliminateBy = nucleicCorrectionThreshold;
             logIfMaster(format(" Eliminating nucleic acid rotamers with correction vectors larger than %5.3f A", nucleicCorrectionThreshold));
             logIfMaster(format(" A minimum of %d rotamers per NA residue will carry through to energy calculations.", minNumberAcceptedNARotamers));
-            ArrayList<Residue> resList = new ArrayList<>();
-            resList.addAll(Arrays.asList(residues));
-            ResidueState[] origCoordinates = ResidueState.storeAllCoordinates(resList);
+        }
+        ArrayList<Residue> resList = new ArrayList<>();
+        resList.addAll(Arrays.asList(residues));
+        int numR = residues.length;
+        defaultNucleicRotamers = new HashMap<>(numR);
 
-            for (int j = 0; j < residues.length; j++) {
-                Residue nucleicResidue = residues[j];
-                Rotamer[] rotamers = nucleicResidue.getRotamers(library);
-                if (nucleicResidue.getResidueType() == NA && rotamers != null) {
-                    int nrotamers = rotamers.length;
-                    // Default to all rotamers that have not previously been
-                    // eliminated; subtract as rotamers are rejected.
-                    int numAcceptedRotamers = nrotamers - numEliminatedRotamers[j];
-                    if (minNumberAcceptedNARotamers >= numAcceptedRotamers) {
+        for (int i = 0; i < numR; i++) {
+            Residue residue = residues[i];
+            Rotamer[] rotamers = residue.getRotamers(library);
+            if (residue.getResidueType() == NA && rotamers != null) {
+                int lenri = rotamers.length;
+                DoubleIndexPair[] sortedCorrections = new DoubleIndexPair[lenri];
+
+                for (int ri = 0; ri < lenri; ri++) {
+                    Rotamer rotamer = rotamers[ri];
+                    sortedCorrections[ri] = new DoubleIndexPair(ri, RotamerLibrary.applyNARotamer(residue, rotamer, false));
+                }
+
+                Arrays.sort(sortedCorrections);
+                int numAccepted = 0;
+                for (int indRI = 0; indRI < lenri; indRI++) {
+                    DoubleIndexPair correction = sortedCorrections[indRI];
+                    int ri = correction.getIndex();
+                    double corrMag = correction.getDoubleValue();
+
+                    if (check(i, ri)) {
                         continue;
                     }
-                    ArrayList<DoubleIndexPair> rejectedRotamers = new ArrayList<>();
-                    for (int i = 0; i < nrotamers; i++) {
-                        if (!check(j, i)) {
-                            try {
-                                RotamerLibrary.applyRotamer(nucleicResidue, rotamers[i], nucleicCorrectionThreshold);
-                            } catch (NACorrectionException error) {
-                                double rejectedCorrection = error.getCorrection();
-                                numAcceptedRotamers--;
-                                DoubleIndexPair rejected = new DoubleIndexPair(i, rejectedCorrection);
-                                rejectedRotamers.add(rejected);
-                            }
+                    if (corrMag < eliminateBy || numAccepted < minNumberAcceptedNARotamers) {
+                        if (numAccepted++ == 0) {
+                            defaultNucleicRotamers.put(residue, rotamers[ri]);
+                            logger.info(String.format(" Setting the default rotamer for residue %s to %d",
+                                    residue.toFormattedString(true, true), ri));
+                            assert ri == 0 || !library.getUsingOrigCoordsRotamer();
                         }
-                    }
-                    int numAdditionalRotamersToAccept = minNumberAcceptedNARotamers - numAcceptedRotamers;
-                    if (numAdditionalRotamersToAccept > 0) {
-                        DoubleIndexPair[] rejectedArray = new DoubleIndexPair[rejectedRotamers.size()];
-                        for (int i = 0; i < rejectedArray.length; i++) {
-                            rejectedArray[i] = rejectedRotamers.get(i);
-                        }
-                        Arrays.sort(rejectedArray);
-                        rejectedRotamers = new ArrayList<>();
-                        rejectedRotamers.addAll(Arrays.asList(rejectedArray));
-                        for (int i = 0; i < numAdditionalRotamersToAccept; i++) {
-                            rejectedRotamers.remove(0);
-                        }
-                    }
-                    for (DoubleIndexPair rotToReject : rejectedRotamers) {
-                        eliminateRotamer(residues, j, rotToReject.getIndex(), print);
-                        logIfMaster(format(" Correction magnitude was %6.4f A > %5.3f A", rotToReject.getDoubleValue(), nucleicCorrectionThreshold));
+                    } else {
+                        eliminateRotamer(residues, i, ri, print);
+                        logIfMaster(String.format(" Eliminated nucleic acid rotamer %s-%d that required a " +
+                                "linking correction %6.4f A > %6.4f A", residue.toFormattedString(false, true),
+                                ri, corrMag, eliminateBy));
                     }
                 }
-                nucleicResidue.revertState(origCoordinates[j]);
-                //revertSingleResidueCoordinates(nucleicResidue, originalCoordinates[j]);
             }
         }
     }
@@ -2394,10 +2376,8 @@ public class RotamerOptimization implements Terminatable {
      * optimization significantly faster.
      *
      * @param residues Residues to check for incompatible rotamers.
-     * @return Number of rotamers eliminated for each Residue.
      */
-    private int[] reconcileNARotamersWithPriorResidues(Residue[] residues) {
-        int[] numEliminatedRotamers = new int[residues.length];
+    private void reconcileNARotamersWithPriorResidues(Residue[] residues) {
         for (int i = 0; i < residues.length; i++) {
             Residue residuei = residues[i];
             Rotamer[] rotamers = residuei.getRotamers(library);
@@ -2421,34 +2401,33 @@ public class RotamerOptimization implements Terminatable {
             double prevDelta = RotamerLibrary.measureDelta(prevResidue);
             // If between 50 and 110, assume a North pucker.
             if (RotamerLibrary.checkPucker(prevDelta) == 1) {
-                for (int j = 0; j < rotamers.length; j++) {
-                    if (RotamerLibrary.checkPucker(rotamers[j].chi1) != 1) {
+                for (int ri = 0; ri < rotamers.length; ri++) {
+                    Rotamer roti = rotamers[ri];
+                    if (!roti.isState && RotamerLibrary.checkPucker(roti.chi1) != 1) {
                         if (print) {
                             logIfMaster(format(" Rotamer %d of residue %s eliminated "
                                     + "for incompatibility with the sugar pucker of previous "
-                                    + "residue %s outside the window.", j, residuei.toFormattedString(false, true),
+                                    + "residue %s outside the window.", ri, residuei.toFormattedString(false, true),
                                     prevResidue.toString()));
                         }
-                        eliminateRotamer(residues, i, j, print);
-                        numEliminatedRotamers[i]++;
+                        eliminateRotamer(residues, i, ri, print);
                     }
                 }
             } else {
-                for (int j = 0; j < rotamers.length; j++) {
-                    if (RotamerLibrary.checkPucker(rotamers[j].chi1) != 2) {
+                for (int ri = 0; ri < rotamers.length; ri++) {
+                    Rotamer roti = rotamers[ri];
+                    if (!roti.isState && RotamerLibrary.checkPucker(roti.chi1) != 2) {
                         if (print) {
                             logIfMaster(format(" Rotamer %d of residue %s eliminated "
                                     + "for incompatibility with the sugar pucker of previous "
-                                    + "residue %s outside the window.", j, residuei.toFormattedString(false, true),
+                                    + "residue %s outside the window.", ri, residuei.toFormattedString(false, true),
                                     prevResidue.toString()));
                         }
-                        eliminateRotamer(residues, i, j, print);
-                        numEliminatedRotamers[i]++;
+                        eliminateRotamer(residues, i, ri, print);
                     }
                 }
             } // TODO: Implement support for the DNA C3'-exo pucker.
         }
-        return numEliminatedRotamers;
     }
 
     /**
@@ -4455,36 +4434,8 @@ public class RotamerOptimization implements Terminatable {
     private void applyEliminationCriteria(Residue residues[]) {
         // allocateEliminationMemory is now called for all algorithms in rotamerEnergies method.
         //allocateEliminationMemory(residues);
-        /*
-         * Must pin 5' ends of nucleic acids which are attached to nucleic acids
-         * outside the window, to those prior residues' sugar puckers.  Then,
-         * if a correction threshold is set, eliminate rotamers with excessive
-         * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
-         */
-        boolean containsNA = false;
-        if (pruneClashes) {
-            for (Residue residue : residues) {
-                if (residue.getResidueType() == NA) {
-                    containsNA = true;
-                    break;
-                }
-            }
-        }
-        if (containsNA && pruneClashes) {
-            logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
-            int[] numEliminatedRotamers = reconcileNARotamersWithPriorResidues(residues);
-            // reconcileNARotamersWithSubsequentResidues(residues, numEliminatedRotamers);
-            // Uncertain if I want to actually do this, since it could return bad results
-            // if the input structure is no good.
-            if (verboseEnergies) {
-                try {
-                    logIfMaster(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
-                } catch (ArithmeticException ex) {
-                    logger.severe(String.format(" Exception %s in calculating beginning energy; FFX shutting down.", ex.toString()));
-                }
-            }
-            eliminateNABackboneRotamers(residues, numEliminatedRotamers);
-        } else if (verboseEnergies) {
+
+        if (verboseEnergies) {
             try {
                 logIfMaster(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
             } catch (ArithmeticException ex) {
@@ -4680,6 +4631,20 @@ public class RotamerOptimization implements Terminatable {
         Atom atoms[] = molecularAssembly.getAtomArray();
         int nAtoms = atoms.length;
         allocateEliminationMemory(residues);
+
+        boolean containsNA = Arrays.stream(residues).anyMatch((Residue r) -> r.getResidueType() == Residue.ResidueType.NA);
+
+        if (containsNA) {
+            /*
+             * Must pin 5' ends of nucleic acids which are attached to nucleic acids
+             * outside the window, to those prior residues' sugar puckers.  Then,
+             * if a correction threshold is set, eliminate rotamers with excessive
+             * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
+             */
+            logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
+            reconcileNARotamersWithPriorResidues(residues);
+            eliminateNABackboneRotamers(residues);
+        }
 
         if (decomposeOriginal) {
             assert library.getUsingOrigCoordsRotamer();
@@ -5003,9 +4968,25 @@ public class RotamerOptimization implements Terminatable {
     private double computeBackboneEnergy(Residue[] residues) throws ArithmeticException {
         turnOffAllResidues(residues);
         for (Residue residue : residues) {
-            RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
+            applyDefaultRotamer(residue);
         }
         return currentEnergy(residues);
+    }
+
+    /**
+     * Applies the "default" rotamer: 0 for amino acids, else a low-magnitude-correction rotamer for nucleic acids.
+     * @param residue Residue to apply a default rotamer for.
+     */
+    private void applyDefaultRotamer(Residue residue) {
+        switch (residue.getResidueType()) {
+            case NA:
+                RotamerLibrary.applyRotamer(residue, defaultNucleicRotamers.get(residue));
+                break;
+            case AA:
+            default:
+                RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
+                break;
+        }
     }
 
     /**
@@ -5137,8 +5118,7 @@ public class RotamerOptimization implements Terminatable {
 
     private void turnOffResidue(Residue residue) {
         turnOffAtoms(residue);
-        Rotamer rotamers[] = residue.getRotamers(library);
-        RotamerLibrary.applyRotamer(residue, rotamers[0]);
+        applyDefaultRotamer(residue);
     }
 
     private void turnOffAllResidues(Residue[] residues) {
@@ -5272,8 +5252,17 @@ public class RotamerOptimization implements Terminatable {
             int nSymm = crystal.spaceGroup.getNumberOfSymOps();
             logger.info("\n Computing Residue Distance Matrix");
 
+            double nlistCutoff = Math.max(Math.max(distance, twoBodyCutoffDist), threeBodyCutoffDist);
+            /**
+             * I think this originated from the fact that side-chain
+             * (and later nucleic acid) atoms could be fairly distant
+             * from the reference atom.
+             */
+            double magicNumberBufferOfUnknownOrigin = 25.0;
+            nlistCutoff += magicNumberBufferOfUnknownOrigin;
+
             NeighborList neighborList = new NeighborList(null, crystal,
-                    atoms, distance + 25.0, 0.0, parallelTeam);
+                    atoms, nlistCutoff, 0.0, parallelTeam);
 
             // Expand coordinates
             double xyz[][] = new double[nSymm][3 * numResidues];
@@ -8739,9 +8728,10 @@ public class RotamerOptimization implements Terminatable {
                         twoBodyEnergy = Double.NaN;
                         logger.info(format(" Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang < %5.3f Ang",
                                 residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, dist, superpositionThreshold));
-                    } else if (dist > twoBodyCutoffDist) {
+                    } else if (twoBodyCutoffDist > 0 && dist > twoBodyCutoffDist) {
                         // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                         twoBodyEnergy = 0.0;
+                        time += System.nanoTime();
                         logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s (Ang) in %6.4f (sec).",
                                 residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, time * 1.0e-9));
                     } else {
