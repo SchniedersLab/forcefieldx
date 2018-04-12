@@ -89,6 +89,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -96,6 +97,8 @@ import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NeighborList;
+import ffx.potential.nonbonded.NonbondedCutoff;
+import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.ObjectPair;
@@ -711,7 +714,14 @@ public class RotamerOptimization implements Terminatable {
             }
         }
 
-        // twoBodyCutoffDist = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 12.0);
+        /**
+         * Set the default 2-body Cutoff to the van der Waals cutoff.
+         */
+        ForceFieldEnergy forceFieldEnegy = molecularAssembly.getPotentialEnergy();
+        VanDerWaals vdW = forceFieldEnegy.getVdwNode();
+        NonbondedCutoff nonBondedCutoff = vdW.getNonbondedCutoff();
+        twoBodyCutoffDist = nonBondedCutoff.off;
+
         // Process relevant system keys.
         String undo = System.getProperty("ro-undo");
         String direction = System.getProperty("ro-direction");
