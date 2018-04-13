@@ -50,6 +50,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.floor;
@@ -57,12 +58,15 @@ import static org.apache.commons.math3.util.FastMath.rint;
 import static org.apache.commons.math3.util.FastMath.signum;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.utilities.HashCodeUtil;
+import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.transpose3;
+import static ffx.numerics.VectorMath.r;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -130,6 +134,7 @@ public class Crystal {
      * The crystal unit cell volume.
      */
     public double volume;
+
     /**
      * Change in the volume with respect to a.
      */
@@ -157,6 +162,7 @@ public class Crystal {
      * zero if gamma is fixed.
      */
     public double dVdGamma;
+
     /**
      * Matrix to convert from fractional to Cartesian coordinates.
      */
@@ -193,13 +199,8 @@ public class Crystal {
      * Interfacial radius in the direction of the C-axis.
      */
     public double interfacialRadiusC;
-    private double cos_alpha;
-    private double sin_beta;
-    private double cos_beta;
-    private double sin_gamma;
-    private double cos_gamma;
-    private double beta_term;
-    private double gamma_term;
+
+
     private boolean aperiodic;
     public int scale_flag;
     public int scale_b[] = new int[6];
@@ -345,6 +346,14 @@ public class Crystal {
      */
     private void updateCrystal() {
 
+        double cos_alpha = 0.0;
+        double sin_beta = 0.0;
+        double cos_beta = 0.0;
+        double sin_gamma = 0.0;
+        double cos_gamma = 0.0;
+        double beta_term = 0.0;
+        double gamma_term = 0.0;
+
         switch (crystalSystem) {
             case CUBIC:
             case ORTHORHOMBIC:
@@ -398,16 +407,32 @@ public class Crystal {
                 dVdB = sin_gamma * gamma_term * a * c;
                 dVdC = sin_gamma * gamma_term * a * b;
 
-                double dbeta = 2.0 * sin_beta * cos_beta
-                        - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma) / (sin_gamma * sin_gamma);
+                double dbeta = 2.0 * sin_beta * cos_beta - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma) / (sin_gamma * sin_gamma);
                 double dgamma1 = -2.0 * (cos_alpha - cos_beta * cos_gamma) * cos_beta / sin_gamma;
                 double dgamma2 = cos_alpha - cos_beta * cos_gamma;
                 dgamma2 *= dgamma2 * 2.0 * cos_gamma / (sin_gamma * sin_gamma * sin_gamma);
+
                 dVdAlpha = (cos_alpha - cos_beta * cos_gamma) * sin_alpha / (sin_gamma * gamma_term) * a * b * c;
                 dVdBeta = 0.5 * sin_gamma * dbeta / gamma_term * a * b * c;
                 dVdGamma = (cos_gamma * gamma_term + 0.5 * sin_gamma * (dgamma1 + dgamma2) / gamma_term) * a * b * c;
+
                 break;
         }
+
+        G[0][0] = a * a;
+        G[0][1] = a * b * cos_gamma;
+        G[0][2] = a * c * cos_beta;
+        G[1][0] = G[0][1];
+        G[1][1] = b * b;
+        G[1][2] = b * c * cos_alpha;
+        G[2][0] = G[0][2];
+        G[2][1] = G[1][2];
+        G[2][2] = c * c;
+
+        // invert G to yield Gstar
+        RealMatrix m = new Array2DRowRealMatrix(G, true);
+        m = new LUDecomposition(m).getSolver().getInverse();
+        Gstar = m.getData();
 
         // a is the first row of A^(-1).
         Ai[0][0] = a;
@@ -433,7 +458,7 @@ public class Crystal {
         Ai22 = Ai[2][2];
 
         // Invert A^-1 to get A
-        RealMatrix m = new Array2DRowRealMatrix(Ai, true);
+        m = new Array2DRowRealMatrix(Ai, true);
         m = new LUDecomposition(m).getSolver().getInverse();
         A = m.getData();
 
@@ -472,21 +497,6 @@ public class Crystal {
                     interfacialRadiusA, interfacialRadiusB, interfacialRadiusC));
         }
 
-        G[0][0] = a * a;
-        G[0][1] = a * b * cos_gamma;
-        G[0][2] = a * c * cos_beta;
-        G[1][0] = G[0][1];
-        G[1][1] = b * b;
-        G[1][2] = b * c * cos_alpha;
-        G[2][0] = G[0][2];
-        G[2][1] = G[1][2];
-        G[2][2] = c * c;
-
-        // invert G to yield Gstar
-        m = new Array2DRowRealMatrix(G, true);
-        m = new LUDecomposition(m).getSolver().getInverse();
-        Gstar = m.getData();
-
         List<SymOp> symOps = spaceGroup.symOps;
         int nSymm = symOps.size();
         if (symOpsCartesian == null) {
@@ -506,7 +516,6 @@ public class Crystal {
             double tr[] = toCart.preMultiply(symOp.tr);
             symOpsCartesian.add(new SymOp(rotMat.getData(), tr));
         }
-
     }
 
     /**
@@ -528,9 +537,11 @@ public class Crystal {
             double gamma) {
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
-            String message = " The proposed lattice parameters do not satisfy the " + crystalSystem
-                    + " crystal system restrictions and were ignored.";
-            logger.info(message);
+            if (logger.isLoggable(Level.FINE)) {
+                String message = " The proposed lattice parameters do not satisfy the " + crystalSystem
+                        + " crystal system restrictions and were ignored.";
+                logger.fine(message);
+            }
             return false;
         }
 
@@ -544,6 +555,48 @@ public class Crystal {
         updateCrystal();
 
         return true;
+    }
+
+
+    /**
+     * Strain the unit cell vectors.
+     *
+     * @param dStrain
+     */
+    public boolean perturbCellVectors(double dStrain[][]) {
+
+        double AA[][] = new double[3][3];
+        double newAi[][] = new double[3][3];
+
+        for (int i=0; i<3; i++) {
+            for (int j=0; j<3; j++) {
+                AA[i][j] = getUnitCell().Ai[i][j];
+            }
+        }
+
+        for (int i=0; i<3; i++) {
+            for (int j=0; j<3; j++) {
+                for (int k=0; k<3; k++) {
+                    double Kronecker = 0.0;
+                    if (j == k) {
+                        Kronecker = 1.0;
+                    }
+                    newAi[i][j] += (Kronecker + dStrain[j][k]) * AA[i][k];
+                }
+            }
+        }
+
+        // Update a-, b-, and c-axis lengths.
+        double aa = r(newAi[0]);
+        double bb = r(newAi[1]);
+        double cc = r(newAi[2]);
+
+        // Update alpha, beta and gamma angles.
+        double aalpha = toDegrees(acos(dot(newAi[1], newAi[2]) / (bb * cc)));
+        double bbeta = toDegrees(acos(dot(newAi[0], newAi[2]) / (aa * cc)));
+        double ggamma =  toDegrees(acos(dot(newAi[0], newAi[1]) / (aa * bb)));
+
+        return changeUnitCellParameters(aa, bb, cc, aalpha, bbeta, ggamma);
     }
 
     public double getDensity(double mass) {
@@ -1424,20 +1477,6 @@ public class Crystal {
         x[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
         x[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
         x[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
-    }
-
-    /**
-     * <p>
-     * toFractionalCoordinatesTINKER</p>
-     *
-     * @param x an array of double.
-     * @param xf an array of double.
-     */
-    public void toFractionalCoordinatesTINKER(double x[], double xf[]) {
-        // Convert to fractional coordinates.
-        xf[2] = (x[2] / gamma_term) / c;
-        xf[1] = ((x[1] - xf[2] * c * beta_term) / sin_gamma) / b;
-        xf[0] = (x[0] - xf[1] * b * cos_gamma - xf[2] * c * cos_beta) / a;
     }
 
     /**

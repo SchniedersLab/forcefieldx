@@ -60,7 +60,7 @@ import ffx.potential.bonded.Polymer;
  * The Barostat class maintains constant pressure using random trial moves in
  * lattice parameters, which are consistent with the space group.
  *
- * @see D. Frenkel and B. Smit, "Understanding Molecular Simulation, 2nd
+ * Frenkel and Smit, "Understanding Molecular Simulation, 2nd
  * Edition", Academic Press, San Diego, CA, 2002; Section 5.4
  *
  * @author Michael J. Schnieders
@@ -154,10 +154,6 @@ public class Barostat implements CrystalPotential {
      * Number of molecules in the systems.
      */
     private final int nMolecules;
-    /**
-     * Center of mass of each molecule in fractional coordinates.
-     */
-    private final double fractionalCOM[][];
     /**
      * Number of energy evaluations between application of MC moves.
      */
@@ -267,14 +263,13 @@ public class Barostat implements CrystalPotential {
         nSymm = spaceGroup.getNumberOfSymOps();
         mass = molecularAssembly.getMass();
         x = new double[3 * nAtoms];
-        nMolecules = countMolecules();
+        nMolecules = molecularAssembly.countMolecules();
         if (nMolecules > 1) {
             logger.info(String.format(" There are %d molecules.", nMolecules));
         } else {
             logger.info(String.format(" There is %d molecule.", nMolecules));
         }
 
-        fractionalCOM = new double[nMolecules][3];
     }
 
     @Override
@@ -361,7 +356,7 @@ public class Barostat implements CrystalPotential {
         potential.setCrystal(crystal);
 
         // Update atomic coordinates to maintain molecular fractional centers of mass.
-        moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCOM();
 
         // Save the new volume
         double newV = unitCell.volume / nSymm;
@@ -456,7 +451,7 @@ public class Barostat implements CrystalPotential {
         potential.setCrystal(crystal);
 
         // Reset the atomic coordinates to maintain molecular fractional centers of mass.
-        moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCOM();
     }
 
     public double density() {
@@ -617,292 +612,19 @@ public class Barostat implements CrystalPotential {
         return currentE;
     }
 
-    private int countMolecules() {
-        int count = 0;
-        // Move polymers togethers.
-        Polymer polymers[] = molecularAssembly.getChains();
-        if (polymers != null && polymers.length > 0) {
-            count += polymers.length;
-        }
-        List<Molecule> molecules = molecularAssembly.getMolecules();
-        if (molecules != null) {
-            count += molecules.size();
-        }
-        List<MSNode> waters = molecularAssembly.getWaters();
-        if (waters != null) {
-            count += waters.size();
-        }
-        List<MSNode> ions = molecularAssembly.getIons();
-        if (ions != null) {
-            count += ions.size();
-        }
-        return count;
-    }
-
     public void setDensity(double density) {
-        computeFractionalCOM();
+        molecularAssembly.computeFractionalCOM();
 
         crystal.setDensity(density, mass);
 
         potential.setCrystal(crystal);
 
-        moveToFractionalCOM();
-    }
-
-    private void computeFractionalCOM() {
-
-        int iMolecule = 0;
-        double[] com = new double[3];
-
-        Polymer polymers[] = molecularAssembly.getChains();
-        if (polymers != null && polymers.length > 0) {
-            // Find the center of mass
-            for (Polymer polymer : polymers) {
-                List<Atom> list = polymer.getAtomList();
-                com[0] = 0.0;
-                com[1] = 0.0;
-                com[2] = 0.0;
-                double totalMass = 0.0;
-                for (Atom atom : list) {
-                    double m = atom.getMass();
-                    com[0] += atom.getX() * m;
-                    com[1] += atom.getY() * m;
-                    com[2] += atom.getZ() * m;
-                    totalMass += m;
-                }
-                com[0] /= totalMass;
-                com[1] /= totalMass;
-                com[2] /= totalMass;
-                unitCell.toFractionalCoordinates(com, fractionalCOM[iMolecule++]);
-            }
-        }
-
-        // Loop over each molecule
-        List<Molecule> molecules = molecularAssembly.getMolecules();
-        for (MSNode molecule : molecules) {
-            List<Atom> list = molecule.getAtomList();
-            // Find the center of mass
-            com[0] = 0.0;
-            com[1] = 0.0;
-            com[2] = 0.0;
-            double totalMass = 0.0;
-            for (Atom atom : list) {
-                double m = atom.getMass();
-                com[0] += atom.getX() * m;
-                com[1] += atom.getY() * m;
-                com[2] += atom.getZ() * m;
-                totalMass += m;
-            }
-            com[0] /= totalMass;
-            com[1] /= totalMass;
-            com[2] /= totalMass;
-            unitCell.toFractionalCoordinates(com, fractionalCOM[iMolecule++]);
-        }
-
-        // Loop over each water
-        List<MSNode> waters = molecularAssembly.getWaters();
-        for (MSNode water : waters) {
-            List<Atom> list = water.getAtomList();
-            // Find the center of mass
-            com[0] = 0.0;
-            com[1] = 0.0;
-            com[2] = 0.0;
-            double totalMass = 0.0;
-            for (Atom atom : list) {
-                double m = atom.getMass();
-                com[0] += atom.getX() * m;
-                com[1] += atom.getY() * m;
-                com[2] += atom.getZ() * m;
-                totalMass += m;
-            }
-            com[0] /= totalMass;
-            com[1] /= totalMass;
-            com[2] /= totalMass;
-            unitCell.toFractionalCoordinates(com, fractionalCOM[iMolecule++]);
-        }
-
-        // Loop over each ion
-        List<MSNode> ions = molecularAssembly.getIons();
-        for (MSNode ion : ions) {
-            List<Atom> list = ion.getAtomList();
-            // Find the center of mass
-            com[0] = 0.0;
-            com[1] = 0.0;
-            com[2] = 0.0;
-            double totalMass = 0.0;
-            for (Atom atom : list) {
-                double m = atom.getMass();
-                com[0] += atom.getX() * m;
-                com[1] += atom.getY() * m;
-                com[2] += atom.getZ() * m;
-                totalMass += m;
-            }
-            com[0] /= totalMass;
-            com[1] /= totalMass;
-            com[2] /= totalMass;
-            unitCell.toFractionalCoordinates(com, fractionalCOM[iMolecule++]);
-        }
-    }
-
-    private void moveToFractionalCOM() {
-        int iMolecule = 0;
-        double[] com = new double[3];
-
-        Polymer polymers[] = molecularAssembly.getChains();
-        if (polymers != null && polymers.length > 0) {
-            // Find the center of mass
-            for (Polymer polymer : polymers) {
-                List<Atom> list = polymer.getAtomList();
-                double totalMass = 0.9;
-                com[0] = 0.0;
-                com[1] = 0.0;
-                com[2] = 0.0;
-                for (Atom atom : list) {
-                    double m = atom.getMass();
-                    com[0] += atom.getX() * m;
-                    com[1] += atom.getY() * m;
-                    com[2] += atom.getZ() * m;
-                    totalMass += m;
-                }
-                com[0] /= totalMass;
-                com[1] /= totalMass;
-                com[2] /= totalMass;
-                // Find the new center of mass in fractional coordinates.
-                unitCell.toFractionalCoordinates(com, com);
-                // Find the reciprocal translation vector.
-                double[] frac = fractionalCOM[iMolecule++];
-                com[0] = frac[0] - com[0];
-                com[1] = frac[1] - com[1];
-                com[2] = frac[2] - com[2];
-                // Convert the fractional translation vector to Cartesian coordinates.
-                unitCell.toCartesianCoordinates(com, com);
-                // Move all atoms.
-//            for (Polymer polymer : polymers) {
-//                List<Atom> list = polymer.getAtomList();
-                for (Atom atom : list) {
-                    atom.move(com);
-                }
-            }
-        }
-
-        // Loop over each molecule
-        List<Molecule> molecules = molecularAssembly.getMolecules();
-        for (MSNode molecule : molecules) {
-            List<Atom> list = molecule.getAtomList();
-            // Find the center of mass
-            com[0] = 0.0;
-            com[1] = 0.0;
-            com[2] = 0.0;
-            double totalMass = 0.0;
-            for (Atom atom : list) {
-                double m = atom.getMass();
-                com[0] += atom.getX() * m;
-                com[1] += atom.getY() * m;
-                com[2] += atom.getZ() * m;
-                totalMass += m;
-            }
-            com[0] /= totalMass;
-            com[1] /= totalMass;
-            com[2] /= totalMass;
-            // Find the new center of mass in fractional coordinates.
-            unitCell.toFractionalCoordinates(com, com);
-            // Find the reciprocal translation vector to the previous COM.
-            double[] frac = fractionalCOM[iMolecule++];
-            com[0] = frac[0] - com[0];
-            com[1] = frac[1] - com[1];
-            com[2] = frac[2] - com[2];
-            // Convert the fractional translation vector to Cartesian coordinates.
-            unitCell.toCartesianCoordinates(com, com);
-            // Move all atoms.
-            for (Atom atom : list) {
-                atom.move(com);
-            }
-        }
-
-        // Loop over each water
-        List<MSNode> waters = molecularAssembly.getWaters();
-        for (MSNode water : waters) {
-            List<Atom> list = water.getAtomList();
-            // Find the center of mass
-            com[0] = 0.0;
-            com[1] = 0.0;
-            com[2] = 0.0;
-            double totalMass = 0.0;
-            for (Atom atom : list) {
-                double m = atom.getMass();
-                com[0] += atom.getX() * m;
-                com[1] += atom.getY() * m;
-                com[2] += atom.getZ() * m;
-                totalMass += m;
-            }
-            com[0] /= totalMass;
-            com[1] /= totalMass;
-            com[2] /= totalMass;
-            // Find the new center of mass in fractional coordinates.
-            unitCell.toFractionalCoordinates(com, com);
-            // Find the reciprocal translation vector to the previous COM.
-            double[] frac = fractionalCOM[iMolecule++];
-            com[0] = frac[0] - com[0];
-            com[1] = frac[1] - com[1];
-            com[2] = frac[2] - com[2];
-            // Convert the fractional translation vector to Cartesian coordinates.
-            unitCell.toCartesianCoordinates(com, com);
-
-            double r = ffx.numerics.VectorMath.r(com);
-            /**
-             * Warn if an atom is moved more than 1 Angstrom.
-             */
-            if (r > 1.0) {
-                int i = iMolecule - 1;
-                logger.info(String.format(" %d R: %16.8f", i, r));
-                logger.info(String.format(" %d FRAC %16.8f %16.8f %16.8f", i, frac[0], frac[1], frac[2]));
-                logger.info(String.format(" %d COM  %16.8f %16.8f %16.8f", i, com[0], com[1], com[2]));
-            }
-
-            // Move all atoms.
-            for (Atom atom : list) {
-                atom.move(com);
-            }
-        }
-
-        // Loop over each ion
-        List<MSNode> ions = molecularAssembly.getIons();
-        for (MSNode ion : ions) {
-            List<Atom> list = ion.getAtomList();
-            // Find the center of mass
-            com[0] = 0.0;
-            com[1] = 0.0;
-            com[2] = 0.0;
-            double totalMass = 0.0;
-            for (Atom atom : list) {
-                double m = atom.getMass();
-                com[0] += atom.getX() * m;
-                com[1] += atom.getY() * m;
-                com[2] += atom.getZ() * m;
-                totalMass += m;
-            }
-            com[0] /= totalMass;
-            com[1] /= totalMass;
-            com[2] /= totalMass;
-            // Find the new center of mass in fractional coordinates.
-            unitCell.toFractionalCoordinates(com, com);
-            // Find the reciprocal translation vector to the previous COM.
-            double[] frac = fractionalCOM[iMolecule++];
-            com[0] = frac[0] - com[0];
-            com[1] = frac[1] - com[1];
-            com[2] = frac[2] - com[2];
-            // Convert the fractional translation vector to Cartesian coordinates.
-            unitCell.toCartesianCoordinates(com, com);
-            // Move all atoms.
-            for (Atom atom : list) {
-                atom.move(com);
-            }
-        }
+        molecularAssembly.moveToFractionalCOM();
     }
 
     private double applyBarostat(double currentE) {
         // Determine the current molecular centers of mass in fractional coordinates.
-        computeFractionalCOM();
+        molecularAssembly.computeFractionalCOM();
 
         // Collect the current unit cell parameters.
         crystal = potential.getCrystal();

@@ -39,6 +39,7 @@ package ffx.algorithms;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -52,7 +53,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.XtalEnergy;
 
 /**
- * Minimize the potential energy of a system to an RMS gradient per atom
+ * Minimize the energy of a system to an RMS gradient per atom
  * convergence criteria.
  *
  * @author Michael J. Schnieders
@@ -67,7 +68,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
     private final double[] grad;
     private final double[] scaling;
     private final MolecularAssembly molecularAssembly;
-    private final XtalEnergy potential;
+    private final XtalEnergy xtalEnergy;
     private final AlgorithmListener algorithmListener;
     private boolean done = false;
     private boolean terminate = false;
@@ -82,17 +83,17 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
      * object.
-     * @param potential a {@link ffx.numerics.Potential} object.
+     * @param xtalEnergy a {@link ffx.potential.XtalEnergy} object.
      * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
      * object.
      */
-    public CrystalMinimize(MolecularAssembly molecularAssembly, XtalEnergy potential,
+    public CrystalMinimize(MolecularAssembly molecularAssembly, XtalEnergy xtalEnergy,
             AlgorithmListener algorithmListener) {
         assert (molecularAssembly != null);
         this.molecularAssembly = molecularAssembly;
         this.algorithmListener = algorithmListener;
-        this.potential = potential;
-        n = potential.getNumberOfVariables();
+        this.xtalEnergy = xtalEnergy;
+        n = xtalEnergy.getNumberOfVariables();
         x = new double[n];
         grad = new double[n];
         crystal = molecularAssembly.getCrystal();
@@ -109,7 +110,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         scaling[n - 2] = 0.02 * sqrt(crystal.beta);
         scaling[n - 1] = 0.02 * sqrt(crystal.gamma);
 
-        potential.setScaling(scaling);
+        xtalEnergy.setScaling(scaling);
     }
 
     /**
@@ -128,8 +129,8 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         if (molecularAssembly.getPotentialEnergy() == null) {
             molecularAssembly.setPotential(ForceFieldEnergy.energyFactory(molecularAssembly));
         }
-        potential = new XtalEnergy(molecularAssembly.getPotentialEnergy(), molecularAssembly);
-        n = potential.getNumberOfVariables();
+        xtalEnergy = new XtalEnergy(molecularAssembly.getPotentialEnergy(), molecularAssembly);
+        n = xtalEnergy.getNumberOfVariables();
         x = new double[n];
         grad = new double[n];
         crystal = molecularAssembly.getCrystal();
@@ -146,7 +147,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         scaling[n - 2] = 0.02 * sqrt(crystal.beta);
         scaling[n - 1] = 0.02 * sqrt(crystal.gamma);
 
-        potential.setScaling(scaling);
+        xtalEnergy.setScaling(scaling);
     }
 
     /**
@@ -197,7 +198,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      */
     public Potential minimize(int m, double eps) {
         time = System.nanoTime();
-        potential.getCoordinates(x);
+        xtalEnergy.getCoordinates(x);
         /**
          * Scale coordinates.
          */
@@ -206,9 +207,8 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         }
 
         done = false;
-        int status = 2;
-        double e = potential.energyAndGradient(x, grad);
-        status = LBFGS.minimize(n, m, x, e, grad, eps, potential, this);
+        double e = xtalEnergy.energyAndGradient(x, grad);
+        int status = LBFGS.minimize(n, m, x, e, grad, eps, xtalEnergy, this);
         done = true;
 
         switch (status) {
@@ -224,8 +224,17 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         crystal = molecularAssembly.getCrystal();
         logger.info(String.format("\n Final lattice parameters" + crystal));
 
-        return potential;
+        return xtalEnergy;
     }
+
+    /**
+     * Print out the partial derivatives of the Energy with respect to
+     * components of the 3 vectors that define the primitive cell.
+     */
+    public void printTensor() {
+        xtalEnergy.computeStressTensor(true);
+    }
+
 
     /**
      * {@inheritDoc}

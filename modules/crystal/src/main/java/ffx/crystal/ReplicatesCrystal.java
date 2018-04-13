@@ -42,6 +42,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.toDegrees;
+
+import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.r;
+
 /**
  * The ReplicatesCrystal class extends Crystal to generate additional symmetry
  * operators needed to describe a "replicated" super cell. The replicated
