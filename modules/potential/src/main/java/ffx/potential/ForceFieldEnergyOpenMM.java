@@ -210,8 +210,6 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_destroy;
 import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_resize;
 import static simtk.openmm.OpenMMLibrary.OpenMM_DoubleArray_set;
 import static simtk.openmm.OpenMMLibrary.OpenMM_Force_setForceGroup;
-import static simtk.openmm.OpenMMLibrary.OpenMM_HarmonicBondForce_addBond;
-import static simtk.openmm.OpenMMLibrary.OpenMM_HarmonicBondForce_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_append;
 import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_create;
 import static simtk.openmm.OpenMMLibrary.OpenMM_IntArray_destroy;
@@ -2631,25 +2629,27 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double baseRadii[] = gk.getBaseRadii();
         double overlapScale[] = gk.getOverlapScale();
         PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
+        boolean nea = gk.getNativeEnvironmentApproximation();
 
         int nAtoms = atoms.length;
         for (int i = 0; i < nAtoms; i++) {
             Atom atom = atoms[i];
-            double useFactor = 1.0;
+            double chargeUseFactor = 1.0;
             if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
                 //if (!atoms[i].getUse()) {
-                useFactor = 0.0;
+                chargeUseFactor = 0.0;
             }
             double lambdaScale = lambda;
             if (!atom.applyLambda()) {
                 lambdaScale = 1.0;
             }
 
-            useFactor *= lambdaScale;
+            chargeUseFactor *= lambdaScale;
+            double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
 
             MultipoleType multipoleType = atom.getMultipoleType();
-            double charge = multipoleType.charge * useFactor;
-            double oScale = overlapScale[i] * useFactor;
+            double charge = multipoleType.charge * chargeUseFactor;
+            double oScale = overlapScale[i] * overlapScaleUseFactor;
             OpenMM_DoubleArray_append(doubleArray, charge);
             OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadii[i]);
             OpenMM_DoubleArray_append(doubleArray, oScale);
@@ -2786,11 +2786,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double overlapScale[] = gk.getOverlapScale();
         double baseRadii[] = gk.getBaseRadii();
         int nAtoms = atoms.length;
+        boolean nea = gk.getNativeEnvironmentApproximation();
+
         for (int i = 0; i < nAtoms; i++) {
-            double useFactor = 1.0;
+            double chargeUseFactor = 1.0;
             if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
-                //if (!atoms[i].getUse()) {
-                useFactor = 0.0;
+                chargeUseFactor = 0.0;
             }
 
             double lambdaScale = lambda;
@@ -2798,12 +2799,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 lambdaScale = 1.0;
             }
 
-            useFactor *= lambdaScale;
+            chargeUseFactor *= lambdaScale;
+            double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
 
             MultipoleType multipoleType = atoms[i].getMultipoleType();
             OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(amoebaGeneralizedKirkwoodForce, i,
-                    multipoleType.charge * useFactor,
-                    OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i] * useFactor);
+                    multipoleType.charge * chargeUseFactor,
+                    OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i] * overlapScaleUseFactor);
         }
         OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(amoebaGeneralizedKirkwoodForce, context);
     }
@@ -2931,6 +2933,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int infoMask = OpenMM_State_Energy;
         state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+        if (!Double.isFinite(e)) {
+            String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
+            logger.warning(message);
+            throw new EnergyException(message);
+        }
         OpenMM_State_destroy(state);
 
         if (verbose) {
@@ -2983,6 +2990,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         state = OpenMM_Context_getState(context, infoMask, enforcePBC);
         double e = OpenMM_State_getPotentialEnergy(state) / OpenMM_KJPerKcal;
+        if (!Double.isFinite(e)) {
+            String message = String.format(" Energy from OpenMM was a non-finite %8g", e);
+            logger.warning(message);
+            throw new EnergyException(message);
+        }
 
         if (vdwLambdaTerm) {
             PointerByReference parameterArray = OpenMM_State_getEnergyParameterDerivatives(state);

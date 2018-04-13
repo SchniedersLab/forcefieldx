@@ -262,7 +262,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Forces all atoms to be considered during Born radius updates.
      */
-    private boolean bornUseAll = false;
+    private boolean nativeEnvironmentApproximation = false;
     /**
      * Provides maps from atomtypes or biotypes to fitted GK radii (by
      * forcefield).
@@ -458,7 +458,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         sharedGKField = new SharedDoubleArray[3];
         sharedGKFieldCR = new SharedDoubleArray[3];
 
-        bornUseAll = forceField.getBoolean(ForceField.ForceFieldBoolean.BORN_USE_ALL, false);
+        nativeEnvironmentApproximation = forceField.getBoolean(ForceField.ForceFieldBoolean.NATIVE_ENVIRONMENT_APPROXIMATION, false);
 
         probe = forceField.getDouble(ForceField.ForceFieldDouble.PROBE_RADIUS, 1.4);
 
@@ -583,12 +583,40 @@ public class GeneralizedKirkwood implements LambdaInterface {
         return fixedRadii;
     }
 
-    public void setBornUseAll(boolean bornUseAll) {
-        this.bornUseAll = bornUseAll;
+    /**
+     * <p>Sets whether GK uses the Native Environment Approximation.
+     * </p>
+     * <p>This (previously known as born-use-all) is useful for
+     * rotamer optimization under continuum solvent. If a large
+     * number of sidechain atoms are completely removed from the
+     * GK/GB calculation, the remaining sidechains are overly
+     * solvated. The NEA says "we will keep all sidechains not under
+     * optimization in some default state and let them contribute to
+     * Born radii calculations, but still exclude their solvation
+     * energy components."
+     * </p>
+     * @param nativeEnvironmentApproximation Whether to use the NEA.
+     */
+    public void setNativeEnvironmentApproximation(boolean nativeEnvironmentApproximation) {
+        this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
     }
 
-    public boolean getBornUseAll() {
-        return bornUseAll;
+    /**
+     * <p>Checks whether GK uses the Native Environment Approximation.
+     * </p>
+     * <p>This (previously known as born-use-all) is useful for
+     * rotamer optimization under continuum solvent. If a large
+     * number of sidechain atoms are completely removed from the
+     * GK/GB calculation, the remaining sidechains are overly
+     * solvated. The NEA says "we will keep all sidechains not under
+     * optimization in some default state and let them contribute to
+     * Born radii calculations, but still exclude their solvation
+     * energy components."
+     * </p>
+     * @return Whether the NEA is in use.
+     */
+    public boolean getNativeEnvironmentApproximation() {
+        return nativeEnvironmentApproximation;
     }
 
     private void initAtomArrays() {
@@ -1339,7 +1367,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             @Override
             public void run(int lb, int ub) {
                 for (int i = lb; i <= ub; i++) {
-                    if (!bornUseAll && !use[i]) {
+                    if (!nativeEnvironmentApproximation && !use[i]) {
                         continue;
                     }
                     final double baseRi = baseRadiusWithBondi[i];
@@ -1361,7 +1389,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         int k = list[l];
                         final double baseRk = baseRadiusWithBondi[k];
                         if (i != k && baseRk > 0.0) {
-                            if (!bornUseAll && !use[k]) {
+                            if (!nativeEnvironmentApproximation && !use[k]) {
                                 continue;
                             }
                             final double xr = x[k] - xi;
