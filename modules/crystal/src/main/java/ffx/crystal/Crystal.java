@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -65,8 +65,8 @@ import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
-import static ffx.numerics.VectorMath.transpose3;
 import static ffx.numerics.VectorMath.r;
+import static ffx.numerics.VectorMath.transpose3;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that
@@ -230,7 +230,7 @@ public class Crystal {
      * @param sg The space group symbol.
      */
     public Crystal(double a, double b, double c, double alpha, double beta,
-            double gamma, String sg) {
+                   double gamma, String sg) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -534,7 +534,7 @@ public class Crystal {
      * otherwise.
      */
     public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta,
-            double gamma) {
+                                            double gamma) {
 
         if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
             if (logger.isLoggable(Level.FINE)) {
@@ -568,19 +568,20 @@ public class Crystal {
         double AA[][] = new double[3][3];
         double newAi[][] = new double[3][3];
 
-        for (int i=0; i<3; i++) {
-            for (int j=0; j<3; j++) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
                 AA[i][j] = getUnitCell().Ai[i][j];
             }
         }
 
-        for (int i=0; i<3; i++) {
-            for (int j=0; j<3; j++) {
-                for (int k=0; k<3; k++) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                for (int k = 0; k < 3; k++) {
                     double Kronecker = 0.0;
                     if (j == k) {
                         Kronecker = 1.0;
                     }
+                    // Aij' = Sum over K ( Kron_jk + dStrain_jk ) * Aij
                     newAi[i][j] += (Kronecker + dStrain[j][k]) * AA[i][k];
                 }
             }
@@ -594,7 +595,7 @@ public class Crystal {
         // Update alpha, beta and gamma angles.
         double aalpha = toDegrees(acos(dot(newAi[1], newAi[2]) / (bb * cc)));
         double bbeta = toDegrees(acos(dot(newAi[0], newAi[2]) / (aa * cc)));
-        double ggamma =  toDegrees(acos(dot(newAi[0], newAi[1]) / (aa * bb)));
+        double ggamma = toDegrees(acos(dot(newAi[0], newAi[1]) / (aa * bb)));
 
         return changeUnitCellParameters(aa, bb, cc, aalpha, bbeta, ggamma);
     }
@@ -904,7 +905,7 @@ public class Crystal {
      * @param symOp The symmetry operator.
      */
     public void applyCartSymOp(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+                               double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         if (x == null || y == null || z == null) {
             return;
         }
@@ -963,7 +964,7 @@ public class Crystal {
      * @param symOp The symmetry operator.
      */
     public void applySymOp(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+                           double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         if (x == null || y == null || z == null) {
             return;
         }
@@ -1251,7 +1252,7 @@ public class Crystal {
      * @param symOp The symmetry operator.
      */
     public void applySymRot(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
+                            double mateX[], double mateY[], double mateZ[], SymOp symOp) {
         double rot[][] = symOp.rot;
         final double rot00 = rot[0][0];
         final double rot10 = rot[1][0];
@@ -1299,8 +1300,8 @@ public class Crystal {
      * @param rotmat an array of double.
      */
     public void applyTransSymRot(int n, double x[], double y[], double z[],
-            double mateX[], double mateY[], double mateZ[],
-            SymOp symOp, double rotmat[][]) {
+                                 double mateX[], double mateY[], double mateZ[],
+                                 SymOp symOp, double rotmat[][]) {
 
         if (x == null || y == null || z == null) {
             return;
@@ -1347,7 +1348,7 @@ public class Crystal {
      * @param zf an array of double.
      */
     public void toFractionalCoordinates(int n, double x[], double y[],
-            double z[], double xf[], double yf[], double zf[]) {
+                                        double z[], double xf[], double yf[], double zf[]) {
         for (int i = 0; i < n; i++) {
             double xc = x[i];
             double yc = y[i];
@@ -1427,7 +1428,7 @@ public class Crystal {
      * @param z an array of double.
      */
     public void toCartesianCoordinates(int n, double xf[], double yf[],
-            double zf[], double x[], double y[], double z[]) {
+                                       double zf[], double x[], double y[], double z[]) {
         for (int i = 0; i < n; i++) {
             double xi = xf[i];
             double yi = yf[i];

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -805,18 +805,18 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     @SuppressWarnings("unchecked")
     public <T extends ParticleMeshEwald> T setPmeClass(Class<T> set) {
 //        if (set != particleMeshEwald.getClass()) {
-            if (set == ParticleMeshEwaldQI.class) {
-                particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecularAssembly.getMoleculeNumbers(),
-                        molecularAssembly.getForceField(), crystal,
-                        vanderWaals.getNeighborList(), particleMeshEwald.getElecForm(), parallelTeam);
-            } else if (set == ParticleMeshEwaldCart.class) {
-                particleMeshEwald = new ParticleMeshEwaldCart(atoms, molecularAssembly.getMoleculeNumbers(),
-                        molecularAssembly.getForceField(), crystal,
-                        vanderWaals.getNeighborList(), particleMeshEwald.getElecForm(), parallelTeam);
-            } else {
-                throw new IllegalArgumentException();
-            }
-            reInit();
+        if (set == ParticleMeshEwaldQI.class) {
+            particleMeshEwald = new ParticleMeshEwaldQI(atoms, molecularAssembly.getMoleculeNumbers(),
+                    molecularAssembly.getForceField(), crystal,
+                    vanderWaals.getNeighborList(), particleMeshEwald.getElecForm(), parallelTeam);
+        } else if (set == ParticleMeshEwaldCart.class) {
+            particleMeshEwald = new ParticleMeshEwaldCart(atoms, molecularAssembly.getMoleculeNumbers(),
+                    molecularAssembly.getForceField(), crystal,
+                    vanderWaals.getNeighborList(), particleMeshEwald.getElecForm(), parallelTeam);
+        } else {
+            throw new IllegalArgumentException();
+        }
+        reInit();
 //        }
         return (T) particleMeshEwald;
     }
@@ -3514,7 +3514,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
 
             public BondedTermLoop(BondedTerm[] terms,
-                    SharedDouble sharedEnergy, SharedDouble sharedRMSD) {
+                                  SharedDouble sharedEnergy, SharedDouble sharedRMSD) {
                 this.terms = terms;
                 this.sharedEnergy = sharedEnergy;
                 this.sharedRMSD = sharedRMSD;

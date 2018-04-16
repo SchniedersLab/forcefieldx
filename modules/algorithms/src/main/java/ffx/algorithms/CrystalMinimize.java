@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -50,7 +50,10 @@ import ffx.numerics.OptimizationListener;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.potential.XtalEnergy;
+
+import static java.lang.System.arraycopy;
 
 /**
  * Minimize the energy of a system to an RMS gradient per atom
@@ -58,7 +61,6 @@ import ffx.potential.XtalEnergy;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class CrystalMinimize implements OptimizationListener, Terminatable {
 
@@ -76,19 +78,21 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
     private double grms;
     private int nSteps;
     private Crystal crystal;
+    private Crystal unitCell;
+    private ForceFieldEnergy forceFieldEnergy;
 
     /**
      * <p>
      * Constructor for Minimize.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param xtalEnergy a {@link ffx.potential.XtalEnergy} object.
+     *                          object.
+     * @param xtalEnergy        a {@link ffx.potential.XtalEnergy} object.
      * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
-     * object.
+     *                          object.
      */
     public CrystalMinimize(MolecularAssembly molecularAssembly, XtalEnergy xtalEnergy,
-            AlgorithmListener algorithmListener) {
+                           AlgorithmListener algorithmListener) {
         assert (molecularAssembly != null);
         this.molecularAssembly = molecularAssembly;
         this.algorithmListener = algorithmListener;
@@ -97,6 +101,9 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         crystal = molecularAssembly.getCrystal();
+        unitCell = crystal.getUnitCell();
+        forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+
         scaling = new double[n];
         for (int i = 0; i < n - 6; i += 3) {
             scaling[i] = 12.0 * crystal.a;
@@ -118,9 +125,9 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * Constructor for Minimize.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
+     *                          object.
      * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
-     * object.
+     *                          object.
      */
     public CrystalMinimize(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener) {
         assert (molecularAssembly != null);
@@ -192,7 +199,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * <p>
      * minimize</p>
      *
-     * @param m a int.
+     * @param m   a int.
      * @param eps a double.
      * @return a {@link ffx.numerics.Potential} object.
      */
@@ -232,20 +239,255 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * components of the 3 vectors that define the primitive cell.
      */
     public void printTensor() {
-        xtalEnergy.computeStressTensor(true);
+        computeStressTensor(true);
+    }
+
+    public void computeStressTensor(boolean verbose) {
+
+        double xOrig[] = new double[forceFieldEnergy.getNumberOfVariables()];
+        forceFieldEnergy.setScaling(null);
+        forceFieldEnergy.getCoordinates(xOrig);
+
+        forceFieldEnergy.energy(xOrig, verbose);
+
+        FractionalMode currentFractionalMode = molecularAssembly.getFractionalMode();
+
+        molecularAssembly.setFractionalMode(FractionalMode.MOLECULE);
+        molecularAssembly.computeFractionalCOM();
+
+        /**
+         * Conversion from kcal/mol/Ang^3 to Atm.
+         */
+        double PRESCON = 6.85684112e4;
+
+        /**
+         * Conversion from Atm to GPa.
+         */
+        double GPA = 101325 * 1.0e-9;
+
+        double volume = crystal.getUnitCell().volume / crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
+        logger.info(format(" Crystal Volume:         %16.8f", crystal.volume));
+        logger.info(format(" Unit Cell Volume:       %16.8f", crystal.getUnitCell().volume));
+        logger.info(format(" Asymmetric Unit Volume: %16.8f", volume));
+
+        logger.info(" The Strain and Stress Tensor code is under development.");
+
+        double delta = 1.0e-4;
+        double eps = 1.0e-2;
+
+        // 1 -> XX
+        // 2 -> YY
+        // 3 -> ZZ
+        // 4 -> YZ
+        // 5 -> XZ
+        // 6 -> XY
+
+        double x[] = new double[forceFieldEnergy.getNumberOfVariables()];
+        arraycopy(xOrig, 0, x,0, x.length);
+
+        double c11 = dE2dA2(1, 1, delta, x, eps) * PRESCON * GPA / volume;
+        double c22 = dE2dA2(2, 2, delta, x, eps) * PRESCON * GPA / volume;
+        double c33 = dE2dA2(3, 3, delta, x, eps) * PRESCON * GPA / volume;
+
+        double c12 = dE2dA2(1, 2, delta, x, eps) * PRESCON * GPA / volume;
+        double c13 = dE2dA2(1, 3, delta, x, eps) * PRESCON * GPA / volume;
+        double c23 = dE2dA2(2, 3, delta, x, eps) * PRESCON * GPA / volume;
+
+        double c14 = dE2dA2(1, 4, delta, x, eps) * PRESCON * GPA / volume;
+        double c15 = dE2dA2(1, 5, delta, x, eps) * PRESCON * GPA / volume;
+        double c16 = dE2dA2(1, 6, delta, x, eps) * PRESCON * GPA / volume;
+
+        double c24 = dE2dA2(2, 4, delta, x, eps) * PRESCON * GPA / volume;
+        double c25 = dE2dA2(2, 5, delta, x, eps) * PRESCON * GPA / volume;
+        double c26 = dE2dA2(2, 6, delta, x, eps) * PRESCON * GPA / volume;
+
+        double c34 = dE2dA2(3, 4, delta, x, eps) * PRESCON * GPA / volume;
+        double c35 = dE2dA2(3, 5, delta, x, eps) * PRESCON * GPA / volume;
+        double c36 = dE2dA2(3, 6, delta, x, eps) * PRESCON * GPA / volume;
+
+        double c44 = dE2dA2(4, 4, delta, x, eps) * PRESCON * GPA / volume;
+        double c55 = dE2dA2(5, 5, delta, x, eps) * PRESCON * GPA / volume;
+        double c66 = dE2dA2(6, 6, delta, x, eps) * PRESCON * GPA / volume;
+
+        double c45 = dE2dA2(4, 5, delta, x, eps) * PRESCON * GPA / volume;
+        double c46 = dE2dA2(4, 6, delta, x, eps) * PRESCON * GPA / volume;
+        double c56 = dE2dA2(5, 6, delta, x, eps) * PRESCON * GPA / volume;
+
+        if (eps > 0) {
+            logger.info(format(" Elasticity Tensor using minimization and FD step size of %6.3e (GPa) =", delta));
+        } else {
+            logger.info(format(" Elasticity Tensor using rigid body fractional coordinates and FD step size of %6.3e (GPa) =", delta));
+        }
+        logger.info(format(" [ %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f ]", c11, c12, c13, c14, c15, c16));
+        logger.info(format(" [ %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f ]", c12, c22, c23, c24, c25, c26));
+        logger.info(format(" [ %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f ]", c13, c23, c33, c34, c35, c36));
+        logger.info(format(" [ %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f ]", c14, c24, c34, c44, c45, c46));
+        logger.info(format(" [ %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f ]", c15, c25, c35, c45, c55, c56));
+        logger.info(format(" [ %16.8f %16.8f %16.8f %16.8f %16.8f %16.8f ]", c16, c26, c36, c46, c56, c66));
+
+        // forceFieldEnergy.energy(xOrig, verbose);
+        molecularAssembly.setFractionalMode(currentFractionalMode);
+    }
+
+    /**
+     * Apply a strain delta.
+     *
+     * @param voight Voight index
+     * @param delta  Strain delta
+     * @param strain Strain matrix
+     */
+    private void applyStrain(int voight, double delta, double strain[][]) {
+        switch (voight) {
+            case 1: // XX
+                strain[0][0] += delta;
+                //strain[1][1] -= 1.0 * delta / 3.0;
+                //strain[2][2] -= 1.0 * delta / 3.0;
+                break;
+            case 2: // YY
+                //strain[0][0] -= 1.0 * delta / 3.0;
+                strain[1][1] += delta;
+                //strain[2][2] -= 1.0 * delta / 3.0;
+                break;
+            case 3: // ZZ
+                //strain[0][0] -= 1.0 * delta / 3.0;
+                //strain[1][1] -= 1.0 * delta / 3.0;
+                strain[2][2] += delta;
+                break;
+            case 4: // YZ
+                strain[1][2] += delta / 2.0;
+                //strain[2][1] += delta / 2.0;
+                break;
+            case 5: // XZ
+                strain[0][2] += delta / 2.0;
+                //strain[2][0] += delta / 2.0;
+                break;
+            case 6: // XY
+                strain[0][1] += delta / 2.0;
+                //strain[1][0] += delta / 2.0;
+                break;
+        }
+    }
+
+    private double dE2dA2(int voight1, int voight2, double delta, double x[], double eps) {
+
+        // Store current unit cell parameters.
+        double a = unitCell.a;
+        double b = unitCell.b;
+        double c = unitCell.c;
+        double alpha = unitCell.alpha;
+        double beta = unitCell.beta;
+        double gamma = unitCell.gamma;
+
+        // F(1,1)
+        double dStrain[][] = new double[3][3];
+        applyStrain(voight1, delta, dStrain);
+        applyStrain(voight2, delta, dStrain);
+        try {
+            if (!crystal.perturbCellVectors(dStrain)) {
+                return 0.0;
+            }
+        } catch (Exception e) {
+            return 0.0;
+        }
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        if (eps > 0.0) {
+            Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, null);
+            minimize.minimize(eps);
+            forceFieldEnergy.setScaling(null);
+        }
+        forceFieldEnergy.getCoordinates(x);
+        double e11 = forceFieldEnergy.energy(x);
+
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+
+        // F(-1,-1)
+        dStrain = new double[3][3];
+        applyStrain(voight1, -delta, dStrain);
+        applyStrain(voight2, -delta, dStrain);
+        try {
+            if (!crystal.perturbCellVectors(dStrain)) {
+                return 0.0;
+            }
+        } catch (Exception e) {
+            return 0.0;
+        }
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        if (eps > 0.0) {
+            Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, null);
+            minimize.minimize(eps);
+            forceFieldEnergy.setScaling(null);
+        }
+        forceFieldEnergy.getCoordinates(x);
+        double em1m1 = forceFieldEnergy.energy(x);
+
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+
+        // F(1,-1)
+        dStrain = new double[3][3];
+        applyStrain(voight1, delta, dStrain);
+        applyStrain(voight2, -delta, dStrain);
+        try {
+            if (!crystal.perturbCellVectors(dStrain)) {
+                return 0.0;
+            }
+        } catch (Exception e) {
+            return 0.0;
+        }
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        if (eps > 0) {
+            Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, null);
+            minimize.minimize(eps);
+            forceFieldEnergy.setScaling(null);
+        }
+        forceFieldEnergy.getCoordinates(x);
+        double e1m1 = forceFieldEnergy.energy(x);
+
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+
+        // F(-1,1)
+        dStrain = new double[3][3];
+        applyStrain(voight1, -delta, dStrain);
+        applyStrain(voight2, delta, dStrain);
+        try {
+            if (!crystal.perturbCellVectors(dStrain)) {
+                return 0.0;
+            }
+        } catch (Exception e) {
+            return 0.0;
+        }
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        if (eps > 0) {
+            Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, null);
+            minimize.minimize(eps);
+            forceFieldEnergy.setScaling(null);
+        }
+        forceFieldEnergy.getCoordinates(x);
+        double em11 = forceFieldEnergy.energy(x);
+
+        // Change back to original unit cell parameters.
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
+        forceFieldEnergy.setCrystal(crystal);
+        molecularAssembly.moveToFractionalCOM();
+        forceFieldEnergy.getCoordinates(x);
+
+        return (e11 - e1m1 - em11 + em1m1) / (4 * delta * delta);
     }
 
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Implement the OptimizationListener interface.
      *
      * @since 1.0
      */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms,
-            double f, double df, double angle, LineSearchResult info) {
+                                      double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
         Double seconds = (currentTime - time) * 1.0e-9;
         time = currentTime;
@@ -286,10 +528,10 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * @param nfun Number of function evaluations so far.
      * @param grms Gradient RMS at current solution.
      * @param xrms Coordinate change RMS at current solution.
-     * @param f Function value at current solution.
-     * @param df Change in the function value compared to the previous solution.
-     * @since 1.0
+     * @param f    Function value at current solution.
+     * @param df   Change in the function value compared to the previous solution.
      * @return a boolean.
+     * @since 1.0
      */
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df) {
         long currentTime = System.nanoTime();
