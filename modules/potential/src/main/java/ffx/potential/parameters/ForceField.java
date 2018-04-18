@@ -1484,13 +1484,16 @@ public class ForceField {
     }
 
     public enum ForceFieldString {
-
+        BIOMTn,
         CAVMODEL,
         ARRAY_REDUCTION,
         EPSILONRULE,
         FFT_METHOD,
         FORCEFIELD,
         NCSGROUP,
+        MTRIX1,
+        MTRIX2,
+        MTRIX3,
         MODRES,
         POLARIZATION,
         RADIUSRULE,
