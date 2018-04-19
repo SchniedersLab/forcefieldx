@@ -73,7 +73,6 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
-import java.awt.GraphicsConfigTemplate;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
@@ -107,6 +106,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.biojava.bio.structure.Structure;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.ReplicatesCrystal;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -116,8 +116,6 @@ import ffx.potential.bonded.ROLS;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.ForceField.ForceFieldDouble;
-import ffx.potential.parameters.ForceField.ForceFieldString;
 import ffx.potential.parsers.ARCFileFilter;
 import ffx.potential.parsers.BiojavaDataFilter;
 import ffx.potential.parsers.BiojavaFilter;
@@ -2232,17 +2230,10 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
             if (saveFile != null) {
                 XYZFilter filter = new XYZFilter(saveFile, system, null, null);
-//                ForceField forceField = system.getForceField();
-//                final double a = forceField.getDouble(ForceFieldDouble.A_AXIS, 10.0);
-//                final double b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
-//                final double c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
-//                final double alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
-//                final double beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
-//                final double gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-//                final String spacegroup = forceField.getString(
-//                        ForceFieldString.SPACEGROUP, "P1");
-//                Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
-                Crystal crystal = system.getCrystal();
+                Crystal crystal = system.getCrystal().getUnitCell();
+                if (crystal instanceof ReplicatesCrystal) {
+                    crystal = crystal.getUnitCell();
+                }
                 if (filter.writeFileAsP1(saveFile, false, crystal)) {
                     // Refresh Panels with the new System name
                     hierarchy.setActive(system);

@@ -41,6 +41,8 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 import ffx.numerics.LBFGS;
 import ffx.numerics.LineSearch.LineSearchResult;
 import ffx.numerics.OptimizationListener;
@@ -55,7 +57,6 @@ import ffx.potential.MolecularAssembly;
  * @author Michael J. Schnieders
  *
  * @since 1.0
- *
  */
 public class Minimize implements OptimizationListener, Terminatable {
 
@@ -194,17 +195,20 @@ public class Minimize implements OptimizationListener, Terminatable {
 
         done = false;
         energy = potential.energyAndGradient(x, grad);
-        logger.info(String.format(" Minimize initial energy: %16.8f", energy));
+
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Minimize initial energy: %16.8f", energy));
+        }
 
         status = LBFGS.minimize(n, m, x, energy, grad, eps, potential, this);
         done = true;
 
         switch (status) {
             case 0:
-                logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
+                logger.info(format("\n Optimization achieved convergence criteria: %8.5f\n", grms));
                 break;
             case 1:
-                logger.info(String.format("\n Optimization terminated at step %d.\n", nSteps));
+                logger.info(format("\n Optimization terminated at step %d.\n", nSteps));
                 break;
             default:
                 logger.warning("\n Optimization failed.\n");
@@ -236,13 +240,13 @@ public class Minimize implements OptimizationListener, Terminatable {
             logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
         }
         if (info == null) {
-            logger.info(String.format("%6d%13.4f%11.4f", iter, f, grms));
+            logger.info(format("%6d%13.4f%11.4f", iter, f, grms));
         } else {
             if (info == LineSearchResult.Success) {
-                logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
+                logger.info(format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
                         iter, f, grms, df, xrms, angle, nfun, seconds));
             } else {
-                logger.info(String.format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
+                logger.info(format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
                         iter, f, grms, df, xrms, angle, nfun, info.toString()));
             }
         }
