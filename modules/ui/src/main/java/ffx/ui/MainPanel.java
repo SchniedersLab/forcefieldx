@@ -2232,16 +2232,17 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
             if (saveFile != null) {
                 XYZFilter filter = new XYZFilter(saveFile, system, null, null);
-                ForceField forceField = system.getForceField();
-                final double a = forceField.getDouble(ForceFieldDouble.A_AXIS, 10.0);
-                final double b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
-                final double c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
-                final double alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
-                final double beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
-                final double gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
-                final String spacegroup = forceField.getString(
-                        ForceFieldString.SPACEGROUP, "P1");
-                Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
+//                ForceField forceField = system.getForceField();
+//                final double a = forceField.getDouble(ForceFieldDouble.A_AXIS, 10.0);
+//                final double b = forceField.getDouble(ForceFieldDouble.B_AXIS, a);
+//                final double c = forceField.getDouble(ForceFieldDouble.C_AXIS, a);
+//                final double alpha = forceField.getDouble(ForceFieldDouble.ALPHA, 90.0);
+//                final double beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
+//                final double gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
+//                final String spacegroup = forceField.getString(
+//                        ForceFieldString.SPACEGROUP, "P1");
+//                Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
+                Crystal crystal = system.getCrystal();
                 if (filter.writeFileAsP1(saveFile, false, crystal)) {
                     // Refresh Panels with the new System name
                     hierarchy.setActive(system);
