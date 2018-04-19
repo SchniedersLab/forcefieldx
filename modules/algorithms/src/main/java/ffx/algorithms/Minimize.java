@@ -70,7 +70,9 @@ public class Minimize implements OptimizationListener, Terminatable {
     private boolean done = false;
     private boolean terminate = false;
     private long time;
+    private double energy;
     private double grms;
+    private int status;
     private int nSteps;
 
     /**
@@ -94,7 +96,6 @@ public class Minimize implements OptimizationListener, Terminatable {
         grad = new double[n];
         scaling = new double[n];
         Arrays.fill(scaling, 12.0);
-        potential.setScaling(scaling);
     }
 
     /**
@@ -119,7 +120,18 @@ public class Minimize implements OptimizationListener, Terminatable {
         grad = new double[n];
         scaling = new double[n];
         Arrays.fill(scaling, 12.0);
-        potential.setScaling(scaling);
+    }
+
+    public double getGRMS() {
+        return grms;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public double getEnergy() {
+        return energy;
     }
 
     /**
@@ -171,6 +183,7 @@ public class Minimize implements OptimizationListener, Terminatable {
     public Potential minimize(int m, double eps) {
         time = System.nanoTime();
         potential.getCoordinates(x);
+        potential.setScaling(scaling);
 
         /**
          * Scale coordinates.
@@ -180,10 +193,10 @@ public class Minimize implements OptimizationListener, Terminatable {
         }
 
         done = false;
-        double e = potential.energyAndGradient(x, grad);
-        logger.info(String.format(" Minimize initial energy: %16.8f", e));
+        energy = potential.energyAndGradient(x, grad);
+        logger.info(String.format(" Minimize initial energy: %16.8f", energy));
 
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, potential, this);
+        status = LBFGS.minimize(n, m, x, energy, grad, eps, potential, this);
         done = true;
 
         switch (status) {
@@ -196,6 +209,8 @@ public class Minimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Optimization failed.\n");
         }
+
+        potential.setScaling(null);
         return potential;
     }
 
@@ -214,6 +229,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         time = currentTime;
         this.grms = grms;
         this.nSteps = iter;
+        this.energy = f;
 
         if (iter == 0) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
@@ -260,6 +276,7 @@ public class Minimize implements OptimizationListener, Terminatable {
         time = currentTime;
         this.grms = grms;
         this.nSteps = iter;
+        this.energy = f;
 
         if (iter == 1) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");

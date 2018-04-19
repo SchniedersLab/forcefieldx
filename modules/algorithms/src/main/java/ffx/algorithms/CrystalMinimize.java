@@ -40,6 +40,7 @@ package ffx.algorithms;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -53,13 +54,11 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.potential.XtalEnergy;
 
-import static java.lang.System.arraycopy;
-
 /**
- * Minimize the energy of a system to an RMS gradient per atom
- * convergence criteria.
+ * Minimize the energy of a system to an RMS gradient per atom convergence criteria.
  *
  * @author Michael J. Schnieders
+ *
  * @since 1.0
  */
 public class CrystalMinimize implements OptimizationListener, Terminatable {
@@ -70,16 +69,19 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
     private final double[] grad;
     private final double[] scaling;
     private final MolecularAssembly molecularAssembly;
+    private final ForceFieldEnergy forceFieldEnergy;
     private final XtalEnergy xtalEnergy;
     private final AlgorithmListener algorithmListener;
     private boolean done = false;
     private boolean terminate = false;
     private long time;
+    private double energy;
     private double grms;
+    private int status;
     private int nSteps;
     private Crystal crystal;
     private Crystal unitCell;
-    private ForceFieldEnergy forceFieldEnergy;
+
 
     /**
      * <p>
@@ -113,11 +115,9 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         scaling[n - 6] = 4.0 * sqrt(crystal.a);
         scaling[n - 5] = 4.0 * sqrt(crystal.b);
         scaling[n - 4] = 4.0 * sqrt(crystal.c);
-        scaling[n - 3] = 0.02 * sqrt(crystal.alpha);
-        scaling[n - 2] = 0.02 * sqrt(crystal.beta);
-        scaling[n - 1] = 0.02 * sqrt(crystal.gamma);
-
-        xtalEnergy.setScaling(scaling);
+        scaling[n - 3] = 0.02 * sqrt(crystal.volume);
+        scaling[n - 2] = 0.02 * sqrt(crystal.volume);
+        scaling[n - 1] = 0.02 * sqrt(crystal.volume);
     }
 
     /**
@@ -136,7 +136,9 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         if (molecularAssembly.getPotentialEnergy() == null) {
             molecularAssembly.setPotential(ForceFieldEnergy.energyFactory(molecularAssembly));
         }
-        xtalEnergy = new XtalEnergy(molecularAssembly.getPotentialEnergy(), molecularAssembly);
+        forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+        xtalEnergy = new XtalEnergy(forceFieldEnergy , molecularAssembly);
+
         n = xtalEnergy.getNumberOfVariables();
         x = new double[n];
         grad = new double[n];
@@ -150,11 +152,25 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         scaling[n - 6] = 4.0 * sqrt(crystal.a);
         scaling[n - 5] = 4.0 * sqrt(crystal.b);
         scaling[n - 4] = 4.0 * sqrt(crystal.c);
-        scaling[n - 3] = 0.02 * sqrt(crystal.alpha);
-        scaling[n - 2] = 0.02 * sqrt(crystal.beta);
-        scaling[n - 1] = 0.02 * sqrt(crystal.gamma);
+        scaling[n - 3] = 0.02 * sqrt(crystal.volume);
+        scaling[n - 2] = 0.02 * sqrt(crystal.volume);
+        scaling[n - 1] = 0.02 * sqrt(crystal.volume);
+    }
 
-        xtalEnergy.setScaling(scaling);
+    public void setFractionalCoordinateMode(FractionalMode fractionalMode) {
+        molecularAssembly.setFractionalMode(fractionalMode);
+    }
+
+    public double getGRMS() {
+        return grms;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public double getEnergy() {
+        return energy;
     }
 
     /**
@@ -205,6 +221,9 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      */
     public Potential minimize(int m, double eps) {
         time = System.nanoTime();
+
+        xtalEnergy.setScaling(scaling);
+
         xtalEnergy.getCoordinates(x);
         /**
          * Scale coordinates.
@@ -214,8 +233,8 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         }
 
         done = false;
-        double e = xtalEnergy.energyAndGradient(x, grad);
-        int status = LBFGS.minimize(n, m, x, e, grad, eps, xtalEnergy, this);
+        energy = xtalEnergy.energyAndGradient(x, grad);
+        status = LBFGS.minimize(n, m, x, energy, grad, eps, xtalEnergy, this);
         done = true;
 
         switch (status) {
@@ -231,6 +250,8 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         crystal = molecularAssembly.getCrystal();
         logger.info(String.format("\n Final lattice parameters" + crystal));
 
+        xtalEnergy.setScaling(null);
+
         return xtalEnergy;
     }
 
@@ -245,7 +266,6 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
     public void computeStressTensor(boolean verbose) {
 
         double xOrig[] = new double[forceFieldEnergy.getNumberOfVariables()];
-        forceFieldEnergy.setScaling(null);
         forceFieldEnergy.getCoordinates(xOrig);
 
         forceFieldEnergy.energy(xOrig, verbose);
@@ -253,7 +273,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         FractionalMode currentFractionalMode = molecularAssembly.getFractionalMode();
 
         molecularAssembly.setFractionalMode(FractionalMode.MOLECULE);
-        molecularAssembly.computeFractionalCOM();
+        molecularAssembly.computeFractionalCoordinates();
 
         /**
          * Conversion from kcal/mol/Ang^3 to Atm.
@@ -266,14 +286,11 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         double GPA = 101325 * 1.0e-9;
 
         double volume = crystal.getUnitCell().volume / crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
-        logger.info(format(" Crystal Volume:         %16.8f", crystal.volume));
-        logger.info(format(" Unit Cell Volume:       %16.8f", crystal.getUnitCell().volume));
-        logger.info(format(" Asymmetric Unit Volume: %16.8f", volume));
 
         logger.info(" The Strain and Stress Tensor code is under development.");
 
         double delta = 1.0e-4;
-        double eps = 1.0e-2;
+        double eps = 1.0e-3;
 
         // 1 -> XX
         // 2 -> YY
@@ -390,11 +407,10 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
             return 0.0;
         }
         forceFieldEnergy.setCrystal(crystal);
-        molecularAssembly.moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCoordinates();
         if (eps > 0.0) {
             Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, null);
             minimize.minimize(eps);
-            forceFieldEnergy.setScaling(null);
         }
         forceFieldEnergy.getCoordinates(x);
         double e11 = forceFieldEnergy.energy(x);
@@ -413,11 +429,10 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
             return 0.0;
         }
         forceFieldEnergy.setCrystal(crystal);
-        molecularAssembly.moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCoordinates();
         if (eps > 0.0) {
             Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, null);
             minimize.minimize(eps);
-            forceFieldEnergy.setScaling(null);
         }
         forceFieldEnergy.getCoordinates(x);
         double em1m1 = forceFieldEnergy.energy(x);
@@ -436,11 +451,10 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
             return 0.0;
         }
         forceFieldEnergy.setCrystal(crystal);
-        molecularAssembly.moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCoordinates();
         if (eps > 0) {
             Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, null);
             minimize.minimize(eps);
-            forceFieldEnergy.setScaling(null);
         }
         forceFieldEnergy.getCoordinates(x);
         double e1m1 = forceFieldEnergy.energy(x);
@@ -459,11 +473,10 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
             return 0.0;
         }
         forceFieldEnergy.setCrystal(crystal);
-        molecularAssembly.moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCoordinates();
         if (eps > 0) {
             Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, null);
             minimize.minimize(eps);
-            forceFieldEnergy.setScaling(null);
         }
         forceFieldEnergy.getCoordinates(x);
         double em11 = forceFieldEnergy.energy(x);
@@ -471,7 +484,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         // Change back to original unit cell parameters.
         crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
         forceFieldEnergy.setCrystal(crystal);
-        molecularAssembly.moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCoordinates();
         forceFieldEnergy.getCoordinates(x);
 
         return (e11 - e1m1 - em11 + em1m1) / (4 * delta * delta);
@@ -493,6 +506,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         time = currentTime;
         this.grms = grms;
         this.nSteps = iter;
+        this.energy = f;
 
         if (iter == 0) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
@@ -539,6 +553,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
         time = currentTime;
         this.grms = grms;
         this.nSteps = iter;
+        this.energy = f;
 
         if (iter == 1) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");

@@ -249,10 +249,7 @@ public class MCLoop implements MonteCarloListener {
         Minimize minimize2 = new Minimize(null, forceFieldEnergy, null);
         minimize2.minimize();
         double newLoopEnergy = forceFieldEnergy.energy(false,true);
-        
-        // Remove the scaling of coordinates & gradient set by the minimizer.
-        forceFieldEnergy.setScaling(null);
-                
+
         double temperature = thermostat.getCurrentTemperature();
         double kT = boltzmann * temperature;
         // Test the MC criterion for a loop move.

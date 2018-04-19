@@ -631,9 +631,6 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             // Set the underlying Potential's Lambda value back to current lambda value.
             lambdaInterface.setLambda(lambda);
 
-            // Remove the scaling of coordinates & gradient set by the minimizer.
-            potential.setScaling(null);
-
             // Reset the Potential State
             potential.setEnergyTermState(state);
 

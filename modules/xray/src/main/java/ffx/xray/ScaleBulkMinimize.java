@@ -39,6 +39,7 @@ package ffx.xray;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.util.Arrays.fill;
 
 import edu.rit.pj.ParallelTeam;
 
@@ -107,6 +108,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         x = new double[n];
         grad = new double[n];
         scaling = new double[n];
+        fill(scaling, 1.0);
 
         x[0] = refinementdata.model_k;
         if (solvent_n > 1) {
@@ -120,11 +122,6 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             }
         }
 
-        for (int i = 0; i < n; i++) {
-            scaling[i] = 1.0;
-        }
-
-        bulkSolventEnergy.setScaling(scaling);
         setInitialScale();
     }
 
@@ -148,7 +145,10 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         double fc[][] = refinementData.fc;
         double fo[][] = refinementData.fsigf;
 
+        bulkSolventEnergy.setScaling(scaling);
         double e = bulkSolventEnergy.energyAndGradient(x, grad);
+        bulkSolventEnergy.setScaling(null);
+
         double fct, sumfofc, sumfc;
         sumfofc = sumfc = 0.0;
         for (HKL ih : reflectionlist.hkllist) {
@@ -175,6 +175,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         if (solvent_n < 3) {
             return;
         }
+
+        bulkSolventEnergy.setScaling(scaling);
 
         double min = Double.POSITIVE_INFINITY;
         double k = refinementData.solvent_k;
@@ -203,6 +205,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         System.out.println("minks: " + k + " minbs: " + b + " min: " + min);
         refinementData.solvent_k = k;
         refinementData.solvent_ueq = b;
+
+        bulkSolventEnergy.setScaling(null);
     }
 
     /**
@@ -213,6 +217,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         if (crs == null) {
             return;
         }
+
+        bulkSolventEnergy.setScaling(scaling);
 
         double min = Double.POSITIVE_INFINITY;
         double a = crs.solventA;
@@ -250,6 +256,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         refinementData.solvent_a = a;
         refinementData.solvent_b = b;
         crs.computeDensity(refinementData.fs);
+
+        bulkSolventEnergy.setScaling(null);
     }
 
     /**
@@ -282,6 +290,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * @return a {@link ffx.xray.ScaleBulkEnergy} object.
      */
     public ScaleBulkEnergy minimize(int m, double eps) {
+
+        bulkSolventEnergy.setScaling(scaling);
 
         double e = bulkSolventEnergy.energyAndGradient(x, grad);
 
@@ -322,6 +332,8 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
             mtime += System.nanoTime();
             logger.info(String.format(" Optimization time: %8.3f (sec)\n", mtime * toSeconds));
         }
+
+        bulkSolventEnergy.setScaling(null);
 
         return bulkSolventEnergy;
     }

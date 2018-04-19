@@ -37,7 +37,6 @@
  */
 package ffx.algorithms;
 
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
@@ -52,9 +51,6 @@ import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.MSNode;
-import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.Polymer;
 
 /**
  * The Barostat class maintains constant pressure using random trial moves in
@@ -263,7 +259,7 @@ public class Barostat implements CrystalPotential {
         nSymm = spaceGroup.getNumberOfSymOps();
         mass = molecularAssembly.getMass();
         x = new double[3 * nAtoms];
-        nMolecules = molecularAssembly.countMolecules();
+        nMolecules = molecularAssembly.fractionalCount();
         if (nMolecules > 1) {
             logger.info(String.format(" There are %d molecules.", nMolecules));
         } else {
@@ -356,7 +352,7 @@ public class Barostat implements CrystalPotential {
         potential.setCrystal(crystal);
 
         // Update atomic coordinates to maintain molecular fractional centers of mass.
-        molecularAssembly.moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCoordinates();
 
         // Save the new volume
         double newV = unitCell.volume / nSymm;
@@ -451,7 +447,7 @@ public class Barostat implements CrystalPotential {
         potential.setCrystal(crystal);
 
         // Reset the atomic coordinates to maintain molecular fractional centers of mass.
-        molecularAssembly.moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCoordinates();
     }
 
     public double density() {
@@ -613,18 +609,18 @@ public class Barostat implements CrystalPotential {
     }
 
     public void setDensity(double density) {
-        molecularAssembly.computeFractionalCOM();
+        molecularAssembly.computeFractionalCoordinates();
 
         crystal.setDensity(density, mass);
 
         potential.setCrystal(crystal);
 
-        molecularAssembly.moveToFractionalCOM();
+        molecularAssembly.moveToFractionalCoordinates();
     }
 
     private double applyBarostat(double currentE) {
         // Determine the current molecular centers of mass in fractional coordinates.
-        molecularAssembly.computeFractionalCOM();
+        molecularAssembly.computeFractionalCoordinates();
 
         // Collect the current unit cell parameters.
         crystal = potential.getCrystal();

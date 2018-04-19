@@ -901,7 +901,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
         /**
          * Compute the current potential energy.
          */
-        potential.setScaling(null);
         try {
             currentPotentialEnergy = potential.energyAndGradient(x, grad);
         } catch (EnergyException ex) {

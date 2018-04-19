@@ -103,7 +103,6 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
             }
             scaling[i] = 1.0;
         }
-        splineEnergy.setScaling(scaling);
     }
 
     public SplineEnergy getSplineEnergy() {
@@ -153,6 +152,8 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
      */
     public SplineEnergy minimize(int m, double eps) {
 
+        splineEnergy.setScaling(scaling);
+
         double e = splineEnergy.energyAndGradient(x, grad);
 
         time = -System.nanoTime();
@@ -169,6 +170,9 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
             default:
                 logger.warning("\n Spline Optimization failed.\n");
         }
+
+        splineEnergy.setScaling(null);
+
         return splineEnergy;
     }
 

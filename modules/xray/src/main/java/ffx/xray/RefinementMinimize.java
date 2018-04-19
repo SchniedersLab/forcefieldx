@@ -288,7 +288,6 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
                 logger.severe(" Occupancy refinement not supported for this data type!");
             }
         }
-        refinementEnergy.setScaling(scaling);
     }
 
     /**

@@ -334,7 +334,6 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
                 forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly);
                 molecularAssembly.setPotential(forceFieldEnergy);
             }
-            forceFieldEnergy.setScaling(null);
         }
 
         if (data instanceof DiffractionData) {
@@ -344,12 +343,10 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             }
             dataEnergy = new XRayEnergy(diffractionData, nXYZ, nBFactor, nOccupancy,
                     refinementMode);
-            dataEnergy.setScaling(null);
         } else if (data instanceof RealSpaceData) {
             RealSpaceData realSpaceData = (RealSpaceData) data;
             dataEnergy = new RealSpaceEnergy(realSpaceData, nXYZ, 0, 0,
                     refinementMode);
-            dataEnergy.setScaling(null);
         }
 
         int assemblySize = molecularAssemblies.length;

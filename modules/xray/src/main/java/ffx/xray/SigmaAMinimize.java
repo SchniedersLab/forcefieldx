@@ -167,7 +167,6 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             scaling[i + refinementData.nbins] = 1.0 / mean;
             x[i + refinementData.nbins] *= scaling[i + refinementData.nbins];
         }
-        sigmaAEnergy.setScaling(scaling);
     }
 
     public SigmaAEnergy getSigmaAEnergy() {
@@ -193,7 +192,11 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      * @return a double.
      */
     public double calculateLikelihood() {
+
+        sigmaAEnergy.setScaling(scaling);
         sigmaAEnergy.energyAndGradient(x, grad);
+        sigmaAEnergy.setScaling(null);
+
         return refinementData.llkr;
     }
 
@@ -204,7 +207,10 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      * @return a double.
      */
     public double calculateLikelihoodFree() {
-        return sigmaAEnergy.energyAndGradient(x, grad);
+        sigmaAEnergy.setScaling(scaling);
+        double energy = sigmaAEnergy.energyAndGradient(x, grad);
+        sigmaAEnergy.setScaling(null);
+        return energy;
     }
 
     /**
@@ -238,6 +244,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
      */
     public SigmaAEnergy minimize(int m, double eps) {
 
+        sigmaAEnergy.setScaling(scaling);
+
         double e = sigmaAEnergy.energyAndGradient(x, grad);
 
         long mtime = -System.nanoTime();
@@ -269,6 +277,8 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
             sb.append(String.format(" Optimization time: %8.3f (sec)\n", mtime * toSeconds));
             logger.info(sb.toString());
         }
+
+        sigmaAEnergy.setScaling(null);
 
         return sigmaAEnergy;
     }

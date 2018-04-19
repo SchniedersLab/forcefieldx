@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2017.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -40,20 +40,15 @@ package ffx.crystal;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.*;
-
 import static java.lang.String.format;
 
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+
 /**
- * The NCSCrystal class extends Crystal to generate additional symmetry
- * operators needed to describe any non-crystallographic distributions of a molecule. The non-crystallographic symmetry
- * operators are applied to the original unit cell to apply generate the entire crystalline system.
- * <br>
- * The non-crystallographic symmetry operators are obtained from the BIOMT section of a PDB file.
- * NCSCrystal allows for the construction of non-traditional unit cells.
- * <br>
+ * The NCSCrystal class extends Crystal to support non-crystallographic symmetry (NCS).
+ * The NCS operators can be obtained from the BIOMT records of a PDB file, and are
+ * permuted with the space group symmetry operators.
  *
  * @author Aaron J. Nessler & Michael J. Schnieders
  *
@@ -75,6 +70,7 @@ public class NCSCrystal extends Crystal {
      * The non-crystallographic symmetry operators needed to be applied to the unit cell.
      */
     private final List<SymOp> NCSsymOps;
+
     /**
      * Constructor for a NCSCrystal.
      *
@@ -113,34 +109,34 @@ public class NCSCrystal extends Crystal {
          * symOps are still equivalent to the unit cell.
          */
         int ii = 0;
-        int SORemoved=0;
-		for (SymOp NCSsymOp : NCSsymOps) {
-		    // All UC symOps seem to have collision issues... Use 1st (identity) for now...
-			for (SymOp symOp : unitCell.spaceGroup.symOps) {
+        int soRemoved = 0;
+        for (SymOp NCSsymOp : NCSsymOps) {
+            // All UC symOps seem to have collision issues... Use 1st (identity) for now...
+            for (SymOp symOp : unitCell.spaceGroup.symOps) {
 //            SymOp symOp=unitCell.spaceGroup.symOps.get(0); //Identity matrix is standard first matrix. (P1)
-        			double NCSTrans[] = new double[3];
-        			RealMatrix NCS = MatrixUtils.createRealMatrix(NCSsymOp.rot);
-        			RealMatrix UC = MatrixUtils.createRealMatrix(symOp.rot);
-        			RealMatrix result= NCS.multiply(UC); //Abelian groups order doesnt matter...
-                    double NCSRot[][]=result.getData();
-        			NCSTrans[0] = symOp.tr[0] + NCSsymOp.tr[0];
-        			NCSTrans[1] = symOp.tr[1] + NCSsymOp.tr[1];
-        			NCSTrans[2] = symOp.tr[2] + NCSsymOp.tr[2];
-        			SymOp NCSSymOp = new SymOp(NCSRot, NCSTrans);
-        			if (!symOps.contains(NCSSymOp)) {
-                        symOps.add(NCSSymOp);
-                    }else{
-                        SORemoved++;
-                    }
-        			if (logger.isLoggable(Level.FINEST)) {
-                        logger.finest(format("\n SymOp: %d", ii));
-                        logger.finest(NCSSymOp.toString());
-                    }
-        			ii++;
-			}
-		}
-		if(SORemoved!=0) {
-            logger.warning(format("\n NCS Replicated SymOps Removed: %d", SORemoved));
+                double NCSTrans[] = new double[3];
+                RealMatrix NCS = MatrixUtils.createRealMatrix(NCSsymOp.rot);
+                RealMatrix UC = MatrixUtils.createRealMatrix(symOp.rot);
+                RealMatrix result = NCS.multiply(UC); //Abelian groups order doesnt matter...
+                double NCSRot[][] = result.getData();
+                NCSTrans[0] = symOp.tr[0] + NCSsymOp.tr[0];
+                NCSTrans[1] = symOp.tr[1] + NCSsymOp.tr[1];
+                NCSTrans[2] = symOp.tr[2] + NCSsymOp.tr[2];
+                SymOp NCSSymOp = new SymOp(NCSRot, NCSTrans);
+                if (!symOps.contains(NCSSymOp)) {
+                    symOps.add(NCSSymOp);
+                } else {
+                    soRemoved++;
+                }
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.finest(format("\n SymOp: %d", ii));
+                    logger.finest(NCSSymOp.toString());
+                }
+                ii++;
+            }
+        }
+        if (soRemoved != 0) {
+            logger.warning(format("\n NCS Replicated SymOps Removed: %d", soRemoved));
         }
     }
 
@@ -158,13 +154,13 @@ public class NCSCrystal extends Crystal {
      * @return True is returned if the unit cell and replicates cell are updated
      * successfully.
      */
-    
+
     @Override
     public boolean changeUnitCellParameters(double a, double b, double c,
-            double alpha, double beta, double gamma) {
-       /**
-        * First, update the parameters of the unit cell.
-        */
+                                            double alpha, double beta, double gamma) {
+        /**
+         * First, update the parameters of the unit cell.
+         */
         if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
             /**
              * Then, update the parameters of the NCSCrystal.
@@ -211,7 +207,6 @@ public class NCSCrystal extends Crystal {
      */
     @Override
     public Crystal getUnitCell() {
-
         return unitCell;
     }
 
@@ -239,8 +234,8 @@ public class NCSCrystal extends Crystal {
     }
 
     /**
-     * Returns an NCSCrystal by expanding the orignal unitcell with the symmetry operators provided by the BIOMT
-     * recordings in the PDB files. See REMARK 350.
+     * Returns an NCSCrystal by expanding the orignal unit cell with the symmetry operators provided by the BIOMT
+     * records in the PDB files. See REMARK 350.
      *
      * @param unitCell The unit cell of the crystal.
      * @param symOps Symmetry operators for non-crystallographic symmetry
@@ -251,7 +246,7 @@ public class NCSCrystal extends Crystal {
 
         if (unitCell == null || unitCell.aperiodic()) {
             return unitCell;
-        }else {
+        } else {
             return new NCSCrystal(unitCell, symOps);
         }
     }

@@ -656,7 +656,6 @@ public class Looptimizer implements Potential {
                  * Revert to the coordinates, gradient lambda, and RESPA State
                  * prior to optimization.
                  */
-                potential.setScaling(null);
                 lambdaInterface.setLambda(lambda);
                 potential.setEnergyTermState(state);
 

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.Potential;
+import ffx.potential.MolecularAssembly.FractionalMode;
 import ffx.potential.bonded.Atom;
 
 /**
@@ -71,6 +72,8 @@ public class XtalEnergy implements Potential {
     private final Crystal unitCell;
     private double scaling[];
     private double totalEnergy;
+
+    private FractionalMode fractionalMode = FractionalMode.OFF;
 
     public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly) {
         this.forceFieldEnergy = forceFieldEnergy;
@@ -120,6 +123,11 @@ public class XtalEnergy implements Potential {
             type[i] = VARIABLE_TYPE.OTHER;
         }
 
+    }
+
+    public void setFractionalCoordinateMode(FractionalMode fractionalMode) {
+        this.fractionalMode = fractionalMode;
+        molecularAssembly.setFractionalMode(fractionalMode);
     }
 
     @Override
@@ -448,11 +456,15 @@ public class XtalEnergy implements Potential {
         if (scaling != null) {
             int len = x.length;
             for (int i = 0; i < len; i++) {
-                g[i] /= scaling[i];
+                if (fractionalMode == FractionalMode.OFF) {
+                    g[i] /= scaling[i];
+                } else {
+                    // If we're maintaining fractional coordinates, so the atomic coordinate derivatives can be zero.
+                    g[i] = 0.0;
+                }
                 x[i] *= scaling[i];
             }
         }
-
     }
 
     /**
@@ -463,6 +475,11 @@ public class XtalEnergy implements Potential {
      */
     private void setCoordinates(double x[]) {
         assert (x != null);
+
+        // Before applying new lattice parameters, store factional coordinates.
+        if (fractionalMode != FractionalMode.OFF) {
+            molecularAssembly.computeFractionalCoordinates();
+        }
 
         int index = nActive * 3;
         double a = x[index];
@@ -539,17 +556,34 @@ public class XtalEnergy implements Potential {
         crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
         forceFieldEnergy.setCrystal(crystal);
 
-        index = 0;
-        for (int i = 0; i < nActive; i++) {
-            Atom atom = activeAtoms[i];
-            double xx = x[index];
-            double yy = x[index + 1];
-            double zz = x[index + 2];
-            xyz[index] = xx;
-            xyz[index + 1] = yy;
-            xyz[index + 2] = zz;
-            index += 3;
-            atom.moveTo(xx, yy, zz);
+        // Use the atomic coordinates from the optimizer.
+        if (fractionalMode == FractionalMode.OFF) {
+            index = 0;
+            for (int i = 0; i < nActive; i++) {
+                Atom atom = activeAtoms[i];
+                double xx = x[index];
+                double yy = x[index + 1];
+                double zz = x[index + 2];
+                xyz[index] = xx;
+                xyz[index + 1] = yy;
+                xyz[index + 2] = zz;
+                index += 3;
+                atom.moveTo(xx, yy, zz);
+            }
+        } else {
+            // Maintain fractional coordinates.
+            molecularAssembly.moveToFractionalCoordinates();
+            index = 0;
+            for (int i = 0; i < nActive; i++) {
+                Atom atom = activeAtoms[i];
+                double xx = atom.getX();
+                double yy = atom.getY();
+                double zz = atom.getZ();
+                xyz[index] = xx;
+                xyz[index + 1] = yy;
+                xyz[index + 2] = zz;
+                index += 3;
+            }
         }
     }
 

@@ -132,8 +132,6 @@ class Minimizer extends Script {
     private AlgorithmFunctions aFuncts;
     def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
     def ranges2 = [];
-    def rangesA = [];
-    def rangesB = [];
     def topologies = []; // MolecularAssembly
     def properties = []; // CompositeConfiguration
     def energies = [];   // ForceFieldEnergy
@@ -353,7 +351,6 @@ class Minimizer extends Script {
             uniqueB = new ArrayList<>();
             
             if (options.unsharedA) {
-                //rangesA = options.uaA.tokenize(".");
                 def ra = [] as Set;
                 String[] toksA = options.unsharedA.tokenize(".");
                 Atom[] atA1 = topologies[0].getAtomArray();
@@ -529,13 +526,6 @@ class Minimizer extends Script {
         AlgorithmListener theListener = aFuncts.getDefaultListener();
         Minimize minimize = new Minimize(topologies[0], potential, theListener);
         minimize.minimize(options.eps);
-        
-        // This does not work, and seems to have poorly-scaled output
-        //potential.getCoordinates(x);
-        //potential.energy(x, true);
-        
-        // This does work... for singular topologies.
-        //energy();
         
         for (mola in topologies) {
             String filename = mola.getFile().getName();

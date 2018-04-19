@@ -2,12 +2,14 @@
 package ffx.algorithms
 
 import org.apache.commons.io.FilenameUtils
+import static org.apache.commons.math3.util.FastMath.abs
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
 
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.MolecularAssembly.FractionalMode
 import ffx.potential.XtalEnergy
 
 /**
@@ -33,9 +35,17 @@ class CrystalMin extends Script {
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
         /**
+         * -c or --coords to cycle between lattice and coordinate optimization until both satisfy the convergence criteria.
+         */
+        @Option(shortName='c', defaultValue='false', description='Cycle between lattice and coordinate optimization until both satisfy the convergence criteria.') boolean coords;
+        /**
          * -e or --eps sets the RMS gradient convergence criteria (in kcal/mol/A^2)
          */
         @Option(shortName='e', longName='eps', defaultValue='1.0', description='RMS gradient convergence criteria') double eps;
+        /**
+         * -f or --fractional to set the optimization to maintain fractional coordinates [ATOM/MOLECULE/OFF].
+         */
+        @Option(shortName='f', defaultValue='molecule', description='Maintain fractional coordinates during lattice optimization [OFF/MOLECULE/ATOM]') String fractional;
         /**
          * -t or --tensor to print out partial derivatives of the energy with respect to unit cell parameters.
          */
@@ -62,7 +72,7 @@ class CrystalMin extends Script {
             aFuncts = getAlgorithmUtils();
         } catch (MissingMethodException ex) {
             // This is the fallback, which does everything necessary without magic names
-            aFuncts = new ffx.algorithms.AlgorithmUtils();
+            aFuncts = new AlgorithmUtils();
         }
 
         List<String> arguments = options.filenames;
@@ -76,11 +86,54 @@ class CrystalMin extends Script {
 
         ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         XtalEnergy xtalEnergy = new XtalEnergy(forceFieldEnergy, molecularAssembly);
+        xtalEnergy.setFractionalCoordinateMode(FractionalMode.MOLECULE);
 
-        // Do the minimization
+        // Apply fractional coordinate mode.
+        if (options.fractional) {
+            try {
+                FractionalMode mode = FractionalMode.valueOf(options.fractional.toUpperCase());
+                xtalEnergy.setFractionalCoordinateMode(mode);
+            } catch (Exception e) {
+                logger.info(" Unrecognized fractional coordinate mode: " + options.fractional);
+                logger.info(" Fractional coordinate mode is set to MOLECULE.");
+            }
+        }
+
         CrystalMinimize crystalMinimize = new CrystalMinimize(molecularAssembly, xtalEnergy, sh);
-
         crystalMinimize.minimize(eps);
+        double energy = crystalMinimize.getEnergy();
+
+        double tolerance = 1.0e-10;
+
+        // Complete rounds of coordinate and lattice optimization.
+        if (options.coords) {
+            Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, sh);
+            while (true) {
+                // Complete a round of coordinate optimization.
+                minimize.minimize(options.eps);
+                double newEnergy = minimize.getEnergy();
+                double status = minimize.getStatus();
+                if (status != 0) {
+                    break;
+                }
+                if (abs(newEnergy - energy) <= tolerance) {
+                    break;
+                }
+                energy = newEnergy;
+
+                // Complete a round of lattice optimization.
+                crystalMinimize.minimize(options.eps);
+                newEnergy = crystalMinimize.getEnergy();
+                status = crystalMinimize.getStatus();
+                if (status != 0) {
+                    break;
+                }
+                if (abs(newEnergy - energy) <= tolerance) {
+                    break;
+                }
+                energy = newEnergy;
+            }
+        }
 
         if (options.tensor) {
             crystalMinimize.printTensor();
