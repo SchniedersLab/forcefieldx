@@ -454,6 +454,9 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
             doublesTo(scaling, scaleA, scaleB);
             dualTopA.setScaling(scaleA);
             dualTopB.setScaling(scaleB);
+        } else {
+            dualTopA.setScaling(null);
+            dualTopB.setScaling(null);
         }
     }
 
