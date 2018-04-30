@@ -460,10 +460,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                 sum(g2, g3, g2);
                 cross(x2, v12, g3);
                 if (lambdaTerm) {
-                    // atoms[0].addToLambdaXYZGradient(g0[0], g0[1], g0[2]);
-                    // atoms[1].addToLambdaXYZGradient(g1[0], g1[1], g1[2]);
-                    // atoms[2].addToLambdaXYZGradient(g2[0], g2[1], g2[2]);
-                    // atoms[3].addToLambdaXYZGradient(g3[0], g3[1], g3[2]);
                     int i0 = atoms[0].getIndex() - 1;
                     lambdaGradX.add(threadID, i0, g0[0]);
                     lambdaGradY.add(threadID, i0, g0[1]);
@@ -482,10 +478,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                     lambdaGradZ.add(threadID, i3, g3[2]);
                 }
                 if (gradient) {
-                    // atoms[0].addToXYZGradient(lambda * g0[0], lambda * g0[1], lambda * g0[2]);
-                    // atoms[1].addToXYZGradient(lambda * g1[0], lambda * g1[1], lambda * g1[2]);
-                    // atoms[2].addToXYZGradient(lambda * g2[0], lambda * g2[1], lambda * g2[2]);
-                    // atoms[3].addToXYZGradient(lambda * g3[0], lambda * g3[1], lambda * g3[2]);
                     scalar(g0, lambda, g0);
                     scalar(g1, lambda, g1);
                     scalar(g2, lambda, g2);

@@ -216,6 +216,8 @@ public class Crystal {
      */
     private static final double AVOGADRO = 6.02214129e23;
 
+    protected boolean checkRestrictions = true;
+
     /**
      * The Crystal class encapsulates the lattice parameters and space group.
      * Methods are available to apply the minimum image convention and to apply
@@ -339,6 +341,14 @@ public class Crystal {
         scale_n = index;
 
         updateCrystal();
+    }
+
+    public void setCheckRestrictions(boolean checkRestrictions) {
+        this.checkRestrictions = checkRestrictions;
+    }
+
+    public boolean getCheckRestrictions(){
+        return checkRestrictions;
     }
 
     /**
@@ -536,13 +546,15 @@ public class Crystal {
     public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta,
                                             double gamma) {
 
-        if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
-            if (logger.isLoggable(Level.FINE)) {
-                String message = " The proposed lattice parameters do not satisfy the " + crystalSystem
-                        + " crystal system restrictions and were ignored.";
-                logger.fine(message);
+        if (checkRestrictions) {
+            if (!SpaceGroup.checkRestrictions(crystalSystem, a, b, c, alpha, beta, gamma)) {
+                if (logger.isLoggable(Level.FINE)) {
+                    String message = " The proposed lattice parameters do not satisfy the " + crystalSystem
+                            + " crystal system restrictions and were ignored.";
+                    logger.fine(message);
+                }
+                return false;
             }
-            return false;
         }
 
         this.a = a;

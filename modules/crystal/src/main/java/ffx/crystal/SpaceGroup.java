@@ -459,6 +459,7 @@ public class SpaceGroup {
         this.chiral = sohnckeGroup(number);
         this.symOps = new ArrayList<>(Arrays.asList(symOps));
 
+        // ToDo: Crystal systems are subdivided into crystal classes. This info needs to be added to each space group.
     }
 
     /**

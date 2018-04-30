@@ -217,6 +217,17 @@ public class ReplicatesCrystal extends Crystal {
 
     }
 
+    @Override
+    public void setCheckRestrictions(boolean checkRestrictions) {
+        this.checkRestrictions = checkRestrictions;
+        unitCell.setCheckRestrictions(checkRestrictions);
+    }
+
+    @Override
+    public boolean getCheckRestrictions() {
+        return unitCell.getCheckRestrictions();
+    }
+
     /**
      * Two crystals are equal only if all unit cell parameters are exactly the
      * same.
