@@ -526,6 +526,9 @@ class Minimizer extends Script {
         AlgorithmListener theListener = aFuncts.getDefaultListener();
         Minimize minimize = new Minimize(topologies[0], potential, theListener);
         minimize.minimize(options.eps);
+
+        potential.getCoordinates(x);
+        potential.energy(x, true);
         
         for (mola in topologies) {
             String filename = mola.getFile().getName();

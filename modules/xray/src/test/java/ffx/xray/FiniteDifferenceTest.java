@@ -112,7 +112,13 @@ public class FiniteDifferenceTest {
         File structure = new File(cl.getResource(pdbName).getPath());
         File mtzFile = new File(cl.getResource(mtzName).getPath());
         PotentialsUtils potutil = new PotentialsUtils();
-        MolecularAssembly mola = potutil.open(structure);
+        MolecularAssembly mola = null;
+        try {
+            mola = potutil.open(structure);
+        } catch (Exception ex) {
+            System.err.println(String.format(" Exception ex: %s", ex.toString()));
+            ex.printStackTrace();
+        }
 
         // load any properties associated with it
         CompositeConfiguration properties = mola.getProperties();

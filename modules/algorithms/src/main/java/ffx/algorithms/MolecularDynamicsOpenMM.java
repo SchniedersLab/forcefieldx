@@ -325,12 +325,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         this.printFrequency = (int) printInterval;
         this.restartFile = dyn;
         this.initVelocities = initVelocities;
+        
+        //logger.info(String.format(" Target Temperature %f", targetTemperature));
+        
+        updateContext();
 
         switch (thermostatType) {
             case BUSSI:
             case BERENDSEN:
                 logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
-                forceFieldEnergyOpenMM.addAndersenThermostat(temperature);
+                forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
                 break;
              default:
                     // No thermostat.
@@ -557,7 +561,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     public double getTimeStep(){
         return dt;
     }
-    
+        
     @Override
     public int getIntervalSteps(){
         return intervalSteps;

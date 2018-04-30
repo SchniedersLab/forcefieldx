@@ -1143,9 +1143,11 @@ public final class PDBFilter extends SystemFilter {
 // 44 - 53        Real(10.6)    m[n][3]        Mn3
 // 59 - 68        Real(10.6)    v[n]           Vn
 // =================================================================================
-                            if (Integer.parseInt(line.substring(7,10).trim())==350 && line.substring(13,18).toUpperCase().equals("BIOMT")) {
-                                StringBuilder BMT = new StringBuilder(line.substring(24,68));
-                                properties.addProperty("BIOMTn", BMT);
+                            if (line.length() >= 68) {
+                                String remarkType = line.substring(7, 10).trim();
+                                if (remarkType.matches("\\d+") && Integer.parseInt(remarkType) == 350 && line.substring(13, 18).equalsIgnoreCase("BIOMT")) {
+                                    properties.addProperty("BIOMTn", new StringBuilder(line.substring(24, 68)));
+                                }
                             }
                             break;
                         default:
