@@ -101,7 +101,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
 
 /**
  * This Generalized Kirkwood class implements GK for the AMOEBA polarizable
- * mutlipole force field in parallel using a {@link NeighborList}.
+ * atomic multipole force field in parallel using a {@link NeighborList}.
  *
  * @author Michael J. Schnieders<br> derived from:<br> TINKER code by Michael J.
  * Schnieders and Jay W. Ponder<br>
