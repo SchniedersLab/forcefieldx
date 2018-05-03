@@ -314,7 +314,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 }
             }
         }
-
     }
 
     @Override
@@ -386,6 +385,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                     logger.log(Level.WARNING, message);
                     done = true;
                 } else {
+                    logger.info(format(" Continuing from " + dyn.getAbsolutePath()));
                     forceFieldEnergyOpenMM.setCrystal(crystal);
                     // Load positions into the main FFX data structure, move into primary unit cell, then load to OpenMM.
                     Atom[] atoms = molecularAssembly.getAtomArray();
@@ -432,9 +432,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         saveSnapshotAsPDB = true;
         if (fileType.equalsIgnoreCase("XYZ")) {
             saveSnapshotAsPDB = false;
-            logger.info("Snapshots will be saved as XYZ");
         } else if (!fileType.equalsIgnoreCase("PDB")) {
-            logger.warning("Snapshot file type unrecognized; saving snaphshots as PDB.\n");
+            logger.warning(" Snapshot file type unrecognized; saving snaphshots as PDB.\n");
         }
         
         Atom[] atoms = molecularAssembly.getAtomArray();

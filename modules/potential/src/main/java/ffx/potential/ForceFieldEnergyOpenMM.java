@@ -416,6 +416,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform, List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
 
+        Crystal crystal = getCrystal();
+        int symOps = crystal.spaceGroup.getNumberOfSymOps();
+        if (symOps > 1) {
+            logger.info("");
+            logger.severe(" OpenMM does not support symmetry operators.");
+        }
+
         //super.energy(false, true);
         logger.info(" Initializing OpenMM\n");
 
@@ -2933,7 +2940,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     public void setCrystal(Crystal crystal) {
         super.setCrystal(crystal);
         setDefaultPeriodicBoxVectors();
-
         //loadFFXPositionToOpenMM();
     }
 

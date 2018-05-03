@@ -37,19 +37,22 @@
  */
 package ffx.algorithms.mc;
 
+import java.io.File;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.lang.Math.abs;
+import static java.lang.String.format;
 
 import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.integrators.IntegratorEnum;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.MolecularDynamicsOpenMM;
+import ffx.algorithms.integrators.IntegratorEnum;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
-import static java.lang.Math.abs;
-import static java.lang.String.format;
 
 /**
  * Use MD as a coordinate based MC move.
@@ -106,7 +109,15 @@ public class MDMove implements MCMove {
             printInterval = mdSteps * timeStep;
         }
 
-        molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
+
+        String name = assembly.getFile().getAbsolutePath();
+        File dyn = new File(FilenameUtils.removeExtension(name) + ".dyn");
+        if (!dyn.exists()) {
+            dyn = null;
+        }
+
+        molecularDynamics.init(mdSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
+
         molecularDynamics.setQuiet(true);
 
     }
@@ -131,12 +142,12 @@ public class MDMove implements MCMove {
 
         molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, null);
         
-        if (molecularDynamics instanceof ffx.algorithms.MolecularDynamicsOpenMM) {
+        if (molecularDynamics instanceof MolecularDynamicsOpenMM && logger.isLoggable(Level.FINE)) {
             energyDriftTotalNet += molecularDynamics.getEndTotalEnergy() - molecularDynamics.getStartingTotalEnergy();
             energyDriftAverageNet = energyDriftTotalNet/mdMoveCounter;
             energyDriftTotalAbs += abs(molecularDynamics.getStartingTotalEnergy() - molecularDynamics.getEndTotalEnergy());
             energyDriftAverageAbs = energyDriftTotalAbs/mdMoveCounter;
-            logger.info(format(" Mean signed/unsigned energy drift:                   %8.4f/%8.4f",
+            logger.fine(format(" Mean signed/unsigned energy drift:                   %8.4f/%8.4f",
                     energyDriftAverageNet, energyDriftAverageAbs));
 
             dt = molecularDynamics.getTimeStep();
@@ -144,7 +155,7 @@ public class MDMove implements MCMove {
             natoms = molecularDynamics.getNumAtoms();
             normalizedEnergyDriftNet = (energyDriftAverageNet/(dt*intervalSteps*natoms)) * 1000;
             normalizedEnergyDriftAbs = (energyDriftAverageAbs/(dt*intervalSteps*natoms)) * 1000;
-            logger.info(format(" Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",
+            logger.fine(format(" Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",
                     normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
         }
     }
