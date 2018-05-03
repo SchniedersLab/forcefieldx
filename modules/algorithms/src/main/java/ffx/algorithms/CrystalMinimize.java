@@ -519,15 +519,15 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
                 break;
             case 4: // YZ
                 strain[1][2] += delta / 2.0;
-                //strain[2][1] += delta / 2.0;
+                strain[2][1] += delta / 2.0;
                 break;
             case 5: // XZ
                 strain[0][2] += delta / 2.0;
-                //strain[2][0] += delta / 2.0;
+                strain[2][0] += delta / 2.0;
                 break;
             case 6: // XY
                 strain[0][1] += delta / 2.0;
-                //strain[1][0] += delta / 2.0;
+                strain[1][0] += delta / 2.0;
                 break;
         }
     }

@@ -234,11 +234,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * States.
      */
     public final int enforcePBC;
-
+    /**
+     * Integrator string (default = VERLET).
+     */
     private String integratorString = "VERLET";
+    /**
+     * Time step (default = 1.0 fsec).
+     */
     private double timeStep = 1.0;
+    /**
+     * Temperature (default = 298.15).
+     */
     private double temperature = 298.15;
-
     /**
      * OpenMM Platform.
      */
@@ -348,14 +355,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private PointerByReference alchemicalAlchemicalStericsForce = null;
 
     private PointerByReference nonAlchemicalAlchemicalStericsForce = null;
-
-    private PointerByReference allStericsForce = null;
-
-    private PointerByReference alchemicalAlchemicalElectrostaticsForce = null;
-
-    private PointerByReference nonAlchemicalAlchemicalElectrostaticsForce = null;
-
-    private PointerByReference allElectrostaticsForce = null;
 
     private boolean chargeExclusion[];
     private boolean vdWExclusion[];
@@ -1525,8 +1524,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         // Not entirely sure how to initialize this portion
+        /**
         alchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
-        
         nonAlchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
         // allStericsForce = (alchemicalAlchemicalStericsForce + nonAlchemicalAlchemicalStericsForce);
 
@@ -1550,11 +1549,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int torsionMask[][] = vdW.getTorsionMask();
 
         for (int i = 0; i < range; i++) {
-            
             OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i, atomi, atomj, charge, sigma, eps);
-            
             OpenMM_CustomNonbondedForce_addExclusion(fixedChargeSoftcore, atomi.getValue(), atomj.getValue());
- 
             int maskI[] = torsionMask[atomi.getValue()];
 
             int jID = atomj.getValue();
@@ -1599,18 +1595,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 }
             } 
         }
-        
-        /**
-        for (int i = 0; i < range; i++){
-            OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i, atomi, atomj, charge, sigma, eps);
-            
-            Atom atom1 = atoms[atomi.getValue()];
-            Atom atom2 = atoms[atomj.getValue()];
-            
-            if (atom1.applyLambda() || atom2.applyLambda()){
-                OpenMM_NonbondedForce_setExceptionParameters(fixedChargeNonBondedForce, i, atomi.getValue(), atomj.getValue(), abs(0.0*charge.getValue()), sigma.getValue(), abs(0.0*eps.getValue()));
-            }
-        } */
+
+//        for (int i = 0; i < range; i++){
+//            OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i, atomi, atomj, charge, sigma, eps);
+//
+//            Atom atom1 = atoms[atomi.getValue()];
+//            Atom atom2 = atoms[atomj.getValue()];
+//
+//            if (atom1.applyLambda() || atom2.applyLambda()){
+//                OpenMM_NonbondedForce_setExceptionParameters(fixedChargeNonBondedForce, i, atomi.getValue(), atomj.getValue(), abs(0.0*charge.getValue()), sigma.getValue(), abs(0.0*eps.getValue()));
+//            }
+//        }
         
         OpenMM_CustomBondForce_addEnergyParameterDerivative(alchemicalAlchemicalStericsForce, "vdw_lambda");
         OpenMM_CustomBondForce_addEnergyParameterDerivative(nonAlchemicalAlchemicalStericsForce, "vdw_lambda");
@@ -1618,6 +1613,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_System_addForce(system, alchemicalAlchemicalStericsForce);
         OpenMM_System_addForce(system, nonAlchemicalAlchemicalStericsForce);
 
+        */
     }
 
     private void addCustomGBForce() {
@@ -2288,7 +2284,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Update parameters if the Use flags changed.
      */
-    private void updateParameters() {
+    private void updateParameters(double x[]) {
 
         Atom[] atoms = molecularAssembly.getAtomArray();
 
@@ -2299,8 +2295,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 createContext(integratorString, timeStep, temperature);
                 OpenMM_Context_setParameter(context, "vdw_lambda", lambda);
                 softcoreCreated = true;
-                double energy = energy();
-                logger.info(format(" OpenMM Energy (L=%6.3f): %16.8f", lambda, energy));
+                if (x != null) {
+                    double energy = energy(x);
+                    logger.info(format(" OpenMM Energy (L=%6.3f): %16.8f", lambda, energy));
+                }
             } else {
                 OpenMM_Context_setParameter(context, "vdw_lambda", lambda);
             }
@@ -2747,7 +2745,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             if (lambda >= 0.0 && lambda <= 1.0) {
                 this.lambda = lambda;
                 super.setLambda(lambda);
-                updateParameters();
+                updateParameters(null);
             } else {
                 String message = format(" Lambda value %8.3f is not in the range [0..1].", lambda);
                 logger.warning(message);
@@ -2787,17 +2785,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return ffxE - thisE;
     }
 
-    /**
-     * Returns the current energy. Preferred is to use the methods with explicit
-     * coordinate/gradient arrays.
-     *
-     * @return Current energy.
-     */
-    @Override
-    public double energy() {
-        return energy(false, false);
-    }
-
     @Override
     public double energy(double[] x) {
         return energy(x, false);
@@ -2810,7 +2797,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             return 0.0;
         }
 
-        updateParameters();
+        updateParameters(x);
 
         /**
          * Unscale the coordinates.
