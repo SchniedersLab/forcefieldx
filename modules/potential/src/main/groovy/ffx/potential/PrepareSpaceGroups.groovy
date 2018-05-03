@@ -49,6 +49,11 @@ class PrepareSpaceGroups extends Script {
         @Option(longName='chiral', shortName='c', defaultValue='false',
             description='Only consider chiral space groups.') boolean chiral
         /**
+         *  -a or --achiral to create directories only for achiral space groups.
+         */
+        @Option(longName='achiral', shortName='a', defaultValue='false',
+                description='Only consider achiral space groups.') boolean achiral
+        /**
          * -sym or --symOp random Cartesian symmetry operator will use the specified translation range -Arg .. Arg (default = 1.0 A).
          */
         @Option(shortName='rsym', longName='randomSymOp', defaultValue='1.0',
@@ -142,6 +147,10 @@ class PrepareSpaceGroups extends Script {
             }
 
             if (options.chiral && !spacegroup.isChiral()) {
+                continue
+            }
+
+            if (options.achiral && spacegroup.isChiral()) {
                 continue
             }
 
