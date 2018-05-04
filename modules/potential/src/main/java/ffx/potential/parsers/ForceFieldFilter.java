@@ -57,6 +57,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import static org.apache.commons.math3.util.FastMath.abs;
 
 import ffx.potential.parameters.AngleType;
+import ffx.potential.parameters.AngleTorsionType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
@@ -75,6 +76,7 @@ import ffx.potential.parameters.PiTorsionType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.RelativeSolvationType;
 import ffx.potential.parameters.StretchBendType;
+import ffx.potential.parameters.StretchTorsionType;
 import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
@@ -281,6 +283,9 @@ public class ForceFieldFilter {
                             case ATOM:
                                 parseAtom(input, tokens);
                                 break;
+                            case ANGTORS:
+                                parseAngleTorsion(input, tokens);
+                                break;
                             case ANGLE:
                                 parseAngle(input, tokens);
                                 break;
@@ -310,6 +315,9 @@ public class ForceFieldFilter {
                                 break;
                             case TORSION:
                                 parseTorsion(input, tokens);
+                                break;
+                            case STRTORS:
+                                parseStretchTorsion(input, tokens);
                                 break;
                             case TORTORS:
                                 parseTorsionTorsion(input, tokens);
@@ -377,6 +385,9 @@ public class ForceFieldFilter {
                 case ANGLE:
                     parseAngle(input, tokens);
                     break;
+                case ANGTORS:
+                    parseAngleTorsion(input, tokens);
+                    break;
                 case BIOTYPE:
                     parseBioType(input, tokens);
                     break;
@@ -400,6 +411,9 @@ public class ForceFieldFilter {
                     break;
                 case IMPTORS:
                     parseImproper(input, tokens);
+                    break;
+                case STRTORS:
+                    parseStretchTorsion(input, tokens);
                     break;
                 case TORSION:
                     parseTorsion(input, tokens);
@@ -982,6 +996,65 @@ public class ForceFieldFilter {
             forceField.addForceFieldType(torsionType);
         } catch (NumberFormatException e) {
             String message = "Exception parsing TORSION type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    private void parseStretchTorsion(String input, String tokens[]) {
+        if (tokens.length < 13) {
+            logger.log(Level.WARNING, "Invalid STRTORS type:\n{0}", input);
+            return;
+        }
+        try {
+            int atomClasses[] = new int[4];
+            atomClasses[0] = Integer.parseInt(tokens[1]);
+            atomClasses[1] = Integer.parseInt(tokens[2]);
+            atomClasses[2] = Integer.parseInt(tokens[3]);
+            atomClasses[3] = Integer.parseInt(tokens[4]);
+
+            double constants[] = new double[9];
+            constants[0] = Double.parseDouble(tokens[5]);
+            constants[1] = Double.parseDouble(tokens[6]);
+            constants[2] = Double.parseDouble(tokens[7]);
+            constants[3] = Double.parseDouble(tokens[8]);
+            constants[4] = Double.parseDouble(tokens[9]);
+            constants[5] = Double.parseDouble(tokens[10]);
+            constants[6] = Double.parseDouble(tokens[11]);
+            constants[7] = Double.parseDouble(tokens[12]);
+            constants[8] = Double.parseDouble(tokens[13]);
+
+            StretchTorsionType stretchTorsionType = new StretchTorsionType(atomClasses, constants);
+            forceField.addForceFieldType(stretchTorsionType);
+        } catch (NumberFormatException e) {
+            String message = "Exception parsing STRTORS type:\n" + input + "\n";
+            logger.log(Level.SEVERE, message, e);
+        }
+    }
+
+    private void parseAngleTorsion(String input, String tokens[]) {
+        if (tokens.length < 10) {
+            logger.log(Level.WARNING, "Invalid ANGTORS type:\n{0}", input);
+            return;
+        }
+        try {
+            int atomClasses[] = new int[4];
+            atomClasses[0] = Integer.parseInt(tokens[1]);
+            atomClasses[1] = Integer.parseInt(tokens[2]);
+            atomClasses[2] = Integer.parseInt(tokens[3]);
+            atomClasses[3] = Integer.parseInt(tokens[4]);
+
+            double constants[] = new double[6];
+            constants[0] = Double.parseDouble(tokens[5]);
+            constants[1] = Double.parseDouble(tokens[6]);
+            constants[2] = Double.parseDouble(tokens[7]);
+            constants[3] = Double.parseDouble(tokens[8]);
+            constants[4] = Double.parseDouble(tokens[9]);
+            constants[5] = Double.parseDouble(tokens[10]);
+
+            AngleTorsionType angleTorsionType = new AngleTorsionType(atomClasses, constants);
+            forceField.addForceFieldType(angleTorsionType);
+        } catch (NumberFormatException e) {
+            String message = "Exception parsing ANGTORS type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, e);
         }
     }
