@@ -38,15 +38,18 @@
 package ffx.potential.bonded;
 
 import java.util.logging.Logger;
-import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.AtomicDoubleArray;
 import ffx.potential.parameters.AngleTorsionType;
+import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.TorsionType;
 import static ffx.numerics.VectorMath.cross;
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.dot;
@@ -59,7 +62,6 @@ import static ffx.numerics.VectorMath.sum;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class AngleTorsion extends BondedTerm implements LambdaInterface {
 
@@ -71,7 +73,10 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     private boolean lambdaTerm = false;
 
     public AngleTorsionType angleTorsionType = null;
-    public double units = 0.5;
+    private double constants[] = new double[6];
+    public TorsionType torsionType = null;
+    public AngleType angleType1 = null;
+    public AngleType angleType2 = null;
 
     /**
      * AngleTorsion constructor.
@@ -110,28 +115,6 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
-     * AngleTorsion constructor.
-     *
-     * @param a Angle that has one Atom in common with Bond b
-     * @param b Bond that has one Atom in common with Angle A
-     */
-    public AngleTorsion(Angle a, Bond b) {
-        super();
-        bonds = new Bond[3];
-        bonds[0] = b;
-        bonds[1] = a.getBond(0);
-        bonds[2] = a.getBond(1);
-        // See if bond 2 or bond 3 is the middle bond
-        Atom atom = bonds[1].getCommonAtom(b);
-        if (atom == null) {
-            ffx.potential.bonded.Bond temp = bonds[1];
-            bonds[1] = bonds[2];
-            bonds[2] = temp;
-        }
-        initialize();
-    }
-
-    /**
      * Create a AngleTorsion from 3 connected bonds (no error checking)
      *
      * @param b1 Bond
@@ -166,76 +149,65 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         atoms[2] = bonds[1].get1_2(atoms[1]);
         atoms[3] = bonds[2].get1_2(atoms[2]);
 
-        // atoms[0].setTorsion(this);
-        // atoms[1].setTorsion(this);
-        // atoms[2].setTorsion(this);
-        // atoms[3].setTorsion(this);
-
         setID_Key(false);
         value = calculateDihedralAngle();
     }
 
+    public void setFlipped(boolean flipped) {
+        for (int i=0;i<6;i++) {
+            constants[i] = angleTorsionType.forceConstants[i];
+        }
+        if (flipped) {
+            constants[0] = angleTorsionType.forceConstants[3];
+            constants[1] = angleTorsionType.forceConstants[4];
+            constants[2] = angleTorsionType.forceConstants[5];
+            constants[3] = angleTorsionType.forceConstants[0];
+            constants[4] = angleTorsionType.forceConstants[1];
+            constants[5] = angleTorsionType.forceConstants[2];
+        }
+    }
+
     /**
-     * Attempt to create a new AngleTorsion based on the supplied bonds. There is no
-     * error checking to enforce that the bonds make up a linear series of 4
-     * bonded atoms.
+     * Attempt to create a new AngleTorsion based on the supplied torsion.
      *
-     * @param bond1 the first Bond.
-     * @param middleBond the middle Bond.
-     * @param bond3 the last Bond.
+     * @param torsion    the Torsion.
      * @param forceField the ForceField parameters to apply.
      * @return a new Torsion, or null.
      */
-    public static AngleTorsion angleTorsionFactory(Bond bond1, Bond middleBond, Bond bond3, ForceField forceField) {
-        Atom atom1 = middleBond.getAtom(0);
-        Atom atom2 = middleBond.getAtom(1);
-        int c[] = new int[4];
-        c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-        c[1] = atom1.getAtomType().atomClass;
-        c[2] = atom2.getAtomType().atomClass;
-        c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-        String key = AngleTorsionType.sortKey(c);
+    public static AngleTorsion angleTorsionFactory(Torsion torsion, ForceField forceField) {
+        TorsionType torsionType = torsion.torsionType;
+        String key = torsionType.getKey();
         AngleTorsionType angleTorsionType = forceField.getAngleTorsionType(key);
-        if (angleTorsionType == null) {
-            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = 0;
-            key = AngleTorsionType.sortKey(c);
-            angleTorsionType = forceField.getAngleTorsionType(key);
-        }
-        if (angleTorsionType == null) {
-            c[0] = 0;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-            key = AngleTorsionType.sortKey(c);
-            angleTorsionType = forceField.getAngleTorsionType(key);
-        }
-        if (angleTorsionType == null) {
-            c[0] = 0;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = 0;
-            key = AngleTorsionType.sortKey(c);
-            angleTorsionType = forceField.getAngleTorsionType(key);
-        }
-        if (angleTorsionType == null) {
-            c[0] = bond1.getOtherAtom(middleBond).getAtomType().atomClass;
-            c[1] = atom1.getAtomType().atomClass;
-            c[2] = atom2.getAtomType().atomClass;
-            c[3] = bond3.getOtherAtom(middleBond).getAtomType().atomClass;
-            key = AngleTorsionType.sortKey(c);
-            logger.severe(format("No AngleTorsionType for key: %s\n%s\n%s\n%s\n",
-                    key, bond1.toString(), middleBond.toString(), bond3.toString()));
-            return null;
-        }
 
-        AngleTorsion angleTorsion = new AngleTorsion(bond1, middleBond, bond3);
-        angleTorsion.angleTorsionType = angleTorsionType;
-        angleTorsion.units = forceField.getDouble(ForceField.ForceFieldDouble.TORSIONUNIT, 0.5);
+        if (angleTorsionType != null) {
+            Bond bond1 = torsion.bonds[0];
+            Bond middleBond = torsion.bonds[1];
+            Bond bond3 = torsion.bonds[2];
 
-        return angleTorsion;
+            AngleTorsion angleTorsion = new AngleTorsion(bond1, middleBond, bond3);
+            angleTorsion.angleTorsionType = angleTorsionType;
+            angleTorsion.torsionType = torsion.torsionType;
+            Atom atom1 = torsion.atoms[0];
+            Atom atom2 = torsion.atoms[1];
+            Atom atom3 = torsion.atoms[2];
+            Atom atom4 = torsion.atoms[3];
+
+            Angle angle1 = atom1.getAngle(atom2, atom3);
+            Angle angle2 = atom2.getAngle(atom3, atom4);
+            angleTorsion.angleType1 = angle1.angleType;
+            angleTorsion.angleType2 = angle2.angleType;
+
+            if (atom1.getAtomType().atomClass == angleTorsionType.atomClasses[0] &&
+                    atom2.getAtomType().atomClass == angleTorsionType.atomClasses[1] &&
+                    atom3.getAtomType().atomClass == angleTorsionType.atomClasses[2] &&
+                    atom4.getAtomType().atomClass == angleTorsionType.atomClasses[3]) {
+                angleTorsion.setFlipped(false);
+            } else {
+                angleTorsion.setFlipped(true);
+            }
+            return angleTorsion;
+        }
+        return null;
     }
 
     /**
@@ -324,7 +296,7 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     /**
      * Evaluate the Angle-Torsion energy.
      *
-     * @param gradient Evaluate the gradient.
+     * @param gradient    Evaluate the gradient.
      * @param threadID
      * @param gradX
      * @param gradY
@@ -343,8 +315,6 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
                          AtomicDoubleArray lambdaGradX,
                          AtomicDoubleArray lambdaGradY,
                          AtomicDoubleArray lambdaGradZ) {
-
-        logger.warning(" AngleTorsion Energy is incomplete.");
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -404,109 +374,132 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         atoms[1].getXYZ(a1);
         atoms[2].getXYZ(a2);
         atoms[3].getXYZ(a3);
-
         diff(a1, a0, v01);
         diff(a2, a1, v12);
         diff(a3, a2, v23);
+
+        double r01 = r(v01);
+        double r12 = r(v12);
+        double r23 = r(v23);
+        if (min(min(r01, r12), r23) == 0.0) {
+            return 0.0;
+        }
+
         cross(v01, v12, x0112);
         cross(v12, v23, x1223);
         cross(x0112, x1223, x);
+
         double r01_12 = dot(x0112, x0112);
+        r01_12 = max(r01_12, 0.000001);
         double r12_23 = dot(x1223, x1223);
+        r12_23 = max(r12_23, 0.000001);
         double rr = sqrt(r01_12 * r12_23);
-        if (rr != 0.0) {
-            double r12 = r(v12);
-            double cosine = dot(x0112, x1223) / rr;
-            double sine = dot(v12, x) / (r12 * rr);
-            value = toDegrees(acos(cosine));
-            if (sine < 0.0) {
-                value = -value;
+        diff(a2, a0, v02);
+        diff(a3, a1, v13);
+        double cosine = dot(x0112, x1223) / rr;
+        double sine = dot(v12, x) / (r12 * rr);
+
+        // Compute multiple angle trigonometry and phase terms
+        double tsin[] = torsionType.sine;
+        double tcos[] = torsionType.cosine;
+        double cosine2 = cosine * cosine - sine * sine;
+        double sine2 = 2.0 * cosine * sine;
+        double cosine3 = cosine * cosine2 - sine * sine2;
+        double sine3 = cosine * sine2 + sine * cosine2;
+        double phi1 = 1.0 + (cosine * tcos[0] + sine * tsin[0]);
+        double phi2 = 1.0 + (cosine2 * tcos[1] + sine2 * tsin[1]);
+        double phi3 = 1.0 + (cosine3 * tcos[2] + sine3 * tsin[2]);
+        double dphi1 = (cosine * tsin[0] - sine * tcos[0]);
+        double dphi2 = 2.0 * (cosine2 * tsin[1] - sine2 * tcos[1]);
+        double dphi3 = 3.0 * (cosine3 * tsin[2] - sine3 * tcos[2]);
+
+        // Set the angle-torsion parameters for the first angle
+        double v1 = constants[0];
+        double v2 = constants[1];
+        double v3 = constants[2];
+
+        double dot = dot(v01, v12);
+        double cosang = -dot / sqrt(r01 * r01 * r12 * r12);
+        double angle1 = toDegrees(acos(cosang));
+        double dt1 = angle1 - angleType1.angle[0];
+        double e1 = angleTorsionType.units * dt1 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
+        double dedphi = angleTorsionType.units * dt1 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
+        double ddt = angleTorsionType.units * toDegrees(v1 * phi1 + v2 * phi2 + v3 * phi3);
+
+        // Set the angle-torsion values for the second angle
+        v1 = constants[3];
+        v2 = constants[4];
+        v3 = constants[5];
+        dot = dot(v12, v23);
+        cosang = -dot / sqrt(r12 * r12 * r23 * r23);
+        double angle2 = toDegrees(acos(cosang));
+        double dt2 = angle2 - angleType2.angle[0];
+        double e2 = angleTorsionType.units * dt2 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
+        dedphi = angleTorsionType.units * dt2 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
+        ddt = angleTorsionType.units * toDegrees(v1 * phi1 + v2 * phi2 + v3 * phi3);
+
+        if (esvTerm) {
+            esvDerivLocal = energy * dedesvChain * lambda;
+        }
+        energy = (e1 + e2) * esvLambda * lambda;
+        dEdL = energy * esvLambda;
+
+        if (gradient || lambdaTerm) {
+            dedphi = dedphi * esvLambda;
+            cross(x0112, v12, x1);
+            cross(x1223, v12, x2);
+            scalar(x1, dedphi / (r01_12 * r12), x1);
+            scalar(x2, -dedphi / (r12_23 * r12), x2);
+            cross(x1, v12, g0);
+            cross(v02, x1, g1);
+            cross(x2, v23, g2);
+            sum(g1, g2, g1);
+            cross(x1, v01, g2);
+            cross(v13, x2, g3);
+            sum(g2, g3, g2);
+            cross(x2, v12, g3);
+            if (lambdaTerm) {
+                int i0 = atoms[0].getIndex() - 1;
+                lambdaGradX.add(threadID, i0, g0[0]);
+                lambdaGradY.add(threadID, i0, g0[1]);
+                lambdaGradZ.add(threadID, i0, g0[2]);
+                int i1 = atoms[1].getIndex() - 1;
+                lambdaGradX.add(threadID, i1, g1[0]);
+                lambdaGradY.add(threadID, i1, g1[1]);
+                lambdaGradZ.add(threadID, i1, g1[2]);
+                int i2 = atoms[2].getIndex() - 1;
+                lambdaGradX.add(threadID, i2, g2[0]);
+                lambdaGradY.add(threadID, i2, g2[1]);
+                lambdaGradZ.add(threadID, i2, g2[2]);
+                int i3 = atoms[3].getIndex() - 1;
+                lambdaGradX.add(threadID, i3, g3[0]);
+                lambdaGradY.add(threadID, i3, g3[1]);
+                lambdaGradZ.add(threadID, i3, g3[2]);
             }
-
-            double dedphi = 0.0;
-//            double amp[] = torsionType.amplitude;
-//            double tsin[] = torsionType.sine;
-//            double tcos[] = torsionType.cosine;
-//            energy = amp[0] * (1.0 + cosine * tcos[0] + sine * tsin[0]);
-//            double dedphi = amp[0] * (cosine * tsin[0] - sine * tcos[0]);
-//            double cosprev = cosine;
-//            double sinprev = sine;
-//            double n = torsionType.terms;
-//            for (int i = 1; i < n; i++) {
-//                double cosn = cosine * cosprev - sine * sinprev;
-//                double sinn = sine * cosprev + cosine * sinprev;
-//                double phi = 1.0 + cosn * tcos[i] + sinn * tsin[i];
-//                double dphi = (1.0 + i) * (cosn * tsin[i] - sinn * tcos[i]);
-//                energy = energy + amp[i] * phi;
-//                dedphi = dedphi + amp[i] * dphi;
-//                cosprev = cosn;
-//                sinprev = sinn;
-//            }
-
-            if (esvTerm) {
-                esvDerivLocal = units * energy * dedesvChain * lambda;
-            }
-            energy = units * energy * esvLambda * lambda;
-            dEdL = units * energy * esvLambda;
-
-            if (gradient || lambdaTerm) {
-                dedphi = units * dedphi * esvLambda;
-                diff(a2, a0, v02);
-                diff(a3, a1, v13);
-                cross(x0112, v12, x1);
-                cross(x1223, v12, x2);
-                scalar(x1, dedphi / (r01_12 * r12), x1);
-                scalar(x2, -dedphi / (r12_23 * r12), x2);
-                cross(x1, v12, g0);
-                cross(v02, x1, g1);
-                cross(x2, v23, g2);
-                sum(g1, g2, g1);
-                cross(x1, v01, g2);
-                cross(v13, x2, g3);
-                sum(g2, g3, g2);
-                cross(x2, v12, g3);
-                if (lambdaTerm) {
-                    int i0 = atoms[0].getIndex() - 1;
-                    lambdaGradX.add(threadID, i0, g0[0]);
-                    lambdaGradY.add(threadID, i0, g0[1]);
-                    lambdaGradZ.add(threadID, i0, g0[2]);
-                    int i1 = atoms[1].getIndex() - 1;
-                    lambdaGradX.add(threadID, i1, g1[0]);
-                    lambdaGradY.add(threadID, i1, g1[1]);
-                    lambdaGradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getIndex() - 1;
-                    lambdaGradX.add(threadID, i2, g2[0]);
-                    lambdaGradY.add(threadID, i2, g2[1]);
-                    lambdaGradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getIndex() - 1;
-                    lambdaGradX.add(threadID, i3, g3[0]);
-                    lambdaGradY.add(threadID, i3, g3[1]);
-                    lambdaGradZ.add(threadID, i3, g3[2]);
-                }
-                if (gradient) {
-                    scalar(g0, lambda, g0);
-                    scalar(g1, lambda, g1);
-                    scalar(g2, lambda, g2);
-                    scalar(g3, lambda, g3);
-                    int i0 = atoms[0].getIndex() - 1;
-                    gradX.add(threadID, i0, g0[0]);
-                    gradY.add(threadID, i0, g0[1]);
-                    gradZ.add(threadID, i0, g0[2]);
-                    int i1 = atoms[1].getIndex() - 1;
-                    gradX.add(threadID, i1, g1[0]);
-                    gradY.add(threadID, i1, g1[1]);
-                    gradZ.add(threadID, i1, g1[2]);
-                    int i2 = atoms[2].getIndex() - 1;
-                    gradX.add(threadID, i2, g2[0]);
-                    gradY.add(threadID, i2, g2[1]);
-                    gradZ.add(threadID, i2, g2[2]);
-                    int i3 = atoms[3].getIndex() - 1;
-                    gradX.add(threadID, i3, g3[0]);
-                    gradY.add(threadID, i3, g3[1]);
-                    gradZ.add(threadID, i3, g3[2]);
-                }
+            if (gradient) {
+                scalar(g0, lambda, g0);
+                scalar(g1, lambda, g1);
+                scalar(g2, lambda, g2);
+                scalar(g3, lambda, g3);
+                int i0 = atoms[0].getIndex() - 1;
+                gradX.add(threadID, i0, g0[0]);
+                gradY.add(threadID, i0, g0[1]);
+                gradZ.add(threadID, i0, g0[2]);
+                int i1 = atoms[1].getIndex() - 1;
+                gradX.add(threadID, i1, g1[0]);
+                gradY.add(threadID, i1, g1[1]);
+                gradZ.add(threadID, i1, g1[2]);
+                int i2 = atoms[2].getIndex() - 1;
+                gradX.add(threadID, i2, g2[0]);
+                gradY.add(threadID, i2, g2[1]);
+                gradZ.add(threadID, i2, g2[2]);
+                int i3 = atoms[3].getIndex() - 1;
+                gradX.add(threadID, i3, g3[0]);
+                gradY.add(threadID, i3, g3[1]);
+                gradZ.add(threadID, i3, g3[2]);
             }
         }
+
         return energy;
     }
 
@@ -524,7 +517,7 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overidden toString Method returns the Term's id.
      */
     @Override

@@ -64,6 +64,11 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
     public final double forceConstants[];
 
     /**
+     * Convert angle-torsion to kcal/mole.
+     */
+    public static final double units = 1.0;
+
+    /**
      * AngleTorsionType Constructor.
      *
      * @param atomClasses int[]
@@ -137,37 +142,39 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
      * @since 1.0
      */
     public static String sortKey(int c[]) {
-        if (c == null || c.length != 4) {
-            return null;
-        }
-        if (c[1] < c[2]) {
-            // Do nothing.
-        } else if (c[2] < c[1]) {
-            // Reverse the order.
-            int temp = c[0];
-            c[0] = c[3];
-            c[3] = temp;
-            temp = c[1];
-            c[1] = c[2];
-            c[2] = temp;
-        } else if (c[1] == c[2]) {
-            if (c[0] > c[3]) {
-                // Reverse the order.
-                int temp = c[0];
-                c[0] = c[3];
-                c[3] = temp;
-            }
-        } else if (c[0] <= c[3]) {
-            // Do nothing.
-        } else {
-            // Reverse the order.
-            int temp = c[0];
-            c[0] = c[3];
-            c[3] = temp;
-            temp = c[1];
-            c[1] = c[2];
-            c[2] = temp;
-        }
+
+//        if (c == null || c.length != 4) {
+//            return null;
+//        }
+//        if (c[1] < c[2]) {
+//            // Do nothing.
+//        } else if (c[2] < c[1]) {
+//            // Reverse the order.
+//            int temp = c[0];
+//            c[0] = c[3];
+//            c[3] = temp;
+//            temp = c[1];
+//            c[1] = c[2];
+//            c[2] = temp;
+//        } else if (c[1] == c[2]) {
+//            if (c[0] > c[3]) {
+//                // Reverse the order.
+//                int temp = c[0];
+//                c[0] = c[3];
+//                c[3] = temp;
+//            }
+//        } else if (c[0] <= c[3]) {
+//            // Do nothing.
+//        } else {
+//            // Reverse the order.
+//            int temp = c[0];
+//            c[0] = c[3];
+//            c[3] = temp;
+//            temp = c[1];
+//            c[1] = c[2];
+//            c[2] = temp;
+//        }
+
         String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
         return key;
     }
@@ -183,11 +190,6 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
                 atomClasses[0], atomClasses[1], atomClasses[2], atomClasses[3],
                 forceConstants[0], forceConstants[1], forceConstants[2], forceConstants[3], forceConstants[4], forceConstants[5]);
     }
-
-    /**
-     * Constant <code>units=PI / 180.0</code>
-     */
-    public static final double units = PI / 180.0;
 
     /**
      * {@inheritDoc}

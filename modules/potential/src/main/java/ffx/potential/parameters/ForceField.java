@@ -1594,7 +1594,9 @@ public class ForceField {
         /* OpenMM coefficient of friction for Langevin integrator */
         FRICTION_COEFF,
         /* OpenMM collision frequency for Langevin integrator */
-        COLLISION_FREQ
+        COLLISION_FREQ,
+        /* Unit Conversions */
+        ANGTORUNIT, STRTORUNIT
     }
 
     public enum ForceFieldInteger {
@@ -1616,7 +1618,8 @@ public class ForceField {
 
         APERIODIC, BONDTERM, ANGLETERM, COMRESTRAINTERM, GKTERM, IMPROPERTERM,
         OPBENDTERM, LAMBDATERM, MPOLETERM, NCSTERM, PITORSTERM, POLARIZETERM,  STRBNDTERM,
-        TORSIONTERM, TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
+        TORSIONTERM, ANGTORSTERM, STRTORSTERM,
+        TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
         RESTRAINTERM, RESTRAIN_WITH_LAMBDA, SCFCACHE, RIGID_HYDROGENS,
         USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES, ROTATE_MULTIPOLES,
         LIGAND_VAPOR_ELEC, LIGAND_GK_ELEC,

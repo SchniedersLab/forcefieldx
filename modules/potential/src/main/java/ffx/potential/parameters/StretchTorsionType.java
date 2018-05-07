@@ -61,6 +61,10 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
      * Force constants.
      */
     public final double forceConstants[];
+    /**
+     * Constant.
+     */
+    public static final double units = 1.0;
 
     /**
      * StretchTorsionType Constructor.
@@ -136,37 +140,39 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
      * @since 1.0
      */
     public static String sortKey(int c[]) {
-        if (c == null || c.length != 4) {
-            return null;
-        }
-        if (c[1] < c[2]) {
-            // Do nothing.
-        } else if (c[2] < c[1]) {
-            // Reverse the order.
-            int temp = c[0];
-            c[0] = c[3];
-            c[3] = temp;
-            temp = c[1];
-            c[1] = c[2];
-            c[2] = temp;
-        } else if (c[1] == c[2]) {
-            if (c[0] > c[3]) {
-                // Reverse the order.
-                int temp = c[0];
-                c[0] = c[3];
-                c[3] = temp;
-            }
-        } else if (c[0] <= c[3]) {
-            // Do nothing.
-        } else {
-            // Reverse the order.
-            int temp = c[0];
-            c[0] = c[3];
-            c[3] = temp;
-            temp = c[1];
-            c[1] = c[2];
-            c[2] = temp;
-        }
+
+//        if (c == null || c.length != 4) {
+//            return null;
+//        }
+//        if (c[1] < c[2]) {
+//            // Do nothing.
+//        } else if (c[2] < c[1]) {
+//            // Reverse the order.
+//            int temp = c[0];
+//            c[0] = c[3];
+//            c[3] = temp;
+//            temp = c[1];
+//            c[1] = c[2];
+//            c[2] = temp;
+//        } else if (c[1] == c[2]) {
+//            if (c[0] > c[3]) {
+//                // Reverse the order.
+//                int temp = c[0];
+//                c[0] = c[3];
+//                c[3] = temp;
+//            }
+//        } else if (c[0] <= c[3]) {
+//            // Do nothing.
+//        } else {
+//            // Reverse the order.
+//            int temp = c[0];
+//            c[0] = c[3];
+//            c[3] = temp;
+//            temp = c[1];
+//            c[1] = c[2];
+//            c[2] = temp;
+//        }
+
         String key = c[0] + " " + c[1] + " " + c[2] + " " + c[3];
         return key;
     }
@@ -184,11 +190,6 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
                 forceConstants[3], forceConstants[4], forceConstants[5],
                 forceConstants[6], forceConstants[7], forceConstants[8]);
     }
-
-    /**
-     * Constant <code>units=PI / 180.0</code>
-     */
-    public static final double units = PI / 180.0;
 
     /**
      * {@inheritDoc}

@@ -287,6 +287,26 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     }
 
     /**
+     * Returns an ArrayList of all AngleTorsions below the present MSNode.
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
+    public ArrayList<ROLS> getAngleTorsionList() {
+        ArrayList<ROLS> arrayList = new ArrayList<>();
+        return getList(AngleTorsion.class, arrayList);
+    }
+
+    /**
+     * Returns an ArrayList of all StretchTorsions below the present MSNode.
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
+    public ArrayList<ROLS> getStretchTorsionList() {
+        ArrayList<ROLS> arrayList = new ArrayList<>();
+        return getList(StretchTorsion.class, arrayList);
+    }
+
+    /**
      * Returns an ArrayList of all Pi-Orbital Torsions below the present MSNode.
      *
      * @return a {@link java.util.ArrayList} object.
