@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -52,7 +52,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public final class VectorMath {
 
@@ -64,12 +63,12 @@ public final class VectorMath {
     private static final float fb[] = new float[3];
     private static final float fc[] = new float[3];
     private static final float fd[] = new float[3];
-    private static final float[] fba = new float[3];
-    private static final float[] fcb = new float[3];
-    private static final float[] fdc = new float[3];
-    private static final float[] ft = new float[3];
-    private static final float[] fu = new float[3];
-    private static final float[] ftu = new float[3];
+    private static final float fba[] = new float[3];
+    private static final float fcb[] = new float[3];
+    private static final float fdc[] = new float[3];
+    private static final float ft[] = new float[3];
+    private static final float fu[] = new float[3];
+    private static final float ftu[] = new float[3];
     /**
      * Internal double work arrays.
      */
@@ -77,13 +76,31 @@ public final class VectorMath {
     private static final double db[] = new double[3];
     private static final double dc[] = new double[3];
     private static final double dd[] = new double[3];
-    private static final double[] dba = new double[3];
-    private static final double[] dcb = new double[3];
-    private static final double[] ddc = new double[3];
-    private static final double[] dt = new double[3];
-    private static final double[] du = new double[3];
-    private static final double[] dtu = new double[3];
+    private static final double dba[] = new double[3];
+    private static final double dcb[] = new double[3];
+    private static final double ddc[] = new double[3];
+    private static final double dt[] = new double[3];
+    private static final double du[] = new double[3];
+    private static final double dtu[] = new double[3];
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
+
+    public static void log(double[] v, String label) {
+        if (v == null) {
+            return;
+        }
+        StringBuilder sb = null;
+        if (label != null) {
+            sb = new StringBuilder(String.format(" %16s = [", label));
+        } else {
+            sb = new StringBuilder(String.format(" %16s = [", "v"));
+        }
+
+        for (int i = 0; i < v.length; i++) {
+            sb.append(String.format(" %16.8f", v[i]));
+        }
+        sb.append(" ]");
+        logger.info(sb.toString());
+    }
 
     /**
      * <p>
@@ -198,8 +215,8 @@ public final class VectorMath {
     /**
      * Finds the cross-product between two vectors
      *
-     * @param a First vector
-     * @param b Second vector
+     * @param a   First vector
+     * @param b   Second vector
      * @param ret The cross-product a x b
      */
     public static void cross(double[] a, double[] b, double ret[]) {
@@ -211,8 +228,8 @@ public final class VectorMath {
     /**
      * Finds the cross-product between two vectors
      *
-     * @param a First vector
-     * @param b Second vector
+     * @param a   First vector
+     * @param b   Second vector
      * @param ret The cross-product a x b
      */
     public static void cross(float[] a, float[] b, float ret[]) {
@@ -255,8 +272,8 @@ public final class VectorMath {
     /**
      * Finds the difference between two vectors
      *
-     * @param a First vector
-     * @param b Second vector
+     * @param a   First vector
+     * @param b   Second vector
      * @param ret Return Values
      */
     public static void diff(double[] a, double[] b, double[] ret) {
@@ -268,8 +285,8 @@ public final class VectorMath {
     /**
      * Finds the difference between two vectors
      *
-     * @param a First vector
-     * @param b Second vector
+     * @param a   First vector
+     * @param b   Second vector
      * @param ret Return Values
      */
     public static void diff(float[] a, float[] b, float[] ret) {
@@ -288,7 +305,7 @@ public final class VectorMath {
      * @return The dihedral angle in the range [ -pi, pi ]
      */
     public static double dihedralAngle(double[] a, double[] b, double[] c,
-            double[] d) {
+                                       double[] d) {
         diff(b, a, dba);
         diff(c, b, dcb);
         diff(d, c, ddc);
@@ -476,7 +493,7 @@ public final class VectorMath {
      * <p>
      * mat3inverse</p>
      *
-     * @param m an array of double.
+     * @param m   an array of double.
      * @param res an array of double.
      */
     public static void mat3Inverse(double m[][], double res[][]) {
@@ -509,8 +526,8 @@ public final class VectorMath {
      * <p>
      * vec3mat3</p>
      *
-     * @param v an array of double.
-     * @param m an array of double.
+     * @param v   an array of double.
+     * @param m   an array of double.
      * @param res an array of double.
      */
     public static void vec3Mat3(double v[], double m[][], double res[]) {
@@ -536,8 +553,8 @@ public final class VectorMath {
      * <p>
      * mat3vec3</p>
      *
-     * @param v an array of double.
-     * @param m an array of double.
+     * @param v   an array of double.
+     * @param m   an array of double.
      * @param res an array of double.
      */
     public static void mat3Vec3(double v[], double m[][], double res[]) {
@@ -563,8 +580,8 @@ public final class VectorMath {
      * <p>
      * symvec6mat3</p>
      *
-     * @param v an array of double.
-     * @param m an array of double.
+     * @param v   an array of double.
+     * @param m   an array of double.
      * @param res an array of double.
      */
     public static void symVec6Mat3(double v[], double m[][], double res[][]) {
@@ -596,8 +613,8 @@ public final class VectorMath {
      * <p>
      * mat3symvec6</p>
      *
-     * @param m an array of double.
-     * @param v an array of double.
+     * @param m   an array of double.
+     * @param v   an array of double.
      * @param res an array of double.
      */
     public static void mat3SymVec6(double m[][], double v[], double res[][]) {
@@ -629,8 +646,8 @@ public final class VectorMath {
      * <p>
      * mat3mat3</p>
      *
-     * @param m1 an array of double.
-     * @param m2 an array of double.
+     * @param m1  an array of double.
+     * @param m2  an array of double.
      * @param res an array of double.
      */
     public static void mat3Mat3(double m1[][], double m2[][], double res[][]) {
@@ -649,8 +666,8 @@ public final class VectorMath {
      * scalar times a matrix times a matrix
      *
      * @param scalar input scalar
-     * @param m1 first input matrix
-     * @param m2 second input matrix
+     * @param m1     first input matrix
+     * @param m2     second input matrix
      * @return matrix product
      */
     public static double[][] scalarMat3Mat3(double scalar, double m1[][], double m2[][]) {
@@ -664,9 +681,9 @@ public final class VectorMath {
      * scalarmat3mat3</p>
      *
      * @param scalar a double.
-     * @param m1 an array of double.
-     * @param m2 an array of double.
-     * @param res an array of double.
+     * @param m1     an array of double.
+     * @param m2     an array of double.
+     * @param res    an array of double.
      */
     public static void scalarMat3Mat3(double scalar, double m1[][], double m2[][], double res[][]) {
         res[0][0] = (scalar * m1[0][0]) * m2[0][0] + (scalar * m1[0][1]) * m2[1][0] + (scalar * m1[0][2]) * m2[2][0];
@@ -683,7 +700,7 @@ public final class VectorMath {
     /**
      * Normalizes a vector
      *
-     * @param n A vector to be normalized.
+     * @param n   A vector to be normalized.
      * @param ret The normalized vector.
      */
     public static void norm(double[] n, double[] ret) {
@@ -697,7 +714,7 @@ public final class VectorMath {
     /**
      * Normalizes a vector
      *
-     * @param n A vector to be normalized.
+     * @param n   A vector to be normalized.
      * @param ret The normalized vector.
      */
     public static void norm(float[] n, float[] ret) {
@@ -757,8 +774,8 @@ public final class VectorMath {
     /**
      * Scales a vector
      *
-     * @param n A vector to be scaled
-     * @param a A scaler value
+     * @param n   A vector to be scaled
+     * @param a   A scaler value
      * @param ret The scaled vector
      */
     public static void scalar(double[] n, double a, double[] ret) {
@@ -770,8 +787,8 @@ public final class VectorMath {
     /**
      * Scales a vector
      *
-     * @param n A vector to be scaled
-     * @param a A scaler value
+     * @param n   A vector to be scaled
+     * @param a   A scaler value
      * @param ret The scaled Vector
      */
     public static void scalar(float[] n, float a, float[] ret) {
@@ -784,8 +801,8 @@ public final class VectorMath {
      * <p>
      * sum</p>
      *
-     * @param a an array of double.
-     * @param b an array of double.
+     * @param a   an array of double.
+     * @param b   an array of double.
      * @param ret an array of double.
      */
     public static void sum(double[] a, double[] b, double[] ret) {
@@ -798,8 +815,8 @@ public final class VectorMath {
      * <p>
      * sum</p>
      *
-     * @param a an array of float.
-     * @param b an array of float.
+     * @param a   an array of float.
+     * @param b   an array of float.
      * @param ret an array of float.
      */
     public static void sum(float[] a, float[] b, float[] ret) {

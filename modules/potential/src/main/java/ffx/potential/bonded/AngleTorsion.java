@@ -353,18 +353,6 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
          * Vector x0112 cross x12_32.
          */
         double x[] = new double[3];
-        /**
-         * Gradient on atoms 0, 1, 2 & 3.
-         */
-        double g0[] = new double[3];
-        double g1[] = new double[3];
-        double g2[] = new double[3];
-        double g3[] = new double[3];
-        /**
-         * Work vectors.
-         */
-        double x1[] = new double[3];
-        double x2[] = new double[3];
 
         energy = 0.0;
         value = 0.0;
@@ -399,6 +387,11 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         double cosine = dot(x0112, x1223) / rr;
         double sine = dot(v12, x) / (r12 * rr);
 
+        value = toDegrees(acos(cosine));
+        if (sine < 0.0) {
+            value = -value;
+        }
+
         // Compute multiple angle trigonometry and phase terms
         double tsin[] = torsionType.sine;
         double tcos[] = torsionType.cosine;
@@ -417,47 +410,132 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
         double v1 = constants[0];
         double v2 = constants[1];
         double v3 = constants[2];
-
         double dot = dot(v01, v12);
         double cosang = -dot / sqrt(r01 * r01 * r12 * r12);
         double angle1 = toDegrees(acos(cosang));
         double dt1 = angle1 - angleType1.angle[0];
         double e1 = angleTorsionType.units * dt1 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
-        double dedphi = angleTorsionType.units * dt1 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
-        double ddt = angleTorsionType.units * toDegrees(v1 * phi1 + v2 * phi2 + v3 * phi3);
 
         // Set the angle-torsion values for the second angle
-        v1 = constants[3];
-        v2 = constants[4];
-        v3 = constants[5];
+        double v4 = constants[3];
+        double v5 = constants[4];
+        double v6 = constants[5];
         dot = dot(v12, v23);
         cosang = -dot / sqrt(r12 * r12 * r23 * r23);
         double angle2 = toDegrees(acos(cosang));
         double dt2 = angle2 - angleType2.angle[0];
-        double e2 = angleTorsionType.units * dt2 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
-        dedphi = angleTorsionType.units * dt2 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
-        ddt = angleTorsionType.units * toDegrees(v1 * phi1 + v2 * phi2 + v3 * phi3);
+        double e2 = angleTorsionType.units * dt2 * (v4 * phi1 + v5 * phi2 + v6 * phi3);
+
+        energy = e1 + e2;
 
         if (esvTerm) {
             esvDerivLocal = energy * dedesvChain * lambda;
         }
-        energy = (e1 + e2) * esvLambda * lambda;
+
+        energy = energy * esvLambda * lambda;
         dEdL = energy * esvLambda;
 
         if (gradient || lambdaTerm) {
-            dedphi = dedphi * esvLambda;
-            cross(x0112, v12, x1);
-            cross(x1223, v12, x2);
-            scalar(x1, dedphi / (r01_12 * r12), x1);
-            scalar(x2, -dedphi / (r12_23 * r12), x2);
-            cross(x1, v12, g0);
-            cross(v02, x1, g1);
-            cross(x2, v23, g2);
-            sum(g1, g2, g1);
-            cross(x1, v01, g2);
-            cross(v13, x2, g3);
-            sum(g2, g3, g2);
-            cross(x2, v12, g3);
+
+            // Compute derivative components for this interaction.
+            double dedphi1 = angleTorsionType.units * dt1 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
+            double ddt1 = angleTorsionType.units * toDegrees(v1 * phi1 + v2 * phi2 + v3 * phi3);
+
+            double dedxt[] = new double[3];
+            double dedxu[] = new double[3];
+            cross(x0112,v12,dedxt);
+            scalar(dedxt,dedphi1/(r01_12*r12),dedxt);
+            cross(v12,x1223,dedxu);
+            scalar(dedxu,dedphi1/(r12_23*r12),dedxu);
+
+            /**
+             * Gradient for atoms 0, 1, 2 & 3.
+             */
+            double g0[] = new double[3];
+            double g1[] = new double[3];
+            double g2[] = new double[3];
+            double g3[] = new double[3];
+            /**
+             * Work vectors.
+             */
+            double x1[] = new double[3];
+            double x2[] = new double[3];
+            double x3[] = new double[3];
+            double x4[] = new double[3];
+
+            // Determine chain rule components for the first angle.
+            double terma = -ddt1 / (r01*r01*sqrt(r01_12));
+            double termc = ddt1 / (r12*r12*sqrt(r01_12));
+            cross(x0112,v01,x1);
+            scalar(x1,terma,x1);
+            cross(dedxt,v12,x2);
+            sum(x1,x2,g0);
+            cross(v01,x0112,x1);
+            scalar(x1,terma,x1);
+            cross(x0112,v12,x2);
+            scalar(x2,termc,x2);
+            cross(v02,dedxt,x3);
+            cross(dedxu,v23,x4);
+            sum(x1,x2,g1);
+            sum(x3,x4,x3);
+            sum(x3,g1,g1);
+            cross(v12,x0112,x1);
+            scalar(x1,termc,x1);
+            cross(dedxt,v01,x2);
+            cross(v13,dedxu,x3);
+            sum(x1,x2,g2);
+            sum(g2,x3,g2);
+            cross(dedxu,v12,g3);
+
+            //  Partial gradient on atoms 0, 1, 2 & 3.
+            double pg0[] = new double[3];
+            double pg1[] = new double[3];
+            double pg2[] = new double[3];
+            double pg3[] = new double[3];
+
+            // Compute derivative components for the 2nd angle.
+            double dedphi2 = angleTorsionType.units * dt2 * (v4 * dphi1 + v5 * dphi2 + v6 * dphi3);
+            double ddt2 = angleTorsionType.units * toDegrees(v4 * phi1 + v5 * phi2 + v6 * phi3);
+            cross(x0112,v12,dedxt);
+            scalar(dedxt,dedphi2/(r01_12*r12),dedxt);
+            cross(v12,x1223,dedxu);
+            scalar(dedxu,dedphi2/(r12_23*r12),dedxu);
+
+            // Increment chain rule components for the 2nd angle.
+            double termb = -ddt2 / (r12*r12*sqrt(r12_23));
+            double termd = ddt2 / (r23*r23*sqrt(r12_23));
+            cross(dedxt,v12,pg0);
+            cross(x1223,v12,x1);
+            scalar(x1,termb,x1);
+            cross(v02,dedxt,x2);
+            cross(dedxu,v23,x3);
+            sum(x1,x2,pg1);
+            sum(x3,pg1,pg1);
+            cross(v12,x1223,x1);
+            scalar(x1,termb,x1);
+            cross(x1223,v23,x2);
+            scalar(x2,termd,x2);
+            cross(dedxt,v01,x3);
+            cross(v13,dedxu,x4);
+            sum(x1,x2,pg2);
+            sum(x3,pg2,pg2);
+            sum(x4,pg2,pg2);
+            cross(v23,x1223,x1);
+            scalar(x1,termd,x1);
+            cross(dedxu,v12,x2);
+            sum(x1,x2,pg3);
+
+            // Accumulate derivative components.
+            sum(pg0,g0,g0);
+            sum(pg1,g1,g1);
+            sum(pg2,g2,g2);
+            sum(pg3,g3,g3);
+
+            scalar(g0, esvLambda, g0);
+            scalar(g1, esvLambda, g1);
+            scalar(g2, esvLambda, g2);
+            scalar(g3, esvLambda, g3);
+
             if (lambdaTerm) {
                 int i0 = atoms[0].getIndex() - 1;
                 lambdaGradX.add(threadID, i0, g0[0]);

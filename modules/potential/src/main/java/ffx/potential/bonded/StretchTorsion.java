@@ -56,6 +56,7 @@ import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.r;
 import static ffx.numerics.VectorMath.scalar;
 import static ffx.numerics.VectorMath.sum;
+import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
  * The Torsion class represents a torsional angle formed between four bonded
@@ -135,12 +136,6 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         atoms[0] = bonds[0].get1_2(atoms[1]);
         atoms[2] = bonds[1].get1_2(atoms[1]);
         atoms[3] = bonds[2].get1_2(atoms[2]);
-
-        // atoms[0].setTorsion(this);
-        // atoms[1].setTorsion(this);
-        // atoms[2].setTorsion(this);
-        // atoms[3].setTorsion(this);
-
         setID_Key(false);
         value = calculateDihedralAngle();
     }
@@ -341,18 +336,6 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
          * Vector x0112 cross x12_32.
          */
         double x[] = new double[3];
-        /**
-         * Gradient on atoms 0, 1, 2 & 3.
-         */
-        double g0[] = new double[3];
-        double g1[] = new double[3];
-        double g2[] = new double[3];
-        double g3[] = new double[3];
-        /**
-         * Work vectors.
-         */
-        double x1[] = new double[3];
-        double x2[] = new double[3];
 
         energy = 0.0;
         value = 0.0;
@@ -387,6 +370,11 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         double cosine = dot(x0112, x1223) / rr;
         double sine = dot(v12, x) / (r12 * rr);
 
+        value = toDegrees(acos(cosine));
+        if (sine < 0.0) {
+            value = -value;
+        }
+
         // Compute multiple angle trigonometry and phase terms
         double tsin[] = torsionType.sine;
         double tcos[] = torsionType.cosine;
@@ -405,52 +393,138 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
         double v1 = constants[0];
         double v2 = constants[1];
         double v3 = constants[2];
-        double dr = r01 - bondType1.distance;
-        double e1 = stretchTorsionType.units * dr * (v1 * phi1 + v2 * phi2 + v3 * phi3);
-        double dedphi = stretchTorsionType.units * dr * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
-        double ddr = stretchTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3) / r01;
+        double dr1 = r01 - bondType1.distance;
+        double e1 = stretchTorsionType.units * dr1 * (v1 * phi1 + v2 * phi2 + v3 * phi3);
 
         // Get the stretch-torsion values for the second bond.
-        v1 = constants[3];
-        v2 = constants[4];
-        v3 = constants[5];
-        dr = r12 - bondType2.distance;
-        double e2 = stretchTorsionType.units * dr * (v1 * phi1 + v2 * phi2 + v3 * phi3);
-        dedphi = stretchTorsionType.units * dr * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
-        ddr = stretchTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3) / r12;
+        double v4 = constants[3];
+        double v5 = constants[4];
+        double v6 = constants[5];
+        double dr2 = r12 - bondType2.distance;
+        double e2 = stretchTorsionType.units * dr2 * (v4 * phi1 + v5 * phi2 + v6 * phi3);
 
         // Get the stretch-torsion values for the third bond.
-        v1 = constants[6];
-        v2 = constants[7];
-        v3 = constants[8];
-        dr = r23 - bondType3.distance;
-        double e3 = stretchTorsionType.units * dr * (v1 * phi1 + v2 * phi2 + v3 * phi3);
-        dedphi = stretchTorsionType.units * dr * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
-        ddr = stretchTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3) / r23;
+        double v7 = constants[6];
+        double v8 = constants[7];
+        double v9 = constants[8];
+        double dr3 = r23 - bondType3.distance;
+        double e3 = stretchTorsionType.units * dr3 * (v7 * phi1 + v8 * phi2 + v9 * phi3);
+
+        energy = e1 + e2 + e3;
 
         if (esvTerm) {
             esvDerivLocal = energy * dedesvChain * lambda;
         }
 
-        energy = (e1 + e2 + e3) * esvLambda * lambda;
+        energy = energy * esvLambda * lambda;
         dEdL = energy * esvLambda;
 
         if (gradient || lambdaTerm) {
-            dedphi = dedphi * esvLambda;
-            diff(a2, a0, v02);
-            diff(a3, a1, v13);
-            cross(x0112, v12, x1);
-            cross(x1223, v12, x2);
-            scalar(x1, dedphi / (r01_12 * r12), x1);
-            scalar(x2, -dedphi / (r12_23 * r12), x2);
-            cross(x1, v12, g0);
-            cross(v02, x1, g1);
-            cross(x2, v23, g2);
-            sum(g1, g2, g1);
-            cross(x1, v01, g2);
-            cross(v13, x2, g3);
-            sum(g2, g3, g2);
-            cross(x2, v12, g3);
+
+            // Compute derivative components for the first bond.
+            double dedphi1 = stretchTorsionType.units * dr1 * (v1 * dphi1 + v2 * dphi2 + v3 * dphi3);
+            double ddr1 = stretchTorsionType.units * (v1 * phi1 + v2 * phi2 + v3 * phi3) / r01;
+
+            double ddrdx[] = new double[3];
+            double dedxt[] = new double[3];
+            double dedxu[] = new double[3];
+            scalar(v01,ddr1,ddrdx);
+            cross(x0112,v12,dedxt);
+            scalar(dedxt,dedphi1/(r01_12*r12),dedxt);
+            cross(x1223,v12,dedxu);
+            scalar(dedxu,-dedphi1/(r12_23*r12),dedxu);
+
+            /**
+             * Gradient for atoms 0, 1, 2 & 3.
+             */
+            double g0[] = new double[3];
+            double g1[] = new double[3];
+            double g2[] = new double[3];
+            double g3[] = new double[3];
+            /**
+             * Work vectors.
+             */
+            double x1[] = new double[3];
+            double x2[] = new double[3];
+
+            // Determine chain rule components for the first bond.
+            cross(dedxt,v12,g0);
+            diff(g0,ddrdx,g0);
+            cross(v02,dedxt,x1);
+            cross(dedxu,v23,x2);
+            sum(x1,x2,g1);
+            sum(g1,ddrdx,g1);
+            cross(dedxt,v01,x1);
+            cross(v13,dedxu,x2);
+            sum(x1,x2,g2);
+            cross(dedxu,v12,g3);
+
+            // Compute derivative components for the 2nd bond.
+            double dedphi2 = stretchTorsionType.units * dr2 * (v4 * dphi1 + v5 * dphi2 + v6 * dphi3);
+            double ddr2 = stretchTorsionType.units * (v4 * phi1 + v5 * phi2 + v6 * phi3) / r12;
+
+            scalar(v12,ddr2,ddrdx);
+            cross(x0112,v12,dedxt);
+            scalar(dedxt,dedphi2/(r01_12*r12),dedxt);
+            cross(x1223,v12,dedxu);
+            scalar(dedxu,-dedphi2/(r12_23*r12),dedxu);
+
+            //  Partial gradient on atoms 0, 1, 2 & 3.
+            double pg0[] = new double[3];
+            double pg1[] = new double[3];
+            double pg2[] = new double[3];
+            double pg3[] = new double[3];
+
+            // Compute chain rule components for the second bond.
+            cross(dedxt,v12,pg0);
+            cross(v02,dedxt,x1);
+            cross(dedxu,v23,x2);
+            sum(x1,x2,pg1);
+            diff(pg1,ddrdx,pg1);
+            cross(dedxt,v01,x1);
+            cross(v13,dedxu,x2);
+            sum(x1,x2,pg2);
+            sum(pg2,ddrdx,pg2);
+            cross(dedxu,v12,pg3);
+
+            // Accumulate derivative components.
+            sum(pg0,g0,g0);
+            sum(pg1,g1,g1);
+            sum(pg2,g2,g2);
+            sum(pg3,g3,g3);
+
+            // Compute derivative components for the 3rd bond.
+            double dedphi3 = stretchTorsionType.units * dr3 * (v7 * dphi1 + v8 * dphi2 + v9 * dphi3);
+            double ddr3 = stretchTorsionType.units * (v7 * phi1 + v8 * phi2 + v9 * phi3) / r23;
+            scalar(v23,ddr3,ddrdx);
+            cross(x0112,v12,dedxt);
+            scalar(dedxt,dedphi3/(r01_12*r12),dedxt);
+            cross(x1223,v12,dedxu);
+            scalar(dedxu,-dedphi3/(r12_23*r12),dedxu);
+
+            // Compute chain rule components for the third bond.
+            cross(dedxt,v12,pg0);
+            cross(v02,dedxt,x1);
+            cross(dedxu,v23,x2);
+            sum(x1,x2,pg1);
+            cross(dedxt,v01,x1);
+            cross(v13,dedxu,x2);
+            sum(x1,x2,pg2);
+            diff(pg2,ddrdx,pg2);
+            cross(dedxu,v12,pg3);
+            sum(pg3,ddrdx,pg3);
+
+            // Accumulate derivative components.
+            sum(pg0,g0,g0);
+            sum(pg1,g1,g1);
+            sum(pg2,g2,g2);
+            sum(pg3,g3,g3);
+
+            scalar(g0, esvLambda, g0);
+            scalar(g1, esvLambda, g1);
+            scalar(g2, esvLambda, g2);
+            scalar(g3, esvLambda, g3);
+
             if (lambdaTerm) {
                 int i0 = atoms[0].getIndex() - 1;
                 lambdaGradX.add(threadID, i0, g0[0]);

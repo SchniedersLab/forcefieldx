@@ -3398,8 +3398,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             stretchBendEnergy = sharedStretchBendEnergy.get();
             ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
             torsionEnergy = sharedTorsionEnergy.get();
-            angleTorsionEnergy = sharedAngleTorsionEnergy.get();
             stretchTorsionEnergy = sharedStretchTorsionEnergy.get();
+            angleTorsionEnergy = sharedAngleTorsionEnergy.get();
             torsionTorsionEnergy = sharedTorsionTorsionEnergy.get();
             ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
 
