@@ -191,6 +191,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
      */
     protected double dForceFieldEnergydL;
     /**
+     * OSRW Bias energy.
+     */
+    protected double biasEnergy;
+    /**
      * Total partial derivative of the potential (U) being sampled w.r.t.
      * lambda.
      */
@@ -559,6 +563,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     public double getForceFieldEnergy() {
         return forceFieldEnergy;
+    }
+
+    public double getBiasEnergy() {
+        return biasEnergy;
     }
 
     public Potential getPotentialEnergy() {
