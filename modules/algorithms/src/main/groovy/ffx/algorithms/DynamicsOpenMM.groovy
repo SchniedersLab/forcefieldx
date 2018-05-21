@@ -89,7 +89,6 @@ class DynamicsOpenMM extends Script{
     }
     
     def run(){
-        logger.info("in the run method");
         def cli = new CliBuilder(usage: ' ffxc DynamicsOpenMM [options] <filename> [file2...]', header: ' Options:');
 
         def options = new Options();
