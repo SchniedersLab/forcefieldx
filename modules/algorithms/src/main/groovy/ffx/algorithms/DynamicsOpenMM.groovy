@@ -148,6 +148,21 @@ class DynamicsOpenMM extends Script{
         }
 
         ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+        switch (forceFieldEnergy.getPlatform()) {
+            case ForceFieldEnergy.Platform.OMM:
+            case ForceFieldEnergy.Platform.OMM_CUDA:
+            case ForceFieldEnergy.Platform.OMM_OPENCL:
+            case ForceFieldEnergy.Platform.OMM_OPTCPU:
+            case ForceFieldEnergy.Platform.OMM_REF:
+                logger.fine(" Platform is appropriate for OpenMM Dynamics.");
+                break;
+            case ForceFieldEnergy.Platform.FFX:
+            default:
+                logger.severe(String.format(" Platform %s is inappropriate for OpenMM dynamics. Please explicitly specify an OpenMM platform.", forceFieldEnergy.getPlatform()));
+                break;
+        }
+
+
         logger.info(" Starting energy (before .dyn restart loaded):");
         boolean updatesDisabled = active.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
         if (updatesDisabled) {

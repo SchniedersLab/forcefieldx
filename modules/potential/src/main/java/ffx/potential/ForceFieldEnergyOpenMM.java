@@ -403,6 +403,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private boolean doFFXdEdL = true;
     private boolean testdEdL = true;
 
+    private final Platform ffxPlatform;
+
     /**
      * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an
      * OpenMM Platform while keeping track of information locally.
@@ -427,6 +429,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         logger.info(" Initializing OpenMM\n");
 
         loadPlatform(requestedPlatform);
+        ffxPlatform = requestedPlatform;
 
         // Create the OpenMM System
         system = OpenMM_System_create();
@@ -1258,7 +1261,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
             logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
             logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
-            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
             return;
         }
 
@@ -3192,6 +3195,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public PointerByReference getContext() {
         return context;
+    }
+
+    @Override
+    public Platform getPlatform() {
+        return ffxPlatform;
     }
 
     /**

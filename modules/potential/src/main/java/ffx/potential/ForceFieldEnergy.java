@@ -2542,6 +2542,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     /**
+     * Gets the Platform associated with this force field energy. For the reference platform, always returns FFX.
+     * @return A Platform.
+     */
+    public Platform getPlatform() {
+        return Platform.FFX;
+    }
+
+    /**
      * <p>
      * setRestraintBond</p>
      *
