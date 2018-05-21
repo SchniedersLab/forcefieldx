@@ -775,7 +775,11 @@ public class SpaceGroup {
      * @since 1.0
      */
     public static SpaceGroup spaceGroupFactory(String name) {
-        return spaceGroupFactory(spaceGroupNumber(name));
+        SpaceGroup spaceGroup = spaceGroupFactory(spaceGroupNumber(name));
+        if (spaceGroup == null) {
+            spaceGroup = getAlternativeSpaceGroup(name);
+        }
+        return spaceGroup;
     }
 
     /**
@@ -6694,6 +6698,24 @@ public class SpaceGroup {
             }
         }
         return -1;
+    }
+
+    String alternativeSpaceGroupNames[] = {"P21/a"};
+
+    public static SpaceGroup getAlternativeSpaceGroup(String name) {
+        SpaceGroup spaceGroup = null;
+        if (name == "P21/a") {
+            spaceGroup = new SpaceGroup(14, 4, 4, "P21/a", "PG2/m", "P 1 21/a 1",
+                    MONOCLINIC, L121,
+                    new ASULimit[]{ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                    new double[]{-1.0, -1.0, -1.0},
+                    new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                    new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_0_12),
+                    new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
+                    new SymOp(SymOp.Rot_X_Y_mZ, SymOp.Tr_12_0_12));
+        }
+
+        return spaceGroup;
     }
 
     /**

@@ -48,7 +48,6 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import ffx.crystal.*;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -60,12 +59,19 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
 
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
+import ffx.crystal.NCSCrystal;
+import ffx.crystal.ReplicatesCrystal;
+import ffx.crystal.SpaceGroup;
+import ffx.crystal.SymOp;
 import ffx.numerics.AdderDoubleArray;
 import ffx.numerics.AtomicDoubleArray;
 import ffx.numerics.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.MultiDoubleArray;
 import ffx.numerics.PJDoubleArray;
 import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
@@ -84,6 +90,7 @@ import ffx.potential.bonded.RelativeSolvation.SolvationLibrary;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RestraintBond;
 import ffx.potential.bonded.StretchBend;
+import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
@@ -139,6 +146,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private UreyBradley ureyBradleys[];
     private OutOfPlaneBend outOfPlaneBends[];
     private Torsion torsions[];
+    private StretchTorsion stretchTorsions[];
+    private AngleTorsion angleTorsions[];
     private PiOrbitalTorsion piOrbitalTorsions[];
     private TorsionTorsion torsionTorsions[];
     private ImproperTorsion improperTorsions[];
@@ -157,6 +166,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private int nUreyBradleys;
     private int nOutOfPlaneBends;
     private int nTorsions;
+    private int nAngleTorsions;
+    private int nStretchTorsions;
     private int nImproperTorsions;
     private int nPiOrbitalTorsions;
     private int nTorsionTorsions;
@@ -171,6 +182,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean ureyBradleyTerm;
     private boolean outOfPlaneBendTerm;
     private boolean torsionTerm;
+    private boolean stretchTorsionTerm;
+    private boolean angleTorsionTerm;
     private boolean improperTorsionTerm;
     private boolean piOrbitalTorsionTerm;
     private boolean torsionTorsionTerm;
@@ -196,6 +209,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean ureyBradleyTermOrig;
     private boolean outOfPlaneBendTermOrig;
     private boolean torsionTermOrig;
+    private boolean stretchTorsionTermOrig;
+    private boolean angleTorsionTermOrig;
     private boolean improperTorsionTermOrig;
     private boolean piOrbitalTorsionTermOrig;
     private boolean torsionTorsionTermOrig;
@@ -213,6 +228,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double ureyBradleyEnergy;
     private double outOfPlaneBendEnergy;
     private double torsionEnergy;
+    private double stretchTorsionEnergy;
+    private double angleTorsionEnergy;
     private double improperTorsionEnergy;
     private double piOrbitalTorsionEnergy;
     private double torsionTorsionEnergy;
@@ -238,7 +255,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double totalEnergy;
     protected final double maxDebugGradient;
     private long bondTime, angleTime, stretchBendTime, ureyBradleyTime;
-    private long outOfPlaneBendTime, torsionTime, piOrbitalTorsionTime, improperTorsionTime;
+    private long outOfPlaneBendTime, torsionTime, angleTorsionTime, stretchTorsionTime;
+    private long piOrbitalTorsionTime, improperTorsionTime;
     private long torsionTorsionTime, vanDerWaalsTime, electrostaticTime;
     private long restraintBondTime, ncsTime, coordRestraintTime, comRestraintTime;
     private long totalTime;
@@ -250,7 +268,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean printCompact = prop("ffe.combineBonded", false);
     private boolean printOverride = prop("ffe.printOverride", false);
     private final boolean noHeader = prop("ffe.noHeader", false);
-    private final boolean decomposePme = prop("pme.decompose", false);
+
     /**
      * *************************************
      */
@@ -325,6 +343,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         ureyBradleyTerm = forceField.getBoolean(ForceFieldBoolean.UREYTERM, true);
         outOfPlaneBendTerm = forceField.getBoolean(ForceFieldBoolean.OPBENDTERM, true);
         torsionTerm = forceField.getBoolean(ForceFieldBoolean.TORSIONTERM, true);
+        stretchTorsionTerm = forceField.getBoolean(ForceFieldBoolean.STRTORSTERM, true);
+        angleTorsionTerm = forceField.getBoolean(ForceFieldBoolean.ANGTORSTERM, true);
         piOrbitalTorsionTerm = forceField.getBoolean(ForceFieldBoolean.PITORSTERM, true);
         torsionTorsionTerm = forceField.getBoolean(ForceFieldBoolean.TORTORTERM, true);
         improperTorsionTerm = forceField.getBoolean(ForceFieldBoolean.IMPROPERTERM, true);
@@ -365,6 +385,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         ureyBradleyTermOrig = ureyBradleyTerm;
         outOfPlaneBendTermOrig = outOfPlaneBendTerm;
         torsionTermOrig = torsionTerm;
+        angleTorsionTermOrig = angleTorsionTerm;
+        stretchTorsionTermOrig = stretchTorsionTerm;
         piOrbitalTorsionTermOrig = piOrbitalTorsionTerm;
         torsionTorsionTermOrig = torsionTorsionTerm;
         restraintBondTermOrig = restraintBondTerm;
@@ -690,6 +712,40 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         } else {
             nTorsions = 0;
             torsions = null;
+        }
+
+        // Collect, count, pack and sort stretch torsions.
+        if (stretchTorsionTerm) {
+            ArrayList<ROLS> stretchTorsion = molecularAssembly.getStretchTorsionList();
+            nStretchTorsions = stretchTorsion.size();
+            stretchTorsions = stretchTorsion.toArray(new StretchTorsion[nStretchTorsions]);
+            if (nStretchTorsions > 0) {
+                if (torsionScale == 1.0) {
+                    logger.info(format("  Stretch-Torsions:                  %10d", nStretchTorsions));
+                } else {
+                    logger.info(format("  Stretch-Torsions (%5.2f):          %10d", torsionScale, nStretchTorsions));
+                }
+            }
+        } else {
+            nStretchTorsions = 0;
+            stretchTorsions = null;
+        }
+
+        // Collect, count, pack and sort angle torsions.
+        if (angleTorsionTerm) {
+            ArrayList<ROLS> angleTorsion = molecularAssembly.getAngleTorsionList();
+            nAngleTorsions = angleTorsion.size();
+            angleTorsions = angleTorsion.toArray(new AngleTorsion[nAngleTorsions]);
+            if (nAngleTorsions > 0) {
+                if (torsionScale == 1.0) {
+                    logger.info(format("  Angle-Torsions:                    %10d", nAngleTorsions));
+                } else {
+                    logger.info(format("  Angle-Torsions (%5.2f):            %10d", torsionScale, nAngleTorsions));
+                }
+            }
+        } else {
+            nAngleTorsions = 0;
+            angleTorsions = null;
         }
 
         // Collect, count, pack and sort pi-orbital torsions.
@@ -1409,6 +1465,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             ureyBradleyTime = 0;
             outOfPlaneBendTime = 0;
             torsionTime = 0;
+            stretchTorsionTime = 0;
+            angleTorsionTime = 0;
             piOrbitalTorsionTime = 0;
             torsionTorsionTime = 0;
             improperTorsionTime = 0;
@@ -1426,6 +1484,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             ureyBradleyEnergy = 0.0;
             outOfPlaneBendEnergy = 0.0;
             torsionEnergy = 0.0;
+            angleTorsionEnergy = 0.0;
+            stretchTorsionEnergy = 0.0;
             piOrbitalTorsionEnergy = 0.0;
             torsionTorsionEnergy = 0.0;
             improperTorsionEnergy = 0.0;
@@ -1561,7 +1621,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
             totalBondedEnergy = bondEnergy + restraintBondEnergy + angleEnergy
                     + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
-                    + torsionEnergy + piOrbitalTorsionEnergy + improperTorsionEnergy
+                    + torsionEnergy + angleTorsionEnergy + stretchTorsionEnergy
+                    + piOrbitalTorsionEnergy + improperTorsionEnergy
                     + torsionTorsionEnergy + ncsEnergy + restrainEnergy;
             totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy + relativeSolvationEnergy;
             totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
@@ -1751,6 +1812,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (printCompact) {
             double totalBondedEnergy = bondEnergy + angleEnergy + stretchBendEnergy
                     + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy
+                    + angleTorsionEnergy + stretchTorsionEnergy
                     + piOrbitalTorsionEnergy + torsionTorsionEnergy + improperTorsionEnergy;
             int totalBondedInteractions = nBonds + nAngles + nStretchBends
                     + nUreyBradleys + nOutOfPlaneBends + nTorsions
@@ -1794,6 +1856,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 sb.append(String.format("  %s %16.8f %12d %12.3f\n",
                         "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
                         nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
+            }
+            if (stretchTorsionTerm && nStretchTorsions > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Stretch-Torsion   ", stretchTorsionEnergy, nStretchTorsions,
+                        stretchTorsionTime * toSeconds));
+            }
+            if (angleTorsionTerm && nAngleTorsions > 0) {
+                sb.append(String.format("  %s %16.8f %12d %12.3f\n",
+                        "Angle-Torsion     ", angleTorsionEnergy, nAngleTorsions,
+                        angleTorsionTime * toSeconds));
             }
             if (torsionTorsionTerm && nTorsionTorsions > 0) {
                 sb.append(String.format("  %s %16.8f %12d %12.3f\n",
@@ -2681,16 +2753,32 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return torsionEnergy;
     }
 
-    public int getNumberofImproperTorsions() {
-        return nImproperTorsions;
+    public int getNumberofTorsions() {
+        return nTorsions;
+    }
+
+    public double getStretchTorsionEnergy() {
+        return stretchTorsionEnergy;
+    }
+
+    public int getNumberofStretchTorsions() {
+        return nStretchTorsions;
+    }
+
+    public double getAngleTorsionEnergy() {
+        return angleTorsionEnergy;
+    }
+
+    public int getNumberofAngleTorsions() {
+        return nAngleTorsions;
     }
 
     public double getImproperTorsionEnergy() {
         return improperTorsionEnergy;
     }
 
-    public int getNumberofTorsions() {
-        return nTorsions;
+    public int getNumberofImproperTorsions() {
+        return nImproperTorsions;
     }
 
     public double getPiOrbitalTorsionEnergy() {
@@ -3121,6 +3209,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         private final SharedDouble sharedUreyBradleyEnergy;
         private final SharedDouble sharedImproperTorsionEnergy;
         private final SharedDouble sharedTorsionEnergy;
+        private final SharedDouble sharedStretchTorsionEnergy;
+        private final SharedDouble sharedAngleTorsionEnergy;
         private final SharedDouble sharedTorsionTorsionEnergy;
         // Shared restraint terms.
         private final SharedDouble sharedRestraintBondEnergy;
@@ -3140,6 +3230,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         private final BondedTermLoop[] piOrbitalTorsionLoops;
         private final BondedTermLoop[] stretchBendLoops;
         private final BondedTermLoop[] torsionLoops;
+        private final BondedTermLoop[] stretchTorsionLoops;
+        private final BondedTermLoop[] angleTorsionLoops;
         private final BondedTermLoop[] torsionTorsionLoops;
         private final BondedTermLoop[] ureyBradleyLoops;
 
@@ -3160,6 +3252,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             sharedPiOrbitalTorsionEnergy = new SharedDouble();
             sharedStretchBendEnergy = new SharedDouble();
             sharedTorsionEnergy = new SharedDouble();
+            sharedStretchTorsionEnergy = new SharedDouble();
+            sharedAngleTorsionEnergy = new SharedDouble();
             sharedTorsionTorsionEnergy = new SharedDouble();
             sharedUreyBradleyEnergy = new SharedDouble();
 
@@ -3180,6 +3274,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             piOrbitalTorsionLoops = new BondedTermLoop[nThreads];
             stretchBendLoops = new BondedTermLoop[nThreads];
             torsionLoops = new BondedTermLoop[nThreads];
+            stretchTorsionLoops = new BondedTermLoop[nThreads];
+            angleTorsionLoops = new BondedTermLoop[nThreads];
             torsionTorsionLoops = new BondedTermLoop[nThreads];
             ureyBradleyLoops = new BondedTermLoop[nThreads];
 
@@ -3262,6 +3358,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             sharedPiOrbitalTorsionEnergy.set(0.0);
             sharedStretchBendEnergy.set(0.0);
             sharedTorsionEnergy.set(0.0);
+            sharedStretchTorsionEnergy.set(0.0);
+            sharedAngleTorsionEnergy.set(0.0);
             sharedTorsionTorsionEnergy.set(0.0);
             sharedUreyBradleyEnergy.set(0.0);
 
@@ -3300,6 +3398,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             stretchBendEnergy = sharedStretchBendEnergy.get();
             ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
             torsionEnergy = sharedTorsionEnergy.get();
+            stretchTorsionEnergy = sharedStretchTorsionEnergy.get();
+            angleTorsionEnergy = sharedAngleTorsionEnergy.get();
             torsionTorsionEnergy = sharedTorsionTorsionEnergy.get();
             ureyBradleyEnergy = sharedUreyBradleyEnergy.get();
 
@@ -3339,6 +3439,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 }
                 if (torsionTerm) {
                     for (BondedTerm term : torsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (stretchTorsionTerm) {
+                    for (BondedTerm term : stretchTorsions) {
+                        term.reduceEsvDeriv();
+                    }
+                }
+                if (angleTorsionTerm) {
+                    for (BondedTerm term : angleTorsions) {
                         term.reduceEsvDeriv();
                     }
                 }
@@ -3468,6 +3578,34 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 execute(0, nTorsions - 1, torsionLoops[threadID]);
                 if (threadID == 0) {
                     torsionTime += System.nanoTime();
+                }
+            }
+
+            if (stretchTorsionTerm) {
+                if (stretchTorsionLoops[threadID] == null) {
+                    stretchTorsionLoops[threadID]
+                            = new BondedTermLoop(stretchTorsions, sharedStretchTorsionEnergy);
+                }
+                if (threadID == 0) {
+                    stretchTorsionTime = -System.nanoTime();
+                }
+                execute(0, nStretchTorsions - 1, stretchTorsionLoops[threadID]);
+                if (threadID == 0) {
+                    stretchTorsionTime += System.nanoTime();
+                }
+            }
+
+            if (angleTorsionTerm) {
+                if (angleTorsionLoops[threadID] == null) {
+                    angleTorsionLoops[threadID]
+                            = new BondedTermLoop(angleTorsions, sharedAngleTorsionEnergy);
+                }
+                if (threadID == 0) {
+                    angleTorsionTime = -System.nanoTime();
+                }
+                execute(0, nAngleTorsions - 1, angleTorsionLoops[threadID]);
+                if (threadID == 0) {
+                    angleTorsionTime += System.nanoTime();
                 }
             }
 

@@ -77,6 +77,8 @@ public abstract class MSGroup extends MSNode {
     private MSNode ureyBradleyNode = new MSNode("Urey-Bradleys");
     private MSNode outOfPlaneBendNode = new MSNode("Out-of-Plane Bends");
     private MSNode torsionNode = new MSNode("Torsions");
+    private MSNode stretchTorsionNode = new MSNode("Stretch-Torsions");
+    private MSNode angleTorsionNode = new MSNode("Angle-Torsions");
     private MSNode piOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
     private MSNode torsionTorsionNode = new MSNode("Torsion-Torsions");
     private MSNode improperTorsionNode = new MSNode("Improper Torsions");
@@ -114,6 +116,14 @@ public abstract class MSGroup extends MSNode {
      */
     protected static long torsionTime = 0;
     /**
+     * Constant <code>stretchTorsionTime=0</code>
+     */
+    protected static long stretchTorsionTime = 0;
+    /**
+     * Constant <code>angleTorsionTime=0</code>
+     */
+    protected static long angleTorsionTime = 0;
+    /**
      * Constant <code>piOrbitalTorsionTime=0</code>
      */
     protected static long piOrbitalTorsionTime = 0;
@@ -139,6 +149,8 @@ public abstract class MSGroup extends MSNode {
         termNode.add(ureyBradleyNode);
         termNode.add(outOfPlaneBendNode);
         termNode.add(torsionNode);
+        termNode.add(stretchTorsionNode);
+        termNode.add(angleTorsionNode);
         termNode.add(piOrbitalTorsionNode);
         termNode.add(torsionTorsionNode);
         termNode.add(improperTorsionNode);
@@ -250,6 +262,8 @@ public abstract class MSGroup extends MSNode {
         MSNode newUreyBradleyNode = new MSNode("Urey-Bradleys");
         MSNode newOutOfPlaneBendNode = new MSNode("Out-of-Plane Bends");
         MSNode newTorsionNode = new MSNode("Torsions");
+        MSNode newStretchTorsionNode = new MSNode("Stretch-Torsions");
+        MSNode newAngleTorsionNode = new MSNode("Angle-Torsions");
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
         MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
@@ -347,6 +361,7 @@ public abstract class MSGroup extends MSNode {
          * Find Intra-Group Torsions.
          */
         time = System.nanoTime();
+        ArrayList<Torsion> torsions = new ArrayList<>();
         for (Bond middleBond : bonds) {
             Atom atom1 = middleBond.getAtom(0);
             Atom atom2 = middleBond.getAtom(1);
@@ -358,6 +373,7 @@ public abstract class MSGroup extends MSNode {
                                 Torsion torsion = Torsion.torsionFactory(bond1, middleBond, bond3, forceField);
                                 if (torsion != null) {
                                     newTorsionNode.add(torsion);
+                                    torsions.add(torsion);
                                 }
                             }
                         }
@@ -368,6 +384,34 @@ public abstract class MSGroup extends MSNode {
         newTorsionNode.setName("Torsions (" + newTorsionNode.getChildCount() + ")");
         setTorsions(newTorsionNode);
         torsionTime += System.nanoTime() - time;
+
+        /**
+         * Find Intra-Group Stretch-Torsions.
+         */
+        time = System.nanoTime();
+        for (Torsion torsion : torsions) {
+            StretchTorsion stretchTorsion = StretchTorsion.stretchTorsionFactory(torsion, forceField);
+            if (stretchTorsion != null) {
+                newStretchTorsionNode.add(stretchTorsion);
+            }
+        }
+        newStretchTorsionNode.setName("Stretch-Torsions (" + newStretchTorsionNode.getChildCount() + ")");
+        setStretchTorsions(newStretchTorsionNode);
+        stretchTorsionTime += System.nanoTime() - time;
+
+        /**
+         * Find Intra-Group Stretch-Torsions.
+         */
+        time = System.nanoTime();
+        for (Torsion torsion : torsions) {
+            AngleTorsion angleTorsion = AngleTorsion.angleTorsionFactory(torsion, forceField);
+            if (angleTorsion != null) {
+                newAngleTorsionNode.add(angleTorsion);
+            }
+        }
+        newAngleTorsionNode.setName("Angle-Torsions (" + newAngleTorsionNode.getChildCount() + ")");
+        setAngleTorsions(newAngleTorsionNode);
+        angleTorsionTime += System.nanoTime() - time;
 
         /**
          * Find Pi-Orbital Torsions.
@@ -433,6 +477,7 @@ public abstract class MSGroup extends MSNode {
         int numberOfValenceTerms = newBondNode.getChildCount() + newAngleNode.getChildCount()
                 + newStretchBendNode.getChildCount() + newUreyBradleyNode.getChildCount()
                 + newOutOfPlaneBendNode.getChildCount() + newTorsionNode.getChildCount()
+                + newStretchTorsionNode.getChildCount() + newAngleTorsionNode.getChildCount()
                 + newPiOrbitalTorsionNode.getChildCount() + newTorsionTorsionNode.getChildCount()
                 + newImproperTorsionNode.getChildCount();
         termNode.setName(
@@ -507,6 +552,8 @@ public abstract class MSGroup extends MSNode {
         MSNode newUreyBradleyNode = new MSNode("Urey-Bradleys");
         MSNode newOutOfPlaneNode = new MSNode("Out-of-Plane Bends");
         MSNode newTorsionNode = new MSNode("Torsions");
+        MSNode newStretchTorsionNode = new MSNode("Stretch-Torsions");
+        MSNode newAngleTorsionNode = new MSNode("Angle-Torsions");
         MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
         MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
         //MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
@@ -542,15 +589,15 @@ public abstract class MSGroup extends MSNode {
         for (Angle angle : angles) {
             StretchBend stretchBend = StretchBend.stretchBendFactory(angle, forceField);
             if (stretchBend != null) {
-                newStretchBendNode.insert(stretchBend, 0);
+                newStretchBendNode.add(stretchBend);
             }
             UreyBradley ureyBradley = UreyBradley.ureyBradlyFactory(angle, forceField);
             if (ureyBradley != null) {
-                newUreyBradleyNode.insert(ureyBradley, 0);
+                newUreyBradleyNode.add(ureyBradley);
             }
             OutOfPlaneBend outOfPlaneBend = OutOfPlaneBend.outOfPlaneBendFactory(angle, forceField);
             if (outOfPlaneBend != null) {
-                newOutOfPlaneNode.insert(outOfPlaneBend, 0);
+                newOutOfPlaneNode.add(outOfPlaneBend);
             }
         }
         newStretchBendNode.setName(
@@ -564,6 +611,7 @@ public abstract class MSGroup extends MSNode {
          */
         atom1 = bond.getAtom(0);
         atom2 = bond.getAtom(1);
+        ArrayList<Torsion> torsions = new ArrayList<>();
         if (atom1.getNumBonds() != 0 && atom2.getNumBonds() != 0) {
             for (Bond firstBond : atom1.getBonds()) {
                 if (firstBond != bond) {
@@ -572,6 +620,7 @@ public abstract class MSGroup extends MSNode {
                             Torsion torsion = Torsion.torsionFactory(firstBond, bond, lastBond, forceField);
                             if (torsion != null) {
                                 newTorsionNode.add(torsion);
+                                torsions.add(torsion);
                             }
                         }
                     }
@@ -580,6 +629,20 @@ public abstract class MSGroup extends MSNode {
         }
         newTorsionNode.setName(
                 "Torsional Angles (" + newTorsionNode.getChildCount() + ")");
+
+        for (Torsion torsion : torsions) {
+            StretchTorsion stretchTorsion = StretchTorsion.stretchTorsionFactory(torsion, forceField);
+            if (stretchTorsion != null) {
+                newStretchTorsionNode.add(stretchTorsion);
+            }
+            AngleTorsion angleTorsion = AngleTorsion.angleTorsionFactory(torsion, forceField);
+            if (angleTorsion != null) {
+                newAngleTorsionNode.add(angleTorsion);
+            }
+        }
+        newStretchTorsionNode.setName("Stretch-Torsions (" + stretchTorsionNode.getChildCount() + ")");
+        newAngleTorsionNode.setName("Angle-Torsions (" + angleTorsionNode.getChildCount() + ")");
+
         /**
          * Find Pi-Orbital Torsions across the joint.
          */
@@ -605,7 +668,7 @@ public abstract class MSGroup extends MSNode {
                             TorsionTorsion torsionTorsion = TorsionTorsion.
                                     torsionTorsionFactory(firstBond, angle, lastBond, forceField);
                             if (torsionTorsion != null) {
-                                newTorsionTorsionNode.insert(torsionTorsion, 0);
+                                newTorsionTorsionNode.add(torsionTorsion);
                             }
                         }
                     }
@@ -618,7 +681,8 @@ public abstract class MSGroup extends MSNode {
 
         Joint newJoint = new Joint(group1, group2, newBondNode, newAngleNode,
                 newStretchBendNode, newUreyBradleyNode, newOutOfPlaneNode,
-                newTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
+                newTorsionNode, newStretchTorsionNode, newAngleTorsionNode,
+                newPiOrbitalTorsionNode, newTorsionTorsionNode);
 
         group1.addJoint(newJoint);
         group2.addJoint(newJoint);
@@ -918,6 +982,12 @@ public abstract class MSGroup extends MSNode {
         if (torsionNode.getChildCount() == 0 && !(torsionNode.getParent() == null)) {
             termNode.removeChild(torsionNode);
         }
+        if (stretchTorsionNode.getChildCount() == 0 && !(stretchTorsionNode.getParent() == null)) {
+            termNode.removeChild(stretchTorsionNode);
+        }
+        if (angleTorsionNode.getChildCount() == 0 && !(angleTorsionNode.getParent() == null)) {
+            termNode.removeChild(angleTorsionNode);
+        }
         if (piOrbitalTorsionNode.getChildCount() == 0 && !(piOrbitalTorsionNode.getParent() == null)) {
             termNode.removeChild(piOrbitalTorsionNode);
         }
@@ -1060,6 +1130,28 @@ public abstract class MSGroup extends MSNode {
         termNode.removeChild(torsionNode);
         torsionNode = t;
         termNode.add(torsionNode);
+    }
+
+    /**
+     * Sets the MultiScaleGroup's stretch-torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setStretchTorsions(MSNode t) {
+        termNode.removeChild(stretchTorsionNode);
+        stretchTorsionNode = t;
+        termNode.add(stretchTorsionNode);
+    }
+
+    /**
+     * Sets the MultiScaleGroup's angle-torsion node to t.
+     *
+     * @param t a {@link ffx.potential.bonded.MSNode} object.
+     */
+    public void setAngleTorsions(MSNode t) {
+        termNode.removeChild(angleTorsionNode);
+        angleTorsionNode = t;
+        termNode.add(angleTorsionNode);
     }
 
     /**

@@ -118,6 +118,8 @@ public class ForceField {
     private final Map<String, OutOfPlaneBendType> outOfPlaneBendTypes;
     private final Map<String, PolarizeType> polarizeTypes;
     private final Map<String, StretchBendType> stretchBendTypes;
+    private final Map<String, StretchTorsionType> stretchTorsionTypes;
+    private final Map<String, AngleTorsionType> angleTorsionTypes;
     private final Map<String, PiTorsionType> piTorsionTypes;
     private final Map<String, TorsionType> torsionTypes;
     private final Map<String, ImproperTorsionType> imptorsTypes;
@@ -163,6 +165,8 @@ public class ForceField {
         piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
         polarizeTypes = new TreeMap<>(new PolarizeType(0, 0, 0, new int[1]));
         stretchBendTypes = new TreeMap<>(new StretchBendType(new int[3], new double[1]));
+        stretchTorsionTypes = new TreeMap<>(new StretchTorsionType(new int[4], new double[1]));
+        angleTorsionTypes = new TreeMap<>(new AngleTorsionType(new int[4], new double[1]));
         torsionTorsionTypes = new TreeMap<>();
         torsionTypes = new TreeMap<>(new TorsionType(new int[4], new double[1], new double[1], new int[1]));
         imptorsTypes = new TreeMap<>(new ImproperTorsionType(new int[4], 0.0, 0.0, 2));
@@ -182,6 +186,8 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.PITORS, piTorsionTypes);
         forceFieldTypes.put(ForceFieldType.POLARIZE, polarizeTypes);
         forceFieldTypes.put(ForceFieldType.STRBND, stretchBendTypes);
+        forceFieldTypes.put(ForceFieldType.STRTORS, stretchTorsionTypes);
+        forceFieldTypes.put(ForceFieldType.ANGTORS, angleTorsionTypes);
         forceFieldTypes.put(ForceFieldType.TORSION, torsionTypes);
         forceFieldTypes.put(ForceFieldType.IMPTORS, imptorsTypes);
         forceFieldTypes.put(ForceFieldType.TORTORS, torsionTorsionTypes);
@@ -190,7 +196,8 @@ public class ForceField {
         forceFieldTypes.put(ForceFieldType.RELATIVESOLV, relativeSolvationTypes);
 
         trueImpliedBoolean(ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
-        trueImpliedBoolean(ForceFieldBoolean.LAMBDATERM, ForceFieldBoolean.VDW_LAMBDATERM, ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
+        trueImpliedBoolean(ForceFieldBoolean.LAMBDATERM, ForceFieldBoolean.VDW_LAMBDATERM,
+                ForceFieldBoolean.PME_LAMBDATERM, ForceFieldBoolean.GK_LAMBDATERM);
     }
 
     /**
@@ -360,6 +367,14 @@ public class ForceField {
             stretchBendType.incrementClasses(classOffset);
         }
 
+        for (StretchTorsionType stretchTorsionType : stretchTorsionTypes.values()) {
+            stretchTorsionType.incrementClasses(classOffset);
+        }
+
+        for (AngleTorsionType angleTorsionType : angleTorsionTypes.values()) {
+            angleTorsionType.incrementClasses(classOffset);
+        }
+
         for (TorsionTorsionType torsionTorsionType : torsionTorsionTypes.values()) {
             torsionTorsionType.incrementClasses(classOffset);
         }
@@ -443,6 +458,14 @@ public class ForceField {
             stretchBendTypes.put(stretchBendType.getKey(), stretchBendType);
         }
 
+        for (StretchTorsionType stretchTorsionType : patch.stretchTorsionTypes.values()) {
+            stretchTorsionTypes.put(stretchTorsionType.getKey(), stretchTorsionType);
+        }
+
+        for (AngleTorsionType angleTorsionType : patch.angleTorsionTypes.values()) {
+            angleTorsionTypes.put(angleTorsionType.getKey(), angleTorsionType);
+        }
+        
         for (TorsionTorsionType torsionTorsionType : patch.torsionTorsionTypes.values()) {
             torsionTorsionTypes.put(torsionTorsionType.getKey(), torsionTorsionType);
         }
@@ -1096,6 +1119,28 @@ public class ForceField {
 
     /**
      * <p>
+     * getStretchTorsionType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.StretchTorsionType} object.
+     */
+    public StretchTorsionType getStretchTorsionType(String key) {
+        return stretchTorsionTypes.get(key);
+    }
+
+    /**
+     * <p>
+     * getAngleTorsionType</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
+     */
+    public AngleTorsionType getAngleTorsionType(String key) {
+        return angleTorsionTypes.get(key);
+    }
+
+    /**
+     * <p>
      * getImproperType</p>
      *
      * @return a {@link ffx.potential.parameters.TorsionType} object.
@@ -1549,7 +1594,9 @@ public class ForceField {
         /* OpenMM coefficient of friction for Langevin integrator */
         FRICTION_COEFF,
         /* OpenMM collision frequency for Langevin integrator */
-        COLLISION_FREQ
+        COLLISION_FREQ,
+        /* Unit Conversions */
+        ANGTORUNIT, STRTORUNIT
     }
 
     public enum ForceFieldInteger {
@@ -1571,7 +1618,8 @@ public class ForceField {
 
         APERIODIC, BONDTERM, ANGLETERM, COMRESTRAINTERM, GKTERM, IMPROPERTERM,
         OPBENDTERM, LAMBDATERM, MPOLETERM, NCSTERM, PITORSTERM, POLARIZETERM,  STRBNDTERM,
-        TORSIONTERM, TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
+        TORSIONTERM, ANGTORSTERM, STRTORSTERM,
+        TORTORTERM, UREYTERM, VDWLRTERM, VDWTERM,
         RESTRAINTERM, RESTRAIN_WITH_LAMBDA, SCFCACHE, RIGID_HYDROGENS,
         USE_CHARGES, USE_DIPOLES, USE_QUADRUPOLES, ROTATE_MULTIPOLES,
         LIGAND_VAPOR_ELEC, LIGAND_GK_ELEC,
@@ -1590,6 +1638,7 @@ public class ForceField {
 
         KEYWORD,
         ANGLE,
+        ANGTORS,
         ATOM,
         BIOTYPE,
         BOND,
@@ -1601,6 +1650,7 @@ public class ForceField {
         PITORS,
         POLARIZE,
         STRBND,
+        STRTORS,
         TORSION,
         TORTORS,
         UREYBRAD,

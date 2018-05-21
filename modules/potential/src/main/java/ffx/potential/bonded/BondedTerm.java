@@ -62,7 +62,6 @@ import static ffx.utilities.HashCodeUtil.hash;
  * @since 1.0
  *
  */
-@SuppressWarnings({"serial", "CloneableImplementsClone"})
 public abstract class BondedTerm extends MSNode implements BondedEnergy, Comparable<BondedTerm> {
 
     private static final Logger logger = Logger.getLogger(BondedTerm.class.getName());
