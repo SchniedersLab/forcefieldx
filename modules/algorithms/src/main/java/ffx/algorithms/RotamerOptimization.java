@@ -4652,8 +4652,8 @@ public class RotamerOptimization implements Terminatable {
              * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
              */
             logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
-            reconcileNARotamersWithPriorResidues(residues);
-            eliminateNABackboneRotamers(residues);
+            //reconcileNARotamersWithPriorResidues(residues);
+            //eliminateNABackboneRotamers(residues);
         }
 
         if (decomposeOriginal) {
@@ -4984,19 +4984,21 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Applies the "default" rotamer: 0 for amino acids, else a low-magnitude-correction rotamer for nucleic acids.
+     * Applies the "default" rotamer: currently the 0'th rotamer.
      * @param residue Residue to apply a default rotamer for.
      */
     private void applyDefaultRotamer(Residue residue) {
-        switch (residue.getResidueType()) {
+        /*switch (residue.getResidueType()) {
             case NA:
-                RotamerLibrary.applyRotamer(residue, defaultNucleicRotamers.get(residue));
+                //RotamerLibrary.applyRotamer(residue, defaultNucleicRotamers.get(residue));
+                RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
                 break;
             case AA:
             default:
                 RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
                 break;
-        }
+        }*/
+        RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
     }
 
     /**
