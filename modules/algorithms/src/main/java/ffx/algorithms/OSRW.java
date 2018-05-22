@@ -239,7 +239,7 @@ public class OSRW extends AbstractOSRW {
             minimize(forceFieldEnergy, x, gradient);
         }
 
-        double biasEnergy = 0.0;
+        biasEnergy = 0.0;
         dUdLambda = lambdaInterface.getdEdL();
         d2UdL2 = lambdaInterface.getd2EdL2();
         int lambdaBin = binForLambda(lambda);

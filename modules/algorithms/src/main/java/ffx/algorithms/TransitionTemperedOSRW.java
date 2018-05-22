@@ -389,7 +389,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
          * interpolation.
          */
         double freeEnergy = currentFreeEnergy();
-        double biasEnergy = freeEnergy + gLdEdL;
+        biasEnergy = freeEnergy + gLdEdL;
 
         if (print) {
             logger.info(String.format(" %s %16.8f", "Bias Energy       ", biasEnergy));

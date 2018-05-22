@@ -160,6 +160,10 @@ public class MDMove implements MCMove {
         }
     }
 
+    public double getStartingKineticEnergy() {
+        return molecularDynamics.getStartingKineticEnergy();
+    }
+
     public double getKineticEnergy() {
         return molecularDynamics.getKineticEnergy();
     }

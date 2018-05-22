@@ -137,6 +137,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     protected double currentKineticEnergy;
     protected double currentPotentialEnergy;
     protected double currentTotalEnergy;
+    protected double startingKineticEnergy;
     protected boolean saveSnapshotAsPDB = true;
     protected String fileType = "XYZ";
     protected static final double NS2SEC = 1e-9;
@@ -926,6 +927,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
          */
         thermostat.kineticEnergy();
         currentKineticEnergy = thermostat.getKineticEnergy();
+        startingKineticEnergy = currentKineticEnergy;
         currentTemperature = thermostat.getCurrentTemperature();
         currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
@@ -1216,6 +1218,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     public double getKineticEnergy() {
         return currentKineticEnergy;
+    }
+
+    /**
+     * Get the system kinetic energy.
+     *
+     * @return kinetic energy.
+     */
+    public double getStartingKineticEnergy() {
+        return startingKineticEnergy;
     }
 
     /**

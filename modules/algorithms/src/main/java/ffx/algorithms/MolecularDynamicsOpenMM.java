@@ -271,6 +271,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.info(format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
                 logger.info(format("  %8s %12.4f %12.4f %12.4f %8.2f",
                         "", currentKineticEnergy, currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+                startingKineticEnergy = currentKineticEnergy;
                 startingTotalEnergy = currentTotalEnergy;
             } else if (i % printFrequency == 0) {
                 double simTime = i * dt * 1.0e-3;
@@ -468,12 +469,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         }
         running = true;
 
+        // Update the time step in Picoseconds.
+        OpenMM_Integrator_setStepSize(integrator,dt * 1.0e-3);
+
         int i = 0;
         time = -System.nanoTime();
         while (i < numSteps) {
-            // Update the time step in Picoseconds.
-            OpenMM_Integrator_setStepSize(integrator,dt * 1.0e-3);
-
             // Get an update from OpenMM.
             updateFromOpenMM(i, running);
 
