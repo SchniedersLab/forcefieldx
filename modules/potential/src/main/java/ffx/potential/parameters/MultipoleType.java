@@ -278,7 +278,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         }
         // Warn if the multipole is not traceless.
         if (Math.abs(quadrupole[0][0] + quadrupole[1][1] + quadrupole[2][2]) > 1.0e-5) {
-            logger.log(Level.WARNING, format("Multipole is not traceless: %7.45f",
+            logger.log(Level.WARNING, format("Multipole is not traceless: %12.8f",
                     Math.abs(quadrupole[0][0] + quadrupole[1][1] + quadrupole[2][2])));
             logger.info(this.toString());
         }
@@ -501,7 +501,11 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     }
 
     /**
-     * @param rotmat Calculated transformation matrix to global frame.
+     * Return the rotation matrix for the local to lab frame.
+     * @param frame the multipole frame definition
+     * @param localOrigin the local origin of the frame
+     * @param frameCoords the coordinates of the frame atoms
+     * @return the rotation matrix
      */
     public static double[][] getRotationMatrix(MultipoleFrameDefinition frame,
             double localOrigin[], double frameCoords[][]) {
@@ -715,11 +719,15 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             multipoleBuffer.append("       ");
         }
         multipoleBuffer.append(format("  % 7.5f \\\n"
-                + "%11$s % 7.5f % 7.5f % 7.5f \\\n" + "%11$s % 7.5f \\\n"
-                + "%11$s % 7.5f % 7.5f \\\n" + "%11$s % 7.5f % 7.5f % 7.5f",
-                multipole[t000], multipole[t100] / BOHR, multipole[t010] / BOHR, multipole[t001] / BOHR,
-                multipole[t200] / BOHR2, multipole[t020] / BOHR2, multipole[t002] / BOHR2,
-                multipole[t110] / BOHR2, multipole[t101] / BOHR2, multipole[t011] / BOHR2,
+                + "%11$s % 7.5f % 7.5f % 7.5f \\\n"
+                + "%11$s % 7.5f \\\n"
+                + "%11$s % 7.5f % 7.5f \\\n"
+                + "%11$s % 7.5f % 7.5f % 7.5f",
+                multipole[t000],
+                multipole[t100] / BOHR, multipole[t010] / BOHR, multipole[t001] / BOHR,
+                multipole[t200] / BOHR2,
+                multipole[t110] / BOHR2, multipole[t020] / BOHR2,
+                multipole[t101] / BOHR2, multipole[t011] / BOHR2, multipole[t002] / BOHR2,
                 "                                      "));
         return multipoleBuffer.toString();
     }
@@ -751,10 +759,11 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             multipoleBuffer.append(format("): "));
         }
         multipoleBuffer.append(format("[%6.3f / %6.3f %6.3f %6.3f / %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f]",
-                charge, dipole[0] / BOHR, dipole[1] / BOHR, dipole[2] / BOHR,
-                quadrupole[0][0] / BOHR2, quadrupole[1][0] / BOHR2,
-                quadrupole[1][1] / BOHR2, quadrupole[2][0] / BOHR2,
-                quadrupole[2][1] / BOHR2, quadrupole[2][2] / BOHR2));
+                charge,
+                dipole[0] / BOHR, dipole[1] / BOHR, dipole[2] / BOHR,
+                quadrupole[0][0] / BOHR2,
+                quadrupole[1][0] / BOHR2, quadrupole[1][1] / BOHR2,
+                quadrupole[2][0] / BOHR2, quadrupole[2][1] / BOHR2, quadrupole[2][2] / BOHR2));
         return multipoleBuffer.toString();
     }
 
