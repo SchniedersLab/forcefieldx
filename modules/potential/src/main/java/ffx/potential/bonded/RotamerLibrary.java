@@ -782,7 +782,9 @@ public class RotamerLibrary {
      * are listed from delta (i-1) to delta (i), along with standard deviations
      * calculated by Richardson et al.
      *
-     * TODO: Add reference to Richardson et al, 2008.
+     * Citation: Richardson, J.S., et al., RNA backbone: Consensus all-angle
+     * conformers and modular string nomenclature (an RNA Ontology Consortium
+     * contribution). Rna-a Publication of the Rna Society, 2008. 14(3): p. 465-481.
      *
      * @param name Type of nucleic acid.
      * @return Rotamer cache (double[] of torsions).
