@@ -365,6 +365,7 @@ public abstract class Thermostat {
         /**
          * Remove the center of mass motion.
          */
+
         if (removeCenterOfMassMotion) {
             centerOfMassMotion(true, !quiet);
         }
