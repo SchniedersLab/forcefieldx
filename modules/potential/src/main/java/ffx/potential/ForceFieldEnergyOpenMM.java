@@ -1432,7 +1432,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
             logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
             logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
-            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
             return;
         }
 
@@ -1636,9 +1636,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "q");
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "radius");
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "scale");
-        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "solventDielectric", 78.3);
+        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "solventDielectric", gk.getSolventPermittivity());
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "soluteDielectric", 1.0);
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "dOffset", gk.getDielecOffset() * OpenMM_NmPerAngstrom); // Factor of 0.1 for Ang to nm.
+        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "probeRadius", gk.getProbeRadius() * OpenMM_NmPerAngstrom);
+
         OpenMM_CustomGBForce_addComputedValue(customGBForce, "I",
                 // "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
                 // "step(r+sr2-or1)*0.5*((1/L^3-1/U^3)/3+(1/U^4-1/L^4)/8*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
@@ -1677,7 +1679,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
                 surfaceTension
-                + "*(radius+0.14+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
+                + "*(radius+probeRadius+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
                 OpenMM_CustomGBForce_SingleParticle);
 
         /**
@@ -2096,7 +2098,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         GeneralizedKirkwood gk = super.getGK();
 
         amoebaGeneralizedKirkwoodForce = OpenMM_AmoebaGeneralizedKirkwoodForce_create();
-        OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric(amoebaGeneralizedKirkwoodForce, 78.3);
+        OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric(amoebaGeneralizedKirkwoodForce, gk.getSolventPermittivity());
         OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(amoebaGeneralizedKirkwoodForce, 1.0);
 
         double overlapScale[] = gk.getOverlapScale();
@@ -2109,7 +2111,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     multipoleType.charge, OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i]);
         }
 
-        OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(amoebaGeneralizedKirkwoodForce, 1.4 * OpenMM_NmPerAngstrom);
+        OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(amoebaGeneralizedKirkwoodForce, gk.getProbeRadius() * OpenMM_NmPerAngstrom);
 
         NonPolar nonpolar = gk.getNonPolarModel();
         switch (nonpolar) {
@@ -2400,7 +2402,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (vdwForm.vdwType != LENNARD_JONES
                 || vdwForm.radiusRule != ARITHMETIC
                 || vdwForm.epsilonRule != GEOMETRIC) {
-            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
             return;
         }
 
@@ -3371,7 +3373,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (vdwForm.vdwType != LENNARD_JONES
                 || vdwForm.radiusRule != ARITHMETIC
                 || vdwForm.epsilonRule != GEOMETRIC) {
-            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
             return -1.0;
         }
 
