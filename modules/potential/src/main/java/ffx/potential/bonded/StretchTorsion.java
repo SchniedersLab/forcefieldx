@@ -60,7 +60,7 @@ import static ffx.numerics.VectorMath.sum;
 import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
- * The Torsion class represents a coupling between a torsional angle and the three
+ * The StretchTorsion class represents a coupling between a torsional angle and the three
  * bonds contained in the torsion, as defined in the 2017 AMOEBA nucleic acid force field.
  *
  * @author Michael J. Schnieders
