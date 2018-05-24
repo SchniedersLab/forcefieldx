@@ -383,25 +383,15 @@ public class RotamerOptimization implements Terminatable {
      * should some be eliminated by the nucleic correction threshold.
      */
     private int minNumberAcceptedNARotamers = 10;
+
     /**
      * Factor by which to multiply the pruning constraints for nucleic acids.
-     * pairHalfPruningFactor is the arithmetic mean of 1.0 and the pruning
+     * nucleicPairsPruningFactor is the arithmetic mean of 1.0 and the pruning
      * factor, and is applied for AA-NA pairs.
      */
-    private double pruningFactor = 1.0;
-    private double pairHalfPruningFactor = ((1.0 + pruningFactor) / 2);
-    /**
-     * Factor by which to multiply the singleton pruning constraints for nucleic
-     * acids.
-     * <p>
-     * Very important, to ensure that all possible combinations of delta(i) and
-     * delta(i-1) are still represented when it comes time to calculate pair
-     * energies. If this pruning factor doesn't cut it, however, it probably
-     * wasn't a biologically relevant rotamer anyways.
-     * <p>
-     * Not presently implemented beyond getting the value in from Groovy.
-     */
-    private double singletonNAPruningFactor = 1.5;
+    private double nucleicPruningFactor = 10.0;
+    private double nucleicPairsPruningFactor = ((1.0 + nucleicPruningFactor) / 2);
+
     /**
      * Flag to calculate and print additional energies (mostly for debugging).
      */
@@ -732,8 +722,7 @@ public class RotamerOptimization implements Terminatable {
         String ensembleEnergy = System.getProperty("ro-ensembleEnergy");
         String ensembleBuffer = System.getProperty("ro-ensembleBuffer");
         String threeBodyCutoffDist = System.getProperty("ro-threeBodyCutoffDist");
-        String pruningFactor = System.getProperty("ro-pruningFactor");
-        String nucleicSinglesPruningFactor = System.getProperty("ro-nucleicSinglesPruningFactor");
+        String nucleicPruningFactor = System.getProperty("ro-nucleicPruningFactor");
         String nucleicCorrectionThreshold = System.getProperty("ro-nucleicCorrectionThreshold");
         String minimumNumberAcceptedNARotamers = System.getProperty("ro-minimumNumberAcceptedNARotamers");
         String singletonClashThreshold = System.getProperty("ro-singletonClashThreshold");
@@ -820,16 +809,11 @@ public class RotamerOptimization implements Terminatable {
             }
             logger.info(format(" (KEY) threeBodyCutoffDist: %.2f", this.threeBodyCutoffDist));
         }
-        if (pruningFactor != null) {
-            double value = Double.parseDouble(pruningFactor);
-            this.pruningFactor = (value >= 0 ? value : 1.0);
-            this.pairHalfPruningFactor = (1.0 + value) / 2;
-            logger.info(format(" (KEY) pruningFactor: %.2f", this.pruningFactor));
-        }
-        if (nucleicSinglesPruningFactor != null) {
-            double value = Double.parseDouble(nucleicSinglesPruningFactor);
-            this.singletonNAPruningFactor = (value >= 0 ? value : 1.5);
-            logger.info(format(" (KEY) nucleicSinglesPruningFactor: %.2f", this.singletonNAPruningFactor));
+        if (nucleicPruningFactor != null) {
+            double value = Double.parseDouble(nucleicPruningFactor);
+            this.nucleicPruningFactor = (value >= 0 ? value : 1.0);
+            this.nucleicPairsPruningFactor = (1.0 + value) / 2;
+            logger.info(format(" (KEY) nucleicPruningFactor: %.2f", this.nucleicPruningFactor));
         }
         if (nucleicCorrectionThreshold != null) {
             double value = Double.parseDouble(nucleicCorrectionThreshold);
@@ -2658,20 +2642,11 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Also sets derivative pruning factors.
      *
-     * @param pruningFactor
+     * @param nucleicPruningFactor
      */
-    public void setPruningFactor(double pruningFactor) {
-        this.pruningFactor = pruningFactor;
-        this.pairHalfPruningFactor = ((1.0 + pruningFactor) / 2);
-    }
-
-    /**
-     * Set teh nucleic acid pruning facgor.
-     *
-     * @param singletonNAPruningFactor
-     */
-    public void setSingletonNAPruningFactor(double singletonNAPruningFactor) {
-        this.singletonNAPruningFactor = singletonNAPruningFactor;
+    public void setNucleicPruningFactor(double nucleicPruningFactor) {
+        this.nucleicPruningFactor = nucleicPruningFactor;
+        this.nucleicPairsPruningFactor = ((1.0 + nucleicPruningFactor) / 2);
     }
 
     /**
@@ -7596,7 +7571,7 @@ public class RotamerOptimization implements Terminatable {
              * have wild swings in energy on account of chemical perturbation.
              */
             double energyToPrune = (residue instanceof MultiResidue) ? multiResClashThreshold : clashThreshold;
-            energyToPrune = (residue.getResidueType() == NA) ? energyToPrune * singletonNAPruningFactor * pruningFactor : energyToPrune;
+            energyToPrune = (residue.getResidueType() == NA) ? energyToPrune * nucleicPruningFactor : energyToPrune;
             energyToPrune += minEnergy;
 
             for (int ri = 0; ri < nrot; ri++) {
@@ -7670,10 +7645,10 @@ public class RotamerOptimization implements Terminatable {
                     case 0:
                         break;
                     case 1:
-                        threshold *= pairHalfPruningFactor;
+                        threshold *= nucleicPairsPruningFactor;
                         break;
                     case 2:
-                        threshold *= pruningFactor;
+                        threshold *= nucleicPruningFactor;
                         break;
                     default:
                         throw new ArithmeticException(" RotamerOptimization.prunePairClashes() has somehow "

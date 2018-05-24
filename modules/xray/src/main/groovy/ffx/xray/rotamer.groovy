@@ -84,7 +84,6 @@ boolean verboseEnergies = true;
 boolean useOrigCoordsRotamer = true;
 //double threeBodyCutoffDist = 9.0;
 boolean decomposeOriginal = false;
-boolean parallelEnergies = true;
 boolean useEnergyRestart = false;
 File energyRestartFile;
 int[] numXYZBoxes = new int[3];
@@ -202,11 +201,6 @@ if (options.vw) {
     video_ignoreInactiveAtoms = true;
     video_skipEnergies = true;
 }
-
-// Ensemble.
-/*if (options.pE) {
-    parallelEnergies = Boolean.parseBoolean(options.pE);
-}*/
 
 if (options.e) {
     ensemble = Integer.parseInt(options.e);
@@ -398,9 +392,6 @@ if (options.dO) {
 }
 
 if (options.eR) {
-    /*if (!parallelEnergies || algorithm == 4) {
-        logger.severe(" FFX shutting down: energy restart only implemented for parallelized global optimizations.");
-    }*/
     useEnergyRestart = true;
     energyRestartFile = new File(options.eR);
 }
@@ -546,9 +537,9 @@ if (minimumNumberAcceptedNARotamers < 1) {
 /**
  * Now handled by system keys.
  *
-if (pruningFactor < 0) {
+if (nucleicPruningFactor < 0) {
     logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.0.\n");
-    pruningFactor = 1;
+    nucleicPruningFactor = 1;
 }
 
 if (singletonNAPruningFactor < 0) {

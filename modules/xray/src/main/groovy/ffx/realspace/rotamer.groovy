@@ -532,9 +532,9 @@ if (minimumNumberAcceptedNARotamers < 1) {
 /**
  * Now handled by system keys.
  *
-if (pruningFactor < 0) {
+if (nucleicPruningFactor < 0) {
     logger.warning("\n Pruning factor must be >= 0.  Setting to default of 1.0.\n");
-    pruningFactor = 1;
+    nucleicPruningFactor = 1;
 }
 
 if (singletonNAPruningFactor < 0) {
