@@ -3173,6 +3173,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return torsionTorsions;
     }
 
+    public StretchTorsion[] getStretchTorsions() {
+        return stretchTorsions;
+    }
+
+    public AngleTorsion[] getAngleTorsions() {
+        return angleTorsions;
+    }
+
     private class BondedRegion extends ParallelRegion {
 
         // Flag to indicate gradient computation.

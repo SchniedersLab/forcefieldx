@@ -56,6 +56,8 @@ import com.sun.jna.ptr.DoubleByReference;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
+import ffx.potential.bonded.AngleTorsion;
+import ffx.potential.bonded.StretchTorsion;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
@@ -347,6 +349,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private PointerByReference fixedChargeNonBondedForce = null;
     /**
+     * OpenMM Stretch-Torsion couplings (as found in phosphate/nucleic acid AMOEBA force fields).
+     */
+    private PointerByReference stretchTorsionForce = null;
+    /**
+     * OpenMM Angle-Torsion couplings (as found in phosphate/nucleic acid AMOEBA force fields).
+     */
+    private PointerByReference angleTorsionForce = null;
+    /**
      * Fixed charge softcore vdW force.
      */
     boolean softcoreCreated = false;
@@ -483,6 +493,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Add bond restraints.
         addRestraintBonds();
+
+        // Add stretch-torsion coupling terms.
+        addStretchTorsionCoupling();
+
+        // Add angle-torsion coupling terms.
+        addAngleTorsionCoupling();
 
         VanDerWaals vdW = super.getVdwNode();
         if (vdW != null) {
@@ -1240,6 +1256,114 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(values);
         OpenMM_System_addForce(system, amoebaTorsionTorsionForce);
         logger.log(Level.INFO, " Added Torsion-Torsions ({0})", nTorsionTorsions);
+    }
+
+    /**
+     * Adds stretch-torsion couplings (as defined for the 2017 AMOEBA nucleic acid model).
+     */
+    private void addStretchTorsionCoupling() {
+        StretchTorsion[] strTorsions = super.getStretchTorsions();
+        if (strTorsions != null && strTorsions.length > 0) {
+            stretchTorsionForce = OpenMM_CustomCompoundBondForce_create(4, StretchTorsion.stretchTorsionForm());
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(stretchTorsionForce, "phi1", 0);
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(stretchTorsionForce, "phi2", Math.PI);
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(stretchTorsionForce, "phi3", 0);
+
+            for (int m = 1; m < 4; m++) {
+                for (int n = 1; n < 4; n++) {
+                    OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchTorsionForce, String.format("k%d%d", m, n));
+                }
+            }
+
+            for (int m = 1; m < 4; m++) {
+                OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchTorsionForce, String.format("b%d", m));
+            }
+
+            final double unitConv = OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+
+            for (StretchTorsion strTors : strTorsions) {
+                double[] constants = strTors.getConstants();
+                PointerByReference strTorsParams = OpenMM_DoubleArray_create(0);
+                for (int m = 0; m < 3; m++) {
+                    for (int n = 0; n < 3; n++) {
+                        int index = (3*m) + n;
+                        double kmn = constants[index] * unitConv;
+                        OpenMM_DoubleArray_append(strTorsParams, kmn);
+                    }
+                }
+
+                OpenMM_DoubleArray_append(strTorsParams, strTors.bondType1.distance * OpenMM_NmPerAngstrom);
+                OpenMM_DoubleArray_append(strTorsParams, strTors.bondType2.distance * OpenMM_NmPerAngstrom);
+                OpenMM_DoubleArray_append(strTorsParams, strTors.bondType3.distance * OpenMM_NmPerAngstrom);
+
+                PointerByReference strTorsParticles = OpenMM_IntArray_create(0);
+                Atom[] atoms = strTors.getAtomArray(true);
+                for (int i = 0; i < 4; i++) {
+                    OpenMM_IntArray_append(strTorsParticles, atoms[i].getXyzIndex() - 1);
+                }
+
+                OpenMM_CustomCompoundBondForce_addBond(stretchTorsionForce, strTorsParticles, strTorsParams);
+                OpenMM_DoubleArray_destroy(strTorsParams);
+                OpenMM_IntArray_destroy(strTorsParticles);
+            }
+
+            OpenMM_System_addForce(system, stretchTorsionForce);
+        }
+    }
+
+    /**
+     * Adds stretch-torsion couplings (as defined for the 2017 AMOEBA nucleic acid model).
+     */
+    private void addAngleTorsionCoupling() {
+        AngleTorsion[] angleTorsions = super.getAngleTorsions();
+        if (angleTorsions != null && angleTorsions.length > 0) {
+            angleTorsionForce = OpenMM_CustomCompoundBondForce_create(4, AngleTorsion.angleTorsionForm());
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(angleTorsionForce, "phi1", 0);
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(angleTorsionForce, "phi2", Math.PI);
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(angleTorsionForce, "phi3", 0);
+
+            for (int m = 1; m < 3; m++) {
+                for (int n = 1; n < 4; n++) {
+                    OpenMM_CustomCompoundBondForce_addPerBondParameter(angleTorsionForce, String.format("k%d%d", m, n));
+                }
+            }
+
+            for (int m = 1; m < 3; m++) {
+                OpenMM_CustomCompoundBondForce_addPerBondParameter(angleTorsionForce, String.format("a%d", m));
+            }
+
+            final double unitConv = OpenMM_KJPerKcal / OpenMM_RadiansPerDegree;
+
+            for (AngleTorsion ators : angleTorsions) {
+                double[] constants = ators.getConstants();
+                PointerByReference atorsParams = OpenMM_DoubleArray_create(0);
+                for (int m = 0; m < 2; m++) {
+                    for (int n = 0; n < 3; n++) {
+                        int index = (3*m) + n;
+                        double kmn = constants[index] * unitConv;
+                        OpenMM_DoubleArray_append(atorsParams, kmn);
+                    }
+                }
+
+                Atom[] atoms = ators.getAtomArray(true);
+
+                // One thing that concerns me is whether it's correct to get angle[0] instead of angle[num hydrogens].
+                // This is the way it is in FFX, but that may be a bug.
+                OpenMM_DoubleArray_append(atorsParams, ators.angleType1.angle[0] * OpenMM_RadiansPerDegree);
+                OpenMM_DoubleArray_append(atorsParams, ators.angleType2.angle[0] * OpenMM_RadiansPerDegree);
+
+                PointerByReference atorsParticles = OpenMM_IntArray_create(0);
+                for (int i = 0; i < 4; i++) {
+                    OpenMM_IntArray_append(atorsParticles, atoms[i].getXyzIndex() - 1);
+                }
+
+                OpenMM_CustomCompoundBondForce_addBond(angleTorsionForce, atorsParticles, atorsParams);
+                OpenMM_DoubleArray_destroy(atorsParams);
+                OpenMM_IntArray_destroy(atorsParticles);
+            }
+
+            OpenMM_System_addForce(system, angleTorsionForce);
+        }
     }
 
     /**
