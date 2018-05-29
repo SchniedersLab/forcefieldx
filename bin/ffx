@@ -96,8 +96,42 @@ CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
 # These flags for for JDK 8.
 EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx1G -Xss1M"
 
-# Flags below are recommend for JDK 9 and above.
-# EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx1G -Xss1M --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
+awkCmd=`which awk`
+sedCmd=`which sed`
+hasAwkSed=''
+
+if [ -x "$awkCmd" ]; then
+    if [ -x "$sedCmd" ]; then
+        hasAwkSed='1'
+    fi
+fi
+
+# Detect JVM version; disallow 1.7 or below, warn for JDK 9+ that experimental flags are in use.
+if [ $hasAwkSed ]; then
+    JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
+    JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "."; } { print $1 }'`"
+    JVSEC="`echo "$JVERS" | awk 'BEGIN { FS = "."; } { print $2 }'`"
+
+    USE_EXPTL_FLAGS=''
+    if [ $JVFIRST -gt 1 ]; then
+        #USE_EXPTL_FLAGS='1'
+        echo " FFX currently not supported by Java 10+. Preferably use JDK 1.8, found ${JVERS}" 1>&2
+        exit 1
+    elif [ $JVSEC -lt 8 ]; then
+        echo " Illegal Java version detected. Must use JDK 1.8 or above (preferably 1.8), found ${JVERS}" 1>&2
+        exit 1
+    elif [ $JVSEC -gt 8 ]; then
+        USE_EXPTL_FLAGS='1'
+    fi
+
+    if [ $USE_EXPTL_FLAGS ]; then
+        echo " WARNING: JDK 9+ detected. JDK 1.8 very strongly recommended to prevent issues with updates to the JVM. FFX not guaranteed to run properly" 1>&2
+        echo '' 1>&2
+        EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
+    fi
+else
+    echo " Cannot autodetect JVM version. JDK 1.8 preferred, else JDK 9 possibly compatible. Incompatible with any other JDK."
+fi
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then

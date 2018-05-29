@@ -33,6 +33,16 @@ This requires Maven v. 3.2 or later to be installed with its bin directory inclu
 
     mvn -DskipTests=false
 
+Additional tests, ordinarily skipped due to length of running them (~15 minutes on a single core of a 2013 CPU) can be accessed via the ffx.ci property, as such:
+
+   mvn -DskipTests=false -Dffx.ci=true
+
+Currently, only JDK 1.8 is fully supported. Versions less than 1.8 do not support 1.8+ syntax such as lambda expressions. Versions above 1.8 are problematic due to changes in JDK policy, such as forbidding illegal reflective access operations. Purely experimental support for this has been added to the ffx/ffxc Bash scripts, though not the Windows batch scripts.
+
+For most systems, simply install JDK 1.8, point the JAVA\_HOME environment variable to the JDK directory, and then add its bin directory to your path. For Mac OS X, it is recommended to add this to your .bash\_profile after installing JDK 1.8:
+
+   export JAVA\_HOME=$(/usr/libexec/java\_home -v 1.8)
+
 ---
 
 ## Execute Force Field X
