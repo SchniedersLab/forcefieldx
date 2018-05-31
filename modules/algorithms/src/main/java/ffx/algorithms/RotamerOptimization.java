@@ -7596,12 +7596,16 @@ public class RotamerOptimization implements Terminatable {
      */
     private boolean alloc3BodyMap(Residue[] residues) {
         boolean retValue = (threeBodyEnergies != null);
-        
-        threeBodyEnergies = new Object2DoubleOpenHashMap<>(1000);
+
         if (retValue) {
-            System.gc(); // Clear the old, possibly gigantic 3-body map from memory.
+            // The clear method only clears the keys, and does not resize.
+            // This should help avoid needless upsizing of the map after the first large box/window.
+            threeBodyEnergies.clear();
             return true;
         } else {
+            // Magic number of 10000 is a random guess at "big enough to cover all small jobs, not too big to be excessive overhead for small jobs".
+            // Estimate maybe 500 kB initial size.
+            threeBodyEnergies = new Object2DoubleOpenHashMap<>(10000);
             return false;
         }
     }
