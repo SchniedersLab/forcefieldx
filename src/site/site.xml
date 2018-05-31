@@ -128,6 +128,7 @@
                 <item name="Structural Refinement" href="/properties-refine.html"/>
             </item>
             <item name="Examples" href="/examples.html" collapse="true">
+               <item name="GPU Accelerated Side-Chain Optimization" href="/examples-gpuSideChain.html"/>
                <item name="Side-Chain Optimization via Many-Body DEE" href="/examples-dee.html"/>
                <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html" />
                <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html" />
