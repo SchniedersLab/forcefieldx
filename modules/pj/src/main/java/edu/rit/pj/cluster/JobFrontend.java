@@ -422,7 +422,13 @@ public class JobFrontend
             command.append(myMiddlewareChannelGroup.listenAddress().getPort());
             command.append(" '");
             command.append(host);
-            command.append("' >/dev/null 2>/dev/null &\"");
+
+            String pjLogging = System.getProperty("pj.log");
+            if (pjLogging != null && Boolean.parseBoolean(pjLogging)) {
+                command.append("' &\"");
+            } else {
+                command.append("' >/dev/null 2>/dev/null &\"");
+            }
 
             // So an SSH remote login and execute the above command.
             Process ssh

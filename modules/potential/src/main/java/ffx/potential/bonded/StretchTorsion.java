@@ -37,6 +37,7 @@
  */
 package ffx.potential.bonded;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -59,8 +60,8 @@ import static ffx.numerics.VectorMath.sum;
 import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
- * The Torsion class represents a torsional angle formed between four bonded
- * atoms.
+ * The StretchTorsion class represents a coupling between a torsional angle and the three
+ * bonds contained in the torsion, as defined in the 2017 AMOEBA nucleic acid force field.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -80,6 +81,44 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     public BondType bondType2 = null;
     public BondType bondType3 = null;
     private double constants[] = new double[9];
+
+    private static final String mathForm;
+    static {
+        /**
+         * Defined constants:
+         * p1-p4 are particles 1-4.
+         * m is a bond number, from 1-3, representing bonds p1-p2, p2-p3, p3-p4.
+         * n is a periodicity, from 1-3.
+         *
+         * k[m][n] is a set of 9 energy constants defined in the parameter file for this stretch-torsion.
+         *
+         * bVal[m] is the current bond distance for bond m.
+         * b[m] is the equilibrium distance for bond m.
+         *
+         * tVal is the current value of the 1-2-3-4 dihedral angle.
+         *
+         * phi[m] is a phase offset constant; phi1 = phi3 = 0, phi2 = pi.
+         */
+
+        StringBuilder mathFormBuilder = new StringBuilder();
+
+        for (int m = 1; m < 4; m++) {
+            for (int n = 1; n < 4; n++) {
+                // kmn * (bm - bm(equil)) * (1 + cos(n*tors + phi(n)))
+                mathFormBuilder.append(String.format("k%d%d*(bVal%d-b%d)*(1+cos(%d*tVal+phi%d))+", m, n, m, m, n, n));
+            }
+        }
+        int lenStr = mathFormBuilder.length();
+        mathFormBuilder.replace(lenStr - 1, lenStr, ";");
+
+        for (int m = 1; m < 4; m++) {
+            mathFormBuilder.append(String.format("bVal%d=distance(p%d,p%d);", m, m, (m+1)));
+        }
+
+        mathFormBuilder.append("tVal=dihedral(p1,p2,p3,p4)");
+
+        mathForm = mathFormBuilder.toString();
+    }
 
     /**
      * Create a StretchTorsion from 3 connected bonds (no error checking)
@@ -274,6 +313,14 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
             }
         }
         return theVal;
+    }
+
+    /**
+     * Returns the array of stretch-torsion constants, in units of kcal/mol/A.
+     * @return Stretch-torsion constants.
+     */
+    public double[] getConstants() {
+        return Arrays.copyOf(constants, constants.length);
     }
 
     /**
@@ -590,6 +637,14 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     @Override
     public String toString() {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
+    }
+
+    /**
+     * Returns the mathematical form of a stretch-torsion as an OpenMM-parsable String.
+     * @return Mathematical form of the stretch-torsion coupling.
+     */
+    public static String stretchTorsionForm() {
+        return mathForm;
     }
 
     @Override

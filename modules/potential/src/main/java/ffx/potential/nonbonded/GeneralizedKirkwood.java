@@ -551,6 +551,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
         return dOffset;
     }
 
+    /**
+     * Returns the solvent relative permittivity (typically 78.3).
+     * @return Relative permittivity of solvent.
+     */
+    public double getSolventPermittivity() {
+        return epsilon;
+    }
+
+    /**
+     * Returns the probe radius (typically 1.4 Angstroms).
+     * @return Radius of the solvent probe.
+     */
+    public double getProbeRadius() {
+        return probe;
+    }
+
     public void setCutoff(double cutoff) {
         this.cutoff = cutoff;
         this.cut2 = cutoff * cutoff;
@@ -3852,7 +3868,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final SharedDouble sharedDispersion;
         private boolean gradient = false;
         private double[] cdisp = null;
-        private static final double DISP_OVERLAP_SCALE_FACTOER = 0.81;
+        private static final double DISP_OVERLAP_SCALE_FACTOR = 0.81;
         private static final double SLEVY = 1.0;
         private static final double AWATER = 0.033428;
         private static final double EPSO = 0.1100;
@@ -4075,7 +4091,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double ah = emixh * rmixh7;
                 double ri = rDisp[i];
                 double rk = rDisp[k];
-                double sk = rk * DISP_OVERLAP_SCALE_FACTOER;
+                double sk = rk * DISP_OVERLAP_SCALE_FACTOR;
                 double sk2 = sk * sk;
                 if (ri < r + sk) {
                     double de = 0.0;

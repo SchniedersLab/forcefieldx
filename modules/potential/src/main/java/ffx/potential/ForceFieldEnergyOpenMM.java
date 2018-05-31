@@ -56,6 +56,8 @@ import com.sun.jna.ptr.DoubleByReference;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
+import ffx.potential.bonded.AngleTorsion;
+import ffx.potential.bonded.StretchTorsion;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
@@ -347,6 +349,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private PointerByReference fixedChargeNonBondedForce = null;
     /**
+     * OpenMM Stretch-Torsion couplings (as found in phosphate/nucleic acid AMOEBA force fields).
+     */
+    private PointerByReference stretchTorsionForce = null;
+    /**
+     * OpenMM Angle-Torsion couplings (as found in phosphate/nucleic acid AMOEBA force fields).
+     */
+    private PointerByReference angleTorsionForce = null;
+    /**
      * Fixed charge softcore vdW force.
      */
     boolean softcoreCreated = false;
@@ -483,6 +493,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Add bond restraints.
         addRestraintBonds();
+
+        // Add stretch-torsion coupling terms.
+        addStretchTorsionCoupling();
+
+        // Add angle-torsion coupling terms.
+        addAngleTorsionCoupling();
 
         VanDerWaals vdW = super.getVdwNode();
         if (vdW != null) {
@@ -1243,6 +1259,114 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Adds stretch-torsion couplings (as defined for the 2017 AMOEBA nucleic acid model).
+     */
+    private void addStretchTorsionCoupling() {
+        StretchTorsion[] strTorsions = super.getStretchTorsions();
+        if (strTorsions != null && strTorsions.length > 0) {
+            stretchTorsionForce = OpenMM_CustomCompoundBondForce_create(4, StretchTorsion.stretchTorsionForm());
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(stretchTorsionForce, "phi1", 0);
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(stretchTorsionForce, "phi2", Math.PI);
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(stretchTorsionForce, "phi3", 0);
+
+            for (int m = 1; m < 4; m++) {
+                for (int n = 1; n < 4; n++) {
+                    OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchTorsionForce, String.format("k%d%d", m, n));
+                }
+            }
+
+            for (int m = 1; m < 4; m++) {
+                OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchTorsionForce, String.format("b%d", m));
+            }
+
+            final double unitConv = OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+
+            for (StretchTorsion strTors : strTorsions) {
+                double[] constants = strTors.getConstants();
+                PointerByReference strTorsParams = OpenMM_DoubleArray_create(0);
+                for (int m = 0; m < 3; m++) {
+                    for (int n = 0; n < 3; n++) {
+                        int index = (3*m) + n;
+                        double kmn = constants[index] * unitConv;
+                        OpenMM_DoubleArray_append(strTorsParams, kmn);
+                    }
+                }
+
+                OpenMM_DoubleArray_append(strTorsParams, strTors.bondType1.distance * OpenMM_NmPerAngstrom);
+                OpenMM_DoubleArray_append(strTorsParams, strTors.bondType2.distance * OpenMM_NmPerAngstrom);
+                OpenMM_DoubleArray_append(strTorsParams, strTors.bondType3.distance * OpenMM_NmPerAngstrom);
+
+                PointerByReference strTorsParticles = OpenMM_IntArray_create(0);
+                Atom[] atoms = strTors.getAtomArray(true);
+                for (int i = 0; i < 4; i++) {
+                    OpenMM_IntArray_append(strTorsParticles, atoms[i].getXyzIndex() - 1);
+                }
+
+                OpenMM_CustomCompoundBondForce_addBond(stretchTorsionForce, strTorsParticles, strTorsParams);
+                OpenMM_DoubleArray_destroy(strTorsParams);
+                OpenMM_IntArray_destroy(strTorsParticles);
+            }
+
+            OpenMM_System_addForce(system, stretchTorsionForce);
+        }
+    }
+
+    /**
+     * Adds stretch-torsion couplings (as defined for the 2017 AMOEBA nucleic acid model).
+     */
+    private void addAngleTorsionCoupling() {
+        AngleTorsion[] angleTorsions = super.getAngleTorsions();
+        if (angleTorsions != null && angleTorsions.length > 0) {
+            angleTorsionForce = OpenMM_CustomCompoundBondForce_create(4, AngleTorsion.angleTorsionForm());
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(angleTorsionForce, "phi1", 0);
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(angleTorsionForce, "phi2", Math.PI);
+            OpenMM_CustomCompoundBondForce_addGlobalParameter(angleTorsionForce, "phi3", 0);
+
+            for (int m = 1; m < 3; m++) {
+                for (int n = 1; n < 4; n++) {
+                    OpenMM_CustomCompoundBondForce_addPerBondParameter(angleTorsionForce, String.format("k%d%d", m, n));
+                }
+            }
+
+            for (int m = 1; m < 3; m++) {
+                OpenMM_CustomCompoundBondForce_addPerBondParameter(angleTorsionForce, String.format("a%d", m));
+            }
+
+            final double unitConv = OpenMM_KJPerKcal / OpenMM_RadiansPerDegree;
+
+            for (AngleTorsion ators : angleTorsions) {
+                double[] constants = ators.getConstants();
+                PointerByReference atorsParams = OpenMM_DoubleArray_create(0);
+                for (int m = 0; m < 2; m++) {
+                    for (int n = 0; n < 3; n++) {
+                        int index = (3*m) + n;
+                        double kmn = constants[index] * unitConv;
+                        OpenMM_DoubleArray_append(atorsParams, kmn);
+                    }
+                }
+
+                Atom[] atoms = ators.getAtomArray(true);
+
+                // One thing that concerns me is whether it's correct to get angle[0] instead of angle[num hydrogens].
+                // This is the way it is in FFX, but that may be a bug.
+                OpenMM_DoubleArray_append(atorsParams, ators.angleType1.angle[0] * OpenMM_RadiansPerDegree);
+                OpenMM_DoubleArray_append(atorsParams, ators.angleType2.angle[0] * OpenMM_RadiansPerDegree);
+
+                PointerByReference atorsParticles = OpenMM_IntArray_create(0);
+                for (int i = 0; i < 4; i++) {
+                    OpenMM_IntArray_append(atorsParticles, atoms[i].getXyzIndex() - 1);
+                }
+
+                OpenMM_CustomCompoundBondForce_addBond(angleTorsionForce, atorsParticles, atorsParams);
+                OpenMM_DoubleArray_destroy(atorsParams);
+                OpenMM_IntArray_destroy(atorsParticles);
+            }
+
+            OpenMM_System_addForce(system, angleTorsionForce);
+        }
+    }
+
+    /**
      * Uses arithmetic mean to define sigma and geometric mean for epsilon.
      */
     private void addFixedChargeNonBondedForce() {
@@ -1432,7 +1556,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             logger.info(format(" VDW Type:         %s", vdwForm.vdwType));
             logger.info(format(" VDW Radius Rule:  %s", vdwForm.radiusRule));
             logger.info(format(" VDW Epsilon Rule: %s", vdwForm.epsilonRule));
-            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
             return;
         }
 
@@ -1636,9 +1760,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "q");
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "radius");
         OpenMM_CustomGBForce_addPerParticleParameter(customGBForce, "scale");
-        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "solventDielectric", 78.3);
+        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "solventDielectric", gk.getSolventPermittivity());
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "soluteDielectric", 1.0);
         OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "dOffset", gk.getDielecOffset() * OpenMM_NmPerAngstrom); // Factor of 0.1 for Ang to nm.
+        OpenMM_CustomGBForce_addGlobalParameter(customGBForce, "probeRadius", gk.getProbeRadius() * OpenMM_NmPerAngstrom);
+
         OpenMM_CustomGBForce_addComputedValue(customGBForce, "I",
                 // "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
                 // "step(r+sr2-or1)*0.5*((1/L^3-1/U^3)/3+(1/U^4-1/L^4)/8*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
@@ -1677,7 +1803,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
                 surfaceTension
-                + "*(radius+0.14+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
+                + "*(radius+probeRadius+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
                 OpenMM_CustomGBForce_SingleParticle);
 
         /**
@@ -2096,7 +2222,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         GeneralizedKirkwood gk = super.getGK();
 
         amoebaGeneralizedKirkwoodForce = OpenMM_AmoebaGeneralizedKirkwoodForce_create();
-        OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric(amoebaGeneralizedKirkwoodForce, 78.3);
+        OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric(amoebaGeneralizedKirkwoodForce, gk.getSolventPermittivity());
         OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(amoebaGeneralizedKirkwoodForce, 1.0);
 
         double overlapScale[] = gk.getOverlapScale();
@@ -2109,7 +2235,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     multipoleType.charge, OpenMM_NmPerAngstrom * baseRadii[i], overlapScale[i]);
         }
 
-        OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(amoebaGeneralizedKirkwoodForce, 1.4 * OpenMM_NmPerAngstrom);
+        OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(amoebaGeneralizedKirkwoodForce, gk.getProbeRadius() * OpenMM_NmPerAngstrom);
 
         NonPolar nonpolar = gk.getNonPolarModel();
         switch (nonpolar) {
@@ -2400,7 +2526,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (vdwForm.vdwType != LENNARD_JONES
                 || vdwForm.radiusRule != ARITHMETIC
                 || vdwForm.epsilonRule != GEOMETRIC) {
-            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
             return;
         }
 
@@ -3371,7 +3497,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (vdwForm.vdwType != LENNARD_JONES
                 || vdwForm.radiusRule != ARITHMETIC
                 || vdwForm.epsilonRule != GEOMETRIC) {
-            logger.log(Level.SEVERE, String.format(" Unsuppporterd van der Waals functional form."));
+            logger.log(Level.SEVERE, String.format(" Unsupported van der Waals functional form."));
             return -1.0;
         }
 

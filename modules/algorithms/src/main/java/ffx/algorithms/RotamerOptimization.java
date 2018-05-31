@@ -63,6 +63,10 @@ import java.util.stream.IntStream;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
+// FastUtil libraries for large collections.
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -104,6 +108,8 @@ import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.ObjectPair;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+import static ffx.utilities.HashCodeUtil.SEED;
+import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone
@@ -203,7 +209,8 @@ public class RotamerOptimization implements Terminatable {
      * Trimer-energies for each trimer of rotamers.
      * [residue1][rotamer1][residue2][rotamer2][residue3][rotamer3]
      */
-    protected double threeBodyEnergy[][][][][][];
+    //protected double threeBodyEnergy[][][][][][];
+    protected Object2DoubleMap<IntegerKeyset> threeBodyEnergies;
     /**
      * Quad cutoff flag.
      */
@@ -383,25 +390,15 @@ public class RotamerOptimization implements Terminatable {
      * should some be eliminated by the nucleic correction threshold.
      */
     private int minNumberAcceptedNARotamers = 10;
+
     /**
      * Factor by which to multiply the pruning constraints for nucleic acids.
-     * pairHalfPruningFactor is the arithmetic mean of 1.0 and the pruning
+     * nucleicPairsPruningFactor is the arithmetic mean of 1.0 and the pruning
      * factor, and is applied for AA-NA pairs.
      */
-    private double pruningFactor = 1.0;
-    private double pairHalfPruningFactor = ((1.0 + pruningFactor) / 2);
-    /**
-     * Factor by which to multiply the singleton pruning constraints for nucleic
-     * acids.
-     * <p>
-     * Very important, to ensure that all possible combinations of delta(i) and
-     * delta(i-1) are still represented when it comes time to calculate pair
-     * energies. If this pruning factor doesn't cut it, however, it probably
-     * wasn't a biologically relevant rotamer anyways.
-     * <p>
-     * Not presently implemented beyond getting the value in from Groovy.
-     */
-    private double singletonNAPruningFactor = 1.5;
+    private double nucleicPruningFactor = 10.0;
+    private double nucleicPairsPruningFactor = ((1.0 + nucleicPruningFactor) / 2);
+
     /**
      * Flag to calculate and print additional energies (mostly for debugging).
      */
@@ -648,7 +645,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Default value for maxRotCheckDepth.
      */
-    private int defaultMaxRotCheckDepth = 3;
+    private int defaultMaxRotCheckDepth = 2;
     /**
      * Maximum depth to check if a rotamer can be eliminated.
      */
@@ -732,8 +729,7 @@ public class RotamerOptimization implements Terminatable {
         String ensembleEnergy = System.getProperty("ro-ensembleEnergy");
         String ensembleBuffer = System.getProperty("ro-ensembleBuffer");
         String threeBodyCutoffDist = System.getProperty("ro-threeBodyCutoffDist");
-        String pruningFactor = System.getProperty("ro-pruningFactor");
-        String nucleicSinglesPruningFactor = System.getProperty("ro-nucleicSinglesPruningFactor");
+        String nucleicPruningFactor = System.getProperty("ro-nucleicPruningFactor");
         String nucleicCorrectionThreshold = System.getProperty("ro-nucleicCorrectionThreshold");
         String minimumNumberAcceptedNARotamers = System.getProperty("ro-minimumNumberAcceptedNARotamers");
         String singletonClashThreshold = System.getProperty("ro-singletonClashThreshold");
@@ -820,16 +816,11 @@ public class RotamerOptimization implements Terminatable {
             }
             logger.info(format(" (KEY) threeBodyCutoffDist: %.2f", this.threeBodyCutoffDist));
         }
-        if (pruningFactor != null) {
-            double value = Double.parseDouble(pruningFactor);
-            this.pruningFactor = (value >= 0 ? value : 1.0);
-            this.pairHalfPruningFactor = (1.0 + value) / 2;
-            logger.info(format(" (KEY) pruningFactor: %.2f", this.pruningFactor));
-        }
-        if (nucleicSinglesPruningFactor != null) {
-            double value = Double.parseDouble(nucleicSinglesPruningFactor);
-            this.singletonNAPruningFactor = (value >= 0 ? value : 1.5);
-            logger.info(format(" (KEY) nucleicSinglesPruningFactor: %.2f", this.singletonNAPruningFactor));
+        if (nucleicPruningFactor != null) {
+            double value = Double.parseDouble(nucleicPruningFactor);
+            this.nucleicPruningFactor = (value >= 0 ? value : 1.0);
+            this.nucleicPairsPruningFactor = (1.0 + value) / 2;
+            logger.info(format(" (KEY) nucleicPruningFactor: %.2f", this.nucleicPruningFactor));
         }
         if (nucleicCorrectionThreshold != null) {
             double value = Double.parseDouble(nucleicCorrectionThreshold);
@@ -1726,7 +1717,8 @@ public class RotamerOptimization implements Terminatable {
                                 int nK = rotK.length;
                                 for (int rk = 0; rk < nK; rk++) {
                                     try {
-                                        threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                        //threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                        threeBodyEnergies.put(new IntegerKeyset(i, ri, j, rj, k, rk), 0.0);
                                     } catch (Exception e) {
                                         // catch NPE.
                                     }
@@ -1795,7 +1787,8 @@ public class RotamerOptimization implements Terminatable {
                                 int nK = rotK.length;
                                 for (int rk = 0; rk < nK; rk++) {
                                     try {
-                                        threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                        //threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                        threeBodyEnergies.put(new IntegerKeyset(i, ri, j, rj, k, rk), 0);
                                     } catch (Exception e) {
                                         // catch NPE.
                                     }
@@ -1864,14 +1857,16 @@ public class RotamerOptimization implements Terminatable {
 
                                     if (i != resID1 && j != resID1 && k != resID1) {
                                         try {
-                                            threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                            //threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                            threeBodyEnergies.put(new IntegerKeyset(i, ri, j, rj, k, rk), 0);
                                         } catch (Exception e) {
                                             // catch NPE.
                                         }
                                     }
                                     if (i != resID2 && j != resID2 && k != resID2) {
                                         try {
-                                            threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                            //threeBodyEnergy[i][ri][j][rj][k][rk] = 0.0;
+                                            threeBodyEnergies.put(new IntegerKeyset(i, ri, j, rj, k, rk), 0);
                                         } catch (Exception e) {
                                             // catch NPE.
                                         }
@@ -2002,9 +1997,9 @@ public class RotamerOptimization implements Terminatable {
             for (int i = 0; i < nRes; i++) {
                 for (int j = i + 1; j < nRes; j++) {
                     for (int k = j + 1; k < nRes; k++) {
-                        if (Math.abs(threeBodyEnergy[i][0][j][0][k][0]) >= trimerCutoff) {
+                        if (Math.abs(get3Body(i, 0, j, 0, k, 0)) >= trimerCutoff) {
                             logger.info(format(" Large Trimer  %s %s %s:    %16.5f",
-                                    residues[i].toFormattedString(false, true), residues[j].toFormattedString(false, true), residues[k].toFormattedString(false, true), threeBodyEnergy[i][0][j][0][k][0]));
+                                    residues[i].toFormattedString(false, true), residues[j].toFormattedString(false, true), residues[k].toFormattedString(false, true), get3Body(i, 0, j, 0, k, 0)));
                         }
                     }
                 }
@@ -2048,10 +2043,10 @@ public class RotamerOptimization implements Terminatable {
                             Rotamer rotk[] = resk.getRotamers(library);
                             for (int rk = 0; rk < rotk.length; rk++) {
                                 try {
-                                    if (Math.abs(threeBodyEnergy[i][ri][j][rj][k][rk]) >= trimerCutoff) {
+                                    if (Math.abs(get3Body(i, ri, j, rj, k, rk)) >= trimerCutoff) {
                                         logger.info(format(" Large Trimer %8s %-2d, %8s %-2d, %8s %-2d: %s",
                                                 resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk,
-                                                formatEnergy(threeBodyEnergy[i][ri][j][rj][k][rk])));
+                                                formatEnergy(get3Body(i, ri, j, rj, k, rk))));
                                     }
                                 } catch (Exception ex) {
                                 }
@@ -2658,20 +2653,11 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Also sets derivative pruning factors.
      *
-     * @param pruningFactor
+     * @param nucleicPruningFactor
      */
-    public void setPruningFactor(double pruningFactor) {
-        this.pruningFactor = pruningFactor;
-        this.pairHalfPruningFactor = ((1.0 + pruningFactor) / 2);
-    }
-
-    /**
-     * Set teh nucleic acid pruning facgor.
-     *
-     * @param singletonNAPruningFactor
-     */
-    public void setSingletonNAPruningFactor(double singletonNAPruningFactor) {
-        this.singletonNAPruningFactor = singletonNAPruningFactor;
+    public void setNucleicPruningFactor(double nucleicPruningFactor) {
+        this.nucleicPruningFactor = nucleicPruningFactor;
+        this.nucleicPairsPruningFactor = ((1.0 + nucleicPruningFactor) / 2);
     }
 
     /**
@@ -4652,8 +4638,8 @@ public class RotamerOptimization implements Terminatable {
              * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
              */
             logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
-            reconcileNARotamersWithPriorResidues(residues);
-            eliminateNABackboneRotamers(residues);
+            //reconcileNARotamersWithPriorResidues(residues);
+            //eliminateNABackboneRotamers(residues);
         }
 
         if (decomposeOriginal) {
@@ -4787,32 +4773,27 @@ public class RotamerOptimization implements Terminatable {
 
             if (threeBodyTerm) {
                 if (loaded < 3) {
+                    alloc3BodyMap(residues);
                     threeBodyEnergyMap.clear();
                     // allocate threeBodyEnergy and create jobs
                     int trimerJobIndex = 0;
-                    threeBodyEnergy = new double[nResidues][][][][][];
                     for (int i = 0; i < nResidues; i++) {
                         Residue resi = residues[i];
                         Rotamer roti[] = resi.getRotamers(library);
-                        threeBodyEnergy[i] = new double[roti.length][][][][];
                         for (int ri = 0; ri < roti.length; ri++) {
                             if (check(i, ri)) {
                                 continue;
                             }
-                            threeBodyEnergy[i][ri] = new double[nResidues][][][];
                             for (int j = i + 1; j < nResidues; j++) {
                                 Residue resj = residues[j];
                                 Rotamer rotj[] = resj.getRotamers(library);
-                                threeBodyEnergy[i][ri][j] = new double[rotj.length][][];
                                 for (int rj = 0; rj < rotj.length; rj++) {
                                     if (checkToJ(i, ri, j, rj)) {
                                         continue;
                                     }
-                                    threeBodyEnergy[i][ri][j][rj] = new double[nResidues][];
                                     for (int k = j + 1; k < nResidues; k++) {
                                         Residue resk = residues[k];
                                         Rotamer rotk[] = resk.getRotamers(library);
-                                        threeBodyEnergy[i][ri][j][rj][k] = new double[rotk.length];
                                         for (int rk = 0; rk < rotk.length; rk++) {
                                             if (checkToK(i, ri, j, rj, k, rk)) {
                                                 continue;
@@ -4984,19 +4965,21 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Applies the "default" rotamer: 0 for amino acids, else a low-magnitude-correction rotamer for nucleic acids.
+     * Applies the "default" rotamer: currently the 0'th rotamer.
      * @param residue Residue to apply a default rotamer for.
      */
     private void applyDefaultRotamer(Residue residue) {
-        switch (residue.getResidueType()) {
+        /*switch (residue.getResidueType()) {
             case NA:
-                RotamerLibrary.applyRotamer(residue, defaultNucleicRotamers.get(residue));
+                //RotamerLibrary.applyRotamer(residue, defaultNucleicRotamers.get(residue));
+                RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
                 break;
             case AA:
             default:
                 RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
                 break;
-        }
+        }*/
+        RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
     }
 
     /**
@@ -6807,11 +6790,13 @@ public class RotamerOptimization implements Terminatable {
             k = jj;
             rk = jrj;
         }
-        try {
-            return threeBodyEnergy[i][ri][j][rj][k][rk];
-        } catch (NullPointerException npe) {
-            logger.info(format(" NPE for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d).", i, ri, j, rj, k, rk));
-            throw npe;
+        IntegerKeyset ijk = new IntegerKeyset(i, ri, j, rj, k, rk);
+        if (threeBodyEnergies.containsKey(ijk)) {
+            return threeBodyEnergies.getOrDefault(ijk, 0);
+        } else {
+            String message = String.format(" Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
+            logger.info(message);
+            throw new IllegalArgumentException(message);
         }
     }
 
@@ -7434,31 +7419,26 @@ public class RotamerOptimization implements Terminatable {
                 }
                 HashMap<String, Integer> reverseJobMapTrimers = new HashMap<>();
                 threeBodyEnergyMap.clear();
-                // allocate 3-Body energy array, fill in 3-Body energies from the restart file.
+                // Allocate 3-body energy Map, fill in 3-Body energies from the restart file.
+                alloc3BodyMap(residues);
                 int trimerJobIndex = 0;
-                threeBodyEnergy = new double[nResidues][][][][][];
                 for (int i = 0; i < nResidues; i++) {
                     Residue resi = residues[i];
                     Rotamer roti[] = resi.getRotamers(library);
-                    threeBodyEnergy[i] = new double[roti.length][][][][];
                     for (int ri = 0; ri < roti.length; ri++) {
                         if (check(i, ri)) {
                             continue;
                         }
-                        threeBodyEnergy[i][ri] = new double[nResidues][][][];
                         for (int j = i + 1; j < nResidues; j++) {
                             Residue resj = residues[j];
                             Rotamer rotj[] = resj.getRotamers(library);
-                            threeBodyEnergy[i][ri][j] = new double[rotj.length][][];
                             for (int rj = 0; rj < rotj.length; rj++) {
                                 if (check(j, rj) || check(i, ri, j, rj)) {
                                     continue;
                                 }
-                                threeBodyEnergy[i][ri][j][rj] = new double[nResidues][];
                                 for (int k = j + 1; k < nResidues; k++) {
                                     Residue resk = residues[k];
                                     Rotamer rotk[] = resk.getRotamers(library);
-                                    threeBodyEnergy[i][ri][j][rj][k] = new double[rotk.length];
                                     for (int rk = 0; rk < rotk.length; rk++) {
                                         if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk)) {
                                             // Not implemented: check(i, ri, j, rj, k, rk).
@@ -7506,7 +7486,8 @@ public class RotamerOptimization implements Terminatable {
                         int rk = Integer.parseInt(tok[6]);
                         double energy = Double.parseDouble(tok[7]);
                         try {
-                            threeBodyEnergy[i][ri][j][rj][k][rk] = energy;
+                            //threeBodyEnergy[i][ri][j][rj][k][rk] = energy;
+                            threeBodyEnergies.put(new IntegerKeyset(i, ri, j, rj, k, rk), energy);
                         } catch (ArrayIndexOutOfBoundsException ex) {
                             if (verbose) {
                                 logIfMaster(format(" Restart file out-of-bounds index: %s", line));
@@ -7594,7 +7575,7 @@ public class RotamerOptimization implements Terminatable {
              * have wild swings in energy on account of chemical perturbation.
              */
             double energyToPrune = (residue instanceof MultiResidue) ? multiResClashThreshold : clashThreshold;
-            energyToPrune = (residue.getResidueType() == NA) ? energyToPrune * singletonNAPruningFactor * pruningFactor : energyToPrune;
+            energyToPrune = (residue.getResidueType() == NA) ? energyToPrune * nucleicPruningFactor : energyToPrune;
             energyToPrune += minEnergy;
 
             for (int ri = 0; ri < nrot; ri++) {
@@ -7606,6 +7587,26 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Allocates the 3-body map from i,ri,j,rj,k,rk keys to 3-body energy values.
+     * @return If the 3-body map already existed.
+     */
+    private boolean alloc3BodyMap(Residue[] residues) {
+        boolean retValue = (threeBodyEnergies != null);
+
+        if (retValue) {
+            // The clear method only clears the keys, and does not resize.
+            // This should help avoid needless upsizing of the map after the first large box/window.
+            threeBodyEnergies.clear();
+            return true;
+        } else {
+            // Magic number of 10000 is a random guess at "big enough to cover all small jobs, not too big to be excessive overhead for small jobs".
+            // Estimate maybe 500 kB initial size.
+            threeBodyEnergies = new Object2DoubleOpenHashMap<>(10000);
+            return false;
         }
     }
 
@@ -7668,10 +7669,10 @@ public class RotamerOptimization implements Terminatable {
                     case 0:
                         break;
                     case 1:
-                        threshold *= pairHalfPruningFactor;
+                        threshold *= nucleicPairsPruningFactor;
                         break;
                     case 2:
-                        threshold *= pruningFactor;
+                        threshold *= nucleicPruningFactor;
                         break;
                     default:
                         throw new ArithmeticException(" RotamerOptimization.prunePairClashes() has somehow "
@@ -8457,7 +8458,8 @@ public class RotamerOptimization implements Terminatable {
                             if (resi < 0 && roti < 0 && resj < 0 && rotj < 0 && resk < 0 && rotk < 0) {
                                 procsDone++;
                             } else {
-                                threeBodyEnergy[resi][roti][resj][rotj][resk][rotk] = energy;
+                                //threeBodyEnergy[resi][roti][resj][rotj][resk][rotk] = energy;
+                                threeBodyEnergies.put(new IntegerKeyset(resi, roti, resj, rotj, resk, rotk), energy);
                                 if (writeEnergyRestart && printFiles) {
                                     energiesToWrite.add(format("Triple %d %d, %d %d, %d %d: %16.8f", resi, roti, resj, rotj, resk, rotk, energy));
                                 }
@@ -9378,6 +9380,43 @@ public class RotamerOptimization implements Terminatable {
         @Override
         public String toString() {
             return "Rotamer moves utilizing a rotamer energy matrix";
+        }
+    }
+
+    /**
+     * Class contains an integer array, comparing and hashing based on the integer values.
+     */
+    private class IntegerKeyset {
+        private final int[] keys;
+
+        public IntegerKeyset(int... keySet) {
+            this.keys = Arrays.copyOf(keySet, keySet.length);
+        }
+
+        public int getSize() {
+            return keys.length;
+        }
+
+        public int[] getKeys() {
+            return Arrays.copyOf(keys, keys.length);
+        }
+
+        /**
+         * Equality based on shallow value equality.
+         * @param other
+         * @return
+         */
+        @Override
+        public boolean equals(Object other) {
+            if (other instanceof IntegerKeyset) {
+                return Arrays.equals(keys, ((IntegerKeyset) other).getKeys());
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(keys);
         }
     }
 }

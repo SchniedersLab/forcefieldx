@@ -414,7 +414,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 if (initVelocities) {
                     getThermostat().setQuiet(true);
                     getThermostat().maxwell(targetTemperature);
-                    forceFieldEnergyOpenMM.setOpenMMVelocities(v, numberOfVariables);
                     Atom[] atoms = molecularAssembly.getAtomArray();
                     double[] vel = new double[3];
                     for (int i = 0; i < atoms.length; i++) {
@@ -428,6 +427,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 }
             }
             setOpenMMState();
+
+            // Get the OpenMM State and then set the starting kinetic energy.
+            getOpenMMState();
+            startingKineticEnergy = currentKineticEnergy;
         }
         
         saveSnapshotAsPDB = true;
@@ -460,7 +463,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     @Override
     public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
 
-        this.init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
+        init(numSteps, timeStep, printInterval, saveInterval, fileType, restartFrequency, temperature, initVelocities, dyn);
 
         storeState();
 

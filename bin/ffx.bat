@@ -77,7 +77,9 @@ if "%REPO%"=="" set REPO=%BASEDIR%
 
 set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\ffx-all.jar
 
-set EXTRA_JVM_ARGUMENTS=-Xms1G -Xmx1G -Xss1M 
+set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M 
+
+@REM Figure out how to print to screen: Cannot autodetect JVM version. JDK 1.8 preferred, else JDK 9 possibly compatible. Incompatible with any other JDK.
 
 goto endInit
 

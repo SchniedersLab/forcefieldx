@@ -37,6 +37,7 @@
  */
 package ffx.potential.bonded;
 
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -77,6 +78,44 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     public TorsionType torsionType = null;
     public AngleType angleType1 = null;
     public AngleType angleType2 = null;
+
+    private static final String mathForm;
+    static {
+        /**
+         * Defined constants:
+         * p1-p4 are particles 1-4.
+         * m is an angle number, from 1-2, representing angles p1-p2-p3, p2-p3-p4.
+         * n is a periodicity, from 1-3.
+         *
+         * k[m][n] is a set of 6 energy constants defined in the parameter file for this angle-torsion.
+         *
+         * aVal[m] is the current value for angle m.
+         * a[m] is the equilibrium value for angle m.
+         *
+         * tVal is the current value of the 1-2-3-4 dihedral angle.
+         *
+         * phi[m] is a phase offset constant; phi1 = phi3 = 0, phi2 = pi.
+         */
+
+        StringBuilder mathFormBuilder = new StringBuilder();
+
+        for (int m = 1; m < 3; m++) {
+            for (int n = 1; n < 4; n++) {
+                // kmn * (am - am(equil)) * (1 + cos(n*tors + phi(n)))
+                mathFormBuilder.append(String.format("k%d%d*(aVal%d-a%d)*(1+cos(%d*tVal+phi%d))+", m, n, m, m, n, n));
+            }
+        }
+        int lenStr = mathFormBuilder.length();
+        mathFormBuilder.replace(lenStr - 1, lenStr, ";");
+
+        for (int m = 1; m < 3; m++) {
+            mathFormBuilder.append(String.format("aVal%d=angle(p%d,p%d,p%d);", m, m, (m+1), (m+2)));
+        }
+
+        mathFormBuilder.append("tVal=dihedral(p1,p2,p3,p4)");
+
+        mathForm = mathFormBuilder.toString();
+    }
 
     /**
      * AngleTorsion constructor.
@@ -291,6 +330,14 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
             }
         }
         return theVal;
+    }
+
+    /**
+     * Returns the array of stretch-torsion constants, in units of kcal/mol/degree.
+     * @return Stretch-torsion constants.
+     */
+    public double[] getConstants() {
+        return Arrays.copyOf(constants, constants.length);
     }
 
     /**
@@ -601,6 +648,14 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     @Override
     public String toString() {
         return String.format("%s  (%7.1f,%7.2f)", id, value, energy);
+    }
+
+    /**
+     * Returns the mathematical form of an angle-torsion as an OpenMM-parsable String.
+     * @return Mathematical form of the angle-torsion coupling.
+     */
+    public static String angleTorsionForm() {
+        return mathForm;
     }
 
     @Override
