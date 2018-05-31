@@ -1018,6 +1018,7 @@
         <biojava.version>3.1.0</biojava.version>
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.1.0</clustering.version>
+        <fastutil.version>8.2.1</fastutil.version>
     </properties>
     <modules>
         <module>modules/algorithms</module>

@@ -88,6 +88,7 @@ public class FFXClassLoader extends URLClassLoader {
             "org.openscience.cdk",
             "edu.rit.pj",
             "org.bridj",
+            "it.unimi.dsi",
             "jcuda"};
     static final List<String> FFX_FILES;
     private boolean extensionsLoaded = false;
@@ -171,6 +172,8 @@ public class FFXClassLoader extends URLClassLoader {
                 //ebi.beam Libraries
                 "uk.ac.ebi.beam/beam-core.jar",
                 "uk.ac.ebi.beam/beam-func.jar",
+                // FastUtil Libraries
+                "it.unimi.dsi/fastutil.jar",
                 // Java Help
                 "javax.help/javahelp.jar",
                 // BioJava
