@@ -68,7 +68,7 @@
                 </source>
                 <p>The command to calculate the deposition free energy of the asymmetric unit is as follows:
                 </p>
-                <source>ffxc osrw -c 100 -a -l 0.0 -i stochastic -n 25000000 -t 298.15 -r 1.0 -s 1 -f 19 ACANIL.xyz</source>
+                <source>ffxc Thermodynamics -c 100 -a -l 0.0 -i stochastic -n 25000000 -t 298.15 -r 1.0 -s 1 -f 19 ACANIL.xyz</source>
                 <table>
                     <thead>
                         <tr>
@@ -125,10 +125,10 @@
                     files are necessary. For restrained crystal and restrained vapor, add "restrainterm true". For
                     restrained vapor, also add "vdwterm false".
                 </p>
-                <source>ffxc osrw -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rminv.SG.xyz rmin.SG.xyz </source>
+                <source>ffxc Thermodynamics -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rminv.SG.xyz rmin.SG.xyz </source>
                 <p>The command to calculate the free energy of adding a harmonic restraint to the asymmetric unit is as follows:
                 </p>
-                <source>ffxc osrw -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rmin.SG.xyz min.SG.xyz </source>
+                <source>ffxc Thermodynamics -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rmin.SG.xyz min.SG.xyz </source>
                 <table>
                     <thead>
                         <tr>
@@ -154,7 +154,7 @@
                 <p>The command to calculate the free energy change to transfer the restrained asymmetric
                     unit molecules into vapor by alchemical annihilation is as follows:
                 </p>
-                <source>ffxc osrw -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rminv.SG.xyz rmin.SG.xyz </source>
+                <source>ffxc Thermodynamics -c 100 -a -l 2.0 -i stochastic -n 5000000 -t 298.15 -r 1.0 rminv.SG.xyz rmin.SG.xyz </source>
                 <p>rminv.SG.xyz refers to the restrained vapor state of the asymmetric unit, and
                     the rest of the commands are the same as the previous step.
                 </p>

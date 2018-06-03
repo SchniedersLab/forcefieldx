@@ -161,7 +161,7 @@
                 </p>
                 <source>ffxc xray.anneal 1N7S.pdb 1N7S.mtz</source>
                 <p>The xray.anneal script is provided in the scripts
-                    directory.  Running the script without any arguments prints out
+                    directory.  Running the script with the -h flag prints out
                     the usage information, reproduced here:
                 </p>
                 <source>
