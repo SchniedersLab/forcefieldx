@@ -20,7 +20,7 @@
             </ul>
             <p>System requirement:</p>
             <ul>
-                <li>A Java Runtime Environment (JRE) of version ${targetVersion} or later.</li>
+                <li>Java Runtime Environment (JRE) versions 8 and 9 are supported (version 10 is not supproted yet).</li>
             </ul>
             <subsection name="Current Force Field X Distributions">
                 <table>
