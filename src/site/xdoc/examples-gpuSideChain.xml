@@ -102,6 +102,13 @@
                 <p>
                     The resulting PDB file is automatically saved as 1uao.pdb_3.
                 </p>
+                <p>
+                    Alternatively, the previous command can be excuted using OpenMM.
+                    Please be sure OpenMM is configured by following the instructions here: <a href="modules/openmm/index.html">OpenMM Installation</a>.
+                </p>
+                <source>
+                    ffxc ManyBody -a 2 -l 2 -x 1 1uao.pdb_2 -Dplatform=omm
+                </source>
             </subsection>
             <subsection name="Optimization of a Deafness Related Protein With a GPU">
                 <p> This next example is based on the deafness related COCH protein. Start by installing OpenMM by following the instructions here: <a href="modules/openmm/index.html">OpenMM Installation</a>. 
