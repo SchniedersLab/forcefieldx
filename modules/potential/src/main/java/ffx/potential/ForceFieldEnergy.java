@@ -420,6 +420,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             beta = forceField.getDouble(ForceFieldDouble.BETA, 90.0);
             gamma = forceField.getDouble(ForceFieldDouble.GAMMA, 90.0);
             spacegroup = forceField.getString(ForceFieldString.SPACEGROUP, "P 1");
+
+            if (a == 1.0 && b == 1.0 && c == 1.0) {
+                String message = " A-, B-, and C-axis values equal to 1.0.";
+                logger.info(message);
+                throw new Exception(message);
+            }
+
         } catch (Exception e) {
             logger.info(" The system will be treated as aperiodic.");
             aperiodic = true;

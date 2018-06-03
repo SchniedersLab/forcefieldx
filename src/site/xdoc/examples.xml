@@ -17,7 +17,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <a href="examples-dee.html">Side-Chain Optimization via Many-Body Dead-End Elimination
+                        <a href="examples-gpuSideChain.html">GPU Accelerated Side-Chain Optimization via Many-Body Dead-End Elimination
                         </a>
                     </td>
                     <td>
@@ -42,16 +42,15 @@
 
                     </td>
                 </tr>
-                <tr>
+                <!-- tr>
                     <td>
                         <a href="examples-homology.html">
                             AMOEBA-assisted Homology Model Refinement
                         </a>
                     </td>
                     <td>
-
                     </td>
-                </tr>
+                </tr -->
             </table>
         </section>
     </body>

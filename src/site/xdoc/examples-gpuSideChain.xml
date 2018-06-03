@@ -17,8 +17,8 @@
                 25x faster than the first implementation of side-chain optimization.
             </p>
             <subsection name="Best Practices Overview">
-                <p>The following example demonstrates global optimization of Chignolin (PDB
-                    <a href="https://www.rcsb.org/structure/5AWL">5AWL</a>). The best practices protocol is as follows:
+                <p>The following example demonstrates global optimization of Chignolin side-chains (PDB
+                    <a href="https://www.rcsb.org/structure/1UAO">1UAO</a>). The best practices protocol is as follows:
                 </p>
                 <ol>
                     <li>Minimize the model to eliminate obvious steric clashes.</li>
@@ -29,84 +29,78 @@
             </subsection>
             <subsection name="Minimization of a Short Peptide">
                 <p>To perform a minimization on the peptide, use the command below:
-                    <source>ffxc Minimize 5awl.pdb</source>
+                    <source>ffxc Minimize 1uao.pdb</source>
                 </p>
                 <p>Output from the minimization will show each iteration of the algorithm and the resulting energy of the protein model. 
-                    Pictured below are iterations 80-90 and the energy output. 
+                    Pictured below are iterations 76-80 and the energy output.
                     This simulation should take less than one minute of computing time on a standard laptop.
-                    <source> 
-                        80    -659.8378     1.6977     1.3246    0.0059    71.19     95    0.084
-                        81    -660.8869     1.8005     1.0491    0.0073    74.43     96    0.083
-                        82    -661.7937     1.7209     0.9069    0.0031    61.02     97    0.073
-                        83    -663.0608     1.8203     1.2670    0.0059    72.98     98    0.077
-                        84    -664.5783     1.6366     1.5176    0.0070    70.77     99    0.075
-                        85    -665.7305     1.9301     1.1522    0.0067    72.48    100    0.082
-                        86    -667.0838     1.3445     1.3533    0.0041    64.49    101    0.087
-                        87    -667.9655     2.2372     0.8817    0.0074    67.58    102    0.080
-                        88    -668.6703     1.2561     0.7048    0.0019    57.88    103    0.075
-                        89    -669.0176     1.0315     0.3473    0.0008    49.38    104    0.077
-                        90    -669.5809     0.8847     0.5634    0.0019    55.17    105    0.084
+                    <source>
+                        76    -242.8328     1.1926     0.3876    0.0032    75.14     77    0.025
+                        77    -243.3192     1.3723     0.4864    0.0041    67.24     78    0.027
+                        78    -243.7189     1.1017     0.3997    0.0068    75.87     79    0.034
+                        79    -243.8713     1.4691     0.1524    0.0028    66.85     80    0.035
+                        80    -244.1078     0.8571     0.2365    0.0010    60.08     81    0.031
 
-                        Optimization achieved convergence criteria:  0.88473
-
+                        Optimization achieved convergence criteria:  0.85712
 
                         Computed Potential Energy
-                        Bond Stretching          9.58748094          195        0.000 ( 0.01108)
-                        Angle Bending           51.79845823          311        0.000 ( 3.24961)
-                        Stretch-Bend            -0.78472634          279        0.000
-                        Urey-Bradley             0.25622073           12        0.000
-                        Out-of-Plane Bend        2.86561680          144        0.001
-                        Torsional Angle         -8.14574875          451        0.001
-                        Pi-Orbital Torsion       1.76037667           37        0.000
-                        Torsion-Torsion         -6.23559113            7        0.000
-                        Van der Waals          102.04698358        78641        0.017
-                        Atomic Multipoles     -684.18482499        15808
-                        Polarization          -138.54519229        15808        0.074
-                        Total Potential       -669.58094654  (Kcal/mole)        0.095 (sec)
-                        Unit Cell            -2678.32378614
-                        Replicates Cell     -10713.29514458
+                        Bond Stretching          9.04900448          141        0.000 ( 0.01322)
+                        Angle Bending           50.63504369          249        0.000 ( 3.54833)
+                        Stretch-Bend            -0.39314453          229        0.000
+                        Out-of-Plane Bend        4.38249086          108        0.000
+                        Torsional Angle          8.76885188          369        0.000
+                        Pi-Orbital Torsion       2.77304417           25        0.000
+                        Torsion-Torsion         -4.58642973            7        0.000
+                        Van der Waals           63.64719498         9063        0.003
+                        Atomic Multipoles     -316.37910863         9453
+                        Polarization           -62.00472529         9453        0.037
+                        Total Potential       -244.10777813  (Kcal/mole)        0.042 (sec)
 
-                        Saving 5awl.pdb_2
-
-                        Script wall clock time: 13.842 (sec)
-
+                        Saving 1uao.pdb_2
                     </source>
                 </p>
-                <p>The resulting PDB file is automatically saved as 5awl.pdb_2. Run the diff command below to see changes between the original and resulting files.
-                    <source>diff 5awl.pdb 5awl.pdb_2</source>
+                <p>The resulting PDB file is automatically saved as 1uao.pdb_2.
                 </p>
             </subsection>
             <subsection name="Side-Chain Optimization of a Short Peptide Without a GPU">
                 <p>To perform an all-with-rotamer-elimination side-chain optimization on the minimized peptide without use of a GPU, use the command below:
-                    <source>ffxc ManyBody -a 2 -l 2 -x 1 5awl.pdb_2</source>
+                    <source>ffxc ManyBody -a 2 -l 2 -x 1 1uao.pdb_2</source>
                 </p>
                 <p>Output from the ManyBody algorithm will show energy evaluations of self and pair side-chain energies along with a printout overall system energy. 
-                    The overall energy is shown below. 
-                    This simulation should take less than one minute of computing time on a standard laptop.
+                    The final rotamers and overall energy are shown below. This simulation should take less than one minute of computing time on a standard laptop.
                     <source>
+                        Final rotamers:
+                        --------------------------------------------------------------------------------------------
+                        Residue          |      Chi 1   |     Chi 2   |     Chi 3   |     Chi 4   |     Energy   |
+                        --------------------------------------------------------------------------------------------
+                        1 A (  2-TYR, 0) |  -172.5  0.0 |   90.2  0.0 |  114.2  0.0 |    0.0  0.0 |     -19.4350 |
+                        2 A (  3-ASP, 0) |   176.3  0.0 |    0.0  0.0 |    0.0  0.0 |    0.0  0.0 |     -28.3183 |
+                        3 A (  5-GLU, 0) |  -165.5  0.0 |  -84.1  0.0 |   22.3  0.0 |    0.0  0.0 |       9.5233 |
+                        4 A (  6-THR, 5) |    62.0  0.0 |  -60.0  0.0 |    0.0  0.0 |    0.0  0.0 |      -8.2411 |
+                        5 A (  8-THR,12) |  -175.0  0.0 | -120.0  0.0 |    0.0  0.0 |    0.0  0.0 |      -3.3993 |
+                        6 A (  9-TRP, 0) |   -41.5  0.0 |   87.5  0.0 |    0.0  0.0 |    0.0  0.0 |       5.9391 |
+                        --------------------------------------------------------------------------------------------
+
                         Final Minimum Energy
 
                         Computed Potential Energy
-                        Bond Stretching          9.60054792          195        0.000 ( 0.01108)
-                        Angle Bending           51.82217484          311        0.000 ( 3.25038)
-                        Stretch-Bend            -0.78694730          279        0.000
-                        Urey-Bradley             0.25532322           12        0.000
-                        Out-of-Plane Bend        2.85385576          144        0.000
-                        Torsional Angle         -8.13915402          451        0.000
-                        Pi-Orbital Torsion       1.75393574           37        0.000
-                        Torsion-Torsion         -6.23619073            7        0.000
-                        Van der Waals          102.06434302        78641        0.002
-                        Atomic Multipoles     -684.21212167        15805
-                        Polarization          -138.53911083        15805        0.052
-                        Total Potential       -669.56334405  (Kcal/mole)        0.055 (sec)
-                        Unit Cell            -2678.25337619
-                        Replicates Cell     -10713.01350476
+                        Bond Stretching          8.77023477          141        0.000 ( 0.01299)
+                        Angle Bending           50.20607206          249        0.000 ( 3.53036)
+                        Stretch-Bend            -0.50772738          229        0.000
+                        Out-of-Plane Bend        4.40102720          108        0.000
+                        Torsional Angle          8.77155306          369        0.000
+                        Pi-Orbital Torsion       2.76777372           25        0.000
+                        Torsion-Torsion         -4.58901318            7        0.000
+                        Van der Waals           71.10186683         9063        0.000
+                        Atomic Multipoles     -331.31181960         9453
+                        Polarization           -63.51240025         9453        0.012
+                        Total Potential       -253.90243277  (Kcal/mole)        0.014 (sec)
 
-                        Saving 5awl.pdb_3
+                        Saving 1uao.pdb_3
                     </source>
                 </p>
-                <p>The resulting PDB file is automatically saved as 5awl.pdb_3. Run the diff command below to see changes between the original and resulting files.
-                    <source>diff 5awl.pdb 5awl.pdb_3</source>
+                <p>
+                    The resulting PDB file is automatically saved as 1uao.pdb_3.
                 </p>
             </subsection>
             <subsection name="Optimization of a Deafness Related Protein With a GPU">
