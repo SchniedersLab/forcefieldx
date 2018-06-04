@@ -9,7 +9,7 @@
         <author email="ava-lynn@uiowa.edu">Ava Lynn</author>
     </properties>
     <body>
-        <section name="Side-Chain Optimization Using Many-Body Dead-End Elimination">
+        <section name="Side-Chain Optimization and Mutation Using Many-Body Dead-End Elimination">
             <p>Discrete rotamer libraries of optimal side-chain conformations have been developed to find the global minimum energy conformation of a protein.
                 However, implementation of rotamer libraries using brute force is computationally expensive, as there exists large number of permutations.
                 Through rigorous inequalities eliminating high-energy rotamers, rotamer pairs, and rotamer trimers, the Dead-End Elimination (DEE)
