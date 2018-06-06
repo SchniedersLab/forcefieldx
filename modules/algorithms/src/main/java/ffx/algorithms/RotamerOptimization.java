@@ -64,6 +64,8 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 // FastUtil libraries for large collections.
+import ffx.potential.DualTopologyEnergy;
+import ffx.potential.QuadTopologyEnergy;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
@@ -689,6 +691,13 @@ public class RotamerOptimization implements Terminatable {
 
         this.molecularAssembly = molecularAssembly;
         this.potential = potential;
+        if (potential instanceof ForceFieldEnergy) {
+            ((ForceFieldEnergy) potential).setPrintOnFailure(false, true);
+        } else if (potential instanceof DualTopologyEnergy) {
+            ((DualTopologyEnergy) potential).setPrintOnFailure(false, true);
+        } else if (potential instanceof QuadTopologyEnergy) {
+            ((QuadTopologyEnergy) potential).setPrintOnFailure(false, true);
+        }
         this.algorithmListener = algorithmListener;
         eFunction = this::currentPE;
         dirSupplier = (List<Residue> resList, List<Rotamer> rotList) -> null;

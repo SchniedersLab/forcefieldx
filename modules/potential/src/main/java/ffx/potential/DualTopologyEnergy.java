@@ -1316,6 +1316,22 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         return previousAcceleration;
     }
 
+    /**
+     * Sets the printOnFailure flag; if override is true, over-rides any
+     * existing property. Essentially sets the default value of printOnFailure
+     * for an algorithm. For example, rotamer optimization will generally run
+     * into force field issues in the normal course of execution as it tries
+     * unphysical self and pair configurations, so the algorithm should not
+     * print out a large number of error PDBs.
+     *
+     * @param onFail To set
+     * @param override Override properties
+     */
+    public void setPrintOnFailure(boolean onFail, boolean override) {
+        forceFieldEnergy1.setPrintOnFailure(onFail, override);
+        forceFieldEnergy2.setPrintOnFailure(onFail, override);
+    }
+
     private class EnergyRegion extends ParallelRegion {
 
         private double[] x;
