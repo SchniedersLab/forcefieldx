@@ -1550,7 +1550,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 logger.warning("Runtime exception during bonded term calculation.");
                 throw ex;
             } catch (Exception ex) {
-                Utilities.printStackTrace(ex);
+                logger.info(Utilities.stackTraceToString(ex));
                 logger.severe(ex.toString());
             }
 
@@ -1658,6 +1658,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
                 return 0.0;
             } else {
+                logger.log(Level.INFO, String.format(" Exception in energy calculation: %s", ex.toString()));
                 throw ex; // Rethrow exception
             }
         }
@@ -2147,9 +2148,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 }
             }
             if (maxDebugGradient < Double.MAX_VALUE) {
-                boolean extremeGrad = Arrays.stream(g).anyMatch((double gi) -> {
-                    return (gi > maxDebugGradient || gi < -maxDebugGradient);
-                });
+                boolean extremeGrad = Arrays.stream(g).anyMatch((double gi) ->
+                        (gi > maxDebugGradient || gi < -maxDebugGradient));
                 if (extremeGrad) {
                     File origFile = molecularAssembly.getFile();
                     String timeString = LocalDateTime.now().format(DateTimeFormatter.
@@ -2168,8 +2168,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
             return e;
         } catch (EnergyException ex) {
-            ex.printStackTrace();
             if (printOnFailure) {
+                logger.info(Utilities.stackTraceToString(ex));
                 String timeString = LocalDateTime.now().format(DateTimeFormatter.
                         ofPattern("yyyy_MM_dd-HH_mm_ss"));
 
@@ -2182,15 +2182,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 logger.info(String.format(" Writing on-error snapshot to file %s", filename));
                 ef.saveAsPDB(molecularAssembly, new File(filename));
             }
+
             if (ex.doCauseSevere()) {
-                Utilities.printStackTrace(ex);
+                logger.info(Utilities.stackTraceToString(ex));
                 logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
             } else {
-                ex.printStackTrace();
-                throw ex; // Rethrow exception
+                logger.log(Level.INFO, String.format(" Exception in energy calculation: %s", ex.toString()));
             }
 
-            throw ex; // Should ordinarily be unreachable.
+            throw ex;
         }
     }
 

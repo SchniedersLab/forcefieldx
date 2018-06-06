@@ -37,6 +37,10 @@
  */
 package ffx.potential;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -778,15 +782,24 @@ public final class Utilities {
         }
         return true;
     }
-	
-	public static void printStackTrace(Throwable ex) {
-		StringBuilder sb = new StringBuilder();
-		StackTraceElement[] trace = ex.getStackTrace();
-		for (StackTraceElement elem : trace) {
-			sb.append(String.format("%s\n", elem.toString()));
-		}
-		logger.info(sb.toString());
-	}
+
+    /**
+     * Gets the stack trace for an exception and converts it to a String.
+     * @param ex An exception.
+     * @return A String of its stack trace.
+     */
+    public static String stackTraceToString(Throwable ex) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (PrintStream ps = new PrintStream(baos, true, "UTF-8")) {
+            ex.printStackTrace(ps);
+            return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+        } catch (UnsupportedEncodingException uex) {
+            logger.warning(String.format(" UTF-8 encoding somehow not " +
+                    "supported by PrintStream for exception %s.", ex.toString()));
+            ex.printStackTrace();
+            return "";
+        }
+    }
 
     /**
      * Returns a carbon that is bonded to the atom a, a carbonyl group, and a
