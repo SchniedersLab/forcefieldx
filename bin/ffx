@@ -114,9 +114,11 @@ if [ $hasAwkSed ]; then
 
     USE_EXPTL_FLAGS=''
     if [ $JVFIRST -gt 9 ]; then
-        echo " FFX currently does not supported by Java 10+ (JDK 1.8 is preferred) - detected ${JVERS}" 1>&2
+        echo " FFX does not currently support Java 10+ (JDK 1.8 is preferred) - detected ${JVERS}" 1>&2
         exit 1
     elif [ $JVFIRST -eq 9 ]; then
+        USE_EXPTL_FLAGS='1'
+    elif [ $JVSEC -eq 9 ]; then
         USE_EXPTL_FLAGS='1'
     elif [ $JVSEC -lt 8 ]; then
         echo " Illegal Java version detected. Must use JDK 1.8 or JDK 9, found ${JVERS}" 1>&2
@@ -124,7 +126,7 @@ if [ $hasAwkSed ]; then
     fi
 
     if [ $USE_EXPTL_FLAGS ]; then
-        echo " WARNING: JDK 9+ is detected and support is experimental." 1>&2
+        echo " WARNING: JDK 9 detected: support is experimental." 1>&2
         echo '' 1>&2
         EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
     fi
