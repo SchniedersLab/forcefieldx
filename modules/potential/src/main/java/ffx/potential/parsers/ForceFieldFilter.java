@@ -97,6 +97,8 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
 public class ForceFieldFilter {
 
     private static final Logger logger = Logger.getLogger(ForceFieldFilter.class.getName());
+    private static final ForceFieldName DEFAULT_FORCE_FIELD = ForceFieldName.AMOEBA_BIO_2018;
+
     private ForceField forceField = null;
     private final CompositeConfiguration properties;
     private final File forceFieldFile;
@@ -199,14 +201,15 @@ public class ForceFieldFilter {
                  * Parse an internal parameter file and add it to the composite
                  * configuration.
                  */
-                String forceFieldString = properties.getString("forcefield", "AMOEBA-BIO-2009");
+                String defaultFFstring = DEFAULT_FORCE_FIELD.toString().toUpperCase().replaceAll("_", "-");
+                String forceFieldString = properties.getString("forcefield", defaultFFstring);
                 ForceFieldName ff;
                 try {
                     ff = ForceField.ForceFieldName.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
                     logger.info(" Loading force field: " + ff.toString());
                 } catch (Exception e) {
-                    logger.warning("Defaulting to force field: AMOEBA_BIO_2009");
-                    ff = ForceField.ForceFieldName.AMOEBA_BIO_2009;
+                    ff = DEFAULT_FORCE_FIELD;
+                    logger.warning("Defaulting to force field: " + ff.toString());
                 }
                 URL url = ForceField.getForceFieldURL(ff);
                 if (url != null) {
