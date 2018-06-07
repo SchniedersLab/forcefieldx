@@ -67,6 +67,7 @@ import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
 import ffx.numerics.VectorMath;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
@@ -2433,8 +2434,10 @@ public final class PDBFilter extends SystemFilter {
                             assignAminoAcidAtomTypes(subChain);
                         }
                     } catch (MissingHeavyAtomException missingHeavyAtomException) {
+                        logger.log(Level.INFO, Utilities.stackTraceToString(missingHeavyAtomException));
                         logger.severe(missingHeavyAtomException.toString());
                     } catch (MissingAtomTypeException missingAtomTypeException) {
+                        logger.log(Level.INFO, Utilities.stackTraceToString(missingAtomTypeException));
                         logger.severe(missingAtomTypeException.toString());
                     }
                     continue;
@@ -2501,7 +2504,7 @@ public final class PDBFilter extends SystemFilter {
                             assignNucleicAcidAtomTypes(subChain, forceField, bondList);
                         }
                     } catch (MissingHeavyAtomException | MissingAtomTypeException e) {
-                        e.printStackTrace();
+                        logger.log(Level.INFO, Utilities.stackTraceToString(e));
                         logger.severe(e.toString());
                     }
                 }
@@ -2550,6 +2553,7 @@ public final class PDBFilter extends SystemFilter {
                             logger.severe(format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));
                     }
                 } catch (Exception e) {
+                    logger.log(Level.INFO, Utilities.stackTraceToString(e));
                     String message = "Error assigning atom types.";
                     logger.log(Level.SEVERE, message, e);
                 }
@@ -2568,6 +2572,7 @@ public final class PDBFilter extends SystemFilter {
                     Atom H2 = buildHydrogen(wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002);
                     H2.setHetero(true);
                 } catch (Exception e) {
+                    logger.log(Level.INFO, Utilities.stackTraceToString(e));
                     String message = "Error assigning atom types to a water.";
                     logger.log(Level.SEVERE, message, e);
                 }

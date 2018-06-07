@@ -38,19 +38,25 @@
 package ffx.potential.bonded;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.potential.bonded.BondedUtils.intxyz;
 import static java.lang.String.format;
 
+import ffx.numerics.VectorMath;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
+import org.apache.commons.math3.util.FastMath;
+
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
 import static ffx.potential.bonded.BondedUtils.buildHydrogen;
@@ -82,6 +88,131 @@ public class NucleicAcidUtils {
         naAtomSubs.put("H2\'1", "H2\'");
         naAtomSubs.put("H2\'2", "H2\'\'");
         newNucleicAcidAtomNames = Collections.unmodifiableMap(naAtomSubs);
+    }
+
+    /**
+     * Intended for 5'-terminal phosphate caps listed as their own residue: find a given atom name in the next residue.
+     * @param residue Current residue.
+     * @param nextResidue Next residue to search in.
+     * @param atomName Atom name to look for.
+     * @return The requested atom.
+     */
+    private static Atom getNextResAtom(Residue residue, Residue nextResidue, String atomName) {
+        if (nextResidue == null) {
+            throw new IllegalArgumentException(String.format(" Residue %s: No subsequent residue to find atom %s in!", residue, atomName));
+        }
+        List<Atom> nrAtoms = nextResidue.getAtomList();
+        for (Atom atom : nrAtoms) {
+            if (atom.getName().equalsIgnoreCase(atomName)) {
+                return atom;
+            }
+        }
+        throw new IllegalArgumentException(String.format(" Residue %s: Subsequent residue %s did not contain an atom %s", residue, nextResidue, atomName));
+    }
+
+    private static void buildOP3(Residue residue, Atom phosphate, int aType, ForceField forceField, ArrayList<Bond> bondList, Residue nextResidue) throws MissingHeavyAtomException {
+        List<Atom> resAts = residue.getAtomList();
+
+        Atom P = null;
+        Atom OP1 = null;
+        Atom OP2 = null;
+        Atom O5s = null;
+        Atom C5s = null;
+
+        boolean foundOP3 = false;
+
+        // Label for a break statement: OP3 causes a break from a switch to the surrounding for loop.
+        ATLOOP: for (Atom at : resAts) {
+            String atName = at.getName().toUpperCase();
+            switch (atName) {
+                case "OP3": {
+                    buildHeavy(residue, "OP3", phosphate, 1248, forceField, bondList);
+                    foundOP3 = true;
+                    break ATLOOP;
+                }
+                case "OP1": {
+                    OP1 = at;
+                    break;
+                }
+                case "OP2": {
+                    OP2 = at;
+                    break;
+                }
+                case "P": {
+                    P = at;
+                    break;
+                }
+                case "O5\'": {
+                    O5s = at;
+                    break;
+                }
+                case "C5\'": {
+                    C5s = at;
+                    break;
+                }
+            }
+        }
+
+        if (!foundOP3) {
+            logger.info(String.format(" EXPERIMENTAL: OP3 of residue %s not found, being rebuilt based on ideal geometry", residue));
+            if (P == null || OP1 == null || OP2 == null) {
+                throw new IllegalArgumentException(String.format(" Attempted to build OP3 for residue %s, but one of P, OP1, OP2, O5\', or C5\' were null", residue));
+            }
+            if (O5s == null) {
+                logger.fine(" Attempting to find O5\' of subsequent residue");
+                O5s = getNextResAtom(residue, nextResidue, "O5\'");
+            }
+            if (C5s == null) {
+                logger.fine(" Attempting to find C5\' of subsequent residue");
+                O5s = getNextResAtom(residue, nextResidue, "C5\'");
+            }
+
+            // Borrow the P-OP1 distance.
+            double[] xyzOP1 = new double[3];
+            double[] xyzP = new double[3];
+            xyzOP1 = OP1.getXYZ(xyzOP1);
+            xyzP = P.getXYZ(xyzP);
+            double distance = VectorMath.dist(xyzP, xyzOP1);
+
+            // Borrow the O5'-P-OP1 angle.
+            double[] xyzO5s = new double[3];
+            xyzO5s = O5s.getXYZ(xyzO5s);
+            double angle = FastMath.toDegrees(VectorMath.bondAngle(xyzO5s, xyzP, xyzOP1));
+
+            // Borrow the C5'-O5'-P-OP1 dihedral (which will have +120 or +240 degrees added on).
+            double[] xyzC5s = new double[3];
+            xyzC5s = C5s.getXYZ(xyzC5s);
+            double dihedralOP1 = FastMath.toDegrees(VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzOP1));
+
+            Atom OP3 = buildHydrogen(residue, "OP3", P, distance, O5s, angle, C5s, dihedralOP1 + 120, 0, aType, forceField, bondList);
+
+            // Measure OP3-OP2 distance for test dihedral + 120 degrees.
+            double[] xyzOP2 = new double[3];
+            xyzOP2 = OP2.getXYZ(xyzOP2);
+            double[] xyzChiral1 = new double[3];
+            xyzChiral1 = OP3.getXYZ(xyzChiral1);
+            double distChiral1 = VectorMath.dist(xyzChiral1, xyzOP2);
+
+            // Measure OP3-OP2 distance for test dihedral + 240 degrees.
+            //intxyz(OP3, P, pOP1, OP1, op1Pop2, O5s, 109.4, 1);
+            intxyz(OP3, P, distance, O5s, angle, C5s, dihedralOP1 + 240, 0);
+            double[] xyzChiral2 = new double[3];
+            xyzChiral2 = OP3.getXYZ(xyzChiral2);
+            double distChiral2 = VectorMath.dist(xyzChiral2, xyzOP2);
+
+            logger.fine(String.format(" Bond: %10.5f Angle: %10.5f Dihedral: %10.5f", distance, angle, dihedralOP1));
+            logger.fine(String.format(" OP2 position: %s", Arrays.toString(xyzOP2)));
+            logger.fine(String.format(" Position 1: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral1[0], xyzChiral1[1], xyzChiral1[2], distChiral1));
+            logger.fine(String.format(" Position 2: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral2[0], xyzChiral2[1], xyzChiral2[2], distChiral2));
+            if (distChiral1 > distChiral2) {
+                logger.fine(" Picked dihedral +120");
+                OP3.setXYZ(xyzChiral1);
+            } else {
+                logger.fine(" Picked dihedral +240");
+                OP3.setXYZ(xyzChiral2);
+            }
+        }
+        //buildHeavy(residue, "OP3", phosphate, 1248, forceField, bondList);
     }
 
     /**
@@ -207,11 +338,17 @@ public class NucleicAcidUtils {
              * Set a position flag.
              */
             Residue.ResiduePosition position = MIDDLE_RESIDUE;
+            boolean lastRes = false;
             if (residueNumber == 0) {
                 position = FIRST_RESIDUE;
-            } else if (residueNumber == numberOfResidues - 1) {
-                position = LAST_RESIDUE;
             }
+            if (residueNumber == numberOfResidues - 1) {
+                lastRes = true;
+                if (position != FIRST_RESIDUE) {
+                    position = LAST_RESIDUE;
+                }
+            }
+
             /**
              * Build the phosphate atoms of the current residue.
              */
@@ -226,17 +363,18 @@ public class NucleicAcidUtils {
                  */
                 phosphate = (Atom) residue.getAtomNode("P");
                 if (phosphate != null) {
+                    Residue nextRes = lastRes ? null : residues.get(residueNumber + 1);
                     if (isDNA) {
                         phosphate = buildHeavy(residue, "P", null, 1247, forceField, bondList);
                         buildHeavy(residue, "OP1", phosphate, 1248, forceField, bondList);
                         buildHeavy(residue, "OP2", phosphate, 1248, forceField, bondList);
-                        buildHeavy(residue, "OP3", phosphate, 1248, forceField, bondList);
+                        buildOP3(residue, phosphate, 1248, forceField, bondList, nextRes);
                         sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1246, forceField, bondList);
                     } else {
                         phosphate = buildHeavy(residue, "P", null, 1235, forceField, bondList);
                         buildHeavy(residue, "OP1", phosphate, 1236, forceField, bondList);
                         buildHeavy(residue, "OP2", phosphate, 1236, forceField, bondList);
-                        buildHeavy(residue, "OP3", phosphate, 1236, forceField, bondList);
+                        buildOP3(residue, phosphate, 1236, forceField, bondList, nextRes);
                         sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1234, forceField, bondList);
                     }
                 } else if (isDNA) {
