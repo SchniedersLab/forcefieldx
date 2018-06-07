@@ -2492,8 +2492,16 @@ public final class PDBFilter extends SystemFilter {
                 if (isNucleicAcid) {
                     try {
                         logger.info(format(" Nucleic acid chain %s", polymer.getName()));
-                        assignNucleicAcidAtomTypes(residues, forceField, bondList);
+                        logger.info(String.format(" EXPERIMENTAL: Finding chain breaks for possible nucleic acid chain %s", polymer.getName()));
+                        double dist = properties.getDouble("chainbreak", 4.0);
+                        // Detect main chain breaks!
+                        List<List<Residue>> subChains = findChainBreaks(residues, dist);
+
+                        for (List<Residue> subChain : subChains) {
+                            assignNucleicAcidAtomTypes(subChain, forceField, bondList);
+                        }
                     } catch (MissingHeavyAtomException | MissingAtomTypeException e) {
+                        e.printStackTrace();
                         logger.severe(e.toString());
                     }
                 }
@@ -2824,14 +2832,38 @@ public final class PDBFilter extends SystemFilter {
     private List<List<Residue>> findChainBreaks(List<Residue> residues, double cutoff) {
         List<List<Residue>> subChains = new ArrayList<List<Residue>>();
 
+        /**
+         * Chain-start atom: N (amino)/O5' (nucleic)
+         * Chain-end atom:   C (amino)/O3' (nucleic)
+         */
+        Residue.ResidueType rType = residues.get(0).getResidueType();
+        String startAtName;
+        String endAtName;
+        switch (rType) {
+            case AA:
+                startAtName = "N";
+                endAtName =   "C";
+                break;
+            case NA:
+                startAtName = "O5\'";
+                endAtName =   "O3\'";
+                break;
+            case UNK:
+            default:
+                logger.fine(" Not attempting to find chain breaks for chain with residue " + residues.get(0).toString());
+                List<List<Residue>> retList = new ArrayList<>();
+                retList.add(residues);
+                return retList;
+        }
+
         List<Residue> subChain = null;
         Residue previousResidue = null;
-        Atom pC = null;
+        Atom priorEndAtom = null;
         StringBuilder sb = new StringBuilder(" Chain Breaks:");
 
         for (Residue residue : residues) {
             List<Atom> resAtoms = residue.getAtomList();
-            if (pC == null) {
+            if (priorEndAtom == null) {
                 /**
                  * Initialization.
                  */
@@ -2840,16 +2872,16 @@ public final class PDBFilter extends SystemFilter {
                 subChains.add(subChain);
             } else {
                 /**
-                 * Find the Nitrogen of the current residue.
+                 * Find the start atom of the current residue.
                  */
-                Atom N = null;
+                Atom startAtom = null;
                 for (Atom a : resAtoms) {
-                    if (a.getName().equalsIgnoreCase("N")) {
-                        N = a;
+                    if (a.getName().equalsIgnoreCase(startAtName)) {
+                        startAtom = a;
                         break;
                     }
                 }
-                if (N == null) {
+                if (startAtom == null) {
                     subChain.add(residue);
                     continue;
                 }
@@ -2857,7 +2889,7 @@ public final class PDBFilter extends SystemFilter {
                  * Compute the distance between the previous carbonyl carbon and
                  * the current nitrogen.
                  */
-                double r = VectorMath.dist(pC.getXYZ(null), N.getXYZ(null));
+                double r = VectorMath.dist(priorEndAtom.getXYZ(null), startAtom.getXYZ(null));
                 if (r > cutoff) {
                     /**
                      * Start a new chain.
@@ -2881,8 +2913,8 @@ public final class PDBFilter extends SystemFilter {
              * Save the carbonyl carbon.
              */
             for (Atom a : resAtoms) {
-                if (a.getName().equalsIgnoreCase("C")) {
-                    pC = a;
+                if (a.getName().equalsIgnoreCase(endAtName)) {
+                    priorEndAtom = a;
                     break;
                 }
             }
