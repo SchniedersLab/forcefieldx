@@ -110,14 +110,26 @@ public class NucleicAcidUtils {
         throw new IllegalArgumentException(String.format(" Residue %s: Subsequent residue %s did not contain an atom %s", residue, nextResidue, atomName));
     }
 
-    private static void buildOP3(Residue residue, Atom phosphate, int aType, ForceField forceField, ArrayList<Bond> bondList, Residue nextResidue) throws MissingHeavyAtomException {
+    /**
+     * Builds a missing OP3 atom. Can be applied either to 5'-terminal or 3'-terminal phosphates.
+     *
+     * @param residue Residue to build an OP3 for.
+     * @param phosphate The phosphate atom.
+     * @param aType The atom type to use.
+     * @param forceField Force field in use.
+     * @param bondList List of bonds.
+     * @param adjacentResidue A Residue either 5' or 3' of residue.
+     * @param at5prime If this residue is at the 5' terminus (vs. 3').
+     * @throws MissingHeavyAtomException
+     */
+    private static void buildOP3(Residue residue, Atom phosphate, int aType, ForceField forceField, ArrayList<Bond> bondList, Residue adjacentResidue, boolean at5prime) throws MissingHeavyAtomException {
         List<Atom> resAts = residue.getAtomList();
 
         Atom P = null;
         Atom OP1 = null;
         Atom OP2 = null;
-        Atom O5s = null;
-        Atom C5s = null;
+        Atom riboOxygen = null;
+        Atom riboCarbon = null;
 
         boolean foundOP3 = false;
 
@@ -143,13 +155,23 @@ public class NucleicAcidUtils {
                     break;
                 }
                 case "O5\'": {
-                    O5s = at;
+                    riboOxygen = at;
                     break;
                 }
                 case "C5\'": {
-                    C5s = at;
+                    riboCarbon = at;
                     break;
                 }
+            }
+        }
+
+        if (!at5prime) {
+            riboOxygen = (Atom) adjacentResidue.getAtomNode("O3\'");
+            riboCarbon = (Atom) adjacentResidue.getAtomNode("C3\'");
+            if (riboCarbon == null || riboOxygen == null) {
+                logger.severe(String.format(" Could not find either O3\' " +
+                        "or C3\' in residue %s prior to presumed 3\' " +
+                        "phosphate cap %s", adjacentResidue, residue));
             }
         }
 
@@ -158,13 +180,16 @@ public class NucleicAcidUtils {
             if (P == null || OP1 == null || OP2 == null) {
                 throw new IllegalArgumentException(String.format(" Attempted to build OP3 for residue %s, but one of P, OP1, OP2, O5\', or C5\' were null", residue));
             }
-            if (O5s == null) {
-                logger.fine(" Attempting to find O5\' of subsequent residue");
-                O5s = getNextResAtom(residue, nextResidue, "O5\'");
-            }
-            if (C5s == null) {
-                logger.fine(" Attempting to find C5\' of subsequent residue");
-                O5s = getNextResAtom(residue, nextResidue, "C5\'");
+
+            if (at5prime) {
+                if (riboOxygen == null) {
+                    logger.fine(" Attempting to find O5\' of subsequent residue");
+                    riboOxygen = getNextResAtom(residue, adjacentResidue, "O5\'");
+                }
+                if (riboCarbon == null) {
+                    logger.fine(" Attempting to find C5\' of subsequent residue");
+                    riboCarbon = getNextResAtom(residue, adjacentResidue, "C5\'");
+                }
             }
 
             // Borrow the P-OP1 distance.
@@ -175,16 +200,16 @@ public class NucleicAcidUtils {
             double distance = VectorMath.dist(xyzP, xyzOP1);
 
             // Borrow the O5'-P-OP1 angle.
-            double[] xyzO5s = new double[3];
-            xyzO5s = O5s.getXYZ(xyzO5s);
-            double angle = FastMath.toDegrees(VectorMath.bondAngle(xyzO5s, xyzP, xyzOP1));
+            double[] xyzRiboO = new double[3];
+            xyzRiboO = riboOxygen.getXYZ(xyzRiboO);
+            double angle = FastMath.toDegrees(VectorMath.bondAngle(xyzRiboO, xyzP, xyzOP1));
 
             // Borrow the C5'-O5'-P-OP1 dihedral (which will have +120 or +240 degrees added on).
-            double[] xyzC5s = new double[3];
-            xyzC5s = C5s.getXYZ(xyzC5s);
-            double dihedralOP1 = FastMath.toDegrees(VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzOP1));
+            double[] xyzRiboC = new double[3];
+            xyzRiboC = riboCarbon.getXYZ(xyzRiboC);
+            double dihedralOP1 = FastMath.toDegrees(VectorMath.dihedralAngle(xyzRiboC, xyzRiboO, xyzP, xyzOP1));
 
-            Atom OP3 = buildHydrogen(residue, "OP3", P, distance, O5s, angle, C5s, dihedralOP1 + 120, 0, aType, forceField, bondList);
+            Atom OP3 = buildHydrogen(residue, "OP3", P, distance, riboOxygen, angle, riboCarbon, dihedralOP1 + 120, 0, aType, forceField, bondList);
 
             // Measure OP3-OP2 distance for test dihedral + 120 degrees.
             double[] xyzOP2 = new double[3];
@@ -195,7 +220,7 @@ public class NucleicAcidUtils {
 
             // Measure OP3-OP2 distance for test dihedral + 240 degrees.
             //intxyz(OP3, P, pOP1, OP1, op1Pop2, O5s, 109.4, 1);
-            intxyz(OP3, P, distance, O5s, angle, C5s, dihedralOP1 + 240, 0);
+            intxyz(OP3, P, distance, riboOxygen, angle, riboCarbon, dihedralOP1 + 240, 0);
             double[] xyzChiral2 = new double[3];
             xyzChiral2 = OP3.getXYZ(xyzChiral2);
             double distChiral2 = VectorMath.dist(xyzChiral2, xyzOP2);
@@ -212,7 +237,6 @@ public class NucleicAcidUtils {
                 OP3.setXYZ(xyzChiral2);
             }
         }
-        //buildHeavy(residue, "OP3", phosphate, 1248, forceField, bondList);
     }
 
     /**
@@ -268,11 +292,30 @@ public class NucleicAcidUtils {
             }
 
             /**
+             * Set a position flag.
+             */
+            Residue.ResiduePosition position = MIDDLE_RESIDUE;
+            boolean lastRes = false;
+            if (residueNumber == 0) {
+                position = FIRST_RESIDUE;
+            }
+            if (residueNumber == numberOfResidues - 1) {
+                lastRes = true;
+                if (position != FIRST_RESIDUE) {
+                    position = LAST_RESIDUE;
+                }
+            }
+
+            // Check if this is a lone 3'-terminal phosphate cap; if so, will skip a lot of logic.
+            boolean threePrimeCap = (position == LAST_RESIDUE && natoms < 7);
+            /**
              * Check if the sugar is deoxyribose and change the residue name if
              * necessary.
              */
             boolean isDNA = false;
-            Atom sugarO2 = (Atom) residue.getAtomNode("O2\'");
+            Residue resToCheck = threePrimeCap ? residues.get(residueNumber - 1) : residue;
+            Atom sugarO2 = (Atom) resToCheck.getAtomNode("O2\'");
+
             if (sugarO2 == null) {
                 /**
                  * Assume deoxyribose (DNA) since there is an O2* atom.
@@ -335,135 +378,157 @@ public class NucleicAcidUtils {
             }
 
             /**
-             * Set a position flag.
-             */
-            Residue.ResiduePosition position = MIDDLE_RESIDUE;
-            boolean lastRes = false;
-            if (residueNumber == 0) {
-                position = FIRST_RESIDUE;
-            }
-            if (residueNumber == numberOfResidues - 1) {
-                lastRes = true;
-                if (position != FIRST_RESIDUE) {
-                    position = LAST_RESIDUE;
-                }
-            }
-
-            /**
              * Build the phosphate atoms of the current residue.
              */
             Atom phosphate = null;
             Atom sugarO5 = null;
-            if (position == FIRST_RESIDUE) {
-                /**
-                 * The 5' O5' oxygen of the nucleic acid is generally terminated
-                 * by 1.) A phosphate group PO3 (-3). 2.) A hydrogen.
-                 *
-                 * If the base has phosphate atom we will assume a PO3 group.
-                 */
-                phosphate = (Atom) residue.getAtomNode("P");
-                if (phosphate != null) {
-                    Residue nextRes = lastRes ? null : residues.get(residueNumber + 1);
-                    if (isDNA) {
-                        phosphate = buildHeavy(residue, "P", null, 1247, forceField, bondList);
-                        buildHeavy(residue, "OP1", phosphate, 1248, forceField, bondList);
-                        buildHeavy(residue, "OP2", phosphate, 1248, forceField, bondList);
-                        buildOP3(residue, phosphate, 1248, forceField, bondList, nextRes);
-                        sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1246, forceField, bondList);
-                    } else {
-                        phosphate = buildHeavy(residue, "P", null, 1235, forceField, bondList);
-                        buildHeavy(residue, "OP1", phosphate, 1236, forceField, bondList);
-                        buildHeavy(residue, "OP2", phosphate, 1236, forceField, bondList);
-                        buildOP3(residue, phosphate, 1236, forceField, bondList, nextRes);
-                        sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1234, forceField, bondList);
-                    }
-                } else if (isDNA) {
-                    sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1244, forceField, bondList);
-                } else {
-                    sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1232, forceField, bondList);
-                }
-            } else {
-                phosphate = buildHeavy(residue, "P", pSugarO3, NA_P[naNumber], forceField, bondList);
-                buildHeavy(residue, "OP1", phosphate, NA_OP[naNumber], forceField, bondList);
-                buildHeavy(residue, "OP2", phosphate, NA_OP[naNumber], forceField, bondList);
-                sugarO5 = buildHeavy(residue, "O5\'", phosphate, NA_O5[naNumber], forceField, bondList);
-            }
-            /**
-             * Build the ribose sugar atoms of the current base.
-             */
-            Atom sugarC5 = buildHeavy(residue, "C5\'", sugarO5, NA_C5[naNumber], forceField, bondList);
-            Atom sugarC4 = buildHeavy(residue, "C4\'", sugarC5, NA_C4[naNumber], forceField, bondList);
-            Atom sugarO4 = buildHeavy(residue, "O4\'", sugarC4, NA_O4[naNumber], forceField, bondList);
-            Atom sugarC1 = buildHeavy(residue, "C1\'", sugarO4, NA_C1[naNumber], forceField, bondList);
-            Atom sugarC3 = buildHeavy(residue, "C3\'", sugarC4, NA_C3[naNumber], forceField, bondList);
-            Atom sugarC2 = buildHeavy(residue, "C2\'", sugarC3, NA_C2[naNumber], forceField, bondList);
-            buildBond(sugarC2, sugarC1, forceField, bondList);
             Atom sugarO3 = null;
-            if (position == LAST_RESIDUE || numberOfResidues == 1) {
+
+            if (threePrimeCap) {
+                logger.info(String.format(" EXPERIMENTAL: Adding 3\'-terminal phosphate cap %s", residue));
+                Residue priorResidue = residues.get(residueNumber - 1);
+                int phosType = isDNA ? 1252 : 1240;
+                int oxygenType = isDNA ? 1253 : 1241;
+
+                phosphate = buildHeavy(residue, "P", pSugarO3, phosType, forceField, bondList);
+                buildHeavy(residue, "OP1", phosphate, oxygenType, forceField, bondList);
+                buildHeavy(residue, "OP2", phosphate, oxygenType, forceField, bondList);
+                switch (natoms) {
+                    case 3: {
+                        buildOP3(residue, phosphate, oxygenType, forceField, bondList, priorResidue, false);
+                    }
+                    break;
+                    case 4: {
+                        MSNode bogusO5s = residue.getAtomNode("O5\'");
+                        if (bogusO5s != null) {
+                            bogusO5s.setName("OP3");
+                        }
+                        buildHeavy(residue, "OP3", phosphate, oxygenType, forceField, bondList);
+                    }
+                    break;
+                    case 5:
+                    case 6: {
+                        logger.severe(" Currently, FFX does not support partially-protonated " +
+                                "3\'-terminal phosphate caps from PDB files!");
+                    }
+                }
+            } else {
+                if (position == FIRST_RESIDUE) {
+                    /**
+                     * The 5' O5' oxygen of the nucleic acid is generally terminated
+                     * by 1.) A phosphate group PO3 (-3). 2.) A hydrogen.
+                     *
+                     * If the base has phosphate atom we will assume a PO3 group.
+                     */
+                    phosphate = (Atom) residue.getAtomNode("P");
+                    if (phosphate != null) {
+                        Residue nextRes = lastRes ? null : residues.get(residueNumber + 1);
+                        if (isDNA) {
+                            phosphate = buildHeavy(residue, "P", null, 1247, forceField, bondList);
+                            buildHeavy(residue, "OP1", phosphate, 1248, forceField, bondList);
+                            buildHeavy(residue, "OP2", phosphate, 1248, forceField, bondList);
+                            buildOP3(residue, phosphate, 1248, forceField, bondList, nextRes, true);
+                            sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1246, forceField, bondList);
+                        } else {
+                            phosphate = buildHeavy(residue, "P", null, 1235, forceField, bondList);
+                            buildHeavy(residue, "OP1", phosphate, 1236, forceField, bondList);
+                            buildHeavy(residue, "OP2", phosphate, 1236, forceField, bondList);
+                            buildOP3(residue, phosphate, 1236, forceField, bondList, nextRes, true);
+                            sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1234, forceField, bondList);
+                        }
+                    } else if (isDNA) {
+                        sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1244, forceField, bondList);
+                    } else {
+                        sugarO5 = buildHeavy(residue, "O5\'", phosphate, 1232, forceField, bondList);
+                    }
+                } else {
+                    phosphate = buildHeavy(residue, "P", pSugarO3, NA_P[naNumber], forceField, bondList);
+                    buildHeavy(residue, "OP1", phosphate, NA_OP[naNumber], forceField, bondList);
+                    buildHeavy(residue, "OP2", phosphate, NA_OP[naNumber], forceField, bondList);
+                    sugarO5 = buildHeavy(residue, "O5\'", phosphate, NA_O5[naNumber], forceField, bondList);
+                }
+                /**
+                 * Build the ribose sugar atoms of the current base.
+                 */
+                Atom sugarC5 = buildHeavy(residue, "C5\'", sugarO5, NA_C5[naNumber], forceField, bondList);
+                Atom sugarC4 = buildHeavy(residue, "C4\'", sugarC5, NA_C4[naNumber], forceField, bondList);
+                Atom sugarO4 = buildHeavy(residue, "O4\'", sugarC4, NA_O4[naNumber], forceField, bondList);
+                Atom sugarC1 = buildHeavy(residue, "C1\'", sugarO4, NA_C1[naNumber], forceField, bondList);
+                Atom sugarC3 = buildHeavy(residue, "C3\'", sugarC4, NA_C3[naNumber], forceField, bondList);
+                Atom sugarC2 = buildHeavy(residue, "C2\'", sugarC3, NA_C2[naNumber], forceField, bondList);
+                buildBond(sugarC2, sugarC1, forceField, bondList);
+                if (position == LAST_RESIDUE || numberOfResidues == 1) {
+                    if (isDNA) {
+                        sugarO3 = buildHeavy(residue, "O3\'", sugarC3, 1249, forceField, bondList);
+                    } else {
+                        sugarO3 = buildHeavy(residue, "O3\'", sugarC3, 1237, forceField, bondList);
+                    }
+                } else {
+                    boolean nextResIsCap = (residues.get(residueNumber + 1).getAtomList().size() < 7);
+                    int o3Type = NA_O3[naNumber];
+                    if (nextResIsCap) {
+                        logger.fine(" Applying a 3\'-terminal-phos-cap O3\' atom type to residue " + residue.toString());
+                        o3Type = isDNA ? 1251 : 1239;
+                    }
+                    sugarO3 = buildHeavy(residue, "O3\'", sugarC3, o3Type, forceField, bondList);
+                }
+                if (!isDNA) {
+                    sugarO2 = buildHeavy(residue, "O2\'", sugarC2, NA_O2[naNumber], forceField, bondList);
+                }
+                /**
+                 * Build the backbone hydrogen atoms.
+                 */
+                if (position == FIRST_RESIDUE && phosphate == null) {
+                    buildHydrogen(residue, "HO5\'", sugarO5, 1.00e0, sugarC5, 109.5e0,
+                            sugarC4, 180.0e0, 0, NA_HO5T[naNumber], forceField, bondList);
+                }
+                buildHydrogen(residue, "H5\'", sugarC5, 1.09e0, sugarO5, 109.5e0,
+                        sugarC4, 109.5e0, 1, NA_H51[naNumber], forceField, bondList);
+                buildHydrogen(residue, "H5\'\'", sugarC5, 1.09e0, sugarO5, 109.5e0,
+                        sugarC4, 109.5e0, -1, NA_H52[naNumber], forceField, bondList);
+                buildHydrogen(residue, "H4\'", sugarC4, 1.09e0, sugarC5, 109.5e0,
+                        sugarC3, 109.5e0, -1, NA_H4[naNumber], forceField, bondList);
+                buildHydrogen(residue, "H3\'", sugarC3, 1.09e0, sugarC4, 109.5e0,
+                        sugarC2, 109.5e0, -1, NA_H3[naNumber], forceField, bondList);
                 if (isDNA) {
-                    sugarO3 = buildHeavy(residue, "O3\'", sugarC3, 1249, forceField, bondList);
+                    buildHydrogen(residue, "H2\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
+                            sugarC1, 109.5e0, -1, NA_H21[naNumber], forceField, bondList);
+                    buildHydrogen(residue, "H2\'\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
+                            sugarC1, 109.5e0, 1, NA_H22[naNumber], forceField, bondList);
                 } else {
-                    sugarO3 = buildHeavy(residue, "O3\'", sugarC3, 1237, forceField, bondList);
+                    buildHydrogen(residue, "H2\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
+                            sugarC1, 109.5e0, -1, NA_H21[naNumber], forceField, bondList);
+                    // Add the NA_O2' Methyl for OMC and OMG
+                    // Note: may be completely out-of-date with the current Chemical Component Dictionary.
+                    if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
+                        Atom CM2 = buildHeavy(residue, "CM2", sugarO2, 1427, forceField, bondList);
+                        Atom HM21 = buildHydrogen(residue, "HM21", CM2, 1.08e0, sugarO2, 109.5e0,
+                                sugarC2, 0.0e0, 0, 1428, forceField, bondList);
+                        buildHydrogen(residue, "HM22", CM2, 1.08e0, sugarO2, 109.5e0,
+                                HM21, 109.5e0, 1, 1429, forceField, bondList);
+                        buildHydrogen(residue, "HM23", CM2, 1.08e0, sugarO2, 109.5e0,
+                                HM21, 109.5e0, -1, 1430, forceField, bondList);
+                    } else {
+                        buildHydrogen(residue, "HO2\'", sugarO2, 1.00e0, sugarC2, 109.5e0,
+                                sugarC3, 180.0e0, 0, NA_H22[naNumber], forceField, bondList);
+                    }
                 }
-            } else {
-                sugarO3 = buildHeavy(residue, "O3\'", sugarC3, NA_O3[naNumber], forceField, bondList);
-            }
-            if (!isDNA) {
-                sugarO2 = buildHeavy(residue, "O2\'", sugarC2, NA_O2[naNumber], forceField, bondList);
-            }
-            /**
-             * Build the backbone hydrogen atoms.
-             */
-            if (position == FIRST_RESIDUE && phosphate == null) {
-                buildHydrogen(residue, "HO5\'", sugarO5, 1.00e0, sugarC5, 109.5e0,
-                        sugarC4, 180.0e0, 0, NA_HO5T[naNumber], forceField, bondList);
-            }
-            buildHydrogen(residue, "H5\'", sugarC5, 1.09e0, sugarO5, 109.5e0,
-                    sugarC4, 109.5e0, 1, NA_H51[naNumber], forceField, bondList);
-            buildHydrogen(residue, "H5\'\'", sugarC5, 1.09e0, sugarO5, 109.5e0,
-                    sugarC4, 109.5e0, -1, NA_H52[naNumber], forceField, bondList);
-            buildHydrogen(residue, "H4\'", sugarC4, 1.09e0, sugarC5, 109.5e0,
-                    sugarC3, 109.5e0, -1, NA_H4[naNumber], forceField, bondList);
-            buildHydrogen(residue, "H3\'", sugarC3, 1.09e0, sugarC4, 109.5e0,
-                    sugarC2, 109.5e0, -1, NA_H3[naNumber], forceField, bondList);
-            if (isDNA) {
-                buildHydrogen(residue, "H2\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
-                        sugarC1, 109.5e0, -1, NA_H21[naNumber], forceField, bondList);
-                buildHydrogen(residue, "H2\'\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
-                        sugarC1, 109.5e0, 1, NA_H22[naNumber], forceField, bondList);
-            } else {
-                buildHydrogen(residue, "H2\'", sugarC2, 1.09e0, sugarC3, 109.5e0,
-                        sugarC1, 109.5e0, -1, NA_H21[naNumber], forceField, bondList);
-                // Add the NA_O2' Methyl for OMC and OMG
-                // Note: may be completely out-of-date with the current Chemical Component Dictionary.
-                if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
-                    Atom CM2 = buildHeavy(residue, "CM2", sugarO2, 1427, forceField, bondList);
-                    Atom HM21 = buildHydrogen(residue, "HM21", CM2, 1.08e0, sugarO2, 109.5e0,
-                            sugarC2, 0.0e0, 0, 1428, forceField, bondList);
-                    buildHydrogen(residue, "HM22", CM2, 1.08e0, sugarO2, 109.5e0,
-                            HM21, 109.5e0, 1, 1429, forceField, bondList);
-                    buildHydrogen(residue, "HM23", CM2, 1.08e0, sugarO2, 109.5e0,
-                            HM21, 109.5e0, -1, 1430, forceField, bondList);
-                } else {
-                    buildHydrogen(residue, "HO2\'", sugarO2, 1.00e0, sugarC2, 109.5e0,
-                            sugarC3, 180.0e0, 0, NA_H22[naNumber], forceField, bondList);
+                buildHydrogen(residue, "H1\'", sugarC1, 1.09e0, sugarO4, 109.5e0,
+                        sugarC2, 109.5e0, -1, NA_H1[naNumber], forceField, bondList);
+                if (position == LAST_RESIDUE || numberOfResidues == 1) {
+                    buildHydrogen(residue, "HO3\'", sugarO3, 1.00e0, sugarC3, 109.5e0,
+                            sugarC4, 180.0e0, 0, NA_HO3T[naNumber], forceField, bondList);
+                    // Else, if it is terminated by a 3' phosphate cap:
+                    // Will need to see how PDB would label a 3' phosphate cap.
                 }
-            }
-            buildHydrogen(residue, "H1\'", sugarC1, 1.09e0, sugarO4, 109.5e0,
-                    sugarC2, 109.5e0, -1, NA_H1[naNumber], forceField, bondList);
-            if (position == LAST_RESIDUE || numberOfResidues == 1) {
-                buildHydrogen(residue, "HO3\'", sugarO3, 1.00e0, sugarC3, 109.5e0,
-                        sugarC4, 180.0e0, 0, NA_HO3T[naNumber], forceField, bondList);
-                // Else, if it is terminated by a 3' phosphate cap:
-                // Will need to see how PDB would label a 3' phosphate cap.
-            }
-            /**
-             * Build the nucleic acid base.
-             */
-            try {
-                assignNucleicAcidBaseAtomTypes(nucleicAcid, residue, sugarC1, sugarO4, sugarC2, forceField, bondList);
-            } catch (MissingHeavyAtomException missingHeavyAtomException) {
-                throw missingHeavyAtomException;
+                /**
+                 * Build the nucleic acid base.
+                 */
+                try {
+                    assignNucleicAcidBaseAtomTypes(nucleicAcid, residue, sugarC1, sugarO4, sugarC2, forceField, bondList);
+                } catch (MissingHeavyAtomException missingHeavyAtomException) {
+                    throw missingHeavyAtomException;
+                }
             }
 
             /**
