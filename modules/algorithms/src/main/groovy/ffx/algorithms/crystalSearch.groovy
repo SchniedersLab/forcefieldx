@@ -42,6 +42,8 @@
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.algorithms.Minimize
 import ffx.crystal.Crystal
 import ffx.potential.ForceFieldEnergy

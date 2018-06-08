@@ -36,6 +36,9 @@
  * exception statement from your version.
  */
 
+
+import groovy.cli.picocli.CliBuilder
+
 import ffx.xray.parsers.MTZFilter
 
 // Create the command line parser.

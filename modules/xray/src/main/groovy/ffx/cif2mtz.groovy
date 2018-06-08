@@ -38,6 +38,8 @@
 
 import org.apache.commons.io.FilenameUtils
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.crystal.Crystal
 import ffx.crystal.ReflectionList
 import ffx.crystal.Resolution

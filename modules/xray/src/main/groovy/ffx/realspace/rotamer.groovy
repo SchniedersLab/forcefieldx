@@ -39,6 +39,8 @@
 // Apache Commons Imports
 import org.apache.commons.io.FilenameUtils
 
+import groovy.cli.picocli.CliBuilder
+
 import edu.rit.pj.Comm
 
 import ffx.algorithms.RotamerOptimization

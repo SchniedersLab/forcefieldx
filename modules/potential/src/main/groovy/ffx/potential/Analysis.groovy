@@ -3,6 +3,7 @@ package ffx.potential
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils

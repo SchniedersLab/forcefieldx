@@ -40,6 +40,8 @@
 
 import org.apache.commons.io.FilenameUtils
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.realspace.RealSpaceData
 import ffx.realspace.RealSpaceFile
 import ffx.xray.RefinementMinimize

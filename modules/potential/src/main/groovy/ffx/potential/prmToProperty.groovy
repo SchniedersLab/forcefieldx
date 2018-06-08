@@ -40,6 +40,8 @@
 
 import org.apache.commons.configuration.CompositeConfiguration
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.ForceFieldFilter
 import ffx.utilities.Keyword

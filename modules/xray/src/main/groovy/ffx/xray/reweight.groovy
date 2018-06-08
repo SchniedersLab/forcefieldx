@@ -38,6 +38,8 @@
 
 package ffx.xray
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.xray.parsers.DiffractionFile
 
 double boltzRestraint = 0.0;

@@ -4,6 +4,7 @@ import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
 
 import edu.rit.pj.Comm
 
@@ -14,7 +15,6 @@ import ffx.potential.bonded.Residue.ResidueType
 import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
-import static ffx.potential.extended.ExtUtils.prop
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.

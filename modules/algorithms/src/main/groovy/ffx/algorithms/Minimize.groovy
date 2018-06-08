@@ -8,6 +8,7 @@ import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
 
 import ffx.numerics.Potential
 import ffx.numerics.PowerSwitch

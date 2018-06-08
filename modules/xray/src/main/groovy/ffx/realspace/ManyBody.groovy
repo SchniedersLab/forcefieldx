@@ -1,29 +1,28 @@
 package realspace
 
+import org.apache.commons.io.FilenameUtils
+
+import groovy.cli.Option
+import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
+
+import edu.rit.pj.Comm
+
 import ffx.algorithms.RotamerOptimization
-import ffx.potential.bonded.Atom
+import ffx.potential.bonded.MultiResidue
+import ffx.potential.bonded.Polymer
+import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Residue.ResidueType
+import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3
+import ffx.potential.bonded.Rotamer
+import ffx.potential.bonded.RotamerLibrary
 import ffx.realspace.RealSpaceData
 import ffx.realspace.RealSpaceFile
 import ffx.xray.CrystalReciprocalSpace
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize
-import ffx.xray.parsers.DiffractionFile;
-import org.apache.commons.io.FilenameUtils;
-
-import groovy.cli.Option;
-import groovy.cli.Unparsed;
-
-import edu.rit.pj.Comm;
-
-import ffx.potential.bonded.MultiResidue;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResidueType;
-import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
-import static ffx.potential.extended.ExtUtils.prop;
+import ffx.xray.parsers.DiffractionFile
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.

@@ -40,6 +40,8 @@ package ffx.utilities
 
 import org.apache.commons.io.FilenameUtils
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Polymer

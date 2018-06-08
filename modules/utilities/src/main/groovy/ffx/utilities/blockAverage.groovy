@@ -38,6 +38,8 @@
 
 package ffx.utilities
 
+import groovy.cli.picocli.CliBuilder
+
 boolean testMode = false;
 Optional<Double> psPerHisto = Optional.empty();
 Optional<Integer> blockSizeStep = Optional.empty();

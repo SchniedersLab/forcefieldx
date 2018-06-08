@@ -41,6 +41,8 @@ import org.apache.commons.io.FilenameUtils
 import org.biojava.bio.structure.Structure
 import org.biojava.bio.structure.io.PDBFileReader
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.algorithms.AlgorithmFunctions
 import ffx.algorithms.AlgorithmUtils
 import ffx.potential.MolecularAssembly

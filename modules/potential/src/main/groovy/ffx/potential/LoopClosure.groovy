@@ -3,6 +3,7 @@ package ffx.potential
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.bonded.Loop
 import ffx.potential.parsers.PDBFilter

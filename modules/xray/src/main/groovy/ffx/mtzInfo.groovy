@@ -37,6 +37,8 @@
  */
 
 // Groovy Imports
+import groovy.cli.picocli.CliBuilder
+
 import ffx.xray.parsers.MTZFilter
 
 // Things below this line normally do not need to be changed.

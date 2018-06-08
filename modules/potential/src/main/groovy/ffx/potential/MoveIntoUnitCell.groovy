@@ -4,6 +4,7 @@ import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
 
 import ffx.crystal.Crystal
 import ffx.potential.bonded.Atom

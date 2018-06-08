@@ -1,10 +1,11 @@
 
-package ffx.potentials
+package ffx.algorithms
 
 import org.apache.commons.configuration.CompositeConfiguration
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
 
 import ffx.algorithms.RotamerOptimization
 import ffx.potential.ForceFieldEnergy

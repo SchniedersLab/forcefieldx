@@ -59,7 +59,6 @@ import java.awt.MenuBar;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.EventObject;
@@ -84,8 +83,8 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.utils.PotentialsFunctions;
-import ffx.utilities.LoggerSevereError;
 
+import groovy.lang.Script;
 import groovy.ui.Console;
 
 /**
@@ -145,7 +144,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         headless = java.awt.GraphicsEnvironment.isHeadless();
         initContext();
         loadPrefs();
-
     }
 
     /**
@@ -288,6 +286,8 @@ public final class ModelingShell extends Console implements AlgorithmListener {
                 frame.setIconImage(icon.getImage());
                 frame.setSize(600, 600);
             } catch (Exception e) {
+                System.out.println(e.toString());
+                e.printStackTrace();
                 logger.warning(e.toString());
             }
         }
@@ -319,7 +319,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             before();
             try {
                 getShell().evaluate(file);
-            } catch (LoggerSevereError ex) {
+            } catch (Exception ex) {
                 logger.log(Level.SEVERE, " Uncaught severe error: FFX shutting down", ex);
             }
             after();
@@ -619,6 +619,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         }
 
         super.appendOutputNl(string, style);
+
         if (EventQueue.isDispatchThread()) {
             scroll();
         } else {

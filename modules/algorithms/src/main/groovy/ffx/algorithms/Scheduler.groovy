@@ -3,6 +3,7 @@ package ffx.algorithms
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder;
 
 /**
  * Run a Parallel Java Job Scheduler on a cluster with multiple nodes.

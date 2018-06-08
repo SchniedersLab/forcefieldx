@@ -36,6 +36,9 @@
  * exception statement from your version.
  */
 
+
+import groovy.cli.picocli.CliBuilder
+
 import ffx.numerics.Potential
 import ffx.xray.CrystalReciprocalSpace.SolventModel
 import ffx.xray.DiffractionData

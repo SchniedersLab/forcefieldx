@@ -45,6 +45,9 @@ import java.awt.GraphicsEnvironment;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -148,6 +151,10 @@ public final class Main extends JFrame {
         Logger ffxLogger = Logger.getLogger("ffx");
         ffxLogger.addHandler(logHandler);
         ffxLogger.setLevel(level);
+
+        // Close the default System.err, then set System.err use to System.out.
+        System.err.close();
+        System.setErr(System.out);
     }
 
     /**

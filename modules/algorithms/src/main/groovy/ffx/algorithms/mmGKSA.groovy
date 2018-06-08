@@ -37,6 +37,8 @@
  * exception statement from your version.
  */
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.algorithms.MMgksa
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom

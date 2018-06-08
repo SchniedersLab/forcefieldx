@@ -41,6 +41,8 @@
 
 import org.apache.commons.io.FilenameUtils
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom

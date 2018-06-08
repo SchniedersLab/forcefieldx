@@ -6,6 +6,7 @@ import static org.apache.commons.math3.util.FastMath.abs
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly

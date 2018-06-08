@@ -38,6 +38,8 @@
 
 package ffx.algorithms
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.potential.parsers.CoordinateFileFilter
 import ffx.potential.parsers.PDBFileFilter
 import static ffx.algorithms.ClusterStructures.ClustAlg.AV_LINK

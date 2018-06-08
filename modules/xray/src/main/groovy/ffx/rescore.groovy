@@ -43,6 +43,8 @@ import java.nio.file.Paths
 
 import org.apache.commons.io.FilenameUtils
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.algorithms.AlgorithmFunctions
 import ffx.algorithms.AlgorithmUtils
 import ffx.potential.parsers.CoordinateFileFilter

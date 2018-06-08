@@ -38,6 +38,8 @@
 
 package ffx.potential
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.potential.parsers.PDBFileFilter
 import ffx.potential.parsers.PDBFileMatcher
 import ffx.potential.parsers.SimplePDBMatcher

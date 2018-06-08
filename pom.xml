@@ -1006,7 +1006,8 @@
         <commons-lang3.version>3.5</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <commons-collections4.version>4.1</commons-collections4.version>
-        <groovy-all.version>2.5.0.1-SNAPSHOT</groovy-all.version>
+        <groovy-all.version>2.5.0.1</groovy-all.version>
+        <picocli.version>3.0.2</picocli.version>
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.6.0</java3d.version>
         <jogamp-fat.version>2.3.2</jogamp-fat.version>
@@ -1036,7 +1037,7 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <version>${groovy-all.version}</version>
-            <type>jar</type>
+            <type>pom</type>
             <scope>compile</scope>
         </dependency>
     </dependencies>

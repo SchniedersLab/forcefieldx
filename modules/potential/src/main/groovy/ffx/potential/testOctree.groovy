@@ -41,6 +41,8 @@ import javax.vecmath.Point3d
 
 import org.apache.commons.io.FilenameUtils
 
+import groovy.cli.picocli.CliBuilder
+
 import ffx.potential.bonded.Atom
 import ffx.potential.nonbonded.Octree
 
