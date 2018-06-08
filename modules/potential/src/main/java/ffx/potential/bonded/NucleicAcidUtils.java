@@ -126,7 +126,7 @@ public class NucleicAcidUtils {
             String atName = at.getName().toUpperCase();
             switch (atName) {
                 case "OP3": {
-                    buildHeavy(residue, "OP3", phosphate, 1248, forceField, bondList);
+                    buildHeavy(residue, "OP3", phosphate, aType, forceField, bondList);
                     foundOP3 = true;
                     break ATLOOP;
                 }
