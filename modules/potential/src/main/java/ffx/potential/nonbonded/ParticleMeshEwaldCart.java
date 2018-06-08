@@ -6159,6 +6159,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 Atom atom = atoms[i];
                 String message = "No multipole could be assigned to atom:\n"
                         + atom + "\nof type:\n" + atom.getAtomType();
+                for (Bond b : atom.getBonds()) {
+                    Atom a2 = b.get1_2(atom);
+                    AtomType aType2 = a2.getAtomType();
+                    logger.info(String.format(" Bonded atom %s type number %d type string %s", a2, aType2.type, aType2));
+                }
                 logger.log(Level.SEVERE, message);
             }
         }
