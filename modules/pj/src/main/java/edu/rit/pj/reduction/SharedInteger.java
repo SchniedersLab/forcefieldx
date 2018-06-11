@@ -113,6 +113,7 @@ public class SharedInteger
      * @param update Updated value.
      * @return True if the update happened, false otherwise.
      */
+    @SuppressWarnings("deprecation")
     public boolean weakCompareAndSet(int expect,
             int update) {
         return myValue.weakCompareAndSet(expect, update);

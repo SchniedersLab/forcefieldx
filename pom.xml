@@ -48,8 +48,8 @@
             <id>fenn</id>
             <name>Timothy D. Fenn</name>
             <email>tim.fenn@gmail.com</email>
-            <organization>Scientist at Boehringer Ingelheim</organization>
-            <organizationUrl>http://www.boehringer-ingelheim.com</organizationUrl>
+            <organization>Associate Director at Prevail Therapeutics</organization>
+            <organizationUrl>http://www.prevailtherapeutics.com</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
             </roles>
@@ -90,7 +90,7 @@
         <developer>
             <id>jhauer</id>
             <name>Jill J. Hauer</name>
-            <email>jillhauer17@gmail.com</email>
+            <email>jill-hauer@uiowa.edu</email>
             <organization>Genetics Graduate Student, Schnieders Lab, The U. of Iowa</organization>
             <organizationUrl>http://www.uiowa.edu</organizationUrl>
             <roles>
@@ -109,6 +109,19 @@
             <roles>
                 <role>
                     Thermodynamics of Missense Mutations
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <id>anessler</id>
+            <name>Aaron Nessler</name>
+            <email>aaron-nessler@uiowa.edu</email>
+            <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Thermodynamics of Crystals
                 </role>
             </roles>
             <timezone>-5</timezone>
@@ -142,8 +155,8 @@
         <contributor>
             <name>Ava M. Lynn</name>
             <email>ava-lynn@uiowa.edu</email>
-            <organization>Undergraduate Student, Schnieders Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <organization>Medical Student, Uniformed Services University of the Health Sciences</organization>
+            <organizationUrl>https://www.usuhs.edu</organizationUrl>
             <roles>
                 <role>
                     Modeling of Missense Mutations Implicated in Inherited Eye Diseases
@@ -267,55 +280,23 @@
     <build>
         <defaultGoal>deploy</defaultGoal>
         <pluginManagement>
-            <!-- Explicitly define plugin versions for reproducible builds -->
+            <!-- Explicitly define plugins for FFX module pom.xml files. -->
             <plugins>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>versions-maven-plugin</artifactId>
-                    <version>2.5</version>
-                    <inherited>true</inherited>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>jdepend-maven-plugin</artifactId>
-                    <version>2.0</version>
-                    <inherited>true</inherited>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0-M1</version>
-                    <inherited>true</inherited>
-                </plugin>
                 <plugin>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>3.1.0</version>
-                    <inherited>true</inherited>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.0.2</version>
-                    <inherited>true</inherited>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>2.5.3</version>
-                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-changes-plugin</artifactId>
                     <version>2.12.1</version>
-                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.0.0</version>
-                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.0.0</version>
-                    <inherited>true</inherited>
+                    <version>3.1.0</version>
                     <configuration>
                         <filesets>
                             <fileset>
@@ -327,7 +308,6 @@
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.7.0</version>
-                    <inherited>true</inherited>
                     <configuration>
                         <debug>true</debug>
                         <optimize>true</optimize>
@@ -340,17 +320,23 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.1.1</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>2.8.2</version>
-                    <inherited>true</inherited>
                     <configuration>
                         <deployAtEnd>true</deployAtEnd>
                     </configuration>
                 </plugin>
                 <plugin>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.0.0-M1</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-install-plugin</artifactId>
                     <version>2.5.2</version>
-                    <inherited>true</inherited>
                     <configuration>
                         <installAtEnd>true</installAtEnd>
                         <createChecksum>true</createChecksum>
@@ -358,18 +344,15 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.0.2</version>
-                    <inherited>true</inherited>
+                    <version>3.1.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jarsigner-plugin</artifactId>
                     <version>1.4</version>
-                    <inherited>true</inherited>
                 </plugin>
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.0.0</version>
-                    <inherited>true</inherited>
+                    <version>3.0.1</version>
                     <configuration>
                         <author>true</author>
                         <defaultAuthor>Michael J. Schnieders</defaultAuthor>
@@ -386,7 +369,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.9</version>
+                    <version>3.10.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-project-info-reports-plugin</artifactId>
@@ -394,15 +377,15 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-scm-plugin</artifactId>
-                    <version>1.9.5</version>
+                    <version>1.10.0</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>3.7.1</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>3.0.1</version>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>3.7</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
@@ -417,9 +400,12 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.5.3</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.0.2</version>
-                    <inherited>true</inherited>
+                    <version>3.1.0</version>
                     <executions>
                         <execution>
                             <id>website-scripts</id>
@@ -458,14 +444,14 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.6.0</version>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.8</version>
                 </plugin>
                 <!--<plugin>
                     <groupId>org.codehaus.mojo</groupId>
-                    <inherited>false</inherited>
                     <artifactId>buildnumber-maven-plugin</artifactId>
+                    <inherited>false</inherited>
                     <version>1.4</version>
                     <executions>
                         <execution>
@@ -483,14 +469,17 @@
                     </configuration>
                 </plugin>-->
                 <plugin>
-                    <groupId>ru.concerteza.buildnumber</groupId>
-                    <inherited>false</inherited>
-                    <artifactId>maven-jgit-buildnumber-plugin</artifactId>
-                    <version>1.2.10</version>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.6.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
-                    <inherited>false</inherited>
+                    <artifactId>jdepend-maven-plugin</artifactId>
+                    <version>2.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
                     <artifactId>properties-maven-plugin</artifactId>
                     <version>1.0.0</version>
                     <!--<executions>
@@ -506,9 +495,14 @@
                     </executions>-->
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-antrun-plugin</artifactId>
-                    <version>1.8</version>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>2.5</version>
+                </plugin>
+                <plugin>
+                    <groupId>ru.concerteza.buildnumber</groupId>
+                    <artifactId>maven-jgit-buildnumber-plugin</artifactId>
+                    <version>1.2.10</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -516,6 +510,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.0.0-M1</version>
                 <executions>
                     <execution>
                         <id>enforce-versions</id>
@@ -543,6 +538,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -563,6 +559,7 @@
                                            use="true"
                                            windowtitle="${project.name}"
                                            doctitle="${project.name}"
+
                                 />
                             </target>
                         </configuration>
@@ -572,12 +569,14 @@
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
                 <inherited>true</inherited>
+                <version>3.7.1</version>
                 <configuration>
                     <generateSitemap>true</generateSitemap>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
+                <version>3.1.0</version>
                 <inherited>false</inherited>
                 <configuration>
                     <filesets>
@@ -589,12 +588,14 @@
             </plugin>
             <plugin>
                 <artifactId>maven-scm-plugin</artifactId>
+                <version>1.10.0</version>
                 <configuration>
                     <connectionType>connection</connectionType>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
                 <configuration>
                     <optimize>true</optimize>
                     <debug>true</debug>
@@ -604,6 +605,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -617,6 +619,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.0</version>
                 <inherited>false</inherited>
                 <configuration>
                     <descriptors>
@@ -638,6 +641,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -668,6 +672,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.21.0</version>
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
@@ -692,9 +697,9 @@
             </plugin -->
             <plugin>
                 <groupId>ru.concerteza.buildnumber</groupId>
-                <inherited>false</inherited>
                 <artifactId>maven-jgit-buildnumber-plugin</artifactId>
                 <version>1.2.10</version>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <id>git-buildnumber</id>
@@ -712,8 +717,9 @@
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
-                <inherited>false</inherited>
                 <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <phase>initialize</phase>
@@ -762,11 +768,11 @@
     <repositories>
         <repository>
             <name>FFX Dependency Repository</name>
-            <id>ffx.dependencies</id>
+            <id>1.ffx.repo</id>
             <url>http://github.com/mjschnie/dependency/raw/master</url>
             <releases>
-                <checksumPolicy>ignore</checksumPolicy>
                 <enabled>true</enabled>
+                <checksumPolicy>ignore</checksumPolicy>
                 <updatePolicy>daily</updatePolicy>
             </releases>
             <snapshots>
@@ -774,40 +780,60 @@
             </snapshots>
         </repository>
         <repository>
+            <name>Apache Maven Repository</name>
+            <id>2.apache.repo</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <name>JogAmp Maven Repository</name>
-            <id>jogamp.snapshots</id>
+            <id>3.jogamp.repo</id>
             <url>http://jogamp.org/deployment/maven</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots>
-                <enabled>true</enabled>
+                <enabled>false</enabled>
             </snapshots>
         </repository>
         <repository>
-            <id>biojava-maven-repo</id>
-            <name>BioJava repository</name>
-            <url>http://www.biojava.org/download/maven/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-        <repository>
-            <id>biojava-legacy-repo</id>
             <name>BioJava's Git based legacy maven repo</name>
+            <id>4.biojava.legacy.repo</id>
             <url>http://github.com/biojava/maven-repo/raw/master/</url>
-        </repository>
-        <repository>
-            <name>Maven Plugin SNAPSHOTS</name>
-            <id>maven.snapshots</id>
-            <url>http://repository.apache.org/snapshots</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots>
-                <enabled>true</enabled>
+                <enabled>false</enabled>
             </snapshots>
         </repository>
+        <repository>
+            <name>BioJava Maven Repository</name>
+            <id>5.biojava.repo</id>
+            <url>http://www.biojava.org/download/maven/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <!-- repository>
+            <name>Apache Maven Snapshot Repo</name>
+            <id>6.apache.snapshot.repo</id>
+            <url>http://repository.apache.org/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository -->
     </repositories>
     <reporting>
         <plugins>
@@ -854,7 +880,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>3.0.1</version>
                 <configuration>
                     <quiet>true</quiet>
                     <failOnError>false</failOnError>
@@ -1038,6 +1064,15 @@
             <artifactId>groovy-all</artifactId>
             <version>${groovy-all.version}</version>
             <type>pom</type>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
+            <groupId>javax.xml.bind</groupId>
+            <!-- This is needed for the GroovyDoc Ant Task on JDK 9+ -->
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.0</version>
+            <type>jar</type>
             <scope>compile</scope>
         </dependency>
     </dependencies>

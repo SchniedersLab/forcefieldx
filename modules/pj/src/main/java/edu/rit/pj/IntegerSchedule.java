@@ -240,7 +240,7 @@ public abstract class IntegerSchedule
                                 Thread.currentThread().getContextClassLoader());
 
                 // Instantiate subclass using no-argument constructor.
-                return (IntegerSchedule) subclass.newInstance();
+                return (IntegerSchedule) subclass.getConstructor().newInstance();
             } else {
                 // Arguments. Verify syntax.
                 int p2 = s.indexOf(')');

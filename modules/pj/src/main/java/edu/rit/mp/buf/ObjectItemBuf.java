@@ -40,6 +40,7 @@ import edu.rit.pj.reduction.Op;
  * @author Alan Kaminsky
  * @version 23-Mar-2009
  */
+@SuppressWarnings("unchecked")
 public class ObjectItemBuf<T>
         extends ObjectBuf<T> {
 

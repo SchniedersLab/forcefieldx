@@ -35,6 +35,7 @@ import java.util.Comparator;
  * @author Alan Kaminsky
  * @version 22-Nov-2011
  */
+@SuppressWarnings("unchecked")
 public class Searching {
 
 // Prevent construction.

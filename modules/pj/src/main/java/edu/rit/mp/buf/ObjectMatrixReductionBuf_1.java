@@ -40,6 +40,7 @@ import edu.rit.util.Range;
  * @author Alan Kaminsky
  * @version 05-Apr-2009
  */
+@SuppressWarnings("unchecked")
 class ObjectMatrixReductionBuf_1<T>
         extends ObjectMatrixBuf_1<T> {
 

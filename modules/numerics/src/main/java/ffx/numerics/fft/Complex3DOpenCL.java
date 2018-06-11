@@ -59,11 +59,10 @@ import edu.rit.pj.ParallelTeam;
 /**
  * This class implements a Java wrapper for calling clMath FFT.
  *
- * @since 1.0
- *
  * @author Michael J. Schnieders
- * @author Stephen LuCore
+ * @since 1.0
  */
+@SuppressWarnings("deprecation")
 public final class Complex3DOpenCL implements Runnable {
 
     static {

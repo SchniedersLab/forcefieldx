@@ -10,10 +10,18 @@ matrix:
       jdk: oraclejdk8
     - os: linux
       jdk: oraclejdk9
+    - os: linux
+      jdk: oraclejdk10
+    - os: linux
+      jdk: openjdk8
+    - os: linux
+      jdk: openjdk9
+    - os: linux
+      jdk: openjdk10
     - os: osx
       osx_image: xcode8.3
     - os: osx
-      osx_image: xcode9.2
+      osx_image: xcode9.3
 
 cache:
   directories:

@@ -42,6 +42,7 @@ import edu.rit.util.Range;
  * @author Alan Kaminsky
  * @version 01-Apr-2012
  */
+@SuppressWarnings("unchecked")
 public class SharedObjectArrayBuf_1<T>
         extends SharedObjectArrayBuf<T> {
 

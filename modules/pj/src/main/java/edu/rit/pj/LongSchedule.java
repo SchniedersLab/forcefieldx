@@ -241,7 +241,7 @@ public abstract class LongSchedule
                                 Thread.currentThread().getContextClassLoader());
 
                 // Instantiate subclass using no-argument constructor.
-                return (LongSchedule) subclass.newInstance();
+                return (LongSchedule) subclass.getConstructor().newInstance();
             } else {
                 // Arguments. Verify syntax.
                 int p2 = s.indexOf(')');

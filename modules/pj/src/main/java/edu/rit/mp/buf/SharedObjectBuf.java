@@ -41,6 +41,7 @@ import edu.rit.pj.reduction.SharedObject;
  * @author Alan Kaminsky
  * @version 01-Apr-2012
  */
+@SuppressWarnings("unchecked")
 public class SharedObjectBuf<T>
         extends ObjectBuf<T> {
 

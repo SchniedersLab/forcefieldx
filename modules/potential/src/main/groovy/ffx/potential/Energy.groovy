@@ -45,7 +45,7 @@ class Energy extends Script {
         /**
          * The final argument(s) should be one or more filenames.
          */
-        @Unparsed List<String> filenames
+        @Unparsed(description='The atomic coordinate file in PDB or XYZ format.') List<String> filenames
     }
 
 
@@ -54,7 +54,9 @@ class Energy extends Script {
      */
     def run() {
 
-        def cli = new CliBuilder(usage:' ffxc Energy [options] <filename>', header:' Options:')
+        // def cli = new CliBuilder(usage:' ffxc Energy [options] <filename>', header:' Options:');
+        def cli = new CliBuilder();
+        cli.name = "ffxc Energy";
 
         // String args[] = getArgs();
 

@@ -755,6 +755,17 @@ public abstract class ParallelRegion
     }
 
     /**
+     * Suppress warnings for casts of ItemGenerator.
+     * @param obj The ItemGenerator instance.
+     * @param <T> Data type of the items iterated over.
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> ItemGenerator<T> castItemGenerator(Object obj) {
+        return (ItemGenerator<T>) obj;
+    }
+
+    /**
      * Execute a parallel iteration within this parallel region. For further
      * information, see class {@linkplain ParallelIteration}. The items
      * processed by the iteration are the elements of the given array. The
@@ -823,7 +834,7 @@ public abstract class ParallelRegion
             }
 
             // Get the shared item generator object.
-            generator = (ItemGenerator<T>) currentThread.getItemGenerator();
+            generator = castItemGenerator(currentThread.getItemGenerator());
             theIteration.myItemGenerator = generator;
 
             // Prepare to catch exceptions thrown by the parallel iteration
@@ -957,7 +968,7 @@ public abstract class ParallelRegion
             }
 
             // Get the shared item generator object.
-            generator = (ItemGenerator<T>) currentThread.getItemGenerator();
+            generator = castItemGenerator(currentThread.getItemGenerator());
             theIteration.myItemGenerator = generator;
 
             // Prepare to catch exceptions thrown by the parallel iteration
@@ -1093,7 +1104,7 @@ public abstract class ParallelRegion
             }
 
             // Get the shared item generator object.
-            generator = (ItemGenerator<T>) currentThread.getItemGenerator();
+            generator = castItemGenerator(currentThread.getItemGenerator());
             theIteration.myItemGenerator = generator;
 
             // Prepare to catch exceptions thrown by the parallel iteration

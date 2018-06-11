@@ -40,6 +40,7 @@ import edu.rit.util.Range;
  * @author Alan Kaminsky
  * @version 23-Mar-2009
  */
+@SuppressWarnings("unchecked")
 class ObjectArrayReductionBuf_1<T>
         extends ObjectArrayBuf_1<T> {
 
