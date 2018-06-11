@@ -146,17 +146,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         initContext();
         loadPrefs();
     }
-
-    /**
-     * Default implementation of the GroovyObject getMetaClass method.
-     *
-     * @return a MetaClassImpl for ModelingShell.
-     */
-    @Override
-    public MetaClass getMetaClass() {
-        return new MetaClassImpl(ModelingShell.class);
-    }
-
+    
     /**
      * Initialize access to Force Field X variables and methods from with the
      * Shell.
