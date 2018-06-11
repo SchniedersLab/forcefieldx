@@ -153,8 +153,9 @@ public final class Main extends JFrame {
         ffxLogger.setLevel(level);
 
         // Close the default System.err, then set System.err use to System.out.
-        System.err.close();
-        System.setErr(System.out);
+        // Note - this gets rid of Java 9/10 Deprecation WARNINGs, but causes problems with PJ logging.
+        // System.err.close();
+        // System.setErr(System.out);
     }
 
     /**

@@ -84,7 +84,8 @@ import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.utils.PotentialsFunctions;
 
-import groovy.lang.Script;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassImpl;
 import groovy.ui.Console;
 
 /**
@@ -144,6 +145,16 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         headless = java.awt.GraphicsEnvironment.isHeadless();
         initContext();
         loadPrefs();
+    }
+
+    /**
+     * Default implementation of the GroovyObject getMetaClass method.
+     *
+     * @return a MetaClassImpl for ModelingShell.
+     */
+    @Override
+    public MetaClass getMetaClass() {
+        return new MetaClassImpl(ModelingShell.class);
     }
 
     /**
