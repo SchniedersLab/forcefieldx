@@ -113,6 +113,7 @@ public class SharedBoolean {
      * @param update Updated value.
      * @return True if the update happened, false otherwise.
      */
+    @SuppressWarnings("deprecation")
     public boolean weakCompareAndSet(boolean expect,
             boolean update) {
         return myValue.weakCompareAndSet(expect, update);

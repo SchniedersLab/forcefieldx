@@ -81,8 +81,8 @@ import static jcuda.jcufft.JCufft.cufftPlan3d;
  *
  * @author Michal J. Schnieders
  * @since 1.0
- *
  */
+@SuppressWarnings("deprecation")
 public class RowMajorComplex3DCuda implements Runnable {
 
     private static final Logger logger = Logger.getLogger(RowMajorComplex3DCuda.class.getName());

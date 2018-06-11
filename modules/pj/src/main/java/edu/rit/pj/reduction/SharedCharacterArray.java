@@ -145,6 +145,7 @@ public class SharedCharacterArray {
      * @param update Updated value.
      * @return True if the update happened, false otherwise.
      */
+    @SuppressWarnings("deprecation")
     public boolean weakCompareAndSet(int i,
             char expect,
             char update) {

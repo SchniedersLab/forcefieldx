@@ -228,6 +228,7 @@ import static ffx.potential.nonbonded.VanDerWaalsForm.VDW_TYPE.LENNARD_JONES;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@SuppressWarnings("deprecation")
 public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     private static final Logger logger = Logger.getLogger(ForceFieldEnergyOpenMM.class.getName());

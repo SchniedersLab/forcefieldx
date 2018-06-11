@@ -178,6 +178,7 @@ public class TimerThread
      * @exception IllegalStateException (unchecked exception) Thrown if some
      * thread other than this timer thread called the <TT>run()</TT> method.
      */
+    @SuppressWarnings("unchecked")
     public void run() {
         // Only this timer thread itself can call the run() method.
         if (Thread.currentThread() != this) {

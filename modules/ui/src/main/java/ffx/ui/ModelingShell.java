@@ -301,7 +301,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      */
     public void setArgList(List<String> argList) {
         setVariable("args", argList);
-        cliArgs = new ArrayList(argList);
+        cliArgs = new ArrayList<>(argList);
     }
 
     List<String> getArgs() {

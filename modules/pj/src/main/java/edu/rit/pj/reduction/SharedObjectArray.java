@@ -139,6 +139,7 @@ public class SharedObjectArray<T> {
      * @param update Updated value.
      * @return True if the update happened, false otherwise.
      */
+    @SuppressWarnings("deprecation")
     public boolean weakCompareAndSet(int i,
             T expect,
             T update) {

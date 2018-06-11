@@ -41,6 +41,7 @@ import edu.rit.util.Range;
  * @author Alan Kaminsky
  * @version 23-Mar-2009
  */
+@SuppressWarnings("unchecked")
 public class ObjectMatrixBuf_1<T>
         extends ObjectMatrixBuf<T> {
 

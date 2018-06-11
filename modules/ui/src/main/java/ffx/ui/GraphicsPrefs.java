@@ -105,11 +105,11 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
         radius.setPaintTicks(true);
         radius.setValue((int) (RendererCache.radius * 100));
         Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-        labelTable.put(new Integer(1), new JLabel("0%"));
-        labelTable.put(new Integer(50), new JLabel("50%"));
-        labelTable.put(new Integer(100), new JLabel("100%"));
-        labelTable.put(new Integer(150), new JLabel("150%"));
-        labelTable.put(new Integer(200), new JLabel("200%"));
+        labelTable.put(Integer.valueOf(1), new JLabel("0%"));
+        labelTable.put(Integer.valueOf(50), new JLabel("50%"));
+        labelTable.put(Integer.valueOf(100), new JLabel("100%"));
+        labelTable.put(Integer.valueOf(150), new JLabel("150%"));
+        labelTable.put(Integer.valueOf(200), new JLabel("200%"));
         radius.setLabelTable(labelTable);
         addSlider(radius, " Radius", 1);
         // Slider for bondwidth
@@ -119,9 +119,9 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
         bondwidth.setPaintLabels(true);
         bondwidth.setPaintTicks(true);
         labelTable = new Hashtable<Integer, JLabel>();
-        labelTable.put(new Integer(1), new JLabel("1"));
-        labelTable.put(new Integer(3), new JLabel("3"));
-        labelTable.put(new Integer(5), new JLabel("5"));
+        labelTable.put(Integer.valueOf(1), new JLabel("1"));
+        labelTable.put(Integer.valueOf(3), new JLabel("3"));
+        labelTable.put(Integer.valueOf(5), new JLabel("5"));
         bondwidth.setLabelTable(labelTable);
         bondwidth.setValue(RendererCache.bondwidth);
         addSlider(bondwidth, " Wireframe Thickness", 3);
@@ -133,8 +133,8 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
         detail.setPaintTicks(true);
         detail.setValue(RendererCache.detail);
         labelTable = new Hashtable<Integer, JLabel>();
-        labelTable.put(new Integer(0), new JLabel("Performance"));
-        labelTable.put(new Integer(10), new JLabel("Quality"));
+        labelTable.put(Integer.valueOf(0), new JLabel("Performance"));
+        labelTable.put(Integer.valueOf(10), new JLabel("Quality"));
         detail.setLabelTable(labelTable);
         addSlider(detail, " Detail", 2);
         constraints.gridwidth = 1;

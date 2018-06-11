@@ -4330,6 +4330,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @param residues List of Residues to be sorted.
      */
+    @SuppressWarnings("unchecked")
     private void sortResidues(List<Residue> residues) {
         Comparator comparator = Comparator.comparing(Residue::getChainID).thenComparingInt(Residue::getResidueNumber);
         residues.sort(comparator);

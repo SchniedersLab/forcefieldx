@@ -93,6 +93,7 @@ import static jcuda.jcufft.JCufft.cufftSetCompatibilityMode;
  *
  * @since 1.0
  */
+@SuppressWarnings("deprecation")
 public class Real3DCuda implements Runnable {
 
     private static final Logger logger = Logger.getLogger(Real3DCuda.class.getName());

@@ -114,6 +114,7 @@ public class SharedShort
      * @param update Updated value.
      * @return True if the update happened, false otherwise.
      */
+    @SuppressWarnings("deprecation")
     public boolean weakCompareAndSet(short expect,
             short update) {
         return myValue.weakCompareAndSet(expect, update);

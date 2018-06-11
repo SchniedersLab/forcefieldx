@@ -35,6 +35,7 @@ import java.lang.reflect.Array;
  * @author Alan Kaminsky
  * @version 19-Nov-2007
  */
+@SuppressWarnings({"unchecked","deprecation"})
 public class Arrays {
 
 // Prevent construction.

@@ -84,6 +84,7 @@ class ItemHolder<T>
      * @exception ClassNotFoundException Thrown if the class of the object could
      * not be found.
      */
+    @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput in)
             throws IOException, ClassNotFoundException {
         myItem = (T) in.readObject();

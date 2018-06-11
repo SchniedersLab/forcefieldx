@@ -152,6 +152,7 @@ import edu.rit.util.Range;
  * @author Alan Kaminsky
  * @version 03-Jul-2008
  */
+@SuppressWarnings("unchecked")
 public abstract class ObjectBuf<T>
         extends Buf {
 

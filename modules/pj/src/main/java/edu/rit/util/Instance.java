@@ -140,7 +140,7 @@ public class Instance {
         boolean allAreInts = true;
         for (i = 0; i < args.length; ++i) {
             try {
-                intargs[i] = new Integer(args[i]);
+                intargs[i] = Integer.valueOf(args[i]);
             } catch (NumberFormatException exc) {
                 allAreInts = false;
             }

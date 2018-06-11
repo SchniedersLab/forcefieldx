@@ -116,6 +116,7 @@ public class SharedCharacter
      * @param update Updated value.
      * @return True if the update happened, false otherwise.
      */
+    @SuppressWarnings("deprecation")
     public boolean weakCompareAndSet(char expect,
             char update) {
         return myValue.weakCompareAndSet(expect, update);

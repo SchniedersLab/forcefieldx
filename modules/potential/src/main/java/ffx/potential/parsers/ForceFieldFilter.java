@@ -833,16 +833,16 @@ public class ForceFieldFilter {
             }
             double dipole[] = new double[3];
             double quadrupole[][] = new double[3][3];
-            double c = new Double(tokens[1 + numTypes]);
-            dipole[0] = new Double(tokens[2 + numTypes]);
-            dipole[1] = new Double(tokens[3 + numTypes]);
-            dipole[2] = new Double(tokens[4 + numTypes]);
-            quadrupole[0][0] = new Double(tokens[5 + numTypes]);
-            quadrupole[1][0] = new Double(tokens[6 + numTypes]);
-            quadrupole[1][1] = new Double(tokens[7 + numTypes]);
-            quadrupole[2][0] = new Double(tokens[8 + numTypes]);
-            quadrupole[2][1] = new Double(tokens[9 + numTypes]);
-            quadrupole[2][2] = new Double(tokens[10 + numTypes]);
+            double c = Double.valueOf(tokens[1 + numTypes]);
+            dipole[0] = Double.valueOf(tokens[2 + numTypes]);
+            dipole[1] = Double.valueOf(tokens[3 + numTypes]);
+            dipole[2] = Double.valueOf(tokens[4 + numTypes]);
+            quadrupole[0][0] = Double.valueOf(tokens[5 + numTypes]);
+            quadrupole[1][0] = Double.valueOf(tokens[6 + numTypes]);
+            quadrupole[1][1] = Double.valueOf(tokens[7 + numTypes]);
+            quadrupole[2][0] = Double.valueOf(tokens[8 + numTypes]);
+            quadrupole[2][1] = Double.valueOf(tokens[9 + numTypes]);
+            quadrupole[2][2] = Double.valueOf(tokens[10 + numTypes]);
             // Fill in symmetric components.
             quadrupole[0][1] = quadrupole[1][0];
             quadrupole[0][2] = quadrupole[2][0];
@@ -1111,8 +1111,8 @@ public class ForceFieldFilter {
                 atomClasses[i] = Integer.parseInt(tokens[i + 1]);
             }
             int gridPoints[] = new int[2];
-            gridPoints[0] = new Integer(tokens[6]);
-            gridPoints[1] = new Integer(tokens[7]);
+            gridPoints[0] = Integer.valueOf(tokens[6]);
+            gridPoints[1] = Integer.valueOf(tokens[7]);
 
             int points = gridPoints[0] * gridPoints[1];
 
@@ -1126,9 +1126,9 @@ public class ForceFieldFilter {
             double energy[] = new double[points];
             int index = 8;
             for (int i = 0; i < points; i++) {
-                torsion1[i] = new Double(tokens[index++]);
-                torsion2[i] = new Double(tokens[index++]);
-                energy[i] = new Double(tokens[index++]);
+                torsion1[i] = Double.valueOf(tokens[index++]);
+                torsion2[i] = Double.valueOf(tokens[index++]);
+                energy[i] = Double.valueOf(tokens[index++]);
             }
             TorsionTorsionType torsionTorsionType = new TorsionTorsionType(
                     atomClasses, gridPoints, torsion1, torsion2, energy);

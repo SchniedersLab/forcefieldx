@@ -635,12 +635,12 @@ public final class PDBFilter extends SystemFilter {
                                 break;
                             }
                             double adp[] = new double[6];
-                            adp[0] = new Integer(line.substring(28, 35).trim()) * 1.0e-4;
-                            adp[1] = new Integer(line.substring(35, 42).trim()) * 1.0e-4;
-                            adp[2] = new Integer(line.substring(42, 49).trim()) * 1.0e-4;
-                            adp[3] = new Integer(line.substring(49, 56).trim()) * 1.0e-4;
-                            adp[4] = new Integer(line.substring(56, 63).trim()) * 1.0e-4;
-                            adp[5] = new Integer(line.substring(63, 70).trim()) * 1.0e-4;
+                            adp[0] = Integer.valueOf(line.substring(28, 35).trim()) * 1.0e-4;
+                            adp[1] = Integer.valueOf(line.substring(35, 42).trim()) * 1.0e-4;
+                            adp[2] = Integer.valueOf(line.substring(42, 49).trim()) * 1.0e-4;
+                            adp[3] = Integer.valueOf(line.substring(49, 56).trim()) * 1.0e-4;
+                            adp[4] = Integer.valueOf(line.substring(56, 63).trim()) * 1.0e-4;
+                            adp[5] = Integer.valueOf(line.substring(63, 70).trim()) * 1.0e-4;
                             if (atoms.containsKey(serial)) {
                                 Atom a = atoms.get(serial);
                                 a.setAltLoc(altLoc);
@@ -755,14 +755,14 @@ public final class PDBFilter extends SystemFilter {
                                     }
                                 }
                                 d = new double[3];
-                                d[0] = new Double(line.substring(30, 38).trim());
-                                d[1] = new Double(line.substring(38, 46).trim());
-                                d[2] = new Double(line.substring(46, 54).trim());
+                                d[0] = Double.valueOf(line.substring(30, 38).trim());
+                                d[1] = Double.valueOf(line.substring(38, 46).trim());
+                                d[2] = Double.valueOf(line.substring(46, 54).trim());
                                 occupancy = 1.0;
                                 tempFactor = 1.0;
                                 try {
-                                    occupancy = new Double(line.substring(54, 60).trim());
-                                    tempFactor = new Double(line.substring(60, 66).trim());
+                                    occupancy = Double.valueOf(line.substring(54, 60).trim());
+                                    tempFactor = Double.valueOf(line.substring(60, 66).trim());
                                 } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                                     // Use default values.
                                     if (printMissingFields) {
@@ -863,14 +863,14 @@ public final class PDBFilter extends SystemFilter {
                             }
 
                             d = new double[3];
-                            d[0] = new Double(line.substring(30, 38).trim());
-                            d[1] = new Double(line.substring(38, 46).trim());
-                            d[2] = new Double(line.substring(46, 54).trim());
+                            d[0] = Double.valueOf(line.substring(30, 38).trim());
+                            d[1] = Double.valueOf(line.substring(38, 46).trim());
+                            d[2] = Double.valueOf(line.substring(46, 54).trim());
                             occupancy = 1.0;
                             tempFactor = 1.0;
                             try {
-                                occupancy = new Double(line.substring(54, 60).trim());
-                                tempFactor = new Double(line.substring(60, 66).trim());
+                                occupancy = Double.valueOf(line.substring(54, 60).trim());
+                                tempFactor = Double.valueOf(line.substring(60, 66).trim());
                             } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
                                 // Use default values.
                                 if (printMissingFields) {
@@ -915,12 +915,12 @@ public final class PDBFilter extends SystemFilter {
 // 56 - 66       LString       sGroup         Space  group.
 // 67 - 70       Integer       z              Z value.
 // =============================================================================
-                            double aaxis = new Double(line.substring(6, 15).trim());
-                            double baxis = new Double(line.substring(15, 24).trim());
-                            double caxis = new Double(line.substring(24, 33).trim());
-                            double alpha = new Double(line.substring(33, 40).trim());
-                            double beta = new Double(line.substring(40, 47).trim());
-                            double gamma = new Double(line.substring(47, 54).trim());
+                            double aaxis = Double.valueOf(line.substring(6, 15).trim());
+                            double baxis = Double.valueOf(line.substring(15, 24).trim());
+                            double caxis = Double.valueOf(line.substring(24, 33).trim());
+                            double alpha = Double.valueOf(line.substring(33, 40).trim());
+                            double beta = Double.valueOf(line.substring(40, 47).trim());
+                            double gamma = Double.valueOf(line.substring(47, 54).trim());
                             int limit = 66;
                             if (line.length() < 66) {
                                 limit = line.length();
@@ -3298,9 +3298,9 @@ public final class PDBFilter extends SystemFilter {
                                     int resSeq = Hybrid36.decode(4, line.substring(22, 26));
 
                                     double[] d = new double[3];
-                                    d[0] = new Double(line.substring(30, 38).trim());
-                                    d[1] = new Double(line.substring(38, 46).trim());
-                                    d[2] = new Double(line.substring(46, 54).trim());
+                                    d[0] = Double.valueOf(line.substring(30, 38).trim());
+                                    d[1] = Double.valueOf(line.substring(38, 46).trim());
+                                    d[2] = Double.valueOf(line.substring(46, 54).trim());
                                     double occupancy = 1.0;
                                     double tempFactor = 1.0;
                                     Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
