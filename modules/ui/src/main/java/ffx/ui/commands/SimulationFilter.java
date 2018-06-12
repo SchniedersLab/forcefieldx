@@ -50,25 +50,23 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parsers.SystemFilter;
 
 /**
- * The SimulationFilter class parses system data sent by TINKER to Force Field
- * X.
+ * The SimulationFilter class parses system data sent by FFXServer to FFXClient.
  *
  * @author Michael J. Schnieders
  */
-@Deprecated
 public final class SimulationFilter extends SystemFilter {
 
-    TinkerSystem system;
+    SimulationDefinition system;
     Hashtable<Integer, AtomType> atomTypes = new Hashtable<Integer, AtomType>();
 
     /**
      * <p>
      * Constructor for SimulationFilter.</p>
      *
-     * @param sys a {@link ffx.ui.commands.TinkerSystem} object.
+     * @param sys a {@link ffx.ui.commands.SimulationDefinition} object.
      * @param m a {@link ffx.potential.MolecularAssembly} object.
      */
-    public SimulationFilter(TinkerSystem sys, MolecularAssembly m) {
+    public SimulationFilter(SimulationDefinition sys, MolecularAssembly m) {
         super(new File(""), m, null, null);
         system = sys;
         fileType = FileType.SIM;
@@ -80,7 +78,7 @@ public final class SimulationFilter extends SystemFilter {
      */
     @Override
     public boolean readFile() {
-        // Create Molecular Mechanics Data Objects from the TinkerSystem
+        // Create Molecular Mechanics Data Objects from the SimulationDefinition
         // information
         for (int i = 0; i < system.numatoms; i++) {
             AtomType atomType = atomTypes.get(system.types[i]);

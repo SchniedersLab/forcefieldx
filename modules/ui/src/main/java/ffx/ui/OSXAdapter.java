@@ -40,10 +40,6 @@ package ffx.ui;
 import java.io.File;
 import java.util.logging.Logger;
 
-import com.apple.mrj.MRJAboutHandler;
-import com.apple.mrj.MRJOpenDocumentHandler;
-import com.apple.mrj.MRJQuitHandler;
-import com.apple.mrj.MRJPrefsHandler;
 import com.apple.mrj.MRJApplicationUtils;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -54,10 +50,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * items: About, Preferences, Quit and File Associations
  *
  * @author Michael J. Schnieders
- *
  */
-public class OSXAdapter implements MRJAboutHandler, MRJOpenDocumentHandler,
-        MRJQuitHandler,  MRJPrefsHandler {
+@SuppressWarnings("deprecation")
+public class OSXAdapter implements com.apple.mrj.MRJAboutHandler, com.apple.mrj.MRJOpenDocumentHandler,
+        com.apple.mrj.MRJQuitHandler,  com.apple.mrj.MRJPrefsHandler {
 
     private final MainPanel mainPanel;
     private static final Logger logger = Logger.getLogger(OSXAdapter.class.getName());

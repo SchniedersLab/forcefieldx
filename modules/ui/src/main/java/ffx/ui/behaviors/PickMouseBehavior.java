@@ -47,7 +47,6 @@ import javax.media.j3d.WakeupOnAWTEvent;
 import javax.media.j3d.WakeupOr;
 
 import java.awt.AWTEvent;
-import java.awt.Event;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
@@ -101,7 +100,8 @@ public abstract class PickMouseBehavior extends Behavior {
      */
     public void initialize() {
         conditions = new WakeupCriterion[1];
-        conditions[0] = new WakeupOnAWTEvent(Event.MOUSE_DOWN);
+        // conditions[0] = new WakeupOnAWTEvent(Event.MOUSE_DOWN);
+        conditions[0] = new WakeupOnAWTEvent(AWTEvent.MOUSE_EVENT_MASK);
         wakeupCondition = new WakeupOr(conditions);
         wakeupOn(wakeupCondition);
     }

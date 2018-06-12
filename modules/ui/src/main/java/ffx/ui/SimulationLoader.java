@@ -48,18 +48,16 @@ import java.util.List;
 import ffx.potential.bonded.Atom;
 import ffx.ui.commands.FFXClient;
 import ffx.ui.commands.SimulationFilter;
-import ffx.ui.commands.TinkerSystem;
-import ffx.ui.commands.TinkerUpdate;
+import ffx.ui.commands.SimulationUpdate;
 import ffx.utilities.Keyword;
 
 /**
- * This TinkerSimulation class oversees loading information from an executing
- * TINKER program into Force Field X.
+ * This SimulationLoader class oversees loading information from an executing
+ * FFX instance program this instance of Force Field X.
  *
  * @author Michael J. Schnieders
- *
  */
-public class TinkerSimulation implements ActionListener {
+public class SimulationLoader implements ActionListener {
     // The client monitors a socket based connection to an executing TINKER
     // program.
 
@@ -76,7 +74,7 @@ public class TinkerSimulation implements ActionListener {
     private Thread reader;
     private MainPanel mainPanel;
     private FFXSystem system;
-    private TinkerUpdate tinkerUpdate = null;
+    private SimulationUpdate tinkerUpdate = null;
     private boolean firstUpdate = true;
     private Timer timer;
     private int delay = 10;
@@ -86,15 +84,15 @@ public class TinkerSimulation implements ActionListener {
     // Constructor
     /**
      * <p>
-     * Constructor for TinkerSimulation.</p>
+     * Constructor for SimulationLoader.</p>
      *
      * @param s a {@link ffx.ui.FFXSystem} object.
      * @param j a {@link java.lang.Thread} object.
      * @param f a {@link ffx.ui.MainPanel} object.
      * @param a a {@link java.net.InetSocketAddress} object.
      */
-    public TinkerSimulation(FFXSystem s, Thread j, MainPanel f,
-            InetSocketAddress a) {
+    public SimulationLoader(FFXSystem s, Thread j, MainPanel f,
+                            InetSocketAddress a) {
         system = s;
         job = j;
         mainPanel = f;
@@ -116,7 +114,7 @@ public class TinkerSimulation implements ActionListener {
         }
         // Check if we need to initialize the Simulation System.
         if (system == null) {
-            TinkerSystem sys = client.getSystem();
+            ffx.ui.commands.SimulationDefinition sys = client.getSystem();
             if (sys != null) {
                 if (simulationFilter == null) {
                     if (system == null) {
@@ -158,7 +156,7 @@ public class TinkerSimulation implements ActionListener {
         if (isConnected()) {
             return true;
         }
-        // Create a timer to regularly wake up this TinkerSimulation.
+        // Create a timer to regularly wake up this SimulationLoader.
         if (timer == null) {
             timer = new Timer(delay, this);
             timer.setCoalesce(true);
@@ -260,13 +258,13 @@ public class TinkerSimulation implements ActionListener {
             return;
         }
         // This is either an MD Run.
-        if (tinkerUpdate.type == TinkerUpdate.SIMULATION) {
+        if (tinkerUpdate.type == ffx.ui.commands.SimulationUpdate.SIMULATION) {
             if (tinkerUpdate.time == time) {
                 tinkerUpdate.read = true;
                 return;
             }
             time = tinkerUpdate.time;
-        } else if (tinkerUpdate.type == TinkerUpdate.OPTIMIZATION) {
+        } else if (tinkerUpdate.type == ffx.ui.commands.SimulationUpdate.OPTIMIZATION) {
             if (tinkerUpdate.step == step) {
                 tinkerUpdate.read = true;
                 return;

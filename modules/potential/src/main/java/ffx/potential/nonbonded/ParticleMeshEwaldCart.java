@@ -44,11 +44,6 @@ import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 
-import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction;
-import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
-import org.apache.commons.math3.optimization.PointVectorValuePair;
-import org.apache.commons.math3.optimization.SimpleVectorValueChecker;
-import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -152,6 +147,7 @@ import static ffx.potential.parameters.MultipoleType.t300;
  * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
  * (1998)</a>
  */
+@SuppressWarnings("deprecation")
 public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
@@ -480,7 +476,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      */
     private double predictorInducedDipoleCR[][][][];
     private LeastSquaresPredictor leastSquaresPredictor;
-    private LevenbergMarquardtOptimizer leastSquaresOptimizer;
+    private org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer leastSquaresOptimizer;
 
     /**
      * Direct induced dipoles.
@@ -732,7 +728,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             if (scfPredictor == SCFPredictor.LS) {
                 leastSquaresPredictor = new LeastSquaresPredictor();
                 double eps = 1.0e-4;
-                leastSquaresOptimizer = new LevenbergMarquardtOptimizer(new SimpleVectorValueChecker(eps, eps));
+                leastSquaresOptimizer = new org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer(
+                        new org.apache.commons.math3.optimization.SimpleVectorValueChecker(eps, eps));
             } else if (scfPredictor == SCFPredictor.ASPC) {
                 predictorOrder = 6;
             }
@@ -8094,7 +8091,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             int maxEvals = 100;
             fill(leastSquaresPredictor.initialSolution, 0.0);
             leastSquaresPredictor.initialSolution[0] = 1.0;
-            PointVectorValuePair optimum
+            org.apache.commons.math3.optimization.PointVectorValuePair optimum
                     = leastSquaresOptimizer.optimize(maxEvals,
                     leastSquaresPredictor,
                     leastSquaresPredictor.calculateTarget(),
@@ -8159,7 +8156,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     private class LeastSquaresPredictor
-            implements DifferentiableMultivariateVectorFunction {
+            implements org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunction {
 
         double weights[];
         double target[];
@@ -8282,12 +8279,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         @Override
-        public MultivariateMatrixFunction jacobian() {
+        public org.apache.commons.math3.analysis.MultivariateMatrixFunction
+            jacobian() {
             return multivariateMatrixFunction;
         }
 
-        private MultivariateMatrixFunction multivariateMatrixFunction
-                = new MultivariateMatrixFunction() {
+        private org.apache.commons.math3.analysis.MultivariateMatrixFunction multivariateMatrixFunction
+                = new org.apache.commons.math3.analysis.MultivariateMatrixFunction() {
             @Override
             public double[][] value(double[] point) {
                 return jacobian(point);

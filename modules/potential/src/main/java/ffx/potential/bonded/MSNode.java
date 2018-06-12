@@ -191,13 +191,16 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a new {@link java.util.ArrayList} object.
      */
     public ArrayList<Atom> getAtomList() {
+        @SuppressWarnings("unchecked")
+        Enumeration<TreeNode> e = depthFirstEnumeration();
+        List<TreeNode> list = Collections.list(e);
         ArrayList<Atom> arrayList = new ArrayList<>();
-        List<TreeNode> list = Collections.list(depthFirstEnumeration());
         for (TreeNode node : list) {
             if (node instanceof Atom) {
                 arrayList.add((Atom) node);
             }
         }
+
         Collections.sort(arrayList);
         return arrayList;
     }
@@ -216,8 +219,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
      * @return a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSNode contains(MSNode msNode) {
-		@SuppressWarnings("unchecked")
-        List<TreeNode> list = Collections.list(depthFirstEnumeration());
+        @SuppressWarnings("unchecked")
+        Enumeration<TreeNode> e = depthFirstEnumeration();
+        List<TreeNode> list = Collections.list(e);
         for (TreeNode node : list) {
             if (node.equals(msNode)) {
                 return (MSNode) node;

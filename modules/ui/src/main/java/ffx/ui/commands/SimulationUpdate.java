@@ -40,13 +40,11 @@ package ffx.ui.commands;
 import java.io.Serializable;
 
 /**
- * The TinkerUpdate class is a serializable wrapper for TINKER simulation data
- * that changes during a simulation.
+ * The SimulationUpdate class is a serializable wrapper for FFX simulation data that changes during a simulation.
  *
  * @author Michael J. Schnieders
  */
-@Deprecated
-public class TinkerUpdate implements Serializable {
+public class SimulationUpdate implements Serializable {
 
     private static final long serialVersionUID = 1L;
     /**
@@ -87,13 +85,13 @@ public class TinkerUpdate implements Serializable {
 
     /**
      * <p>
-     * Constructor for TinkerUpdate.</p>
+     * Constructor for SimulationUpdate.</p>
      *
      * @param n a int.
      * @param t a int.
      * @param a a boolean.
      */
-    public TinkerUpdate(int n, int t, boolean a) {
+    public SimulationUpdate(int n, int t, boolean a) {
         numatoms = n;
         amoeba = a;
         type = t;
@@ -113,10 +111,10 @@ public class TinkerUpdate implements Serializable {
      * <p>
      * isNewer</p>
      *
-     * @param message a {@link ffx.ui.commands.FFXMessage} object.
+     * @param message a {@link ffx.ui.commands.SimulationMessage} object.
      * @return a boolean.
      */
-    public boolean isNewer(FFXMessage message) {
+    public boolean isNewer(SimulationMessage message) {
         if (type == SIMULATION && time > message.getTime()) {
             return true;
         }
@@ -131,7 +129,7 @@ public class TinkerUpdate implements Serializable {
      * print</p>
      */
     public void print() {
-        if (type == TinkerUpdate.SIMULATION) {
+        if (type == SimulationUpdate.SIMULATION) {
             System.out.println("Time: " + time + " Energy: " + energy);
         } else {
             System.out.println("Step: " + step + " Energy: " + energy);

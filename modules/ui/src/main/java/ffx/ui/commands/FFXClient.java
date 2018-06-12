@@ -46,14 +46,13 @@ import java.net.Socket;
 import java.util.logging.Logger;
 
 /**
- * The FFXClient class encapsulates a socket connection to an TinkerServer
- * started by an executing TINKER program. TinkerSystem and TinkerUpdate objects
- * are sent by the TinkerServer to the FFXClient on request.
+ * The FFXClient class encapsulates a socket connection to an FFXServer
+ * started by an executing FFX instance. FFXSystem and FFXUpdate objects
+ * are sent by the FFXServer to the FFXClient on request.
  *
  * @author Michael J. Schnieders
  *
  */
-@Deprecated
 public class FFXClient {
 
     private static final Logger logger = Logger.getLogger(FFXClient.class.getName());
@@ -63,9 +62,9 @@ public class FFXClient {
     private ObjectInputStream oin; // Input form the server
     private OutputStream out; // Output to the server
     private ObjectOutputStream oout; // Output to the server
-    private TinkerSystem system; // Tinker system definition
-    private TinkerUpdate update; // Tinker update information
-    private FFXMessage message; // Message Passed Between Client & Server
+    private SimulationDefinition system; // Tinker system definition
+    private SimulationUpdate update; // Tinker update information
+    private SimulationMessage message; // Message Passed Between Client & Server
     // Various connection status variables
     private int retryCount = 0; // Count of Client attempts to Connect
     private int retryLimit = 10000; // Maximum number of retries
@@ -121,7 +120,7 @@ public class FFXClient {
             in = client.getInputStream();
             oin = new ObjectInputStream(in);
             connectionMade = true;
-            logger.info("Connected to TINKER Server: " + client);
+            logger.info("Connected to FFX Server: " + client);
         } catch (Exception e) {
             client = null;
         } finally {
@@ -135,9 +134,9 @@ public class FFXClient {
      * <p>
      * Getter for the field <code>system</code>.</p>
      *
-     * @return a {@link ffx.ui.commands.TinkerSystem} object.
+     * @return a {@link ffx.ui.commands.SimulationDefinition} object.
      */
-    public TinkerSystem getSystem() {
+    public SimulationDefinition getSystem() {
         readSocket();
         return system;
     }
@@ -146,9 +145,9 @@ public class FFXClient {
      * <p>
      * Getter for the field <code>update</code>.</p>
      *
-     * @return a {@link ffx.ui.commands.TinkerUpdate} object.
+     * @return a {@link ffx.ui.commands.SimulationUpdate} object.
      */
-    public TinkerUpdate getUpdate() {
+    public SimulationUpdate getUpdate() {
         readSocket();
         return update;
     }
@@ -184,30 +183,30 @@ public class FFXClient {
         try {
             while (oin != null && in.available() > 0) {
                 Object o = oin.readObject();
-                if (o instanceof FFXMessage) {
-                    message = (FFXMessage) o;
+                if (o instanceof SimulationMessage) {
+                    message = (SimulationMessage) o;
                     // logger.info(message.toString());
-                    if (message.getMessage() == FFXMessage.SYSTEM) {
-                        system = (TinkerSystem) oin.readObject();
+                    if (message.getMessage() == SimulationMessage.SYSTEM) {
+                        system = (SimulationDefinition) oin.readObject();
                         system.read = false;
-                    } else if (message.getMessage() == FFXMessage.UPDATE) {
-                        update = (TinkerUpdate) oin.readObject();
+                    } else if (message.getMessage() == SimulationMessage.UPDATE) {
+                        update = (SimulationUpdate) oin.readObject();
                         update.read = false;
-                    } else if (message.getMessage() == FFXMessage.CLOSING) {
+                    } else if (message.getMessage() == SimulationMessage.CLOSING) {
                         closed = true;
                         release();
                     }
                 }
             }
             if (system == null) {
-                message = new FFXMessage(FFXMessage.SYSTEM);
+                message = new SimulationMessage(SimulationMessage.SYSTEM);
                 oout.reset();
                 oout.writeObject(message);
                 oout.flush();
             } else if (update == null || update.read) {
-                message = new FFXMessage(FFXMessage.UPDATE);
+                message = new SimulationMessage(SimulationMessage.UPDATE);
                 if (update != null) {
-                    if (update.type == TinkerUpdate.SIMULATION) {
+                    if (update.type == SimulationUpdate.SIMULATION) {
                         message.setTime(update.time);
                     } else {
                         message.setStep(update.step);
@@ -218,7 +217,7 @@ public class FFXClient {
                 oout.flush();
             }
         } catch (Exception e) {
-            logger.warning("Exception reading data from TINKER\n"
+            logger.warning("Exception reading data from FFX\n"
                     + e.toString());
             release();
         }
@@ -238,7 +237,7 @@ public class FFXClient {
         }
         if (client != null && client.isConnected() && oout != null) {
             try {
-                FFXMessage close = new FFXMessage(FFXMessage.CLOSING);
+                SimulationMessage close = new SimulationMessage(SimulationMessage.CLOSING);
                 oout.reset();
                 oout.writeObject(close);
                 oout.flush();

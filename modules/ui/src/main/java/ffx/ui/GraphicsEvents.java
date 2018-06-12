@@ -51,7 +51,6 @@ import javax.media.j3d.WakeupOr;
 import javax.vecmath.Point3d;
 
 import java.awt.AWTEvent;
-import java.awt.Event;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
@@ -201,15 +200,12 @@ public class GraphicsEvents extends Behavior {
      */
     public void initialize() {
         WakeupCriterion[] behaviorPost = new WakeupCriterion[3];
-        behaviorPost[0] = new WakeupOnBehaviorPost(systemRotate,
-                BEHAVIORDONEPOST);
-        behaviorPost[1] = new WakeupOnBehaviorPost(systemTranslate,
-                BEHAVIORDONEPOST);
+        behaviorPost[0] = new WakeupOnBehaviorPost(systemRotate, BEHAVIORDONEPOST);
+        behaviorPost[1] = new WakeupOnBehaviorPost(systemTranslate, BEHAVIORDONEPOST);
         behaviorPost[2] = new WakeupOnBehaviorPost(globalZoom, BEHAVIORDONEPOST);
         postCriterion = new WakeupOr(behaviorPost);
-        WakeupCriterion awtCriterion[] = new WakeupCriterion[2];
-        awtCriterion[0] = new WakeupOnAWTEvent(Event.MOUSE_DOWN);
-        awtCriterion[1] = new WakeupOnAWTEvent(Event.MOUSE_UP);
+        WakeupCriterion awtCriterion[] = new WakeupCriterion[1];
+        awtCriterion[0] = new WakeupOnAWTEvent(java.awt.AWTEvent.MOUSE_EVENT_MASK);
         mouseCriterion = new WakeupOr(awtCriterion);
         wakeupOn(mouseCriterion);
     }
@@ -293,8 +289,9 @@ public class GraphicsEvents extends Behavior {
         }
     }
 
-    // Most of the logic for mouse interaction with the Scenegraph is here.
     /**
+     * Most of the logic for mouse interaction with the Scenegraph is here.
+     *
      * {@inheritDoc}
      */
     public void processStimulus(Enumeration criteria) {

@@ -146,7 +146,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         initContext();
         loadPrefs();
     }
-    
+
     /**
      * Initialize access to Force Field X variables and methods from with the
      * Shell.

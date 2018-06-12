@@ -59,7 +59,6 @@ import static javax.swing.Action.SHORT_DESCRIPTION;
 import static javax.swing.Action.SMALL_ICON;
 
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -79,7 +78,14 @@ public class MainMenu extends JMenuBar {
 
     private static final Logger logger = Logger.getLogger(MainMenu.class.getName());
     private static final long serialVersionUID = 1L;
-    private static final int keyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+
+    /**
+     * Note that the getMenuShortcutKeyMask() is deprecated in JDK 10 and replaced with
+     * getMenuShortcutKeyMaskEx(). However, this later method is not present in JDK 8/9.
+     */
+    @SuppressWarnings("deprecation")
+    private static final int keyMask = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+
     // Controller References
     private final MainPanel mainPanel;
     private final GraphicsCanvas graphics;
@@ -461,6 +467,7 @@ public class MainMenu extends JMenuBar {
             name = actionCommand;
         }
         ImageIcon imageIcon = getIcon(icon);
+
         KeyStroke keyStroke = KeyStroke.getKeyStroke(accelerator, keyMask);
         a.putValue(ACCELERATOR_KEY, keyStroke);
         a.putValue(ACTION_COMMAND_KEY, actionCommand);
