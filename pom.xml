@@ -528,7 +528,7 @@
                                     <version>3.0</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>1.8</version>
+                                    <version>[1.8,10.1]</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>

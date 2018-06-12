@@ -48,17 +48,16 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 /**
- * The TinkerServer is launched by TINKER executables to allow Force Field X
+ * The FFXServer is launched by an FFX instance to allow Force Field X
  * Clients to connect.
  *
  * @author Michael J. Schnieders
  *
  */
-@Deprecated
-public class TinkerServer implements Runnable {
+public class FFXServer implements Runnable {
 
-    private static final Logger logger = Logger.getLogger(TinkerServer.class.getName());
-    private static FFXMessage closing = new FFXMessage(FFXMessage.CLOSING);
+    private static final Logger logger = Logger.getLogger(FFXServer.class.getName());
+    private static SimulationMessage closing = new SimulationMessage(SimulationMessage.CLOSING);
     private ServerSocket server;
     private int serverPort = 2000;
     private int serverTimeout = 100;
@@ -71,16 +70,16 @@ public class TinkerServer implements Runnable {
     private Vector<Socket> clients = new Vector<Socket>();
     private Vector<ObjectOutputStream> outputs = new Vector<ObjectOutputStream>();
     private Vector<ObjectInputStream> inputs = new Vector<ObjectInputStream>();
-    private TinkerSystem system = null;
-    private TinkerUpdate update = null;
+    private SimulationDefinition system = null;
+    private SimulationUpdate update = null;
 
     /**
      * <p>
-     * Constructor for TinkerServer.</p>
+     * Constructor for FFXServer.</p>
      *
-     * @param s a {@link ffx.ui.commands.TinkerSystem} object.
+     * @param s a {@link ffx.ui.commands.SimulationDefinition} object.
      */
-    public TinkerServer(TinkerSystem s) {
+    public FFXServer(SimulationDefinition s) {
         system = s;
     }
 
@@ -188,7 +187,7 @@ public class TinkerServer implements Runnable {
             ObjectOutputStream oout = outputs.get(index);
             Socket client = clients.get(index);
             if (client != null && client.isConnected() && oout != null) {
-                FFXMessage last = new FFXMessage(FFXMessage.SYSTEM);
+                SimulationMessage last = new SimulationMessage(SimulationMessage.SYSTEM);
                 if (system != null) {
                     oout.reset();
                     oout.writeObject(last);
@@ -197,12 +196,12 @@ public class TinkerServer implements Runnable {
                 }
                 if (update != null) {
                     oout.reset();
-                    last.setMessage(FFXMessage.UPDATE);
+                    last.setMessage(SimulationMessage.UPDATE);
                     oout.writeObject(last);
                     oout.writeObject(update);
                     oout.flush();
                 }
-                last.setMessage(FFXMessage.CLOSING);
+                last.setMessage(SimulationMessage.CLOSING);
                 oout.reset();
                 oout.writeObject(last);
                 oout.flush();
@@ -216,9 +215,9 @@ public class TinkerServer implements Runnable {
      * <p>
      * loadUpdate</p>
      *
-     * @param u a {@link ffx.ui.commands.TinkerUpdate} object.
+     * @param u a {@link ffx.ui.commands.SimulationUpdate} object.
      */
-    public void loadUpdate(TinkerUpdate u) {
+    public void loadUpdate(SimulationUpdate u) {
         update = u;
     }
 
@@ -291,13 +290,13 @@ public class TinkerServer implements Runnable {
                 closed.add(client);
             } else {
                 try {
-                    FFXMessage message = null;
+                    SimulationMessage message = null;
                     while (oin != null
                             && client.getInputStream().available() > 0) {
                         Object o = oin.readObject();
-                        if (o instanceof FFXMessage) {
-                            message = (FFXMessage) o;
-                            if (message.getMessage() == FFXMessage.CLOSING) {
+                        if (o instanceof SimulationMessage) {
+                            message = (SimulationMessage) o;
+                            if (message.getMessage() == SimulationMessage.CLOSING) {
                                 closed.add(client);
                                 message = null;
                                 break;
@@ -305,14 +304,14 @@ public class TinkerServer implements Runnable {
                         }
                     }
                     if (message != null) {
-                        if (message.getMessage() == FFXMessage.SYSTEM) {
+                        if (message.getMessage() == SimulationMessage.SYSTEM) {
                             synchronized (system) {
                                 oout.reset();
                                 oout.writeObject(message);
                                 oout.writeObject(system);
                                 oout.flush();
                             }
-                        } else if (message.getMessage() == FFXMessage.UPDATE) {
+                        } else if (message.getMessage() == SimulationMessage.UPDATE) {
                             request = true;
                             if (update != null && update.isNewer(message)) {
                                 synchronized (update) {
@@ -374,7 +373,7 @@ public class TinkerServer implements Runnable {
             }
         }
         Logger.getLogger("ffx").info(
-                "TINKER Server Address: " + server.getLocalSocketAddress());
+                "FFX Server Address: " + server.getLocalSocketAddress());
         // JOptionPane.showMessageDialog(null, server.getLocalSocketAddress(),
         // "Server Address", JOptionPane.ERROR_MESSAGE);
     }

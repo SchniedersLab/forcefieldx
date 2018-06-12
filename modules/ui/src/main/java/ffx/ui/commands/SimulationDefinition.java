@@ -40,13 +40,11 @@ package ffx.ui.commands;
 import java.io.Serializable;
 
 /**
- * The TinkerSystem class is a serializable wrapper that specifies a TINKER
- * system.
+ * The SimulationDefinition class is a serializable wrapper that specifies an FFX simulation.
  *
  * @author Michael J. Schnieders
  */
-@Deprecated
-public class TinkerSystem implements Serializable {
+public class SimulationDefinition implements Serializable {
 
     private static final long serialVersionUID = 1L;
     public boolean read = true;
@@ -66,12 +64,12 @@ public class TinkerSystem implements Serializable {
     public int[] atomic;
 
     /**
-     * Constructor that allocates space for a TINKER system
+     * Constructor that allocates space for a simulation definition.
      *
      * @param a The number of atoms
      * @param k The number of keywords
      */
-    public TinkerSystem(int a, int k) {
+    public SimulationDefinition(int a, int k) {
         numatoms = a;
         numkeys = k;
         keywords = new String[k];

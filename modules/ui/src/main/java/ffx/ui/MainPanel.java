@@ -289,7 +289,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     private ConversionFilter activeConvFilter = null;
     private boolean oscillate = false;
     // TINKER Simulation Variables
-    private TinkerSimulation simulation;
+    private SimulationLoader simulation;
     private String ip = new String("");
     private int port = 2000;
     private InetAddress address = null;
@@ -611,7 +611,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             if (simulation != null) {
                 simulation.release();
             }
-            simulation = new TinkerSimulation(null, null, this, socketAddress);
+            simulation = new SimulationLoader(null, null, this, socketAddress);
             simulation.connect();
             mainMenu.setConnect(false);
             setPanel(GRAPHICS);
@@ -642,7 +642,7 @@ public final class MainPanel extends JPanel implements ActionListener,
                     return;
                 }
             }
-            simulation = new TinkerSimulation(system, modelingThread, this,
+            simulation = new SimulationLoader(system, modelingThread, this,
                     tempAddress);
             if (modelingThread != null) {
                 modelingThread.start();

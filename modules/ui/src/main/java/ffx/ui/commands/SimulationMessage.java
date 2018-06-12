@@ -40,14 +40,12 @@ package ffx.ui.commands;
 import java.io.Serializable;
 
 /**
- * The FFXMessage class is used to pass simple messages between a TinkerServer
+ * The SimulationMessage class is used to pass simple messages between an FFXServer
  * and its FFXClient(s).
  *
  * @author Michael J. Schnieders
- *
  */
-@Deprecated
-public class FFXMessage implements Serializable {
+public class SimulationMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
     /**
@@ -73,11 +71,11 @@ public class FFXMessage implements Serializable {
 
     /**
      * <p>
-     * Constructor for FFXMessage.</p>
+     * Constructor for SimulationMessage.</p>
      *
      * @param m a int.
      */
-    public FFXMessage(int m) {
+    public SimulationMessage(int m) {
         message = m;
     }
 
