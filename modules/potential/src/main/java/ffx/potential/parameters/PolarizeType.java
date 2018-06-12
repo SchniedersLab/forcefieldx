@@ -381,7 +381,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
      * found group member.
      *
      * @param polarizationGroup Atom types that should be included in the group.
-     * @param group XYZ indeces of current group members.
+     * @param group XYZ indices of current group members.
      * @param seed The bonds of the seed atom are queried for inclusion in the
      * group.
      */
