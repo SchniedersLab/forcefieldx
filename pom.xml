@@ -1039,7 +1039,7 @@
         <jogamp-fat.version>2.3.2</jogamp-fat.version>
         <jcuda.version>6.5.0</jcuda.version>
         <junit.version>4.12</junit.version>
-        <openmm.version>7.2.0</openmm.version>
+        <openmm.version>7.2.2</openmm.version>
         <pj.version>1.0.1</pj.version>
         <jna.version>4.1.0</jna.version>
         <biojava.version>3.1.0</biojava.version>
