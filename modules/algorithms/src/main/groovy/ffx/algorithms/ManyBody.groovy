@@ -437,7 +437,7 @@ class ManyBody extends Script {
         if (!options.titrationOptimization.equalsIgnoreCase('none')) {
             def tok = options.titrationOptimization.tokenize('.');
             for (String t : tok) {
-                logger.info(" Protonation state optimizing " + t);
+                logger.info(" Optimizing protonation states of " + t);
                 titrationOptimizationList.add(t);
             }
         }
