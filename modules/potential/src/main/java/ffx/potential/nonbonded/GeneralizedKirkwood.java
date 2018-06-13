@@ -1277,12 +1277,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double sum = sharedBorn.get(i);
                     if (sum <= 0.0) {
                         sum = PI4_3 * 1.0e-9;
-                        born[i] = 1.0 / pow(sum / PI4_3, THIRD);
+                        born[i] = 1.0 / pow(sum / PI4_3, oneThird);
                         //logger.info(format(" I < 0; Resetting %d to %12.6f", i, born[i]));
                         logger.log(GK_WARN_LEVEL, format(" I < 0; Resetting %d to %12.6f", i, born[i]));
                         continue;
                     }
-                    born[i] = 1.0 / pow(sum / PI4_3, THIRD);
+                    born[i] = 1.0 / pow(sum / PI4_3, oneThird);
                     if (verboseRadii) {
                         logger.info(String.format(" Atom %s Born radius %14.8g", atoms[i], born[i]));
                     }
@@ -1521,6 +1521,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private double xi, yi, zi;
             private double ci, uxi, uyi, uzi, qxxi, qxyi, qxzi, qyyi, qyzi, qzzi;
             private double rbi;
+            private int nSymm, iSymm;
+            private SymOp symOp;
+            private double transOp[][];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1538,6 +1541,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqxz = new double[11];
                 gqyz = new double[11];
                 dx_local = new double[3];
+                transOp = new double[3][3];
             }
 
             @Override
@@ -1565,46 +1569,54 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    if (!use[i]) {
-                        continue;
-                    }
-                    xi = x[i];
-                    yi = y[i];
-                    zi = z[i];
-                    multipolei = globalMultipole[0][i];
-                    ci = multipolei[t000];
-                    uxi = multipolei[t100];
-                    uyi = multipolei[t010];
-                    uzi = multipolei[t001];
-                    qxxi = multipolei[t200] / 3.0;
-                    qxyi = multipolei[t110] / 3.0;
-                    qxzi = multipolei[t101] / 3.0;
-                    qyyi = multipolei[t020] / 3.0;
-                    qyzi = multipolei[t011] / 3.0;
-                    qzzi = multipolei[t002] / 3.0;
-                    rbi = born[i];
-                    int list[] = neighborLists[0][i];
-                    int npair = list.length;
-                    for (int l = 0; l < npair; l++) {
-                        int k = list[l];
-                        if (!use[k]) {
+                nSymm = crystal.spaceGroup.symOps.size();
+                List<SymOp> symOps = crystal.spaceGroup.symOps;
+                for (iSymm = 0; iSymm < nSymm; iSymm++) {
+                    symOp = symOps.get(iSymm);
+                    crystal.getTransformationOperator(symOp, transOp);
+                    for (int i = lb; i <= ub; i++) {
+                        if (!use[i]) {
                             continue;
                         }
-                        permanentGKField(i, k);
+                        xi = x[i];
+                        yi = y[i];
+                        zi = z[i];
+                        multipolei = globalMultipole[0][i];
+                        ci = multipolei[t000];
+                        uxi = multipolei[t100];
+                        uyi = multipolei[t010];
+                        uzi = multipolei[t001];
+                        qxxi = multipolei[t200] * oneThird;
+                        qxyi = multipolei[t110] * oneThird;
+                        qxzi = multipolei[t101] * oneThird;
+                        qyyi = multipolei[t020] * oneThird;
+                        qyzi = multipolei[t011] * oneThird;
+                        qzzi = multipolei[t002] * oneThird;
+                        rbi = born[i];
+                        int list[] = neighborLists[iSymm][i];
+                        int npair = list.length;
+                        for (int l = 0; l < npair; l++) {
+                            int k = list[l];
+                            if (!use[k]) {
+                                continue;
+                            }
+                            permanentGKField(i, k);
+                        }
+                        /**
+                         * Include the self permanent reaction field, which is not
+                         * in the neighbor list.
+                         */
+                        if (iSymm == 0) {
+                            permanentGKField(i, i);
+                        }
                     }
-                    /**
-                     * Include the self permanent reaction field, which is not
-                     * in the neighbor list.
-                     */
-                    permanentGKField(i, i);
                 }
             }
 
             private void permanentGKField(int i, int k) {
-                dx_local[0] = x[k] - xi;
-                dx_local[1] = y[k] - yi;
-                dx_local[2] = z[k] - zi;
+                dx_local[0] = sXYZ[iSymm][0][k] - xi;
+                dx_local[1] = sXYZ[iSymm][1][k] - yi;
+                dx_local[2] = sXYZ[iSymm][2][k] - zi;
                 final double r2 = crystal.image(dx_local);
                 if (r2 > cut2) {
                     return;
@@ -1616,17 +1628,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double yr2 = yr * yr;
                 double zr2 = zr * zr;
                 final double rbk = born[k];
-                final double multipolek[] = globalMultipole[0][k];
+                final double multipolek[] = globalMultipole[iSymm][k];
                 final double ck = multipolek[t000];
                 final double uxk = multipolek[t100];
                 final double uyk = multipolek[t010];
                 final double uzk = multipolek[t001];
-                final double qxxk = multipolek[t200] / 3.0;
-                final double qxyk = multipolek[t110] / 3.0;
-                final double qxzk = multipolek[t101] / 3.0;
-                final double qyyk = multipolek[t020] / 3.0;
-                final double qyzk = multipolek[t011] / 3.0;
-                final double qzzk = multipolek[t002] / 3.0;
+                final double qxxk = multipolek[t200] * oneThird;
+                final double qxyk = multipolek[t110] * oneThird;
+                final double qxzk = multipolek[t101] * oneThird;
+                final double qyyk = multipolek[t020] * oneThird;
+                final double qyzk = multipolek[t011] * oneThird;
+                final double qzzk = multipolek[t002] * oneThird;
                 final double rb2 = rbi * rbk;
                 final double expterm = exp(-r2 / (gkc * rb2));
                 final double expc = expterm / gkc;
@@ -1783,6 +1795,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         + qyyi * gqyy[4] + qzzi * gqzz[4]
                         + 2.0 * (qxyi * gqxy[4] + qxzi * gqxz[4]
                         + qyzi * gqyz[4]));
+
                 /**
                  * Scale the self-field by half, such that it sums to one below.
                  */
@@ -1797,6 +1810,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 fx_local[i] += fix;
                 fy_local[i] += fiy;
                 fz_local[i] += fiz;
+
+                double xc = fkx;
+                double yc = fky;
+                double zc = fkz;
+                fkx = xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0];
+                fky = xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1];
+                fkz = xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2];
                 fx_local[k] += fkx;
                 fy_local[k] += fky;
                 fz_local[k] += fkz;
@@ -2212,12 +2232,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         uxi = multipolei[t100];
                         uyi = multipolei[t010];
                         uzi = multipolei[t001];
-                        qxxi = multipolei[t200] / 3.0;
-                        qxyi = multipolei[t110] / 3.0;
-                        qxzi = multipolei[t101] / 3.0;
-                        qyyi = multipolei[t020] / 3.0;
-                        qyzi = multipolei[t011] / 3.0;
-                        qzzi = multipolei[t002] / 3.0;
+                        qxxi = multipolei[t200] * oneThird;
+                        qxyi = multipolei[t110] * oneThird;
+                        qxzi = multipolei[t101] * oneThird;
+                        qyyi = multipolei[t020] * oneThird;
+                        qyzi = multipolei[t011] * oneThird;
+                        qzzi = multipolei[t002] * oneThird;
                         dxi = inducedDipole[i][0];
                         dyi = inducedDipole[i][1];
                         dzi = inducedDipole[i][2];
@@ -2305,12 +2325,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 uxk = multipolek[t100];
                 uyk = multipolek[t010];
                 uzk = multipolek[t001];
-                qxxk = multipolek[t200] / 3.0;
-                qxyk = multipolek[t110] / 3.0;
-                qxzk = multipolek[t101] / 3.0;
-                qyyk = multipolek[t020] / 3.0;
-                qyzk = multipolek[t011] / 3.0;
-                qzzk = multipolek[t002] / 3.0;
+                qxxk = multipolek[t200] * oneThird;
+                qxyk = multipolek[t110] * oneThird;
+                qxzk = multipolek[t101] * oneThird;
+                qyyk = multipolek[t020] * oneThird;
+                qyzk = multipolek[t011] * oneThird;
+                qzzk = multipolek[t002] * oneThird;
                 dxk = inducedDipole[k][0];
                 dyk = inducedDipole[k][1];
                 dzk = inducedDipole[k][2];
@@ -2986,6 +3006,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 final double dsumdr = desymdr + 0.5 * (dewidr + dewkdr);
                 final double drbi = rbk * dsumdr;
                 final double drbk = rbi * dsumdr;
+
                 double selfScale = 1.0;
                 if (i == k) {
                     if (iSymm == 0) {
@@ -2995,6 +3016,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         selfScale = 0.5;
                     }
                 }
+
                 /**
                  * Increment the gradients and Born chain rule term.
                  */
@@ -3373,17 +3395,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tky += 2.0 * (qxzk * kxx + qyzk * kyx + qzzk * kzx - qxxk * kxz - qxyk * kyz - qxzk * kzz);
                 tkz += 2.0 * (qxxk * kxy + qxyk * kyy + qxzk * kzy - qxyk * kxx - qyyk * kyx - qyzk * kzx);
 
-                double selfScale = 1.0;
                 if (i == k) {
-                    selfScale = 0.5;
+                    double selfScale = 0.5;
+                    tix *= selfScale;
+                    tiy *= selfScale;
+                    tiz *= selfScale;
+                    tkx *= selfScale;
+                    tky *= selfScale;
+                    tkz *= selfScale;
                 }
-
-                tix *= selfScale;
-                tiy *= selfScale;
-                tiz *= selfScale;
-                tkx *= selfScale;
-                tky *= selfScale;
-                tkz *= selfScale;
 
                 tX[i] += lPow * tix;
                 tY[i] += lPow * tiy;
@@ -3759,7 +3779,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
          */
         private class BornCRLoop extends IntegerForLoop {
 
-            private final double factor = -pow(PI, THIRD) * pow(6.0, (2.0 * THIRD)) / 9.0;
+            private final double factor = -pow(PI, oneThird) * pow(6.0, (2.0 * oneThird)) / 9.0;
             private final double dx_local[];
             private double gX[];
             private double gY[];
@@ -3896,7 +3916,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         final double zi = z[i];
                         final double rbi = born[i];
                         double termi = PI4_3 / (rbi * rbi * rbi);
-                        termi = factor / pow(termi, (4.0 * THIRD));
+                        termi = factor / pow(termi, (4.0 * oneThird));
 
                         int list[] = neighborLists[iSymOp][i];
                         int nPair = list.length;
@@ -3930,7 +3950,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 // Atom k being descreeened by atom i.
                                 double rbk = born[k];
                                 double termk = PI4_3 / (rbk * rbk * rbk);
-                                termk = factor / pow(termk, (4.0 * THIRD));
+                                termk = factor / pow(termk, (4.0 * oneThird));
 
                                 final double si = ri * overlapScale[i];
                                 de = integralDerivative(r, r2, rk, si);
@@ -9989,9 +10009,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Some static constants.
      */
-    private static final double THIRD = 1.0 / 3.0;
     private static final double PI4_3 = 4.0 / 3.0 * PI;
     private static final double PI_12 = PI / 12.0;
+    /**
+     * Constant factor used with quadrupoles.
+     */
+    private static final double oneThird = 1.0 / 3.0;
 
     public enum NonPolar {
 

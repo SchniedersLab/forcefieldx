@@ -1808,6 +1808,17 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             if (scfPredictor != SCFPredictor.NONE) {
                 saveMutualInducedDipoles();
             }
+
+            if (System.getProperty("printInducedDipoles") != null) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("     Atom                                         Induced Dipole \n");
+                sb.append("    ======                                       ================\n");
+                for (int i = 0; i < nAtoms; i++) {
+                    sb.append(format("%-47s: (%+8.6f %+8.6f %+8.6f)\n", atoms[i],
+                            inducedDipole[0][i][0], inducedDipole[0][i][1], inducedDipole[0][i][2]));
+                }
+                logger.info(sb.toString());
+            }
         }
 
         /**
@@ -2094,16 +2105,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 break;
         }
 
-        if (System.getProperty("printInducedDipoles") != null) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("     Atom                                         Induced Dipole \n");
-            sb.append("    ======                                       ================\n");
-            for (int i = 0; i < nAtoms; i++) {
-                sb.append(format("%-47s: (%+8.6f %+8.6f %+8.6f)\n", atoms[i],
-                        inducedDipole[0][i][0], inducedDipole[0][i][1], inducedDipole[0][i][2]));
-            }
-            logger.info(sb.toString());
-        }
         return iterations;
     }
 
