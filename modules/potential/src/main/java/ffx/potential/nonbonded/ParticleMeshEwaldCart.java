@@ -708,7 +708,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
 
         double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
-        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
+
+        //aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
+        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, 0.545);
         setEwaldParameters(off, aewald);
 
         reciprocalSpaceTerm = forceField.getBoolean(ForceFieldBoolean.RECIPTERM, true);
@@ -6086,6 +6088,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 xhi = x;
             }
         }
+
         return x;
     }
 
