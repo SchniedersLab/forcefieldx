@@ -186,7 +186,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private Atom atoms[];
     private double x[], y[], z[];
     private double sXYZ[][][];
-    private double globalMultipole[][];
+    private double globalMultipole[][][];
     private double inducedDipole[][];
     private double inducedDipoleCR[][];
     private double baseRadius[];
@@ -646,13 +646,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
             fixedRadii = false;
         }
 
-        x = particleMeshEwald.coordinates[0][0];
-        y = particleMeshEwald.coordinates[0][1];
-        z = particleMeshEwald.coordinates[0][2];
-
         sXYZ = particleMeshEwald.coordinates;
 
-        globalMultipole = particleMeshEwald.globalMultipole[0];
+        x = sXYZ[0][0];
+        y = sXYZ[0][1];
+        z = sXYZ[0][2];
+
+        globalMultipole = particleMeshEwald.globalMultipole;
         inducedDipole = particleMeshEwald.inducedDipole[0];
         inducedDipoleCR = particleMeshEwald.inducedDipoleCR[0];
         neighborLists = particleMeshEwald.neighborLists;
@@ -1572,7 +1572,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     xi = x[i];
                     yi = y[i];
                     zi = z[i];
-                    multipolei = globalMultipole[i];
+                    multipolei = globalMultipole[0][i];
                     ci = multipolei[t000];
                     uxi = multipolei[t100];
                     uyi = multipolei[t010];
@@ -1616,7 +1616,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double yr2 = yr * yr;
                 double zr2 = zr * zr;
                 final double rbk = born[k];
-                final double multipolek[] = globalMultipole[k];
+                final double multipolek[] = globalMultipole[0][k];
                 final double ck = multipolek[t000];
                 final double uxk = multipolek[t100];
                 final double uyk = multipolek[t010];
@@ -2132,6 +2132,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private double xi, yi, zi;
             private boolean gradient = false;
             private int count;
+            private int nSymm, iSymm;
+            private SymOp symOp;
+            private double transOp[][];
             private double gkEnergy;
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -2151,6 +2154,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 gqxz = new double[31];
                 gqyz = new double[31];
                 dx_local = new double[3];
+                transOp = new double[3][3];
             }
 
             public void setGradient(boolean gradient) {
@@ -2190,70 +2194,79 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    if (!use[i]) {
-                        continue;
-                    }
-                    xi = x[i];
-                    yi = y[i];
-                    zi = z[i];
-                    final double multipolei[] = globalMultipole[i];
-                    ci = multipolei[t000];
-                    uxi = multipolei[t100];
-                    uyi = multipolei[t010];
-                    uzi = multipolei[t001];
-                    qxxi = multipolei[t200] / 3.0;
-                    qxyi = multipolei[t110] / 3.0;
-                    qxzi = multipolei[t101] / 3.0;
-                    qyyi = multipolei[t020] / 3.0;
-                    qyzi = multipolei[t011] / 3.0;
-                    qzzi = multipolei[t002] / 3.0;
-                    dxi = inducedDipole[i][0];
-                    dyi = inducedDipole[i][1];
-                    dzi = inducedDipole[i][2];
-                    pxi = inducedDipoleCR[i][0];
-                    pyi = inducedDipoleCR[i][1];
-                    pzi = inducedDipoleCR[i][2];
-                    sxi = dxi + pxi;
-                    syi = dyi + pyi;
-                    szi = dzi + pzi;
-                    rbi = born[i];
-                    int list[] = neighborLists[0][i];
-                    int nPair = list.length;
-                    for (int l = 0; l < nPair; l++) {
-                        int k = list[l];
-                        if (!use[k]) {
+                nSymm = crystal.spaceGroup.symOps.size();
+                List<SymOp> symOps = crystal.spaceGroup.symOps;
+
+                for (iSymm = 0; iSymm < nSymm; iSymm++) {
+                    symOp = symOps.get(iSymm);
+                    crystal.getTransformationOperator(symOp, transOp);
+                    for (int i = lb; i <= ub; i++) {
+                        if (!use[i]) {
                             continue;
                         }
-                        interaction(i, k);
-                    }
-                    // Include the self-interaction.
-                    interaction(i, i);
+                        xi = x[i];
+                        yi = y[i];
+                        zi = z[i];
+                        final double multipolei[] = globalMultipole[0][i];
+                        ci = multipolei[t000];
+                        uxi = multipolei[t100];
+                        uyi = multipolei[t010];
+                        uzi = multipolei[t001];
+                        qxxi = multipolei[t200] / 3.0;
+                        qxyi = multipolei[t110] / 3.0;
+                        qxzi = multipolei[t101] / 3.0;
+                        qyyi = multipolei[t020] / 3.0;
+                        qyzi = multipolei[t011] / 3.0;
+                        qzzi = multipolei[t002] / 3.0;
+                        dxi = inducedDipole[i][0];
+                        dyi = inducedDipole[i][1];
+                        dzi = inducedDipole[i][2];
+                        pxi = inducedDipoleCR[i][0];
+                        pyi = inducedDipoleCR[i][1];
+                        pzi = inducedDipoleCR[i][2];
+                        sxi = dxi + pxi;
+                        syi = dyi + pyi;
+                        szi = dzi + pzi;
+                        rbi = born[i];
+                        int list[] = neighborLists[iSymm][i];
+                        int nPair = list.length;
+                        for (int l = 0; l < nPair; l++) {
+                            int k = list[l];
+                            if (!use[k]) {
+                                continue;
+                            }
+                            interaction(i, k);
+                        }
+                        // Include self-interactions for the asymmetric unit atoms.
+                        if (iSymm == 0) {
+                            interaction(i, i);
+                        }
 
-                    /**
-                     * Formula for Born energy approximation is: e = ai * 4.0*pi
-                     * * (ri + probe)^2 * (ri/rb)^6. ri is baseRadius, rb is
-                     * Born radius of given atom. ai is an empirical constant
-                     * for the atom. If ai is too low, everything wants to pack
-                     * into a solid ball, and if ai is too high, everything
-                     * wants to unfold and be as solvent-exposed as possible.
-                     *
-                     * The bornaiTerm is a precalculated 4 * pi * ai value.
-                     */
-                    switch (nonPolar) {
-                        case BORN_SOLV:
-                        case BORN_CAV_DISP:
-                            double r = baseRadiusWithBondi[i] + dOffset + probe;
-                            double ratio = (baseRadiusWithBondi[i] + dOffset) / born[i];
-                            ratio *= ratio;
-                            ratio *= (ratio * ratio);
-                            double saTerm = -surfaceTension * r * r * ratio;
-                            gkEnergy += saTerm / -6.0;
-                            // Now calculate derivatives
-                            gb_local[i] += saTerm / born[i];
-                            break;
-                        default:
-                            break;
+                        /**
+                         * Formula for Born energy approximation is: e = ai * 4.0*pi
+                         * * (ri + probe)^2 * (ri/rb)^6. ri is baseRadius, rb is
+                         * Born radius of given atom. ai is an empirical constant
+                         * for the atom. If ai is too low, everything wants to pack
+                         * into a solid ball, and if ai is too high, everything
+                         * wants to unfold and be as solvent-exposed as possible.
+                         *
+                         * The bornaiTerm is a precalculated 4 * pi * ai value.
+                         */
+                        switch (nonPolar) {
+                            case BORN_SOLV:
+                            case BORN_CAV_DISP:
+                                double r = baseRadiusWithBondi[i] + dOffset + probe;
+                                double ratio = (baseRadiusWithBondi[i] + dOffset) / born[i];
+                                ratio *= ratio;
+                                ratio *= (ratio * ratio);
+                                double saTerm = -surfaceTension * r * r * ratio;
+                                gkEnergy += saTerm / -6.0;
+                                // Now calculate derivatives
+                                gb_local[i] += saTerm / born[i];
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
             }
@@ -2272,9 +2285,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
 
             private void interaction(int i, int k) {
-                dx_local[0] = x[k] - xi;
-                dx_local[1] = y[k] - yi;
-                dx_local[2] = z[k] - zi;
+                dx_local[0] = sXYZ[iSymm][0][k] - xi;
+                dx_local[1] = sXYZ[iSymm][1][k] - yi;
+                dx_local[2] = sXYZ[iSymm][2][k] - zi;
                 r2 = crystal.image(dx_local);
                 if (r2 > cut2) {
                     return;
@@ -2286,7 +2299,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 yr2 = yr * yr;
                 zr2 = zr * zr;
                 rbk = born[k];
-                final double multipolek[] = globalMultipole[k];
+
+                final double multipolek[] = globalMultipole[iSymm][k];
                 ck = multipolek[t000];
                 uxk = multipolek[t100];
                 uyk = multipolek[t010];
@@ -2422,7 +2436,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  */
                 energyTensors();
                 /**
-                 * Compute the GK interac tion energy.
+                 * Compute the GK interaction energy.
                  */
                 gkEnergy += energy(i, k);
                 count++;
@@ -2972,31 +2986,42 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 final double dsumdr = desymdr + 0.5 * (dewidr + dewkdr);
                 final double drbi = rbk * dsumdr;
                 final double drbk = rbi * dsumdr;
+                double selfScale = 1.0;
                 if (i == k) {
-                    gb_local[i] += drbi;
-                    return;
+                    if (iSymm == 0) {
+                        gb_local[i] += drbi;
+                        return;
+                    } else {
+                        selfScale = 0.5;
+                    }
                 }
                 /**
                  * Increment the gradients and Born chain rule term.
                  */
-                final double dedx = dEdX();
-                final double dedy = dEdY();
-                final double dedz = dEdZ();
+                final double dedx = selfScale * dEdX();
+                final double dedy = selfScale * dEdY();
+                final double dedz = selfScale * dEdZ();
+
                 gX[i] -= lPow * dedx;
                 gY[i] -= lPow * dedy;
                 gZ[i] -= lPow * dedz;
-                gb_local[i] += drbi;
-                gX[k] += lPow * dedx;
-                gY[k] += lPow * dedy;
-                gZ[k] += lPow * dedz;
-                gb_local[k] += drbk;
+                gb_local[i] += selfScale * drbi;
+
+                final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
+                final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
+                final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
+
+                gX[k] += lPow * dedxk;
+                gY[k] += lPow * dedyk;
+                gZ[k] += lPow * dedzk;
+                gb_local[k] += selfScale * drbk;
                 if (lambdaTerm) {
                     lgX[i] -= dlPow * dedx;
                     lgY[i] -= dlPow * dedy;
                     lgZ[i] -= dlPow * dedz;
-                    lgX[k] += dlPow * dedx;
-                    lgY[k] += dlPow * dedy;
-                    lgZ[k] += dlPow * dedz;
+                    lgX[k] += dlPow * dedxk;
+                    lgY[k] += dlPow * dedyk;
+                    lgZ[k] += dlPow * dedzk;
                 }
                 permanentEnergyTorque(i, k);
             }
@@ -3347,19 +3372,36 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tkx += 2.0 * (qxyk * kxz + qyyk * kyz + qyzk * kzz - qxzk * kxy - qyzk * kyy - qzzk * kzy);
                 tky += 2.0 * (qxzk * kxx + qyzk * kyx + qzzk * kzx - qxxk * kxz - qxyk * kyz - qxzk * kzz);
                 tkz += 2.0 * (qxxk * kxy + qxyk * kyy + qxzk * kzy - qxyk * kxx - qyyk * kyx - qyzk * kzx);
+
+                double selfScale = 1.0;
+                if (i == k) {
+                    selfScale = 0.5;
+                }
+
+                tix *= selfScale;
+                tiy *= selfScale;
+                tiz *= selfScale;
+                tkx *= selfScale;
+                tky *= selfScale;
+                tkz *= selfScale;
+
                 tX[i] += lPow * tix;
                 tY[i] += lPow * tiy;
                 tZ[i] += lPow * tiz;
-                tX[k] += lPow * tkx;
-                tY[k] += lPow * tky;
-                tZ[k] += lPow * tkz;
+
+                final double rtkx = tkx * transOp[0][0] + tky * transOp[1][0] + tkz * transOp[2][0];
+                final double rtky = tkx * transOp[0][1] + tky * transOp[1][1] + tkz * transOp[2][1];
+                final double rtkz = tkx * transOp[0][2] + tky * transOp[1][2] + tkz * transOp[2][2];
+                tX[k] += lPow * rtkx;
+                tY[k] += lPow * rtky;
+                tZ[k] += lPow * rtkz;
                 if (lambdaTerm) {
                     ltX[i] += dlPow * tix;
                     ltY[i] += dlPow * tiy;
                     ltZ[i] += dlPow * tiz;
-                    ltX[k] += dlPow * tkx;
-                    ltY[k] += dlPow * tky;
-                    ltZ[k] += dlPow * tkz;
+                    ltX[k] += dlPow * rtkx;
+                    ltY[k] += dlPow * rtky;
+                    ltZ[k] += dlPow * rtkz;
                 }
             }
 
@@ -3838,18 +3880,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
             @Override
             public void run(int lb, int ub) {
                 int nSymm = crystal.spaceGroup.symOps.size();
-                if (nSymm == 0) {
-                    nSymm = 1;
-                }
-
                 for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
-
                     SymOp symOp = crystal.spaceGroup.symOps.get(iSymOp);
                     double transOp[][] = new double[3][3];
-
                     double xyz[][] = sXYZ[iSymOp];
                     crystal.getTransformationOperator(symOp, transOp);
-
                     for (int i = lb; i <= ub; i++) {
                         if (!nativeEnvironmentApproximation && !use[i]) {
                             continue;
