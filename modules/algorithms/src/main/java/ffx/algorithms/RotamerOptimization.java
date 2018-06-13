@@ -110,8 +110,6 @@ import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.ObjectPair;
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-import static ffx.utilities.HashCodeUtil.SEED;
-import static ffx.utilities.HashCodeUtil.hash;
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone
@@ -2097,23 +2095,32 @@ public class RotamerOptimization implements Terminatable {
         residueList = new ArrayList<>();
         for (int i = startResID; i <= finalResID; i++) {
             Residue residue = polymer.getResidue(i);
-            if (residue == null) {
-                logger.warning(String.format(" Null residue %d for chain %c", i, polymer.getChainID()));
-            } else {
-                Rotamer[] rotamers = residue.getRotamers(library);
-                if (rotamers != null) {
-                    int lenri = rotamers.length;
-                    if (lenri > 1 || addOrigRot) {
-                        residue.initializeDefaultAtomicCoordinates();
-                        // The default rotamers map hasn't yet been initialized.
-                        if (residue.getResidueType() == Residue.ResidueType.AA) {
-                            RotamerLibrary.applyRotamer(residue, rotamers[0]);
-                        }
-                        residueList.add(residue);
-                    }
-                } else if (useForcedResidues && checkIfForced(i)) {
+            initResidue(residue, polymer, i);
+        }
+    }
+
+    /**
+     * Initialize a rotamer for optimization: add it to  residueList,
+     * apply its 0th rotamer, initialize default atomic doordinates, etc.
+     *
+     * @param residue A Residue to add to optimization.
+     * @param polymer The Polymer it belongs to.
+     * @param i residues index in polymer.
+     */
+    private void initResidue(Residue residue, Polymer polymer, int i) {
+        if (residue == null) {
+            logger.warning(String.format(" Null residue %d for chain %c", i, polymer.getChainID()));
+        } else {
+            Rotamer[] rotamers = residue.getRotamers(library);
+            if (rotamers != null) {
+                int lenri = rotamers.length;
+                if (lenri > 1 || addOrigRot) {
+                    residue.initializeDefaultAtomicCoordinates();
+                    RotamerLibrary.applyRotamer(residue, rotamers[0]);
                     residueList.add(residue);
                 }
+            } else if (useForcedResidues && checkIfForced(i)) {
+                residueList.add(residue);
             }
         }
     }
@@ -3504,47 +3511,27 @@ public class RotamerOptimization implements Terminatable {
      * @return Shortest distance
      */
     private double get2BodyDistance(int i, int ri, int j, int rj) {
+        if (i > j) {
+            int temp = i;
+            i = j;
+            j = temp;
+            temp = ri;
+            ri = rj;
+            rj = temp;
+        }
+
         if (distanceMethod == DistanceMethod.ROTAMER) {
-            if (i > j) {
-                double dist = distanceMatrix[j][rj][i][ri];
-                if (dist < 0) {
-                    dist = evaluateDistance(j, rj, i, ri);
-                    distanceMatrix[j][rj][i][ri] = dist;
-                }
-                return dist;
-            }
-            double dist = distanceMatrix[i][ri][j][rj];
-            if (dist < 0) {
-                dist = evaluateDistance(i, ri, j, rj);
-                distanceMatrix[i][ri][j][rj] = dist;
-            }
-            return dist;
+            return checkDistMatrix(i, ri, j, rj);
         } else {
             double minDist = Double.MAX_VALUE;
-            if (i > j) {
-                for (int rotJ = 0; rotJ < distanceMatrix[j].length; rotJ++) {
-                    for (int rotI = 0; rotI < distanceMatrix[j][rotI][i].length; rotI++) {
-                        double dist = distanceMatrix[j][rotJ][i][rotI];
-                        if (dist < 0) {
-                            dist = evaluateDistance(j, rotJ, i, rotI);
-                            distanceMatrix[j][rotJ][i][rotI] = dist;
+            final int lenri = distanceMatrix[i].length;
+            final int lenrj = distanceMatrix[i][ri][j].length;
+            for (int roti = 0; roti < lenri; roti++) {
+                if (!check(i, roti)) {
+                    for (int rotj = 0; rotj < lenrj; rotj++) {
+                        if (!check(j, rotj) && !check(i, roti, j, rotj)) {
+                            minDist = Math.min(minDist, checkDistMatrix(i, roti, j, rotj));
                         }
-                        if (dist < minDist) {
-                            minDist = dist;
-                        }
-                    }
-                }
-                return minDist;
-            }
-            for (int rotI = 0; rotI < distanceMatrix[i].length; rotI++) {
-                for (int rotJ = 0; rotJ < distanceMatrix[i][rotI][j].length; rotJ++) {
-                    double dist = distanceMatrix[i][rotI][j][rotJ];
-                    if (dist < 0) {
-                        dist = evaluateDistance(i, rotI, j, rotJ);
-                        distanceMatrix[i][rotI][j][rotJ] = dist;
-                    }
-                    if (dist < minDist) {
-                        minDist = dist;
                     }
                 }
             }
@@ -3553,7 +3540,35 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
+     * Helper method for get2BodyDistance, using lazy loading of the distanceMatrix array.
+     * Not intended to be used by any other method.
+     *
+     * @param i A residue index.
+     * @param ri A rotamer index for i.
+     * @param j A residue index j!=i.
+     * @param rj A rotamer index for j.
+     * @return dist(i, ri, j, rj), ignoring distance matrix method used.
+     */
+    private double checkDistMatrix(int i, int ri, int j, int rj) {
+        if (i > j) {
+            int temp = i;
+            i = j;
+            j = temp;
+            temp = ri;
+            ri = rj;
+            rj = temp;
+        }
+        double dist = distanceMatrix[i][ri][j][rj];
+        if (dist < 0) {
+            dist = evaluateDistance(i, ri, j, rj);
+            distanceMatrix[i][ri][j][rj] = dist;
+        }
+        return dist;
+    }
+
+    /**
      * Returns the RMS separation distance of three 2-body distances.
+     * Defaults to Double.MAX_VALUE when there are pair distances outside cutoffs.
      *
      * @param i Residue i
      * @param ri Rotamer for i
@@ -3567,11 +3582,16 @@ public class RotamerOptimization implements Terminatable {
         double ij = get2BodyDistance(i, ri, j, rj);
         double ik = get2BodyDistance(i, ri, k, rk);
         double jk = get2BodyDistance(j, rj, k, rk);
-        return sqrt((ij * ij + ik * ik + jk * jk) / 3.0);
+        if (areFiniteAndNotMax(ij, ik, jk)) {
+            return sqrt((ij * ij + ik * ik + jk * jk) / 3.0);
+        } else {
+            return Double.MAX_VALUE;
+        }
     }
 
     /**
      * Returns the RMS separation distance of 6 2-body distances.
+     * Defaults to Double.MAX_VALUE when there are pair distances outside cutoffs.
      *
      * @param i Residue i
      * @param ri Rotamer for i
@@ -3590,7 +3610,38 @@ public class RotamerOptimization implements Terminatable {
         double jk = get2BodyDistance(j, rj, k, rk);
         double jl = get2BodyDistance(j, rj, l, rl);
         double kl = get2BodyDistance(k, rk, l, rl);
-        return sqrt((ij * ij + ik * ik + il * il + jk * jk + jl * jl + kl * kl) / 6.0);
+        if (areFiniteAndNotMax(ij, ik, il, jk, jl, kl)) {
+            return sqrt((ij * ij + ik * ik + il * il + jk * jk + jl * jl + kl * kl) / 6.0);
+        } else {
+            return Double.MAX_VALUE;
+        }
+    }
+
+    /**
+     * Returns true if all values (usually distances) are
+     * both finite and not set to Double.MAX_VALUE.
+     *
+     * @param values Values to check.
+     * @return If all values are regular, finite values.
+     */
+    private static boolean areFiniteAndNotMax(double... values) {
+        return Arrays.stream(values).
+                allMatch((double val) -> Double.isFinite(val) && val < Double.MAX_VALUE);
+    }
+
+    /**
+     * Checks if the i,ri,j,rj pair exceeds the pair distance thresholds.
+     * @param i A residue index.
+     * @param ri A rotamer index for i.
+     * @param j A residue index j!=i.
+     * @param rj A rotamer index for j.
+     * @return If i,ri,j,rj > threshold distance.
+     */
+    private boolean checkPairDistThreshold(int i, int ri, int j, int rj) {
+        if (twoBodyCutoffDist <= 0 || !Double.isFinite(twoBodyCutoffDist)) {
+            return false;
+        }
+        return !(get2BodyDistance(i, ri, j, rj) < twoBodyCutoffDist);
     }
 
     /**
@@ -4640,17 +4691,17 @@ public class RotamerOptimization implements Terminatable {
 
         boolean containsNA = Arrays.stream(residues).anyMatch((Residue r) -> r.getResidueType() == Residue.ResidueType.NA);
 
-        if (containsNA) {
+        //if (containsNA) {
             /*
              * Must pin 5' ends of nucleic acids which are attached to nucleic acids
              * outside the window, to those prior residues' sugar puckers.  Then,
              * if a correction threshold is set, eliminate rotamers with excessive
              * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
              */
-            logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
+            //logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
             //reconcileNARotamersWithPriorResidues(residues);
             //eliminateNABackboneRotamers(residues);
-        }
+        //}
 
         if (decomposeOriginal) {
             assert library.getUsingOrigCoordsRotamer();
@@ -7647,14 +7698,16 @@ public class RotamerOptimization implements Terminatable {
                 int minRI = -1;
                 int minRJ = -1;
 
+                boolean cutoffPair = true;
                 for (int ri = 0; ri < lenri; ri++) {
                     if (check(i, ri)) {
                         continue;
                     }
                     for (int rj = 0; rj < lenrj; rj++) {
-                        if (check(j, rj) || check(i, ri, j, rj)) {
+                        if (check(j, rj) || check(i, ri, j, rj) || checkPairDistThreshold(i, ri, j, rj)) {
                             continue;
                         }
+                        cutoffPair = false;
                         double pairEnergy = get2Body(i, ri, j, rj) + getSelf(i, ri) + getSelf(j, rj);
                         assert Double.isFinite(pairEnergy);
                         if (pairEnergy < minPair) {
@@ -7663,6 +7716,10 @@ public class RotamerOptimization implements Terminatable {
                             minRJ = rj;
                         }
                     }
+                }
+                if (cutoffPair) {
+                    // Under this branch: no rotamer pairs that clear the distance threshold.
+                    continue;
                 }
                 assert (minRI >= 0 && minRJ >= 0); // Otherwise, i and j are not on a well-packed backbone.
 
@@ -8750,7 +8807,7 @@ public class RotamerOptimization implements Terminatable {
                         twoBodyEnergy = Double.NaN;
                         logger.info(format(" Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang < %5.3f Ang",
                                 residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, dist, superpositionThreshold));
-                    } else if (twoBodyCutoffDist > 0 && dist > twoBodyCutoffDist) {
+                    } else if (checkPairDistThreshold(i, ri, j, rj)) {
                         // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                         twoBodyEnergy = 0.0;
                         time += System.nanoTime();
