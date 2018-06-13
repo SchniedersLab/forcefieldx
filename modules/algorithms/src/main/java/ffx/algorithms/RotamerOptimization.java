@@ -59,6 +59,7 @@ import java.util.function.ToDoubleFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -108,6 +109,9 @@ import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.ObjectPair;
+import org.apache.commons.math3.util.CombinatoricsUtils;
+import org.apache.commons.math3.util.FastMath;
+
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
@@ -3527,12 +3531,8 @@ public class RotamerOptimization implements Terminatable {
             final int lenri = distanceMatrix[i].length;
             final int lenrj = distanceMatrix[i][ri][j].length;
             for (int roti = 0; roti < lenri; roti++) {
-                if (!check(i, roti)) {
-                    for (int rotj = 0; rotj < lenrj; rotj++) {
-                        if (!check(j, rotj) && !check(i, roti, j, rotj)) {
-                            minDist = Math.min(minDist, checkDistMatrix(i, roti, j, rotj));
-                        }
-                    }
+                for (int rotj = 0; rotj < lenrj; rotj++) {
+                    minDist = Math.min(minDist, checkDistMatrix(i, roti, j, rotj));
                 }
             }
             return minDist;
@@ -3540,8 +3540,8 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Helper method for get2BodyDistance, using lazy loading of the distanceMatrix array.
-     * Not intended to be used by any other method.
+     * Gets the raw distance between two rotamers using lazy loading of the distance matrix.
+     * Intended uses: helper method for get2BodyDistance, and for checking for superpositions.
      *
      * @param i A residue index.
      * @param ri A rotamer index for i.
@@ -3564,6 +3564,39 @@ public class RotamerOptimization implements Terminatable {
             distanceMatrix[i][ri][j][rj] = dist;
         }
         return dist;
+    }
+
+    /**
+     * Returns the RMS distance between an arbitrary set of rotamers.
+     * @param resrot Residue index-rotamer index pairs.
+     * @return RMS distance, or Double.MAX_VALUE if ill-defined.
+     */
+    private double getRawNBodyDistance(int... resrot) {
+        int nRes = resrot.length;
+        if (nRes % 2 != 0) {
+            throw new IllegalArgumentException(" Must have an even number of arguments; res-rot pairs!");
+        }
+        nRes /= 2;
+        if (nRes < 2) {
+            throw new IllegalArgumentException(" Must have >= 4 arguments; at least 2 res-rot pairs!");
+        }
+        // nCr where n is # of residues, choose pairs.
+        int numDists = (int) CombinatoricsUtils.binomialCoefficient(nRes, 2);
+        double mult = 1.0 / numDists;
+        double totDist2 = 0.0;
+
+        for (int i = 0; i < nRes - 1; i++) {
+            int i2 = 2*i;
+            for (int j = i+1; j < nRes; j++) {
+                int j2 = 2*j;
+                double rawDist = checkDistMatrix(resrot[i2], resrot[i2+1], resrot[j2], resrot[j2+1]);
+                if (!Double.isFinite(rawDist) || rawDist == Double.MAX_VALUE) {
+                    return Double.MAX_VALUE;
+                }
+                totDist2 += (rawDist * mult);
+            }
+        }
+        return FastMath.sqrt(totDist2);
     }
 
     /**
@@ -3641,7 +3674,54 @@ public class RotamerOptimization implements Terminatable {
         if (twoBodyCutoffDist <= 0 || !Double.isFinite(twoBodyCutoffDist)) {
             return false;
         }
-        return !(get2BodyDistance(i, ri, j, rj) < twoBodyCutoffDist);
+        return (get2BodyDistance(i, ri, j, rj) > twoBodyCutoffDist);
+    }
+
+    /**
+     * Checks if the i,ri,j,rj,k,rk triple exceeds the 3-body threshold,
+     * or if any component exceeds the pair distance threshold.
+     * @param i A residue index.
+     * @param ri A rotamer index for i.
+     * @param j A residue index j!=i.
+     * @param rj A rotamer index for j.
+     * @param k A residue index k!=i, k!=j.
+     * @param rk A rotamer index for k.
+     * @return If i,ri,j,rj,k,rk > threshold distances.
+     */
+    private boolean checkTriDistThreshold(int i, int ri, int j, int rj, int k, int rk) {
+        if (checkPairDistThreshold(i, ri, j, rj) || checkPairDistThreshold(i, ri, k, rk) ||
+                checkPairDistThreshold(j, rj, k, rk)) {
+            return true;
+        }
+        if (threeBodyCutoffDist <= 0 || !Double.isFinite(threeBodyCutoffDist)) {
+            return false;
+        }
+        return (get3BodyDistance(i, ri, j, rj, k, rk) > threeBodyCutoffDist);
+    }
+
+    /**
+     * Checks if the i,ri,j,rj,k,rk,l,rl quad exceeds the 3-body threshold,
+     * or if any component exceeds the pair/triple distance thresholds.
+     * @param i A residue index.
+     * @param ri A rotamer index for i.
+     * @param j A residue index j!=i.
+     * @param rj A rotamer index for j.
+     * @param k A residue index k!=i, k!=j.
+     * @param rk A rotamer index for k.
+     * @param l A residue index l!=i, l!=j, l!=k.
+     * @param rl A rotamer index for l.
+     * @return If i,ri,j,rj,k,rk,l,rl > threshold distances.
+     */
+    private boolean checkQuadDistThreshold(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+        if (checkTriDistThreshold(i, ri, j, rj, k, rk) || checkTriDistThreshold(i, ri, j, rj, l, rl)
+                || checkTriDistThreshold(i, ri, k, rk, l, rl) || checkTriDistThreshold(j, rj, k, rk, l, rl)) {
+            return true;
+        }
+        // Use the 3-body cutoff distance for now.
+        if (threeBodyCutoffDist <= 0 || !Double.isFinite(threeBodyCutoffDist)) {
+            return false;
+        }
+        return get4BodyDistance(i, ri, j, rj, k, rk, l, rl) > threeBodyCutoffDist;
     }
 
     /**
@@ -8415,7 +8495,7 @@ public class RotamerOptimization implements Terminatable {
                         int roti = (int) incSelf[1];
                         double energy = incSelf[2];
                         if (energy == Double.NaN) {
-                            logger.warning("Rotamer eliminated.");
+                            logger.info("Rotamer eliminated.");
                             eliminateRotamer(resArr, resi, roti, false);
                         }
                         // check for "process finished" announcements
@@ -8467,7 +8547,7 @@ public class RotamerOptimization implements Terminatable {
                         int rotj = (int) incPair[3];
                         double energy = incPair[4];
                         if (energy == Double.NaN) {
-                            logger.warning("Rotamer pair eliminated.");
+                            logger.info("Rotamer pair eliminated.");
                             eliminateRotamerPair(resArr, resi, roti, resj, rotj, false);
                         }
                         // check for "process finished" announcements
@@ -8787,6 +8867,7 @@ public class RotamerOptimization implements Terminatable {
                     int rj = job[3];
 
                     if (check(i, ri) || check(j, rj) || check(i, ri, j, rj)) {
+                        logger.severe(String.format(" Invalid pair energy job for %d-%d %d-%d: eliminated i %b j %b i-j %b", i, ri, j, rj, check(i, ri), check(j, rj), check(i, ri, j, rj)));
                         continue;
                     }
 
@@ -8794,7 +8875,7 @@ public class RotamerOptimization implements Terminatable {
                     Residue residueJ = residues[j];
                     int indexI = allResiduesList.indexOf(residueI);
                     int indexJ = allResiduesList.indexOf(residueJ);
-                    double dist = get2BodyDistance(indexI, ri, indexJ, rj);
+                    double dist = checkDistMatrix(indexI, ri, indexJ, rj);
 
                     String distString = format("     large");
                     if (dist < Double.MAX_VALUE) {
@@ -8825,6 +8906,10 @@ public class RotamerOptimization implements Terminatable {
                             logger.info(format(" Pair %8s %-2d, %8s %-2d:              NaN at %s (Ang) in %6.4f (sec).",
                                     residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, distString, time * 1.0e-9));
                         }
+                    }
+
+                    if (!Double.isFinite(twoBodyEnergy)) {
+                        eliminateRotamerPair(residues, i, ri, j, rj, false);
                     }
 
                     // Broadcast the energy.
@@ -8949,18 +9034,16 @@ public class RotamerOptimization implements Terminatable {
                     int indexI = allResiduesList.indexOf(residueI);
                     int indexJ = allResiduesList.indexOf(residueJ);
                     int indexK = allResiduesList.indexOf(residueK);
-                    double dIJ = get2BodyDistance(indexI, ri, indexJ, rj);
-                    double dIK = get2BodyDistance(indexI, ri, indexK, rk);
-                    double dJK = get2BodyDistance(indexJ, rj, indexK, rk);
 
-                    // Compute the RMS 3-Body distance.
-                    double dist = sqrt((dIJ * dIJ + dIK * dIK + dJK * dJK) / 3.0);
-                    // Compute the minimum separation distance.
-                    double minDist = min(dIJ, min(dIK, dJK));
+                    double rawDist = getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
+                    double dIJ = checkDistMatrix(indexI, ri, indexJ, rj);
+                    double dIK = checkDistMatrix(indexI, ri, indexK, rk);
+                    double dJK = checkDistMatrix(indexJ, rj, indexK, rk);
+                    double minDist = Math.min(Math.min(dIJ, dIK), dJK);
 
                     String distString = format("     large");
-                    if (dist < Double.MAX_VALUE) {
-                        distString = format("%10.3f", dist);
+                    if (rawDist < Double.MAX_VALUE) {
+                        distString = format("%10.3f", rawDist);
                     }
 
                     double threeBodyEnergy = 0.0;
@@ -8968,7 +9051,7 @@ public class RotamerOptimization implements Terminatable {
                         threeBodyEnergy = Double.NaN;
                         logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %13.6f Ang < %5.3f Ang.",
                                 residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk, minDist, superpositionThreshold));
-                    } else if (threeBodyCutoff && (dist > threeBodyCutoffDist)) {
+                    } else if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
                         // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                         threeBodyEnergy = 0.0;
                         time += System.nanoTime();
@@ -9066,25 +9149,24 @@ public class RotamerOptimization implements Terminatable {
                     Residue resk = residues[k];
                     Residue resl = residues[l];
 
-                    int indexOfI = allResiduesList.indexOf(residues[i]);
-                    int indexOfJ = allResiduesList.indexOf(residues[j]);
-                    int indexOfK = allResiduesList.indexOf(residues[k]);
-                    int indexOfL = allResiduesList.indexOf(residues[l]);
-                    // Distance matrix is asymmetric, but in present implementation i < j < k.
-                    double dij = get2BodyDistance(indexOfI, ri, indexOfJ, rj);
-                    double dik = get2BodyDistance(indexOfI, ri, indexOfK, rk);
-                    double dil = get2BodyDistance(indexOfI, ri, indexOfL, rl);
-                    double djk = get2BodyDistance(indexOfJ, rj, indexOfK, rk);
-                    double djl = get2BodyDistance(indexOfJ, rj, indexOfL, rl);
-                    double dkl = get2BodyDistance(indexOfK, rk, indexOfL, rl);
+                    int indexI = allResiduesList.indexOf(residues[i]);
+                    int indexJ = allResiduesList.indexOf(residues[j]);
+                    int indexK = allResiduesList.indexOf(residues[k]);
+                    int indexL = allResiduesList.indexOf(residues[l]);
 
-                    // Compute the RMS 4-Body distance.
-                    double dist = sqrt((dij * dij + dik * dik + dil * dil + djk * djk + djl * djl + dkl * dkl) / 6.0);
-                    double minDist = min(dij, min(dik, min(dil, min(djk, min(djl, dkl)))));
+                    double rawDist = getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk, indexL, rl);
+                    double dIJ = checkDistMatrix(indexI, ri, indexJ, rj);
+                    double dIK = checkDistMatrix(indexI, ri, indexK, rk);
+                    double dIL = checkDistMatrix(indexI, ri, indexL, rl);
+                    double dJK = checkDistMatrix(indexJ, rj, indexK, rk);
+                    double dJL = checkDistMatrix(indexJ, rj, indexL, rl);
+                    double dKL = checkDistMatrix(indexK, rk, indexL, rl);
+
+                    double minDist = DoubleStream.of(dIJ, dIK, dIL, dJK, dJL, dKL).min().getAsDouble();
 
                     String distString = format("     large");
-                    if (dist < Double.MAX_VALUE) {
-                        distString = format("%10.3f", dist);
+                    if (rawDist < Double.MAX_VALUE) {
+                        distString = format("%10.3f", rawDist);
                     }
 
                     double fourBodyEnergy = 0.0;
@@ -9092,7 +9174,8 @@ public class RotamerOptimization implements Terminatable {
                         fourBodyEnergy = Double.NaN;
                         logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d:   set to NaN at %13.6f Ang < %5.3f Ang.",
                                 residues[i], ri, residues[j].toFormattedString(false, true), rj, residues[k].toFormattedString(false, true), rk, residues[l].toFormattedString(false, true), rl, minDist, superpositionThreshold));
-                    } else if (quadCutoff && (dist < quadCutoffDist)) {
+                    } //else if (quadCutoff && (dist < quadCutoffDist)) {
+                    else if (checkQuadDistThreshold(indexI, ri, indexJ, rj, indexK, rk, indexL, rl)) {
                         // Set the 4-body energy to 0.0 for separation distances larger than the 4-body cutoff.
                         fourBodyEnergy = 0.0;
                         time += System.nanoTime();
