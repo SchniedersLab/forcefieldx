@@ -37,6 +37,7 @@
  */
 package ffx.algorithms.integrators;
 
+import ffx.algorithms.thermostats.Thermostat;
 import ffx.numerics.Potential;
 
 /**
@@ -52,10 +53,29 @@ import ffx.numerics.Potential;
  */
 public class Respa extends Integrator {
 
+    /**
+     * Target inner time step in psec.
+     */
     private double dalt;
-    private double dta;
-    private double dta_2;
+
+    /**
+     * Number of inner time steps.
+     */
     private int nalt;
+
+    /**
+     * Actual inner time step in psec.
+     */
+    private double dta;
+
+    /**
+     * Half the actual inner time step.
+     */
+    private double dta_2;
+
+    /**
+     * Small increase in the target inner time step when computing the number of inner time steps.
+     */
     private final double eps = .00000001;
     private double halfStepEnergy = 0;
 
@@ -111,7 +131,7 @@ public class Respa extends Integrator {
             potential.setEnergyTermState(Potential.STATE.FAST);
             halfStepEnergy = potential.energyAndGradient(x, gradient);
             for (int i = 0; i < nVariables; i++) {
-                aPrevious[i] = -ffx.algorithms.thermostats.Thermostat.convert * gradient[i] / mass[i];
+                aPrevious[i] = -Thermostat.convert * gradient[i] / mass[i];
                 v[i] += aPrevious[i] * dta;
                 x[i] += v[i] * dta_2;
             }
@@ -127,7 +147,7 @@ public class Respa extends Integrator {
     @Override
     public void postForce(double[] gradient) {
         for (int i = 0; i < nVariables; i++) {
-            a[i] = -ffx.algorithms.thermostats.Thermostat.convert * gradient[i] / mass[i];
+            a[i] = -Thermostat.convert * gradient[i] / mass[i];
             v[i] += a[i] * dt_2;
         }
     }
