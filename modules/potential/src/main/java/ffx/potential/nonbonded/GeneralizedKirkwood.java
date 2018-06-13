@@ -187,8 +187,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private double x[], y[], z[];
     private double sXYZ[][][];
     private double globalMultipole[][][];
-    private double inducedDipole[][];
-    private double inducedDipoleCR[][];
+    private double inducedDipole[][][];
+    private double inducedDipoleCR[][][];
     private double baseRadius[];
     private double baseRadiusWithBondi[];
     private double overlapScale[];
@@ -653,8 +653,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         z = sXYZ[0][2];
 
         globalMultipole = particleMeshEwald.globalMultipole;
-        inducedDipole = particleMeshEwald.inducedDipole[0];
-        inducedDipoleCR = particleMeshEwald.inducedDipoleCR[0];
+        inducedDipole = particleMeshEwald.inducedDipole;
+        inducedDipoleCR = particleMeshEwald.inducedDipoleCR;
         neighborLists = particleMeshEwald.neighborLists;
         grad = particleMeshEwald.getGradient();
         torque = particleMeshEwald.getTorque();
@@ -1883,6 +1883,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private double uix, uiy, uiz;
             private double uixCR, uiyCR, uizCR;
             private double rbi;
+            private int nSymm, iSymm;
+            private SymOp symOp;
+            private double transOp[][];
             // Extra padding to avert cache interference.
             private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
             private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -1893,6 +1896,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 guy = new double[5];
                 guz = new double[5];
                 dx_local = new double[3];
+                transOp = new double[3][3];
             }
 
             @Override
@@ -1929,41 +1933,49 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    if (!use[i]) {
-                        continue;
-                    }
-                    xi = x[i];
-                    yi = y[i];
-                    zi = z[i];
-                    uix = inducedDipole[i][0];
-                    uiy = inducedDipole[i][1];
-                    uiz = inducedDipole[i][2];
-                    uixCR = inducedDipoleCR[i][0];
-                    uiyCR = inducedDipoleCR[i][1];
-                    uizCR = inducedDipoleCR[i][2];
-                    rbi = born[i];
-                    int list[] = neighborLists[0][i];
-                    int nPair = list.length;
-                    for (int l = 0; l < nPair; l++) {
-                        int k = list[l];
-                        if (!use[k]) {
+                nSymm = crystal.spaceGroup.symOps.size();
+                List<SymOp> symOps = crystal.spaceGroup.symOps;
+                for (iSymm = 0; iSymm < nSymm; iSymm++) {
+                    symOp = symOps.get(iSymm);
+                    crystal.getTransformationOperator(symOp, transOp);
+                    for (int i = lb; i <= ub; i++) {
+                        if (!use[i]) {
                             continue;
                         }
-                        inducedGKField(i, k);
+                        xi = x[i];
+                        yi = y[i];
+                        zi = z[i];
+                        uix = inducedDipole[0][i][0];
+                        uiy = inducedDipole[0][i][1];
+                        uiz = inducedDipole[0][i][2];
+                        uixCR = inducedDipoleCR[0][i][0];
+                        uiyCR = inducedDipoleCR[0][i][1];
+                        uizCR = inducedDipoleCR[0][i][2];
+                        rbi = born[i];
+                        int list[] = neighborLists[iSymm][i];
+                        int nPair = list.length;
+                        for (int l = 0; l < nPair; l++) {
+                            int k = list[l];
+                            if (!use[k]) {
+                                continue;
+                            }
+                            inducedGKField(i, k);
+                        }
+                        /**
+                         * Include the self induced reaction field, which is not in
+                         * the neighbor list.
+                         */
+                        if (iSymm == 0) {
+                            inducedGKField(i, i);
+                        }
                     }
-                    /**
-                     * Include the self induced reaction field, which is not in
-                     * the neighbor list.
-                     */
-                    inducedGKField(i, i);
                 }
             }
 
             private void inducedGKField(int i, int k) {
-                dx_local[0] = x[k] - xi;
-                dx_local[1] = y[k] - yi;
-                dx_local[2] = z[k] - zi;
+                dx_local[0] = sXYZ[iSymm][0][k] - xi;
+                dx_local[1] = sXYZ[iSymm][1][k] - yi;
+                dx_local[2] = sXYZ[iSymm][2][k] - zi;
                 final double r2 = crystal.image(dx_local);
                 if (r2 > cut2) {
                     return;
@@ -1974,12 +1986,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double xr2 = xr * xr;
                 double yr2 = yr * yr;
                 double zr2 = zr * zr;
-                final double ukx = inducedDipole[k][0];
-                final double uky = inducedDipole[k][1];
-                final double ukz = inducedDipole[k][2];
-                final double ukxCR = inducedDipoleCR[k][0];
-                final double ukyCR = inducedDipoleCR[k][1];
-                final double ukzCR = inducedDipoleCR[k][2];
+                final double ukx = inducedDipole[iSymm][k][0];
+                final double uky = inducedDipole[iSymm][k][1];
+                final double ukz = inducedDipole[iSymm][k][2];
+                final double ukxCR = inducedDipoleCR[iSymm][k][0];
+                final double ukyCR = inducedDipoleCR[iSymm][k][1];
+                final double ukzCR = inducedDipoleCR[iSymm][k][2];
                 final double rbk = born[k];
                 final double rb2 = rbi * rbk;
                 final double expterm = exp(-r2 / (gkc * rb2));
@@ -2049,15 +2061,29 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     fkyCR *= 0.5;
                     fkzCR *= 0.5;
                 }
+
                 fx_local[i] += fix;
                 fy_local[i] += fiy;
                 fz_local[i] += fiz;
+                double xc = fkx;
+                double yc = fky;
+                double zc = fkz;
+                fkx = xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0];
+                fky = xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1];
+                fkz = xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2];
                 fx_local[k] += fkx;
                 fy_local[k] += fky;
                 fz_local[k] += fkz;
+
                 fxCR_local[i] += fixCR;
                 fyCR_local[i] += fiyCR;
                 fzCR_local[i] += fizCR;
+                xc = fkxCR;
+                yc = fkyCR;
+                zc = fkzCR;
+                fkxCR = xc * transOp[0][0] + yc * transOp[1][0] + zc * transOp[2][0];
+                fkyCR = xc * transOp[0][1] + yc * transOp[1][1] + zc * transOp[2][1];
+                fkzCR = xc * transOp[0][2] + yc * transOp[1][2] + zc * transOp[2][2];
                 fxCR_local[k] += fkxCR;
                 fyCR_local[k] += fkyCR;
                 fzCR_local[k] += fkzCR;
@@ -2238,12 +2264,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         qyyi = multipolei[t020] * oneThird;
                         qyzi = multipolei[t011] * oneThird;
                         qzzi = multipolei[t002] * oneThird;
-                        dxi = inducedDipole[i][0];
-                        dyi = inducedDipole[i][1];
-                        dzi = inducedDipole[i][2];
-                        pxi = inducedDipoleCR[i][0];
-                        pyi = inducedDipoleCR[i][1];
-                        pzi = inducedDipoleCR[i][2];
+                        dxi = inducedDipole[0][i][0];
+                        dyi = inducedDipole[0][i][1];
+                        dzi = inducedDipole[0][i][2];
+                        pxi = inducedDipoleCR[0][i][0];
+                        pyi = inducedDipoleCR[0][i][1];
+                        pzi = inducedDipoleCR[0][i][2];
                         sxi = dxi + pxi;
                         syi = dyi + pyi;
                         szi = dzi + pzi;
@@ -2331,12 +2357,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 qyyk = multipolek[t020] * oneThird;
                 qyzk = multipolek[t011] * oneThird;
                 qzzk = multipolek[t002] * oneThird;
-                dxk = inducedDipole[k][0];
-                dyk = inducedDipole[k][1];
-                dzk = inducedDipole[k][2];
-                pxk = inducedDipoleCR[k][0];
-                pyk = inducedDipoleCR[k][1];
-                pzk = inducedDipoleCR[k][2];
+                dxk = inducedDipole[iSymm][k][0];
+                dyk = inducedDipole[iSymm][k][1];
+                dzk = inducedDipole[iSymm][k][2];
+                pxk = inducedDipoleCR[iSymm][k][0];
+                pyk = inducedDipoleCR[iSymm][k][1];
+                pzk = inducedDipoleCR[iSymm][k][2];
                 sxk = dxk + pxk;
                 syk = dyk + pyk;
                 szk = dzk + pzk;
@@ -3608,24 +3634,37 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 /**
                  * Increment the gradients and Born chain rule term.
                  */
-                if (i == k) {
+
+                if (i == k && iSymm == 0) {
                     gb_local[i] += dbi;
                 } else {
+                    if (i == k) {
+                        dpdx *= 0.5;
+                        dpdy *= 0.5;
+                        dpdz *= 0.5;
+                        dbi *= 0.5;
+                        dbk *= 0.5;
+                    }
                     gX[i] -= lPow * dpdx;
                     gY[i] -= lPow * dpdy;
                     gZ[i] -= lPow * dpdz;
                     gb_local[i] += dbi;
-                    gX[k] += lPow * dpdx;
-                    gY[k] += lPow * dpdy;
-                    gZ[k] += lPow * dpdz;
+
+                    final double rdpdx = dpdx * transOp[0][0] + dpdy * transOp[1][0] + dpdz * transOp[2][0];
+                    final double rdpdy = dpdx * transOp[0][1] + dpdy * transOp[1][1] + dpdz * transOp[2][1];
+                    final double rdpdz = dpdx * transOp[0][2] + dpdy * transOp[1][2] + dpdz * transOp[2][2];
+                    gX[k] += lPow * rdpdx;
+                    gY[k] += lPow * rdpdy;
+                    gZ[k] += lPow * rdpdz;
                     gb_local[k] += dbk;
+
                     if (lambdaTerm) {
                         lgX[i] -= dlPow * dpdx;
                         lgY[i] -= dlPow * dpdy;
                         lgZ[i] -= dlPow * dpdz;
-                        lgX[k] += dlPow * dpdx;
-                        lgY[k] += dlPow * dpdy;
-                        lgZ[k] += dlPow * dpdz;
+                        lgX[k] += dlPow * rdpdx;
+                        lgY[k] += dlPow * rdpdy;
+                        lgZ[k] += dlPow * rdpdz;
                     }
                 }
                 polarizationEnergyTorque(i, k);
@@ -3727,6 +3766,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 tX[i] += lPow * tix;
                 tY[i] += lPow * tiy;
                 tZ[i] += lPow * tiz;
+
+                final double rx = tkx;
+                final double ry = tky;
+                final double rz = tkz;
+                tkx = rx * transOp[0][0] + ry * transOp[1][0] + rz * transOp[2][0];
+                tky = rx * transOp[0][1] + ry * transOp[1][1] + rz * transOp[2][1];
+                tkz = rx * transOp[0][2] + ry * transOp[1][2] + rz * transOp[2][2];
+
                 tX[k] += lPow * tkx;
                 tY[k] += lPow * tky;
                 tZ[k] += lPow * tkz;
