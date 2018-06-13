@@ -431,9 +431,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
         try {
             String cavModel = forceField.getString(ForceField.ForceFieldString.CAVMODEL, "CAV_DISP").toUpperCase();
             nonpolarModel = getNonPolarModel(cavModel);
-            if (nonpolarModel == NonPolar.NONE) {
-                logger.info(" No non-polar term will be used.");
-            }
         } catch (Exception ex) {
             nonpolarModel = NonPolar.NONE;
             logger.warning(format(" Error parsing non-polar model (set to NONE) %s", ex.toString()));
@@ -2283,35 +2280,35 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             }
                             interaction(i, k);
                         }
-                        // Include self-interactions for the asymmetric unit atoms.
                         if (iSymm == 0) {
+                            // Include self-interactions for the asymmetric unit atoms.
                             interaction(i, i);
-                        }
 
-                        /**
-                         * Formula for Born energy approximation is: e = ai * 4.0*pi
-                         * * (ri + probe)^2 * (ri/rb)^6. ri is baseRadius, rb is
-                         * Born radius of given atom. ai is an empirical constant
-                         * for the atom. If ai is too low, everything wants to pack
-                         * into a solid ball, and if ai is too high, everything
-                         * wants to unfold and be as solvent-exposed as possible.
-                         *
-                         * The bornaiTerm is a precalculated 4 * pi * ai value.
-                         */
-                        switch (nonPolar) {
-                            case BORN_SOLV:
-                            case BORN_CAV_DISP:
-                                double r = baseRadiusWithBondi[i] + dOffset + probe;
-                                double ratio = (baseRadiusWithBondi[i] + dOffset) / born[i];
-                                ratio *= ratio;
-                                ratio *= (ratio * ratio);
-                                double saTerm = -surfaceTension * r * r * ratio;
-                                gkEnergy += saTerm / -6.0;
-                                // Now calculate derivatives
-                                gb_local[i] += saTerm / born[i];
-                                break;
-                            default:
-                                break;
+                            /**
+                             * Formula for Born energy approximation is: e = ai * 4.0*pi
+                             * * (ri + probe)^2 * (ri/rb)^6. ri is baseRadius, rb is
+                             * Born radius of given atom. ai is an empirical constant
+                             * for the atom. If ai is too low, everything wants to pack
+                             * into a solid ball, and if ai is too high, everything
+                             * wants to unfold and be as solvent-exposed as possible.
+                             *
+                             * The bornaiTerm is a precalculated 4 * pi * ai value.
+                             */
+                            switch (nonPolar) {
+                                case BORN_SOLV:
+                                case BORN_CAV_DISP:
+                                    double r = baseRadiusWithBondi[i] + dOffset + probe;
+                                    double ratio = (baseRadiusWithBondi[i] + dOffset) / born[i];
+                                    ratio *= ratio;
+                                    ratio *= (ratio * ratio);
+                                    double saTerm = -surfaceTension * r * r * ratio;
+                                    gkEnergy += saTerm / -6.0;
+                                    // Now calculate derivatives
+                                    gb_local[i] += saTerm / born[i];
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
                     }
                 }

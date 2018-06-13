@@ -256,14 +256,14 @@ public class RefinementModel {
                     }
                 }
             }
-            if (tocc < 1.0 || tocc > 1.0) {
-                Residue r = list.get(0);
-                logger.log(Level.WARNING, " Residue {0} occupancy does not sum to 1.0!\n This should be fixed or checked due to possible instability in refinement!\n", r.getChainID() + " " + r.toString());
-            }
             if (list.size() == 1) {
                 Residue r = list.get(0);
-                logger.log(Level.WARNING, " Residue {0} is a single conformer with non-unity occupancy.\n Occupancy will be refined independently!\n", r.getChainID() + " " + r.toString());
+                logger.log(Level.INFO, " Residue {0} is a single conformer with non-unity occupancy.\n Occupancy will be refined independently.\n", r.getChainID() + " " + r.toString());
+            } else if (tocc < 1.0 || tocc > 1.0) {
+                Residue r = list.get(0);
+                logger.log(Level.INFO, " Residue {0} occupancy does not sum to 1.0.\n This should be fixed or checked due to possible instability in refinement.\n", r.getChainID() + " " + r.toString());
             }
+
         }
     }
 
