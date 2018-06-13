@@ -437,7 +437,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         //super.energy(false, true);
-        logger.info(" Initializing OpenMM\n");
+        logger.info("\n Initializing OpenMM");
 
         loadPlatform(requestedPlatform);
         ffxPlatform = requestedPlatform;
@@ -835,7 +835,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
             numParticles++;
         }
-        logger.log(Level.INFO, " Added particles ({0})", nAtoms);
+        logger.log(Level.INFO, "  Atoms {0}", nAtoms);
     }
 
     /**
@@ -921,7 +921,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         OpenMM_System_addForce(system, amoebaBondForce);
-        logger.log(Level.INFO, " Added bonds ({0})", nBonds);
+        logger.log(Level.INFO, "  Bonds {0}", nBonds);
     }
 
     private void addAngleForce() {
@@ -960,7 +960,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         OpenMM_System_addForce(system, amoebaAngleForce);
-        logger.log(Level.INFO, " Added angles ({0})", nAngles);
+        logger.log(Level.INFO, "  Angles {0}", nAngles);
     }
 
     private void addInPlaneAngleForce() {
@@ -996,7 +996,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAnglePentic(amoebaInPlaneAngleForce, AngleType.quintic);
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleSextic(amoebaInPlaneAngleForce, AngleType.sextic);
         OpenMM_System_addForce(system, amoebaInPlaneAngleForce);
-        logger.log(Level.INFO, " Added in-plane angles ({0})", nAngles);
+        logger.log(Level.INFO, " In-plane Angles {0}", nAngles);
     }
 
     private void addUreyBradleyForce() {
@@ -1023,7 +1023,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 UreyBradleyType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
 
         OpenMM_System_addForce(system, amoebaUreyBradleyForce);
-        logger.log(Level.INFO, " Added Urey-Bradleys ({0})", nUreys);
+        logger.log(Level.INFO, "  Urey-Bradleys {0}", nUreys);
     }
 
     private void addOutOfPlaneBendForce() {
@@ -1049,7 +1049,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quintic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.sextic);
         OpenMM_System_addForce(system, amoebaOutOfPlaneBendForce);
-        logger.log(Level.INFO, " Added Out of Plane Bends ({0})", nOutOfPlaneBends);
+        logger.log(Level.INFO, "  Out-of-Plane Bends {0}", nOutOfPlaneBends);
     }
 
     private void addStretchBendForce() {
@@ -1075,7 +1075,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         }
         OpenMM_System_addForce(system, amoebaStretchBendForce);
-        logger.log(Level.INFO, " Added Stretch Bends ({0})", nStretchBends);
+        logger.log(Level.INFO, "  Stretch-Bends {0}", nStretchBends);
     }
 
     private void addTorsionForce() {
@@ -1102,7 +1102,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         OpenMM_System_addForce(system, amoebaTorsionForce);
-        logger.log(Level.INFO, " Added Torsions ({0})", nTorsions);
+        logger.log(Level.INFO, "  Torsions {0}", nTorsions);
     }
 
     private void addImproperTorsionForce() {
@@ -1127,7 +1127,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     * improperTorsion.scaleFactor * improperTorsionType.k);
         }
         OpenMM_System_addForce(system, amoebaImproperTorsionForce);
-        logger.log(Level.INFO, " Added improper torsions ({0})", nImpropers);
+        logger.log(Level.INFO, "  Improper Torsions {0} ", nImpropers);
     }
 
     private void addPiTorsionForce() {
@@ -1152,7 +1152,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     OpenMM_KJPerKcal * type.forceConstant * units);
         }
         OpenMM_System_addForce(system, amoebaPiTorsionForce);
-        logger.log(Level.INFO, " Added Pi-Orbital Torsions ({0})", nPiOrbitalTorsions);
+        logger.log(Level.INFO, "  Pi-Orbital Torsions {0}", nPiOrbitalTorsions);
     }
 
     private void addTorsionTorsionForce() {
@@ -1256,7 +1256,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
         OpenMM_DoubleArray_destroy(values);
         OpenMM_System_addForce(system, amoebaTorsionTorsionForce);
-        logger.log(Level.INFO, " Added Torsion-Torsions ({0})", nTorsionTorsions);
+        logger.log(Level.INFO, " Torsion-Torsions {0}", nTorsionTorsions);
     }
 
     /**
@@ -1523,7 +1523,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // OpenMM_Force_setForceGroup(fixedChargeNonBondedForce, 1);
         OpenMM_System_addForce(system, fixedChargeNonBondedForce);
-        logger.log(Level.INFO, String.format(" Added fixed charge non-bonded force."));
+        logger.log(Level.INFO, String.format("  Fixed charge non-bonded force"));
 
         GeneralizedKirkwood gk = super.getGK();
         if (gk != null) {
@@ -1835,7 +1835,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_Force_setForceGroup(customGBForce, 1);
         OpenMM_System_addForce(system, customGBForce);
 
-        logger.log(Level.INFO, " Added generalized Born force");
+        logger.log(Level.INFO, "  Generalized Born force");
     }
 
     private void addAmoebaVDWForce() {
@@ -2209,7 +2209,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_System_addForce(system, amoebaMultipoleForce);
         OpenMM_Force_setForceGroup(amoebaMultipoleForce, 1);
 
-        logger.log(Level.INFO, " Added polarizable multipole force.");
+        logger.log(Level.INFO, "  Polarizable multipole force");
 
         GeneralizedKirkwood gk = super.getGK();
         if (gk != null) {
@@ -2272,7 +2272,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             // WCA force is not being used.
         }
 
-        logger.log(Level.INFO, " Added generalized Kirkwood force.");
+        logger.log(Level.INFO, "  Generalized Kirkwood force");
     }
 
     private void addWCAForce() {
@@ -2320,7 +2320,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaWcaDispersionForce_setShctd(amoebaWcaDispersionForce, shctd);
 
         OpenMM_System_addForce(system, amoebaWcaDispersionForce);
-        logger.log(Level.INFO, " Added WCA dispersion force.");
+        logger.log(Level.INFO, "  WCA dispersion force.");
 
     }
 

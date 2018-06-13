@@ -72,6 +72,7 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import edu.rit.pj.reduction.SharedInteger;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.SymOp;
 import ffx.numerics.VectorMath;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.Atom;
@@ -184,6 +185,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final Polarization polarization;
     private Atom atoms[];
     private double x[], y[], z[];
+    private double sXYZ[][][];
     private double globalMultipole[][];
     private double inducedDipole[][];
     private double inducedDipoleCR[][];
@@ -553,6 +555,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * Returns the solvent relative permittivity (typically 78.3).
+     *
      * @return Relative permittivity of solvent.
      */
     public double getSolventPermittivity() {
@@ -561,6 +564,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     /**
      * Returns the probe radius (typically 1.4 Angstroms).
+     *
      * @return Radius of the solvent probe.
      */
     public double getProbeRadius() {
@@ -611,6 +615,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Born radii calculations, but still exclude their solvation
      * energy components."
      * </p>
+     *
      * @param nativeEnvironmentApproximation Whether to use the NEA.
      */
     public void setNativeEnvironmentApproximation(boolean nativeEnvironmentApproximation) {
@@ -629,6 +634,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Born radii calculations, but still exclude their solvation
      * energy components."
      * </p>
+     *
      * @return Whether the NEA is in use.
      */
     public boolean getNativeEnvironmentApproximation() {
@@ -643,6 +649,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
         x = particleMeshEwald.coordinates[0][0];
         y = particleMeshEwald.coordinates[0][1];
         z = particleMeshEwald.coordinates[0][2];
+
+        sXYZ = particleMeshEwald.coordinates;
+
         globalMultipole = particleMeshEwald.globalMultipole[0];
         inducedDipole = particleMeshEwald.inducedDipole[0];
         inducedDipoleCR = particleMeshEwald.inducedDipoleCR[0];
@@ -1382,48 +1391,73 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void run(int lb, int ub) {
+                /**
+                 * The descreening integral is initialized to the limit of
+                 * the atom alone in solvent.
+                 */
                 for (int i = lb; i <= ub; i++) {
-                    if (!nativeEnvironmentApproximation && !use[i]) {
-                        continue;
-                    }
                     final double baseRi = baseRadiusWithBondi[i];
-                    assert (baseRi > 0.0);
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    /**
-                     * The descreening integral is initialized to the limit of
-                     * the atom alone in solvent.
-                     *
-                     * Lower values of i may have contributed descreening, so
-                     * the integral is incremented rather than initialized.
-                     */
-                    localBorn[i] += PI4_3 / (baseRi * baseRi * baseRi);
-                    int list[] = neighborLists[0][i];
-                    int npair = list.length;
-                    for (int l = 0; l < npair; l++) {
-                        int k = list[l];
-                        final double baseRk = baseRadiusWithBondi[k];
-                        if (i != k && baseRk > 0.0) {
+                    localBorn[i] = PI4_3 / (baseRi * baseRi * baseRi);
+                }
+
+                int nSymm = crystal.spaceGroup.symOps.size();
+                if (nSymm == 0) {
+                    nSymm = 1;
+                }
+
+                for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
+                    double xyz[][] = sXYZ[iSymOp];
+                    for (int i = lb; i <= ub; i++) {
+                        if (!nativeEnvironmentApproximation && !use[i]) {
+                            continue;
+                        }
+                        final double baseRi = baseRadiusWithBondi[i];
+                        assert (baseRi > 0.0);
+                        final double xi = x[i];
+                        final double yi = y[i];
+                        final double zi = z[i];
+                        int list[] = neighborLists[iSymOp][i];
+                        int npair = list.length;
+                        for (int l = 0; l < npair; l++) {
+                            int k = list[l];
+                            final double baseRk = baseRadiusWithBondi[k];
+                            assert (baseRk > 0.0);
                             if (!nativeEnvironmentApproximation && !use[k]) {
                                 continue;
                             }
-                            final double xr = x[k] - xi;
-                            final double yr = y[k] - yi;
-                            final double zr = z[k] - zi;
-                            final double r2 = crystal.image(xr, yr, zr);
-                            if (r2 > cut2) {
-                                continue;
+                            if (i != k) {
+                                final double xr = xyz[0][k] - xi;
+                                final double yr = xyz[1][k] - yi;
+                                final double zr = xyz[2][k] - zi;
+                                final double r2 = crystal.image(xr, yr, zr);
+                                if (r2 > cut2) {
+                                    continue;
+                                }
+                                final double r = sqrt(r2);
+
+                                // Atom i being descreeened by atom k.
+                                double scaledRk = baseRk * overlapScale[k];
+                                localBorn[i] += integral(r, r2, baseRi, scaledRk);
+
+                                // Atom k being descreeened by atom i.
+                                double scaledRi = baseRi * overlapScale[i];
+                                localBorn[k] += integral(r, r2, baseRk, scaledRi);
+                            } else if (iSymOp > 0) {
+                                final double xr = xyz[0][k] - xi;
+                                final double yr = xyz[1][k] - yi;
+                                final double zr = xyz[2][k] - zi;
+                                final double r2 = crystal.image(xr, yr, zr);
+                                if (r2 > cut2) {
+                                    continue;
+                                }
+                                final double r = sqrt(r2);
+
+                                // Atom i being descreeened by atom k.
+                                double scaledRk = baseRk * overlapScale[k];
+                                localBorn[i] += integral(r, r2, baseRi, scaledRk);
+
+                                // For symmetry mates, atom k is not descreeened by atom i.
                             }
-                            final double r = sqrt(r2);
-
-                            // Atom i being descreeened by atom k.
-                            double scaledRk = baseRk * overlapScale[k];
-                            localBorn[i] += integral(r, r2, baseRi, scaledRk);
-
-                            // Atom k being descreeened by atom i.
-                            double scaledRi = baseRi * overlapScale[i];
-                            localBorn[k] += integral(r, r2, baseRk, scaledRi);
                         }
                     }
                 }
@@ -2205,8 +2239,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                      * wants to unfold and be as solvent-exposed as possible.
                      *
                      * The bornaiTerm is a precalculated 4 * pi * ai value.
-                     *
-                     * Fix this.
                      */
                     switch (nonPolar) {
                         case BORN_SOLV:
@@ -3778,78 +3810,121 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param yr y-component of the separation vector.
              * @param zr z-component of the separation vector.
              */
-            private void incrementGradient(int i, int k, double dE, double xr, double yr, double zr) {
+            private void incrementGradient(int i, int k, double dE, double xr, double yr, double zr, double transOp[][]) {
                 double dedx = dE * xr;
                 double dedy = dE * yr;
                 double dedz = dE * zr;
                 gX[i] += lPow * dedx;
                 gY[i] += lPow * dedy;
                 gZ[i] += lPow * dedz;
-                gX[k] -= lPow * dedx;
-                gY[k] -= lPow * dedy;
-                gZ[k] -= lPow * dedz;
+
+                final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
+                final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
+                final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
+
+                gX[k] -= lPow * dedxk;
+                gY[k] -= lPow * dedyk;
+                gZ[k] -= lPow * dedzk;
                 if (lambdaTerm) {
                     lgX[i] += dlPow * dedx;
                     lgY[i] += dlPow * dedy;
                     lgZ[i] += dlPow * dedz;
-                    lgX[k] -= dlPow * dedx;
-                    lgY[k] -= dlPow * dedy;
-                    lgZ[k] -= dlPow * dedz;
+                    lgX[k] -= dlPow * dedxk;
+                    lgY[k] -= dlPow * dedyk;
+                    lgZ[k] -= dlPow * dedzk;
                 }
             }
 
             @Override
             public void run(int lb, int ub) {
-                for (int i = lb; i <= ub; i++) {
-                    if (!use[i]) {
-                        continue;
-                    }
-                    final double ri = baseRadiusWithBondi[i];
-                    assert (ri > 0.0);
-                    final double xi = x[i];
-                    final double yi = y[i];
-                    final double zi = z[i];
-                    final double rbi = born[i];
-                    double termi = PI4_3 / (rbi * rbi * rbi);
-                    termi = factor / pow(termi, (4.0 * THIRD));
-                    int list[] = neighborLists[0][i];
-                    int nPair = list.length;
-                    for (int l = 0; l < nPair; l++) {
-                        int k = list[l];
-                        if (!use[k]) {
+                int nSymm = crystal.spaceGroup.symOps.size();
+                if (nSymm == 0) {
+                    nSymm = 1;
+                }
+
+                for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
+
+                    SymOp symOp = crystal.spaceGroup.symOps.get(iSymOp);
+                    double transOp[][] = new double[3][3];
+
+                    double xyz[][] = sXYZ[iSymOp];
+                    crystal.getTransformationOperator(symOp, transOp);
+
+                    for (int i = lb; i <= ub; i++) {
+                        if (!nativeEnvironmentApproximation && !use[i]) {
                             continue;
                         }
-                        final double rk = baseRadiusWithBondi[k];
-                        if (k != i && rk > 0.0) {
-                            dx_local[0] = x[k] - xi;
-                            dx_local[1] = y[k] - yi;
-                            dx_local[2] = z[k] - zi;
-                            double r2 = crystal.image(dx_local);
-                            if (r2 > cut2) {
+                        final double ri = baseRadiusWithBondi[i];
+                        assert (ri > 0.0);
+                        final double xi = x[i];
+                        final double yi = y[i];
+                        final double zi = z[i];
+                        final double rbi = born[i];
+                        double termi = PI4_3 / (rbi * rbi * rbi);
+                        termi = factor / pow(termi, (4.0 * THIRD));
+
+                        int list[] = neighborLists[iSymOp][i];
+                        int nPair = list.length;
+                        for (int l = 0; l < nPair; l++) {
+                            int k = list[l];
+                            if (!nativeEnvironmentApproximation && !use[k]) {
                                 continue;
                             }
-                            final double xr = dx_local[0];
-                            final double yr = dx_local[1];
-                            final double zr = dx_local[2];
-                            final double r = sqrt(r2);
+                            final double rk = baseRadiusWithBondi[k];
+                            assert (rk > 0.0);
+                            if (k != i) {
+                                dx_local[0] = xyz[0][k] - xi;
+                                dx_local[1] = xyz[1][k] - yi;
+                                dx_local[2] = xyz[2][k] - zi;
+                                double r2 = crystal.image(dx_local);
+                                if (r2 > cut2) {
+                                    continue;
+                                }
+                                final double xr = dx_local[0];
+                                final double yr = dx_local[1];
+                                final double zr = dx_local[2];
+                                final double r = sqrt(r2);
 
-                            // Atom i being descreeened by atom k.
-                            final double sk = rk * overlapScale[k];
-                            double de = integralDerivative(r, r2, ri, sk);
-                            double dbr = termi * de / r;
-                            de = dbr * sharedBornGrad.get(i);
-                            incrementGradient(i, k, de, xr, yr, zr);
+                                // Atom i being descreeened by atom k.
+                                final double sk = rk * overlapScale[k];
+                                double de = integralDerivative(r, r2, ri, sk);
+                                double dbr = termi * de / r;
+                                de = dbr * sharedBornGrad.get(i);
+                                incrementGradient(i, k, de, xr, yr, zr, transOp);
 
-                            // Atom k being descreeened by atom i.
-                            double rbk = born[k];
-                            double termk = PI4_3 / (rbk * rbk * rbk);
-                            termk = factor / pow(termk, (4.0 * THIRD));
+                                // Atom k being descreeened by atom i.
+                                double rbk = born[k];
+                                double termk = PI4_3 / (rbk * rbk * rbk);
+                                termk = factor / pow(termk, (4.0 * THIRD));
 
-                            final double si = ri * overlapScale[i];
-                            de = integralDerivative(r, r2, rk, si);
-                            dbr = termk * de / r;
-                            de = dbr * sharedBornGrad.get(k);
-                            incrementGradient(i, k, de, xr, yr, zr);
+                                final double si = ri * overlapScale[i];
+                                de = integralDerivative(r, r2, rk, si);
+                                dbr = termk * de / r;
+                                de = dbr * sharedBornGrad.get(k);
+                                incrementGradient(i, k, de, xr, yr, zr, transOp);
+
+                            } else if (iSymOp > 0) {
+                                dx_local[0] = xyz[0][k] - xi;
+                                dx_local[1] = xyz[1][k] - yi;
+                                dx_local[2] = xyz[2][k] - zi;
+                                double r2 = crystal.image(dx_local);
+                                if (r2 > cut2) {
+                                    continue;
+                                }
+                                final double xr = dx_local[0];
+                                final double yr = dx_local[1];
+                                final double zr = dx_local[2];
+                                final double r = sqrt(r2);
+
+                                // Atom i being descreeened by atom k.
+                                final double sk = rk * overlapScale[k];
+                                double de = integralDerivative(r, r2, ri, sk);
+                                double dbr = termi * de / r;
+                                de = dbr * sharedBornGrad.get(i);
+                                incrementGradient(i, k, de, xr, yr, zr, transOp);
+
+                                // For symmetry mates, atom k is not descreeened by atom i.
+                            }
                         }
                     }
                 }

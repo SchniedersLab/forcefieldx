@@ -176,52 +176,38 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private int nPermanentInteractions;
     private int nGKInteractions;
     private int nRelativeSolvations;
-    private boolean bondTerm;
-    private boolean angleTerm;
-    private boolean stretchBendTerm;
-    private boolean ureyBradleyTerm;
-    private boolean outOfPlaneBendTerm;
-    private boolean torsionTerm;
-    private boolean stretchTorsionTerm;
-    private boolean angleTorsionTerm;
-    private boolean improperTorsionTerm;
-    private boolean piOrbitalTorsionTerm;
-    private boolean torsionTorsionTerm;
-    private boolean restraintBondTerm;
-    private boolean vanderWaalsTerm;
-    private boolean multipoleTerm;
-    private boolean polarizationTerm;
-    private boolean generalizedKirkwoodTerm;
-    private boolean ncsTerm;
-    private boolean restrainTerm;
-    private boolean restrainWithLambda;
-    private boolean comTerm;
+
+    // Flags that control the use of force field energy terms.
+    private boolean bondTerm, bondTermOrig;
+    private boolean angleTerm, angleTermOrig;
+    private boolean stretchBendTerm, stretchBendTermOrig;
+    private boolean ureyBradleyTerm, ureyBradleyTermOrig;
+    private boolean outOfPlaneBendTerm, outOfPlaneBendTermOrig;
+    private boolean torsionTerm, torsionTermOrig;
+    private boolean stretchTorsionTerm, stretchTorsionTermOrig;
+    private boolean angleTorsionTerm, angleTorsionTermOrig;
+    private boolean improperTorsionTerm, improperTorsionTermOrig;
+    private boolean piOrbitalTorsionTerm, piOrbitalTorsionTermOrig;
+    private boolean torsionTorsionTerm, torsionTorsionTermOrig;
+    private boolean restraintBondTerm, restraintBondTermOrig;
+    private boolean vanderWaalsTerm, vanderWaalsTermOrig;
+    private boolean multipoleTerm, multipoleTermOrig;
+    private boolean polarizationTerm, polarizationTermOrig;
+    private boolean generalizedKirkwoodTerm, generalizedKirkwoodTermOrig;
+    private boolean ncsTerm, ncsTermOrig;
+    private boolean restrainTerm, restrainTermOrig;
+    private boolean comTerm, comTermOrig;
+
     private boolean esvTerm;
     protected boolean lambdaTerm;
     protected boolean lambdaBondedTerms = false;
+    private boolean restrainWithLambda;
+
     private boolean relativeSolvationTerm;
     private boolean rigidHydrogens = false;
     private boolean lambdaTorsions = false;
     private double rigidScale = 1.0;
-    private boolean bondTermOrig;
-    private boolean angleTermOrig;
-    private boolean stretchBendTermOrig;
-    private boolean ureyBradleyTermOrig;
-    private boolean outOfPlaneBendTermOrig;
-    private boolean torsionTermOrig;
-    private boolean stretchTorsionTermOrig;
-    private boolean angleTorsionTermOrig;
-    private boolean improperTorsionTermOrig;
-    private boolean piOrbitalTorsionTermOrig;
-    private boolean torsionTorsionTermOrig;
-    private boolean restraintBondTermOrig;
-    private boolean vanderWaalsTermOrig;
-    private boolean multipoleTermOrig;
-    private boolean polarizationTermOrig;
-    private boolean generalizedKirkwoodTermOrig;
-    private boolean ncsTermOrig;
-    private boolean restrainTermOrig;
-    private boolean comTermOrig;
+
     private double bondEnergy, bondRMSD;
     private double angleEnergy, angleRMSD;
     private double stretchBendEnergy;
@@ -823,7 +809,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                         vanderWaals.getNeighborList(), form, parallelTeam);
             }
             double charge = molecularAssembly.getCharge(checkAllNodeCharges);
-            logger.info(String.format(" Overall system charge:            %10.3f", charge));
+            logger.info(String.format("\n  Overall system charge:             %10.3f", charge));
         } else {
             particleMeshEwald = null;
         }
@@ -2620,6 +2606,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 ureyBradleyTerm = ureyBradleyTermOrig;
                 outOfPlaneBendTerm = outOfPlaneBendTermOrig;
                 torsionTerm = torsionTermOrig;
+                stretchTorsionTerm = stretchTorsionTermOrig;
+                angleTorsionTerm = angleTorsionTermOrig;
                 piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
                 torsionTorsionTerm = torsionTorsionTermOrig;
                 improperTorsionTerm = improperTorsionTermOrig;
@@ -2632,7 +2620,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 polarizationTerm = false;
                 generalizedKirkwoodTerm = false;
                 break;
-
             case SLOW:
                 vanderWaalsTerm = vanderWaalsTermOrig;
                 multipoleTerm = multipoleTermOrig;
@@ -2644,6 +2631,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 ureyBradleyTerm = false;
                 outOfPlaneBendTerm = false;
                 torsionTerm = false;
+                stretchTorsionTerm = false;
+                angleTorsionTerm = false;
                 piOrbitalTorsionTerm = false;
                 torsionTorsionTerm = false;
                 improperTorsionTerm = false;
@@ -2652,7 +2641,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 restrainTerm = false;
                 comTerm = false;
                 break;
-
             default:
                 bondTerm = bondTermOrig;
                 angleTerm = angleTermOrig;
@@ -2660,6 +2648,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 ureyBradleyTerm = ureyBradleyTermOrig;
                 outOfPlaneBendTerm = outOfPlaneBendTermOrig;
                 torsionTerm = torsionTermOrig;
+                stretchTorsionTerm = stretchTorsionTermOrig;
+                angleTorsionTerm = angleTorsionTermOrig;
                 piOrbitalTorsionTerm = piOrbitalTorsionTermOrig;
                 torsionTorsionTerm = torsionTorsionTermOrig;
                 improperTorsionTerm = improperTorsionTermOrig;
