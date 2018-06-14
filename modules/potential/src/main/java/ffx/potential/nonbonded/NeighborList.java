@@ -371,6 +371,15 @@ public class NeighborList extends ParallelRegion {
     }
 
     /**
+     * Returns the cutoff distance used internally by NeighborList.
+     *
+     * @return Cutoff distance in Angstroms.
+     */
+    public double getCutoff() {
+        return cutoff;
+    }
+
+    /**
      * Getter for the disableUpdates field.
      *
      * @return If neighbor list updates disabled
