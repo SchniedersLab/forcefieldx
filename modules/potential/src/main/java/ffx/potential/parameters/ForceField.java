@@ -615,6 +615,21 @@ public class ForceField {
     }
 
     /**
+     * Checks if a ForceFieldDouble was specified.
+     *
+     * @param forceFieldDouble ForceFieldDouble to check.
+     * @return Ever specified.
+     * @throws NullPointerException If forceFieldDouble is null.
+     */
+    public boolean hasDouble(ForceFieldDouble forceFieldDouble) throws NullPointerException {
+        if (forceFieldDouble == null) {
+            throw new NullPointerException("NULL keyword");
+        }
+        String key = toPropertyForm(forceFieldDouble.toString());
+        return properties.containsKey(key);
+    }
+
+    /**
      * <p>
      * getInteger</p>
      *
@@ -1598,7 +1613,9 @@ public class ForceField {
         /* OpenMM collision frequency for Langevin integrator */
         COLLISION_FREQ,
         /* Unit Conversions */
-        ANGTORUNIT, STRTORUNIT
+        ANGTORUNIT, STRTORUNIT,
+        /* Cutoff used for building frozen neighbor lists */
+        NEIGHBOR_LIST_CUTOFF
     }
 
     public enum ForceFieldInteger {

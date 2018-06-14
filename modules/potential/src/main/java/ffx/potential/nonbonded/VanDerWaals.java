@@ -412,60 +412,51 @@ public class VanDerWaals implements MaskingInterface,
         double cut;
         double off;
 
+        // Check for a frozen neighbor list.
         boolean disabledNeighborUpdates = forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
-        if (disabledNeighborUpdates) {
-            cut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 12.0);
-            double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
 
-            if (ewaldOff > cut) {
-                logger.info(" The Van der Waals cutoff must be at least as large as the Ewald cutoff.");
-                logger.info(String.format(" The Van der Waals cutoff has been set to %f", ewaldOff));
-                cut = ewaldOff;
-            }
-
-            logger.info(String.format(" Neighbor list updates disabled: all nonbonded interactions calculated for atoms "
-                    + "that start the simulation within a radius of %9.3g of each other", cut));
-
-            nonbondedCutoff = NonbondedCutoff.noCutoffFactory();
-            multiplicativeSwitch = new NonSwitch();
-            neighborList = new NeighborList(null, this.crystal, atoms, cut, 0.0, parallelTeam);
-
-            off = cut;
-        } else {
-            if (!crystal.aperiodic()) {
-                vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 12.0);
-            } else {
-                vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, crystal.a / 2.0 - (buff + 1.0));
-                // If aperiodic, set the vdW cutoff to cover everything.
-            }
-
-            // Ensure Van der Waals cutoff is at least as large as Ewald cutoff.
-            //double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
-            double ewaldOff = crystal.aperiodic() ? ParticleMeshEwald.APERIODIC_DEFAULT_EWALD_CUTOFF : ParticleMeshEwald.PERIODIC_DEFAULT_EWALD_CUTOFF;
-            ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, ewaldOff);
-
-            if (ewaldOff > vdwcut) {
-                vdwcut = ewaldOff;
-                logger.info(" The Van der Waals cutoff must be at least as large as the Ewald cutoff.");
-                logger.info(String.format(" The Van der Waals cutoff has been set to %-12.4g", ewaldOff));
-            }
-
-            /**
-             * Define the multiplicative switch, which sets vdW energy to zero
-             * at the cutoff distance using a window that begin at 90% of the
-             * cutoff distance.
-             */
-            double vdwtaper = 0.9 * vdwcut;
-            cut = vdwtaper;
-            off = vdwcut;
-            nonbondedCutoff = new NonbondedCutoff(off, cut, buff);
-            multiplicativeSwitch = new MultiplicativeSwitch(off, cut);
-
-            /**
-             * Parallel neighbor list builder.
-             */
-            neighborList = new NeighborList(null, this.crystal, atoms, off, buff, parallelTeam);
+        // Default vdW cut is 12.0 for periodic systems, a function of system size for aperiodic.
+        double defaultVdwCut = 12.0;
+        if (crystal.aperiodic()) {
+            double maxDim = Math.max(Math.max(crystal.a, crystal.b), crystal.c);
+            defaultVdwCut = (maxDim * 0.5) - (buff + 1.0);
         }
+        vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, defaultVdwCut);
+
+        // Now make sure vdW cutoff is at least as large as the electrostatics cutoff.
+        double ewaldOff = crystal.aperiodic() ? ParticleMeshEwald.APERIODIC_DEFAULT_EWALD_CUTOFF : ParticleMeshEwald.PERIODIC_DEFAULT_EWALD_CUTOFF;
+        ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, ewaldOff);
+        if (ewaldOff > vdwcut) {
+            vdwcut = ewaldOff;
+            logger.info(" The Van der Waals cutoff must be at least as large as the Ewald cutoff.");
+            logger.info(String.format(" The Van der Waals cutoff has been set to %-12.4g", ewaldOff));
+        }
+
+        /**
+         * Define the multiplicative switch, which sets vdW energy to zero
+         * at the cutoff distance using a window that begin at 90% of the
+         * cutoff distance.
+         */
+        double vdwtaper = 0.9 * vdwcut;
+        cut = vdwtaper;
+        off = vdwcut;
+        nonbondedCutoff = new NonbondedCutoff(off, cut, buff);
+        multiplicativeSwitch = new MultiplicativeSwitch(off, cut);
+
+        double nlistCutoff = off;
+        if (disabledNeighborUpdates) {
+            nlistCutoff = forceField.getDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF, off);
+            logger.info(String.format(" Neighbor list updates disabled; interactions will " +
+                    "only be calculated between atoms that started the simulation " +
+                    "within a radius of %9.3g Angstroms of each other", nlistCutoff));
+            if (nlistCutoff < off) {
+                logger.severe(String.format(" Specified a neighbor list cutoff %10.4g < energy cutoff %10.4g!", nlistCutoff, off));
+            }
+        } else if (forceField.hasDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF)) {
+            logger.severe(" Specified a neighbor list cutoff for a non-frozen neighbor list!");
+        }
+        neighborList = new NeighborList(null, this.crystal, atoms, nlistCutoff, buff, parallelTeam);
+
         pairwiseSchedule = neighborList.getPairwiseSchedule();
         neighborLists = new int[nSymm][][];
 

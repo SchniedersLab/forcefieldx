@@ -359,7 +359,13 @@ public class DiffractionData implements DataContainer {
                 continue;
             }
 
-            double arad = a.getVDWType().radius * 0.5;
+            double arad = 0;
+            try {
+                arad = a.getVDWType().radius * 0.5;
+            } catch (NullPointerException ex) {
+                logger.warning(String.format(" Failure to get van der Waals type for atom %s; ensure the vdW term is enabled!", a.toString()));
+                throw ex;
+            }
             double xyz[] = new double[3];
             xyz[0] = a.getX() + arad;
             xyz[1] = a.getY();
