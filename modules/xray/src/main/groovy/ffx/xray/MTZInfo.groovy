@@ -22,7 +22,7 @@ class MTZInfo extends Script {
      * <br>
      * ffxc xray.MTZInfo &lt;filename&gt;
      */
-    public class Options {
+    class Options {
         /**
          * -h or --help to print a help message
          */
@@ -32,7 +32,7 @@ class MTZInfo extends Script {
          * The final argument should be an MTZ filename.
          */
         @Unparsed(description = 'The MTZ file.')
-        List<String> filenames
+        List<String> filename
     }
 
     /**
@@ -51,7 +51,7 @@ class MTZInfo extends Script {
             return cli.usage()
         }
 
-        List<String> arguments = options.filenames
+        List<String> arguments = options.filename
         String mtzfile
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.

@@ -62,7 +62,7 @@ import ffx.realspace.RealSpaceData;
 public class RefinementMinimize implements OptimizationListener, Terminatable {
 
     /**
-     * Different refinement mode selection types
+     * Different refinement mode selection types.
      */
     public enum RefinementMode {
 
@@ -95,6 +95,23 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
          */
         COORDINATES_AND_BFACTORS_AND_OCCUPANCIES
     }
+
+    /**
+     * Parse a string into a refinement mode.
+     *
+     * @param str Refinement mode string.
+     * @return An instance of RefinementMode.
+     */
+    public static RefinementMode parseMode(String str) {
+        try {
+            return RefinementMode.valueOf(str.toUpperCase());
+        } catch (Exception e) {
+            logger.info(String.format(" Could not parse %s as a refinement mode; defaulting to coordinates.", str));
+            return RefinementMode.COORDINATES;
+        }
+    }
+
+
     public final RefinementEnergy refinementEnergy;
     private final AlgorithmListener listener;
     private static final Logger logger = Logger.getLogger(RefinementMinimize.class.getName());

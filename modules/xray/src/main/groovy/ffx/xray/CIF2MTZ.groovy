@@ -32,7 +32,7 @@ class CIF2MTZ extends Script {
      * <br>
      * ffxc xray.CIF2MTZ &lt;filename&gt;
      */
-    public class Options {
+    class Options {
         /**
          * -h or --help to print a help message
          */

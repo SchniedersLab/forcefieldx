@@ -7,7 +7,9 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.cli.picocli.CliBuilder
 
+import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
+import ffx.algorithms.thermostats.Thermostat
 import ffx.algorithms.thermostats.ThermostatEnum
 
 /**

@@ -29,7 +29,7 @@ class Deuterate extends Script {
 	 * <br>
 	 * ffxc xray.Deuterate &lt;pdbfile1&gt;
 	 */
-	public class Options {
+	class Options {
 		/**
 		 * -h or --help to print a help message
 		 */
@@ -39,7 +39,7 @@ class Deuterate extends Script {
 		 * The final argument should be a PDB filename.
 		 */
 		@Unparsed(description = 'A PDB filename.')
-		List<String> filenames
+		List<String> filename
 	}
 
 	/**
@@ -56,7 +56,7 @@ class Deuterate extends Script {
 			return cli.usage()
 		}
 
-		List<String> arguments = options.filenames
+		List<String> arguments = options.filename
 
 		// Name of the PDB with crystal header information
 		String modelfilename

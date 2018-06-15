@@ -23,7 +23,7 @@ class AverageMTZ extends Script {
      * <br>
      * ffxc xray.AverageMTZ &lt;filename1&gt; &lt;filename2&gt;
      */
-    public class Options {
+    class Options {
         /**
          * -h or --help to print a help message
          */
