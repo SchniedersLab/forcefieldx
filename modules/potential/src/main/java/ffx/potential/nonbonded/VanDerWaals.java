@@ -443,18 +443,34 @@ public class VanDerWaals implements MaskingInterface,
         nonbondedCutoff = new NonbondedCutoff(off, cut, buff);
         multiplicativeSwitch = new MultiplicativeSwitch(off, cut);
 
+        /**
+         * Neighbor list cutoff is at least max(PME cutoff, vdW cutoff).
+         * For a non-frozen neighbor list, it is max(PME, vdW, GK).
+         * Then, if a larger neighbor-list cutoff is specified, we use that.
+         *
+         * GK cutoff may be > neighbor-list cutoff for frozen neighbor lists.
+         * This indicates we are running full real-space GK on a frozen neighbor list.
+         *
+         * Error is indicated for a frozen neighbor list if a specified NL cutoff < PME,vdW.
+         * Error is indicated for a non-frozen neighbor list if the NL cutoff was specified by the user.
+         */
         double nlistCutoff = off;
+
         if (disabledNeighborUpdates) {
             nlistCutoff = forceField.getDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF, off);
             logger.info(String.format(" Neighbor list updates disabled; interactions will " +
                     "only be calculated between atoms that started the simulation " +
                     "within a radius of %9.3g Angstroms of each other", nlistCutoff));
             if (nlistCutoff < off) {
-                logger.severe(String.format(" Specified a neighbor list cutoff %10.4g < energy cutoff %10.4g!", nlistCutoff, off));
+                logger.severe(String.format(" Specified a neighbor-list cutoff %10.4g < max(PME, vdW) cutoff %10.4g !", nlistCutoff, off));
             }
-        } else if (forceField.hasDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF)) {
-            logger.severe(" Specified a neighbor list cutoff for a non-frozen neighbor list!");
+        } else {
+            nlistCutoff = Math.max(forceField.getDouble(ForceFieldDouble.GK_CUTOFF, 0), nlistCutoff);
+            if (forceField.hasDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF)) {
+                logger.severe(" Specified a neighbor list cutoff for a non-frozen neighbor list!");
+            }
         }
+
         neighborList = new NeighborList(null, this.crystal, atoms, nlistCutoff, buff, parallelTeam);
 
         pairwiseSchedule = neighborList.getPairwiseSchedule();

@@ -387,11 +387,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         // Define the cutoff lengths.
         double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
         double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
+        double neighborOff = forceField.getDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF, ewaldOff);
         if (ewaldOff > vdwOff) {
             vdwOff = ewaldOff;
         }
         double buff = 2.0;
-        double cutOff2 = 2.0 * (max(vdwOff, ewaldOff) + buff);
+        double cutOff2 = max(max(vdwOff, ewaldOff), neighborOff);
+        cutOff2 += buff;
+        cutOff2 *= 2.0;
 
         // Determine the unit cell dimensions and Spacegroup
         String spacegroup;
