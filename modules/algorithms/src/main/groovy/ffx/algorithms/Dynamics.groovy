@@ -65,12 +65,12 @@ class Dynamics extends Script {
          * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
          */
         @Option(shortName = 'w', longName = 'write', defaultValue = '10.0', description = 'Interval to write out coordinates (psec).')
-        double write;
+        double write
         /**
          * -t or --temperature sets the simulation temperature (Kelvin).
          */
         @Option(shortName = 't', longName = 'temperature', defaultValue = '298.15', description = 'Temperature (Kelvin)')
-        double temp;
+        double temp
         /**
          * -n or --steps sets the number of molecular dynamics steps (default is 1 nsec).
          */
