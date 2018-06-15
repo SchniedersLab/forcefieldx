@@ -190,16 +190,17 @@ public final class Main extends JFrame {
      * Print out help for the command line version of Force Field X.
      */
     private static void commandLineInterfaceHelp(boolean listTestScripts) {
-        logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
+        logger.info("\n usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
         logger.info("\n where commands include:\n");
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         if (listTestScripts) {
-            classLoader.getResource("List all scripts");
+            classLoader.getResource("List test scripts");
+            logger.info("\n For help on an experimental or test command use:  ffxc command -h\n");
         } else {
             classLoader.getResource("List scripts");
+            logger.info("\n To list experimental & test scripts: ffxc --test");
+            logger.info(" For help on a specific command use:  ffxc command -h\n");
         }
-        logger.info("\n To list experimental & test scripts: ffxc --test");
-        logger.info(" For help on a specific command use:  ffxc command -h\n");
         System.exit(0);
     }
 
@@ -317,16 +318,6 @@ public final class Main extends JFrame {
         startLogging();
 
         /**
-         * Print out help for the command line interface.
-         */
-        if (GraphicsEnvironment.isHeadless() && args.length < 2) {
-            if (args.length == 1 && args[0].toUpperCase().contains("TEST")) {
-                commandLineInterfaceHelp(true);
-            }
-            commandLineInterfaceHelp(false);
-        }
-
-        /**
          * Determine host name and process ID.
          */
         environment();
@@ -338,6 +329,16 @@ public final class Main extends JFrame {
 
         // Print the header.
         header(args);
+
+        /**
+         * Print out help for the command line interface.
+         */
+        if (GraphicsEnvironment.isHeadless() && args.length < 2) {
+            if (args.length == 1 && args[0].toUpperCase().contains("TEST")) {
+                commandLineInterfaceHelp(true);
+            }
+            commandLineInterfaceHelp(false);
+        }
 
         /**
          * Parse the specified command or structure file.

@@ -36,8 +36,6 @@
  * exception statement from your version.
  */
 
-package ffx.utilities
-
 import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.picocli.CliBuilder

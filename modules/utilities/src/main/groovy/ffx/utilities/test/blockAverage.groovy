@@ -36,8 +36,6 @@
  * exception statement from your version.
  */
 
-package ffx.utilities
-
 import groovy.cli.picocli.CliBuilder
 
 boolean testMode = false;
@@ -67,7 +65,7 @@ String filename = arguments.get(0);
 
 if (options.gt) {
     int size = Integer.parseInt(options.gt);
-    BlockAverager.generateTestData(filename, size);
+    ffx.utilities.BlockAverager.generateTestData(filename, size);
     return;
 }
 
@@ -87,6 +85,6 @@ if (options.t) {
     testMode = true;
 }
 
-BlockAverager ba = new BlockAverager(filename, testMode, grepCmd, psPerHisto, blockSizeStep, maxBlockSize);
+ffx.utilities.BlockAverager ba = new ffx.utilities.BlockAverager(filename, testMode, grepCmd, psPerHisto, blockSizeStep, maxBlockSize);
 double[] binStdErrors = ba.computeBinUncertainties();
 double totalStdError = ba.computeTotalUncertainty();

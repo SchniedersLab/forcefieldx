@@ -454,10 +454,12 @@ public class FFXClassLoader extends URLClassLoader {
             loadExtensions();
         }
 
-        if (name.equals("List all scripts")) {
+        if (name.equals("List test scripts")) {
             listScripts(true);
+            return null;
         } else if (name.equals("List scripts")) {
             listScripts(false);
+            return null;
         }
 
         if (extensionJars != null) {
