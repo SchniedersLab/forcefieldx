@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -66,7 +65,7 @@ double pH;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc testEsvGradient [options] <XYZ|PDB>');
+def cli = new CliBuilder(usage:' ffxc test.esvGradient [options] <XYZ|PDB>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.l(longOpt:'lambda', args:1, argName:'1.0', 'Initial lambda value (for all ESVs).');
 cli.dx(longOpt:'stepSize', args:1, argName:'0.0001', 'Finite difference step size.');

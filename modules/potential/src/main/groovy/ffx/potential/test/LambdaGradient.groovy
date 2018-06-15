@@ -1,5 +1,5 @@
 
-package ffx.potential
+package ffx.potential.test
 
 import java.util.regex.Pattern
 import java.util.stream.Collectors
@@ -19,21 +19,21 @@ import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
 /**
- * The TestLambdaGradient script tests numeric gradients w.r.t. lambda against
+ * The LambdaGradient script tests numeric gradients w.r.t. lambda against
  * numeric, finite-difference gradients
  * <br>
  * Usage:
  * <br>
- * ffxc TestLambdaGradient [options] &lt;filename [file2...]&gt;
+ * ffxc test.LambdaGradient [options] &lt;filename [file2...]&gt;
  */
-class TestLambdaGradient extends Script {
+class LambdaGradient extends Script {
 
     /**
-     * Options for the TestLambdaGradient Script.
+     * Options for the LambdaGradient Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc TestLambdaGradient [options] &lt;filename&gt;
+     * ffxc test.LambdaGradient [options] &lt;filename&gt;
      */
     class Options {
         /**
@@ -168,13 +168,13 @@ class TestLambdaGradient extends Script {
     def energies = [];   // ForceFieldEnergy
 
     private void openFile(Options options, String toOpen, int topNum) {
-        MolecularAssembly[] opened = pFuncts.openAll(toOpen, threadsPer);
-        MolecularAssembly mola = pFuncts.getActiveAssembly();
+        ffx.potential.MolecularAssembly[] opened = pFuncts.openAll(toOpen, threadsPer);
+        ffx.potential.MolecularAssembly mola = pFuncts.getActiveAssembly();
         processFile(options, mola, topNum);
     }
 
-    private void processFile(Options options, MolecularAssembly mola, int topNum) {
-        ForceFieldEnergy energy = mola.getPotentialEnergy();
+    private void processFile(Options options, ffx.potential.MolecularAssembly mola, int topNum) {
+        ffx.potential.ForceFieldEnergy energy = mola.getPotentialEnergy();
 
         Atom[] atoms = mola.getAtomArray();
         int remainder = (topNum % 2) + 1;
@@ -331,7 +331,7 @@ class TestLambdaGradient extends Script {
      */
     def run() {
 
-        def cli = new CliBuilder(usage:' ffxc TestLambdaGradient [options] <filename> [file2...]', header:' Options:');
+        def cli = new CliBuilder(usage:' ffxc test.LambdaGradient [options] <filename> [file2...]', header:' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);
@@ -395,7 +395,7 @@ class TestLambdaGradient extends Script {
         }
 
         if (!arguments || arguments.isEmpty()) {
-            MolecularAssembly mola = aFuncts.getActiveAssembly();
+            ffx.potential.MolecularAssembly mola = aFuncts.getActiveAssembly();
             if (mola == null) {
                 return cli.usage();
             }
@@ -578,7 +578,7 @@ class TestLambdaGradient extends Script {
                 break;
             case 2:
                 sb.append("dual topology ");
-                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                ffx.potential.DualTopologyEnergy dte = new ffx.potential.DualTopologyEnergy(topologies[0], topologies[1], sf);
                 if (numParallel == 2) {
                     dte.setParallel(true);
                 }
@@ -587,9 +587,9 @@ class TestLambdaGradient extends Script {
             case 4:
                 sb.append("quad topology ");
 
-                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
-                QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
+                ffx.potential.DualTopologyEnergy dta = new ffx.potential.DualTopologyEnergy(topologies[0], topologies[1], sf);
+                ffx.potential.DualTopologyEnergy dtb = new ffx.potential.DualTopologyEnergy(topologies[3], topologies[2], sf);
+                ffx.potential.QuadTopologyEnergy qte = new ffx.potential.QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
                 if (numParallel >= 2) {
                     qte.setParallel(true);
                     if (numParallel == 4) {
@@ -602,15 +602,15 @@ class TestLambdaGradient extends Script {
             case 8:
                 sb.append("oct-topology ");
 
-                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
-                QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
+                ffx.potential.DualTopologyEnergy dtga = new ffx.potential.DualTopologyEnergy(topologies[0], topologies[1], sf);
+                ffx.potential.DualTopologyEnergy dtgb = new ffx.potential.DualTopologyEnergy(topologies[3], topologies[2], sf);
+                ffx.potential.QuadTopologyEnergy qtg = new ffx.potential.QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
 
-                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
-                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
-                QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
+                ffx.potential.DualTopologyEnergy dtda = new ffx.potential.DualTopologyEnergy(topologies[4], topologies[5], sf);
+                ffx.potential.DualTopologyEnergy dtdb = new ffx.potential.DualTopologyEnergy(topologies[7], topologies[6], sf);
+                ffx.potential.QuadTopologyEnergy qtd = new ffx.potential.QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
 
-                OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
+                ffx.potential.OctTopologyEnergy ote = new ffx.potential.OctTopologyEnergy(qtg, qtd, true);
                 if (numParallel >= 2) {
                     ote.setParallel(true);
                     if (numParallel >= 4) {

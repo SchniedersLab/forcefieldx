@@ -1,5 +1,5 @@
 
-package ffx.potential
+package ffx.potential.test
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
@@ -10,21 +10,21 @@ import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
 /**
- * The TestGradient script evaluates the consistency of the energy and gradient.
+ * The Gradient script evaluates the consistency of the energy and gradient.
  * <br>
  * Usage:
  * <br>
- * ffxc TestGradient [options] &lt;filename&gt;
+ * ffxc test.Gradient [options] &lt;filename&gt;
  */
-class TestGradient extends Script {
+class Gradient extends Script {
 
 
     /**
-     * Options for the TestGradient script.
+     * Options for the Gradient script.
      * <br>
      * Usage:
      * <br>
-     * ffxc TestGradient [options] &lt;filename&gt;
+     * ffxc test.Gradient [options] &lt;filename&gt;
      */
     public class Options {
         /**
@@ -55,7 +55,7 @@ class TestGradient extends Script {
     def run() {
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc testGradient [options] <filename>', header:' Options:');
+        def cli = new CliBuilder(usage:' ffxc test.Gradient [options] <filename>', header:' Options:');
         def options = new Options()
         cli.parseFromInstance(options, args)
         if (options.help) {
@@ -87,9 +87,9 @@ class TestGradient extends Script {
             functions = new PotentialsUtils()
         }
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy();
+        ffx.potential.MolecularAssembly[] assemblies = functions.open(modelFilename)
+        ffx.potential.MolecularAssembly activeAssembly = assemblies[0]
+        ffx.potential.ForceFieldEnergy energy = activeAssembly.getPotentialEnergy();
         Atom[] atoms = activeAssembly.getAtomArray();
         int n = atoms.length;
 

@@ -123,7 +123,7 @@ RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc loopBuilder [options] <filename1>');
+def cli = new CliBuilder(usage:' ffxc test.loopBuilder [options] <filename1>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.n(longOpt:'steps', args:1, argName:'10000', 'Number of molecular dynamics steps.');

@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -72,7 +71,7 @@ String fileType = "PDB";
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc test.monteCarlo [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of Monte Carlo steps.');
 // cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');

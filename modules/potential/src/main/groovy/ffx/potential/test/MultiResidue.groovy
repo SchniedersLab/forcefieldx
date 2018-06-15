@@ -1,5 +1,5 @@
 
-package ffx.potential
+package ffx.potential.test
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
@@ -14,20 +14,20 @@ import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
 
 /**
- * The TestMultiResidue script evaluates the energy of a MultiResidue system.
+ * The MultiResidue script evaluates the energy of a MultiResidue system.
  * <br>
  * Usage:
  * <br>
- * ffxc TestMultiResidue [options] &lt;filename&gt;
+ * ffxc test.MultiResidue [options] &lt;filename&gt;
  */
-class TestMultiResidue extends Script {
+class MultiResidue extends Script {
 
     /**
-     * Options for the TestMultiResidue script.
+     * Options for the MultiResidue script.
      * <br>
      * Usage:
      * <br>
-     * ffxc TestMultiResidue [options] &lt;filename&gt;
+     * ffxc test.MultiResidue [options] &lt;filename&gt;
      */
     public class Options {
         /**
@@ -58,7 +58,7 @@ class TestMultiResidue extends Script {
     def run() {
 
         // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc MultiResidue [options] <filename>', header:' Options:');
+        def cli = new CliBuilder(usage:' ffxc test.MultiResidue [options] <filename>', header:' Options:');
         def options = new Options()
         cli.parseFromInstance(options, args)
         if (options.help) {
@@ -76,7 +76,7 @@ class TestMultiResidue extends Script {
             modelFilename = active.getFile()
         }
 
-        logger.info("\n Running TestMultiResidue on " + modelFilename + "\n");
+        logger.info("\n Running MultiResidue on " + modelFilename + "\n");
 
         // This is an interface specifying the closure-like methods.
         PotentialsFunctions functions
@@ -90,15 +90,15 @@ class TestMultiResidue extends Script {
             functions = new PotentialsUtils()
         }
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
+        ffx.potential.MolecularAssembly[] assemblies = functions.open(modelFilename)
         ForceField forceField = assemblies[0].getForceField();
-        ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy();
+        ffx.potential.ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy();
 
         int resID = options.resID
         Character chain = options.chain
         String name = options.name
 
-        MultiResidue multiResidue;
+        ffx.potential.bonded.MultiResidue multiResidue;
         Residue residue;
         Polymer[] polymers = assemblies[0].getChains();
         for (int i = 0; i < polymers.length; i++) {
@@ -106,7 +106,7 @@ class TestMultiResidue extends Script {
             if (chain.equals(polymer.getChainID())) {
                 residue = polymer.getResidue(resID);
                 if (residue != null) {
-                    multiResidue = new MultiResidue(residue, forceField, forceFieldEnergy);
+                    multiResidue = new ffx.potential.bonded.MultiResidue(residue, forceField, forceFieldEnergy);
                     polymer.addMultiResidue(multiResidue);
                 }
             }

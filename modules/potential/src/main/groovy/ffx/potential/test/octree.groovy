@@ -52,7 +52,7 @@ boolean writePartitionFile = false;
 boolean straddle = false;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc biotype [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc test.octree [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.d(longOpt:'maxDepth', args:1, argName:'10', 'Maximum octree depth.');
 cli.m(longOpt:'maxOccupancy', args:1, argName:'20', 'Maximum number of atoms per sub-volume.');

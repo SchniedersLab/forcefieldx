@@ -455,7 +455,9 @@ public class FFXClassLoader extends URLClassLoader {
         }
 
         if (name.equals("List all scripts")) {
-            listScripts();
+            listScripts(true);
+        } else if (name.equals("List scripts")) {
+            listScripts(false);
         }
 
         if (extensionJars != null) {
@@ -594,7 +596,7 @@ public class FFXClassLoader extends URLClassLoader {
         }
     }
 
-    protected void listScripts() {
+    protected void listScripts(boolean listTestScripts) {
         if (extensionJars != null) {
             List<String> scripts = new ArrayList<>();
             for (JarFile extensionJar : extensionJars) {
@@ -607,7 +609,15 @@ public class FFXClassLoader extends URLClassLoader {
                         name = name.replace('/', '.');
                         name = name.replace("ffx.scripts.", "");
                         name = name.replace(".groovy", "");
-                        scripts.add(name);
+                        if (name.toUpperCase().contains("TEST")) {
+                            if (listTestScripts) {
+                                scripts.add(name);
+                            }
+                        } else {
+                            if (!listTestScripts) {
+                                scripts.add(name);
+                            }
+                        }
                     }
                 }
             }

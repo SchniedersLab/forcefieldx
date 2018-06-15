@@ -47,7 +47,7 @@ import ffx.potential.parsers.ForceFieldFilter
 import ffx.utilities.Keyword
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc prmToProperty <prm> [prm] ...');
+def cli = new CliBuilder(usage:' ffxc test.prmToProperty <prm> [prm] ...');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.i(longOpt:'improper', args:1, argName:'1.0', 'Scale Improper Torsions');
 cli.r(longOpt:'radii', args:1, argName:'false', 'Convert vdW Radii values to Diameters');

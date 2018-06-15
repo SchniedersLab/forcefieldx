@@ -68,7 +68,7 @@ class Energy extends Script {
         }
 
         List<String> arguments = options.filenames
-        String modelFilename = null
+        String modelFilename
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)

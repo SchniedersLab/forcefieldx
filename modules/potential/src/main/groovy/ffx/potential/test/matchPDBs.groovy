@@ -36,8 +36,6 @@
  * exception statement from your version.
  */
 
-package ffx.potential
-
 import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.parsers.PDBFileFilter
@@ -63,7 +61,7 @@ int atomsUsed = 1;
 PDBFileMatcher fileMatcher;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc matchPDBs [options] <sourcefiles> <filestomatch>');
+def cli = new CliBuilder(usage:' ffxc test.matchPDBs [options] <sourcefiles> <filestomatch>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.d(longOpt:'parseDeep', args:1, argName:'true', 'Accept files with valid coordinate file format (true) or look only at extension (false).');
 cli.v(longOpt:'verbose', 'Flag to print progress messages.');

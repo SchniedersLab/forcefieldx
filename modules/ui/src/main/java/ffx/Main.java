@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -45,9 +45,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -73,6 +71,8 @@ import ffx.ui.MainPanel;
 import ffx.ui.OSXAdapter;
 import static ffx.potential.extended.ExtUtils.prop;
 
+import sun.misc.Unsafe;
+
 /**
  * The Main class is the entry point to the graphical user interface version of
  * Force Field X.
@@ -86,7 +86,7 @@ public final class Main extends JFrame {
     private static final Logger logger = Logger.getLogger(Main.class.getName());
     private static Level level;
     private static LogHandler logHandler;
-	private static final boolean noHeader = prop("sys.noHeader", false);
+    private static final boolean noHeader = prop("sys.noHeader", false);
 
     /**
      * Process any "-D" command line flags.
@@ -152,10 +152,20 @@ public final class Main extends JFrame {
         ffxLogger.addHandler(logHandler);
         ffxLogger.setLevel(level);
 
-        // Close the default System.err, then set System.err use to System.out.
-        // Note - this gets rid of Java 9/10 Deprecation WARNINGs, but causes problems with PJ logging.
-        // System.err.close();
-        // System.setErr(System.out);
+        /**
+         * This removes logger warnings about Illegal Access.
+         */
+        try {
+            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
+            theUnsafe.setAccessible(true);
+            Unsafe u = (Unsafe) theUnsafe.get(null);
+
+            Class cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
+            Field logger = cls.getDeclaredField("logger");
+            u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     /**
@@ -179,12 +189,17 @@ public final class Main extends JFrame {
     /**
      * Print out help for the command line version of Force Field X.
      */
-    private static void commandLineInterfaceHelp() {
+    private static void commandLineInterfaceHelp(boolean listTestScripts) {
         logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
         logger.info("\n where commands include:\n");
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        classLoader.getResource("List all scripts");
-        logger.info("\n For help on a spcific command: ffxc command -h\n");
+        if (listTestScripts) {
+            classLoader.getResource("List all scripts");
+        } else {
+            classLoader.getResource("List scripts");
+        }
+        logger.info("\n To list experimental & test scripts: ffxc --test");
+        logger.info(" For help on a specific command use:  ffxc command -h\n");
         System.exit(0);
     }
 
@@ -305,7 +320,10 @@ public final class Main extends JFrame {
          * Print out help for the command line interface.
          */
         if (GraphicsEnvironment.isHeadless() && args.length < 2) {
-            commandLineInterfaceHelp();
+            if (args.length == 1 && args[0].toUpperCase().contains("TEST")) {
+                commandLineInterfaceHelp(true);
+            }
+            commandLineInterfaceHelp(false);
         }
 
         /**
@@ -459,6 +477,7 @@ public final class Main extends JFrame {
                 "Up Time: " + stopWatch).append("Logger: " + logger.getName());
         return toStringBuilder.toString();
     }
+
     /**
      * Constant <code>stopWatch</code>
      */

@@ -81,7 +81,7 @@ int tableDimensions = 10;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc testESVs [options]');
+def cli = new CliBuilder(usage:' ffxc test.esv [options]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.l(longOpt:'lambda', args:1, argName:'rng', 'Initial lambda value (for all ESVs).');
 cli.t1(longOpt:'test1', 'Test 1: Lambda derivatives by finite difference.');

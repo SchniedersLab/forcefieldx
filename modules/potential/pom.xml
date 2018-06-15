@@ -57,9 +57,6 @@
             <resource>
                 <directory>${basedir}/src/main/groovy/ffx/potential</directory>
                 <targetPath>ffx/scripts</targetPath>
-                <includes>
-                    <include>*</include>
-                </includes>
             </resource>
         </resources>
         <!-- plugins>

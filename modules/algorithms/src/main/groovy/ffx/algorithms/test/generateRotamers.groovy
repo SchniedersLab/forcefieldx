@@ -36,7 +36,6 @@
  * exception statement from your version.
  */
 
-
 import org.apache.commons.io.FilenameUtils
 
 import groovy.cli.picocli.CliBuilder
@@ -64,7 +63,7 @@ String inactiveAtoms = null;
 RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc generateRotamers [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc test.generateRotamers [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.r(longOpt:'residue', args:1, argName:'resid', 'Required: Specify residue as ChainNumber (e.g. B71).');
 cli.n(longOpt:'nChi', args:1, argName:'1-7', 'Required: Specify number of torsions per rotamer.');

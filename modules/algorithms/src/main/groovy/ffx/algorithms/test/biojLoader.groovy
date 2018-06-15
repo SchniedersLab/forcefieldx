@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -49,7 +48,7 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.parsers.PDBFileFilter
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc biojLoader [options] <PDB> <Biojava PDB>');
+def cli = new CliBuilder(usage:' ffxc test.biojLoader [options] <PDB> <Biojava PDB>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.p(longOpt:'print', 'Test by printing to file.');
 cli.m(longOpt:'minimize', 'Not implemented: tests minimization of structure.');

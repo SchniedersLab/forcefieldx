@@ -105,7 +105,7 @@ PhMD.Distribution distribution = PhMD.Distribution.DISCRETE;
 
 // Create the command line parser.
 // Holy mother of god.
-def cli = new CliBuilder(usage:' ffxc protonate [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc test.phMD [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
 cli.d(longOpt:'distribution', args:1, argName:'Discrete', 'Distribution: [DISCRETE / CONTINUOUS]');
 cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');

@@ -331,9 +331,9 @@ public class DiffractionRefinementData {
 
         if (logger.isLoggable(Level.WARNING)) {
             StringBuilder sb = new StringBuilder();
-            sb.append("\n Internally converting intensities to amplitudes:\n");
-            sb.append("  This does NOT use French & Wilson scaling.\n");
-            logger.warning(sb.toString());
+            sb.append("\n Internally converting intensities to amplitudes.\n");
+            sb.append(" This does not use French & Wilson scaling.\n");
+            logger.info(sb.toString());
         }
     }
 

@@ -315,7 +315,8 @@
                         <source>${compileVersion}</source>
                         <target>${targetVersion}</target>
                         <compilerArgs>
-                            <arg>-Xlint</arg>
+                            <compilerArg>-Xlint:all</compilerArg>
+                            <compilerArg>-XDignore.symbol.file</compilerArg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -601,6 +602,10 @@
                     <debug>true</debug>
                     <source>${compileVersion}</source>
                     <target>${targetVersion}</target>
+                    <compilerArgs>
+                        <compilerArg>-Xlint:all</compilerArg>
+                        <compilerArg>-XDignore.symbol.file</compilerArg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

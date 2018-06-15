@@ -36,8 +36,6 @@
  * exception statement from your version.
  */
 
-package ffx.xray
-
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -80,7 +78,7 @@ Path pwdPath;
 RescoreStrategy rscType = RescoreStrategy.NO_RESCORE;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc rescore [options] <modelfilename> [datafilename]');
+def cli = new CliBuilder(usage:' ffxc xray.test.rescore [options] <modelfilename> [datafilename]');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.m(longOpt: 'minimize', args: 1, argName:'1', 'Rescore on energy evaluation (1), minimization (2), minimization with X-ray target (3), or minimization with real-space target (4).');
 cli.e(longOpt:'eps', args:1, argName:'-1.0', 'RMS gradient convergence criteria (negative: automatically determine based on refinement type)');

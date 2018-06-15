@@ -22,9 +22,6 @@
             <resource>
                 <directory>${basedir}/src/main/groovy/ffx/algorithms</directory>
                 <targetPath>ffx/scripts</targetPath>
-                <includes>
-                    <include>*</include>
-                </includes>
             </resource>
             <resource>
                 <directory>${basedir}/src/main/java/ffx/algorithms/structures

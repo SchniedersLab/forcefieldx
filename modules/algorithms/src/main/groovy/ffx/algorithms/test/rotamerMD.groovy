@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -36,8 +35,6 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-
-
 
 // Apache Commons Imports
 import static java.lang.Math.exp
@@ -117,7 +114,7 @@ double temperature = 298.15;
 RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc rotamer.md [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc test.rotamerMD [options] <filename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.l(longOpt:'library', args:1, argName:'1', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
 cli.a(longOpt:'algorithm', args:1, argName:'1', 'Algorithm for rotamer optimization; choices are independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5).');

@@ -36,8 +36,6 @@
  * exception statement from your version.
  */
 
-package ffx.algorithms
-
 import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.parsers.CoordinateFileFilter
@@ -54,16 +52,16 @@ boolean copyFiles = true;
 boolean parallel = true;
 String[] sourceFileNames;
 File[] clusterFiles;
-AlgorithmFunctions utils;
+ffx.algorithms.AlgorithmFunctions utils;
 String outputDirectoryName = "ffx_cluster_";
-ClusterStructures.ClustAlg algorithm = ClusterStructures.ClustAlg.AV_LINK;
-ClusterStructures.ClusterDistanceFunction distFunction = RMSD;
+ffx.algorithms.ClusterStructures.ClustAlg algorithm = ffx.algorithms.ClusterStructures.ClustAlg.AV_LINK;
+ffx.algorithms.ClusterStructures.ClusterDistanceFunction distFunction = RMSD;
 int numClusters = 0;
 int cacheSize = 1000;
 double rmsdCutoff = 1.0;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc rescore [options] <pdbfilename>');
+def cli = new CliBuilder(usage:' ffxc test.cluster [options] <pdbfilename>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.w(longOpt:'write', args:1, argName:'true', 'Write copies of PDB files to cluster directories.');
 cli.o(longOpt:'outputDirectories', argName:'ffx_cluster_', 'Prefix of cluster output directories (followed by number)');
@@ -84,7 +82,7 @@ if (options.h || arguments == null || arguments.size() < 1) {
 try {
     utils = getAlgorithmUtils();
 } catch (MissingMethodException ex) {
-    utils = new AlgorithmUtils();
+    utils = new ffx.algorithms.AlgorithmUtils();
 }
 
 if (options.w) {
@@ -350,7 +348,7 @@ if (tempDirectory != null) {
     //FileUtils.deleteDirectory(tempDirectory);
 }*/
 
-ClusterStructures clusterer = new ClusterStructures(utils, modelFiles);
+ffx.algorithms.ClusterStructures clusterer = new ffx.algorithms.ClusterStructures(utils, modelFiles);
 clusterer.setAlgorithm(algorithm);
 clusterer.setNumClusters(numClusters);
 clusterer.setOutputDirectoryPrefix(outputDirectoryName);

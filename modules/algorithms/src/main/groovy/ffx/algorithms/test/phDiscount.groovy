@@ -43,19 +43,20 @@ import org.apache.commons.io.FilenameUtils
 import groovy.cli.picocli.CliBuilder
 
 import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.MonteCarloListener
+import ffx.algorithms.PhDiscount
 import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
-import ffx.algorithms.mc.RosenbluthCBMC
 import ffx.algorithms.thermostats.Thermostat
 import ffx.algorithms.thermostats.ThermostatEnum
-import ffx.potential.bonded.Residue
+import ffx.potential.MolecularAssembly
+import ffx.potential.extended.ExtendedSystem
+import ffx.potential.extended.TitrationUtils
 
 // Number of molecular dynamics steps
 int nSteps = 1000000;
 
 // Time step in femtoseconds.
-double timeStep = 1.0;
+double dt = 1.0;
 
 // Frequency to print out thermodynamics information in picoseconds.
 double printInterval = 0.01;
@@ -81,24 +82,25 @@ double restartFrequency = 1000;
 // File type of snapshots.
 String fileType = "PDB";
 
-// Parameters to RRMC.
-List<Residue> targets = new ArrayList<>();
-int resNum = 1;
-int mcFrequency = 50;
-int trialSetSize = 10;
-boolean writeSnapshots = false;
-boolean dynamics = false;
-boolean bias = true;
+// Monte-Carlo step frequencies for titration and rotamer moves.
+int moveFrequency = 10;
+int stepsPerMove = 100;
+int rotamerMoveRatio = 0;
+
+// Simulation pH
+Double pH;
+
+// Titrating residue list.
+List<String> rlTokens = new ArrayList<>();
+double cutoffs = 10.0;
 
 // Things below this line normally do not need to be changed.
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc md [options] <filename>');
+def cli = new CliBuilder(usage:' ffxc test.phDiscount [options] <filename>');
 cli.h(longOpt:'help', 'Print this message.');
-cli.b(longOpt:'thermostat', args:1, argName:'Berendsen', 'Thermostat: [Adiabatic / Berendsen / Bussi]');
 cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.i(longOpt:'integrate', args:1, argName:'Beeman', 'Integrator: [Beeman / RESPA / Stochastic / VELOCITYVERLET]');
 cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
 cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
 cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
@@ -106,60 +108,78 @@ cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees K
 cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
 cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
 cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.rmcR(longOpt:'residue', args:1, argName:'1', 'RRMC target residue number.');
-cli.rmcF(longOpt:'mcFreq', args:1, argName:'50', 'RRMC frequency.');
-cli.rmcK(longOpt:'trialSetSize', args:1, argName:'10', 'Size of RRMC trial sets.');
-cli.rmcW(longOpt:'writeSnapshots', args:1, argName:'false', 'Output PDBs of trial sets and orig/proposed conformations.');
-cli.rmcD(longOpt:'dynamics', args:1, argName:'false', 'Skip molecular dynamics; do only Monte Carlo moves.')
-cli.rmcB(longOpt:'bias', args:1, argName:'true', 'For validation. Skips biasing.');
+cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
+cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
+cli.mc(longOpt:'titrationFrequency', args:1, argName:'100', 'Number of steps between Monte-Carlo proton attempts.')
+cli.mcd(longOpt:'titrationDuration', args:1, argName:'100', 'Number of steps for which to run continuous proton dynamics during MC move.');
+cli.mcr(longOpt:'rotamerMoveRatio', args:1, argName:'0', 'Number of steps between Monte-Carlo rotamer attempts.')
+cli.cut(longOpt:'cutoff', args:1, argName:'1000', 'Value of vdw-cutoff and pme-cutoff.');
+
+//cli.ra(longOpt:'resAll', 'Titrate all residues.');
+//cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
+//cli.rw(longOpt:'resWindow', args:1, 'Titrate all residues with intrinsic pKa within [arg] units of simulation pH.');
+//cli.tt(longOpt:'titrateTermini', args:1, argName:'false', 'Titrate amino acid chain ends.');
+
 def options = cli.parse(args);
 
 if (options.h) {
     return cli.usage();
 }
 
-if (options.rmcB) {
-    bias = Boolean.parseBoolean(options.rmcB);
+// Required Options
+if (!options.rl) {
+    logger.warning("Must list titrating residues (-rl).");
+    return;
+} else {
+    def tok = (options.rl).tokenize('.');
+    for (String t : tok) {
+        rlTokens.add(t);
+    }
 }
 
-if (options.rmcD) {
-    dynamics = Boolean.parseBoolean(options.rmcD);
+if (options.cut) {
+    cutoffs = Double.parseDouble(options.cut);
 }
 
-// Load the number of molecular dynamics steps.
+// Suggested Options
+if (!options.pH) {
+    /* DISCOUNT interprets null as 7.4, then issues a warning (in a more readable location). */
+    pH = null;
+} else {
+    pH = Double.parseDouble(options.pH);
+}
+
+if (options.rw) {
+    window = Double.parseDouble(options.rw);
+}
+
+if (options.mc) {
+    moveFrequency = Integer.parseInt(options.mc);
+}
+if (options.mcd) {
+    stepsPerMove = Integer.parseInt(options.mcd);
+}
 if (options.n) {
     nSteps = Integer.parseInt(options.n);
 }
-
-// Write dyn interval in picoseconds
 if (options.s) {
     restartFrequency = Double.parseDouble(options.s);
 }
-
-//
 if (options.f) {
     fileType = options.f.toUpperCase();
 }
-// Load the time steps in femtoseconds.
 if (options.d) {
-    timeStep = Double.parseDouble(options.d);
+    dt = Double.parseDouble(options.d);
 }
-
-// Report interval in picoseconds.
 if (options.l) {
     printInterval = Double.parseDouble(options.l);
 }
-
-// Write snapshot interval in picoseconds.
 if (options.w) {
     saveInterval = Double.parseDouble(options.w);
 }
-
-// Temperature in degrees Kelvin.
 if (options.t) {
     temperature = Double.parseDouble(options.t);
 }
-
 if (options.p) {
     System.setProperty("polarization", options.p);
 }
@@ -168,76 +188,39 @@ if (options.b) {
     thermostat = Thermostat.parseThermostat(options.b)
 }
 
+if (options.mcmd) {
+    mcRunTime = Integer.parseInt(options.mcmd);
+}
 if (options.i) {
     integrator = Integrator.parseIntegrator(options.i)
 }
 
-if (options.rmcR) {
-    resNum = Integer.parseInt(options.rmcR);
-}
-
-if (options.rmcF) {
-    mcFrequency = Integer.parseInt(options.rmcF);
-}
-
-if (options.rmcK) {
-    trialSetSize = Integer.parseInt(options.rmcK);
-}
-
-if (options.rmcW) {
-    writeSnapshots = Boolean.parseBoolean(options.rmcW);
-}
-
 List<String> arguments = options.arguments();
-String modelfilename = null;
-if (arguments != null && arguments.size() > 0) {
-    // Read in command line.
-    modelfilename = arguments.get(0);
-    open(modelfilename);
-} else if (active == null) {
-    return cli.usage();
-} else {
-    modelfilename = active.getFile();
+if (arguments == null || arguments.size() != 1) {
+    logger.warning("No input file supplied.");
+    return;
 }
-
-// Restart File
-File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
+String filename = arguments.get(0);
+File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn");
 if (!dyn.exists()) {
     dyn = null;
 }
 
-if (!dynamics) {
-    int numAccepted = 0;
-    logger.info("\n Running CBMC on " + modelfilename);
-    System.setProperty("forcefield","AMOEBA_PROTEIN_2013");
-    mcFrequency = 1;
-    targets.add(active.getChains()[0].getResidues().get(resNum));
-    MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), null,
-        targets, mcFrequency, trialSetSize, writeSnapshots);
-    while (numAccepted < nSteps) {
-        if (bias) {
-            boolean accepted = rrmc.cbmcStep();
-            if (accepted) {
-                numAccepted++;
-            }
-        } else {
-            boolean accepted = rrmc.controlStep();
-            if (accepted) {
-                numAccepted++;
-            }
-        }
-    }
-    return;
-}
+TitrationUtils.initDiscountPreloadProperties(cutoffs);
+MolecularAssembly mola = TitrationUtils.openFullyProtonated(filename);
 
-logger.info("\n Running dynamics with CBMC on " + modelfilename);
-MolecularDynamics molDyn = new MolecularDynamics(active, active.getPotentialEnergy(), active.getProperties(), sh, thermostat, integrator);
+ExtendedSystem esvSystem = new ExtendedSystem(mola, pH);
+esvSystem.populate(options.rl);
+
+// Create the MolecularDynamics.
+MolecularDynamics molDyn = new MolecularDynamics(mola, mola.getPotentialEnergy(), mola.getProperties(), sh, thermostat, integrator);
 molDyn.setFileType(fileType);
 molDyn.setRestartFrequency(restartFrequency);
 
-targets.add(active.getChains()[0].getResidues().get(resNum));
-MonteCarloListener rrmc = new RosenbluthCBMC(active, active.getPotentialEnergy(), molDyn.getThermostat(),
-    targets, mcFrequency, trialSetSize, writeSnapshots);
-molDyn.addMCListener(rrmc);
+// Create the DISCOuNT object, linking it to the MD.
+PhDiscount phmd = new PhDiscount(mola, esvSystem, molDyn,
+    dt, printInterval, saveInterval, initVelocities,
+    fileType, restartFrequency, dyn);
 
-molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+// Launch dynamics through the DISCOuNT controller.
+phmd.dynamic(nSteps, pH, temperature, moveFrequency, stepsPerMove);

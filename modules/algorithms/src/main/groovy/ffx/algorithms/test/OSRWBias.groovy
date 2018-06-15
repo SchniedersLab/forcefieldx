@@ -1,5 +1,5 @@
 
-package ffx.algorithms
+package ffx.algorithms.test;
 
 import org.apache.commons.io.FilenameUtils
 
@@ -12,20 +12,20 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom
 
 /**
- * The TestOSRWBias script tests the Transition-Tempered Orthogonal Space Random Walk Potential.
+ * The OSRWBias script tests the Transition-Tempered Orthogonal Space Random Walk Potential.
  * <br>
  * Usage:
  * <br>
- * ffxc TTosrw [options] &lt;filename [file2...]&gt;
+ * ffxc test.OSRWBias [options] &lt;filename [file2...]&gt;
  */
-class TestOSRWBias extends Script {
+class OSRWBias extends Script {
 
     /**
-     * Options for the TestOSRWBias Script.
+     * Options for the OSRWBias Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc TestOSRWBias [options] &lt;filename [file2...]&gt;
+     * ffxc test.OSRWBias [options] &lt;filename [file2...]&gt;
      */
     class Options {
         /**
@@ -76,7 +76,7 @@ class TestOSRWBias extends Script {
     }
 
     def run() {
-        def cli = new CliBuilder(usage:' ffxc TTosrw [options] <filename> [file2...]', header:' Options:');
+        def cli = new CliBuilder(usage:' ffxc test.OSRWBias [options] <filename> [file2...]', header:' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);
@@ -183,17 +183,17 @@ class TestOSRWBias extends Script {
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
         energy.getCrystal().setSpecialPositionCutoff(0.0);
         // OSRW will be configured for either single or dual topology.
-        AbstractOSRW osrw = null;
+        ffx.algorithms.AbstractOSRW osrw = null;
         // Save a reference to the first topology.
         topology1 = active;
 
         if (arguments.size() == 1) {
             // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
             if (temper) {
-                osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+                osrw = new ffx.algorithms.TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
                     active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
             } else {
-                osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
+                osrw = new ffx.algorithms.OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
                     298.15, 1.0, 1.0, 1.0, false, sh);
             }
         } else {
@@ -230,11 +230,11 @@ class TestOSRWBias extends Script {
             DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active);
 
             if (temper) {
-                osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+                osrw = new ffx.algorithms.TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
                     active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
             } else {
                 // Wrap the DualTopology potential energy inside an OSRW instance.
-                osrw = new OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
+                osrw = new ffx.algorithms.OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
                     298.15, 1.0, 1.0, 1.0, false, sh);
             }
         }

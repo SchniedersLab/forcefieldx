@@ -1,4 +1,3 @@
-
 /**
  * Title: Force Field X.
  *
@@ -57,7 +56,7 @@ double eps = 1.0;
 int nTrials = 10;
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc crystalSearch [options] <filename1>');
+def cli = new CliBuilder(usage:' ffxc test.crystalSearch [options] <filename1>');
 cli.h(longOpt:'help', 'Print this help message.');
 cli.e(longOpt:'eps', args:1, argName:'1.0', 'RMS gradient convergence criteria');
 cli.t(longOpt:'trials', args:1, argName:'10', 'Number of random trials');
