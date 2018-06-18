@@ -709,9 +709,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
                 break;
             case "RESPA":
-                double inner = 0.25;
-                logger.log(Level.INFO, String.format(" Created a RESPA integrator with outer %6.3e and inner %6.3e time steps (psec).", inner, dt));
+                // Read in the inner time step in fsec, then convert to psec.
+                double in = molecularAssembly.getProperties().getDouble("respa-dt",0.1);
+                double inner = in * 0.001;
+                logger.log(Level.INFO, String.format(" Created a RESPA integrator with outer %6.3e and inner %6.3e time steps (psec).", dt, inner));
                 integrator = addRESPA(inner, dt);
+                break;
             /*
             case "BROWNIAN":
                 integrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
