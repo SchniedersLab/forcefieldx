@@ -69,6 +69,10 @@ class Minimize extends Script {
                 description = 'Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.')
         String[] data
         /**
+         * -s or --suffix Specify the suffix to apply to output files. For example, for 1abc_refine.pdb, write out 1abc_refine_refine.[pdb|mtz] at the end.
+         */
+        @Option(shortName='s', longName='suffix', defaultValue = '_refine', description = 'Suffix to apply to files written out by minimization.') String suffix;
+        /**
          * The final arguments should be a PDB filename and data filename (CIF or MTZ).
          */
         @Unparsed(description = "PDB file and a CIF or MTZ file.")
@@ -113,10 +117,7 @@ class Minimize extends Script {
         int maxiter = options.iterations
 
         // Type of refinement.
-        RefinementMode refinementmode = options.mode
-
-        // Suffix to append to output data
-        String suffix = "_refine"
+        RefinementMode refinementmode = options.mode;
 
         String modelfilename = null
         if (arguments != null && arguments.size() > 0) {
@@ -208,8 +209,8 @@ class Minimize extends Script {
 
         aFuncts.energy(systems[0])
 
-        diffractiondata.writeModel(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb")
-        diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + suffix + ".mtz")
+        diffractiondata.writeModel(FilenameUtils.removeExtension(modelfilename) + options.suffix + ".pdb")
+        diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + options.suffix + ".mtz")
     }
 }
 
