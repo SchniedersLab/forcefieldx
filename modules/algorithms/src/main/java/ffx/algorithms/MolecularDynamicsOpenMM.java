@@ -43,7 +43,6 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
-
 import com.sun.jna.ptr.PointerByReference;
 
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -141,16 +140,18 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * Run time.
      */
     private long time;
-    
+
     private long mdTime = 0;
-    
+
     private double startingTotalEnergy;
-    
+
     private double endTotalEnergy;
-    
+
     private int natoms;
     // A change in potential energy exceeding 1E6 kcal/mol triggers a warning and snapshot dump.
     private double defaultDeltaPEThresh = 1.0E6;
+
+    private boolean NVE = false;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -168,8 +169,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * routines
      */
     public MolecularDynamicsOpenMM(MolecularAssembly assembly, ForceFieldEnergyOpenMM forceFieldEnergyOpenMM,
-                                   CompositeConfiguration properties, AlgorithmListener listener,
-                                   ThermostatEnum thermostat, IntegratorEnum integratorMD) {
+            CompositeConfiguration properties, AlgorithmListener listener,
+            ThermostatEnum thermostat, IntegratorEnum integratorMD) {
         super(assembly, forceFieldEnergyOpenMM, properties, listener, thermostat, integratorMD);
 
         /**
@@ -186,10 +187,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
-     * takeOpenMMSteps moves the simulation forward in time a user defined number of
-     * steps and integrates the equations of motion for each step. This method
-     * ensures that the algorithm reports back only when the time interval
-     * (steps) specified by the user is completed.
+     * takeOpenMMSteps moves the simulation forward in time a user defined
+     * number of steps and integrates the equations of motion for each step.
+     * This method ensures that the algorithm reports back only when the time
+     * interval (steps) specified by the user is completed.
      *
      * @param intervalSteps
      */
@@ -223,7 +224,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         if (aPrevious == null || aPrevious.length != a.length) {
             aPrevious = new double[a.length];
         }
-        arraycopy(a,0,aPrevious,0,a.length);
+        arraycopy(a, 0, aPrevious, 0, a.length);
 
         OpenMM_State_destroy(state);
     }
@@ -238,24 +239,24 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             logger.severe(" Position vector has not been allocated.");
         }
         double velocity[] = new double[3];
-        for (int i=0; i<nAtoms; i++) {
+        for (int i = 0; i < nAtoms; i++) {
             int index = i * 3;
             Atom atom = atoms[i];
             x[index] = atom.getX();
-            x[index+1] = atom.getY();
-            x[index+2] = atom.getZ();
+            x[index + 1] = atom.getY();
+            x[index + 2] = atom.getZ();
             atom.getVelocity(velocity);
             v[index] = velocity[0];
-            v[index+1] = velocity[1];
-            v[index+2] = velocity[2];
+            v[index + 1] = velocity[1];
+            v[index + 2] = velocity[2];
         }
         forceFieldEnergyOpenMM.setOpenMMPositions(x, numberOfVariables);
         forceFieldEnergyOpenMM.setOpenMMVelocities(v, numberOfVariables);
     }
 
     /**
-     * updateFromOpenMM obtains the state of the simulation from OpenMM, completes some logging, and saves
-     * restart files.
+     * updateFromOpenMM obtains the state of the simulation from OpenMM,
+     * completes some logging, and saves restart files.
      *
      * @param i
      */
@@ -280,9 +281,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.info(format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.2f",
                         simTime, currentKineticEnergy, currentPotentialEnergy,
                         currentTotalEnergy, currentTemperature, time * NS2SEC));
-                
+
                 endTotalEnergy = currentTotalEnergy;
-                
+
                 time = -System.nanoTime();
             }
 
@@ -325,9 +326,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         this.printFrequency = (int) printInterval;
         this.restartFile = dyn;
         this.initVelocities = initVelocities;
-        
+
         //logger.info(String.format(" Target Temperature %f", targetTemperature));
-        
         updateContext();
 
         switch (thermostatType) {
@@ -336,9 +336,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                 logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
                 forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
                 break;
-             default:
-                    // No thermostat.
-        }
+            case ADIABATIC:
+            default:
+                break;
+            // No thermostat.
+            }
 
         /**
          * Convert the print interval to a print frequency.
@@ -432,14 +434,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             getOpenMMState();
             startingKineticEnergy = currentKineticEnergy;
         }
-        
+
         saveSnapshotAsPDB = true;
         if (fileType.equalsIgnoreCase("XYZ")) {
             saveSnapshotAsPDB = false;
         } else if (!fileType.equalsIgnoreCase("PDB")) {
             logger.warning(" Snapshot file type unrecognized; saving snaphshots as PDB.\n");
         }
-        
+
         Atom[] atoms = molecularAssembly.getAtomArray();
         natoms = atoms.length;
 
@@ -473,7 +475,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         running = true;
 
         // Update the time step in Picoseconds.
-        OpenMM_Integrator_setStepSize(integrator,dt * 1.0e-3);
+        OpenMM_Integrator_setStepSize(integrator, dt * 1.0e-3);
 
         int i = 0;
         time = -System.nanoTime();
@@ -501,6 +503,10 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                     break;
                 case VELOCITYVERLET:
                     integratorString = "VERLET";
+                    break;
+                case RESPA:
+                    integratorString = "RESPA";
+                    logger.info(String.format(" In RESPA integrator case"));
                     break;
                 default:
                     integratorString = "VERLET";
@@ -540,41 +546,43 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     public DynamicsEngine getEngine() {
         return DynamicsEngine.OPENMM;
     }
-    
+
     /**
-     * Returns time spent calculating the molecular dynamics trajectory on the GPU
-     * @return 
+     * Returns time spent calculating the molecular dynamics trajectory on the
+     * GPU
+     *
+     * @return
      */
     @Override
-    public long getMDTime(){
+    public long getMDTime() {
         return mdTime;
     }
-    
+
     @Override
-    public double getStartingTotalEnergy(){
+    public double getStartingTotalEnergy() {
         return startingTotalEnergy;
     }
-    
+
     @Override
-    public double getEndTotalEnergy(){
+    public double getEndTotalEnergy() {
         return endTotalEnergy;
     }
-    
+
     @Override
-    public double getTimeStep(){
+    public double getTimeStep() {
         return dt;
     }
-        
+
     @Override
-    public int getIntervalSteps(){
+    public int getIntervalSteps() {
         return intervalSteps;
     }
-    
+
     @Override
-    public int getNumAtoms(){
+    public int getNumAtoms() {
         return natoms;
     }
-    
+
     @Override
     public void setFileType(String fileType) {
         this.fileType = fileType;

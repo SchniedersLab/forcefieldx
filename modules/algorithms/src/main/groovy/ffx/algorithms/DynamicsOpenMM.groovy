@@ -25,7 +25,7 @@ class DynamicsOpenMM extends Script{
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
         @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return Thermostat.parseThermostat(s); },
-            defaultValue = 'Berendsen', description = 'Thermostat: [Berendsen, Anderson]')
+            defaultValue = 'Adiabatic', description = 'Thermostat: [Berendsen, Anderson, Adiabatic]')
         ThermostatEnum tstat;
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, Velocity Verlet, or Stochastic (AKA Langevin dynamics).
