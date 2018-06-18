@@ -175,6 +175,7 @@ import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Ener
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_ParameterDerivatives;
 import static simtk.openmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
+import static simtk.openmm.OpenMMLibrary.OpenMM_CustomIntegrator_addComputePerDof;
 
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Angle;
@@ -707,6 +708,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 logger.log(Level.INFO, String.format(" Created Langevin integrator with time step %6.3e (psec).", dt));
                 integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
                 break;
+            case "RESPA":
+                double inner = 0.25;
+                logger.log(Level.INFO, String.format(" Created a RESPA integrator with outer %6.3e and inner %6.3e time steps (psec).", inner, dt));
+                integrator = addRESPA(inner, dt);
             /*
             case "BROWNIAN":
                 integrator = OpenMM_BrownianIntegrator_create(temperature, frictionCoeff, dt);
@@ -900,6 +905,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
         int nBonds = bonds.length;
         amoebaBondForce = OpenMM_AmoebaBondForce_create();
+
         double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
         for (int i = 0; i < nBonds; i++) {
@@ -920,6 +926,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
         }
 
+        OpenMM_Force_setForceGroup(amoebaBondForce, 0);
         OpenMM_System_addForce(system, amoebaBondForce);
         logger.log(Level.INFO, "  Bonds {0}", nBonds);
     }
@@ -959,6 +966,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_AmoebaAngleForce_setAmoebaGlobalAngleSextic(amoebaAngleForce, AngleType.sextic);
         }
 
+        OpenMM_Force_setForceGroup(amoebaAngleForce, 0);
         OpenMM_System_addForce(system, amoebaAngleForce);
         logger.log(Level.INFO, "  Angles {0}", nAngles);
     }
@@ -995,6 +1003,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleQuartic(amoebaInPlaneAngleForce, AngleType.quartic);
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAnglePentic(amoebaInPlaneAngleForce, AngleType.quintic);
         OpenMM_AmoebaInPlaneAngleForce_setAmoebaGlobalInPlaneAngleSextic(amoebaInPlaneAngleForce, AngleType.sextic);
+
+        OpenMM_Force_setForceGroup(amoebaInPlaneAngleForce, 0);
         OpenMM_System_addForce(system, amoebaInPlaneAngleForce);
         logger.log(Level.INFO, " In-plane Angles {0}", nAngles);
     }
@@ -1022,6 +1032,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaBondForce_setAmoebaGlobalBondQuartic(amoebaUreyBradleyForce,
                 UreyBradleyType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
 
+        OpenMM_Force_setForceGroup(amoebaUreyBradleyForce, 0);
         OpenMM_System_addForce(system, amoebaUreyBradleyForce);
         logger.log(Level.INFO, "  Urey-Bradleys {0}", nUreys);
     }
@@ -1048,6 +1059,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendQuartic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quartic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendPentic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.quintic);
         OpenMM_AmoebaOutOfPlaneBendForce_setAmoebaGlobalOutOfPlaneBendSextic(amoebaOutOfPlaneBendForce, OutOfPlaneBendType.sextic);
+
+        OpenMM_Force_setForceGroup(amoebaOutOfPlaneBendForce, 0);
         OpenMM_System_addForce(system, amoebaOutOfPlaneBendForce);
         logger.log(Level.INFO, "  Out-of-Plane Bends {0}", nOutOfPlaneBends);
     }
@@ -1074,6 +1087,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     (OpenMM_KJPerKcal / OpenMM_NmPerAngstrom) * fc0, (OpenMM_KJPerKcal / OpenMM_NmPerAngstrom) * fc1);
 
         }
+
+        OpenMM_Force_setForceGroup(amoebaStretchBendForce, 0);
         OpenMM_System_addForce(system, amoebaStretchBendForce);
         logger.log(Level.INFO, "  Stretch-Bends {0}", nStretchBends);
     }
@@ -1101,6 +1116,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
         }
 
+        OpenMM_Force_setForceGroup(amoebaTorsionForce, 0);
         OpenMM_System_addForce(system, amoebaTorsionForce);
         logger.log(Level.INFO, "  Torsions {0}", nTorsions);
     }
@@ -1126,6 +1142,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     OpenMM_KJPerKcal * improperTorsion.units
                     * improperTorsion.scaleFactor * improperTorsionType.k);
         }
+
+        OpenMM_Force_setForceGroup(amoebaImproperTorsionForce, 0);
         OpenMM_System_addForce(system, amoebaImproperTorsionForce);
         logger.log(Level.INFO, "  Improper Torsions {0} ", nImpropers);
     }
@@ -1151,6 +1169,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     a1, a2, a3, a4, a5, a6,
                     OpenMM_KJPerKcal * type.forceConstant * units);
         }
+
+        OpenMM_Force_setForceGroup(amoebaPiTorsionForce, 0);
         OpenMM_System_addForce(system, amoebaPiTorsionForce);
         logger.log(Level.INFO, "  Pi-Orbital Torsions {0}", nPiOrbitalTorsions);
     }
@@ -1255,6 +1275,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_3D_DoubleArray_destroy(grid3D);
         }
         OpenMM_DoubleArray_destroy(values);
+
+        OpenMM_Force_setForceGroup(amoebaTorsionTorsionForce, 0);
         OpenMM_System_addForce(system, amoebaTorsionTorsionForce);
         logger.log(Level.INFO, " Torsion-Torsions {0}", nTorsionTorsions);
     }
@@ -1308,6 +1330,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_IntArray_destroy(strTorsParticles);
             }
 
+            OpenMM_Force_setForceGroup(stretchTorsionForce, 0);
             OpenMM_System_addForce(system, stretchTorsionForce);
         }
     }
@@ -1363,6 +1386,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_IntArray_destroy(atorsParticles);
             }
 
+            OpenMM_Force_setForceGroup(angleTorsionForce, 0);
             OpenMM_System_addForce(system, angleTorsionForce);
         }
     }
@@ -1521,7 +1545,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_NonbondedForce_setUseDispersionCorrection(fixedChargeNonBondedForce, OpenMM_False);
 
-        // OpenMM_Force_setForceGroup(fixedChargeNonBondedForce, 1);
+        OpenMM_Force_setForceGroup(fixedChargeNonBondedForce, 1);
         OpenMM_System_addForce(system, fixedChargeNonBondedForce);
         logger.log(Level.INFO, String.format("  Fixed charge non-bonded force"));
 
@@ -1649,6 +1673,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         // Add energy parameter derivative
         OpenMM_CustomNonbondedForce_addEnergyParameterDerivative(fixedChargeSoftcore, "vdw_lambda");
 
+        OpenMM_Force_setForceGroup(fixedChargeSoftcore, 1);
         OpenMM_System_addForce(system, fixedChargeSoftcore);
         logger.log(Level.INFO, String.format(" Added fixed charge softcore sterics force."));
 
@@ -2206,9 +2231,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_IntArray_destroy(covalentMap);
 
-        OpenMM_System_addForce(system, amoebaMultipoleForce);
-        OpenMM_Force_setForceGroup(amoebaMultipoleForce, 1);
 
+        OpenMM_Force_setForceGroup(amoebaMultipoleForce, 1);
+        OpenMM_System_addForce(system, amoebaMultipoleForce);
         logger.log(Level.INFO, "  Polarizable multipole force");
 
         GeneralizedKirkwood gk = super.getGK();
@@ -2257,6 +2282,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(amoebaGeneralizedKirkwoodForce, OpenMM_False);
                 break;
         }
+
+        OpenMM_Force_setForceGroup(amoebaGeneralizedKirkwoodForce, 1);
         OpenMM_System_addForce(system, amoebaGeneralizedKirkwoodForce);
 
         switch (nonpolar) {
@@ -2319,6 +2346,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaWcaDispersionForce_setSlevy(amoebaWcaDispersionForce, slevy);
         OpenMM_AmoebaWcaDispersionForce_setShctd(amoebaWcaDispersionForce, shctd);
 
+        OpenMM_Force_setForceGroup(amoebaWcaDispersionForce, 1);
         OpenMM_System_addForce(system, amoebaWcaDispersionForce);
         logger.log(Level.INFO, "  WCA dispersion force.");
 
@@ -2358,6 +2386,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             }
             OpenMM_DoubleArray_destroy(xyzOrigArray);
 
+            OpenMM_Force_setForceGroup(theRestraint, 0);
             OpenMM_System_addForce(system, theRestraint);
         }
     }
@@ -2398,6 +2427,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         default:
                             break;
                     }
+
+                    OpenMM_Force_setForceGroup(theForce, 0);
                     OpenMM_System_addForce(system, theForce);
                 }
                 double forceConst = bType.forceConstant * kParameterConversion;
@@ -3572,6 +3603,34 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     public int getNumParticles() {
         return numParticles;
+    }
+
+    public PointerByReference addRESPA(double inner, double dt) {
+
+            integrator = OpenMM_CustomIntegrator_create (dt);
+
+            // Update the Context with the new integrator (i.e. without creating a new context).
+            // OpenMM_CustomIntegrator_addUpdateContextState (integrator);
+
+            int n = (int) (Math.round(dt / inner));
+            StringBuffer e1 = new StringBuffer("v+0.5*(dt/" + n + ")*f0/m");
+            StringBuffer e11 = new StringBuffer(n + "*(x-x1)/dt+" + e1);
+            StringBuffer e2 = new StringBuffer("x+(dt/" + n + ")*v");
+
+            OpenMM_CustomIntegrator_addPerDofVariable (integrator, "x1", 0.0);
+            OpenMM_CustomIntegrator_addComputePerDof (integrator, "v", "v+0.5*dt*f1/m");
+            for (int i = 0; i < n; i++) {
+                OpenMM_CustomIntegrator_addComputePerDof (integrator, "v", e1.toString());
+                OpenMM_CustomIntegrator_addComputePerDof (integrator, "x", e2.toString());
+                OpenMM_CustomIntegrator_addComputePerDof (integrator, "x1", "x");
+                OpenMM_CustomIntegrator_addConstrainPositions (integrator);
+                OpenMM_CustomIntegrator_addComputePerDof (integrator, "v", e11.toString());
+                OpenMM_CustomIntegrator_addConstrainVelocities (integrator);
+            }
+            OpenMM_CustomIntegrator_addComputePerDof (integrator, "v", "v+0.5*dt*f1/m");
+            OpenMM_CustomIntegrator_addConstrainVelocities (integrator);
+
+            return integrator;
     }
 
 }
