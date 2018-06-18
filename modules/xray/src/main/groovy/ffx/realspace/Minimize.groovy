@@ -1,4 +1,5 @@
-package ffx.xray
+
+package ffx.realspace
 
 import org.apache.commons.io.FilenameUtils
 
@@ -9,24 +10,24 @@ import groovy.cli.picocli.CliBuilder
 import ffx.algorithms.AlgorithmFunctions
 import ffx.algorithms.AlgorithmUtils
 import ffx.potential.MolecularAssembly
-import ffx.xray.CrystalReciprocalSpace.SolventModel
-import ffx.xray.parsers.DiffractionFile
+import ffx.xray.RefinementMinimize
+import ffx.xray.RefinementMinimize.RefinementMode
 
 /**
- * The X-ray ModelvsData script.
+ * The Real Space Minimize script.
  * <br>
  * Usage:
  * <br>
- * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
+ * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
  */
-class ModelvsData extends Script {
+class Minimize extends Script {
 
     /**
-     * Options for the ModelvsData Script.
+     * Options for the Real Space Minimize Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
+     * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
      */
     class Options {
         /**
@@ -35,38 +36,32 @@ class ModelvsData extends Script {
         @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
         boolean help
         /**
-         * -m or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
+         * -e or --eps RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type).
          */
-        @Option(shortName = 'm', longName='maps', defaultValue = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
-        boolean maps
+        @Option(shortName = 'e', longName = 'eps', defaultValue = '-1.0', description = 'RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type)')
+        double eps
         /**
-         * -t or --timings Perform FFT timings.
+         * -i or --iterations Maximum number of optimization iterations.
          */
-        @Option(shortName = 't', longName='timings', defaultValue = 'false', description = 'Perform FFT timings.')
-        boolean timings
+        @Option(shortName = 'i', longName = 'iterations ', defaultValue = '1000', description = ' Maximum number of optimization iterations.')
+        int iterations
         /**
-         * -w or --mtz Write out MTZ containing structure factor coefficients.
+         * -D or --data Specify input data filename and weight applied to the data (wA).
          */
-        @Option(shortName = 'w', longName='mtz', defaultValue = 'false',
-                description = 'write out MTZ containing structure factor coefficients.')
-        boolean mtz
-        /**
-         * -D or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-         */
-        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 3, valueSeparator = ',',
-                description = 'Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.')
+        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 2, valueSeparator = ',',
+                description = 'Specify input data filename and weight applied to the data (wA).')
         String[] data
         /**
          * The final arguments should be a PDB filename and data filename (CIF or MTZ).
          */
-        @Unparsed(description = "PDB file and a CIF or MTZ file.")
+        @Unparsed(description = "PDB file and a Real Space Map file.")
         List<String> filenames
     }
-
+    
     def run() {
 
         def cli = new CliBuilder()
-        cli.name = "ffxc xray.ModelvsData"
+        cli.name = "ffxc realspace.Minimize"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -86,7 +81,16 @@ class ModelvsData extends Script {
 
         List<String> arguments = options.filenames
 
-        String modelfilename = null
+        // RMS gradient per atom convergence criteria.
+        double eps = options.eps
+        
+        // Maximum number of refinement cycles.
+        int maxiter = options.iterations
+        
+        // Suffix to append to output data
+        String suffix = "_refine"
+
+        String modelfilename
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelfilename = arguments.get(0)
@@ -96,50 +100,46 @@ class ModelvsData extends Script {
             modelfilename = active.getFile()
         }
 
-        logger.info("\n Running xray.ModelvsData on " + modelfilename)
+        logger.info("\n Running simulated annealing on " + modelfilename)
 
         MolecularAssembly[] systems = aFuncts.open(modelfilename)
 
-        // Set up diffraction data (can be multiple files)
-        List diffractionfiles = new ArrayList()
+        // set up real space map data (can be multiple files)
+        List mapfiles = new ArrayList()
         if (arguments.size() > 1) {
-            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false)
-            diffractionfiles.add(diffractionfile)
+            RealSpaceFile realspacefile = new RealSpaceFile(arguments.get(1), 1.0)
+            mapfiles.add(realspacefile)
         }
-
         if (options.data) {
-            for (int i = 0; i < options.data.size(); i += 3) {
-                double wA = Double.parseDouble(options.data[i + 1])
-                boolean neutron = Boolean.parseBoolean(options.data[i + 2])
-                DiffractionFile diffractionfile = new DiffractionFile(options.data[i], wA, neutron)
-                diffractionfiles.add(diffractionfile)
+            for (int i=0; i<options.data.size(); i+=2) {
+                double wA = Double.parseDouble(options.data[i+1])
+                RealSpaceFile realspacefile = new RealSpaceFile(options.data[i], wA)
+                mapfiles.add(realspacefile)
             }
         }
 
-        if (diffractionfiles.size() == 0) {
-            DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false)
-            diffractionfiles.add(diffractionfile)
+        if (mapfiles.size() == 0) {
+            RealSpaceFile realspacefile = new RealSpaceFile(systems[0], 1.0)
+            mapfiles.add(realspacefile)
         }
 
-        DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(),
-                SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
-
-        diffractiondata.scaleBulkFit()
-        diffractiondata.printStats()
+        RealSpaceData realspacedata = new RealSpaceData(systems[0], systems[0].getProperties(), systems[0].getParallelTeam(),
+                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
         aFuncts.energy(systems[0])
+        
+        RefinementMinimize refinementMinimize = new RefinementMinimize(realspacedata, RefinementMode.COORDINATES)
 
-        if (options.mtz) {
-            diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz")
+        if (eps < 0.0) {
+            eps = 1.0
         }
+        
+        logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter)
+        refinementMinimize.minimize(eps, maxiter)
 
-        if (options.maps) {
-            diffractiondata.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx")
-        }
-
-        if (options.timings) {
-            diffractiondata.timings()
-        }
+        aFuncts.energy(systems[0])
+        aFuncts.saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
+        
     }
 }
 

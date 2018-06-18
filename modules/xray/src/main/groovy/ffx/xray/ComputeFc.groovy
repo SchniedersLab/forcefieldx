@@ -19,16 +19,16 @@ import ffx.xray.parsers.MTZWriter.MTZType
  * <br>
  * Usage:
  * <br>
- * ffxc xray.ComputeFc [options] &lt;filename&gt;
+ * ffxc xray.ComputeFc [options] &lt;filename [file2...]&gt;
  */
 class ComputeFc extends Script {
 
     /**
-     * Options for the ModelvsData Script.
+     * Options for the X-ray ComputeFc Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
+     * ffxc xray.ComputeFc [options] &lt;filename [file2...]&gt;
      */
     class Options {
         /**
@@ -46,7 +46,7 @@ class ComputeFc extends Script {
     def run() {
 
         def cli = new CliBuilder()
-        cli.name = "ffxc xray.ModelvsData"
+        cli.name = "ffxc xray.ComputeFc"
 
         def options = new Options()
         cli.parseFromInstance(options, args)

@@ -75,8 +75,6 @@ public class HeadlessMain {
         logHandler.setMainPanel(mainPanel);
         mainPanel.initialize();
 
-        Resources.logResources();
-
         // Open the supplied script file.
         if (commandLineFile != null) {
             if (!commandLineFile.exists()) {

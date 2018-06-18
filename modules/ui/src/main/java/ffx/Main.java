@@ -261,7 +261,7 @@ public final class Main extends JFrame {
     private static void startCommandLineInterface(File commandLineFile, List<String> argList) {
         if (processes == 1) {
             logger.info(String.format(" Process ID %d on %s.", procID, hostName));
-            logger.info(String.format(" Starting up the command line interface."));
+            logger.info(String.format(" Starting up the command line interface.\n"));
         } else {
             logger.info(String.format(" Starting up rank %d on %s.\n", rank, hostName));
         }

@@ -23,7 +23,7 @@ import ffx.potential.utils.PotentialsUtils
 class Deuterate extends Script {
 
 	/**
-	 * Options for the Deuterate Script.
+	 * Options for the X-ray Deuterate Script.
 	 * <br>
 	 * Usage:
 	 * <br>
@@ -34,7 +34,7 @@ class Deuterate extends Script {
 		 * -h or --help to print a help message
 		 */
 		@Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-		boolean help;
+		boolean help
 		/**
 		 * The final argument should be a PDB filename.
 		 */
@@ -46,8 +46,8 @@ class Deuterate extends Script {
 	 * Execute the script.
 	 */
 	def run() {
-		def cli = new CliBuilder();
-		cli.name = "ffxc xray.Deuterate";
+		def cli = new CliBuilder()
+		cli.name = "ffxc xray.Deuterate"
 
 		def options = new Options()
 		cli.parseFromInstance(options, args)
@@ -87,28 +87,28 @@ class Deuterate extends Script {
 		MolecularAssembly[] systems = functions.open(modelfilename)
 
 		for (int i=0; i<systems.length; i++) {
-			Atom[] atoms = systems[i].getAtomArray();
+			Atom[] atoms = systems[i].getAtomArray()
 			for (Atom a : atoms) {
 				if (a.getAtomicNumber() == 1) {
-					Atom b = a.getBonds().get(0).get1_2(a);
+					Atom b = a.getBonds().get(0).get1_2(a)
 
 					// Criteria for converting H to D
 					if (b.getAtomicNumber() == 7
 							|| b.getAtomicNumber() == 8) {
-						String name = a.getName().replaceFirst("H", "D");
-						a.setName(name);
+						String name = a.getName().replaceFirst("H", "D")
+						a.setName(name)
 					}
 				}
 			}
 
-			ArrayList<MSNode> waters = systems[i].getWaters();
+			ArrayList<MSNode> waters = systems[i].getWaters()
 			for (MSNode node : waters) {
-				Molecule water = (Molecule) node;
-				water.setName("DOD");
+				Molecule water = (Molecule) node
+				water.setName("DOD")
 			}
 		}
 
-		saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"));
+		functions.saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"))
 	}
 }
 

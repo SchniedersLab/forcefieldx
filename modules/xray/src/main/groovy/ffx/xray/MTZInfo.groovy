@@ -27,7 +27,7 @@ class MTZInfo extends Script {
          * -h or --help to print a help message
          */
         @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help;
+        boolean help
         /**
          * The final argument should be an MTZ filename.
          */
@@ -40,9 +40,8 @@ class MTZInfo extends Script {
      */
     def run() {
 
-        // def cli = new CliBuilder(usage: ' ffxc mtzInfo [options] <mtzfilename>');
-        def cli = new CliBuilder();
-        cli.name = "ffxc xray.MTZInfo";
+        def cli = new CliBuilder()
+        cli.name = "ffxc xray.MTZInfo"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -62,15 +61,15 @@ class MTZInfo extends Script {
 
         logger.info("\n Running MTZInfo on " + mtzfile)
 
-        File file = new File(mtzfile);
+        File file = new File(mtzfile)
         if (!file.exists()) {
-            println(" File " + mtzfile + " was not found.");
-            return;
+            println(" File " + mtzfile + " was not found.")
+            return
         }
 
-        MTZFilter mtzfilter = new MTZFilter();
-        mtzfilter.getReflectionList(file);
-        mtzfilter.printHeader();
+        MTZFilter mtzfilter = new MTZFilter()
+        mtzfilter.getReflectionList(file)
+        mtzfilter.printHeader()
     }
 }
 

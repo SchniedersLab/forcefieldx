@@ -106,7 +106,7 @@ class Timer extends Script {
 
         // Set the number of threads (needs to be done before opening the files).
         if (options.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(options.threads));
+            System.setProperty("pj.nt", Integer.toString(options.threads))
         }
 
         MolecularAssembly[] systems = aFuncts.open(modelfilename)

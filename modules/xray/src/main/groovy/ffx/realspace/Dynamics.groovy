@@ -1,5 +1,5 @@
 
-package ffx.xray
+package ffx.realspace
 
 import org.apache.commons.io.FilenameUtils
 
@@ -15,25 +15,24 @@ import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.thermostats.Thermostat
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.potential.MolecularAssembly
-import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
-import ffx.xray.parsers.DiffractionFile
 
 /**
- * The X-ray Dynamics script.
+ * The Real Space Dynamics script.
  * <br>
  * Usage:
  * <br>
- * ffxc xray.Dynamics [options] &lt;filename&gt;
+ * ffxc realspace.Dynamics [options] &lt;filename&gt;
  */
 class Dynamics extends Script {
 
     /**
-     * Options for the X-ray Dynamics Script.
+     * Options for the Real Space Dynamics Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc xray.Dynamics [options] &lt;filename [file2...]&gt;
+     * ffxc realspace.Dynamics [options] &lt;filename [file2...]&gt;
      */
     class Options {
         /**
@@ -55,7 +54,7 @@ class Dynamics extends Script {
          * -l or --log sets the thermodynamics logging frequency in picoseconds (0.1 psec default).
          */
         @Option(shortName = 'l', longName = 'log', defaultValue = '0.25', description = 'Interval to report thermodynamics (psec).')
-        double log
+        double log;
         /**
          * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
          */
@@ -79,29 +78,22 @@ class Dynamics extends Script {
                 description = 'Integrator: Beeman, RESPA or Stochastic.')
         IntegratorEnum integrator
         /**
-         * -r or --mode sets the desired refinement mode
-         * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
+         * -D or --data Specify input data filename and weight applied to the data (wA).
          */
-        @Option(shortName = 'r', longName = 'mode', convert = { s -> return RefinementMinimize.parseMode(s) }, defaultValue = 'COORDINATES',
-                description = 'Refinement mode: coordinates, bfactors, occupancies.')
-        RefinementMode mode
-        /**
-         * -D or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-         */
-        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 3, valueSeparator = ',',
-                description = 'Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.')
+        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 2, valueSeparator = ',',
+                description = 'Specify input data filename and weight applied to the data (wA).')
         String[] data
         /**
          * The final arguments should be a PDB filename and data filename (CIF or MTZ).
          */
-        @Unparsed(description = "PDB file and a CIF or MTZ file.")
+        @Unparsed(description = "PDB file and a Real Space Map file.")
         List<String> filenames
     }
 
     def run() {
 
         def cli = new CliBuilder()
-        cli.name = "ffxc xray.Dynamics"
+        cli.name = "ffxc realspace.Dynamics"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -131,52 +123,48 @@ class Dynamics extends Script {
             modelfilename = active.getFile()
         }
 
-        logger.info("\n Running dynamics on " + modelfilename)
+        logger.info("\n Running Real Space Dynamics on " + modelfilename)
 
         MolecularAssembly[] systems = aFuncts.open(modelfilename)
 
-        // Set up diffraction data (can be multiple files)
-        List diffractionfiles = new ArrayList()
+        // set up real space map data (can be multiple files)
+        List mapfiles = new ArrayList();
         if (arguments.size() > 1) {
-            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false)
-            diffractionfiles.add(diffractionfile)
+            RealSpaceFile realspacefile = new RealSpaceFile(arguments.get(1), 1.0);
+            mapfiles.add(realspacefile);
         }
-
         if (options.data) {
-            for (int i=0; i<options.data.size(); i+=3) {
-                double wA = Double.parseDouble(options.data[i+1])
-                boolean neutron = Boolean.parseBoolean(options.data[i+2])
-                DiffractionFile diffractionfile = new DiffractionFile(options.data[i], wA, neutron)
-                diffractionfiles.add(diffractionfile)
+            for (int i=0; i<options.data.size(); i+=2) {
+                double wA = Double.parseDouble(options.data[i+1]);
+                RealSpaceFile realspacefile = new RealSpaceFile(options.data[i], wA);
+                mapfiles.add(realspacefile);
             }
         }
 
-        RefinementMode refinementmode = options.mode
-
-        if (diffractionfiles.size() == 0) {
-            DiffractionFile diffractionfile = new DiffractionFile(systems[0], 1.0, false)
-            diffractionfiles.add(diffractionfile)
+        if (mapfiles.size() == 0) {
+            RealSpaceFile realspacefile = new RealSpaceFile(systems[0], 1.0);
+            mapfiles.add(realspacefile);
         }
 
-        DiffractionData diffractiondata = new DiffractionData(systems[0], systems[0].getProperties(),
-                SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+        RealSpaceData realspacedata = new RealSpaceData(systems[0], systems[0].getProperties(), systems[0].getParallelTeam(),
+                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
 
-        diffractiondata.scaleBulkFit()
-        diffractiondata.printStats()
+        aFuncts.energy(systems[0]);
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode)
+        RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES);
 
         // Restart File
-        File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn")
+        File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
         if (!dyn.exists()) {
-            dyn = null
+            dyn = null;
         }
-        MolecularDynamics molDyn = new MolecularDynamics(systems[0], refinementEnergy, systems[0].getProperties(), refinementEnergy,
-                options.thermostat, options.integrator)
-        refinementEnergy.setThermostat(molDyn.getThermostat())
+        MolecularDynamics molDyn = new MolecularDynamics(systems[0], refinementEnergy,
+                systems[0].getProperties(), refinementEnergy, options.thermostat, options.integrator, null);
+        refinementEnergy.setThermostat(molDyn.getThermostat());
 
-        boolean initVelocities = true
-        molDyn.dynamic(options.steps, options.d, options.log, options.write, options.temperature, initVelocities, dyn)
+        // Reset velocities (ignored if a restart file is given)
+        boolean initVelocities = true;
+        molDyn.dynamic(options.steps, options.d, options.log, options.write, options.temperature, initVelocities, dyn);
     }
 }
 

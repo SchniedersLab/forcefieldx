@@ -37,7 +37,7 @@ class CIF2MTZ extends Script {
          * -h or --help to print a help message
          */
         @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help;
+        boolean help
         /**
          * The final argument should be an CIF filename.
          */
@@ -49,8 +49,8 @@ class CIF2MTZ extends Script {
      * Execute the script.
      */
     def run() {
-        def cli = new CliBuilder();
-        cli.name = "ffxc xray.CIF2MTZ";
+        def cli = new CliBuilder()
+        cli.name = "ffxc xray.CIF2MTZ"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -87,28 +87,28 @@ class CIF2MTZ extends Script {
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
         MolecularAssembly[] systems = functions.open(modelfilename)
 
-        CIFFilter ciffilter = new CIFFilter();
-        ReflectionList reflectionlist = ciffilter.getReflectionList(new File(datafilename), systems[0].getProperties());
+        CIFFilter ciffilter = new CIFFilter()
+        ReflectionList reflectionlist = ciffilter.getReflectionList(new File(datafilename), systems[0].getProperties())
 
         if (reflectionlist == null) {
-            println(" Using crystal information from PDB to generate MTZ file.");
+            println(" Using crystal information from PDB to generate MTZ file.")
 
-            Crystal crystal = systems[0].getCrystal().getUnitCell();
-            double res = ciffilter.getResolution(new File(datafilename), crystal);
+            Crystal crystal = systems[0].getCrystal().getUnitCell()
+            double res = ciffilter.getResolution(new File(datafilename), crystal)
             if (res < 0.0) {
-                println(" Resolution could not be determined from PDB and CIF file.");
-                return;
+                println(" Resolution could not be determined from PDB and CIF file.")
+                return
             }
 
-            Resolution resolution = new Resolution(res);
-            reflectionlist = new ReflectionList(crystal, resolution, systems[0].getProperties());
+            Resolution resolution = new Resolution(res)
+            reflectionlist = new ReflectionList(crystal, resolution, systems[0].getProperties())
         }
 
-        DiffractionRefinementData refinementdata = new DiffractionRefinementData(systems[0].getProperties(), reflectionlist);
-        ciffilter.readFile(new File(datafilename), reflectionlist, refinementdata, systems[0].getProperties());
+        DiffractionRefinementData refinementdata = new DiffractionRefinementData(systems[0].getProperties(), reflectionlist)
+        ciffilter.readFile(new File(datafilename), reflectionlist, refinementdata, systems[0].getProperties())
 
-        MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata, FilenameUtils.removeExtension(datafilename) + ".mtz", MTZType.DATAONLY);
-        mtzwriter.write();
+        MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata, FilenameUtils.removeExtension(datafilename) + ".mtz", MTZType.DATAONLY)
+        mtzwriter.write()
     }
 }
 

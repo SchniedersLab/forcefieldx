@@ -244,16 +244,17 @@ class ManyBody extends Script {
         /**
          * The final argument(s) should be one or more filenames.
          */
-        @Unparsed
+        @Unparsed(description = "PDB file and a Real Space Map file.")
         List<String> filenames;
     }
 
     def run() {
 
-        def cli = new CliBuilder(usage: ' ffxc ManyBody [options] <filename> [map file]', header: ' Options:');
+        def cli = new CliBuilder()
+        cli.name = "realspace.ManyBody"
 
-        def options = new Options();
-        cli.parseFromInstance(options, args);
+        def options = new Options()
+        cli.parseFromInstance(options, args)
 
         if (options.help == true) {
             return cli.usage();

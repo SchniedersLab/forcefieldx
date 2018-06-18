@@ -1,5 +1,5 @@
 
-package ffx.potential
+package ffx.potential.test
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
@@ -84,7 +84,7 @@ class LoopClosure extends Script {
             functions = new PotentialsUtils()
         }
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
+        ffx.potential.MolecularAssembly[] assemblies = functions.open(modelFilename)
 
         int firstResidue = options.first
         int lastResidue = options.last
@@ -95,7 +95,7 @@ class LoopClosure extends Script {
         }
 
         boolean writeFile = true;
-        ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy();
+        ffx.potential.ForceFieldEnergy forceFieldEnergy = assemblies[0].getPotentialEnergy();
         forcefieldEnergy.setPrintOnFailure(false, false);
         Loop loop = new Loop(assemblies[0]);
         List<double[]> loopSolutions = loop.generateLoops(firstResidue, lastResidue);

@@ -137,19 +137,19 @@ class Anneal extends Script {
         double timeStep = options.d
 
         // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
-        ThermostatEnum thermostat = options.thermostat;
+        ThermostatEnum thermostat = options.thermostat
 
         // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC]
-        IntegratorEnum integrator = options.integrator;
+        IntegratorEnum integrator = options.integrator
 
-        String modelfilename = null;
+        String modelfilename = null
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
-            modelfilename = arguments.get(0);
+            modelfilename = arguments.get(0)
         } else if (active == null) {
-            return cli.usage();
+            return cli.usage()
         } else {
-            modelfilename = active.getFile();
+            modelfilename = active.getFile()
         }
 
         logger.info("\n Running simulated annealing on " + modelfilename)
@@ -157,13 +157,13 @@ class Anneal extends Script {
         MolecularAssembly[] systems = aFuncts.open(modelfilename)
 
         // suffix to append to output data
-        String suffix = "_anneal";
+        String suffix = "_anneal"
 
         // Set up diffraction data (can be multiple files)
-        List diffractionfiles = new ArrayList();
+        List diffractionfiles = new ArrayList()
         if (arguments.size() > 1) {
-            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false);
-            diffractionfiles.add(diffractionfile);
+            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false)
+            diffractionfiles.add(diffractionfile)
         }
 
         if (options.data) {
@@ -175,7 +175,7 @@ class Anneal extends Script {
             }
         }
 
-        RefinementMode refinementmode = options.mode;
+        RefinementMode refinementmode = options.mode
 
         if (diffractionfiles.size() == 0) {
             DiffractionFile diffractionfile = new DiffractionFile(systems[0], 1.0, false)
@@ -190,7 +190,7 @@ class Anneal extends Script {
 
         aFuncts.energy(systems[0])
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode);
+        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode)
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(systems[0], refinementEnergy, systems[0].getProperties(),
                 refinementEnergy, thermostat, integrator)
 

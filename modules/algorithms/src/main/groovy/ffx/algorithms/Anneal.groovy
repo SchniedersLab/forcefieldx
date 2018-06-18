@@ -32,37 +32,45 @@ class Anneal extends Script {
         /**
          * -h or --help to print a help message.
          */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.') boolean help
+        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
+        boolean help
         /**
          * -n or --steps Number of molecular dynamics steps per annealing window (1000).
          */
-        @Option(shortName='n', longName='steps', defaultValue='1000', description='Number of MD steps per annealing window.') int n
+        @Option(shortName='n', longName='steps', defaultValue='1000', description='Number of MD steps per annealing window.')
+        int n
         /**
          * -d or --dt Time step in femtosceonds (1.0).
          */
-        @Option(shortName='d', longName='dt', defaultValue='1.0', description='Time step (fsec).') double d
+        @Option(shortName='d', longName='dt', defaultValue='1.0', description='Time step (fsec).')
+        double d
         /**
          * -w or --windows Number of annealing windows (10).
          */
-        @Option(shortName='w', longName='windows', defaultValue='10', description='Number of annealing windows.') int w
+        @Option(shortName='w', longName='windows', defaultValue='10', description='Number of annealing windows.')
+        int w
         /**
          * -l or --low Low temperature limit in degrees Kelvin (10.0).
          */
-        @Option(shortName='l', longName='low', defaultValue='10.0', description='Low temperature limit (Kelvin).') double l
+        @Option(shortName='l', longName='low', defaultValue='10.0', description='Low temperature limit (Kelvin).')
+        double l
         /**
-         * -h or --high High temperature limit in degrees Kelvin (1000.0).
+         * -u or --upper Upper temperature limit in degrees Kelvin (1000.0).
          */
-        @Option(shortName='h', longName='high', defaultValue='1000.0', description='High temperature limit (Kelvin).') double h
+        @Option(shortName='u', longName='upper', defaultValue='1000.0', description='High temperature limit (Kelvin).')
+        double u
         /**
          * -b or --thermostat sets the desired thermostat [Adiabatic, Berendsen, Bussi].
          */
         @Option(shortName='t', longName='thermostat', convert = {s -> return Thermostat.parseThermostat(s);}, defaultValue='Berendsen',
-                description='Thermostat: Adiabatic, Berendsen or Bussi.') ThermostatEnum thermo
+                description='Thermostat: Adiabatic, Berendsen or Bussi.')
+        ThermostatEnum thermo
         /**
          * -i or --integrator sets the desired integrator [Beeman, RESPA, Stochastic].
          */
         @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman',
-                description='Integrator: Beeman, RESPA or Stochastic.') IntegratorEnum integrate
+                description='Integrator: Beeman, RESPA or Stochastic.')
+        IntegratorEnum integrate
         /**
          * The final argument should be a filename.
          */
@@ -101,7 +109,7 @@ class Anneal extends Script {
         double low = options.l
 
         // Load the high temperature end point.
-        double high = options.h
+        double high = options.u
 
         // Load the time steps in femtoseconds.
         double timeStep = options.d

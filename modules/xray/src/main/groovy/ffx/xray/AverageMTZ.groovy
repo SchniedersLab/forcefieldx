@@ -28,13 +28,13 @@ class AverageMTZ extends Script {
          * -h or --help to print a help message
          */
         @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help;
+        boolean help
         /**
          * -i or --iteration the current moving average iteration
          */
         @Option(shortName = 'i', defaultValue = '1',
                 description = 'The current moving average iteration (use 1 for a "normal" average of two files).')
-        int iteration;
+        int iteration
         /**
          * The final arguments should be two MTZ filenames.
          */
@@ -46,8 +46,8 @@ class AverageMTZ extends Script {
      * Execute the script.
      */
     def run() {
-        def cli = new CliBuilder();
-        cli.name = "ffxc xray.AverageMTZ";
+        def cli = new CliBuilder()
+        cli.name = "ffxc xray.AverageMTZ"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -69,20 +69,20 @@ class AverageMTZ extends Script {
             return cli.usage()
         }
 
-        File file1 = new File(mtzfile1);
+        File file1 = new File(mtzfile1)
         if (!file1.exists()){
-            println("File: " + mtzfile1 + " not found!");
-            return;
+            println("File: " + mtzfile1 + " not found!")
+            return
         }
 
-        File file2 = new File(mtzfile2);
+        File file2 = new File(mtzfile2)
         if (!file2.exists()){
-            println("File: " + mtzfile2 + " not found!");
-            return;
+            println("File: " + mtzfile2 + " not found!")
+            return
         }
 
-        MTZFilter mtzfilter = new MTZFilter();
-        mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), Integer.parseInt(options.iteration), null);
+        MTZFilter mtzfilter = new MTZFilter()
+        mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), Integer.parseInt(options.iteration), null)
     }
 }
 

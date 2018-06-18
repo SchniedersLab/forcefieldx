@@ -1,5 +1,5 @@
 
-package ffx.potential
+package ffx.potential.test
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
@@ -30,9 +30,10 @@ class Analysis extends Script {
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
         /**
-         * The final argument(s) should be one or more filenames.
+         * The final argument(s) should be one or more PDB and/or XYZ filenames.
          */
-        @Unparsed List<String> filenames
+        @Unparsed(description = "PDB or XYZ file.")
+        List<String> filenames
     }
 
     /**
@@ -40,7 +41,9 @@ class Analysis extends Script {
      */
     def run() {
 
-        def cli = new CliBuilder(usage:' ffxc Analysis [options] <filename>', header:' Options:')
+        def cli = new CliBuilder()
+        cli.name = "ffxc Analysis"
+        cli.header = "\n Print index, residue, atom name, type and class for each atom.\n"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -75,8 +78,8 @@ class Analysis extends Script {
         }
 
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
+        ffx.potential.MolecularAssembly[] assemblies = functions.open(modelFilename)
+        ffx.potential.MolecularAssembly activeAssembly = assemblies[0]
         functions.analysis(activeAssembly)
         functions.energy(activeAssembly)
     }

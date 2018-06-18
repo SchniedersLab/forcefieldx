@@ -28,20 +28,23 @@ class Biotype extends Script {
      * <br>
      * ffxc Biotype &lt;filename&gt;
      */
-    public class Options {
+    class Options {
         /**
          * -h or --help to print a help message
          */
         @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
         /**
-         * The final argument(s) should be one or more filenames.
+         * The final argument(s) should be an XYZ file.
          */
-        @Unparsed List<String> filenames
+        @Unparsed(description = "An XYZ file.")
+        List<String> xyzFile
     }
 
     def run() {
 
-        def cli = new CliBuilder(usage:' ffxc Biotype <filename>', header:' Options:')
+        def cli = new CliBuilder()
+        cli.name = "ffxc Biotype"
+        cli.header = "\n Biotype prints out biotype records, which are added to Patch parameter files.\n"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -50,12 +53,11 @@ class Biotype extends Script {
             return cli.usage()
         }
 
-        List<String> arguments = options.filenames
-        String modelFilename = null
+        List<String> arguments = options.xyzFile
+        String modelFilename
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)
-            open(modelFilename)
         } else if (active == null) {
             return cli.usage()
         } else {

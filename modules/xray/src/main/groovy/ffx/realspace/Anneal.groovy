@@ -1,5 +1,4 @@
-
-package ffx.xray
+package ffx.realspace
 
 import org.apache.commons.io.FilenameUtils
 
@@ -9,31 +8,31 @@ import groovy.cli.picocli.CliBuilder
 
 import ffx.algorithms.AlgorithmFunctions
 import ffx.algorithms.AlgorithmUtils
-import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.SimulatedAnnealing
 import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.thermostats.Thermostat
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.potential.MolecularAssembly
-import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize
 import ffx.xray.RefinementMinimize.RefinementMode
-import ffx.xray.parsers.DiffractionFile
 
 /**
- * The X-ray Dynamics script.
+ * The Real Space Annealing script.
  * <br>
  * Usage:
  * <br>
- * ffxc xray.Dynamics [options] &lt;filename&gt;
+ * ffxc realspace.Anneal [options] &lt;filename&gt;
  */
-class Dynamics extends Script {
+class Anneal extends Script {
 
     /**
-     * Options for the X-ray Dynamics Script.
+     * Options for the Real Space Annealing Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc xray.Dynamics [options] &lt;filename [file2...]&gt;
+     * ffxc realspace.Anneal [options] &lt;filename [file2...]&gt;
      */
     class Options {
         /**
@@ -42,34 +41,34 @@ class Dynamics extends Script {
         @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
         boolean help
         /**
-         * -n or --steps sets the number of molecular dynamics steps (default is 1 nsec).
+         * -n or --steps Number of molecular dynamics steps per annealing window (1000).
          */
-        @Option(shortName = 'n', defaultValue = '1000000', description = 'Number of molecular dynamics steps')
-        int steps
+        @Option(shortName = 'n', longName = 'steps', defaultValue = '1000', description = 'Number of MD steps per annealing window.')
+        int n
         /**
          * -d or --dt Time step in femtosceonds (1.0).
          */
         @Option(shortName = 'd', longName = 'dt', defaultValue = '1.0', description = 'Time step (fsec).')
         double d
         /**
-         * -l or --log sets the thermodynamics logging frequency in picoseconds (0.1 psec default).
+         * -w or --windows Number of annealing windows (10).
          */
-        @Option(shortName = 'l', longName = 'log', defaultValue = '0.25', description = 'Interval to report thermodynamics (psec).')
-        double log
+        @Option(shortName = 'w', longName = 'windows', defaultValue = '10', description = 'Number of annealing windows.')
+        int w
         /**
-         * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
+         * -l or --lower Low temperature limit in degrees Kelvin (10.0).
          */
-        @Option(shortName = 'w', longName = 'write', defaultValue = '10.0', description = 'Interval to write out coordinates (psec).')
-        double write
+        @Option(shortName = 'l', longName = 'lower', defaultValue = '10.0', description = 'Low temperature limit (Kelvin).')
+        double l
         /**
-         * -t or --temperature sets the simulation temperature (Kelvin).
+         * -u or --upper High temperature limit in degrees Kelvin (1000.0).
          */
-        @Option(shortName = 't', longName = 'temperature', defaultValue = '298.15', description = 'Temperature (Kelvin)')
-        double temperature
+        @Option(shortName = 'u', longName = 'upper', defaultValue = '1000.0', description = 'High temperature limit (Kelvin).')
+        double u
         /**
          * -b or --thermostat sets the desired thermostat [Adiabatic, Berendsen, Bussi].
          */
-        @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return Thermostat.parseThermostat(s) }, defaultValue = 'Berendsen',
+        @Option(shortName = 't', longName = 'thermostat', convert = { s -> return Thermostat.parseThermostat(s) }, defaultValue = 'Berendsen',
                 description = 'Thermostat: Adiabatic, Berendsen or Bussi.')
         ThermostatEnum thermostat
         /**
@@ -86,22 +85,22 @@ class Dynamics extends Script {
                 description = 'Refinement mode: coordinates, bfactors, occupancies.')
         RefinementMode mode
         /**
-         * -D or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
+         * -D or --data Specify input data filename and weight applied to the data (wA).
          */
-        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 3, valueSeparator = ',',
-                description = 'Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.')
+        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 2, valueSeparator = ',',
+                description = 'Specify input data filename and weight applied to the data (wA).')
         String[] data
         /**
          * The final arguments should be a PDB filename and data filename (CIF or MTZ).
          */
-        @Unparsed(description = "PDB file and a CIF or MTZ file.")
+        @Unparsed(description = "PDB file and a Real Space Map file.")
         List<String> filenames
     }
 
     def run() {
 
         def cli = new CliBuilder()
-        cli.name = "ffxc xray.Dynamics"
+        cli.name = "ffxc realspace.Anneal"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -121,7 +120,31 @@ class Dynamics extends Script {
 
         List<String> arguments = options.filenames
 
-        String modelfilename
+        // suffix to append to output data
+        String suffix = "_anneal"
+
+        // Load the number of molecular dynamics steps at each temperature.
+        int steps = options.n
+
+        // Load the number of annealing steps.
+        int windows = options.w
+
+        // Load the low temperature end point.
+        double low = options.l
+
+        // Load the high temperature end point.
+        double high = options.u
+
+        // Load the time steps in femtoseconds.
+        double timeStep = options.d
+
+        // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
+        ThermostatEnum thermostat = options.thermostat
+
+        // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC]
+        IntegratorEnum integrator = options.integrator
+
+        String modelfilename = null
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelfilename = arguments.get(0)
@@ -131,52 +154,41 @@ class Dynamics extends Script {
             modelfilename = active.getFile()
         }
 
-        logger.info("\n Running dynamics on " + modelfilename)
+        logger.info("\n Running simulated annealing on " + modelfilename)
 
         MolecularAssembly[] systems = aFuncts.open(modelfilename)
 
-        // Set up diffraction data (can be multiple files)
-        List diffractionfiles = new ArrayList()
+        // set up real space map data (can be multiple files)
+        List mapfiles = new ArrayList()
         if (arguments.size() > 1) {
-            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false)
-            diffractionfiles.add(diffractionfile)
+            RealSpaceFile realspacefile = new RealSpaceFile(arguments.get(1), 1.0)
+            mapfiles.add(realspacefile)
         }
-
         if (options.data) {
-            for (int i=0; i<options.data.size(); i+=3) {
-                double wA = Double.parseDouble(options.data[i+1])
-                boolean neutron = Boolean.parseBoolean(options.data[i+2])
-                DiffractionFile diffractionfile = new DiffractionFile(options.data[i], wA, neutron)
-                diffractionfiles.add(diffractionfile)
+            for (int i=0; i<options.data.size(); i+=2) {
+                double wA = Double.parseDouble(options.data[i+1]);
+                RealSpaceFile realspacefile = new RealSpaceFile(options.data[i], wA)
+                mapfiles.add(realspacefile)
             }
         }
 
-        RefinementMode refinementmode = options.mode
-
-        if (diffractionfiles.size() == 0) {
-            DiffractionFile diffractionfile = new DiffractionFile(systems[0], 1.0, false)
-            diffractionfiles.add(diffractionfile)
+        if (mapfiles.size() == 0) {
+            RealSpaceFile realspacefile = new RealSpaceFile(systems[0], 1.0)
+            mapfiles.add(realspacefile)
         }
 
-        DiffractionData diffractiondata = new DiffractionData(systems[0], systems[0].getProperties(),
-                SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+        RealSpaceData realspacedata = new RealSpaceData(systems[0], systems[0].getProperties(), systems[0].getParallelTeam(),
+                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
-        diffractiondata.scaleBulkFit()
-        diffractiondata.printStats()
+        aFuncts.energy(systems[0])
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode)
+        RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES)
+        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(systems[0], refinementEnergy, systems[0].getProperties(),
+                refinementEnergy, thermostat, integrator)
+        simulatedAnnealing.anneal(high, low, windows, steps, timeStep)
 
-        // Restart File
-        File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn")
-        if (!dyn.exists()) {
-            dyn = null
-        }
-        MolecularDynamics molDyn = new MolecularDynamics(systems[0], refinementEnergy, systems[0].getProperties(), refinementEnergy,
-                options.thermostat, options.integrator)
-        refinementEnergy.setThermostat(molDyn.getThermostat())
-
-        boolean initVelocities = true
-        molDyn.dynamic(options.steps, options.d, options.log, options.write, options.temperature, initVelocities, dyn)
+        aFuncts.energy(systems[0])
+        aFuncts.saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
     }
 }
 

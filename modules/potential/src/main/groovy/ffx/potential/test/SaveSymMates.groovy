@@ -1,4 +1,5 @@
-package ffx.potential
+
+package ffx.potential.test
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
@@ -102,8 +103,8 @@ class SaveSymMates extends Script {
             functions = new PotentialsUtils()
         }
         
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
+        ffx.potential.MolecularAssembly[] assemblies = functions.open(modelFilename)
+        ffx.potential.MolecularAssembly activeAssembly = assemblies[0]
         functions.saveAsPDB(activeAssembly, new File(modelFilename));
 
         //saveAsPDB();

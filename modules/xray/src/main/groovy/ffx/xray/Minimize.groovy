@@ -19,7 +19,7 @@ import ffx.xray.parsers.DiffractionFile
  * <br>
  * Usage:
  * <br>
- * ffxc xray.Minimize [options] &lt;filename&gt;
+ * ffxc xray.Minimize [options] &lt;filename [file2...]&gt;
  */
 class Minimize extends Script {
 
@@ -39,11 +39,11 @@ class Minimize extends Script {
         /**
          * -e or --eps RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type).
          */
-        @Option(shortName='e', longName='eps', defaultValue='-1.0', description='RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type)') double eps;
+        @Option(shortName='e', longName='eps', defaultValue='-1.0', description='RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type)') double eps
         /**
          * -i or --iterations Maximum number of optimization iterations.
          */
-        @Option(shortName='i', longName='iterations ', defaultValue='1000', description=' Maximum number of optimization iterations.') int iterations;
+        @Option(shortName='i', longName='iterations ', defaultValue='1000', description=' Maximum number of optimization iterations.') int iterations
         /**
          * -r or --mode sets the desired refinement mode
          * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
@@ -55,7 +55,7 @@ class Minimize extends Script {
          * -t or --threeStage Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true).
          */
         @Option(shortName='t', longName='threeStage', defaultValue='false',
-                description='Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true)') boolean threeStage;
+                description='Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true)') boolean threeStage
         /**
          * -E or --eps3 RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determine eps for each stage).
          */
@@ -105,9 +105,9 @@ class Minimize extends Script {
         boolean threestage = options.threeStage
 
         // RMS gradient convergence criteria for three stage refinement
-        double coordeps = options.eps3[0];
-        double beps = options.eps3[1];
-        double occeps = options.eps3[2];
+        double coordeps = options.eps3[0]
+        double beps = options.eps3[1]
+        double occeps = options.eps3[2]
 
         // Maximum number of refinement cycles.
         int maxiter = options.iterations
@@ -128,7 +128,7 @@ class Minimize extends Script {
             modelfilename = active.getFile()
         }
 
-        logger.info("\n Running simulated annealing on " + modelfilename)
+        logger.info("\n Running X-ray Minimize on " + modelfilename)
 
         MolecularAssembly[] systems = aFuncts.open(modelfilename)
 
@@ -159,12 +159,12 @@ class Minimize extends Script {
         diffractiondata.scaleBulkFit()
         diffractiondata.printStats()
 
-        aFuncts.energy(systems[0]);
+        aFuncts.energy(systems[0])
 
         if (threestage) {
             RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES)
             if (coordeps < 0.0) {
-                coordeps = refinementMinimize.getEps();
+                coordeps = refinementMinimize.getEps()
             }
             logger.info("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter)
             refinementMinimize.minimize(coordeps, maxiter)
@@ -173,7 +173,7 @@ class Minimize extends Script {
 
             aFuncts.energy(systems[0])
 
-            refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS);
+            refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS)
             if (beps < 0.0) {
                 beps = refinementMinimize.getEps()
             }
@@ -212,7 +212,6 @@ class Minimize extends Script {
         diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + suffix + ".mtz")
     }
 }
-
 
 /**
  * Title: Force Field X.

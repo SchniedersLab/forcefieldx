@@ -41,6 +41,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
+import ffx.algorithms.AlgorithmUtils;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
@@ -61,7 +62,7 @@ import ffx.potential.parsers.SystemFilter;
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
-public class UIUtils implements AlgorithmFunctions {
+public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
 
     private final ModelingShell modelingShell;
     private final MainPanel mainPanel;

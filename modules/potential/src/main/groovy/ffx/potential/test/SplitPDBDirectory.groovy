@@ -1,5 +1,5 @@
 
-package ffx.potential
+package ffx.potential.test
 
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -25,7 +25,7 @@ class SplitPDBDirectory extends Script {
      * <br>
      * ffxc SplitPDBDirectory [options] &lt;filename&gt;
      */
-    public class Options{
+    class Options{
         /**
          * -h or --help to print a help message
          */
