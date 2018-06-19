@@ -117,7 +117,7 @@ class Thermodynamics extends Script {
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, or Stochastic (AKA Langevin dynamics).
          */
-        @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic]') IntegratorEnum integrator;
+        @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic / Verlet]') IntegratorEnum integrator;
         /**
          * -s1 or --start1 defines the first softcored atom for the first topology.
          */
@@ -1014,7 +1014,7 @@ class Thermodynamics extends Script {
 
         if (options.mc) {
             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, IntegratorEnum.VELOCITYVERLET);
+                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, options.integrator);
 
             if (options.nEquil > 0) {
                 logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
