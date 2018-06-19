@@ -4871,6 +4871,7 @@ public class RotamerOptimization implements Terminatable {
                 twoBodyEnergy = new double[nResidues][][][];
                 for (int i = 0; i < nResidues; i++) {
                     Residue resi = residues[i];
+                    int indexI = allResiduesList.indexOf(resi);
                     Rotamer roti[] = resi.getRotamers(library);
                     twoBodyEnergy[i] = new double[roti.length][][];
                     for (int ri = 0; ri < roti.length; ri++) {
@@ -4880,12 +4881,19 @@ public class RotamerOptimization implements Terminatable {
                         twoBodyEnergy[i][ri] = new double[nResidues][];
                         for (int j = i + 1; j < nResidues; j++) {
                             Residue resj = residues[j];
+                            int indexJ = allResiduesList.indexOf(resj);
                             Rotamer rotj[] = resj.getRotamers(library);
                             twoBodyEnergy[i][ri][j] = new double[rotj.length];
                             for (int rj = 0; rj < rotj.length; rj++) {
                                 if (checkToJ(i, ri, j, rj)) {
                                     continue;
                                 }
+                                
+                                // Skip creating a job if the pair is outside pair cut-off.
+                                if (checkPairDistThreshold(indexI, ri, indexJ, rj)) {
+                                    continue;
+                                }
+                                
                                 Integer pairJob[] = {i, ri, j, rj};
                                 if (decomposeOriginal && (ri != 0 || rj != 0)) {
                                     continue;
@@ -4920,6 +4928,7 @@ public class RotamerOptimization implements Terminatable {
                     int trimerJobIndex = 0;
                     for (int i = 0; i < nResidues; i++) {
                         Residue resi = residues[i];
+                        int indexI = allResiduesList.indexOf(resi);
                         Rotamer roti[] = resi.getRotamers(library);
                         for (int ri = 0; ri < roti.length; ri++) {
                             if (check(i, ri)) {
@@ -4927,6 +4936,7 @@ public class RotamerOptimization implements Terminatable {
                             }
                             for (int j = i + 1; j < nResidues; j++) {
                                 Residue resj = residues[j];
+                                int indexJ = allResiduesList.indexOf(resj);
                                 Rotamer rotj[] = resj.getRotamers(library);
                                 for (int rj = 0; rj < rotj.length; rj++) {
                                     if (checkToJ(i, ri, j, rj)) {
@@ -4934,11 +4944,18 @@ public class RotamerOptimization implements Terminatable {
                                     }
                                     for (int k = j + 1; k < nResidues; k++) {
                                         Residue resk = residues[k];
+                                        int indexK = allResiduesList.indexOf(resk);
                                         Rotamer rotk[] = resk.getRotamers(library);
                                         for (int rk = 0; rk < rotk.length; rk++) {
                                             if (checkToK(i, ri, j, rj, k, rk)) {
                                                 continue;
                                             }
+                                            
+                                            // Skip work items outside the 3-body cutoff.
+                                            if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
+                                                continue;
+                                            }
+                                            
                                             Integer trimerJob[] = {i, ri, j, rj, k, rk};
                                             if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
                                                 continue;
@@ -8888,7 +8905,7 @@ public class RotamerOptimization implements Terminatable {
                         twoBodyEnergy = Double.NaN;
                         logger.info(format(" Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang < %5.3f Ang",
                                 residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, dist, superpositionThreshold));
-                    } else if (checkPairDistThreshold(i, ri, j, rj)) {
+                    } else if (checkPairDistThreshold(indexI, ri, indexJ, rj)) {
                         // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                         twoBodyEnergy = 0.0;
                         time += System.nanoTime();
