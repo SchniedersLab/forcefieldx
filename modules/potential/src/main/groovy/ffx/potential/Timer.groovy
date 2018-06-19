@@ -1,12 +1,17 @@
-
 package ffx.potential
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
+import java.util.logging.Logger
 
+import ffx.potential.cli.TimerOptions
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
+import ffx.utilities.StringOutputStream
+
+import picocli.CommandLine
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The Timer script evaluates the wall clock time for energy and forces.
@@ -15,79 +20,73 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc Timer [options] &lt;filename&gt;
  */
+@Command(description = " Time energy evaluations.", name = "ffxc Timer")
 class Timer extends Script {
 
     /**
-     * Options for the Timer script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc Timer [options] &lt;filename&gt;
+     * The logger for this class.
      */
-    public class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
-        /**
-         * -n or --iterations to set the number of iterations
-         */
-        @Option(longName='iterations', shortName='n', defaultValue='5', description='Number of iterations.') int iterations
-        /**
-         * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
-         */
-        @Option(longName='threads', shortName='c', defaultValue='0', description='Number of SMP threads (the default of 0 specifies use of all CPU cores)') int threads
-        /**
-         * -g or --gradient to ignore computation of the atomic coordinates gradient
-         */
-        @Option(longName='gradient', shortName='g', defaultValue='false', description='Ignore computation of the atomic coordinates gradient') boolean gradient
-        /**
-         * -q or --quiet to suppress printing of the energy for each iteration
-         */
-        @Option(longName='quiet', shortName='q', defaultValue='false', description='Suppress printing of the energy for each iteration') boolean quiet
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    }
+    private static final Logger logger = Logger.getLogger(Timer.class.getName());
+
+    /**
+     * Timing Options.
+     */
+    @Mixin
+    private TimerOptions options
+
+    /**
+     * -h or --help to print a help message
+     */
+    @Option(names=["-h", "--help"], usageHelp = true, description="Print this help message.")
+    private boolean helpRequested = false
+
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
+    private List<String> filenames
 
     /**
      * Execute the script.
      */
     def run() {
 
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc Timer [options] <filename>')
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-        if (options.help == true) {
-            return cli.usage()
+        String[] argsArray = (String[]) args.toArray()
+        Timer timer = CommandLine.populateCommand(new Timer(), argsArray)
+
+        if (timer.helpRequested) {
+            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream())
+            CommandLine.usage(new Timer(), sos)
+            logger.info(" " + sos.toString())
+            return
         }
 
-        List<String> arguments = options.filenames
-        String modelFilename = null
+        List<String> arguments = timer.filenames
+        String modelFilename
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)
-            //open(modelFilename)
         } else if (active == null) {
-            return cli.usage()
+            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream())
+            CommandLine.usage(new Timer(), sos)
+            logger.info(" " + sos.toString())
+            return
         } else {
             modelFilename = active.getFile()
         }
 
         // The number of iterations.
-        int nEvals = options.iterations
+        int nEvals = timer.options.iterations
 
         // Compute the atomic coordinate gradient.
-        boolean noGradient = options.gradient
+        boolean noGradient = timer.options.gradient
 
         // Print the energy for each iteraction.
-        boolean quiet = options.quiet
+        boolean quiet = timer.options.quiet
 
         // Set the number of threads.
-        if (options.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(options.threads));
+        if (timer.options.threads > 0) {
+            System.setProperty("pj.nt", Integer.toString(timer.options.threads));
         }
 
         logger.info("\n Timing energy and gradient for " + modelFilename);
@@ -106,25 +105,30 @@ class Timer extends Script {
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
         MolecularAssembly[] assemblies = functions.open(modelFilename)
         MolecularAssembly activeAssembly = assemblies[0]
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy();
+        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
 
-        long minTime = Long.MAX_VALUE;
-        double sumTime2 = 0.0;
-        int halfnEvals = (nEvals % 2 == 1) ? (nEvals/2) : (nEvals/2) - 1; // Halfway point
+        logger.info("\n Beginning timing\n")
+        long minTime = Long.MAX_VALUE
+        double sumTime2 = 0.0
+        int halfnEvals = (nEvals % 2 == 1) ? (nEvals/2) : (nEvals/2) - 1 // Halfway point
         for (int i=0; i<nEvals; i++) {
-            long time = -System.nanoTime();
-            energy.energy(!noGradient, !quiet);
-            time += System.nanoTime();
+            long time = -System.nanoTime()
+            double e = energy.energy(!noGradient, !quiet)
+            time += System.nanoTime()
+            if (quiet) {
+                logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
+            }
             minTime = time < minTime ? time : minTime;
             if (i >= (int) (nEvals/2)) {
-                double time2 = time * 1.0E-9;
-                sumTime2 += (time2*time2);
+                double time2 = time * 1.0E-9
+                sumTime2 += (time2*time2)
             }
         }
-        ++halfnEvals;
-        double rmsTime = Math.sqrt(sumTime2/halfnEvals);
-        logger.info(String.format(" Minimum time:           %6.3f (sec)", minTime * 1.0E-9));
-        logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime));
+
+        ++halfnEvals
+        double rmsTime = Math.sqrt(sumTime2/halfnEvals)
+        logger.info(String.format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
+        logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime))
     }
 
 }

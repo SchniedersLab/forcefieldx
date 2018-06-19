@@ -1,4 +1,3 @@
-
 package ffx.potential.test
 
 import groovy.cli.Option
