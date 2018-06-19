@@ -39,11 +39,13 @@ class Minimize extends Script {
         /**
          * -e or --eps RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type).
          */
-        @Option(shortName='e', longName='eps', defaultValue='-1.0', description='RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type)') double eps
+        @Option(shortName='e', longName='eps', defaultValue='-1.0', description='RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type)')
+        double eps
         /**
          * -i or --iterations Maximum number of optimization iterations.
          */
-        @Option(shortName='i', longName='iterations ', defaultValue='1000', description=' Maximum number of optimization iterations.') int iterations
+        @Option(shortName='i', longName='iterations ', defaultValue='1000', description=' Maximum number of optimization iterations.')
+        int iterations
         /**
          * -r or --mode sets the desired refinement mode
          * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
@@ -55,7 +57,8 @@ class Minimize extends Script {
          * -t or --threeStage Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true).
          */
         @Option(shortName='t', longName='threeStage', defaultValue='false',
-                description='Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true)') boolean threeStage
+                description='Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true)')
+        boolean threeStage
         /**
          * -E or --eps3 RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determine eps for each stage).
          */
@@ -71,7 +74,8 @@ class Minimize extends Script {
         /**
          * -s or --suffix Specify the suffix to apply to output files. For example, for 1abc_refine.pdb, write out 1abc_refine_refine.[pdb|mtz] at the end.
          */
-        @Option(shortName='s', longName='suffix', defaultValue = '_refine', description = 'Suffix to apply to files written out by minimization.') String suffix;
+        @Option(shortName='s', longName='suffix', defaultValue = '_refine', description = 'Suffix to apply to files written out by minimization.')
+        String suffix;
         /**
          * The final arguments should be a PDB filename and data filename (CIF or MTZ).
          */
@@ -117,7 +121,7 @@ class Minimize extends Script {
         int maxiter = options.iterations
 
         // Type of refinement.
-        RefinementMode refinementmode = options.mode;
+        RefinementMode refinementmode = options.mode
 
         String modelfilename = null
         if (arguments != null && arguments.size() > 0) {

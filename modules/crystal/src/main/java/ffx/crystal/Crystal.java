@@ -63,6 +63,7 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.utilities.HashCodeUtil;
 import static ffx.numerics.VectorMath.dot;
+import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.r;
@@ -349,6 +350,23 @@ public class Crystal {
 
     public boolean getCheckRestrictions(){
         return checkRestrictions;
+    }
+
+    public boolean isSpecialPosition(double cartesianCoords[]) {
+        double newCoords[] = new double[3];
+        double ret[] = new double[3];
+        int n = spaceGroup.getNumberOfSymOps();
+        for (int i=1; i<n; i++) {
+            SymOp symOp = symOpsCartesian.get(i);
+            applyCartesianSymOp(cartesianCoords, newCoords, symOp);
+            diff(cartesianCoords, newCoords, ret);
+            image(ret);
+            double r = r(ret);
+            if (r < specialPositionCutoff) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

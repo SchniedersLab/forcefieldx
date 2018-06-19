@@ -1,4 +1,4 @@
-package ffx.xray
+package ffx.xray.test
 
 import org.apache.commons.io.FilenameUtils
 
@@ -8,25 +8,32 @@ import groovy.cli.picocli.CliBuilder
 
 import ffx.algorithms.AlgorithmFunctions
 import ffx.algorithms.AlgorithmUtils
+import ffx.crystal.Crystal
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.MSNode
 import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
+import ffx.xray.RefinementMinimize
+import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.parsers.DiffractionFile
 
 /**
- * The X-ray ModelvsData script.
+ * The X-ray PlaceIon script.
  * <br>
  * Usage:
  * <br>
- * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
+ * ffxc xray.PlaceIon [options] &lt;filename [file2...]&gt;
  */
-class ModelvsData extends Script {
+class PlaceIon extends Script {
 
     /**
-     * Options for the ModelvsData Script.
+     * Options for the PlaceIon Script.
      * <br>
      * Usage:
      * <br>
-     * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
+     * ffxc xray.PlaceIon [options] &lt;filename [file2...]&gt;
      */
     class Options {
         /**
@@ -35,21 +42,15 @@ class ModelvsData extends Script {
         @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
         boolean help
         /**
-         * -m or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
+         * -S or --spacing Specify the spacing in fractional coordinates.
          */
-        @Option(shortName = 'm', longName='maps', defaultValue = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
-        boolean maps
+        @Option(shortName = 'S', longName = 'spacing', defaultValue = '0.05', description = 'Search spacing in fractional coordinates.')
+        double spacing;
         /**
-         * -t or --timings Perform FFT timings.
+         * -s or --suffix Specify the suffix to apply to output files. For example, for 1abc_refine.pdb, write out 1abc_refine_refine.[pdb|mtz] at the end.
          */
-        @Option(shortName = 't', longName='timings', defaultValue = 'false', description = 'Perform FFT timings.')
-        boolean timings
-        /**
-         * -w or --mtz Write out MTZ containing structure factor coefficients.
-         */
-        @Option(shortName = 'w', longName='mtz', defaultValue = 'false',
-                description = 'write out MTZ containing structure factor coefficients.')
-        boolean mtz
+        @Option(shortName = 's', longName = 'suffix', defaultValue = '_refine', description = 'Suffix to apply to files written out by minimization.')
+        String suffix;
         /**
          * -D or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
          */
@@ -66,7 +67,7 @@ class ModelvsData extends Script {
     def run() {
 
         def cli = new CliBuilder()
-        cli.name = "ffxc xray.ModelvsData"
+        cli.name = "ffxc xray.PlaceIon"
 
         def options = new Options()
         cli.parseFromInstance(options, args)
@@ -79,11 +80,9 @@ class ModelvsData extends Script {
         try {
             // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
             aFuncts = getAlgorithmUtils()
-            logger.info(" Got UI Utils.");
         } catch (MissingMethodException ex) {
             // This is the fallback, which does everything necessary without magic names
             aFuncts = new AlgorithmUtils()
-            logger.info(" Got Algorithm Utils.");
         }
 
         List<String> arguments = options.filenames
@@ -98,7 +97,7 @@ class ModelvsData extends Script {
             modelfilename = active.getFile()
         }
 
-        logger.info("\n Running xray.ModelvsData on " + modelfilename)
+        logger.info("\n Running xray.PlaceIon on " + modelfilename)
 
         MolecularAssembly[] systems = aFuncts.openAll(modelfilename)
 
@@ -131,16 +130,83 @@ class ModelvsData extends Script {
 
         aFuncts.energy(systems[0])
 
-        if (options.mtz) {
-            diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz")
+        MolecularAssembly molecularAssembly = systems[0]
+        ArrayList<MSNode> ions = molecularAssembly.getIons()
+        if (ions == null || ions.size() == 0) {
+            logger.info(" Please add an ion to the PDB file to scan with.")
+            return
         }
 
-        if (options.maps) {
-            diffractiondata.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx")
+        // Scan with the last ion in the file.
+        int nIon = ions.size()
+        Atom ion = ions.get(nIon - 1).getAtomList().get(0)
+        logger.info(" Preparing to scan with ion:\n " + ion.toString())
+
+        RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES)
+        RefinementEnergy refinementEnergy = refinementMinimize.refinementEnergy
+        int n = refinementEnergy.getNumberOfVariables()
+        double[] x = new double[n]
+
+        Crystal crystal = molecularAssembly.getCrystal()
+
+        double spacing = options.spacing
+        double[] fracCoords = new double[3]
+        double[] realCoords = new double[3]
+        double[] minCoords
+        double eMin = Double.MAX_VALUE
+
+        refinementEnergy.getCoordinates(x)
+        double eStart = refinementEnergy.energy(x, true)
+        double[] startingCoords = [ion.getX(), ion.getY(), ion.getZ()]
+
+        // Scan the ion over the fractional coordinates of the unit cell.
+        for (double ai = 0; ai <= 1.0; ai += spacing) {
+            fracCoords[0] = ai
+            for (double bi = 0; bi <= 1.0; bi += spacing) {
+                fracCoords[1] = bi
+                for (double ci = 0; ci <= 1.0; ci += spacing) {
+                    fracCoords[2] = ci
+                    // Get the real space coordinates.
+                    crystal.toCartesianCoordinates(fracCoords, realCoords)
+                    ion.setXYZ(realCoords)
+                    if (crystal.isSpecialPosition(realCoords)) {
+                        logger.info(" Ion special position skipped " + ion.toString())
+                        continue
+                    }
+                    long time = -System.nanoTime()
+                    refinementEnergy.getCoordinates(x)
+                    double e = refinementEnergy.energy(x, true)
+                    time += System.nanoTime()
+                    if (e < eMin) {
+                        eMin = e
+                        minCoords = [realCoords[0], realCoords[1], realCoords[2]]
+                        logger.info(String.format(" New minimum %16.8f at (%12.6f %12.6f %12.6f) in %6.3f (sec)",
+                                eMin, realCoords[0], realCoords[1], realCoords[2], time * 1.0e-9))
+                    } else {
+                        logger.info(String.format(" Energy      %16.8f at (%12.6f %12.6f %12.6f) in %6.3f (sec)",
+                                e, realCoords[0], realCoords[1], realCoords[2], time * 1.0e-9))
+                    }
+                }
+            }
         }
 
-        if (options.timings) {
-            diffractiondata.timings()
+        if (eMin < Double.MAX_VALUE) {
+            logger.info(String.format(" Best minimum   %16.8f found at (%16.8f %16.8f %16.8f)", eMin, minCoords[0], minCoords[1], minCoords[2]))
+        }
+
+        if (eMin < eStart) {
+            // Set the ion coordinates to the minimum found.
+            ion.setXYZ(minCoords)
+
+            // Report the force field energy.
+            aFuncts.energy(systems[0])
+
+            // Write out the results.
+            diffractiondata.writeModel(FilenameUtils.removeExtension(modelfilename) + options.suffix + ".pdb")
+            diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + options.suffix + ".mtz")
+        } else {
+            logger.info(String.format(" Initial position %16.8f kept at (%16.8f %16.8f %16.8f)",
+                    eStart, startingCoords[0], startingCoords[1], startingCoords[2]))
         }
     }
 }

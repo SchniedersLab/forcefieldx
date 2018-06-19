@@ -122,6 +122,13 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
     }
 
     @Override
+    public FFXSystem open(String file) {
+        FFXSystem[] systems = mainPanel.openWait(file);
+        lastFilter = mainPanel.getFilter();
+        return systems[0];
+    }
+
+    @Override
     public void close(MolecularAssembly assembly) {
         Optional<FFXSystem> origSys = switchTo(assembly);
         mainPanel.closeWait();

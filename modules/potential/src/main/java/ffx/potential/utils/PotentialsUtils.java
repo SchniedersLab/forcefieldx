@@ -538,6 +538,7 @@ public class PotentialsUtils implements PotentialsFunctions {
      */
     @Override
     public ForceFieldEnergy energy(MolecularAssembly assembly) {
+        logger.info(" PotentialUtils Energy");
         if (assembly == null) {
             logger.info(" Molecular assembly was null - skipping energy");
             return null;
