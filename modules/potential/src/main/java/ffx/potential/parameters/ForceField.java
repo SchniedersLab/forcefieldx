@@ -1620,9 +1620,9 @@ public class ForceField {
 
     public enum ForceFieldInteger {
 
-        FF_THREADS,
-        PME_ORDER,
-        PME_REAL_THREADS,
+        FF_THREADS(1),
+        PME_ORDER(5),
+        PME_REAL_THREADS(1),
         PME_GRID_X,
         PME_GRID_Y,
         PME_GRID_Z,
@@ -1630,7 +1630,61 @@ public class ForceField {
         LIGAND_STOP,
         SCF_CYCLES,
         SCF_PREDICTOR_ORDER,
-        CUDA_DEVICE
+        CUDA_DEVICE(0),
+        
+        /* Flags for bonded-term force groups. If not specified, they default to DEFAULT_BONDED_FORCE_GROUP */
+        BOND_FORCE_GROUP(0), ANGLE_FORCE_GROUP(0), TORSION_FORCE_GROUP(0), ANGLE_TORSION_FORCE_GROUP(0),
+        IMPROPER_TORSION_FORCE_GROUP(0), OUT_OF_PLANE_BEND_FORCE_GROUP(0), PI_ORBITAL_TORSION_FORCE_GROUP(0),
+        STRETCH_BEND_FORCE_GROUP(0), STRETCH_TORSION_FORCE_GROUP(0), IN_PLANE_ANGLE_FORCE_GROUP(0),
+        UREY_BRADLEY_FORCE_GROUP(0), TORSION_TORSION_FORCE_GROUP(0), BOND_RESTRAINT_FORCE_GROUP(0),
+
+        /* Flags for nonbonded-term force groups. If not specified, they default to DEFAULT_NONBONDED_FORCE_GROUP */
+        COM_RESTRAINT_FORCE_GROUP(0), COORD_RESTRAINT_FORCE_GROUP(0), GK_FORCE_GROUP(1),
+        NCS_RESTRAINT_FORCE_GROUP(0), PME_FORCE_GROUP(1), VDW_FORCE_GROUP(1);
+
+        // Describes the default value of this ForceFieldInteger.
+        private final int defaultValue;
+        // Set true if the default value is a meaningful constant value.
+        private final boolean constantDefault;
+
+        ForceFieldInteger() {
+            this(1, false);
+        }
+        ForceFieldInteger(int defaultValue) {
+            this(1, true);
+        }
+        ForceFieldInteger(int defaultValue, boolean constantDefault) {
+            this.defaultValue = defaultValue;
+            this.constantDefault = constantDefault;
+        }
+
+        /**
+         * Returns the default value of this ForceFieldInteger if it is meaningful.
+         *
+         * Throws an Exception if it either does not have a meaningful default, or
+         * if the default is determined via a formula. For example, PME_GRID_X is
+         * generally determined as a function of a-axis length and PME grid spacing.
+         *
+         * @return Default value if meaningful.
+         * @throws RuntimeException If default value not meaningful.
+         */
+        public int getDefaultValue() throws RuntimeException {
+            if (constantDefault) {
+                return defaultValue;
+            } else {
+                throw new RuntimeException(String.format(" ForceFieldInteger %s " +
+                        "either does not have a defined default, or default is " +
+                        "determined formulaically", this.toString()));
+            }
+        }
+
+        /**
+         * Checks whether there is a meaningful, constant default.
+         * @return If meaningful constant default exists.
+         */
+        public boolean getDefaultMeaningful() {
+            return constantDefault;
+        }
     }
 
     public enum ForceFieldBoolean {
