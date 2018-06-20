@@ -1,18 +1,13 @@
 package ffx.potential
 
-import java.awt.GraphicsEnvironment
-import java.util.logging.Logger
-
 import ffx.potential.cli.TimerOptions
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
-import ffx.utilities.StringOutputStream
+import ffx.utilities.FFXScript
 
 import picocli.CommandLine
 import picocli.CommandLine.Command
-import picocli.CommandLine.Help.Ansi
 import picocli.CommandLine.Mixin
-import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
@@ -23,24 +18,13 @@ import picocli.CommandLine.Parameters
  * ffxc Timer [options] &lt;filename&gt;
  */
 @Command(description = " Time energy evaluations.", name = "ffxc Timer")
-class Timer extends Script {
-
-    /**
-     * The logger for this class.
-     */
-    private static final Logger logger = Logger.getLogger(Timer.class.getName());
+class Timer extends FFXScript {
 
     /**
      * Mix in Timing Options.
      */
     @Mixin
     private TimerOptions options
-
-    /**
-     * -h or --help to print a help message
-     */
-    @Option(names = ["-h", "--help"], usageHelp = true, description = "Print this help message.")
-    private boolean helpRequested = false
 
     /**
      * One or more filenames.
@@ -56,15 +40,8 @@ class Timer extends Script {
         String[] argsArray = (String[]) args.toArray()
         CommandLine.populateCommand(this, argsArray)
 
-        Ansi color = Ansi.OFF
-        if (GraphicsEnvironment.isHeadless()) {
-            color = Ansi.ON
-        }
-
-        if (helpRequested) {
-            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream())
-            CommandLine.usage(this, sos, color)
-            logger.info(" " + sos.toString())
+        if (help) {
+            logger.info(helpString())
             return
         }
 
@@ -74,9 +51,7 @@ class Timer extends Script {
             // Read in command line.
             modelFilename = arguments.get(0)
         } else if (active == null) {
-            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream())
-            CommandLine.usage(new Timer(), sos, color)
-            logger.info(" " + sos.toString())
+            logger.info(helpString())
             return
         } else {
             modelFilename = active.getFile()
