@@ -1,5 +1,6 @@
 package ffx.potential
 
+import java.awt.GraphicsEnvironment
 import java.util.logging.Logger
 
 import ffx.potential.cli.TimerOptions
@@ -9,6 +10,7 @@ import ffx.utilities.StringOutputStream
 
 import picocli.CommandLine
 import picocli.CommandLine.Command
+import picocli.CommandLine.Help.Ansi
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -29,7 +31,7 @@ class Timer extends Script {
     private static final Logger logger = Logger.getLogger(Timer.class.getName());
 
     /**
-     * Timing Options.
+     * Mix in Timing Options.
      */
     @Mixin
     private TimerOptions options
@@ -37,7 +39,7 @@ class Timer extends Script {
     /**
      * -h or --help to print a help message
      */
-    @Option(names=["-h", "--help"], usageHelp = true, description="Print this help message.")
+    @Option(names = ["-h", "--help"], usageHelp = true, description = "Print this help message.")
     private boolean helpRequested = false
 
     /**
@@ -52,23 +54,28 @@ class Timer extends Script {
     def run() {
 
         String[] argsArray = (String[]) args.toArray()
-        Timer timer = CommandLine.populateCommand(new Timer(), argsArray)
+        CommandLine.populateCommand(this, argsArray)
 
-        if (timer.helpRequested) {
+        Ansi color = Ansi.OFF
+        if (GraphicsEnvironment.isHeadless()) {
+            color = Ansi.ON
+        }
+
+        if (helpRequested) {
             StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream())
-            CommandLine.usage(new Timer(), sos)
+            CommandLine.usage(this, sos, color)
             logger.info(" " + sos.toString())
             return
         }
 
-        List<String> arguments = timer.filenames
+        List<String> arguments = filenames
         String modelFilename
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)
         } else if (active == null) {
             StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream())
-            CommandLine.usage(new Timer(), sos)
+            CommandLine.usage(new Timer(), sos, color)
             logger.info(" " + sos.toString())
             return
         } else {
@@ -76,17 +83,17 @@ class Timer extends Script {
         }
 
         // The number of iterations.
-        int nEvals = timer.options.iterations
+        int nEvals = options.iterations
 
         // Compute the atomic coordinate gradient.
-        boolean noGradient = timer.options.gradient
+        boolean noGradient = options.gradient
 
         // Print the energy for each iteraction.
-        boolean quiet = timer.options.quiet
+        boolean quiet = options.quiet
 
         // Set the number of threads.
-        if (timer.options.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(timer.options.threads));
+        if (options.threads > 0) {
+            System.setProperty("pj.nt", Integer.toString(options.threads));
         }
 
         logger.info("\n Timing energy and gradient for " + modelFilename);
@@ -110,8 +117,8 @@ class Timer extends Script {
         logger.info("\n Beginning timing\n")
         long minTime = Long.MAX_VALUE
         double sumTime2 = 0.0
-        int halfnEvals = (nEvals % 2 == 1) ? (nEvals/2) : (nEvals/2) - 1 // Halfway point
-        for (int i=0; i<nEvals; i++) {
+        int halfnEvals = (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1 // Halfway point
+        for (int i = 0; i < nEvals; i++) {
             long time = -System.nanoTime()
             double e = energy.energy(!noGradient, !quiet)
             time += System.nanoTime()
@@ -119,14 +126,14 @@ class Timer extends Script {
                 logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
             }
             minTime = time < minTime ? time : minTime;
-            if (i >= (int) (nEvals/2)) {
+            if (i >= (int) (nEvals / 2)) {
                 double time2 = time * 1.0E-9
-                sumTime2 += (time2*time2)
+                sumTime2 += (time2 * time2)
             }
         }
 
         ++halfnEvals
-        double rmsTime = Math.sqrt(sumTime2/halfnEvals)
+        double rmsTime = Math.sqrt(sumTime2 / halfnEvals)
         logger.info(String.format("\n Minimum time:           %6.3f (sec)", minTime * 1.0E-9))
         logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime))
     }

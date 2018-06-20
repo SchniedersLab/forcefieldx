@@ -1,13 +1,18 @@
-
 package ffx.potential
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder;
+import java.awt.GraphicsEnvironment
+import java.util.logging.Logger
 
 import ffx.potential.bonded.Atom
 import ffx.potential.utils.PotentialsFunctions
 import ffx.potential.utils.PotentialsUtils
+import ffx.utilities.StringOutputStream
+
+import picocli.CommandLine
+import picocli.CommandLine.Command
+import picocli.CommandLine.Help.Ansi
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The Energy script evaluates the energy of a system.
@@ -16,65 +21,70 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc Energy &lt;filename&gt;
  */
+@Command(description = " Compute the force field potential energy.", name = "ffxc Energy")
 class Energy extends Script {
 
     /**
-     * Options for the Energy Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc Energy [options] &lt;filename&gt;
+     * The logger for this class.
      */
-    public class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
-        /**
-         * -g or --gradient to print out gradients.
-         */
-        @Option(shortName='g', longName='gradient', description='Print out atomic gradients as well as energy.') boolean gradient;
-        /**
-         * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
-         */
-        @Option(shortName='es1', longName='noElecStart1', defaultValue='1', description='Starting no-electrostatics atom for 1st topology') int es1;
-        /**
-         * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
-         */
-        @Option(shortName='ef1', longName='noElecFinal1', defaultValue='-1', description='Final no-electrostatics atom for 1st topology') int ef1;
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed(description='The atomic coordinate file in PDB or XYZ format.') List<String> filenames
-    }
+    private static final Logger logger = Logger.getLogger(Energy.class.getName());
 
+    /**
+     * -h or --help to print a help message
+     */
+    @Option(names = ['-h', '--help'], usageHelp = true, description = 'Print this help message.')
+    boolean help = false
+    /**
+     * -g or --gradient to print out gradients.
+     */
+    @Option(names = ['-g', '--gradient'], description = 'Print out atomic gradients as well as energy.')
+    boolean gradient = false
+    /**
+     * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
+     */
+    @Option(names = ['--es1', '--noElecStart1'], description = 'Starting no-electrostatics atom for 1st topology')
+    int es1 = 1
+    /**
+     * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
+     */
+    @Option(names = ['--ef1', '--noElecFinal1'], description = 'Final no-electrostatics atom for 1st topology')
+    int ef1 = -1
+    /**
+     * The final argument(s) should be one or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    List<String> filenames = null
 
     /**
      * Execute the script.
      */
     def run() {
 
-        // def cli = new CliBuilder(usage:' ffxc Energy [options] <filename>', header:' Options:');
-        def cli = new CliBuilder();
-        cli.name = "ffxc Energy";
+        String[] argsArray = (String[]) args.toArray()
+        CommandLine.populateCommand(this, argsArray)
 
-        // String args[] = getArgs();
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        Ansi color = Ansi.OFF
+        if (GraphicsEnvironment.isHeadless()) {
+            color = Ansi.ON
         }
 
-        List<String> arguments = options.filenames
+        if (help) {
+            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream())
+            CommandLine.usage(this, sos, color)
+            logger.info(" " + sos.toString())
+            return
+        }
+
+        List<String> arguments = filenames
         String modelFilename
         if (arguments != null && arguments.size() > 0) {
             // Read in command line.
             modelFilename = arguments.get(0)
-            //open(modelFilename)
         } else if (active == null) {
-            return cli.usage()
+            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream())
+            CommandLine.usage(this, sos, color)
+            logger.info(" " + sos.toString())
+            return
         } else {
             modelFilename = active.getFile()
         }
@@ -95,56 +105,56 @@ class Energy extends Script {
 
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
         MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0];
-        ForceFieldEnergy pe = activeAssembly.getPotentialEnergy();
+        MolecularAssembly activeAssembly = assemblies[0]
+        ForceFieldEnergy pe = activeAssembly.getPotentialEnergy()
 
-        Atom[] atoms = activeAssembly.getAtomArray();
+        Atom[] atoms = activeAssembly.getAtomArray()
 
         // Apply the no electrostatics atom selection
-        int noElecStart = options.es1;
-        noElecStart = (noElecStart < 1) ? 1 : noElecStart;
+        int noElecStart = es1
+        noElecStart = (noElecStart < 1) ? 1 : noElecStart
 
-        int noElecStop = options.ef1;
-        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
+        int noElecStop = ef1
+        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop
 
         for (int i = noElecStart; i <= noElecStop; i++) {
-            Atom ai = atoms[i - 1];
-            ai.setElectrostatics(false);
-            ai.print();
+            Atom ai = atoms[i - 1]
+            ai.setElectrostatics(false)
+            ai.print()
         }
 
-        int nVars = pe.getNumberOfVariables();
-        double[] x = new double[nVars];
-        pe.getCoordinates(x);
+        int nVars = pe.getNumberOfVariables()
+        double[] x = new double[nVars]
+        pe.getCoordinates(x)
 
-        if (options.gradient) {
-            double[] g = new double[nVars];
-            int nAts = nVars / 3;
+        if (gradient) {
+            double[] g = new double[nVars]
+            int nAts = nVars / 3
             if (pe instanceof ForceFieldEnergyOpenMM) {
-                double[] gOMM = new double[nVars];
-                ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe;
-                ope.energyAndGradVsFFX(x, g, gOMM, true);
+                double[] gOMM = new double[nVars]
+                ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe
+                ope.energyAndGradVsFFX(x, g, gOMM, true)
                 for (int i = 0; i < nAts; i++) {
-                    int i3 = 3*i;
+                    int i3 = 3 * i
                     logger.info(String.format(" Atom %d OpenMM gradient:      %14.9g %14.9g %14.9g",
-                            i, gOMM[i3], gOMM[i3+1], gOMM[i3+2]));
+                            i, gOMM[i3], gOMM[i3 + 1], gOMM[i3 + 2]))
                     logger.info(String.format(" Atom %d gradient discrepancy: %14.9g %14.9g %14.9g",
-                            i, gOMM[i3]-g[i3], gOMM[i3+1]-g[i3+1], gOMM[i3+2]-g[i3+2]));
+                            i, gOMM[i3] - g[i3], gOMM[i3 + 1] - g[i3 + 1], gOMM[i3 + 2] - g[i3 + 2]))
                 }
             } else {
-                pe.energyAndGradient(x, g, true);
-            }
-            for (int i = 0; i < nAts; i++) {
-                int i3 = 3*i;
-                logger.info(String.format(" Atom %d FFX gradient:         %14.9g %14.9g %14.9g", i, g[i3], g[i3+1], g[i3+2]));
+                pe.energyAndGradient(x, g, true)
+                logger.info(String.format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
+                for (int i = 0; i < nAts; i++) {
+                    int i3 = 3 * i
+                    logger.info(String.format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
+                }
             }
         } else if (pe instanceof ForceFieldEnergyOpenMM) {
-            ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe;
-            ope.energyVsFFX(x, true);
+            ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe
+            ope.energyVsFFX(x, true)
         } else {
-            pe.energy(x, true);
+            pe.energy(x, true)
         }
-        //functions.energy(activeAssembly)
     }
 }
 
