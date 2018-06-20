@@ -6951,7 +6951,11 @@ public class RotamerOptimization implements Terminatable {
         IntegerKeyset ijk = new IntegerKeyset(i, ri, j, rj, k, rk);
         if (threeBodyEnergies.containsKey(ijk)) {
             return threeBodyEnergies.getOrDefault(ijk, 0);
-        } else {
+        }
+        else if (checkTriDistThreshold(i, ri, j, rj, k, rk)) {
+            return 0.00000000;
+        }
+        else {
             String message = String.format(" Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
             logger.info(message);
             throw new IllegalArgumentException(message);
