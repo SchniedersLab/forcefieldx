@@ -23,6 +23,7 @@ class Timer extends PotentialScript {
     @Mixin
     private TimerOptions timer
 
+
     /**
      * One or more filenames.
      */
@@ -68,7 +69,7 @@ class Timer extends PotentialScript {
             long time = -System.nanoTime()
             double e = energy.energy(!timer.gradient, !timer.quiet)
             time += System.nanoTime()
-            if (quiet) {
+            if (!timer.quiet) {
                 logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
             }
             minTime = time < minTime ? time : minTime;
