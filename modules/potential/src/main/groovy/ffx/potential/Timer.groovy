@@ -1,11 +1,8 @@
 package ffx.potential
 
+import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.TimerOptions
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
-import ffx.utilities.FFXScript
 
-import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -18,13 +15,13 @@ import picocli.CommandLine.Parameters
  * ffxc Timer [options] &lt;filename&gt;
  */
 @Command(description = " Time energy evaluations.", name = "ffxc Timer")
-class Timer extends FFXScript {
+class Timer extends PotentialScript {
 
     /**
      * Mix in Timing Options.
      */
     @Mixin
-    private TimerOptions options
+    private TimerOptions timer
 
     /**
      * One or more filenames.
@@ -37,56 +34,30 @@ class Timer extends FFXScript {
      */
     def run() {
 
-        String[] argsArray = (String[]) args.toArray()
-        CommandLine.populateCommand(this, argsArray)
+        if (!init()) {
+            return
+        }
 
-        if (help) {
+        if (filenames != null && filenames.size() > 0) {
+            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
             logger.info(helpString())
             return
         }
 
-        List<String> arguments = filenames
-        String modelFilename
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-        } else if (active == null) {
-            logger.info(helpString())
-            return
-        } else {
-            modelFilename = active.getFile()
-        }
+        logger.info("\n Running Timer on " + activeAssembly.toString())
 
         // The number of iterations.
-        int nEvals = options.iterations
-
-        // Compute the atomic coordinate gradient.
-        boolean noGradient = options.gradient
-
-        // Print the energy for each iteraction.
-        boolean quiet = options.quiet
+        int nEvals = timer.iterations
 
         // Set the number of threads.
-        if (options.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(options.threads));
+        if (timer.threads > 0) {
+            System.setProperty("pj.nt", Integer.toString(timer.threads));
         }
 
-        logger.info("\n Timing energy and gradient for " + modelFilename);
+        logger.info("\n Timing energy and gradient for " + activeAssembly.toString());
 
-        // This is an interface specifying the closure-like methods.
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
-        // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
         ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
 
         logger.info("\n Beginning timing\n")
@@ -95,7 +66,7 @@ class Timer extends FFXScript {
         int halfnEvals = (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1 // Halfway point
         for (int i = 0; i < nEvals; i++) {
             long time = -System.nanoTime()
-            double e = energy.energy(!noGradient, !quiet)
+            double e = energy.energy(!timer.gradient, !timer.quiet)
             time += System.nanoTime()
             if (quiet) {
                 logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))

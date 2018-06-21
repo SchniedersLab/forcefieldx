@@ -1,16 +1,11 @@
-
 package ffx.potential
-
-import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Bond
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+import ffx.potential.cli.PotentialScript
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
 
 /**
  * The Biotype script prints out biotype properties.
@@ -19,81 +14,48 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc Biotype &lt;filename&gt;
  */
-class Biotype extends Script {
+@Command(description = " Print out Biotype records for the atoms in an XYZ file.", name = "ffxc Biotype")
+class Biotype extends PotentialScript {
 
-    /**
-     * Options for the Biotype Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc Biotype &lt;filename&gt;
-     */
-    class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
-        /**
-         * The final argument(s) should be an XYZ file.
-         */
-        @Unparsed(description = "An XYZ file.")
-        List<String> xyzFile
-    }
+    @Parameters(arity = "1..*", paramLabel = "files", description = "An XYZ file.")
+    List<String> xyzFile = null
 
     def run() {
-
-        def cli = new CliBuilder()
-        cli.name = "ffxc Biotype"
-        cli.header = "\n Biotype prints out biotype records, which are added to Patch parameter files.\n"
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        List<String> arguments = options.xyzFile
-        String modelFilename
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
+        if (xyzFile != null && xyzFile.size() > 0) {
+            MolecularAssembly[] assemblies = potentialFunctions.open(xyzFile.get(0))
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         }
 
-        // This is an interface specifying the closure-like methods.
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
+        logger.info("\n Running Biotype on " + activeAssembly.toString())
+
+        potentialFunctions.energy(activeAssembly)
+
+        List atoms = activeAssembly.getAtomList()
+        String mol = atoms.get(0).getAtomType().environment
+
+        mol = mol.replaceAll("\"", "").trim()
+        if (mol.length() > 3) {
+            mol = mol.substring(0, 3)
         }
 
-        // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        functions.energy(activeAssembly)
-
-        String mol = FilenameUtils.getBaseName(modelFilename);
-        List atoms = activeAssembly.getAtomList();
-        int index = 1;
+        int index = 1
         for (Atom atom : atoms) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.format(" biotype %3d %4s \"%s\" %3d", index++, atom.getName(), mol, atom.getAtomType().type));
-            List bonds = atom.getBonds();
+            StringBuilder sb = new StringBuilder()
+            sb.append(String.format(" biotype %3d %4s \"%s\" %3d", index++, atom.getName(), mol, atom.getAtomType().type))
+            List bonds = atom.getBonds()
             if (bonds != null) {
                 for (Bond bond : bonds) {
-                    sb.append(String.format(" %4s", bond.get1_2(atom).getName()));
+                    sb.append(String.format(" %4s", bond.get1_2(atom).getName()))
                 }
             }
-            logger.info(sb.toString());
+            logger.info(sb.toString())
         }
     }
 

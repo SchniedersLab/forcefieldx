@@ -1,12 +1,9 @@
-
 package ffx.potential
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
+import ffx.potential.cli.PotentialScript
 
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
 
 /**
  * The SaveAsP1 script expands a specified file to P1
@@ -15,72 +12,38 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc SaveAsP1 [options] &lt;filename&gt;
  */
-class SaveAsP1 extends Script {
-    
+@Command(description = " Expand the system to P1 and then save it.", name = "ffxc SaveAsP1")
+class SaveAsP1 extends PotentialScript {
+
     /**
-     * Options for the SaveAsP1 Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc SaveAsP1 [options] &lt;filename&gt;
+     * The final argument(s) should be one or more filenames.
      */
-    public class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    } 
-    
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    List<String> filenames = null
+
     /**
      * Execute the script.
      */
     def run() {
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc SaveAsP1 [options] <filename>');
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-        
-        if (options.help == true) {
-            return cli.usage()
-        }
-                
-        List<String> arguments = options.filenames
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-            //open(modelFilename)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
+        if (!init()) {
+            return
         }
 
-        logger.info("\n Expanding to P1 for " + modelFilename);
-
-        // This is an interface specifying the closure-like methods.
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = potentialFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         }
 
-        // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        functions.saveAsP1(activeAssembly, new File(modelFilename))
+        String modelFilename = activeAssembly.getFile().getAbsolutePath()
+        logger.info("\n Expanding to P1 for " + modelFilename)
+
+        potentialFunctions.saveAsP1(activeAssembly, new File(modelFilename))
     }
 }
-
 
 /**
  * Title: Force Field X.

@@ -35,72 +35,52 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.utilities;
+package ffx.potential.cli;
 
-import java.awt.GraphicsEnvironment;
-import java.io.ByteArrayOutputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.BaseScript;
 
-import groovy.lang.Script;
-import picocli.CommandLine.Help.Ansi;
-import picocli.CommandLine.Option;
-
-public class FFXScript extends Script {
+/**
+ * Initialize support specific to the Potential package.
+ */
+public class PotentialScript extends BaseScript {
 
     /**
-     * The logger for this class.
+     * An instance of PotentialFunctions passed into the current context.
      */
-    public static final Logger logger = Logger.getLogger(FFXScript.class.getName());
+    public PotentialsFunctions potentialFunctions;
 
     /**
-     * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does not.
+     * An active MolecularAssembly passed into the current context or loaded by the Script from a file argument.
+     */
+    public MolecularAssembly activeAssembly;
+
+    /**
+     * Execute the BaseScript init method, then load potential functions.
      *
-     * In a headless environment, color will be ON for command line help, but OFF for the GUI.
-     */
-    public final Ansi color;
-
-    /**
-     * -h or --help to print a help message
-     */
-    @Option(names = {"-h", "--help"}, usageHelp = true, description = "Print this help message.")
-    public boolean help = false;
-
-    /**
-     * Default constructor for an FFX Script.
-     */
-    public FFXScript() {
-        if (GraphicsEnvironment.isHeadless()) {
-            color = Ansi.ON;
-        } else {
-            color = Ansi.OFF;
-        }
-    }
-
-    /**
-     * Default help information.
-     *
-     * @return String describing how to use this command.
-     */
-    public String helpString() {
-        try {
-            StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream());
-            picocli.CommandLine.usage(this, sos, color);
-            return " " + sos.toString();
-        } catch (UnsupportedEncodingException e) {
-            logger.log(Level.WARNING, e.toString());
-            return null;
-        }
-    }
-
-    /**
-     * Execute the script.
+     * @return Returns true if the script should continue.
      */
     @Override
-    public Object run() {
-        logger.info(helpString());
-        return null;
+    public boolean init() {
+        if (!super.init()) {
+            return false;
+        }
+
+        if (context.hasVariable("functions")) {
+            potentialFunctions = (PotentialsFunctions) context.getVariable("functions");
+        } else {
+            potentialFunctions = new PotentialsUtils();
+        }
+
+        activeAssembly = null;
+        if (context.hasVariable("active")) {
+            activeAssembly = (MolecularAssembly) context.getVariable("active");
+        }
+
+        return true;
     }
+
 
 }

@@ -2,14 +2,12 @@ package ffx.potential
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
+import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
 
 /**
  * The SaveAsPDB script saves a file as a PDB file
@@ -18,86 +16,57 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc SaveAsPDB [options] &lt;filename&gt;
  */
-class SaveAsPDB extends Script {
+@Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
+class SaveAsPDB extends PotentialScript {
 
     /**
-     * Options for the SaveAsPDB script saves a file as a PDB file
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc SaveAsPDB [options] &lt;filename&gt;
+     * The final argument(s) should be one or more filenames.
      */
-    public class Options{
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    }
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    List<String> filenames = null
 
     /**
      * Execute the script.
      */
     def run() {
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc SaveAsPDB [options] <filename>');
-        def options = new Options()
-        cli.parseFromInstance(options, args)
 
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-
-        List<String> arguments = options.filenames;
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-            //open(modelFilename)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
+        MolecularAssembly[] assemblies
+        SystemFilter openFilter = null
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = potentialFunctions.open(filenames.get(0))
+            openFilter = potentialFunctions.getFilter()
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         }
 
-        logger.info("\n Saving PDB for " + modelFilename);
+        String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
-
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        SystemFilter openFilter = functions.getFilter()
-        MolecularAssembly activeAssembly = assemblies[0]
+        logger.info("\n Saving PDB for " + modelFilename)
 
         modelFilename = FilenameUtils.removeExtension(modelFilename) + ".pdb"
         File modelFile = new File(modelFilename)
 
-        functions.saveAsPDB(activeAssembly, modelFile)
-        PDBFilter saveFilter = (PDBFilter) functions.getFilter()
-        saveFilter.setModelNumbering(true);
+        potentialFunctions.saveAsPDB(activeAssembly, modelFile)
+        PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()
+        saveFilter.setModelNumbering(true)
 
-        try {
-            while (openFilter.readNext(false)) {
-                saveFilter.writeFile(modelFile, true);
+        if (openFilter != null) {
+            try {
+                while (openFilter.readNext(false)) {
+                    saveFilter.writeFile(modelFile, true)
+                }
+            } catch (Exception e) {
+                // Do nothing.
             }
-        } catch (Exception e) {
-            // Do nothing.
         }
     }
 }
-
 
 /**
  * Title: Force Field X.

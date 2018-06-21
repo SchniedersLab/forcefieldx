@@ -2,12 +2,11 @@ package ffx.potential
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
+import ffx.potential.cli.PotentialScript
 
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The SaveAsSIFTPDB script saves a file as a PDB file or as a SIFTPDB file
@@ -16,97 +15,59 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc SaveAsSIFTPDB [options] &lt;filename&gt;
  */
-class SaveAsSIFTPDB extends Script {
+@Command(description = " Save SIFT scores into the PDB b-factor column.", name = "ffxc SaveAsSIFTPDB")
+class SaveAsSIFTPDB extends PotentialScript {
+
     /**
-     * The SaveAsSIFTPDB script saves a file as a PDB file or as a SIFTPDB file
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc SaveAsSIFTPDB [options] &lt;filename&gt;
+     * -f or --filename to input file of sift scores to enter
      */
-    public class Options{
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
-        /**
-         * -f or --filename to input file of sift scores to enter
-         */
-        @Option(longName='fileName', shortName='f', description='File of sift scores to enter.') boolean filename
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    }
-    
+    @Option(names = ['--fileName', '-f'], description = 'File of sift scores to enter.')
+    boolean siftFilename = null
+
+    /**
+     * The final argument(s) should be one or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    List<String> filenames = null
+
     /**
      * Execute the script.
      */
     def run() {
-        String siftFileName = null;
 
-
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc SaveAsSIFTPDB [options] <filename>');
-        def options = new Options()
-        //cli.f(longOpt: 'fileName', args:1, argName:'GENENAME.out', 'File of sift scores to enter.');
-        cli.parseFromInstance(options, args)
-        
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        if (options.filename == true) {
-            siftFileName = options.filename;
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = potentialFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         }
-        
-        List<String> arguments = options.filenames;
-        
 
-        String[] data;
+        String filename = activeAssembly.getFile().getAbsolutePath()
 
-        File siftFile = new File(siftFileName);
+        String[] data
+        File siftFile = new File(siftFilename)
 
         if (siftFile.exists()) {
             data = siftFile.text.split('\n')
         }
 
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-            //open(modelFilename)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
-        }
+        logger.info("\n Writing out PDB for " + filename)
 
-        logger.info("\n Writing out PDB for " + modelFilename);
-        
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
+        filename = FilenameUtils.removeExtension(filename) + ".pdb";
 
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        modelFilename = FilenameUtils.removeExtension(modelFilename) + ".pdb";
-        
-        if (siftFileName == null) {
-            functions.saveAsPDB(activeAssembly, new File(modelFilename));
+        if (siftFilename == null) {
+            potentialFunctions.saveAsPDB(activeAssembly, new File(filename));
         } else {
-            functions.saveAsSIFTPDB(activeAssembly, new File(modelFilename), data)
+            potentialFunctions.saveAsSIFTPDB(activeAssembly, new File(filename), data)
         }
     }
 }
-
 
 /**
  * Title: Force Field X.

@@ -131,7 +131,8 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     private long time;
     private long subTime;
     private static final double toSeconds = 1.0e-9;
-    private List<String> cliArgs;
+
+    private List<String> args;
 
     /**
      * <p>
@@ -301,12 +302,12 @@ public final class ModelingShell extends Console implements AlgorithmListener {
      * @param argList a {@link java.util.List} object.
      */
     public void setArgList(List<String> argList) {
+        args = new ArrayList<>(argList);
         setVariable("args", argList);
-        cliArgs = new ArrayList<>(argList);
     }
 
     List<String> getArgs() {
-        return new ArrayList<>(cliArgs);
+        return new ArrayList<>(args);
     }
 
     /**
@@ -319,12 +320,11 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         try {
             before();
             try {
-                getShell().evaluate(file);
+                getShell().run(file, args);
             } catch (Exception ex) {
-                logger.log(Level.SEVERE, " Uncaught severe error: FFX shutting down", ex);
+                logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
             }
             after();
-
         } catch (Exception e) { // Replacing this with a "Multi-Catch" leads to specific Exceptions not present in some versions of Groovy.
             String message = "Error evaluating script.";
             logger.log(Level.WARNING, message, e);

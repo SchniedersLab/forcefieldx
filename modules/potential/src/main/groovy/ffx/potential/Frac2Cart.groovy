@@ -2,14 +2,12 @@ package ffx.potential
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
 import ffx.crystal.Crystal
 import ffx.potential.bonded.Atom
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+import ffx.potential.cli.PotentialScript
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
 
 /**
  * The Frac2Cart script converts from Fractional to Cartesian coordinates.
@@ -18,92 +16,61 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc Frac2Cart &lt;filename&gt;
  */
-class Frac2Cart extends Script {
+@Command(description = " Convert fractional to Cartesian coordinates.", name = "ffxc Frac2Cart")
+class Frac2Cart extends PotentialScript {
 
     /**
-     * Options for the FracToCart Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc FracToCart &lt;filename&gt;
+     * The final argument(s) should be one or more filenames.
      */
-    public class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName='h', description='Print this help message.') boolean help
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    }
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    List<String> filenames = null
 
     /**
      * Execute the script.
      */
     def run() {
 
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc Frac2Cart <filename>', header:' Options:');
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-        if (options.help) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        List<String> arguments = options.filenames
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = potentialFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelFilename = active.getFile()
+            assemblies = [activeAssembly]
         }
 
-        logger.info("\n Converting from fractional to Cartesian coordinates for " + modelFilename);
-
-        // This is an interface specifying the closure-like methods.
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
-        // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
+        String filename = activeAssembly.getFile().getAbsolutePath()
+        logger.info("\n Converting from fractional to Cartesian coordinates for " + filename)
 
         // Loop over each system.
-        for (int i=0; i<assemblies.length; i++) {
-            system = assemblies[i];
-            Crystal crystal = system.getCrystal().getUnitCell();
+        for (int i = 0; i < assemblies.length; i++) {
+            def system = assemblies[i]
+            Crystal crystal = system.getCrystal().getUnitCell()
 
-            List<Atom> atoms = system.getAtomList();
-            int nAtoms = atoms.size();
-            double[] frac = new double[3];
-            double[] cart = new double[3];
+            List<Atom> atoms = system.getAtomList()
+            double[] frac = new double[3]
+            double[] cart = new double[3]
 
             for (Atom atom in atoms) {
-                atom.getXYZ(frac);
-                crystal.toCartesianCoordinates(frac, cart);
-                atom.moveTo(cart);
+                atom.getXYZ(frac)
+                crystal.toCartesianCoordinates(frac, cart)
+                atom.moveTo(cart)
             }
         }
-        
-        filename = modelFilename;
-        String ext = FilenameUtils.getExtension(filename);
-        filename = FilenameUtils.removeExtension(filename);
-        if (ext.toUpperCase().contains("XYZ")) {
-            functions.saveAsXYZ(assemblies[0], new File(filename + ".xyz"))
-        } else {
-            functions.saveAsPDB(assemblies, new File(filename + ".pdb"))
-        }
 
+        String ext = FilenameUtils.getExtension(filename)
+        filename = FilenameUtils.removeExtension(filename)
+        if (ext.toUpperCase().contains("XYZ")) {
+            potentialFunctions.saveAsXYZ(assemblies[0], new File(filename + ".xyz"))
+        } else {
+            potentialFunctions.saveAsPDB(assemblies, new File(filename + ".pdb"))
+        }
     }
 }
 

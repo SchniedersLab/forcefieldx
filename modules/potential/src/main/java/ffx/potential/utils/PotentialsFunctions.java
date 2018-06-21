@@ -233,6 +233,15 @@ public interface PotentialsFunctions {
     abstract public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
 
     /**
+     * Saves SIFT info to the b-factor column of a PDB files.
+     *
+     * @param assembly To save
+     * @param file Destination file
+     * @param resAndScore SIFT data
+     */
+    abstract public void saveAsSIFTPDB(MolecularAssembly assembly, File file, String[] resAndScore);
+
+    /**
      * Evaluates the energy of a MolecularAssembly and returns its
      * ForceFieldEnergy object.
      *

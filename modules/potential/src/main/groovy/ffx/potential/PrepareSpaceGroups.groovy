@@ -3,16 +3,14 @@ package ffx.potential
 import org.apache.commons.configuration.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
 import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
 import ffx.crystal.SymOp
 import ffx.potential.bonded.Atom
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+import ffx.potential.cli.PotentialScript
+
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file
@@ -21,105 +19,85 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc SaveAsXYZ [options] &lt;filename&gt;
  */
-class PrepareSpaceGroups extends Script {
-    /**
-     * Options for the SaveAsXYZ script
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc SaveAsXYZ [options] &lt;filename&gt;
-     */
-    public class Options{
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
-        /**
-         * -r or --PDB only consider space groups ranked above the supplied cut-off in the Protein Databank.
-         */
-        @Option(longName='PDB', shortName='r', defaultValue='231',
-            description='Only consider space groups populated above the specified percentage in the Protein Databank.') int rank
-        /**
-         * -p or --CSD only consider space groups populated above the specified percentage in the CSD.
-         */
-        @Option(longName='CSD', shortName='p', defaultValue='0.0',
-            description='Only consider space groups populated above the specified percentage in the CSD.') double percent
-        /**
-         * -c or --chiral to create directories only for chiral space groups.
-         */
-        @Option(longName='chiral', shortName='c', defaultValue='false',
-            description='Only consider chiral space groups.') boolean chiral
-        /**
-         *  -a or --achiral to create directories only for achiral space groups.
-         */
-        @Option(longName='achiral', shortName='a', defaultValue='false',
-                description='Only consider achiral space groups.') boolean achiral
-        /**
-         * -sym or --symOp random Cartesian symmetry operator will use the specified translation range -Arg .. Arg (default = 1.0 A).
-         */
-        @Option(shortName='rsym', longName='randomSymOp', defaultValue='1.0',
-            description='Random Cartesian sym op will choose a translation in the range -Arg .. Arg (default = 1.0A).') double symScalar
-        /**
-         * -d or --density random unit cell axes will be used achieve the specified density (g/cc).
-         */
-        @Option(shortName='d', longName='density', defaultValue='1.0',
-            description='Random unit cell axes will be used to achieve the specified density (default = 1.0 g/cc).') double density
-        /**
-         * -sg or --spacegroup prepare a directory for a single spacegroup (no default).
-         */
-        @Option(shortName='sg', longName='spacegroup', description='Prepare a directory for a single spacegroup.') String sg
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    }
+class PrepareSpaceGroups extends PotentialScript {
 
+    /**
+     * -r or --PDB only consider space groups ranked above the supplied cut-off in the Protein Databank.
+     */
+    @Option(names = ['--PDB', '-r'], paramLabel = '231',
+            description = 'Only consider space groups populated in the PDB above the specified rank (231 excludes none).')
+    int rank = 231
+
+    /**
+     * -p or --CSD only consider space groups populated above the specified percentage in the CSD.
+     */
+    @Option(names = ['--CSD', '-p'], paramLabel = '1.0',
+            description = 'Only consider space groups populated above the specified percentage in the CSD.')
+    double percent = 0.0
+
+    /**
+     * -c or --chiral to create directories only for chiral space groups.
+     */
+    @Option(names = ['--chiral', '-c'], paramLabel = 'false',
+            description = 'Only consider chiral space groups.')
+    boolean chiral = false
+
+    /**
+     *  -a or --achiral to create directories only for achiral space groups.
+     */
+    @Option(names = ['--achiral', '-a'], paramLabel = 'false',
+            description = 'Only consider achiral space groups.')
+    boolean achiral = false
+
+    /**
+     * -sym or --symOp random Cartesian symmetry operator will use the specified translation range -Arg .. Arg (default of 1.0 A).
+     */
+    @Option(names = ['--rsym', '--randomSymOp'], paramLabel = 'Arg',
+            description = 'Random Cartesian sym op will choose a translation in the range -Arg .. Arg (default of 1.0 A).')
+    double symScalar = 1.0
+
+    /**
+     * -d or --density random unit cell axes will be used achieve the specified density (g/cc).
+     */
+    @Option(names = ['-d', '--density'], paramLabel = '1.0',
+            description = 'Random unit cell axes will be used to achieve the specified density (default of 1.0 g/cc).')
+    double density = 1.0
+
+    /**
+     * -sg or --spacegroup prepare a directory for a single spacegroup (no default).
+     */
+    @Option(names = ['--sg', '--spacegroup'], description = 'Prepare a directory for a single spacegroup.')
+    String sg
+
+    /**
+     * The final argument(s) should be one or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    List<String> filenames = null
 
     /**
      * Execute the script.
      */
     def run() {
-        int offset = 0;
 
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc PrepareSpaceGroups [options] <filename>');
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        List<String> arguments = options.filenames;
-
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-            //open(modelFilename)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = potentialFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         }
 
-        logger.info("\n Preparing space group directories for " + modelFilename);
+        String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
-        System.setProperty("ewald-alpha", "0.0");
+        logger.info("\n Preparing space group directories for " + modelFilename)
+        System.setProperty("ewald-alpha", "0.0")
 
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
-
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
         ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
         CompositeConfiguration config = activeAssembly.getProperties()
 
@@ -129,17 +107,17 @@ class PrepareSpaceGroups extends Script {
 
         Atom[] atoms = activeAssembly.getAtomArray()
         double mass = activeAssembly.getMass()
-        double density = options.density
+        double density = density
         if (density < 0.0) {
             density = 1.0
         }
 
-        for (int num = 1; num <=230; num++) {
+        for (int num = 1; num <= 230; num++) {
             SpaceGroup spacegroup = SpaceGroup.spaceGroupFactory(num)
-            if (options.sg) {
-                SpaceGroup spacegroup2 = SpaceGroup.spaceGroupFactory(options.sg);
+            if (sg) {
+                SpaceGroup spacegroup2 = SpaceGroup.spaceGroupFactory(sg)
                 if (spacegroup2 == null) {
-                    logger.info(String.format("\n Space group %s was not recognized.\n", sg));
+                    logger.info(String.format("\n Space group %s was not recognized.\n", sg))
                     return;
                 }
                 if (spacegroup2.number != spacegroup.number) {
@@ -147,19 +125,19 @@ class PrepareSpaceGroups extends Script {
                 }
             }
 
-            if (options.chiral && !spacegroup.isChiral()) {
+            if (chiral && !spacegroup.isChiral()) {
                 continue
             }
 
-            if (options.achiral && spacegroup.isChiral()) {
+            if (achiral && spacegroup.isChiral()) {
                 continue
             }
 
-            if (spacegroup.csdPercent[num - 1] < options.percent) {
+            if (spacegroup.csdPercent[num - 1] < percent) {
                 continue
             }
 
-            if (SpaceGroup.getPDBRank(spacegroup) > options.rank) {
+            if (SpaceGroup.getPDBRank(spacegroup) > rank) {
                 continue
             }
 
@@ -177,13 +155,13 @@ class PrepareSpaceGroups extends Script {
             double[] abc = spacegroup.randomUnitCellParams()
             Crystal crystal = new Crystal(abc[0], abc[1], abc[2], abc[3], abc[4], abc[5], spacegroup.shortName)
             crystal.setDensity(density, mass)
-            energy.setCrystal(crystal);
+            energy.setCrystal(crystal)
 
-            if (options.symScalar > 0.0) {
-                SymOp symOp = SymOp.randomSymOpFactory(options.symScalar)
+            if (symScalar > 0.0) {
+                SymOp symOp = SymOp.randomSymOpFactory(symScalar)
                 logger.info(String.format("\n Applying random Cartesian SymOp:\n %s", symOp.toString()))
                 double[] xyz = new double[3]
-                for (int i=0; i<atoms.length; i++) {
+                for (int i = 0; i < atoms.length; i++) {
                     atoms[i].getXYZ(xyz)
                     crystal.applyCartesianSymOp(xyz, xyz, symOp)
                     atoms[i].setXYZ(xyz)
@@ -193,52 +171,52 @@ class PrepareSpaceGroups extends Script {
             // Save the coordinate file.
             File sgFile = new File(sgDir.getAbsolutePath() + File.separator + coordName)
             logger.info(" Saving " + sgDirName + " coordinates to: " + sgFile.toString())
-            functions.save(activeAssembly, sgFile)
+            potentialFunctions.save(activeAssembly, sgFile)
 
             File keyFile = new File(FilenameUtils.removeExtension(sgFile.getAbsolutePath()) + ".properties")
             logger.info(" Saving " + sgDirName + " properties to: " + keyFile.toString())
 
-            PrintWriter out = null;
-            BufferedReader keyReader = null;
+            PrintWriter out = null
+            BufferedReader keyReader = null
             try {
-                out = new PrintWriter(new BufferedWriter(new FileWriter(keyFile)));
-                keyReader = new BufferedReader(new FileReader(propertyFile));
+                out = new PrintWriter(new BufferedWriter(new FileWriter(keyFile)))
+                keyReader = new BufferedReader(new FileReader(propertyFile))
                 while (keyReader.ready()) {
                     String line = keyReader.readLine().trim();
                     if (line != null && !line.equalsIgnoreCase("")) {
                         String[] tokens = line.split(" +")
                         if (tokens != null && tokens.length > 1) {
                             if (tokens[0].equalsIgnoreCase("a-axis")) {
-                                out.println(String.format("a-axis %12.8f", crystal.a));
+                                out.println(String.format("a-axis %12.8f", crystal.a))
                             } else if (tokens[0].equalsIgnoreCase("b-axis")) {
-                                out.println(String.format("b-axis %12.8f", crystal.b));
+                                out.println(String.format("b-axis %12.8f", crystal.b))
                             } else if (tokens[0].equalsIgnoreCase("c-axis")) {
-                                out.println(String.format("c-axis %12.8f", crystal.c));
+                                out.println(String.format("c-axis %12.8f", crystal.c))
                             } else if (tokens[0].equalsIgnoreCase("alpha")) {
-                                out.println(String.format("alpha %12.8f", crystal.alpha));
+                                out.println(String.format("alpha %12.8f", crystal.alpha))
                             } else if (tokens[0].equalsIgnoreCase("beta")) {
-                                out.println(String.format("beta %12.8f", crystal.beta));
+                                out.println(String.format("beta %12.8f", crystal.beta))
                             } else if (tokens[0].equalsIgnoreCase("gamma")) {
-                                out.println(String.format("gamma %12.8f", crystal.gamma));
+                                out.println(String.format("gamma %12.8f", crystal.gamma))
                             } else if (tokens[0].equalsIgnoreCase("spacegroup")) {
-                                out.println(String.format("spacegroup %s", spacegroup.shortName));
+                                out.println(String.format("spacegroup %s", spacegroup.shortName))
                             } else {
-                                out.println(line);
+                                out.println(line)
                             }
                         } else {
-                            out.println(line);
+                            out.println(line)
                         }
                     }
                 }
             } catch (IOException ex) {
-                logger.warning(" Exception writing keyfile." + ex.toString());
+                logger.warning(" Exception writing keyfile." + ex.toString())
             } finally {
                 if (out != null) {
-                    out.flush();
-                    out.close();
+                    out.flush()
+                    out.close()
                 }
                 if (keyReader != null) {
-                    keyReader.close();
+                    keyReader.close()
                 }
             }
         }

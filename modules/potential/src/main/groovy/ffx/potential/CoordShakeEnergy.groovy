@@ -1,15 +1,13 @@
-
 package ffx.potential
-
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
 
 import ffx.numerics.Potential
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+import ffx.potential.cli.PotentialScript
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The CoordShakeEnergy script evaluates the energy of a system before and after moving coordinates by a fixed offset.
@@ -19,163 +17,127 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc CoordShakeEnergy &lt;filename&gt;
  */
-class CoordShakeEnergy extends Script {
+@Command(description = " Compute the energy after shaking coordinates.", name = "ffxc CoordShakeEnergy")
+class CoordShakeEnergy extends PotentialScript {
 
     /**
-     * Options for the Energy Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc Energy [options] &lt;filename&gt;
+     * -d or --deltaX to set the distance by which the coordinates should be moved. Applies a constant offset in x,
+     * reverts, in y, reverts, then z, and reverts again.
      */
-    public class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
-        /**
-         * -d or --deltaX to set the distance by which the coordinates should be moved. Applies a constant offset in x,
-         * reverts, in y, reverts, then z, and reverts again.
-         */
-        @Option(shortName='d', longName='deltaX', defaultValue='1.0', description='Distance to move coordinates (applies to all equally)') double dX;
-        /**
-         * -l or --lambda sets the lambda value to evaluate at.
-         */
-        @Option(shortName='l', longName='lambda', defaultValue='-1', description='Lambda value') double initialLambda;
-        /**
-         * -s or --start sets the first atom to move.
-         */
-        @Option(shortName='s', longName='start', defaultValue='1', description='Starting atom to test') int start;
-        /**
-         * -f or --final sets the last atom to move.
-         */
-        @Option(shortName='f', longName='final', defaultValue='-1', description='Last atom to test') int last;
+    @Option(names = ['-d', '--deltaX'], paramLabel = "1.0", description = 'Distance to move coordinates (applies to all equally)')
+    double dX = 1.0
+    /**
+     * -l or --lambda sets the lambda value to evaluate at.
+     */
+    @Option(names = ['-l', '--lambda'], paramLabel = "-1", description = 'Lambda value (-1 indicates no lambda dependence).')
+    double initialLambda = -1
+    /**
+     * -s or --start sets the first atom to move.
+     */
+    @Option(names = ['-s', '--start'], paramLabel = '1', description = 'Starting atom to test')
+    int start = 1
+    /**
+     * -f or --final sets the last atom to move.
+     */
+    @Option(names = ['-f', '--final'], paramLabel = '-1', description = 'Last atom to test (-1 indicates last atom in the system).')
+    int last = -1
 
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    }
-
+    /**
+     * The final argument(s) should be one or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    List<String> filenames = null
 
     /**
      * Execute the script.
      */
     def run() {
 
-        def cli = new CliBuilder(usage:' ffxc Energy [options] <filename>', header:' Options:')
-
-        // String args[] = getArgs();
-
-        def options = new Options();
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        List<String> arguments = options.filenames
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-            //open(modelFilename)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
+        if (filenames != null && filenames.size() > 0) {
+            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         }
 
-        logger.info("\n Running Energy on " + modelFilename)
+        String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
-        // This is an interface specifying the closure-like methods.
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils();
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
-
-        // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        Potential thePotential = activeAssembly.getPotentialEnergy();
+        logger.info("\n Running CoordShakeEnergy on " + modelFilename)
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology has lambda specified.
-        boolean lambdaTerm = options.initialLambda >= 0.0;
+        boolean lambdaTerm = initialLambda >= 0.0
         if (lambdaTerm) {
-            System.setProperty("lambdaterm","true");
+            System.setProperty("lambdaterm", "true")
         }
-        if (options.initialLambda < 0.0 || options.initialLambda > 1.0) {
-            options.initialLambda = 0.0;
+        if (initialLambda < 0.0 || initialLambda > 1.0) {
+            initialLambda = 0.0
         }
+
+        Potential thePotential = activeAssembly.getPotentialEnergy()
 
         if (lambdaTerm) {
-            ((LambdaInterface) thePotential).setLambda(options.initialLambda);
+            ((LambdaInterface) thePotential).setLambda(initialLambda);
         }
 
-        def eFunct;
-
+        def eFunct
         if (thePotential instanceof ForceFieldEnergyOpenMM) {
-            ForceFieldEnergyOpenMM ommE = (ForceFieldEnergyOpenMM) thePotential;
-            eFunct = { double[] coords -> return ommE.energyVsFFX(coords, true); };
+            ForceFieldEnergyOpenMM ommE = (ForceFieldEnergyOpenMM) thePotential
+            eFunct = { double[] coords -> return ommE.energyVsFFX(coords, true) }
         } else {
-            eFunct = { double[] coords -> return thePotential.energy(coords, true) };
+            eFunct = { double[] coords -> return thePotential.energy(coords, true) }
         }
 
-        logger.info(" Starting energy: ");
-        double[] x = thePotential.getCoordinates();
-        eFunct(x);
+        logger.info(" Starting energy: ")
+        double[] x = thePotential.getCoordinates()
+        eFunct(x)
 
-        Atom[] atoms = activeAssembly.getAtomArray();
+        Atom[] atoms = activeAssembly.getAtomArray()
 
-        def axes = ["X","Y","Z"];
-        double[] atomXYZ = new double[3];
-        int firstAt = options.start - 1;
-        int lastAt = options.last;
+        def axes = ["X", "Y", "Z"]
+        double[] atomXYZ = new double[3]
+        int firstAt = start - 1
+        int lastAt = last
         if (lastAt < 0 || lastAt > atoms.length) {
-            lastAt = atoms.length;
+            lastAt = atoms.length
         }
 
         for (int i = 0; i < 3; i++) {
-            logger.info(String.format(" Moving atoms +1 unit in %s", axes[i]));
-            //for (Atom atom : atoms) {
+            logger.info(String.format(" Moving atoms +1 unit in %s", axes[i]))
             for (int j = firstAt; j < lastAt; j++) {
-                Atom atom = atoms[j];
-                atom.getXYZ(atomXYZ);
-                atomXYZ[i] += options.dX;
-                atom.setXYZ(atomXYZ);
+                Atom atom = atoms[j]
+                atom.getXYZ(atomXYZ)
+                atomXYZ[i] += dX
+                atom.setXYZ(atomXYZ)
             }
-            thePotential.getCoordinates(x);
-            eFunct(x);
+            thePotential.getCoordinates(x)
+            eFunct(x)
 
-            logger.info(String.format(" Moving atoms -1 unit in %s", axes[i]));
-            //for (Atom atom : atoms) {
+            logger.info(String.format(" Moving atoms -1 unit in %s", axes[i]))
             for (int j = firstAt; j < lastAt; j++) {
-                Atom atom = atoms[j];
-                atom.getXYZ(atomXYZ);
-                atomXYZ[i] -= (2.0 * options.dX);
-                atom.setXYZ(atomXYZ);
+                Atom atom = atoms[j]
+                atom.getXYZ(atomXYZ)
+                atomXYZ[i] -= (2.0 * dX)
+                atom.setXYZ(atomXYZ)
             }
-            thePotential.getCoordinates(x);
-            eFunct(x);
+            thePotential.getCoordinates(x)
+            eFunct(x)
 
-            //for (Atom atom : atoms) {
             for (int j = firstAt; j < lastAt; j++) {
-                Atom atom = atoms[j];
-                atom.getXYZ(atomXYZ);
-                atomXYZ[i] += options.dX;
-                atom.setXYZ(atomXYZ);
+                Atom atom = atoms[j]
+                atom.getXYZ(atomXYZ)
+                atomXYZ[i] += dX
+                atom.setXYZ(atomXYZ)
             }
         }
 
-        logger.info(" After movement (may have small rounding errors): ");
-        thePotential.getCoordinates(x);
-        eFunct(x);
+        logger.info(" After movement (may have small rounding errors): ")
+        thePotential.getCoordinates(x)
+        eFunct(x)
     }
 }
 

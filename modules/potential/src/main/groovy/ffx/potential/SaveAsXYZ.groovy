@@ -2,16 +2,15 @@ package ffx.potential
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
 import ffx.crystal.Crystal
 import ffx.crystal.SymOp
 import ffx.potential.bonded.Atom
+import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file
@@ -20,118 +19,93 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc SaveAsXYZ [options] &lt;filename&gt;
  */
-class SaveAsXYZ extends Script {
-    /**
-     * Options for the SaveAsXYZ script
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc SaveAsXYZ [options] &lt;filename&gt;
-     */
-    public class Options{
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help;
-        /**
-         * -p or --pos-offset to set the positive atom type offset
-         */
-        @Option(longName='pos-offset', shortName='p', defaultValue='0', description='Positive offset of atom types in the new file') int posOffset;
-        /**
-         * -n or --neg-offset to set the negative atom type offset
-         */
-        @Option(longName='neg-offset', shortName='n', defaultValue='0', description='Negative offset of atom types in the new file.') int negOffset
-        /**
-         * -r or --random to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
-         */
-        @Option(longName='random', shortName='r', defaultValue='-1.0', description='Apply a random Cartesian SymOp with translation range -X .. X.') double scalar
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    }
+@Command(description = " Save the system as an XYZ file.", name = "ffxc SaveAsXYZ")
+class SaveAsXYZ extends PotentialScript {
 
+    /**
+     * -p or --pos-offset to set the positive atom type offset
+     */
+    @Option(names = ['--pos-offset', '-p'], paramLabel = "0", description = 'Positive offset of atom types in the new file')
+    int posOffset = 0
+
+    /**
+     * -n or --neg-offset to set the negative atom type offset
+     */
+    @Option(names = ['--neg-offset', '-n'], paramLabel = "0", description = 'Negative offset of atom types in the new file.')
+    int negOffset = 0
+
+    /**
+     * -r or --random to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
+     */
+    @Option(names = ['--random', '-r'], description = 'Apply a random Cartesian SymOp with translation range -X .. X.')
+    double scalar = -1
+
+    /**
+     * The final argument(s) should be one or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    List<String> filenames = null
 
     /**
      * Execute the script.
      */
     def run() {
-        int offset = 0;
 
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc SaveAsXYZ [options] <filename>');
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = potentialFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
+        }
+
+        String modelFilename = activeAssembly.getFile().getAbsolutePath()
+
+        int offset = 0
+
         // Positive offset atom types.
-        if (options.posOffset > 0) {
-            offset = options.posOffset;
+        if (posOffset > 0) {
+            offset = posOffset;
         }
 
         // Negative offset atom types.
-        if (options.negOffset > 0) {
-            offset = options.negOffset;
+        if (negOffset > 0) {
+            offset = negOffset;
             offset = -offset;
         }
 
-        List<String> arguments = options.filenames;
+        logger.info("\n Writing out XYZ for " + modelFilename)
 
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-            //open(modelFilename)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
-        }
+        modelFilename = FilenameUtils.removeExtension(modelFilename) + ".xyz"
 
-        logger.info("\n Writing out XYZ for " + modelFilename);
-
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsUtils()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
-
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        modelFilename = FilenameUtils.removeExtension(modelFilename) + ".xyz";
-
-        //open(modelFilename);
         // Offset atom type numbers.
         if (offset != 0) {
-            logger.info("\n Offset atom types by " + offset);
-            ForceField forceField = activeAssembly.getForceField();
-            forceField.renumberForceField(0,offset,0);
+            logger.info("\n Offset atom types by " + offset)
+            ForceField forceField = activeAssembly.getForceField()
+            forceField.renumberForceField(0, offset, 0)
         }
 
-        if (options.scalar > 0.0) {
-            SymOp symOp = SymOp.randomSymOpFactory(options.scalar);
+        if (scalar > 0.0) {
 
-            logger.info(String.format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()));
+            SymOp symOp = SymOp.randomSymOpFactory(scalar)
 
-            Crystal crystal = activeAssembly.getCrystal();
-            Atom[] atoms = activeAssembly.getAtomArray();
+            logger.info(String.format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()))
+            Crystal crystal = activeAssembly.getCrystal()
+            Atom[] atoms = activeAssembly.getAtomArray()
             double[] xyz = new double[3];
-            for (int i=0; i<atoms.length; i++) {
-                atoms[i].getXYZ(xyz);
-                crystal.applyCartesianSymOp(xyz, xyz, symOp);
-                atoms[i].setXYZ(xyz);
+            for (int i = 0; i < atoms.length; i++) {
+                atoms[i].getXYZ(xyz)
+                crystal.applyCartesianSymOp(xyz, xyz, symOp)
+                atoms[i].setXYZ(xyz)
             }
         }
 
-        functions.save(activeAssembly, new File(modelFilename));
+        potentialFunctions.save(activeAssembly, new File(modelFilename))
 
     }
 }
