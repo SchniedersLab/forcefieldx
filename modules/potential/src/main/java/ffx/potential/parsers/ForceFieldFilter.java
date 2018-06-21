@@ -369,7 +369,13 @@ public class ForceFieldFilter {
     private void parse(String input, BufferedReader br) {
 
         // Split the line on the pound symbol to remove comments.
-        input = input.split("#")[0];
+        String inputs[] = input.split("#");
+
+        if (inputs == null || inputs.length < 1) {
+            return;
+        }
+        
+        input = inputs[0].split("#")[0];
 
         // Split the line into tokens between instances of 1 or more spaces.
         String tokens[] = input.trim().split(" +");
