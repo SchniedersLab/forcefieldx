@@ -710,8 +710,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 break;
             case "RESPA":
                 // Read in the inner time step in fsec, then convert to psec.
-                double in = molecularAssembly.getProperties().getDouble("respa-dt",0.1);
-                double inner = in * 0.001;
+                int in = molecularAssembly.getProperties().getInt("respa-dt", 4);
+                //double in = molecularAssembly.getProperties().getDouble("respa-dt",0.1);
+                if (in < 2){
+                    in = 2;
+                }
+                double inner = dt/in;
+                
                 logger.log(Level.INFO, String.format(" Created a RESPA integrator with outer %6.3e and inner %6.3e time steps (psec).", dt, inner));
                 integrator = addRESPA(inner, dt);
                 break;

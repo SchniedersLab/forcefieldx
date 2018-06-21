@@ -89,6 +89,12 @@
             <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
             <groupId>com.apporiented</groupId>
             <artifactId>hierarchical-clustering</artifactId>
             <version>${clustering.version}</version>
