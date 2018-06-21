@@ -38,6 +38,10 @@
 package ffx.algorithms.cli;
 
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ITypeConverter;
+
+import ffx.algorithms.thermostats.Thermostat;
+import ffx.algorithms.thermostats.ThermostatEnum;
 
 /**
  * Dynamics options shared by Dynamics scripts that use the Pico CLI.
@@ -50,4 +54,18 @@ public class DynamicsOptions {
     @Option(names = {"-d", "--dt"}, paramLabel = "1.0", description = "Time discretization step in femtoseconds.")
     double dt = 1.0;
 
+    /**
+     * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
+     */
+    @Option(names = {"-b", "--thermostat"}, converter = ThermoConverter.class,
+            paramLabel = "Berendsen", description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
+    ThermostatEnum tstat = ThermostatEnum.BERENDSEN;
+
+    class ThermoConverter implements ITypeConverter<ThermostatEnum> {
+        public ThermostatEnum convert(String value) {
+            return Thermostat.parseThermostat(value);
+        }
+    }
+
+    
 }
