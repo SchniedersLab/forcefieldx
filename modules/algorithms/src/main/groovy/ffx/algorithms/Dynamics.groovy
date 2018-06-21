@@ -2,10 +2,6 @@ package ffx.algorithms
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
 import edu.rit.pj.Comm
 
 import ffx.algorithms.integrators.Integrator
@@ -15,6 +11,15 @@ import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.parameters.ForceField
+import ffx.potential.MolecularAssembly
+
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.DynamicsOptions
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The Dynamics script implements molecular and stochastic dynamics algorithms.
@@ -23,191 +28,83 @@ import ffx.potential.parameters.ForceField
  * <br>
  * ffxc Dynamics [options] &lt;filename&gt; [file2...]
  */
-class Dynamics extends Script {
+@Command(description = " Run dynamics on a system.", name = "ffxc Dynamics")
+class Dynamics extends AlgorithmsScript {
+
+    @Mixin
+    DynamicsOptions dynamics;
+    
+    /**
+     * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
+     */
+    @Option(names = [ '--ld',  '--minDensity'], paramLabel = '0.75',
+        description = 'Minimum density allowed by the barostat')
+    double minDensity = 0.75;
+    /**
+     * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
+     */
+    @Option(names = [ '--hd',  '--maxDensity'], paramLabel = '1.6',
+        description = 'Maximum density allowed by the barostat')
+    double maxDensity = 1.6;
+    /**
+     * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
+     */
+    @Option(names = [ '--sm',  '--maxSideMove'], paramLabel = '0.25',
+        description = 'Maximum side move allowed by the barostat in Angstroms')
+    double maxSideMove = 0.25;
+    /**
+     * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
+     */
+    @Option(names = [ '--am',  '--maxAngleMove'], paramLabel = '0.5',
+        description = 'Maximum angle move allowed by the barostat in degrees')
+    double maxAngleMove = 0.5;
+    /**
+     * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
+     */
+    @Option(names = [ '--mi',  '--meanInterval'], paramLabel = '10',
+        description = 'Mean number of MD steps between barostat move proposals.')
+    int meanInterval = 10;
 
     /**
-     * Options for the Dynamics Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc Dynamics [options] &lt;filename&gt; [file2...]
+     * -r or --repEx to execute temperature replica exchange.
      */
-    class Options {
+    @Option(names = [ '-x',  '--repEx'], paramLabel = 'false',
+        description = 'Execute temperature replica exchange')
+    boolean repEx = false;
 
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help;
-        /**
-         * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
-         */
-        @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return Thermostat.parseThermostat(s); },
-                defaultValue = 'Berendsen', description = 'Thermostat: [Adiabatic / Berendsen / Bussi].')
-        ThermostatEnum tstat;
-        /**
-         * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, Velocity Verlet, or Stochastic (AKA Langevin dynamics).
-         */
-        @Option(shortName = 'i', longName = 'integrator', convert = { s -> return Integrator.parseIntegrator(s); },
-                defaultValue = 'Beeman', description = 'Integrator: [Beeman / Respa / Stochastic / VelocityVerlet ]')
-        IntegratorEnum integrator;
-        /**
-         * -d or --dt sets the timestep in femtoseconds (default of 1.0). A value of 2.0 is possible for the RESPA integrator.
-         */
-        @Option(shortName = 'd', defaultValue = '1.0', description = 'Time discretization step in femtoseconds.')
-        double dt;
-        /**
-         * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
-         */
-        @Option(shortName = 'r', longName = 'report', defaultValue = '0.25', description = 'Interval to report thermodynamics (psec).')
-        double report;
-        /**
-         * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
-         */
-        @Option(shortName = 'w', longName = 'write', defaultValue = '10.0', description = 'Interval to write out coordinates (psec).')
-        double write
-        /**
-         * -t or --temperature sets the simulation temperature (Kelvin).
-         */
-        @Option(shortName = 't', longName = 'temperature', defaultValue = '298.15', description = 'Temperature (Kelvin)')
-        double temp
-        /**
-         * -n or --steps sets the number of molecular dynamics steps (default is 1 nsec).
-         */
-        @Option(shortName = 'n', defaultValue = '1000000', description = 'Number of molecular dynamics steps')
-        int steps;
-        /**
-         * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
-         */
-        @Option(shortName = 'ld', longName = 'minDensity', defaultValue = '0.75',
-                description = 'Minimum density allowed by the barostat')
-        double minDensity;
-        /**
-         * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
-         */
-        @Option(shortName = 'hd', longName = 'maxDensity', defaultValue = '1.6',
-                description = 'Maximum density allowed by the barostat')
-        double maxDensity;
-        /**
-         * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
-         */
-        @Option(shortName = 'sm', longName = 'maxSideMove', defaultValue = '0.25',
-                description = 'Maximum side move allowed by the barostat in Angstroms')
-        double maxSideMove;
-        /**
-         * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
-         */
-        @Option(shortName = 'am', longName = 'maxAngleMove', defaultValue = '0.5',
-                description = 'Maximum angle move allowed by the barostat in degrees')
-        double maxAngleMove;
-        /**
-         * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
-         */
-        @Option(shortName = 'mi', longName = 'meanInterval', defaultValue = '10',
-                description = 'Mean number of MD steps between barostat move proposals.')
-        int meanInterval;
-        /**
-         * -p or --npt Specify use of a MC Barostat at the given pressure (default 1.0 atm).
-         */
-        @Option(shortName = 'p', longName = 'npt', defaultValue = '0',
-                description = 'Specify use of a MC Barostat at the given pressure (default of 0 = disabled)')
-        double pressure;
-        /**
-         * -f or --file Choose the file type to write [PDB/XYZ].
-         */
-        @Option(shortName = 'f', longName = 'file', defaultValue = 'XYZ',
-                description = 'Choose file type to write [PDB/XYZ].')
-        String fileType;
-        /**
-         * -r or --repEx to execute temperature replica exchange.
-         */
-        @Option(shortName = 'x', longName = 'repEx', defaultValue = 'false',
-                description = 'Execute temperature replica exchange')
-        boolean repEx;
-
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed
-        List<String> filenames;
-    }
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
+    private List<String> filenames
 
     def run() {
 
-        def cli = new CliBuilder(usage: ' ffxc Dynamics [options] <filename> [file2...]', header: ' Options:');
-
-        def options = new Options();
-        cli.parseFromInstance(options, args);
-
-        if (options.help == true) {
-            return cli.usage();
+        if (!init()) {
+            return
         }
-
-        // Load the number of molecular dynamics steps.
-        nSteps = options.steps
-
-        // Write dyn interval in picoseconds
-        restartFrequency = options.write
-        saveInterval = options.write
-
-        fileType = options.fileType;
-
-        // Load the time steps in femtoseconds.
-        timeStep = options.dt
-
-        // Report interval in picoseconds.
-        printInterval = options.report
-
-        // Temperature in degrees Kelvin.
-        temperature = options.temp
-
-        // Pressure in atm.
-        pressure = options.pressure
-
-        // Minimum density
-        minDensity = options.minDensity
-
-        // Maximum density
-        maxDensity = options.maxDensity
-
-        // Max side move
-        maxSideMove = options.maxSideMove
-
-        // Max angle move
-        maxAngleMove = options.maxAngleMove
-
-        // Mean interval to apply the Barostat
-        meanInterval = options.meanInterval
-
-        // Thermostat.
-        thermostat = options.tstat
-
-        // Integrator.
-        integrator = options.integrator
-
-        // RepEx
-        repEx = options.repEx;
-
-        List<String> arguments = options.filenames;
+        
+        dynamics.init();
 
         String modelfilename = null;
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelfilename = arguments.get(0);
-            open(modelfilename);
-        } else if (active == null) {
-            return cli.usage();
+        if (filenames != null && filenames.size() > 0) {
+            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelfilename = active.getFile();
+            modelfilename = activeAssembly.getFile().getAbsolutePath();
         }
-
+        
         File structureFile = new File(FilenameUtils.normalize(modelfilename));
         structureFile = new File(structureFile.getAbsolutePath());
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
 
-        Potential potential = active.getPotentialEnergy();
+        Potential potential = activeAssembly.getPotentialEnergy();
         logger.info(" Starting energy (before .dyn restart loaded):");
-        boolean updatesDisabled = active.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+        boolean updatesDisabled = activeAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
         if (updatesDisabled) {
             logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
         }
@@ -216,14 +113,14 @@ class Dynamics extends Script {
 
         potential.energy(x, true);
 
-        if (pressure > 0) {
+        if (dynamics.pressure > 0) {
             if (potential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
                 logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.");
             }
-            logger.info(String.format(" Running NPT dynamics at pressure %7.4g", pressure));
+            logger.info(String.format(" Running NPT dynamics at pressure %7.4g", dynamics.pressure));
             CrystalPotential crystalPotential = (CrystalPotential) potential;
-            Barostat barostat = new Barostat(active, crystalPotential);
-            barostat.setPressure(pressure);
+            Barostat barostat = new Barostat(activeAssembly, crystalPotential);
+            barostat.setPressure(dynamics.pressure);
             barostat.setMaxDensity(maxDensity);
             barostat.setMinDensity(minDensity);
             barostat.setMaxSideMove(maxSideMove);
@@ -242,15 +139,17 @@ class Dynamics extends Script {
             if (!dyn.exists()) {
                 dyn = null;
             }
-            MolecularDynamics molDyn = new MolecularDynamics(active, potential, active.getProperties(), sh, thermostat, integrator);
-            molDyn.setFileType(fileType);
-            molDyn.setRestartFrequency(restartFrequency);
-            molDyn.dynamic(nSteps, timeStep, printInterval, saveInterval, temperature, true, dyn);
+            
+            MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
+                
+            molDyn.dynamic(dynamics.steps, dynamics.dt, 
+                dynamics.report, dynamics.write, dynamics.temp, true, dyn);
+            
         } else {
             logger.info("\n Running replica exchange molecular dynamics on " + modelfilename);
             rank = world.rank();
             File rankDirectory = new File(structureFile.getParent() + File.separator
-                    + Integer.toString(rank));
+                + Integer.toString(rank));
             if (!rankDirectory.exists()) {
                 rankDirectory.mkdir();
             }
@@ -259,19 +158,18 @@ class Dynamics extends Script {
             if (!dyn.exists()) {
                 dyn = null;
             }
-            MolecularDynamics molecularDynamics = new MolecularDynamics(active, potential, active.getProperties(), sh, thermostat, integrator);
-            molecularDynamics.setFileType(fileType);
-            molecularDynamics.setRestartFrequency(restartFrequency);
-            ReplicaExchange replicaExchange = new ReplicaExchange(molecularDynamics, sh, temperature);
+            
+            MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
+            ReplicaExchange replicaExchange = new ReplicaExchange(molecularDynamics, sh, dynamics.temp);
 
-            int totalSteps = nSteps;
+            int totalSteps = dynamics.steps;
             int nSteps = 100;
-            int cycles = totalSteps / nSteps;
+            int cycles = totalSteps / dynamics.steps;
             if (cycles <= 0) {
                 cycles = 1;
             }
 
-            replicaExchange.sample(cycles, nSteps, timeStep, printInterval, saveInterval);
+            replicaExchange.sample(cycles, dynamics.steps, dynamics.dt, dynamics.report, dynamics.write);
         }
     }
 }
