@@ -21,22 +21,25 @@ class Energy extends PotentialScript {
      * -g or --gradient to print out gradients.
      */
     @Option(names = ['-g', '--gradient'], description = 'Print out atomic gradients as well as energy.')
-    boolean gradient = false
+    private boolean gradient = false
+
     /**
      * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
      */
     @Option(names = ['--es1', '--noElecStart1'], description = 'Starting no-electrostatics atom for 1st topology')
-    int es1 = 1
+    private int es1 = 1
+
     /**
      * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
      */
     @Option(names = ['--ef1', '--noElecFinal1'], description = 'Final no-electrostatics atom for 1st topology')
-    int ef1 = -1
+    private int ef1 = -1
+
     /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null
+    private List<String> filenames = null
 
     /**
      * Execute the script.
