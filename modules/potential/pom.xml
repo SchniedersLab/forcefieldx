@@ -59,13 +59,6 @@
                 <targetPath>ffx/scripts</targetPath>
             </resource>
         </resources>
-        <!-- plugins>
-            <plugin>
-                <groupId>com.nativelibs4java</groupId>
-                <artifactId>maven-jnaerator-plugin</artifactId>
-                <version>0.13-SNAPSHOT</version>
-            </plugin>
-        </plugins -->
     </build>
     <dependencies>
         <dependency>
@@ -151,11 +144,5 @@
             <artifactId>openmm</artifactId>
             <version>${openmm.version}</version>
         </dependency>
-        <!-- dependency>
-            <groupId>com.nativelibs4java</groupId>
-            <artifactId>jnaerator-runtime</artifactId>
-            <version>0.13-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency -->
     </dependencies>
 </project>

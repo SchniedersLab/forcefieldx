@@ -35,6 +35,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec.version}</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>

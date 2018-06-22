@@ -284,19 +284,19 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>${assembly.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-changes-plugin</artifactId>
-                    <version>2.12.1</version>
+                    <version>${changes.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>${checkstyle.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>${clean.version}</version>
                     <configuration>
                         <filesets>
                             <fileset>
@@ -307,7 +307,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.7.0</version>
+                    <version>${compiler.version}</version>
                     <configuration>
                         <debug>true</debug>
                         <optimize>true</optimize>
@@ -322,22 +322,22 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.1.1</version>
+                    <version>${dependency.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>2.8.2</version>
+                    <version>${deploy.version}</version>
                     <configuration>
                         <deployAtEnd>true</deployAtEnd>
                     </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0-M1</version>
+                    <version>${enforcer.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>2.5.2</version>
+                    <version>${install.version}</version>
                     <configuration>
                         <installAtEnd>true</installAtEnd>
                         <createChecksum>true</createChecksum>
@@ -345,15 +345,15 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>${jar.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jarsigner-plugin</artifactId>
-                    <version>1.4</version>
+                    <version>${jarsigner.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>${javadoc.version}</version>
                     <configuration>
                         <author>true</author>
                         <defaultAuthor>Michael J. Schnieders</defaultAuthor>
@@ -362,39 +362,53 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-jxr-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>${jxr.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-linkcheck-plugin</artifactId>
-                    <version>1.2</version>
+                    <version>${linkcheck.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.10.0</version>
+                    <version>${pmd.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>2.9</version>
+                    <version>${project-info-reports.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-scm-plugin</artifactId>
-                    <version>1.10.0</version>
+                    <version>${scm.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-site-plugin</artifactId>
-                    <version>3.7.1</version>
+                    <version>${site.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>3.0.1</version>
+                    <version>${source.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.21.0</version>
+                    <version>${surefire.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.surefire</groupId>
+                            <artifactId>surefire-junit47</artifactId>
+                            <version>${surefire.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>2.21.0</version>
+                    <version>${surefire.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.maven.surefire</groupId>
+                            <artifactId>surefire-junit47</artifactId>
+                            <version>${surefire.version}</version>
+                        </dependency>
+                    </dependencies>
                     <configuration>
                         <aggregate>true</aggregate>
                         <linkXRef>true</linkXRef>
@@ -402,11 +416,11 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-release-plugin</artifactId>
-                    <version>2.5.3</version>
+                    <version>${release.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>${resources.version}</version>
                     <executions>
                         <execution>
                             <id>website-scripts</id>
@@ -445,9 +459,8 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>1.8</version>
+                    <version>${antrun.version}</version>
                 </plugin>
                 <!--<plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -472,17 +485,17 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.6.0</version>
+                    <version>${exec.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>jdepend-maven-plugin</artifactId>
-                    <version>2.0</version>
+                    <version>${jdepend.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>properties-maven-plugin</artifactId>
-                    <version>1.0.0</version>
+                    <version>${properties.version}</version>
                     <!--<executions>
                         <execution>
                             <phase>initialize</phase>
@@ -498,20 +511,19 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>${versions.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>ru.concerteza.buildnumber</groupId>
                     <artifactId>maven-jgit-buildnumber-plugin</artifactId>
-                    <version>1.2.10</version>
+                    <version>${buildnumber.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M1</version>
+                <version>${enforcer.version}</version>
                 <executions>
                     <execution>
                         <id>enforce-versions</id>
@@ -537,9 +549,8 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
+                <version>${antrun.version}</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -569,15 +580,15 @@
             </plugin>
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
+                <version>${site.version}</version>
                 <inherited>true</inherited>
-                <version>3.7.1</version>
                 <configuration>
                     <generateSitemap>true</generateSitemap>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>${clean.version}</version>
                 <inherited>false</inherited>
                 <configuration>
                     <filesets>
@@ -589,14 +600,14 @@
             </plugin>
             <plugin>
                 <artifactId>maven-scm-plugin</artifactId>
-                <version>1.10.0</version>
+                <version>${scm.version}</version>
                 <configuration>
                     <connectionType>connection</connectionType>
                 </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${compiler.version}</version>
                 <configuration>
                     <optimize>true</optimize>
                     <debug>true</debug>
@@ -610,7 +621,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>${source.version}</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -624,7 +635,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>${assembly.version}</version>
                 <inherited>false</inherited>
                 <configuration>
                     <descriptors>
@@ -646,7 +657,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
+                <version>${exec.version}</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -677,7 +688,14 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.21.0</version>
+                <version>${surefire.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit47</artifactId>
+                        <version>${surefire.version}</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
@@ -703,7 +721,7 @@
             <plugin>
                 <groupId>ru.concerteza.buildnumber</groupId>
                 <artifactId>maven-jgit-buildnumber-plugin</artifactId>
-                <version>1.2.10</version>
+                <version>${buildnumber.version}</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -723,7 +741,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>properties-maven-plugin</artifactId>
-                <version>1.0.0</version>
+                <version>${properties.version}</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
@@ -845,7 +863,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>2.5</version>
+                <version>${versions.version}</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -856,7 +874,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.9</version>
+                <version>${project-info-reports.version}</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -885,7 +903,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>${javadoc.version}</version>
                 <configuration>
                     <quiet>true</quiet>
                     <failOnError>false</failOnError>
@@ -903,7 +921,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-jxr-plugin</artifactId>
-                <version>2.5</version>
+                <version>${jxr.version}</version>
                 <configuration>
                     <goal>aggregate</goal>
                     <goal>test-aggregate</goal>
@@ -911,7 +929,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.21.0</version>
+                <version>${surefire.version}</version>
                 <configuration>
                     <linkXRef>true</linkXRef>
                     <aggregate>true</aggregate>
@@ -936,7 +954,7 @@
             </plugin -->
             <plugin>
                 <artifactId>maven-linkcheck-plugin</artifactId>
-                <version>1.2</version>
+                <version>${linkcheck.version}</version>
             </plugin>
             <!-- plugin>
                 <artifactId>maven-pmd-plugin</artifactId>
@@ -1000,7 +1018,20 @@
             <url>${release.repo}</url>
         </repository>
     </distributionManagement>
+    <modules>
+        <module>modules/algorithms</module>
+        <module>modules/crystal</module>
+        <module>modules/numerics</module>
+        <module>modules/openmm</module>
+        <module>modules/pj</module>
+        <module>modules/potential</module>
+        <module>modules/ui</module>
+        <module>modules/utilities</module>
+        <module>modules/xray</module>
+    </modules>
     <properties>
+        <!-- Version of FFX  -->
+        <ffx.version>1.0.0-BETA</ffx.version>
         <!-- Default locations for deploying the website, snapshot location and
         release location. These can be over-ridden by a developer's
         settings.xml -->
@@ -1015,8 +1046,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
-        <!-- Version of FFX  -->
-        <ffx.version>1.0.0-BETA</ffx.version>
         <!-- Skip most website reports by default -->
         <assembly.skipAssembly>false</assembly.skipAssembly>
         <changes.jira.skip>true</changes.jira.skip>
@@ -1051,18 +1080,37 @@
         <cdk.version>2.0</cdk.version>
         <clustering.version>1.1.0</clustering.version>
         <fastutil.version>8.2.1</fastutil.version>
+        <!-- Maven Plugin Version -->
+        <assembly.version>3.1.0</assembly.version>
+        <changes.version>2.12.1</changes.version>
+        <checkstyle.version>3.0.0</checkstyle.version>
+        <clean.version>3.1.0</clean.version>
+        <compiler.version>3.7.0</compiler.version>
+        <dependency.version>3.1.1</dependency.version>
+        <deploy.version>2.8.2</deploy.version>
+        <enforcer.version>3.0.0-M2</enforcer.version>
+        <install.version>2.5.2</install.version>
+        <jar.version>3.1.0</jar.version>
+        <jarsigner.version>1.4</jarsigner.version>
+        <javadoc.version>3.0.1</javadoc.version>
+        <jxr.version>2.5</jxr.version>
+        <linkcheck.version>1.2</linkcheck.version>
+        <pmd.version>3.10.0</pmd.version>
+        <project-info-reports.version>2.9</project-info-reports.version>
+        <scm.version>1.10.0</scm.version>
+        <site.version>3.7.1</site.version>
+        <source.version>3.0.1</source.version>
+        <surefire.version>2.22.0</surefire.version>
+        <release.version>2.5.3</release.version>
+        <resources.version>3.1.0</resources.version>
+        <antrun.version>1.8</antrun.version>
+        <exec.version>1.6.0</exec.version>
+        <jdepend.version>2.0</jdepend.version>
+        <properties.version>1.0.0</properties.version>
+        <versions.version>2.5</versions.version>
+        <buildnumber.version>1.2.10</buildnumber.version>
+        <appassembler.version>1.10</appassembler.version>
     </properties>
-    <modules>
-        <module>modules/algorithms</module>
-        <module>modules/crystal</module>
-        <module>modules/numerics</module>
-        <module>modules/openmm</module>
-        <module>modules/pj</module>
-        <module>modules/potential</module>
-        <module>modules/ui</module>
-        <module>modules/utilities</module>
-        <module>modules/xray</module>
-    </modules>
     <dependencies>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>

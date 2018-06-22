@@ -124,16 +124,7 @@ public class ExtendedVariableTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
             {EsvTest.EndStates, Interactions.All, CellType.Crystal},
-            //			{EsvTest.Deriv_OneEsv,	Interactions.All,	CellType.Aperiodic},
-            {EsvTest.Deriv_OneEsv, Interactions.All, CellType.Crystal}, //			{EsvTest.Deriv_TwoEsvs,	Interactions.All,	CellType.Aperiodic},
-        //			{EsvTest.Deriv_TwoEsvs,	Interactions.All,	CellType.Crystal},
-        //			{EsvTest.Deriv_Meta,	Interactions.All,	CellType.Crystal},
-        //			{EsvTest.EndStates,		Interactions.All,	CellType.Aperiodic},
-        //			{EsvTest.Smoothness,	Interactions.All,	CellType.Aperiodic},
-        //			{EsvTest.Smoothness,	Interactions.All,	CellType.Crystal},
-        //          {EsvTest.All,           Interactions.All,   CellType.Aperiodic},
-        //          {EsvTest.All,           Interactions.All,   CellType.Crystal},
-        //            {EsvTest.Deriv_Meta,    Interactions.All,   CellType.Aperiodic},
+            {EsvTest.Deriv_OneEsv, Interactions.All, CellType.Crystal}
         });
     }
 
@@ -853,6 +844,16 @@ public class ExtendedVariableTest {
             inducedEnergies = new double[11][11];
             inducedDerivsA = new double[11][11];
             inducedDerivsB = new double[11][11];
+        } else {
+            vdwEnergies = null;
+            vdwDerivsA = null;
+            vdwDerivsB = null;
+            permanentEnergies = null;
+            permanentDerivsA = null;
+            permanentDerivsB = null;
+            inducedEnergies = null;
+            inducedDerivsA = null;
+            inducedDerivsB = null;
         }
         for (int idxA = 0; idxA <= 10; idxA++) {
             double evA = idxA / 10.0;

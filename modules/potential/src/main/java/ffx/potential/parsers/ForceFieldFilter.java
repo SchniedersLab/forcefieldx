@@ -374,7 +374,7 @@ public class ForceFieldFilter {
         if (inputs == null || inputs.length < 1) {
             return;
         }
-        
+
         input = inputs[0].split("#")[0];
 
         // Split the line into tokens between instances of 1 or more spaces.
