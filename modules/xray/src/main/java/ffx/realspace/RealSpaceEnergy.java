@@ -596,7 +596,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
 
     @Override
     public ffx.crystal.Crystal getCrystal() {
-        logger.severe(" RealSpaceEnergy does implement getCrystal yet.");
+        realSpaceData.getCrystal();
         return null;
     }
 

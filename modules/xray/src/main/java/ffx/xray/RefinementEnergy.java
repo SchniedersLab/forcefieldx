@@ -1030,8 +1030,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
 
     @Override
     public Crystal getCrystal() {
-        logger.severe(" RefinementEnergy does implement getCrystal yet.");
-        return null;
+        return dataEnergy.getCrystal();
     }
 
     @Override
