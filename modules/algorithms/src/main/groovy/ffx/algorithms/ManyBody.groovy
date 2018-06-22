@@ -43,125 +43,125 @@ class ManyBody extends Script {
          * -l or --library Choose either Ponder and Richards (1) or Richardson (2) rotamer library.
          */
         @Option(shortName = 'l', longName = 'library', defaultValue = '1',
-                description = 'Ponder and Richards (1) or Richardson (2) rotamer library.')
+            description = 'Ponder and Richards (1) or Richardson (2) rotamer library.')
         int library
         /**
          * -a or --algorithm Choices are independent residues (1), all with rotamer elimination (2),
          * all brute force (3), sliding window (4), or box optimization (5).
          */
         @Option(shortName = 'a', longName = 'algorithm', defaultValue = '2',
-                description = 'Algorithm: independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5)')
+            description = 'Algorithm: independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5)')
         int algorithm
         /**
          * -dee or --deadEnd Use dead-end elimination criteria instead of Goldstein criteria.
          */
         @Option(shortName = 'dee', longName = 'deadEnd',
-                description = 'Use dead-end elimination criteria instead of Goldstein criteria.')
+            description = 'Use dead-end elimination criteria instead of Goldstein criteria.')
         boolean dee
         /**
          * -w or --window Size of the sliding window with respect to adjacent residues (default = 7).
          */
         @Option(shortName = 'w', longName = 'window', defaultValue = '7',
-                description = 'Size of the sliding window with respect to adjacent residues.')
+            description = 'Size of the sliding window with respect to adjacent residues.')
         int window
         /**
          * -i or --increment Sliding window increment (default = 3).
          */
         @Option(shortName = 'i', longName = 'increment', defaultValue = '3',
-                description = 'Sliding window increment.')
+            description = 'Sliding window increment.')
         int increment
         /**
          * -r or --cutoff The sliding window cutoff radius (Angstroms).
          */
         @Option(shortName = 'r', longName = 'cutoff', defaultValue = '2.0',
-                description = 'The sliding window cutoff radius (Angstroms).')
+            description = 'The sliding window cutoff radius (Angstroms).')
         double cutoff
         /**
          * -c or --chain Single character chain ID of the residues to optimize.
          */
         @Option(shortName = 'c', longName = 'chain', defaultValue = '-1',
-                description = 'Single character chain ID of the residues to optimize.')
+            description = 'Single character chain ID of the residues to optimize.')
         String chain;
         /**
          * -s or --start Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.
          */
         @Option(shortName = 's', longName = 'start', defaultValue = '-1',
-                description = 'Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.')
+            description = 'Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.')
         int start
         /**
          * -f or --final Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.
          */
         @Option(shortName = 'f', longName = 'final', defaultValue = '-1',
-                description = 'Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.')
+            description = 'Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.')
         int last
         /**
          * -m or --minimize Minimize the final structure to the given RMS gradient (Kcal/mole/A); the default is not
          * to minimize.
          */
         @Option(shortName = 'm', longName = 'minimize', defaultValue = '0.0',
-                description = 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).')
+            description = 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).')
         double minimize
         /**
          * -t or --threeBody Include 3-Body interactions in the elimination criteria.
          */
         @Option(shortName = 't', longName = 'threeBody',
-                description = 'Include 3-Body interactions in the elimination criteria.')
+            description = 'Include 3-Body interactions in the elimination criteria.')
         boolean threeBody
         /**
          * -p or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
          */
         @Option(shortName = 'p', longName = 'prune', defaultValue = '2',
-                description = 'Prune no clashes (0), only single clashes (1), or all clashes (2)')
+            description = 'Prune no clashes (0), only single clashes (1), or all clashes (2)')
         int prune
         /**
          * -x or --all Optimize all residues beginning from the passed value (overrides other options);
          * for box optimization, optimizes all boxes beginning from the passed index.
          */
         @Option(shortName = 'x', longName = 'all', defaultValue = '-1',
-                description = 'Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.')
+            description = 'Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.')
         int all
         /**
          * -v or --verbose Prints beginning and default-conformation energies.
          */
         @Option(shortName = 'v', longName = 'verbose',
-                description = 'Prints beginning and default-conformation energies.')
+            description = 'Prints beginning and default-conformation energies.')
         boolean verbose
         /**
          * -o or --original Do not include starting coordinates as their own rotamer.
          */
         @Option(shortName = 'o', longName = 'original',
-                description = 'Do not include starting coordinates as their own rotamer.')
+            description = 'Do not include starting coordinates as their own rotamer.')
         boolean original
         /**
          * -d or --decompose Print energy decomposition for original-coordinates rotamers.
          */
         @Option(shortName = 'd', longName = 'decompose',
-                description = 'Print energy decomposition for original-coordinates rotamers.')
+            description = 'Print energy decomposition for original-coordinates rotamers.')
         boolean decompose
         /**
          * -eR or --energyRestart Load energy restart file from a previous run (requires that all parameters are the same).
          */
         @Option(shortName = 'eR', longName = 'energyRestart', defaultValue = 'none',
-                description = 'Load energy restart file from a previous run (requires that all parameters are the same).')
+            description = 'Load energy restart file from a previous run (requires that all parameters are the same).')
         String energyRestart
         /**
          * -nB or --numBoxes Specify number of boxes along X, Y, and Z (default: '3,3,3').
          */
         @Option(shortName = 'nB', longName = 'numBoxes', defaultValue = '3,3,3',
-                description = 'Specify number of boxes along X, Y, and Z (default: 3,3,3)')
+            description = 'Specify number of boxes along X, Y, and Z (default: 3,3,3)')
         String numBoxes
         /**
          * -bB or --boxBorderSize Extent of overlap between optimization boxes in Angstroms (default: 3.0).
          */
         @Option(shortName = 'bB', longName = 'boxBorderSize', defaultValue = '3.0',
-                description = 'Extent of overlap between optimization boxes in Angstroms.')
+            description = 'Extent of overlap between optimization boxes in Angstroms.')
         double boxBorderSize
         /**
          * -bL or --approxBoxLength Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).
          *  Box sizes are rounded up to make a whole number of boxes along each axis (default of 0 disables this function).
          */
         @Option(shortName = 'bL', longName = 'approxBoxLength', defaultValue = '0.0',
-                description = 'Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).')
+            description = 'Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).')
         double approxBoxLength
         /**
          * -bC or --boxInclusionCriterion Criterion to use for adding residues to boxes.
@@ -170,68 +170,74 @@ class ManyBody extends Script {
          *      (3) uses any rotamer
          */
         @Option(shortName = 'bC', longName = 'boxInclusionCriterion', defaultValue = '1',
-                description = 'Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer')
+            description = 'Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer')
         int boxInclusionCriterion
         /**
          * -fR or --forceResidues Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.
          */
         @Option(shortName = 'fR', longName = 'forceResidues', defaultValue = '-1,-1',
-                description = 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.')
+            description = 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.')
         String forceResidues
         /**
          * -lR or --listResidues Choose a list of individual residues to optimize (eg. A11,A24,B40).
          */
         @Option(shortName = 'lR', longName = 'listResidues', defaultValue = 'none',
-                description = 'Choose a list of individual residues to optimize (eg. A11,A24,B40).')
+            description = 'Choose a list of individual residues to optimize (eg. A11,A24,B40).')
         String listResidues
         /**
          * -sO or --sequence Choose a list of individual residues to sequence optimize (example: A2.A3.A5).
          */
         @Option(shortName = 'sO', longName = 'sequence', defaultValue = 'none',
-                description = 'Choose a list of individual residues to sequence optimize (example: A2.A3.A5)')
+            description = 'Choose a list of individual residues to sequence optimize (example: A2.A3.A5)')
         String sequence
         /**
          * -tO or --titrationOptimization Optimize the titration states for a list of residues (example: H2.H3.H5).
          */
         @Option(shortName = 'tO', longName = 'titrationOptimization', defaultValue = 'none',
-                description = 'Optimize the titration states for a list of residues (example: H2.H3.H5).')
+            description = 'Optimize the titration states for a list of residues (example: H2.H3.H5).')
         String titrationOptimization
         /**
          * -nT or --nucleicCorrectionThreshold Nucleic acid rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).
          */
         @Option(shortName = 'nT', longName = 'nucleicCorrectionThreshold', defaultValue = '0',
-                description = 'Nucleic acid rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).')
+            description = 'Nucleic acid rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).')
         double nucleicCorrectionThreshold
         /**
          * -mN or --minimumAcceptedNARotamers Minimum number of NA rotamers to be accepted if a threshold distance is enabled.
          */
         @Option(shortName = 'mN', longName = 'minimumAcceptedNARotamers', defaultValue = '10',
-                description = 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.')
+            description = 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.')
         int minimumAcceptedNARotamers
         /**
          * -mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.
          */
         @Option(shortName = 'mC', longName = 'monteCarlo', defaultValue = '-1',
-                description = 'Follow elimination criteria with (n) Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.')
+            description = 'Follow elimination criteria with (n) Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.')
         int monteCarlo
         /**
          * -z or --noRevert Do not revert an unfavorable change.
          */
         @Option(shortName = 'z', longName = 'revert',
-                description = 'Undo an unfavorable change.')
+            description = 'Undo an unfavorable change.')
         boolean noRevert
         /**
          * -tC or --twoBodyCutoff Cutoff distance for two-body interactions.
          */
         @Option(shortName = 'tC', longName = 'twoBodyCutoff', defaultValue = '-1.0',
-                description = 'Cutoff distance for two body interactions.')
+            description = 'Cutoff distance for two body interactions.')
         double twoBodyCutoff
         /**
          * -thC or --threeBodyCutoff Cutoff distance for three-body interactions.
          */
         @Option(shortName = 'thC', longName = 'threeBodyCutoff', defaultValue = '9.0',
-                description = 'Cutoff distance for three-body interactions.')
+            description = 'Cutoff distance for three-body interactions.')
         double threeBodyCutoff
+        /**
+         * -out or --output Save eliminated singles and eliminated pairs to a text file (global and box optimization).
+         */
+        @Option(shortName = 'out', longName = 'output',
+            description = 'Save eliminated singles and eliminated pairs to a text file.')
+        boolean output
 
         /**
          * The final argument(s) should be one or more filenames.
@@ -267,6 +273,7 @@ class ManyBody extends Script {
         boolean useOrigCoordsRotamer = !options.original
         boolean verboseEnergies = options.verbose
         boolean decomposeOriginal = options.decompose
+        boolean saveOutput = options.output
         double twoBodyCutoff = options.twoBodyCutoff
         double threeBodyCutoff = options.threeBodyCutoff
         if (decomposeOriginal) {
@@ -550,7 +557,7 @@ class ManyBody extends Script {
                             }
                         } else if (!options.forceResidues.equalsIgnoreCase('none')) {
                             if (counter >= allStartResID && counter >= forceResiduesStart
-                                    && counter <= forceResiduesEnd) {
+                                && counter <= forceResiduesEnd) {
                                 residueList.add(residue);
                             }
                         }
@@ -718,6 +725,11 @@ class ManyBody extends Script {
                 saveAsPDB(new File(filename + ".pdb"));
             }
         }
+        
+        if (saveOutput) {
+            rotamerOptimization.outputEliminated();
+        }
+
     }
 }
 
