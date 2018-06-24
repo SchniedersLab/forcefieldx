@@ -72,7 +72,7 @@ public class DynamicsOptions {
      * Beeman, RESPA, Velocity Verlet, or Stochastic (AKA Langevin dynamics).
      */
     @Option(names = {"-i", "--integrator"},
-            paramLabel = "Beeman", description = "Integrator: [Beeman / Respa / Stochastic / VelocityVerlet ]")
+            paramLabel = "Beeman", description = "Integrator: [Beeman / Respa / Stochastic / VelocityVerlet].")
     String integratorString = "VELOCITYVERLET";
 
     /**
@@ -92,14 +92,14 @@ public class DynamicsOptions {
     /**
      * -t or --temperature sets the simulation temperature (Kelvin).
      */
-    @Option(names = {"-t", "--temperature"}, paramLabel = "298.15", description = "Temperature (Kelvin)")
+    @Option(names = {"-t", "--temperature"}, paramLabel = "298.15", description = "Temperature (Kelvin).")
     double temp = 298.15;
 
     /**
      * -n or --steps sets the number of molecular dynamics steps (default is 1
      * nsec).
      */
-    @Option(names = {"-n"}, paramLabel = "1000000", description = "Number of molecular dynamics steps")
+    @Option(names = {"-n"}, paramLabel = "1000000", description = "Number of molecular dynamics steps.")
     int steps = 1000000;
 
     /**
@@ -107,7 +107,7 @@ public class DynamicsOptions {
      * 1.0 atm).
      */
     @Option(names = {"-p", "--npt"}, paramLabel = "0",
-            description = "Specify use of a MC Barostat at the given pressure (default of 0 = disabled)")
+            description = "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
     double pressure = 0;
 
     /**

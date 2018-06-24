@@ -4,17 +4,12 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.integrators.Integrator
-import ffx.algorithms.integrators.IntegratorEnum
-import ffx.algorithms.thermostats.Thermostat
-import ffx.algorithms.thermostats.ThermostatEnum
-import ffx.crystal.CrystalPotential
-import ffx.numerics.Potential
-import ffx.potential.parameters.ForceField
-import ffx.potential.MolecularAssembly
-
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.crystal.CrystalPotential
+import ffx.numerics.Potential
+import ffx.potential.MolecularAssembly
+import ffx.potential.parameters.ForceField
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -33,43 +28,43 @@ class Dynamics extends AlgorithmsScript {
 
     @Mixin
     DynamicsOptions dynamics;
-    
+
     /**
      * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
      */
-    @Option(names = [ '--ld',  '--minDensity'], paramLabel = '0.75',
-        description = 'Minimum density allowed by the barostat')
+    @Option(names = ['--ld', '--minDensity'], paramLabel = '0.75',
+            description = 'Minimum density allowed by the barostat')
     double minDensity = 0.75;
     /**
      * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
      */
-    @Option(names = [ '--hd',  '--maxDensity'], paramLabel = '1.6',
-        description = 'Maximum density allowed by the barostat')
+    @Option(names = ['--hd', '--maxDensity'], paramLabel = '1.6',
+            description = 'Maximum density allowed by the barostat')
     double maxDensity = 1.6;
     /**
      * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
      */
-    @Option(names = [ '--sm',  '--maxSideMove'], paramLabel = '0.25',
-        description = 'Maximum side move allowed by the barostat in Angstroms')
+    @Option(names = ['--sm', '--maxSideMove'], paramLabel = '0.25',
+            description = 'Maximum side move allowed by the barostat in Angstroms')
     double maxSideMove = 0.25;
     /**
      * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
      */
-    @Option(names = [ '--am',  '--maxAngleMove'], paramLabel = '0.5',
-        description = 'Maximum angle move allowed by the barostat in degrees')
+    @Option(names = ['--am', '--maxAngleMove'], paramLabel = '0.5',
+            description = 'Maximum angle move allowed by the barostat in degrees')
     double maxAngleMove = 0.5;
     /**
      * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
      */
-    @Option(names = [ '--mi',  '--meanInterval'], paramLabel = '10',
-        description = 'Mean number of MD steps between barostat move proposals.')
+    @Option(names = ['--mi', '--meanInterval'], paramLabel = '10',
+            description = 'Mean number of MD steps between barostat move proposals.')
     int meanInterval = 10;
 
     /**
      * -r or --repEx to execute temperature replica exchange.
      */
-    @Option(names = [ '-x',  '--repEx'], paramLabel = 'false',
-        description = 'Execute temperature replica exchange')
+    @Option(names = ['-x', '--repEx'], paramLabel = 'false',
+            description = 'Execute temperature replica exchange')
     boolean repEx = false;
 
     /**
@@ -83,10 +78,10 @@ class Dynamics extends AlgorithmsScript {
         if (!init()) {
             return
         }
-        
-        dynamics.init();
 
-        String modelfilename = null;
+        dynamics.init()
+
+        String modelfilename
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
@@ -95,81 +90,81 @@ class Dynamics extends AlgorithmsScript {
             logger.info(helpString())
             return
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath();
+            modelfilename = activeAssembly.getFile().getAbsolutePath()
         }
-        
-        File structureFile = new File(FilenameUtils.normalize(modelfilename));
-        structureFile = new File(structureFile.getAbsolutePath());
-        String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
 
-        Potential potential = activeAssembly.getPotentialEnergy();
-        logger.info(" Starting energy (before .dyn restart loaded):");
-        boolean updatesDisabled = activeAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+        File structureFile = new File(FilenameUtils.normalize(modelfilename))
+        structureFile = new File(structureFile.getAbsolutePath())
+        String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+
+        Potential potential = activeAssembly.getPotentialEnergy()
+        logger.info(" Starting energy (before .dyn restart loaded):")
+        boolean updatesDisabled = activeAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
         if (updatesDisabled) {
-            logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart");
+            logger.info(" This ensures neighbor list is properly constructed from the source file, before coordinates updated by .dyn restart")
         }
-        double[] x = new double[potential.getNumberOfVariables()];
-        potential.getCoordinates(x);
+        double[] x = new double[potential.getNumberOfVariables()]
+        potential.getCoordinates(x)
 
-        potential.energy(x, true);
+        potential.energy(x, true)
 
         if (dynamics.pressure > 0) {
             if (potential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
-                logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.");
+                logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.")
             }
-            logger.info(String.format(" Running NPT dynamics at pressure %7.4g", dynamics.pressure));
-            CrystalPotential crystalPotential = (CrystalPotential) potential;
-            Barostat barostat = new Barostat(activeAssembly, crystalPotential);
-            barostat.setPressure(dynamics.pressure);
-            barostat.setMaxDensity(maxDensity);
-            barostat.setMinDensity(minDensity);
-            barostat.setMaxSideMove(maxSideMove);
-            barostat.setMaxAngleMove(maxAngleMove);
-            barostat.setMeanBarostatInterval(meanInterval);
-            potential = barostat;
+            logger.info(String.format(" Running NPT dynamics at pressure %7.4g", dynamics.pressure))
+            CrystalPotential crystalPotential = (CrystalPotential) potential
+            Barostat barostat = new Barostat(activeAssembly, crystalPotential)
+            barostat.setPressure(dynamics.pressure)
+            barostat.setMaxDensity(maxDensity)
+            barostat.setMinDensity(minDensity)
+            barostat.setMaxSideMove(maxSideMove)
+            barostat.setMaxAngleMove(maxAngleMove)
+            barostat.setMeanBarostatInterval(meanInterval)
+            potential = barostat
         }
 
-        Comm world = Comm.world();
-        size = world.size();
+        Comm world = Comm.world()
+        int size = world.size()
 
         if (!repEx || size < 2) {
-            logger.info("\n Running molecular dynamics on " + modelfilename);
+            logger.info("\n Running molecular dynamics on " + modelfilename)
             // Restart File
-            File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn");
+            File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn")
             if (!dyn.exists()) {
-                dyn = null;
+                dyn = null
             }
-            
+
             MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
-                
-            molDyn.dynamic(dynamics.steps, dynamics.dt, 
-                dynamics.report, dynamics.write, dynamics.temp, true, dyn);
-            
+
+            molDyn.dynamic(dynamics.steps, dynamics.dt,
+                    dynamics.report, dynamics.write, dynamics.temp, true, dyn)
+
         } else {
-            logger.info("\n Running replica exchange molecular dynamics on " + modelfilename);
-            rank = world.rank();
+            logger.info("\n Running replica exchange molecular dynamics on " + modelfilename)
+            rank = world.rank()
             File rankDirectory = new File(structureFile.getParent() + File.separator
-                + Integer.toString(rank));
+                    + Integer.toString(rank))
             if (!rankDirectory.exists()) {
-                rankDirectory.mkdir();
+                rankDirectory.mkdir()
             }
-            withRankName = rankDirectory.getPath() + File.separator + baseFilename;
-            dyn = new File(withRankName + ".dyn");
+            withRankName = rankDirectory.getPath() + File.separator + baseFilename
+            dyn = new File(withRankName + ".dyn")
             if (!dyn.exists()) {
-                dyn = null;
+                dyn = null
             }
-            
+
             MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
-            ReplicaExchange replicaExchange = new ReplicaExchange(molecularDynamics, sh, dynamics.temp);
+            ReplicaExchange replicaExchange = new ReplicaExchange(molecularDynamics, sh, dynamics.temp)
 
-            int totalSteps = dynamics.steps;
-            int nSteps = 100;
-            int cycles = totalSteps / dynamics.steps;
+            int totalSteps = dynamics.steps
+            int nSteps = 100
+            int cycles = totalSteps / dynamics.steps
             if (cycles <= 0) {
-                cycles = 1;
+                cycles = 1
             }
 
-            replicaExchange.sample(cycles, dynamics.steps, dynamics.dt, dynamics.report, dynamics.write);
+            replicaExchange.sample(cycles, dynamics.steps, dynamics.dt, dynamics.report, dynamics.write)
         }
     }
 }

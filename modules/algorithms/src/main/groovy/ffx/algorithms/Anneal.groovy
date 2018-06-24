@@ -1,16 +1,15 @@
-
 package ffx.algorithms
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.AnnealOptions
+import ffx.algorithms.cli.DynamicsOptions
+import ffx.potential.MolecularAssembly
 
-import ffx.algorithms.integrators.Integrator
-import ffx.algorithms.integrators.IntegratorEnum
-import ffx.algorithms.thermostats.Thermostat
-import ffx.algorithms.thermostats.ThermostatEnum
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Parameters
+import picocli.CommandLine.Command
 
 /**
  * The Anneal script.
@@ -19,130 +18,56 @@ import ffx.algorithms.thermostats.ThermostatEnum
  * <br>
  * ffxc Anneal [options] &lt;filename&gt;
  */
-class Anneal extends Script {
+@Command(description = " Run simulated annealing on a system.", name = "ffxc Anneal")
+class Anneal extends AlgorithmsScript {
+
+    @Mixin
+    DynamicsOptions dynamics
+
+    @Mixin
+    AnnealOptions anneal
 
     /**
-     * Options for the Anneal Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc Anneal [options] &lt;filename [file2...]&gt;
+     * One or more filenames.
      */
-    class Options {
-        /**
-         * -h or --help to print a help message.
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * -n or --steps Number of molecular dynamics steps per annealing window (1000).
-         */
-        @Option(shortName='n', longName='steps', defaultValue='1000', description='Number of MD steps per annealing window.')
-        int n
-        /**
-         * -d or --dt Time step in femtosceonds (1.0).
-         */
-        @Option(shortName='d', longName='dt', defaultValue='1.0', description='Time step (fsec).')
-        double d
-        /**
-         * -w or --windows Number of annealing windows (10).
-         */
-        @Option(shortName='w', longName='windows', defaultValue='10', description='Number of annealing windows.')
-        int w
-        /**
-         * -l or --low Low temperature limit in degrees Kelvin (10.0).
-         */
-        @Option(shortName='l', longName='low', defaultValue='10.0', description='Low temperature limit (Kelvin).')
-        double l
-        /**
-         * -u or --upper Upper temperature limit in degrees Kelvin (1000.0).
-         */
-        @Option(shortName='u', longName='upper', defaultValue='1000.0', description='High temperature limit (Kelvin).')
-        double u
-        /**
-         * -b or --thermostat sets the desired thermostat [Adiabatic, Berendsen, Bussi].
-         */
-        @Option(shortName='t', longName='thermostat', convert = {s -> return Thermostat.parseThermostat(s);}, defaultValue='Berendsen',
-                description='Thermostat: Adiabatic, Berendsen or Bussi.')
-        ThermostatEnum thermo
-        /**
-         * -i or --integrator sets the desired integrator [Beeman, RESPA, Stochastic].
-         */
-        @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman',
-                description='Integrator: Beeman, RESPA or Stochastic.')
-        IntegratorEnum integrate
-        /**
-         * The final argument should be a filename.
-         */
-        @Unparsed List<String> filenames
-    }
+    @Parameters(arity = "1", paramLabel = "files", description = "XYZ or PDB input files.")
+    private List<String> filenames
 
     def run() {
 
-        def cli = new CliBuilder(usage: ' ffxc Anneal [options] <filename>', header: ' Options:')
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        AlgorithmFunctions aFuncts
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils()
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils()
-        }
+        dynamics.init()
 
-        List<String> arguments = options.filenames
-
-        // Load the number of molecular dynamics steps at each temperature.
-        int steps = options.n
-
-        // Load the number of annealing steps.
-        int windows = options.w
-
-        // Load the low temperature end point.
-        double low = options.l
-
-        // Load the high temperature end point.
-        double high = options.u
-
-        // Load the time steps in femtoseconds.
-        double timeStep = options.d
-
-        // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
-        ThermostatEnum thermostat = options.thermo;
-
-        // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC]
-        IntegratorEnum integrator = options.integrate;
-
-        String filename = null;
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelfilename = arguments.get(0);
-            open(modelfilename);
-        } else if (active == null) {
-            return cli.usage();
+        String modelfilename
+        if (filenames != null && filenames.size() > 0) {
+            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelfilename = active.getFile();
+            modelfilename = activeAssembly.getFile().getAbsolutePath();
         }
 
-        logger.info("\n Running simulated annealing on " + modelfilename)
-        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(active, active.getPotentialEnergy(),
-                active.getProperties(), null, thermostat, integrator)
-        simulatedAnnealing.anneal(high, low, windows, steps, timeStep)
+        logger.info("\n Running simulated annealing on " + modelfilename + "\n")
+
+        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly,
+                activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(), null,
+                dynamics.thermostat, dynamics.integrator)
+
+        simulatedAnnealing.anneal(anneal.upper, anneal.low, anneal.windows, dynamics.steps, dynamics.dt)
 
         String ext = FilenameUtils.getExtension(modelfilename)
         modelfilename = FilenameUtils.removeExtension(modelfilename)
 
         if (ext.toUpperCase().contains("XYZ")) {
-            saveAsXYZ(new File(modelfilename + ".xyz"));
+            algorithmFunctions.saveAsXYZ(new File(modelfilename + ".xyz"));
         } else {
-            saveAsPDB(new File(modelfilename + ".pdb"));
+            algorithmFunctions.saveAsPDB(new File(modelfilename + ".pdb"));
         }
     }
 }

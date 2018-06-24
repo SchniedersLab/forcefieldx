@@ -159,29 +159,43 @@ public class Minimize implements OptimizationListener, Terminatable {
      * @return a {@link ffx.numerics.Potential} object.
      */
     public Potential minimize() {
-        return minimize(1.0);
+        return minimize(7,1.0, Integer.MAX_VALUE);
     }
 
     /**
      * <p>
      * minimize</p>
      *
-     * @param eps a double.
+     * @param eps The convergence criteria.
      * @return a {@link ffx.numerics.Potential} object.
      */
     public Potential minimize(double eps) {
-        return minimize(7, eps);
+        return minimize(7, eps, Integer.MAX_VALUE);
     }
 
     /**
      * <p>
      * minimize</p>
      *
-     * @param m a int.
-     * @param eps a double.
+     * @param eps The convergence criteria.
+     * @param maxIterations The maximum number of iterations.
      * @return a {@link ffx.numerics.Potential} object.
      */
-    public Potential minimize(int m, double eps) {
+    public Potential minimize(double eps, int maxIterations) {
+        return minimize(7, eps, maxIterations);
+    }
+
+    /**
+     * <p>
+     * minimize</p>
+     *
+     * @param m The number of previous steps used to estimate the Hessian.
+     * @param eps The convergence criteria.
+     * @param maxIterations The maximum number of iterations.
+     *
+     * @return a {@link ffx.numerics.Potential} object.
+     */
+    public Potential minimize(int m, double eps, int maxIterations) {
         time = System.nanoTime();
         potential.getCoordinates(x);
         potential.setScaling(scaling);
@@ -200,7 +214,7 @@ public class Minimize implements OptimizationListener, Terminatable {
             logger.fine(format(" Minimize initial energy: %16.8f", energy));
         }
 
-        status = LBFGS.minimize(n, m, x, energy, grad, eps, potential, this);
+        status = LBFGS.minimize(n, m, x, energy, grad, eps, maxIterations, potential, this);
         done = true;
 
         switch (status) {

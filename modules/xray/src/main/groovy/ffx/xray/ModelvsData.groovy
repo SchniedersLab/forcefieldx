@@ -2,15 +2,15 @@ package ffx.xray
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
-import ffx.algorithms.AlgorithmFunctions
-import ffx.algorithms.AlgorithmUtils
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.MolecularAssembly
-import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The X-ray ModelvsData script.
@@ -19,127 +19,78 @@ import ffx.xray.parsers.DiffractionFile
  * <br>
  * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
  */
-class ModelvsData extends Script {
+@Command(description = " Compare the PDB model to the diffraction data.", name = "ffxc ModelvsData")
+class ModelvsData extends AlgorithmsScript {
+
+    @Mixin
+    XrayOptions xrayOptions
 
     /**
-     * Options for the ModelvsData Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
+     * -m or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
      */
-    class Options {
-        /**
-         * -h or --help to print a help message.
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * -m or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
-         */
-        @Option(shortName = 'm', longName='maps', defaultValue = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
-        boolean maps
-        /**
-         * -t or --timings Perform FFT timings.
-         */
-        @Option(shortName = 't', longName='timings', defaultValue = 'false', description = 'Perform FFT timings.')
-        boolean timings
-        /**
-         * -w or --mtz Write out MTZ containing structure factor coefficients.
-         */
-        @Option(shortName = 'w', longName='mtz', defaultValue = 'false',
-                description = 'write out MTZ containing structure factor coefficients.')
-        boolean mtz
-        /**
-         * -D or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-         */
-        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 3, valueSeparator = ',',
-                description = 'Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.')
-        String[] data
-        /**
-         * The final arguments should be a PDB filename and data filename (CIF or MTZ).
-         */
-        @Unparsed(description = "PDB file and a CIF or MTZ file.")
-        List<String> filenames
-    }
+    @Option(names = ['-m', '--maps'], paramLabel = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
+    boolean maps = false
+    /**
+     * -t or --timings Perform FFT timings.
+     */
+    @Option(names = ['-t', '--timings'], paramLabel = 'false', description = 'Perform FFT timings.')
+    boolean timings = false
+    /**
+     * -w or --mtz Write out MTZ containing structure factor coefficients.
+     */
+    @Option(names = ['-w', '--mtz'], paramLabel = 'false',
+            description = 'write out MTZ containing structure factor coefficients.')
+    boolean mtz = false
+
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+    private List<String> filenames
 
     def run() {
 
-        def cli = new CliBuilder()
-        cli.name = "ffxc xray.ModelvsData"
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        AlgorithmFunctions aFuncts
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils()
-            logger.info(" Got UI Utils.");
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils()
-            logger.info(" Got Algorithm Utils.");
-        }
+        xrayOptions.init()
 
-        List<String> arguments = options.filenames
-
-        String modelfilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelfilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
+        String modelfilename
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelfilename = active.getFile()
+            modelfilename = activeAssembly.getFile().getAbsolutePath();
         }
 
         logger.info("\n Running xray.ModelvsData on " + modelfilename)
 
-        MolecularAssembly[] systems = aFuncts.openAll(modelfilename)
-
         // Set up diffraction data (can be multiple files)
-        List diffractionfiles = new ArrayList()
-        if (arguments.size() > 1) {
-            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false)
-            diffractionfiles.add(diffractionfile)
-        }
+        List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
 
-        if (options.data) {
-            for (int i = 0; i < options.data.size(); i += 3) {
-                double wA = Double.parseDouble(options.data[i + 1])
-                boolean neutron = Boolean.parseBoolean(options.data[i + 2])
-                DiffractionFile diffractionfile = new DiffractionFile(options.data[i], wA, neutron)
-                diffractionfiles.add(diffractionfile)
-            }
-        }
-
-        if (diffractionfiles.size() == 0) {
-            DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false)
-            diffractionfiles.add(diffractionfile)
-        }
-
-        DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(),
-                SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+        DiffractionData diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
+                xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
 
         diffractiondata.scaleBulkFit()
         diffractiondata.printStats()
 
-        aFuncts.energy(systems[0])
+        algorithmFunctions.energy(assemblies[0])
 
-        if (options.mtz) {
+        if (mtz) {
             diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz")
         }
 
-        if (options.maps) {
+        if (maps) {
             diffractiondata.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx")
         }
 
-        if (options.timings) {
+        if (timings) {
             diffractiondata.timings()
         }
     }

@@ -1,11 +1,11 @@
-
 package xray
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.xray.parsers.MTZFilter
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * Use AverageMTZ to provide two MTZ files and an iteration for a cumulative moving average.
@@ -14,75 +14,53 @@ import ffx.xray.parsers.MTZFilter
  * <br>
  * ffxc xray.AverageMTZ &lt;filename1&gt; &lt;filename2&gt;
  */
-class AverageMTZ extends Script {
+@Command(description = " Average two MTZ files.", name = "ffxc xray.AverageMTZ")
+class AverageMTZ extends AlgorithmsScript {
 
     /**
-     * Options for the AverageMTZ  Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc xray.AverageMTZ &lt;filename1&gt; &lt;filename2&gt;
+     * -i or --iteration the current moving average iteration
      */
-    class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * -i or --iteration the current moving average iteration
-         */
-        @Option(shortName = 'i', defaultValue = '1',
-                description = 'The current moving average iteration (use 1 for a "normal" average of two files).')
-        int iteration
-        /**
-         * The final arguments should be two MTZ filenames.
-         */
-        @Unparsed(description = 'Two MTZ filenames.')
-        List<String> filenames
-    }
+    @Option(names = ['-i', '--iterations'], paramLabel = '1',
+            description = 'The current moving average iteration (use 1 for a "normal" average of two files).')
+    int iteration = 1
 
     /**
-     * Execute the script.
+     * One or more filenames.
      */
+    @Parameters(arity = "2", paramLabel = "MTZ", description = "Two diffraction input files.")
+    private List<String> filenames
+
     def run() {
-        def cli = new CliBuilder()
-        cli.name = "ffxc xray.AverageMTZ"
 
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
-
-        List<String> arguments = options.filenames
 
         String mtzfile1
         String mtzfile2
 
-        if (arguments != null && arguments.size() > 1) {
+        if (filenames != null && filenames.size() > 1) {
             // Read in command line.
-            mtzfile1 = arguments.get(0)
-            mtzfile2 = arguments.get(1)
+            mtzfile1 = filenames.get(0)
+            mtzfile2 = filenames.get(1)
         } else {
-            return cli.usage()
+            return helpString();
         }
 
         File file1 = new File(mtzfile1)
-        if (!file1.exists()){
+        if (!file1.exists()) {
             println("File: " + mtzfile1 + " not found!")
             return
         }
 
         File file2 = new File(mtzfile2)
-        if (!file2.exists()){
+        if (!file2.exists()) {
             println("File: " + mtzfile2 + " not found!")
             return
         }
 
         MTZFilter mtzfilter = new MTZFilter()
-        mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), Integer.parseInt(options.iteration), null)
+        mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), iteration, null)
     }
 }
 
