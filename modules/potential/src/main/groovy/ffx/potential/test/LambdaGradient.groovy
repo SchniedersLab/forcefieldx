@@ -96,6 +96,8 @@ class LambdaGradient extends PotentialScript {
         boolean debug = (System.getProperty("debug") != null);
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
+        /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
+           The Minimize script, for example, may be running on a single, unscaled physical topology. */
         boolean lambdaTerm = (nArgs == 1 || alchemical.hasSoftcore() || topology.hasSoftcore());
 
         if (lambdaTerm) {

@@ -58,4 +58,11 @@ public class MinimizeOptions {
             description = "Convergence criteria.")
     double eps = 1.0;
 
+    public int getIterations() {
+        return iterations;
+    }
+
+    public double getEps() {
+        return eps;
+    }
 }

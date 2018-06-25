@@ -38,6 +38,7 @@
 package ffx.potential.cli;
 
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -234,11 +235,23 @@ public class AlchemicalOptions {
 
     /**
      * Gets the initial value of lambda.
+     *
      * @return Initial lambda.
      */
     public double getInitialLambda() {
+        return getInitialLambda(true);
+    }
+
+    /**
+     * Gets the initial value of lambda.
+     *
+     * @param quiet If true, do not warn about lambda not being in the range 0-1.
+     * @return Initial lambda.
+     */
+    public double getInitialLambda(boolean quiet) {
+        Level toLog = quiet ? Level.OFF : Level.WARNING;
         if (initialLambda < 0.0 || initialLambda > 1.0) {
-            logger.warning(String.format(" Initial alchemical lambda reset " +
+            logger.log(toLog, String.format(" Initial alchemical lambda reset " +
                     "to 0.0 from %8.4g; must be between 0 and 1!", initialLambda));
             initialLambda = 0.0;
         }

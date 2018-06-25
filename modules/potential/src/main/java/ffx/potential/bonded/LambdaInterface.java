@@ -49,7 +49,7 @@ package ffx.potential.bonded;
 public interface LambdaInterface {
 
     /**
-     * Set the current value of the state variable.
+     * Set the current value of the state variable. May be ignored if lambda is not being applied.
      *
      * @param lambda a double.
      * @since 1.0
