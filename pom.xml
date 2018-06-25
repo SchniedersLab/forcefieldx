@@ -316,7 +316,6 @@
                         <target>${targetVersion}</target>
                         <compilerArgs>
                             <compilerArg>-Xlint:all</compilerArg>
-                            <compilerArg>-XDignore.symbol.file</compilerArg>
                         </compilerArgs>
                     </configuration>
                 </plugin>
@@ -462,26 +461,6 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>${antrun.version}</version>
                 </plugin>
-                <!--<plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>buildnumber-maven-plugin</artifactId>
-                    <inherited>false</inherited>
-                    <version>1.4</version>
-                    <executions>
-                        <execution>
-                            <phase>validate</phase>
-                            <goals>
-                                <goal>create</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <doCheck>false</doCheck>
-                        <doUpdate>false</doUpdate>
-                        <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
-                        <revisionOnScmFailure>revisionNotFound</revisionOnScmFailure>
-                    </configuration>
-                </plugin>-->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
@@ -496,17 +475,6 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>properties-maven-plugin</artifactId>
                     <version>${properties.version}</version>
-                    <!--<executions>
-                        <execution>
-                            <phase>initialize</phase>
-                            <goals>
-                                <goal>write-project-properties</goal>
-                            </goals>
-                            <configuration>
-                                <outputFile>${basedir}/target/ffx-mvn.properties</outputFile>
-                            </configuration>
-                        </execution>
-                    </executions>-->
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -615,7 +583,6 @@
                     <target>${targetVersion}</target>
                     <compilerArgs>
                         <compilerArg>-Xlint:all</compilerArg>
-                        <compilerArg>-XDignore.symbol.file</compilerArg>
                     </compilerArgs>
                 </configuration>
             </plugin>
@@ -730,11 +697,6 @@
                             <goal>extract-buildnumber</goal>
                         </goals>
                         <phase>prepare-package</phase>
-                        <!--<configuration>
-                            <javaScriptBuildnumberCallback>
-                                "${ffx.version}" + "-" + tag + "-" + commitsCount
-                            </javaScriptBuildnumberCallback>
-                        </configuration>-->
                     </execution>
                 </executions>
             </plugin>
@@ -786,6 +748,52 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>ffx.clover</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openclover</groupId>
+                        <artifactId>clover-maven-plugin</artifactId>
+                        <version>${clover.version}</version>
+                        <configuration>
+                            <generateHtml>true</generateHtml>
+                            <generateXml>true</generateXml>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>main</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>instrument</goal>
+                                    <goal>aggregate</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>site</id>
+                                <phase>pre-site</phase>
+                                <goals>
+                                    <goal>instrument</goal>
+                                    <goal>aggregate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <reporting>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openclover</groupId>
+                        <artifactId>clover-maven-plugin</artifactId>
+                        <version>${clover.version}</version>
+                    </plugin>
+                </plugins>
+            </reporting>
         </profile>
     </profiles>
     <repositories>
@@ -846,17 +854,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        <!-- repository>
-            <name>Apache Maven Snapshot Repo</name>
-            <id>6.apache.snapshot.repo</id>
-            <url>http://repository.apache.org/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository -->
     </repositories>
     <reporting>
         <plugins>
@@ -987,15 +984,6 @@
                 <artifactId>jdepend-maven-plugin</artifactId>
                 <version>2.0</version>
             </plugin -->
-            <!-- plugin>
-              <groupId>com.atlassian.maven.plugins</groupId>
-              <artifactId>maven-clover2-plugin</artifactId>
-              <version>${clover.version}</version>
-              <configuration>
-                  <maven.clover.license>${clover.license}</maven.clover.license>
-                  <maven.clover.alwaysReport>true</maven.clover.alwaysReport>
-              </configuration>
-            </plugin -->
         </plugins>
     </reporting>
     <distributionManagement>
@@ -1110,6 +1098,7 @@
         <versions.version>2.5</versions.version>
         <buildnumber.version>1.2.10</buildnumber.version>
         <appassembler.version>1.10</appassembler.version>
+        <clover.version>4.2.0</clover.version>
     </properties>
     <dependencies>
         <dependency>

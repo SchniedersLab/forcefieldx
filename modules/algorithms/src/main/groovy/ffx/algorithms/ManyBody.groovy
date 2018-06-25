@@ -40,8 +40,6 @@ class ManyBody extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
     private List<String> filenames
-    
-    
     def run() {
         
         if (!init()) {
@@ -507,6 +505,11 @@ class ManyBody extends AlgorithmsScript {
                 saveAsPDB(new File(filename + ".pdb"));
             }
         }
+        
+        if (saveOutput) {
+            rotamerOptimization.outputEliminated();
+        }
+
     }
 }
 

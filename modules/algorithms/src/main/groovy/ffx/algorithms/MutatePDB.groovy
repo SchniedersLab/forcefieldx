@@ -1,13 +1,8 @@
-
 package ffx.algorithms
 
 import org.apache.commons.configuration.CompositeConfiguration
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
-import ffx.algorithms.RotamerOptimization
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Polymer
@@ -19,6 +14,10 @@ import ffx.potential.parsers.ForceFieldFilter
 import ffx.potential.parsers.PDBFilter
 import ffx.utilities.Keyword
 
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
+
 /**
  * The MutatePDB script mutates a residue of a PDB file.
  * <br>
@@ -26,178 +25,152 @@ import ffx.utilities.Keyword
  * <br>
  * ffxc MutatePDB [options] &lt;pdb&gt;
  */
-class MutatePDB extends Script {
+@Command(description = " Mutate a PDB residue.", name = "ffxc MutatePDB")
+class MutatePDB extends AlgorithmsScript {
 
     /**
-     * Options for the MutatePDB script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc MutatePDB [options] &lt;filename&gt;
+     * -r or --resid Residue number.
      */
-    public class Options {
+    @Option(names = ['--resid', '-r'], paramLabel = '1',
+            description = 'Residue number.')
+    int resID = 1
+    /**
+     * -n or --resname New residue name.
+     */
+    @Option(names = ['--resname', '-n'], paramLabel = 'ALA',
+            description = 'New residue name.')
+    String resName = "ALA"
+    /**
+     * -c or --chain Single character chain name (default is ' ').
+     */
+    @Option(names = ['--chain', '-c'], paramLabel = ' ',
+            description = 'Single character chain name (default is \' \').')
+    Character chain = ' '
+    /**
+     * -p or --repack After mutation, repack all residues within the specified cutoff radius (Angstroms).
+     */
+    @Option(names = ['--repack', '-p'], paramLabel = '-1.0',
+            description = 'After mutation, repack all residues within a cutoff radius (Angstroms).')
+    double repackDistance = -1.0
+    /**
+     * -pt or --twoBodyRepack Do not include three-body energies in repacking.
+     */
+    @Option(names = ['--threeBody', '--tB'], paramLabel = 'false',
+            description = 'Include three-body energies in repacking.')
+    boolean threeBody = false
 
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help
-        /**
-         * -r or --resid Residue number.
-         */
-        @Option(longName='resid', shortName='r', defaultValue='1', description='Residue number.') int resid
-        /**
-         * -n or --resname New residue name.
-         */
-        @Option(longName='resname', shortName='n', defaultValue='ALA', description='New residue name.') String resname
-        /**
-         * -c or --chain Single character chain name (default is ' ').
-         */
-        @Option(longName='chain', shortName='c', defaultValue=' ', description='Single character chain name (default is \' \').') Character chain
-        /**
-         * -p or --repack After mutation, repack all residues within the specified cutoff radius (Angstroms).
-         */
-        @Option(longName='repack', shortName='p', defaultValue='-1.0',
-            description='After mutation, repack all residues within a cutoff radius (Angstroms).') double repack
-        /**
-         * -pt or --twoBodyRepack Do not include three-body energies in repacking.
-         */
-        @Option(longName='twoBodyRepack', shortName='pt', defaultValue='false',
-            description='Include three-body energies in repacking.') boolean twoBodyRepack
-        /**
-         * -eR or --energyRestart Load energy restart file from a previous run (ensure that all parameters are the same).
-         */
-        @Option(longName='energyRestart', shortName='eR', defaultValue='filename',
-            description='Load energy restart file from a previous run (ensure that all parameters are the same).') String energyRestart
-        /**
-         * -R or --rotamer Rotamer number to apply.
-         */
-        @Option(longName='rotamer', shortName='R', defaultValue='-1', description='Rotamer number to apply.') int rotamer
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames
-    }
+    /**
+     * -eR or --energyRestart Load energy restart file from a previous run (ensure that all parameters are the same).
+     */
+    @Option(names = ['--energyRestart', '--eR'], paramLabel = 'filename',
+            description = 'Load energy restart file from a previous run (ensure that all parameters are the same).')
+    String energyRestart = null
+    /**
+     * -R or --rotamer Rotamer number to apply.
+     */
+    @Option(names = ['--rotamer', '-R'], paramLabel = '-1', description = 'Rotamer number to apply.')
+    int rotamer = -1
+
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1", paramLabel = "files", description = "A PDB input files.")
+    private List<String> filenames
 
     /**
      * Execute the script.
      */
     def run() {
 
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc MutatePDB [options] <PDB>')
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
-
-        List<String> arguments = options.filenames
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-            //open(modelFilename)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelFilename = active.getFile()
-        }
-
-
-        int resID = options.resid;
-        String resName = options.resname
-        Character chain = options.chain
 
         boolean repack = false;
-        double repackDistance = options.repack
         if (repackDistance > -1) {
             repack = true
         }
-        boolean threeBodyRepack = !options.twoBodyRepack
+
+        boolean threeBodyRepack = !twoBodyRepack
         boolean useEnergyRestart = false
-        energyRestartFile = null
-        if (!options.energyRestart.equalsIgnoreCase('filename')) {
+        File energyRestartFile = null
+        if (energyRestart != null) {
             useEnergyRestart = true
-            energyRestartFile = new File(options.energyRestart)
+            energyRestartFile = new File(energyRestart)
         }
 
-        int destRotamer = 0;
-        if (options.rotamer > -1) {
+        int destRotamer = 0
+        if (rotamer > -1) {
             if (repack) {
-                logger.severe(" Can't combine repack with explicit rotamer specification.");
+                logger.severe(" Can't combine repack with explicit rotamer specification.")
             }
-            destRotamer = options.rotamer
+            destRotamer = rotamer
         }
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary()
 
-        logger.info("\n Mutating residue number " + resID + " of chain " + chain + " to " + resName);
+        logger.info("\n Mutating residue number " + resID + " of chain " + chain + " to " + resName)
 
         // Read in command line.
-        String filename = arguments.get(0);
-        File structure = new File(filename);
-        int index = filename.lastIndexOf(".");
-        String name = filename.substring(0, index);
-        MolecularAssembly molecularAssembly = new MolecularAssembly(name);
-        molecularAssembly.setFile(structure);
+        String filename = filenames.get(0)
+        File structure = new File(filename)
+        int index = filename.lastIndexOf(".")
+        String name = filename.substring(0, index)
+        MolecularAssembly molecularAssembly = new MolecularAssembly(name)
+        molecularAssembly.setFile(structure)
 
-        CompositeConfiguration properties = Keyword.loadProperties(structure);
-        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-        ForceField forceField = forceFieldFilter.parse();
-        molecularAssembly.setForceField(forceField);
+        CompositeConfiguration properties = Keyword.loadProperties(structure)
+        ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
+        ForceField forceField = forceFieldFilter.parse()
+        molecularAssembly.setForceField(forceField)
 
-        PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, properties);
-        pdbFilter.mutate(chain,resID,resName);
-        pdbFilter.readFile();
-        pdbFilter.applyAtomProperties();
-        molecularAssembly.finalize(true, forceField);
+        PDBFilter pdbFilter = new PDBFilter(structure, molecularAssembly, forceField, properties)
+        pdbFilter.mutate(chain, resID, resName)
+        pdbFilter.readFile()
+        pdbFilter.applyAtomProperties()
+        molecularAssembly.finalize(true, forceField)
 
         if (repack) {
-            logger.info("\n Repacking... \n");
-            ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly);
-            molecularAssembly.setPotential(forceFieldEnergy);
-            forceFieldEnergy.setPrintOnFailure(false, false);
+            logger.info("\n Repacking... \n")
+            ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly)
+            molecularAssembly.setPotential(forceFieldEnergy)
+            forceFieldEnergy.setPrintOnFailure(false, false)
 
             // Do a sliding-window rotamer optimization on a single one-residue window with a radius-inclusion criterion.
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-            rLib.setUseOrigCoordsRotamer(true);
+            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson)
+            rLib.setUseOrigCoordsRotamer(true)
 
             // This does break encapsulation of our modules.
-            RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
-            rotamerOptimization.setThreeBodyEnergy(threeBodyRepack);
-            rotamerOptimization.setForcedResidues(resID, resID);
-            rotamerOptimization.setWindowSize(1);
-            rotamerOptimization.setDistanceCutoff(repackDistance);
+            RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null)
+            rotamerOptimization.setThreeBodyEnergy(threeBody)
+            rotamerOptimization.setForcedResidues(resID, resID)
+            rotamerOptimization.setWindowSize(1)
+            rotamerOptimization.setDistanceCutoff(repackDistance)
             if (useEnergyRestart) {
-                rotamerOptimization.setEnergyRestartFile(energyRestartFile);
+                rotamerOptimization.setEnergyRestartFile(energyRestartFile)
             }
 
-            startResID = resID;
-            finalResID = resID;
-            if (options.c) {
-                rotamerOptimization.setResidues(options.c, startResID, finalResID);
-            } else {
-                rotamerOptimization.setResidues(startResID, finalResID);
-            }
+            rotamerOptimization.setResidues(chain, resID, resID)
+            ArrayList<Residue> residueList = rotamerOptimization.getResidues()
 
-            residueList = rotamerOptimization.getResidues();
-            energy();
-            RotamerLibrary.measureRotamers(residueList, false);
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.SLIDING_WINDOW);
-            logger.info("\n Repacking successful.\n");
+            algorithmFunctions.energy(molecularAssembly)
+
+            RotamerLibrary.measureRotamers(residueList, false)
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW)
+            logger.info("\n Repacking successful.\n")
         }
 
         if (destRotamer > -1) {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-            Polymer polymer = molecularAssembly.getChain(chain.toString());
-            Residue residue = polymer.getResidue(resID);
-            Rotamer[] rotamers = residue.getRotamers(rLib);
+            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson)
+            Polymer polymer = molecularAssembly.getChain(chain.toString())
+            Residue residue = polymer.getResidue(resID)
+            Rotamer[] rotamers = residue.getRotamers(rLib)
             if (rotamers != null && rotamers.length > 0) {
-                RotamerLibrary.applyRotamer(residue, rotamers[destRotamer]);
+                RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
             } else {
-                logger.info(" No rotamer to apply.");
+                logger.info(" No rotamer to apply.")
             }
         }
-        pdbFilter.writeFile(structure, false);
+        pdbFilter.writeFile(structure, false)
     }
 }
 

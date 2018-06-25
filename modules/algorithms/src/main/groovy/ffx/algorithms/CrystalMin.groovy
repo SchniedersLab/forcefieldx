@@ -1,17 +1,19 @@
-
 package ffx.algorithms
 
 import org.apache.commons.io.FilenameUtils
 import static org.apache.commons.math3.util.FastMath.abs
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.MinimizeOptions
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.MolecularAssembly.FractionalMode
 import ffx.potential.XtalEnergy
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The CrystalMin script uses a limited-memory BFGS algorithm to minimize the
@@ -21,132 +23,120 @@ import ffx.potential.XtalEnergy
  * <br>
  * ffxc CrystalMin [options] &lt;filename&gt;
  */
-class CrystalMin extends Script {
+@Command(description = " Minimize crystal unit cell parameters.", name = "ffxc CrystalMin")
+class CrystalMin extends AlgorithmsScript {
+
+    @Mixin
+    MinimizeOptions minimizeOptions
 
     /**
-     * Options for the Minimize Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc CrystalMin [options] &lt;filename&gt;
+     * -c or --coords to cycle between lattice and coordinate optimization until both satisfy the convergence criteria.
      */
-    class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
-        /**
-         * -c or --coords to cycle between lattice and coordinate optimization until both satisfy the convergence criteria.
-         */
-        @Option(shortName='c', defaultValue='false', description='Cycle between lattice and coordinate optimization until both satisfy the convergence criteria.') boolean coords;
-        /**
-         * -e or --eps sets the RMS gradient convergence criteria (in kcal/mol/A^2)
-         */
-        @Option(shortName='e', longName='eps', defaultValue='1.0', description='RMS gradient convergence criteria') double eps;
-        /**
-         * -f or --fractional to set the optimization to maintain fractional coordinates [ATOM/MOLECULE/OFF].
-         */
-        @Option(shortName='f', defaultValue='molecule', description='Maintain fractional coordinates during lattice optimization [OFF/MOLECULE/ATOM]') String fractional;
-        /**
-         * -t or --tensor to print out partial derivatives of the energy with respect to unit cell parameters.
-         */
-        @Option(shortName='t', defaultValue='false', description='Compute partial derivatives of the energy with respect to unit cell parameters') boolean tensor;
-        /**
-         * The final argument should be a filename.
-         */
-        @Unparsed List<String> filenames;
-    }
+    @Option(names = ["-c", "--coords"], paramLabel = 'false',
+            description = 'Cycle between lattice and coordinate optimization until both satisfy the convergence criteria.')
+    boolean coords = false
+    /**
+     * -f or --fractional to set the optimization to maintain fractional coordinates [ATOM/MOLECULE/OFF].
+     */
+    @Option(names = ["-f", "--fractional"], paramLabel = 'molecule',
+            description = 'Maintain fractional coordinates during lattice optimization [OFF/MOLECULE/ATOM].')
+    String fractional = "MOLECULE"
+    /**
+     * -t or --tensor to print out partial derivatives of the energy with respect to unit cell parameters.
+     */
+    @Option(names = ["-t", "--tensor"], paramLabel = 'false',
+            description = 'Compute partial derivatives of the energy with respect to unit cell parameters.')
+    boolean tensor = false
+
+    /**
+     * The final argument(s) should be a filename.
+     */
+    @Parameters(arity = "1", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
+    List<String> filenames = null
 
     def run() {
 
-        def cli = new CliBuilder(usage: ' ffxc CrystalMin [options] <filename>', header: ' Options:');
-
-        def options = new Options();
-        cli.parseFromInstance(options, args);
-
-        if (options.help == true) {
-            return cli.usage();
+        if (!init()) {
+            return
         }
 
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils();
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils();
+        String modelfilename
+        if (filenames != null && filenames.size() > 0) {
+            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
+        } else {
+            modelfilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        List<String> arguments = options.filenames;
-        String filename = arguments.get(0);
-        double eps = options.eps;
+        logger.info("\n Running CrystalMinimize on " + modelfilename)
+        logger.info("\n RMS gradient convergence criteria: " + minimizeOptions.eps)
 
-        logger.info("\n Running CrystalMinimize on " + filename);
-        logger.info(" RMS gradient convergence criteria: " + eps);
-
-        MolecularAssembly molecularAssembly = (MolecularAssembly) aFuncts.open(filename);
-
-        ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
-        XtalEnergy xtalEnergy = new XtalEnergy(forceFieldEnergy, molecularAssembly);
-        xtalEnergy.setFractionalCoordinateMode(FractionalMode.MOLECULE);
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+        XtalEnergy xtalEnergy = new XtalEnergy(forceFieldEnergy, activeAssembly)
+        xtalEnergy.setFractionalCoordinateMode(FractionalMode.MOLECULE)
 
         // Apply fractional coordinate mode.
-        if (options.fractional) {
+        if (fractional) {
             try {
-                FractionalMode mode = FractionalMode.valueOf(options.fractional.toUpperCase());
-                xtalEnergy.setFractionalCoordinateMode(mode);
+                FractionalMode mode = FractionalMode.valueOf(fractional.toUpperCase())
+                xtalEnergy.setFractionalCoordinateMode(mode)
             } catch (Exception e) {
-                logger.info(" Unrecognized fractional coordinate mode: " + options.fractional);
-                logger.info(" Fractional coordinate mode is set to MOLECULE.");
+                logger.info(" Unrecognized fractional coordinate mode: " + fractional)
+                logger.info(" Fractional coordinate mode is set to MOLECULE.")
             }
         }
 
-        CrystalMinimize crystalMinimize = new CrystalMinimize(molecularAssembly, xtalEnergy, sh);
-        crystalMinimize.minimize(eps);
-        double energy = crystalMinimize.getEnergy();
+        CrystalMinimize crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, sh)
+        crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+        double energy = crystalMinimize.getEnergy()
 
-        double tolerance = 1.0e-10;
+        double tolerance = 1.0e-10
 
         // Complete rounds of coordinate and lattice optimization.
-        if (options.coords) {
-            Minimize minimize = new Minimize(molecularAssembly, forceFieldEnergy, sh);
+        if (coords) {
+            Minimize minimize = new Minimize(activeAssembly, forceFieldEnergy, sh)
             while (true) {
                 // Complete a round of coordinate optimization.
-                minimize.minimize(options.eps);
-                double newEnergy = minimize.getEnergy();
-                double status = minimize.getStatus();
+                minimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+                double newEnergy = minimize.getEnergy()
+                double status = minimize.getStatus()
                 if (status != 0) {
-                    break;
+                    break
                 }
                 if (abs(newEnergy - energy) <= tolerance) {
-                    break;
+                    break
                 }
-                energy = newEnergy;
+                energy = newEnergy
 
                 // Complete a round of lattice optimization.
-                crystalMinimize.minimize(options.eps);
-                newEnergy = crystalMinimize.getEnergy();
-                status = crystalMinimize.getStatus();
+                crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+                newEnergy = crystalMinimize.getEnergy()
+                status = crystalMinimize.getStatus()
                 if (status != 0) {
-                    break;
+                    break
                 }
                 if (abs(newEnergy - energy) <= tolerance) {
-                    break;
+                    break
                 }
-                energy = newEnergy;
+                energy = newEnergy
             }
         }
 
-        if (options.tensor) {
-            crystalMinimize.printTensor();
+        if (tensor) {
+            crystalMinimize.printTensor()
         }
 
-        String ext = FilenameUtils.getExtension(filename);
-        filename = FilenameUtils.removeExtension(filename);
+        String ext = FilenameUtils.getExtension(modelfilename)
+        modelfilename = FilenameUtils.removeExtension(modelfilename)
 
         if (ext.toUpperCase().contains("XYZ")) {
-            saveAsXYZ(new File(filename + ".xyz"));
+            algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelfilename + ".xyz"))
         } else {
-            saveAsPDB(systems, new File(filename + ".pdb"));
+            algorithmFunctions.saveAsPDB(activeAssembly, new File(modelfilename + ".pdb"))
         }
     }
 }

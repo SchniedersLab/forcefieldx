@@ -35,52 +35,38 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.cli;
+package ffx.algorithms.cli;
 
-import picocli.CommandLine.Option;
+import groovy.cli.Option;
+import picocli.CommandLine;
 
 /**
- * Timer options shared by Timer scripts that use the Pico CLI.
+ * Represents command line options for scripts that utilize a mobile lambda
+ * particle, such as Thermodynamics.
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
-public class TimerOptions {
+public class LambdaParticleOptions {
     /**
-     * -n or --iterations to set the number of iterations
+     * -m or --lambdaMass to set the mass of the lambda particle.
      */
-    @Option(names = {"-n", "--iterations"}, paramLabel = "5",
-            description = "Number of iterations.")
-    private int iterations = 5;
+    @CommandLine.Option(names = {"--lm", "--lambdaMass"}, paramLabel = "1.0E-18",
+            description = "Mass of the lambda particle.")
+    private double lambdaMass = 1.0E-18;
     /**
-     * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
+     * -x or --lambdaFriction to set friction on the lambda particle
      */
-    @Option(names = {"-c", "--threads"}, paramLabel = "0",
-            description = "Number of SMP threads (0 specifies use of all CPU cores)")
-    private int threads = 0;
-    /**
-     * -g or --gradient to ignore computation of the atomic coordinates gradient
-     */
-    @Option(names = {"-g", "--gradient"},
-            description = "Ignore computation of the atomic coordinates gradient")
-    private boolean gradient = false;
-    /**
-     * -q or --quiet to suppress printing of the energy for each iteration
-     */
-    @Option(names = {"-q", "--quiet"},
-            description = "Suppress printing of the energy for each iteration")
-    private boolean quiet = false;
+    @CommandLine.Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "1.0E-18",
+            description = "Friction on the lambda particle.")
+    private double lambdaFriction = 1.0E-18;
 
-    public int getIterations() {
-        return iterations;
+    public double getLambdaMass() {
+        return lambdaMass;
     }
 
-    public int getThreads() {
-        return threads;
-    }
-
-    public boolean getGradient() {
-        return gradient;
-    }
-
-    public boolean getQuiet() {
-        return quiet;
+    public double getLambdaFriction() {
+        return lambdaFriction;
     }
 }

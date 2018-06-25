@@ -2,11 +2,13 @@ package ffx.algorithms
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The Histogram script prints out a (TT-)OSRW histogram from a *.his file.
@@ -15,105 +17,79 @@ import ffx.potential.ForceFieldEnergy
  * <br>
  * ffxc Histogram [options] &lt;filename&gt;
  */
-class Histogram extends Script {
+@Command(description = " Evaluate the Orthogonal Space Histogram.", name = "ffxc Histogram")
+class Histogram extends AlgorithmsScript {
 
     /**
-     * Options for the Histogram Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc Histogram [options] &lt;filename&gt;
+     * -p or --pmf Print out potential of mean force information.
      */
-    class Options {
+    @Option(names = ['-p', '--pmf'], paramLabel = 'false',
+            description = 'Print out potential of mean force information.')
+    boolean pmf = false
+    /**
+     * -u or --untempered Histogram for untempered OSRW.
+     */
+    @Option(names = ['-u', '--untempered'], paramLabel = 'false',
+            description = 'Histogram for untempered OSRW.')
+    boolean untempered = false
 
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * -p or --pmf Print out potential of mean force information.
-         */
-        @Option(shortName = 'p', longName = 'pmf', defaultValue = 'false', description = 'Print out potential of mean force information.')
-        boolean pmf
-        /**
-         * -u or --untempered Histogram for untempered OSRW.
-         */
-        @Option(shortName = 'u', longName = 'untempered', defaultValue = 'false', description = 'Histogram for untempered OSRW.')
-        boolean untempered
-
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed
-        List<String> filenames;
-    }
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
+    private List<String> filenames
 
     def run() {
 
-        def cli = new CliBuilder(usage: ' ffxc Histogram [options] <filename>', header: ' Options:');
-
-        def options = new Options();
-        cli.parseFromInstance(options, args);
-
-        if (options.help == true) {
-            return cli.usage();
+        if (!init()) {
+            return
         }
 
-        List<String> arguments = options.filenames;
+        String modelfilename
+        if (filenames != null && filenames.size() > 0) {
+            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
+        } else {
+            modelfilename = activeAssembly.getFile().getAbsolutePath()
+        }
 
-        // Read in command line file.
-        String filename = arguments.get(0);
+        println("\n Evaluating Histogram for " + modelfilename)
 
-        // Print out PMF information.
-        boolean pmf = options.pmf;
-
-        // The default Histogram is tempered (i.e. the counts are floating point values).
-        boolean untempered = options.untempered
-
-        println("\n Evaluating Histogram for " + filename);
-
-        File structureFile = new File(FilenameUtils.normalize(filename));
-        structureFile = new File(structureFile.getAbsolutePath());
-        String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
-        File histogramRestart = new File(baseFilename + ".his");
-        File lambdaRestart = null;
-
-        open(filename);
+        File structureFile = new File(FilenameUtils.normalize(modelfilename))
+        structureFile = new File(structureFile.getAbsolutePath())
+        String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+        File histogramRestart = new File(baseFilename + ".his")
+        File lambdaRestart = null
 
         // Get a reference to the active system's ForceFieldEnergy and atom array.
-        ForceFieldEnergy energy = active.getPotentialEnergy();
+        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
 
         // Print the current energy
-        energy.energy(true, true);
+        energy.energy(true, true)
 
-        // Asychronous communication between walkers.
-        boolean asynchronous = false;
-
-        // Time step in femtoseconds.
-        double timeStep = 1.0;
-
-        // Frequency to log thermodynamics information in picoseconds.
-        double printInterval = 1.0;
-
-        // Frequency to write out coordinates in picoseconds.
-        double saveInterval = 100.0;
-
-        // Temperture in degrees Kelvin.
-        double temperature = 298.15;
+        // These fields are needed for the OSRW constructor, but otherwise are not used.
+        boolean asynchronous = false
+        double timeStep = 1.0
+        double printInterval = 1.0
+        double saveInterval = 100.0
+        double temperature = 298.15
 
         if (!untempered) {
-            TransitionTemperedOSRW ttosrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-                    temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+            TransitionTemperedOSRW ttosrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+                    activeAssembly.getProperties(), temperature, timeStep, printInterval, saveInterval, asynchronous, sh)
             if (pmf) {
-                ttosrw.evaluatePMF();
+                ttosrw.evaluatePMF()
             }
         } else {
             // Wrap the potential energy inside an OSRW instance.
-            OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-                    temperature, timeStep, printInterval, saveInterval, asynchronous, sh);
+            OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart,
+                    activeAssembly.getProperties(), temperature, timeStep, printInterval, saveInterval, asynchronous, sh)
             if (pmf) {
-                osrw.evaluatePMF();
+                osrw.evaluatePMF()
             }
         }
     }

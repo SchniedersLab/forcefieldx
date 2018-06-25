@@ -63,6 +63,11 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FilenameFilter;
+import java.io.PrintWriter;
 
 // FastUtil libraries for large collections.
 import ffx.potential.DualTopologyEnergy;
@@ -192,6 +197,8 @@ public class RotamerOptimization implements Terminatable {
      * Two-Body cutoff distance.
      */
     protected double twoBodyCutoffDist = 0;
+    // Fallback if there is no vdW node.
+    private static final double FALLBACK_TWO_BODY_CUTOFF = 0;
     /**
      * Two-body energies for each pair of residues and pair of rotamers.
      * [residue1][rotamer1][residue2][rotamer2]
@@ -677,9 +684,29 @@ public class RotamerOptimization implements Terminatable {
      */
     private int testTripleEnergyEliminations2 = -1;
     /**
-     * Holds onto the "default" low-correction-vector Rotamer for a nucleic acid Residue.
+     * Holds onto the "default" low-correction-vector Rotamer for a nucleic acid
+     * Residue.
      */
     private Map<Residue, Rotamer> defaultNucleicRotamers;
+    /**
+     * Writes residue and rotamer numbers of eliminated singles and pairs to a
+     * CSV file.
+     */
+    public boolean outputFile[];
+    /**
+     * Stores eliminated residue and rotamer singles and pairs.
+     */
+    public List<Integer> eliminatedResidue = new ArrayList<Integer>();
+    public List<Integer> eliminatedRotamer = new ArrayList<Integer>();
+    public List<Integer> eliminatedResidue1 = new ArrayList<Integer>();
+    public List<Integer> eliminatedRotamer1 = new ArrayList<Integer>();
+    public List<Integer> eliminatedResidue2 = new ArrayList<Integer>();
+    public List<Integer> eliminatedRotamer2 = new ArrayList<Integer>();
+    /**
+     * Stores the number of box iterations for single and pair elimination.
+     */
+    public List<Integer> singlesIterations = new ArrayList<Integer>();
+    public List<Integer> pairsIterations = new ArrayList<Integer>();
 
     /**
      * RotamerOptimization constructor.
@@ -727,8 +754,12 @@ public class RotamerOptimization implements Terminatable {
          */
         ForceFieldEnergy forceFieldEnegy = molecularAssembly.getPotentialEnergy();
         VanDerWaals vdW = forceFieldEnegy.getVdwNode();
-        NonbondedCutoff nonBondedCutoff = vdW.getNonbondedCutoff();
-        twoBodyCutoffDist = nonBondedCutoff.off;
+        if (vdW != null) {
+            NonbondedCutoff nonBondedCutoff = vdW.getNonbondedCutoff();
+            twoBodyCutoffDist = nonBondedCutoff.off;
+        } else {
+            twoBodyCutoffDist = FALLBACK_TWO_BODY_CUTOFF;
+        }
 
         // Process relevant system keys.
         String undo = System.getProperty("ro-undo");
@@ -1694,7 +1725,8 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Sets the decompose-original flag.
      *
-     * @param decomposeOriginal If true, decompose the energy of the structure without optimizing.
+     * @param decomposeOriginal If true, decompose the energy of the structure
+     * without optimizing.
      */
     private void setDecomposeOriginal(boolean decomposeOriginal) {
         this.decomposeOriginal = true;
@@ -1893,7 +1925,9 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Prints based on a molecule-based decomposition of original energies. Would need to be re-implemented.
+     * Prints based on a molecule-based decomposition of original energies.
+     * Would need to be re-implemented.
+     *
      * @param residues
      * @param totalEnergy
      * @param backbone
@@ -2104,8 +2138,8 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Initialize a rotamer for optimization: add it to  residueList,
-     * apply its 0th rotamer, initialize default atomic doordinates, etc.
+     * Initialize a rotamer for optimization: add it to residueList, apply its
+     * 0th rotamer, initialize default atomic doordinates, etc.
      *
      * @param residue A Residue to add to optimization.
      * @param polymer The Polymer it belongs to.
@@ -2384,8 +2418,8 @@ public class RotamerOptimization implements Terminatable {
                         }
                     } else {
                         eliminateRotamer(residues, i, ri, print);
-                        logIfMaster(String.format(" Eliminated nucleic acid rotamer %s-%d that required a " +
-                                "linking correction %6.4f A > %6.4f A", residue.toFormattedString(false, true),
+                        logIfMaster(String.format(" Eliminated nucleic acid rotamer %s-%d that required a "
+                                + "linking correction %6.4f A > %6.4f A", residue.toFormattedString(false, true),
                                 ri, corrMag, eliminateBy));
                     }
                 }
@@ -3498,6 +3532,7 @@ public class RotamerOptimization implements Terminatable {
      * rotamers or two residues.
      */
     public enum DistanceMethod {
+
         ROTAMER, RESIDUE
     };
 
@@ -3540,8 +3575,9 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Gets the raw distance between two rotamers using lazy loading of the distance matrix.
-     * Intended uses: helper method for get2BodyDistance, and for checking for superpositions.
+     * Gets the raw distance between two rotamers using lazy loading of the
+     * distance matrix. Intended uses: helper method for get2BodyDistance, and
+     * for checking for superpositions.
      *
      * @param i A residue index.
      * @param ri A rotamer index for i.
@@ -3568,6 +3604,7 @@ public class RotamerOptimization implements Terminatable {
 
     /**
      * Returns the RMS distance between an arbitrary set of rotamers.
+     *
      * @param resrot Residue index-rotamer index pairs.
      * @return RMS distance, or Double.MAX_VALUE if ill-defined.
      */
@@ -3586,10 +3623,10 @@ public class RotamerOptimization implements Terminatable {
         double totDist2 = 0.0;
 
         for (int i = 0; i < nRes - 1; i++) {
-            int i2 = 2*i;
-            for (int j = i+1; j < nRes; j++) {
-                int j2 = 2*j;
-                double rawDist = checkDistMatrix(resrot[i2], resrot[i2+1], resrot[j2], resrot[j2+1]);
+            int i2 = 2 * i;
+            for (int j = i + 1; j < nRes; j++) {
+                int j2 = 2 * j;
+                double rawDist = checkDistMatrix(resrot[i2], resrot[i2 + 1], resrot[j2], resrot[j2 + 1]);
                 if (!Double.isFinite(rawDist) || rawDist == Double.MAX_VALUE) {
                     return Double.MAX_VALUE;
                 }
@@ -3600,8 +3637,8 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Returns the RMS separation distance of three 2-body distances.
-     * Defaults to Double.MAX_VALUE when there are pair distances outside cutoffs.
+     * Returns the RMS separation distance of three 2-body distances. Defaults
+     * to Double.MAX_VALUE when there are pair distances outside cutoffs.
      *
      * @param i Residue i
      * @param ri Rotamer for i
@@ -3623,8 +3660,8 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Returns the RMS separation distance of 6 2-body distances.
-     * Defaults to Double.MAX_VALUE when there are pair distances outside cutoffs.
+     * Returns the RMS separation distance of 6 2-body distances. Defaults to
+     * Double.MAX_VALUE when there are pair distances outside cutoffs.
      *
      * @param i Residue i
      * @param ri Rotamer for i
@@ -3651,8 +3688,8 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Returns true if all values (usually distances) are
-     * both finite and not set to Double.MAX_VALUE.
+     * Returns true if all values (usually distances) are both finite and not
+     * set to Double.MAX_VALUE.
      *
      * @param values Values to check.
      * @return If all values are regular, finite values.
@@ -3664,6 +3701,7 @@ public class RotamerOptimization implements Terminatable {
 
     /**
      * Checks if the i,ri,j,rj pair exceeds the pair distance thresholds.
+     *
      * @param i A residue index.
      * @param ri A rotamer index for i.
      * @param j A residue index j!=i.
@@ -3678,8 +3716,9 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Checks if the i,ri,j,rj,k,rk triple exceeds the 3-body threshold,
-     * or if any component exceeds the pair distance threshold.
+     * Checks if the i,ri,j,rj,k,rk triple exceeds the 3-body threshold, or if
+     * any component exceeds the pair distance threshold.
+     *
      * @param i A residue index.
      * @param ri A rotamer index for i.
      * @param j A residue index j!=i.
@@ -3689,8 +3728,8 @@ public class RotamerOptimization implements Terminatable {
      * @return If i,ri,j,rj,k,rk > threshold distances.
      */
     private boolean checkTriDistThreshold(int i, int ri, int j, int rj, int k, int rk) {
-        if (checkPairDistThreshold(i, ri, j, rj) || checkPairDistThreshold(i, ri, k, rk) ||
-                checkPairDistThreshold(j, rj, k, rk)) {
+        if (checkPairDistThreshold(i, ri, j, rj) || checkPairDistThreshold(i, ri, k, rk)
+                || checkPairDistThreshold(j, rj, k, rk)) {
             return true;
         }
         if (threeBodyCutoffDist <= 0 || !Double.isFinite(threeBodyCutoffDist)) {
@@ -3700,8 +3739,9 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Checks if the i,ri,j,rj,k,rk,l,rl quad exceeds the 3-body threshold,
-     * or if any component exceeds the pair/triple distance thresholds.
+     * Checks if the i,ri,j,rj,k,rk,l,rl quad exceeds the 3-body threshold, or
+     * if any component exceeds the pair/triple distance thresholds.
+     *
      * @param i A residue index.
      * @param ri A rotamer index for i.
      * @param j A residue index j!=i.
@@ -4029,11 +4069,11 @@ public class RotamerOptimization implements Terminatable {
                     logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", windowTime * 1.0E-9));
                     logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
                     /*for (Residue residue : residueList) {
-                        if (residue instanceof MultiResidue) {
-                            ((MultiResidue) residue).setDefaultResidue();
-                            residue.reInitOriginalAtomList();
-                        }
-                    }*/
+                     if (residue instanceof MultiResidue) {
+                     ((MultiResidue) residue).setDefaultResidue();
+                     residue.reInitOriginalAtomList();
+                     }
+                     }*/
                 }
                 break;
 
@@ -4259,11 +4299,11 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
                 /*for (Residue residue : residueList) {
-                    if (residue instanceof MultiResidue) {
-                        ((MultiResidue) residue).setDefaultResidue();
-                        residue.reInitOriginalAtomList();
-                    }
-                }*/
+                 if (residue instanceof MultiResidue) {
+                 ((MultiResidue) residue).setDefaultResidue();
+                 residue.reInitOriginalAtomList();
+                 }
+                 }*/
             } else {
                 logIfMaster(format(" Empty box: no residues found."));
             }
@@ -4773,16 +4813,15 @@ public class RotamerOptimization implements Terminatable {
 
         //if (containsNA) {
             /*
-             * Must pin 5' ends of nucleic acids which are attached to nucleic acids
-             * outside the window, to those prior residues' sugar puckers.  Then,
-             * if a correction threshold is set, eliminate rotamers with excessive
-             * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
-             */
+         * Must pin 5' ends of nucleic acids which are attached to nucleic acids
+         * outside the window, to those prior residues' sugar puckers.  Then,
+         * if a correction threshold is set, eliminate rotamers with excessive
+         * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
+         */
             //logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
-            //reconcileNARotamersWithPriorResidues(residues);
-            //eliminateNABackboneRotamers(residues);
+        //reconcileNARotamersWithPriorResidues(residues);
+        //eliminateNABackboneRotamers(residues);
         //}
-
         if (decomposeOriginal) {
             assert library.getUsingOrigCoordsRotamer();
             for (int i = 0; i < nResidues; i++) {
@@ -4888,12 +4927,12 @@ public class RotamerOptimization implements Terminatable {
                                 if (checkToJ(i, ri, j, rj)) {
                                     continue;
                                 }
-                                
+
                                 // Skip creating a job if the pair is outside pair cut-off.
                                 if (checkPairDistThreshold(indexI, ri, indexJ, rj)) {
                                     continue;
                                 }
-                                
+
                                 Integer pairJob[] = {i, ri, j, rj};
                                 if (decomposeOriginal && (ri != 0 || rj != 0)) {
                                     continue;
@@ -4950,12 +4989,12 @@ public class RotamerOptimization implements Terminatable {
                                             if (checkToK(i, ri, j, rj, k, rk)) {
                                                 continue;
                                             }
-                                            
+
                                             // Skip work items outside the 3-body cutoff.
                                             if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
                                                 continue;
                                             }
-                                            
+
                                             Integer trimerJob[] = {i, ri, j, rj, k, rk};
                                             if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
                                                 continue;
@@ -5000,8 +5039,8 @@ public class RotamerOptimization implements Terminatable {
                             Rotamer rotj[] = resj.getRotamers(library);
                             for (int rj = 0; rj < rotj.length; rj++) {
                                 /*if (check(j, rj) || check(i, ri, j, rj)) {
-                                        continue;
-                                    }*/
+                                 continue;
+                                 }*/
                                 if (checkToJ(i, ri, j, rj)) {
                                     continue;
                                 }
@@ -5010,8 +5049,8 @@ public class RotamerOptimization implements Terminatable {
                                     Rotamer rotk[] = resk.getRotamers(library);
                                     for (int rk = 0; rk < rotk.length; rk++) {
                                         /*if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk) || check(i, ri, j, rj, k, rk)) {
-                                                continue;
-                                            }*/
+                                         continue;
+                                         }*/
                                         if (checkToK(i, ri, j, rj, k, rk)) {
                                             continue;
                                         }
@@ -5020,11 +5059,11 @@ public class RotamerOptimization implements Terminatable {
                                             Rotamer rotl[] = resl.getRotamers(library);
                                             for (int rl = 0; rl < rotl.length; rl++) {
                                                 /*if (check(l, rl) || check(i, ri, l, rl) ||
-                                                            check(j, rj, l, rl) || check(k, rk, l, rl) ||
-                                                            check(i, ri, j, rj, l, rl) || check(i, ri, k, rk, l, rl) ||
-                                                            check(j, rj, k, rk, l, rl)) {
-                                                        continue;
-                                                    }*/
+                                                 check(j, rj, l, rl) || check(k, rk, l, rl) ||
+                                                 check(i, ri, j, rj, l, rl) || check(i, ri, k, rk, l, rl) ||
+                                                 check(j, rj, k, rk, l, rl)) {
+                                                 continue;
+                                                 }*/
                                                 if (checkToL(i, ri, j, rj, k, rk, l, rl)) {
                                                     continue;
                                                 }
@@ -5124,19 +5163,20 @@ public class RotamerOptimization implements Terminatable {
 
     /**
      * Applies the "default" rotamer: currently the 0'th rotamer.
+     *
      * @param residue Residue to apply a default rotamer for.
      */
     private void applyDefaultRotamer(Residue residue) {
         /*switch (residue.getResidueType()) {
-            case NA:
-                //RotamerLibrary.applyRotamer(residue, defaultNucleicRotamers.get(residue));
-                RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
-                break;
-            case AA:
-            default:
-                RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
-                break;
-        }*/
+         case NA:
+         //RotamerLibrary.applyRotamer(residue, defaultNucleicRotamers.get(residue));
+         RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
+         break;
+         case AA:
+         default:
+         RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
+         break;
+         }*/
         RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
     }
 
@@ -5405,9 +5445,9 @@ public class RotamerOptimization implements Terminatable {
 
             double nlistCutoff = Math.max(Math.max(distance, twoBodyCutoffDist), threeBodyCutoffDist);
             /**
-             * I think this originated from the fact that side-chain
-             * (and later nucleic acid) atoms could be fairly distant
-             * from the reference atom.
+             * I think this originated from the fact that side-chain (and later
+             * nucleic acid) atoms could be fairly distant from the reference
+             * atom.
              */
             double magicNumberBufferOfUnknownOrigin = 25.0;
             nlistCutoff += magicNumberBufferOfUnknownOrigin;
@@ -6636,6 +6676,12 @@ public class RotamerOptimization implements Terminatable {
 
         eliminatedSingles[i][ri] = true;
 
+        //adds eliminatedSingles indices to arraylist
+        if (eliminatedSingles[i][ri]) {
+            eliminatedResidue.add(i);
+            eliminatedRotamer.add(ri);
+        }
+
         if (verbose) {
             logIfMaster(format(" Rotamer (%8s,%2d) eliminated (%2d left).", residues[i].toFormattedString(false, true), ri, rotCount));
         }
@@ -6676,6 +6722,13 @@ public class RotamerOptimization implements Terminatable {
         }
         if (!check(i, ri, j, rj)) {
             eliminatedPairs[i][ri][j][rj] = true;
+            //adds eliminatedPairs indices to arraylist
+            if (eliminatedPairs[i][ri][j][rj]) {
+                eliminatedResidue1.add(i);
+                eliminatedRotamer1.add(ri);
+                eliminatedResidue2.add(j);
+                eliminatedRotamer2.add(rj);
+            }
             if (verbose) {
                 logIfMaster(format("  Rotamer pair eliminated: [(%8s,%2d) (%8s,%2d)]", residues[i].toFormattedString(false, true), ri, residues[j].toFormattedString(false, true), rj));
             }
@@ -6951,11 +7004,9 @@ public class RotamerOptimization implements Terminatable {
         IntegerKeyset ijk = new IntegerKeyset(i, ri, j, rj, k, rk);
         if (threeBodyEnergies.containsKey(ijk)) {
             return threeBodyEnergies.getOrDefault(ijk, 0);
-        }
-        else if (checkTriDistThreshold(i, ri, j, rj, k, rk)) {
+        } else if (checkTriDistThreshold(i, ri, j, rj, k, rk)) {
             return 0.00000000;
-        }
-        else {
+        } else {
             String message = String.format(" Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
             logger.info(message);
             throw new IllegalArgumentException(message);
@@ -7753,7 +7804,9 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Allocates the 3-body map from i,ri,j,rj,k,rk keys to 3-body energy values.
+     * Allocates the 3-body map from i,ri,j,rj,k,rk keys to 3-body energy
+     * values.
+     *
      * @return If the 3-body map already existed.
      */
     private boolean alloc3BodyMap(Residue[] residues) {
@@ -7881,13 +7934,14 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
-    public void setTwoBodyCutoff(double twoBodyCutoffDist){
+    public void setTwoBodyCutoff(double twoBodyCutoffDist) {
         this.twoBodyCutoffDist = twoBodyCutoffDist;
     }
-    
-    public void setThreeBodyCutoff(double threeBodyCutoffDist){
+
+    public void setThreeBodyCutoff(double threeBodyCutoffDist) {
         this.threeBodyCutoffDist = threeBodyCutoffDist;
     }
+
     public void setTestOverallOpt(boolean testing) {
         this.testing = testing;
         distanceMethod = DistanceMethod.ROTAMER;
@@ -7986,8 +8040,8 @@ public class RotamerOptimization implements Terminatable {
             //try {
             execute(0, nResidues - 1, energyLoops[threadID]);
             /*} catch (Exception e) {
-                logger.log(Level.WARNING, " Exception in EnergyLoop.", e);
-            }*/
+             logger.log(Level.WARNING, " Exception in EnergyLoop.", e);
+             }*/
         }
 
         private class EnergyLoop extends IntegerForLoop {
@@ -9555,9 +9609,11 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
-     * Class contains an integer array, comparing and hashing based on the integer values.
+     * Class contains an integer array, comparing and hashing based on the
+     * integer values.
      */
     private class IntegerKeyset {
+
         private final int[] keys;
 
         public IntegerKeyset(int... keySet) {
@@ -9574,6 +9630,7 @@ public class RotamerOptimization implements Terminatable {
 
         /**
          * Equality based on shallow value equality.
+         *
          * @param other
          * @return
          */
@@ -9589,5 +9646,160 @@ public class RotamerOptimization implements Terminatable {
         public int hashCode() {
             return Arrays.hashCode(keys);
         }
+    }
+
+    /**
+     * Writes eliminated singles and pairs to a CSV file. Reads in .log file.
+     */
+    public void outputEliminated() throws FileNotFoundException, IOException {
+        /**
+         * eliminated.csv stores the eliminated singles and pairs.
+         */
+        File fileName = new File("eliminated.csv");
+        String path = fileName.getCanonicalPath();
+        File outputTxt = new File(path);
+        Path currentRelativePath = Paths.get("eliminated.csv");
+        String logPath = currentRelativePath.toAbsolutePath().toString();
+        logPath = logPath.replaceAll("/eliminated.csv", "");
+        File logDirectory = new File(logPath);
+        /**
+         * Searches for .log file within the directory.
+         */
+        File[] logArray = logDirectory.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String filename) {
+                return filename.endsWith(".log");
+            }
+        });
+        File logFile = logArray[0];
+        PrintWriter out = new PrintWriter(new FileWriter(outputTxt, true));
+        BufferedReader br = new BufferedReader(new FileReader(logFile));
+        String line;
+        String line3;
+        List<String> boxes = new ArrayList<String>();
+        while ((line3 = br.readLine()) != null) {
+            if (line3.contains("-a, 5")) {
+                /**
+                 * Stores the number of box optimization iterations and the
+                 * coordinates of each box.
+                 */
+                while ((line = br.readLine()) != null) {
+                    if (line.contains("xyz indices")) {
+                        String coordinates = line.replaceAll(" Cell xyz indices:", "");
+                        String nextLine = br.readLine();
+                        if (!nextLine.contains("Empty box")) {
+                            boxes.add(coordinates);
+                            String nextLine2;
+                            String nextLine4;
+                            String nextLine5;
+                            while (!(nextLine2 = br.readLine()).contains("Collecting Permutations")) {
+                                if (nextLine2.contains("Applying Rotamer Pair")) {
+                                    int total = 0;
+                                    int total2 = 0;
+                                    nextLine2 = br.readLine();
+                                    nextLine4 = br.readLine();
+                                    nextLine5 = br.readLine();
+                                    if (nextLine5.contains("Self-consistent")) {
+                                        String[] split = nextLine2.split(" ");
+                                        int singlesAmount = Integer.parseInt(split[1]);
+                                        if (singlesIterations.size() > 0) {
+                                            total = singlesIterations.get(singlesIterations.size() - 1);
+                                        }
+                                        singlesIterations.add(singlesAmount + total);
+                                        System.out.println(nextLine4);
+                                        String[] split2 = nextLine4.split(" ");
+                                        int pairsAmount = Integer.parseInt(split2[1]);
+                                        if (pairsIterations.size() > 0) {
+                                            total2 = pairsIterations.get(pairsIterations.size() - 1);
+                                        }
+                                        pairsIterations.add(pairsAmount + total2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                /**
+                 * Writes eliminated singles and pairs to eliminated.csv, sorted
+                 * by box iteration.
+                 */
+                out.append("Eliminated Singles\n");
+                out.append("Residue,Rotamer\n");
+                out.append(boxes.get(0) + "\n");
+                int stopper = 0;
+                for (int i = 0; i < eliminatedResidue.size(); i++) {
+                    while (stopper == 0) {
+                        for (int x = 0; x < (singlesIterations.size() - 1); x++) {
+                            if (singlesIterations.get(x) == 0) {
+                                String boxHeader = (boxes.get(x + 1));
+                                out.append(boxHeader + System.lineSeparator());
+                            }
+                            stopper++;
+                        }
+                    }
+                    String first = eliminatedResidue.get(i).toString();
+                    String second = eliminatedRotamer.get(i).toString();
+                    String resrot = first + "," + second;
+                    out.append(resrot + System.lineSeparator());
+                    for (int x = 0; x < (singlesIterations.size() - 1); x++) {
+                        if ((i + 1) == singlesIterations.get(x)) {
+                            String boxHeader = (boxes.get(x + 1));
+                            out.append(boxHeader + System.lineSeparator());
+                        }
+                    }
+                }
+                out.append("Eliminated Pairs\n");
+                out.append("Residue1,Rotamer1,Residue2,Rotamer2" + System.lineSeparator());
+                out.append(boxes.get(0) + "\n");
+                int stopper2 = 0;
+                for (int i = 0; i < eliminatedResidue1.size(); i++) {
+                    while (stopper2 == 0) {
+                        for (int x = 0; x < (pairsIterations.size() - 1); x++) {
+                            if (pairsIterations.get(x) == 0) {
+                                String boxHeader = (boxes.get(x + 1));
+                                out.append(boxHeader + System.lineSeparator());
+                            }
+                            stopper2++;
+                        }
+                    }
+                    String first = eliminatedResidue1.get(i).toString();
+                    String second = eliminatedRotamer1.get(i).toString();
+                    String third = eliminatedResidue2.get(i).toString();
+                    String fourth = eliminatedRotamer2.get(i).toString();
+                    String resrot = first + "," + second + "," + third + "," + fourth;
+                    out.append(resrot + System.lineSeparator());
+                    for (int x = 0; x < (pairsIterations.size() - 1); x++) {
+                        if ((i + 1) == pairsIterations.get(x)) {
+                            String boxHeader = (boxes.get(x + 1));
+                            out.append(boxHeader + System.lineSeparator());
+                        }
+                    }
+                }
+                /**
+                 * Writes eliminated singles and pairs to eliminated.csv for
+                 * global optimization.
+                 */
+            } else if ((line3.contains("-a, 1")) || (line3.contains("-a, 2")) || (line3.contains("-a, 3")) || (line3.contains("-a, 4"))) {
+                out.append("Eliminated Singles\n");
+                out.append("Residue,Rotamer\n");
+                for (int i = 0; i < eliminatedResidue.size(); i++) {
+                    String first = eliminatedResidue.get(i).toString();
+                    String second = eliminatedRotamer.get(i).toString();
+                    String resrot = first + "," + second;
+                    out.append(resrot + System.lineSeparator());
+                }
+                out.append("Eliminated Pairs\n");
+                out.append("Residue1,Rotamer1,Residue2,Rotamer2" + System.lineSeparator());
+                for (int i = 0; i < eliminatedResidue1.size(); i++) {
+                    String first = eliminatedResidue1.get(i).toString();
+                    String second = eliminatedRotamer1.get(i).toString();
+                    String third = eliminatedResidue2.get(i).toString();
+                    String fourth = eliminatedRotamer2.get(i).toString();
+                    String resrot = first + "," + second + "," + third + "," + fourth;
+                    out.append(resrot + System.lineSeparator());
+                }
+            }
+        }
+        out.close();
+        br.close();
     }
 }

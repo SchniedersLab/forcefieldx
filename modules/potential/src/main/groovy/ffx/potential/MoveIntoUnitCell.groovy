@@ -25,7 +25,8 @@ class MoveIntoUnitCell extends PotentialScript {
     /**
      * The final argument(s) should be one or more filenames.
      */
-    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    @Parameters(arity = "1..*", paramLabel = "files",
+            description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
     /**

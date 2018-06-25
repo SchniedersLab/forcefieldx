@@ -2,17 +2,16 @@ package ffx.xray
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
-import ffx.algorithms.AlgorithmFunctions
-import ffx.algorithms.AlgorithmUtils
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.MolecularAssembly
-import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
 import ffx.xray.parsers.MTZWriter
 import ffx.xray.parsers.MTZWriter.MTZType
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Parameters
 
 /**
  * The X-ray ComputeFc script.
@@ -21,79 +20,46 @@ import ffx.xray.parsers.MTZWriter.MTZType
  * <br>
  * ffxc xray.ComputeFc [options] &lt;filename [file2...]&gt;
  */
-class ComputeFc extends Script {
+@Command(description = " Write out computed structure factors.", name = "ffxc ComputeFc")
+class ComputeFc extends AlgorithmsScript {
+
+    @Mixin
+    XrayOptions xrayOptions
 
     /**
-     * Options for the X-ray ComputeFc Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc xray.ComputeFc [options] &lt;filename [file2...]&gt;
+     * One or more filenames.
      */
-    class Options {
-        /**
-         * -h or --help to print a help message.
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * The final arguments should be a PDB filename and data filename (CIF or MTZ).
-         */
-        @Unparsed(description = "PDB file and a CIF or MTZ file.")
-        List<String> filenames
-    }
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+    private List<String> filenames
 
     def run() {
 
-        def cli = new CliBuilder()
-        cli.name = "ffxc xray.ComputeFc"
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        AlgorithmFunctions aFuncts
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils()
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils()
-        }
+        xrayOptions.init()
 
-        List<String> arguments = options.filenames
-
-        String modelfilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelfilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
+        String modelfilename
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelfilename = active.getFile()
+            modelfilename = activeAssembly.getFile().getAbsolutePath();
         }
-
-        logger.info("\n Running xray.ModelvsData on " + modelfilename)
-
-        MolecularAssembly[] systems = aFuncts.open(modelfilename)
 
         // Set up diffraction data (can be multiple files)
-        List diffractionfiles = new ArrayList()
-        if (arguments.size() > 1) {
-            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false)
-            diffractionfiles.add(diffractionfile)
-        }
+        List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
 
-        if (diffractionfiles.size() == 0) {
-            DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false)
-            diffractionfiles.add(diffractionfile)
-        }
+        DiffractionData diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
+                xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
 
-        DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(),
-                SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+        logger.info("\n Running xray.ComputeFc on " + modelfilename)
 
         // Compute structure factors
         diffractiondata.computeAtomicDensity()
@@ -105,9 +71,6 @@ class ComputeFc extends Script {
         mtzwriter.write()
     }
 }
-
-
-
 
 /**
  * Title: Force Field X.

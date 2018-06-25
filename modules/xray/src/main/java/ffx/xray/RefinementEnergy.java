@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -45,11 +45,10 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import org.apache.commons.io.FilenameUtils;
-
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.thermostats.Thermostat;
-import ffx.numerics.Potential;
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
@@ -66,13 +65,13 @@ import static ffx.numerics.VectorMath.b2u;
 
 /**
  * Combine the X-ray target and chemical potential energy using the
- * {@link Potential} interface
+ * {@link CrystalPotential} interface
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
  *
  * @since 1.0
  */
-public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmListener {
+public class RefinementEnergy implements LambdaInterface, CrystalPotential, AlgorithmListener {
 
     private static final Logger logger = Logger.getLogger(RefinementEnergy.class.getName());
 
@@ -115,7 +114,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     /**
      * The Potential based on experimental data.
      */
-    protected Potential dataEnergy;
+    protected CrystalPotential dataEnergy;
     /**
      * A thermostat instance.
      */
@@ -193,7 +192,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
      * @param optimizationScaling scaling of refinement parameters
      */
     public RefinementEnergy(DataContainer data,
-            RefinementMode refinementMode, double optimizationScaling[]) {
+                            RefinementMode refinementMode, double optimizationScaling[]) {
 
         this.data = data;
         this.refinementMode = refinementMode;
@@ -353,7 +352,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
         }
     }
 
-    public Potential getDataEnergy() {
+    public CrystalPotential getDataEnergy() {
         return dataEnergy;
     }
 
@@ -464,7 +463,7 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
     /**
      * {@inheritDoc}
      *
-     * Implementation of the {@link Potential} interface for the
+     * Implementation of the {@link CrystalPotential} interface for the
      * RefinementEnergy.
      */
     @Override
@@ -1027,5 +1026,15 @@ public class RefinementEnergy implements LambdaInterface, Potential, AlgorithmLi
             }
         }
         return previousAcceleration;
+    }
+
+    @Override
+    public Crystal getCrystal() {
+        return dataEnergy.getCrystal();
+    }
+
+    @Override
+    public void setCrystal(Crystal crystal) {
+        logger.severe(" RefinementEnergy does implement setCrystal yet.");
     }
 }

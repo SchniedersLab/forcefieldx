@@ -616,9 +616,10 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
                     osrwOptimumCoords = new double[n];
                     osrwOptimumCoords = potential.getCoordinates(osrwOptimumCoords);
                     double mass = molecularAssembly.getMass();
-                    double density = potential.getCrystal().getDensity(mass);
+                    Crystal crystal = molecularAssembly.getCrystal();
+                    double density = crystal.getDensity(mass);
                     systemFilter.writeFile(optFile, false);
-                    Crystal uc = potential.getCrystal().getUnitCell();
+                    Crystal uc = crystal.getUnitCell();
                     logger.info(String.format(" Minimum: %12.6f %s (%12.6f g/cc) optimized from %12.6f at step %d.",
                             minEnergy, uc.toShortString(), density, startingEnergy, energyCount));
                 }

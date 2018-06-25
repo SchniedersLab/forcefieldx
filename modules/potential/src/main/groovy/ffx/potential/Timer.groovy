@@ -23,11 +23,11 @@ class Timer extends PotentialScript {
     @Mixin
     private TimerOptions timer
 
-
     /**
      * One or more filenames.
      */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
+    @Parameters(arity = "1", paramLabel = "files",
+            description = "XYZ or PDB input files.")
     private List<String> filenames
 
     /**

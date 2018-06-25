@@ -21,13 +21,15 @@ class SaveAsSIFTPDB extends PotentialScript {
     /**
      * -f or --filename to input file of sift scores to enter
      */
-    @Option(names = ['--fileName', '-f'], description = 'File of sift scores to enter.')
+    @Option(names = ['--fileName', '-f'],
+            description = 'File of sift scores to enter.')
     boolean siftFilename = null
 
     /**
      * The final argument(s) should be one or more filenames.
      */
-    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    @Parameters(arity = "1", paramLabel = "files",
+            description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
     /**

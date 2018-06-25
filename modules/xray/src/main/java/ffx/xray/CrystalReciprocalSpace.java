@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -132,6 +132,21 @@ public class CrystalReciprocalSpace {
          * switch (default).
          */
         POLYNOMIAL
+    }
+
+
+    /**
+     * Parse a solvent model string and return a SolventModel enum.
+     * @param str The solvent model String.
+     * @return The SolventModel to use.
+     */
+    public static SolventModel parseSolventModel(String str) {
+        try {
+            return SolventModel.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
+        } catch (Exception e) {
+            logger.info(String.format(" Could not parse %s as a Solvent Model; defaulting to Polynomial.", str));
+            return SolventModel.POLYNOMIAL;
+        }
     }
 
     public enum GridMethod {
@@ -262,7 +277,7 @@ public class CrystalReciprocalSpace {
      * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
      */
     public CrystalReciprocalSpace(ReflectionList reflectionList,
-            Atom atoms[], ParallelTeam fftTeam, ParallelTeam parallelTeam) {
+                                  Atom atoms[], ParallelTeam fftTeam, ParallelTeam parallelTeam) {
         this(reflectionList, atoms, fftTeam, parallelTeam, false, false,
                 SolventModel.POLYNOMIAL);
     }
@@ -280,9 +295,9 @@ public class CrystalReciprocalSpace {
      * @param solventMask true if this is a bulk solvent mask
      */
     public CrystalReciprocalSpace(ReflectionList reflectionList,
-            Atom atoms[],
-            ParallelTeam fftTeam, ParallelTeam parallelTeam,
-            boolean solventMask) {
+                                  Atom atoms[],
+                                  ParallelTeam fftTeam, ParallelTeam parallelTeam,
+                                  boolean solventMask) {
         this(reflectionList, atoms, fftTeam, parallelTeam, solventMask, false,
                 SolventModel.POLYNOMIAL);
     }
@@ -301,9 +316,9 @@ public class CrystalReciprocalSpace {
      * @param neutron true if this is a neutron structure
      */
     public CrystalReciprocalSpace(ReflectionList reflectionList,
-            Atom atoms[],
-            ParallelTeam fftTeam, ParallelTeam parallelTeam,
-            boolean solventMask, boolean neutron) {
+                                  Atom atoms[],
+                                  ParallelTeam fftTeam, ParallelTeam parallelTeam,
+                                  boolean solventMask, boolean neutron) {
         this(reflectionList, atoms, fftTeam, parallelTeam, solventMask, neutron,
                 SolventModel.POLYNOMIAL);
     }
@@ -323,9 +338,9 @@ public class CrystalReciprocalSpace {
      * @see CrystalReciprocalSpace.SolventModel
      */
     public CrystalReciprocalSpace(ReflectionList reflectionlist,
-            Atom atoms[],
-            ParallelTeam fftTeam, ParallelTeam parallelTeam,
-            boolean solventMask, boolean neutron, SolventModel solventModel) {
+                                  Atom atoms[],
+                                  ParallelTeam fftTeam, ParallelTeam parallelTeam,
+                                  boolean solventMask, boolean neutron, SolventModel solventModel) {
         this.reflectionList = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.resolution = reflectionlist.resolution;
@@ -550,12 +565,12 @@ public class CrystalReciprocalSpace {
                     case SPATIAL:
                         atomicDensityRegion
                                 = new SpatialDensityRegion(fftX, fftY, fftZ,
-                                        densityGrid, (aRadGrid + 2) * 2, nSymm, minWork,
-                                        threadCount, crystal, atoms, coordinates);
+                                densityGrid, (aRadGrid + 2) * 2, nSymm, minWork,
+                                threadCount, crystal, atoms, coordinates);
                         solventDensityRegion
                                 = new BulkSolventDensityRegion(fftX, fftY, fftZ,
-                                        solventGrid, (aRadGrid + 2) * 2, bulkNSymm, minWork,
-                                        threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
+                                solventGrid, (aRadGrid + 2) * 2, bulkNSymm, minWork,
+                                threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
                         if (solventModel == SolventModel.GAUSSIAN) {
                             atomicDensityRegion.setInitValue(0.0);
                         } else {
@@ -583,12 +598,12 @@ public class CrystalReciprocalSpace {
                     case ROW:
                         atomicRowRegion
                                 = new RowRegion(fftX, fftY, fftZ,
-                                        densityGrid, (aRadGrid + 2) * 2, nSymm,
-                                        threadCount, crystal, atoms, coordinates);
+                                densityGrid, (aRadGrid + 2) * 2, nSymm,
+                                threadCount, crystal, atoms, coordinates);
                         solventRowRegion
                                 = new BulkSolventRowRegion(fftX, fftY, fftZ,
-                                        solventGrid, (aRadGrid + 2) * 2, bulkNSymm,
-                                        threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
+                                solventGrid, (aRadGrid + 2) * 2, bulkNSymm,
+                                threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
                         if (solventModel == SolventModel.GAUSSIAN) {
                             atomicRowRegion.setInitValue(0.0);
                         } else {
@@ -617,12 +632,12 @@ public class CrystalReciprocalSpace {
                     default:
                         atomicSliceRegion
                                 = new SliceRegion(fftX, fftY, fftZ,
-                                        densityGrid, (aRadGrid + 2) * 2, nSymm,
-                                        threadCount, crystal, atoms, coordinates);
+                                densityGrid, (aRadGrid + 2) * 2, nSymm,
+                                threadCount, crystal, atoms, coordinates);
                         solventSliceRegion
                                 = new BulkSolventSliceRegion(fftX, fftY, fftZ,
-                                        solventGrid, (aRadGrid + 2) * 2, bulkNSymm,
-                                        threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
+                                solventGrid, (aRadGrid + 2) * 2, bulkNSymm,
+                                threadCount, crystal, atoms, coordinates, 4.0, parallelTeam);
                         if (solventModel == SolventModel.GAUSSIAN) {
                             atomicSliceRegion.setInitValue(0.0);
                         } else {
@@ -963,7 +978,7 @@ public class CrystalReciprocalSpace {
      * @see DiffractionRefinementData
      */
     public void computeAtomicGradients(double hklData[][],
-            int freer[], int flag, RefinementMode refinementMode) {
+                                       int freer[], int flag, RefinementMode refinementMode) {
         computeAtomicGradients(hklData, freer, flag, refinementMode, false);
     }
 
@@ -980,8 +995,8 @@ public class CrystalReciprocalSpace {
      * @see DiffractionRefinementData
      */
     public void computeAtomicGradients(double hklData[][],
-            int freer[], int flag, RefinementMode refinementMode,
-            boolean print) {
+                                       int freer[], int flag, RefinementMode refinementMode,
+                                       boolean print) {
 
         if (solvent && solventModel == SolventModel.NONE) {
             return;

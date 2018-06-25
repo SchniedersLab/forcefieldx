@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -39,7 +39,8 @@ package ffx.realspace;
 
 import java.util.logging.Logger;
 
-import ffx.numerics.Potential;
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.xray.RefinementMinimize.RefinementMode;
@@ -52,7 +53,7 @@ import ffx.xray.RefinementModel;
  *
  * @since 1.0
  */
-public class RealSpaceEnergy implements LambdaInterface, Potential {
+public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
 
     private static final Logger logger = Logger.getLogger(RealSpaceEnergy.class.getName());
 
@@ -102,11 +103,11 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
      * @param nxyz number of xyz parameters
      * @param nb number of b factor parameters
      * @param nocc number of occupancy parameters
-     * @param refinementMode the {@link RefinementMinimize.RefinementMode} type
+     * @param refinementMode the {@link RefinementMode} type
      * of refinement requested
      */
     public RealSpaceEnergy(RealSpaceData realSpaceData, int nxyz, int nb, int nocc,
-            RefinementMode refinementMode) {
+                           RefinementMode refinementMode) {
         this.realSpaceData = realSpaceData;
         this.refinementModel = realSpaceData.getRefinementModel();
         this.refinementMode = refinementMode;
@@ -591,5 +592,16 @@ public class RealSpaceEnergy implements LambdaInterface, Potential {
             }
         }
         return previousAcceleration;
+    }
+
+    @Override
+    public ffx.crystal.Crystal getCrystal() {
+        realSpaceData.getCrystal();
+        return null;
+    }
+
+    @Override
+    public void setCrystal(Crystal crystal) {
+        logger.severe(" RealSpaceEnergy does implement setCrystal yet.");
     }
 }

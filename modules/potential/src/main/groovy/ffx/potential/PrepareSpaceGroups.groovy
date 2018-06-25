@@ -66,13 +66,15 @@ class PrepareSpaceGroups extends PotentialScript {
     /**
      * -sg or --spacegroup prepare a directory for a single spacegroup (no default).
      */
-    @Option(names = ['--sg', '--spacegroup'], description = 'Prepare a directory for a single spacegroup.')
+    @Option(names = ['--sg', '--spacegroup'],
+            description = 'Prepare a directory for a single spacegroup.')
     String sg
 
     /**
      * The final argument(s) should be one or more filenames.
      */
-    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    @Parameters(arity = "1..*", paramLabel = "files",
+            description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
     /**
