@@ -67,4 +67,20 @@ public class TimerOptions {
     @Option(names = {"-q", "--quiet"},
             description = "Suppress printing of the energy for each iteration")
     private boolean quiet = false;
+
+    public int getIterations() {
+        return iterations;
+    }
+
+    public int getThreads() {
+        return threads;
+    }
+
+    public boolean getGradient() {
+        return gradient;
+    }
+
+    public boolean getQuiet() {
+        return quiet;
+    }
 }
