@@ -4448,7 +4448,6 @@ public class RotamerOptimization implements Terminatable {
                         toAdd.add(residue);
                     }
                 }
-
                 // If the identity symop produces nothing, skip checking other symops.
                 if (toAdd.isEmpty()) {
                     break;
