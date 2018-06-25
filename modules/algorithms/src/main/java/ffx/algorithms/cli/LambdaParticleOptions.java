@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- * <p>
+ *
  * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
+ *
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- * <p>
+ *
  * This file is part of Force Field X.
- * <p>
+ *
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- * <p>
+ *
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- * <p>
+ *
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
+ *
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- * <p>
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -37,32 +37,36 @@
  */
 package ffx.algorithms.cli;
 
-import picocli.CommandLine.Option;
+import groovy.cli.Option;
+import picocli.CommandLine;
 
 /**
- * Minimization options shared by optimizations scripts that use the Pico CLI.
+ * Represents command line options for scripts that utilize a mobile lambda
+ * particle, such as Thermodynamics.
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
-public class MinimizeOptions {
-
+public class LambdaParticleOptions {
     /**
-     * -i or --iterations Number of minimization steps.
+     * -m or --lambdaMass to set the mass of the lambda particle.
      */
-    @Option(names = {"-I", "--iterations"}, paramLabel = "Unlimited",
-            description = "Number of minimization steps.")
-    int iterations = Integer.MAX_VALUE;
-
+    @CommandLine.Option(names = {"--lm", "--lambdaMass"}, paramLabel = "1.0E-18",
+            description = "Mass of the lambda particle.")
+    private double lambdaMass = 1.0E-18;
     /**
-     * -e or --eps Convergence criteria.
+     * -x or --lambdaFriction to set friction on the lambda particle
      */
-    @Option(names = {"-e", "--eps"}, paramLabel = "1.0",
-            description = "Convergence criteria.")
-    double eps = 1.0;
+    @CommandLine.Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "1.0E-18",
+            description = "Friction on the lambda particle.")
+    private double lambdaFriction = 1.0E-18;
 
-    public int getIterations() {
-        return iterations;
+    public double getLambdaMass() {
+        return lambdaMass;
     }
 
-    public double getEps() {
-        return eps;
+    public double getLambdaFriction() {
+        return lambdaFriction;
     }
 }

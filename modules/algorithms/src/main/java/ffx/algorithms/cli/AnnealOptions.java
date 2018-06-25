@@ -53,13 +53,13 @@ public class AnnealOptions {
     /**
      * -l or --low Low temperature limit in degrees Kelvin (10.0).
      */
-    @Option(names = {"-l", "--low"}, paramLabel="10.0",
+    @Option(names = {"--tl", "--temperatureLow"}, paramLabel="10.0",
             description="Low temperature limit (Kelvin).")
     double low = 10.0;
     /**
      * -u or --upper Upper temperature limit in degrees Kelvin (1000.0).
      */
-    @Option(names = {"-u", "--upper"}, paramLabel="1000.0",
+    @Option(names = {"--tu", "--temperatureUpper"}, paramLabel="1000.0",
             description="High temperature limit (Kelvin).")
     double upper = 1000.0;
 

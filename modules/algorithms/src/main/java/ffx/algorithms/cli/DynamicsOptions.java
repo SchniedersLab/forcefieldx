@@ -103,7 +103,7 @@ public class DynamicsOptions {
      * -n or --steps sets the number of molecular dynamics steps (default is 1
      * nsec).
      */
-    @Option(names = {"-n"}, paramLabel = "1000000",
+    @Option(names = {"-n", "--numberOfSteps"}, paramLabel = "1000000",
             description = "Number of molecular dynamics steps.")
     int steps = 1000000;
 

@@ -50,37 +50,6 @@ class Minimizer extends AlgorithmsScript {
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
-    CompositeConfiguration[] properties
-    ForceFieldEnergy[] energies
-
-    private void openFile(String toOpen, int topNum) {
-        algorithmFunctions.openAll(toOpen, threadsPer)
-        MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
-        processFile(mola, topNum)
-    }
-
-    private void processFile(MolecularAssembly mola, int topNum) {
-
-        int remainder = (topNum % 2) + 1
-        switch (remainder) {
-            case 1:
-                alchemical.setAlchemicalAtoms(mola)
-                alchemical.setUnchargedAtoms(mola)
-                break
-            case 2:
-                topology.setAlchemicalAtoms(mola)
-                topology.setUnchargedAtoms(mola)
-        }
-
-        // Turn off checks for overlapping atoms, which is expected for lambda=0.
-        ForceFieldEnergy energy = mola.getPotentialEnergy()
-        energy.getCrystal().setSpecialPositionCutoff(0.0)
-
-        // Save a reference to the topology.
-        properties[topNum] = mola.getProperties()
-        topologies[topNum] = mola
-        energies[topNum] = energy
-    }
 
 
     def run() {
@@ -89,91 +58,65 @@ class Minimizer extends AlgorithmsScript {
             return
         }
 
-        List<String> arguments = filenames
+        List<String> arguments = filenames;
         // Check nArgs should either be number of arguments (min 1), else 1.
-        int nArgs = arguments ? arguments.size() : 1
-        nArgs = (nArgs < 1) ? 1 : nArgs
+        int nArgs = arguments ? arguments.size() : 1;
+        nArgs = (nArgs < 1) ? 1 : nArgs;
 
-        topologies = new MolecularAssembly[nArgs]
-        properties = new CompositeConfiguration[nArgs]
-        energies = new ForceFieldEnergy[nArgs]
+        topologies = new MolecularAssembly[nArgs];
 
-        int numParallel = topology.getNumParallel(threadsAvail, nArgs)
-        threadsPer = threadsAvail / numParallel
+        int numParallel = topology.getNumParallel(threadsAvail, nArgs);
+        threadsPer = threadsAvail / numParallel;
 
-        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
-        boolean lambdaTerm = alchemical.ligAt1 || topology.ligAt2 || (alchemical.s1 > 0) || (topology.s2 > 0)
+        // Turn on computation of lambda derivatives if softcore atoms exist.
+        boolean lambdaTerm = alchemical.hasSoftcore() || topology.hasSoftcore();
 
         if (lambdaTerm) {
             System.setProperty("lambdaterm", "true")
         }
+
+        double lambda = alchemical.getInitialLambda();
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
         if (nArgs >= 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
-            System.setProperty("ligand-vapor-elec", "false")
+            System.setProperty("ligand-vapor-elec", "false");
         }
+
+        List<MolecularAssembly> topologyList = new ArrayList<>(4);
 
         /**
          * Read in files.
          */
         if (!arguments || arguments.isEmpty()) {
-            MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
+            MolecularAssembly mola = algorithmFunctions.getActiveAssembly();
             if (mola == null) {
-                return helpString()
+                return helpString();
             }
-            arguments = new ArrayList<>()
-            arguments.add(mola.getFile().getName())
-            processFile(mola)
+            arguments = new ArrayList<>();
+            arguments.add(mola.getFile().getName());
+            topologyList.add(alchemical.processFile(Optional.of(topology), mola, 0));
         } else {
-            logger.info(String.format(" Initializing %d topologies...", nArgs))
+            logger.info(String.format(" Initializing %d topologies...", nArgs));
             for (int i = 0; i < nArgs; i++) {
-                openFile(arguments.get(i), i)
+                topologyList.add(alchemical.openFile(algorithmFunctions, Optional.of(topology), threadsPer, arguments.get(i), i));
             }
         }
+
+        MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()]);
 
         /**
          * Configure the potential to test.
          */
-        StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
-        Potential potential
-        UnivariateSwitchingFunction sf = topology.getSwitchingFunction();
-        switch (nArgs) {
-            case 1:
-                potential = energies[0]
-                alchemical.setActiveAtoms(topologies[0]);
-                break
-            case 2:
-            case 4:
-            case 8:
-                List<Integer> uniqueA
-                List<Integer> uniqueB
-                if (nArgs >= 4) {
-                    uniqueA = topology.getUniqueAtoms(topologies[0], "A");
-                    uniqueB = topology.getUniqueAtoms(topologies[1], "B");
-                }
-                potential = topology.getTopology(topologies, sf, uniqueA, uniqueB, numParallel, sb)
-                break
-            default:
-                logger.severe(" Must have 1, 2, 4, or 8 topologies!")
-                break
-        }
+        StringBuilder sb = new StringBuilder("\n Minimizing energy of ");
+        Potential potential = topology.assemblePotential(topologies, threadsAvail, sb);
 
-        ArrayList<MolecularAssembly> topo = new ArrayList<>(Arrays.asList(topologies));
-        sb.append(topo.stream().map { t -> t.getFile().getName() }.collect(Collectors.joining(",", "[", "]")))
-        logger.info(sb.toString())
+        logger.info(sb.toString());
 
-        LambdaInterface linter = (LambdaInterface) potential
-
-        // Turn on computation of lambda derivatives if l >= 0 or > 1 argument
-        if (lambdaTerm || nArgs > 1) {
-            if (alchemical.initialLambda < 0.0 || alchemical.initialLambda > 1.0) {
-                alchemical.initialLambda = 0.5
-            }
-            linter.setLambda(alchemical.initialLambda)
-        }
+        LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null;
+        linter?.setLambda(lambda);
 
         double[] x = new double[potential.getNumberOfVariables()]
         potential.getCoordinates(x)
@@ -181,7 +124,7 @@ class Minimizer extends AlgorithmsScript {
 
         AlgorithmListener theListener = algorithmFunctions.getDefaultListener()
         Minimize minimize = new Minimize(topologies[0], potential, theListener)
-        minimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+        minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations());
 
         potential.getCoordinates(x)
         potential.energy(x, true)

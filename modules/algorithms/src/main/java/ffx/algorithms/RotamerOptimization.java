@@ -197,6 +197,8 @@ public class RotamerOptimization implements Terminatable {
      * Two-Body cutoff distance.
      */
     protected double twoBodyCutoffDist = 0;
+    // Fallback if there is no vdW node.
+    private static final double FALLBACK_TWO_BODY_CUTOFF = 0;
     /**
      * Two-body energies for each pair of residues and pair of rotamers.
      * [residue1][rotamer1][residue2][rotamer2]
@@ -752,8 +754,12 @@ public class RotamerOptimization implements Terminatable {
          */
         ForceFieldEnergy forceFieldEnegy = molecularAssembly.getPotentialEnergy();
         VanDerWaals vdW = forceFieldEnegy.getVdwNode();
-        NonbondedCutoff nonBondedCutoff = vdW.getNonbondedCutoff();
-        twoBodyCutoffDist = nonBondedCutoff.off;
+        if (vdW != null) {
+            NonbondedCutoff nonBondedCutoff = vdW.getNonbondedCutoff();
+            twoBodyCutoffDist = nonBondedCutoff.off;
+        } else {
+            twoBodyCutoffDist = FALLBACK_TWO_BODY_CUTOFF;
+        }
 
         // Process relevant system keys.
         String undo = System.getProperty("ro-undo");

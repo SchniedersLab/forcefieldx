@@ -38,12 +38,13 @@
 package ffx.potential.cli;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import ffx.numerics.Potential;
 import ffx.numerics.PowerSwitch;
@@ -202,38 +203,8 @@ public class TopologyOptions {
      *
      * @param topology
      */
-    public void setAlchemicalAtoms(MolecularAssembly topology) {
-        Atom atoms[] = topology.getAtomArray();
-        if (s2 > 0) {
-            for (int i = s2; i <= f2; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setApplyLambda(true);
-                ai.print();
-            }
-        }
-
-        if (ligAt2 != null) {
-            String ranges[] = ligAt2.split(".");
-            Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
-            for (String range : ranges) {
-                Matcher m = rangeregex.matcher(range);
-                if (m.find()) {
-                    int rangeStart = Integer.parseInt(m.group(1));
-                    int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                    if (rangeStart > rangeEnd) {
-                        logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                    }
-                    // Don't need to worry about negative numbers; rangeregex just won't match.
-                    for (int i = rangeStart; i <= rangeEnd; i++) {
-                        Atom ai = atoms[i - 1];
-                        ai.setApplyLambda(true);
-                        ai.print();
-                    }
-                } else {
-                    logger.warning(" Could not recognize ${range} as a valid range; skipping");
-                }
-            }
-        }
+    public void setSecondSystemAlchemistry(MolecularAssembly topology) {
+        AlchemicalOptions.setAlchemicalAtoms(topology, s2, f2, ligAt2);
     }
 
     /**
@@ -241,39 +212,47 @@ public class TopologyOptions {
      *
      * @param topology
      */
-    public void setUnchargedAtoms(MolecularAssembly topology) {
-        Atom atoms[] = topology.getAtomArray();
-        // Apply the no electrostatics atom selection
-        int noElecStart = es2;
-        noElecStart = (noElecStart < 1) ? 1 : noElecStart;
-
-        int noElecStop = ef2;
-        noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
-
-        for (int i = noElecStart; i <= noElecStop; i++) {
-            Atom ai = atoms[i - 1];
-            ai.setElectrostatics(false);
-            ai.print();
-        }
+    public void setSecondSystemUnchargedAtoms(MolecularAssembly topology) {
+        AlchemicalOptions.setUnchargedAtoms(topology, es2, ef2);
     }
 
     /**
-     * Collect unique atoms for a topology.
+     * Collect unique atoms for the A dual-topology.
      *
-     * @param topology The MolecularAsembly.
-     * @param label    A label for logging (i.e. A or B).
+     * @param topology A MolecularAssembly from dual-topology A.
      * @return A List of Integers.
      */
-    public List<Integer> getUniqueAtoms(MolecularAssembly topology, String label) {
-        List<Integer> unique = new ArrayList<>();
-        Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
+    public List<Integer> getUniqueAtomsA(MolecularAssembly topology) {
+        return getUniqueAtoms(topology, "A", unsharedA);
+    }
 
-        if (unsharedA != null) {
-            Set<Integer> ra = new HashSet<>();
-            String[] toksA = unsharedA.split(".");
-            Atom[] atA1 = topology.getAtomArray();
-            for (String range : toksA) {
-                Matcher m = rangeregex.matcher(range);
+    /**
+     * Collect unique atoms for the B dual-topology.
+     *
+     * @param topology A MolecularAssembly from dual-topology B.
+     * @return A List of Integers.
+     */
+    public List<Integer> getUniqueAtomsB(MolecularAssembly topology) {
+        return getUniqueAtoms(topology, "B", unsharedB);
+    }
+
+    /**
+     * Collect unique atoms for a dual-topology.
+     *
+     * @param assembly A MolecularAssembly from the dual topology.
+     * @param label Either 'A' or 'B'.
+     * @param unshared Atoms this dual topology isn't sharing.
+     * @return A List of Integers.
+     */
+    public List<Integer> getUniqueAtoms(MolecularAssembly assembly, String label, String unshared) {
+        List<Integer> unique = new ArrayList<>();
+
+        if (unshared != null) {
+            Set<Integer> indices = new HashSet<>();
+            String[] toks = unshared.split("\\.");
+            Atom[] atoms1 = assembly.getAtomArray();
+            for (String range : toks) {
+                Matcher m = AlchemicalOptions.rangeregex.matcher(range);
                 if (m.find()) {
                     int rangeStart = Integer.parseInt(m.group(1));
                     int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
@@ -281,27 +260,27 @@ public class TopologyOptions {
                         logger.severe(String.format(" Range %s was invalid start was greater than end", range));
                     }
                     logger.info(String.format(" Range %s for %s, start %d end %d", range, label, rangeStart, rangeEnd));
-                    logger.info(String.format(" First atom in range: %s", atA1[rangeStart - 1]));
+                    logger.info(String.format(" First atom in range: %s", atoms1[rangeStart - 1]));
                     if (rangeEnd > rangeStart) {
-                        logger.info(String.format(" Last atom in range: %s", atA1[rangeEnd - 1]));
+                        logger.info(String.format(" Last atom in range: %s", atoms1[rangeEnd - 1]));
                     }
                     for (int i = rangeStart; i <= rangeEnd; i++) {
-                        ra.add(i - 1);
+                        indices.add(i - 1);
                     }
                 }
             }
             int counter = 0;
-            Set<Integer> raAdj = new HashSet<>(); // Indexed by common variables in dtA.
-            for (int i = 0; i < atA1.length; i++) {
-                Atom ai = atA1[i];
-                if (ra.contains(i)) {
+            Set<Integer> adjustedIndices = new HashSet<>(); // Indexed by common variables in dtA.
+            for (int i = 0; i < atoms1.length; i++) {
+                Atom ai = atoms1[i];
+                if (indices.contains(i)) {
                     if (ai.applyLambda()) {
                         logger.warning(String.format(
                                 " Ranges defined in %s should not overlap with ligand atoms they are assumed to not be shared.", label));
                     } else {
                         logger.fine(String.format(" Unshared %s: %d variables %d-%d", label, i, counter, counter + 2));
                         for (int j = 0; j < 3; j++) {
-                            raAdj.add(Integer.valueOf(counter + j));
+                            adjustedIndices.add(Integer.valueOf(counter + j));
                         }
                     }
                 }
@@ -309,31 +288,62 @@ public class TopologyOptions {
                     counter += 3;
                 }
             }
-            unique.addAll(raAdj);
+            unique.addAll(adjustedIndices);
         }
 
         return unique;
     }
 
     /**
+     * Performs the bulk of the work of setting up a multi-topology system.
+     *
+     * The sb StringBuilder is often something like "Timing energy and gradients for". The
+     * method will append the exact type of Potential being assembled.
+     *
+     * @param assemblies Opened MolecularAssembly(s).
+     * @param threadsAvail Number of available threads.
+     * @param sb A StringBuilder describing what is to be done.
+     * @return
+     */
+    public Potential assemblePotential(MolecularAssembly[] assemblies, int threadsAvail, StringBuilder sb) {
+        int nargs = assemblies.length;
+        int numPar = getNumParallel(threadsAvail, nargs);
+        UnivariateSwitchingFunction sf = nargs > 1 ? getSwitchingFunction() : null;
+        List<Integer> uniqueA;
+        List<Integer> uniqueB;
+        if (nargs >= 4) {
+            uniqueA = getUniqueAtomsA(assemblies[0]);
+            uniqueB = getUniqueAtomsB(assemblies[2]);
+        } else {
+            uniqueA = new ArrayList<>(1);
+            uniqueB = new ArrayList<>(1);
+        }
+
+        return getTopology(assemblies, sf, uniqueA, uniqueB, numPar, sb);
+    }
+
+    /**
      * Configure a Dual-, Quad- or Oct- Topology.
      *
-     * @param num         The number of topologies.
      * @param topologies  The topologies.
      * @param sf          The Potential switching function.
      * @param uniqueA     The unique atoms of topology A.
      * @param uniqueB     The unique atoms of topology B.
-     * @param numParallel The number of energies to evaluate in paralle.
+     * @param numParallel The number of energies to evaluate in parallel.
      * @param sb          A StringBuilder for logging.
      * @return The Potential for the Topology.
      */
-    public Potential getTopology(int num, MolecularAssembly[] topologies,
+    public Potential getTopology(MolecularAssembly[] topologies,
                                  UnivariateSwitchingFunction sf,
                                  List<Integer> uniqueA, List<Integer> uniqueB,
                                  int numParallel, StringBuilder sb) {
         Potential potential = null;
 
-        switch (num) {
+        switch (topologies.length) {
+            case 1:
+                sb.append("single topology ");
+                potential = topologies[0].getPotentialEnergy();
+                break;
             case 2:
                 sb.append("dual topology ");
                 ffx.potential.DualTopologyEnergy dte = new ffx.potential.DualTopologyEnergy(topologies[0], topologies[1], sf);
@@ -356,7 +366,7 @@ public class TopologyOptions {
                 }
                 potential = qte;
                 break;
-            case 8:
+            /*case 8: // DEPRECATED.
                 sb.append("oct-topology ");
                 ffx.potential.DualTopologyEnergy dtga = new ffx.potential.DualTopologyEnergy(topologies[0], topologies[1], sf);
                 ffx.potential.DualTopologyEnergy dtgb = new ffx.potential.DualTopologyEnergy(topologies[3], topologies[2], sf);
@@ -379,12 +389,23 @@ public class TopologyOptions {
                     }
                 }
                 potential = ote;
-                break;
+                break;*/
             default:
                 logger.severe(" Must have 2, 4, or 8 topologies!");
                 break;
         }
+        sb.append(Arrays.stream(topologies).
+                map(MolecularAssembly::toString).
+                collect(Collectors.joining(", ", " [", "] ")));
         return potential;
     }
 
+    /**
+     * If any softcore Atoms have been detected.
+     *
+     * @return Presence of softcore Atoms.
+     */
+    public boolean hasSoftcore() {
+        return ((ligAt2 != null && ligAt2.length() > 0) || s2 > 0);
+    }
 }

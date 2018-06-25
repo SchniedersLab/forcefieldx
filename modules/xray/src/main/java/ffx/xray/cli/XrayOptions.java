@@ -63,7 +63,8 @@ public class XrayOptions {
     /**
      * -s or --solvent Bulk solvent scattering model [Polynomial/Gaussian/Binary/None].
      */
-    @Option(names = {"-s", "--solvent"}, paramLabel = "polynomial",
+
+    @Option(names = {"-s", "--solvent"}, paramLabel = "POLYNOMIAL",
             description = "Bulk solvent scattering model [Polynomial/Gaussian/Binary/None]")
     private String solventString = "POLYNOMIAL";
 
