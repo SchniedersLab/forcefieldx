@@ -90,7 +90,6 @@ class Anneal extends AlgorithmsScript {
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy, properties,
                 refinementEnergy, dynamicsOptions.thermostat, dynamicsOptions.integrator)
 
-
         simulatedAnnealing.anneal(annealOptions.upper, annealOptions.low, annealOptions.windows,
                 dynamicsOptions.steps, dynamicsOptions.dt)
 

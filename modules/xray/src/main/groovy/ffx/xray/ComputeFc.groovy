@@ -8,6 +8,7 @@ import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
 import ffx.xray.parsers.MTZWriter
 import ffx.xray.parsers.MTZWriter.MTZType
+import org.apache.commons.configuration.CompositeConfiguration
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -52,6 +53,10 @@ class ComputeFc extends AlgorithmsScript {
         } else {
             modelfilename = activeAssembly.getFile().getAbsolutePath();
         }
+
+        // Load parsed X-ray properties.
+        CompositeConfiguration properties = activeAssembly.getProperties()
+        xrayOptions.setProperties(properties)
 
         // Set up diffraction data (can be multiple files)
         List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);

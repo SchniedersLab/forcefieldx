@@ -50,7 +50,6 @@ import ffx.xray.RefinementModel;
  * Combine the Real Space target and chemical potential energy.
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
- *
  * @since 1.0
  */
 public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
@@ -98,13 +97,13 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     /**
      * Diffraction data energy target
      *
-     * @param realSpaceData {@link RealSpaceData} object to associate with the
-     * target
-     * @param nxyz number of xyz parameters
-     * @param nb number of b factor parameters
-     * @param nocc number of occupancy parameters
+     * @param realSpaceData  {@link RealSpaceData} object to associate with the
+     *                       target
+     * @param nxyz           number of xyz parameters
+     * @param nb             number of b factor parameters
+     * @param nocc           number of occupancy parameters
      * @param refinementMode the {@link RefinementMode} type
-     * of refinement requested
+     *                       of refinement requested
      */
     public RealSpaceEnergy(RealSpaceData realSpaceData, int nxyz, int nb, int nocc,
                            RefinementMode refinementMode) {
@@ -130,7 +129,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
      * Setter for the field <code>refinementMode</code>.</p>
      *
      * @param refinementMode a
-     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     *                       {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
     public void setRefinementMode(RefinementMode refinementMode) {
         this.refinementMode = refinementMode;
@@ -155,7 +154,7 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
 
     /**
      * The parameters passed in are only for "active" atoms.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
