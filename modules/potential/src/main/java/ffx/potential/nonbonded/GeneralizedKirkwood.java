@@ -212,6 +212,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final BornCRRegion bornGradRegion;
     private final DispersionRegion dispersionRegion;
     private final CavitationRegion cavitationRegion;
+    private final VolumeRegion volumeRegion;
 
     /**
      * Gradient array for each thread.
@@ -534,6 +535,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(format("   Cavitation Probe Radius:            %8.3f (A)", probe));
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         }
+
+        boolean doVolume = forceField.getBoolean(ForceField.ForceFieldBoolean.VOLUME, false);
+        if (doVolume) {
+            volumeRegion = new VolumeRegion(threadCount);
+        } else {
+            volumeRegion = null;
+        }
+
 
     }
 
@@ -1075,6 +1084,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 solvationEnergy = gkEnergyRegion.getEnergy();
                 break;
 
+        }
+
+        if (volumeRegion != null) {
+            try {
+                parallelTeam.execute(volumeRegion);
+                logger.info(format(" Volume %16.8f", volumeRegion.getVolume()));
+            } catch (Exception e) {
+                String message = "Fatal exception computing volume.";
+                logger.log(Level.SEVERE, message, e);
+            }
         }
 
         if (lambdaTerm) {
@@ -5392,6 +5411,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         private final VolumeLoop volumeLoop[];
         private final SharedDouble sharedVolume;
+        private final SharedDouble sharedArea;
         private final int itab[];
         private final static int MAXCUBE = 40;
         private final static int MAXARC = 1000;
@@ -5706,6 +5726,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 volumeLoop[i] = new VolumeLoop();
             }
             sharedVolume = new SharedDouble();
+            sharedArea = new SharedDouble();
             itab = new int[nAtoms];
 
             /**
@@ -5723,13 +5744,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         }
 
-        public double getEnergy() {
+        public double getArea() {
+            return sharedArea.get();
+        }
+
+        public double getVolume() {
             return sharedVolume.get();
         }
 
         @Override
         public void start() {
             sharedVolume.set(0.0);
+            sharedArea.set(0.0);
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
                 a[0][i] = atom.getX();
@@ -5806,7 +5832,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private final int mxcube = 15;
             private final int inov[] = new int[MAXARC];
             private final int cube[][][][] = new int[2][mxcube][mxcube][mxcube];
-            private double evol;
+            private double evol, earea;
             private double xmin, ymin, zmin;
             private double xmax, ymax, zmax;
             private double aa, bb, temp, phi_term;
@@ -5850,11 +5876,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 fill(dex[1], 0.0);
                 fill(dex[2], 0.0);
                 evol = 0.0;
+                earea = 0.0;
             }
 
             @Override
             public void finish() {
                 sharedVolume.addAndGet(evol);
+                sharedArea.addAndGet(earea);
             }
 
             public void setRadius() {
@@ -8970,11 +8998,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 /**
                  * Finally, compute the total area and total volume.
                  */
-                logger.info(String.format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
+                // logger.info(String.format("totap=%16.8f,totas=%16.8f,totan=%16.8f,totasp=%16.8f,alenst=%16.8f", totap, totas, totan, totasp, alenst));
                 area = totap + totas + totan - totasp - alenst;
-                logger.info(String.format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, polyhedronVolume, totvsp, vlenst));
+                // logger.info(String.format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, polyhedronVolume, totvsp, vlenst));
                 volume = totvp + totvs + totvn + polyhedronVolume - totvsp + vlenst;
-                logger.info(String.format("volume=%16.8f area= %16.8f", volume, area));
+                logger.info(String.format(" Volume = %16.8f, Area = %16.8f", volume, area));
+
+                evol += volume;
+                earea += area;
+
             }
 
             /**

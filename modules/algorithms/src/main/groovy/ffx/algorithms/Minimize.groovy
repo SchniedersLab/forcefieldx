@@ -1,27 +1,25 @@
-
 package ffx.algorithms
 
-import java.util.regex.Pattern
 import java.util.stream.Collectors
 
+import org.apache.commons.configuration.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
+import edu.rit.pj.ParallelTeam
 
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.MinimizeOptions
 import ffx.numerics.Potential
-import ffx.numerics.PowerSwitch
-import ffx.numerics.SquaredTrigSwitch
 import ffx.numerics.UnivariateSwitchingFunction
-import ffx.potential.DualTopologyEnergy
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.OctTopologyEnergy
-import ffx.potential.QuadTopologyEnergy
-import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
-import ffx.potential.nonbonded.MultiplicativeSwitch
+import ffx.potential.cli.AlchemicalOptions
+import ffx.potential.cli.TopologyOptions
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Parameters
 
 /**
  * The Minimize script uses a limited-memory BFGS algorithm to minimize the 
@@ -31,515 +29,172 @@ import ffx.potential.nonbonded.MultiplicativeSwitch
  * <br>
  * ffxc Minimizer [options] &lt;filename [file2...]&gt;
  */
-class Minimizer extends Script {
+@Command(description = " Run L-BFGS minimization on a system.", name = "ffxc Minimize")
+class Minimizer extends AlgorithmsScript {
+
+    @Mixin
+    MinimizeOptions minimizeOptions
+
+    @Mixin
+    AlchemicalOptions alchemical
+
+    @Mixin
+    TopologyOptions topology
 
     /**
-     * Options for the Minimize Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc Minimize [options] &lt;filename [file2...]&gt;
+     * The final argument(s) should be one or more filenames.
      */
-    class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
-        /**
-         * -s1 or --start1 defines the first softcored atom for the first topology.
-         */
-        @Option(shortName='s1', longName='start1', defaultValue='0', description='Starting ligand atom for 1st topology') int s1;
-        /**
-         * -s2 or --start2 defines the first softcored atom for the second topology.
-         */
-        @Option(shortName='s2', longName='start2', defaultValue='0', description='Starting ligand atom for 2nd topology') int s2;
-        /**
-         * -f1 or --final1 defines the last softcored atom for the first topology.
-         */
-        @Option(shortName='f1', longName='final1', defaultValue='-1', description='Final ligand atom for the 1st topology') int f1;
-        /**
-         * -f2 or --final2 defines the last softcored atom for the second topology.
-         */
-        @Option(shortName='f2', longName='final2', defaultValue='-1', description='Final ligand atom for the 2nd topology') int f2;
-        /**
-         * --la1 or -ligAtoms1 allows for multiple ranges and/or singletons of ligand atoms in the first topology, separated by periods.
-         */
-        @Option(shortName='la1', longName='ligAtoms1', description='Period-separated ranges of 1st toplogy ligand atoms (e.g. 40-50.72-83)') String ligAt1;
-        /**
-         * --la2 or -ligAtoms2 allows for multiple ranges and/or singletons of ligand atoms in the second topology, separated by periods.
-         */
-        @Option(shortName='la2', longName='ligAtoms2', description='Period-separated ranges of 2nd toplogy ligand atoms (e.g. 40-50.72-83)') String ligAt2;
-        /**
-         * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
-         */
-        @Option(shortName='es1', longName='noElecStart1', defaultValue='1', description='Starting no-electrostatics atom for 1st topology') int es1;
-        /**
-         * -es2 or --noElecStart2 defines the first atom of the second topology to have no electrostatics.
-         */
-        @Option(shortName='es2', longName='noElecStart2', defaultValue='1', description='Starting no-electrostatics atom for 2nd topology') int es2;
-        /**
-         * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
-         */
-        @Option(shortName='ef1', longName='noElecFinal1', defaultValue='-1', description='Final no-electrostatics atom for 1st topology') int ef1;
-        /**
-         * -ef2 or --noElecFinal2 defines the last atom of the second topology to have no electrostatics.
-         */
-        @Option(shortName='ef2', longName='noElecFinal2', defaultValue='-1', description='Final no-electrostatics atom for 2nd topology') int ef2;
-        /**
-         * -l or --lambda sets the lambda value to minimize at.
-         */
-        @Option(shortName='l', longName='lambda', defaultValue='-1', description='Lambda value') double lambda;
-        /**
-         * -e or --eps sets the RMS gradient convergence criteria (in kcal/mol/A^2)
-         */
-        @Option(shortName='e', longName='eps', defaultValue='1.0', description='RMS gradient convergence criteria') double eps;
-        /**
-         * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or 4.
-         */
-        @Option(shortName='np', longName='nParallel', defaultValue='1', description='Number of topologies to evaluate in parallel') int nPar;
-        /**
-         * -uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
-         */
-        @Option(shortName='uaA', longName='unsharedA', description='Unshared atoms in the A dual topology (period-separated hyphenated ranges)') String unsharedA;
-        /**
-         * -uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
-         */
-        @Option(shortName='uaB', longName='unsharedB', description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
-        /**
-         * -sf or --switchingFunction sets the switching function to be used by
-         * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)
-         * + cos^2(pi/2*lambda)*E2(1-lambda), MULT uses a 5'th-order polynomial
-         * switching function with zero first and second derivatives at the end
-         * (same function as used for van der Waals switch), and a number uses
-         * the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
-         * 
-         * All of these are generalizations of Udt = f(l)*E1(l) + 
-         * f(1-l)*E2(1-lambda), where f(l) is a continuous switching function
-         * such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1 for lambda 0-1.
-         * The trigonometric switch can be restated thusly, since 
-         * cos^2(pi/2*lambda) is identical to sin^2(pi/2*(1-lambda)), f(1-l).
-         */
-        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0', 
-            description='Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)') String lambdaFunction;
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames;
-    }
-    
-    private static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
-    private int threadsAvail = edu.rit.pj.ParallelTeam.getDefaultThreadCount();
-    private int threadsPer = threadsAvail;
-    private AlgorithmFunctions aFuncts;
-    def ranges1 = []; // Groovy mechanism for creating an untyped ArrayList.
-    def ranges2 = [];
-    def topologies = []; // MolecularAssembly
-    def properties = []; // CompositeConfiguration
-    def energies = [];   // ForceFieldEnergy
+    @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
+    List<String> filenames = null
 
-    private void openFile(Options options, String toOpen, int topNum) {
-        MolecularAssembly[] opened = aFuncts.openAll(toOpen, threadsPer);
-        MolecularAssembly mola = aFuncts.getActiveAssembly();
-        processFile(options, mola, topNum);
+    private int threadsAvail = ParallelTeam.getDefaultThreadCount()
+    private int threadsPer = threadsAvail
+    MolecularAssembly[] topologies
+    CompositeConfiguration[] properties
+    ForceFieldEnergy[] energies
+
+    private void openFile(String toOpen, int topNum) {
+        algorithmFunctions.openAll(toOpen, threadsPer)
+        MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
+        processFile(mola, topNum)
     }
-    
-    private void processFile(Options options, MolecularAssembly mola, int topNum) {
-        ForceFieldEnergy energy = mola.getPotentialEnergy();
-        
-        Atom[] atoms = mola.getAtomArray();
-        int remainder = (topNum % 2) + 1;
-        switch(remainder) {
-        case 1:
-            /**
-             * Improve this logic once @Option annotations are more finished.
-             */
-            if (options.s1 > 0) {
-                for (int i = options.s1; i <= options.f1; i++) {
-                    Atom ai = atoms[i-1];
-                    ai.setApplyLambda(true);
-                    ai.print();
-                }
-            }
-            if (ranges1) {
-                for (range in ranges1) {
-                    def m = rangeregex.matcher(range);
-                    if (m.find()) {
-                        int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                        if (rangeStart > rangeEnd) {
-                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                        }
-                        // Don't need to worry about negative numbers; rangeregex just won't match.
-                        for (int i = rangeStart; i <= rangeEnd; i++) {
-                            Atom ai = atoms[i-1];
-                            ai.setApplyLambda(true);
-                            ai.print();
-                        }
-                    } else {
-                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
-                    }
-                }
-            }
-            
-            // Apply the no electrostatics atom selection
-            int noElecStart = options.es1;
-            noElecStart = (noElecStart < 1) ? 1 : noElecStart;
-            
-            int noElecStop = options.ef1;
-            noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
-            
-            for (int i = noElecStart; i <= noElecStop; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setElectrostatics(false);
-                ai.print();
-            }
-            break;
-        case 2:
-            /**
-             * Improve this logic once @Option annotations are more finished.
-             */
-            if (options.s2 > 0) {
-                for (int i = options.s2; i <= options.f2; i++) {
-                    Atom ai = atoms[i-1];
-                    ai.setApplyLambda(true);
-                    ai.print();
-                }
-            }
-            if (ranges2) {
-                for (range in ranges2) {
-                    def m = rangeregex.matcher(range);
-                    if (m.find()) {
-                        int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                        if (rangeStart > rangeEnd) {
-                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                        }
-                        // Don't need to worry about negative numbers; rangeregex just won't match.
-                        for (int i = rangeStart; i <= rangeEnd; i++) {
-                            Atom ai = atoms[i-1];
-                            ai.setApplyLambda(true);
-                            ai.print();
-                        }
-                    } else {
-                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
-                    }
-                }
-            }
-            
-            // Apply the no electrostatics atom selection
-            int noElecStart2 = options.es2;
-            noElecStart2 = (noElecStart2 < 1) ? 1 : noElecStart2;
-            
-            int noElecStop2 = options.ef2;
-            noElecStop2 = (noElecStop2 > atoms.length) ? atoms.length : noElecStop2;
-            
-            for (int i = noElecStart2; i <= noElecStop2; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setElectrostatics(false);
-                ai.print();
-            }
-            break;
+
+    private void processFile(MolecularAssembly mola, int topNum) {
+
+        int remainder = (topNum % 2) + 1
+        switch (remainder) {
+            case 1:
+                alchemical.setAlchemicalAtoms(mola)
+                alchemical.setUnchargedAtoms(mola)
+                break
+            case 2:
+                topology.setAlchemicalAtoms(mola)
+                topology.setUnchargedAtoms(mola)
         }
-        
+
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
-        energy.getCrystal().setSpecialPositionCutoff(0.0);
+        ForceFieldEnergy energy = mola.getPotentialEnergy()
+        energy.getCrystal().setSpecialPositionCutoff(0.0)
+
         // Save a reference to the topology.
-        properties[topNum] = mola.getProperties();
-        topologies[topNum] = mola;
-        energies[topNum] = energy;
+        properties[topNum] = mola.getProperties()
+        topologies[topNum] = mola
+        energies[topNum] = energy
     }
-    
+
+
     def run() {
 
-        def cli = new CliBuilder(usage:' ffxc Minimize [options] <filename> [file2...]', header:' Options:');
-
-        def options = new Options();
-        cli.parseFromInstance(options, args);
-
-        if (options.help == true) {
-            return cli.usage();
-        }
-        
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils();
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils();
-        }
-        
-        List<String> arguments = options.filenames;
-        // Check nArgs; should either be number of arguments (min 1), else 1.
-        int nArgs = arguments ? arguments.size() : 1;
-        nArgs = (nArgs < 1) ? 1 : nArgs;
-        
-        int numParallel = options.nPar;
-        if (threadsAvail % numParallel != 0) {
-            logger.warning(String.format(" Number of threads available %d not evenly divisible by np %d; reverting to sequential", threadsAvail, numParallel));
-            numParallel = 1;
-        } else if (nArgs % numParallel != 0) {
-            logger.warning(String.format(" Number of topologies %d not evenly divisible by np %d; reverting to sequential", arguments.size(), numParallel));
-            numParallel = 1;
-        } else {
-            threadsPer = threadsAvail / numParallel;
-        }
-        
-        if (options.ligAt1) {
-            ranges1 = options.ligAt1.tokenize(".");
-        }
-        if (options.ligAt2) {
-            ranges2 = options.ligAt2.tokenize(".");
-        }
-        
-        if (!arguments || arguments.isEmpty()) {
-            MolecularAssembly mola = aFuncts.getActiveAssembly();
-            if (mola == null) {
-                return cli.usage();
-            }
-            arguments = new ArrayList<>();
-            arguments.add(mola.getFile().getName());
-            
-            processFile(options, mola, 0);
-        } else {
-            for (int i = 0; i < nArgs; i++) {
-                openFile(options, arguments.get(i), i);
-            }
+        if (!init()) {
+            return
         }
 
+        List<String> arguments = filenames
+        // Check nArgs should either be number of arguments (min 1), else 1.
+        int nArgs = arguments ? arguments.size() : 1
+        nArgs = (nArgs < 1) ? 1 : nArgs
 
-        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology has lambda specified.
-        boolean lambdaTerm = options.ligAt1 || options.ligAt2 || (options.s1 > 0) || (options.s2 > 0) || (options.lambda >= 0.0 && nArgs == 1);
+        topologies = new MolecularAssembly[nArgs]
+        properties = new CompositeConfiguration[nArgs]
+        energies = new ForceFieldEnergy[nArgs]
+
+        int numParallel = topology.getNumParallel(threadsAvail, nArgs)
+        threadsPer = threadsAvail / numParallel
+
+        // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
+        boolean lambdaTerm = alchemical.ligAt1 || topology.ligAt2 || (alchemical.s1 > 0) || (topology.s2 > 0)
+
         if (lambdaTerm) {
-            System.setProperty("lambdaterm","true");
+            System.setProperty("lambdaterm", "true")
         }
-        if (options.lambda < 0.0 || options.lambda > 1.0) {
-            options.lambda = 0.0;
+
+        // Relative free energies via the DualTopologyEnergy class require different
+        // default OSRW parameters than absolute free energies.
+        if (nArgs >= 2) {
+            // Ligand vapor electrostatics are not calculated. This cancels when the
+            // difference between protein and water environments is considered.
+            System.setProperty("ligand-vapor-elec", "false")
         }
-        
-        Potential potential;
-        
-        UnivariateSwitchingFunction sf;
-        if (options.lambdaFunction) {
-            String lf = options.lambdaFunction.toUpperCase();
-            switch (lf) {
-                case ~/^-?[0-9]*\.?[0-9]+/:
-                    double exp = Double.parseDouble(lf);
-                    sf = new PowerSwitch(1.0, exp);
-                    break;
-                case "TRIG":
-                    sf = new SquaredTrigSwitch(false);
-                    break;
-                case "MULT":
-                    sf = new MultiplicativeSwitch(0.0, 1.0);
-                    break;
-                default:
-                    try {
-                        double beta = Double.parseDouble(lf);
-                        sf = new PowerSwitch(1.0, beta);
-                    } catch (NumberFormatException ex) {
-                        logger.warning(String.format("Argument to option -sf %s could not be properly parsed; using default linear switch", options.lambdaFunction));
-                        sf = new PowerSwitch(1.0, 1.0);
-                    }
+
+        /**
+         * Read in files.
+         */
+        if (!arguments || arguments.isEmpty()) {
+            MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
+            if (mola == null) {
+                return helpString()
             }
+            arguments = new ArrayList<>()
+            arguments.add(mola.getFile().getName())
+            processFile(mola)
         } else {
-            sf = new PowerSwitch(1.0, options.lamExp);
-        }
-        
-        List<Integer> uniqueA;
-        List<Integer> uniqueB;
-        if (nArgs >= 4) {
-            uniqueA = new ArrayList<>();
-            uniqueB = new ArrayList<>();
-            
-            if (options.unsharedA) {
-                def ra = [] as Set;
-                String[] toksA = options.unsharedA.tokenize(".");
-                Atom[] atA1 = topologies[0].getAtomArray();
-                for (range in toksA) {
-                    def m = rangeregex.matcher(range);
-                    if (m.find()) {
-                        int rangeStart = Integer.parseInt(m.group(1));
-                        logger.info(String.format("Range %s A rangeStart %d groupCount %d", range, rangeStart, m.groupCount()));
-                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                        if (rangeStart > rangeEnd) {
-                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                        }
-                        logger.info(String.format(" Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
-                        logger.info(String.format(" First atom in range: %s", atA1[rangeStart-1]));
-                        if (rangeEnd > rangeStart) {
-                            logger.info(String.format(" Last atom in range: %s", atA1[rangeEnd-1]));
-                        }
-                        for (int i = rangeStart; i <= rangeEnd; i++) {
-                            ra.add(i-1);
-                        }
-                    }
-                }
-                int counter = 0;
-                def raAdj = [] as Set; // Indexed by common variables in dtA.
-                for (int i = 0; i < atA1.length; i++) {
-                    Atom ai = atA1[i];
-                    if (i in ra) {
-                        if (ai.applyLambda()) {
-                            logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
-                        } else {
-                            logger.fine(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
-                            for (int j = 0; j < 3; j++) {
-                                raAdj.add(new Integer(counter + j));
-                            }
-                        }
-                    }
-                    if (! ai.applyLambda()) {
-                        counter += 3;
-                    }
-                }
-                if (raAdj) {
-                    uniqueA.addAll(raAdj);
-                }
-            }
-            if (options.unsharedB) {
-                def rb = [] as Set;
-                String[] toksB = options.unsharedB.tokenize(".");
-                Atom[] atB1 = topologies[2].getAtomArray();
-                for (range in toksB) {
-                    def m = rangeregex.matcher(range);
-                    if (m.find()) {
-                        int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                        if (rangeStart > rangeEnd) {
-                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                        }
-                        logger.info(String.format(" Range %s for B, start %d end %d", range, rangeStart, rangeEnd));
-                        logger.info(String.format(" First atom in range: %s", atB1[rangeStart-1]));
-                        if (rangeEnd > rangeStart) {
-                            logger.info(String.format(" Last atom in range: %s", atB1[rangeEnd-1]));
-                        }
-                        for (int i = rangeStart; i <= rangeEnd; i++) {
-                            rb.add(i-1);
-                        }
-                    }
-                }
-                int counter = 0;
-                def rbAdj = [] as Set; // Indexed by common variables in dtA.
-                for (int i = 0; i < atB1.length; i++) {
-                    Atom bi = atB1[i];
-                    if (i in rb) {
-                        if (bi.applyLambda()) {
-                            logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
-                        } else {
-                            logger.fine(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
-                            for (int j = 0; j < 3; j++) {
-                                rbAdj.add(counter + j);
-                            }
-                        }
-                    }
-                    if (! bi.applyLambda()) {
-                        counter += 3;
-                    }
-                }
-                if (rbAdj) {
-                    uniqueB.addAll(rbAdj);
-                }
+            logger.info(String.format(" Initializing %d topologies...", nArgs))
+            for (int i = 0; i < nArgs; i++) {
+                openFile(arguments.get(i), i)
             }
         }
-        
+
+        /**
+         * Configure the potential to test.
+         */
+        StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
+        Potential potential
+        UnivariateSwitchingFunction sf = topology.getSwitchingFunction();
         switch (nArgs) {
             case 1:
-                logger.info("\n Running minimize on " + topologies[0].getFile().getName());
-                potential = energies[0];
-                break;
+                potential = energies[0]
+                alchemical.setActiveAtoms(topologies[0]);
+                break
             case 2:
-                logger.info(String.format("\n Running minimize on dual topology [%s,%s]", topologies[0].getFile().getName(), topologies[1].getFile().getName()));
-                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-                if (numParallel == 2) {
-                    dte.setParallel(true);
-                }
-                potential = dte;
-                break;
             case 4:
-                StringBuilder sb = new StringBuilder("\n Running minimize on quad topology ");
-                sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
-                logger.info(sb.toString());
-                
-                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
-                QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
-                if (numParallel >= 2) {
-                    qte.setParallel(true);
-                    if (numParallel == 4) {
-                        dta.setParallel(true);
-                        dtb.setParallel(true);
-                    }
-                }
-                potential = qte;
-                break;
             case 8:
-                logger.warning("Oct-topology minimization not presently functional");
-                sb = new StringBuilder("\n Running minimize on oct-topology ");
-                sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
-                logger.info(sb.toString());
-                
-                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
-                QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
-                
-                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
-                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
-                QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
-                
-                OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
-                if (numParallel >= 2) {
-                    ote.setParallel(true);
-                    if (numParallel >= 4) {
-                        qtg.setParallel(true);
-                        qtd.setParallel(true);
-                        if (numParallel == 8) {
-                            dtga.setParallel(true);
-                            dtgb.setParallel(true);
-                            dtda.setParallel(true);
-                            dtdb.setParallel(true);
-                        }
-                    }
+                List<Integer> uniqueA
+                List<Integer> uniqueB
+                if (nArgs >= 4) {
+                    uniqueA = topology.getUniqueAtoms(topologies[0], "A");
+                    uniqueB = topology.getUniqueAtoms(topologies[1], "B");
                 }
-                potential = ote;
-                break;
+                potential = topology.getTopology(topologies, sf, uniqueA, uniqueB, numParallel, sb)
+                break
             default:
-                logger.severe(" Must have 1, 2, 4, or 8 topologies!");
-                break;
+                logger.severe(" Must have 1, 2, 4, or 8 topologies!")
+                break
         }
-        logger.info(" RMS gradient convergence criteria: " + options.eps);
-        
-        LambdaInterface linter = (LambdaInterface) potential;
-        
-        // Turn on computation of lambda derivatives if l >= 0 or > 1 argument
-        if (options.lambda >= 0.0 || nArgs > 1) {
-            double lamToUse = options.lambda;
-            if (lamToUse < 0.0 || lamToUse > 1.0) {
-                logger.warning(String.format(" Lambda value %8.4g out-of-bounds of 0-1; resetting to 0.5", options.lambda));
-                lamToUse = 0.5;
-            }
-            linter.setLambda(lamToUse);
-        }
-        
-        double[] x = new double[potential.getNumberOfVariables()];
-        potential.getCoordinates(x);
-        potential.energy(x, true);
-        
-        AlgorithmListener theListener = aFuncts.getDefaultListener();
-        Minimize minimize = new Minimize(topologies[0], potential, theListener);
-        minimize.minimize(options.eps);
 
-        potential.getCoordinates(x);
-        potential.energy(x, true);
-        
+        ArrayList<MolecularAssembly> topo = new ArrayList<>(Arrays.asList(topologies));
+        sb.append(topo.stream().map { t -> t.getFile().getName() }.collect(Collectors.joining(",", "[", "]")))
+        logger.info(sb.toString())
+
+        LambdaInterface linter = (LambdaInterface) potential
+
+        // Turn on computation of lambda derivatives if l >= 0 or > 1 argument
+        if (lambdaTerm || nArgs > 1) {
+            if (alchemical.initialLambda < 0.0 || alchemical.initialLambda > 1.0) {
+                alchemical.initialLambda = 0.5
+            }
+            linter.setLambda(alchemical.initialLambda)
+        }
+
+        double[] x = new double[potential.getNumberOfVariables()]
+        potential.getCoordinates(x)
+        potential.energy(x, true)
+
+        AlgorithmListener theListener = algorithmFunctions.getDefaultListener()
+        Minimize minimize = new Minimize(topologies[0], potential, theListener)
+        minimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+
+        potential.getCoordinates(x)
+        potential.energy(x, true)
+
         for (mola in topologies) {
-            String filename = mola.getFile().getName();
-            String ext = FilenameUtils.getExtension(filename);
-            filename = FilenameUtils.removeExtension(filename);
-            
+            String filename = mola.getFile().getName()
+            String ext = FilenameUtils.getExtension(filename)
+            filename = FilenameUtils.removeExtension(filename)
+
             if (ext.toUpperCase().contains("XYZ")) {
-                aFuncts.saveAsXYZ(mola, new File(filename + ".xyz"));
+                algorithmFunctions.saveAsXYZ(mola, new File(filename + ".xyz"))
             } else {
-                aFuncts.saveAsPDB(mola, new File(filename + ".pdb"));
+                algorithmFunctions.saveAsPDB(mola, new File(filename + ".pdb"))
             }
         }
     }

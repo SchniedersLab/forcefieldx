@@ -1185,8 +1185,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
 
     @Override
     public Crystal getCrystal() {
-        logger.severe(" XRayEnergy does implement getCrystal yet.");
-        return null;
+        return diffractionData.getCrystal()[0];
     }
 
     @Override

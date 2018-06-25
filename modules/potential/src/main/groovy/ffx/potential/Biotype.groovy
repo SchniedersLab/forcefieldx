@@ -17,7 +17,8 @@ import picocli.CommandLine.Parameters
 @Command(description = " Print out Biotype records for the atoms in an XYZ file.", name = "ffxc Biotype")
 class Biotype extends PotentialScript {
 
-    @Parameters(arity = "1..*", paramLabel = "files", description = "An XYZ file.")
+    @Parameters(arity = "1..*", paramLabel = "files",
+            description = "An XYZ file.")
     List<String> xyzFile = null
 
     def run() {

@@ -250,12 +250,12 @@ public class MTZFilter implements DiffractionFileFilter {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append(format("\n Reading %s\n\n", mtzFile.getName()));
-            sb.append(format(" Setting up reflection list based on MTZ file.\n"));
+            sb.append(format(" Reading %s\n", mtzFile.getName()));
+            sb.append(format("  Setting up reflection list based on MTZ file.\n"));
             sb.append(format("  Space group number: %d (name: %s)\n",
                     spaceGroupNum, SpaceGroup.spaceGroupNames[spaceGroupNum - 1]));
             sb.append(format("  Resolution:         %8.3f\n", 0.999999 * resHigh));
-            sb.append(format("  Cell:               %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+            sb.append(format("  Cell:               %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
                     dataSet.cell[0], dataSet.cell[1], dataSet.cell[2],
                     dataSet.cell[3], dataSet.cell[4], dataSet.cell[5]));
             logger.info(sb.toString());
@@ -527,7 +527,7 @@ public class MTZFilter implements DiffractionFileFilter {
                 sb.append(format(" HKL NOT read in (too high resolution):   %d\n", nRes));
                 sb.append(format(" HKL NOT read in (not in internal list?): %d\n", nIgnore));
                 sb.append(format(" HKL NOT read in (F/sigF cutoff):         %d\n", nCut));
-                sb.append(format(" HKL in internal list:                    %d\n", reflectionList.hkllist.size()));
+                sb.append(format(" HKL in internal list:                    %d", reflectionList.hkllist.size()));
                 logger.info(sb.toString());
             }
             if (rFree < 0 && rFreePlus < 0 && rFreeMinus < 0) {
@@ -566,7 +566,7 @@ public class MTZFilter implements DiffractionFileFilter {
         readFcs(mtzFile2, reflectionlist, fcdata2, properties);
 
         // compute running average using mtzFile1 as current average
-        System.out.println("iteration for averaging: " + iter);
+        logger.info(format(" Iteration for averaging: %d.", iter));
         for (int i = 0; i < reflectionlist.hkllist.size(); i++) {
             fcdata1.fc[i][0] += (fcdata2.fc[i][0] - fcdata1.fc[i][0]) / iter;
             fcdata1.fc[i][1] += (fcdata2.fc[i][1] - fcdata1.fc[i][1]) / iter;
@@ -705,12 +705,12 @@ public class MTZFilter implements DiffractionFileFilter {
 
             if (logger.isLoggable(Level.INFO)) {
                 sb.append(format(" MTZ file type (machine stamp): %s\n", stampString));
-                sb.append(format(" Fc HKL read in:                             %d\n", nRead));
-                sb.append(format(" Fc HKL read as friedel mates:               %d\n", nFriedel));
-                sb.append(format(" Fc HKL NOT read in (too high resolution):   %d\n", nRes));
-                sb.append(format(" Fc HKL NOT read in (not in internal list?): %d\n", nIgnore));
-                sb.append(format(" Fc HKL NOT read in (F/sigF cutoff):         %d\n", nCut));
-                sb.append(format(" HKL in internal list:                       %d\n",
+                sb.append(format("  Fc HKL read in:                             %d\n", nRead));
+                sb.append(format("  Fc HKL read as friedel mates:               %d\n", nFriedel));
+                sb.append(format("  Fc HKL NOT read in (too high resolution):   %d\n", nRes));
+                sb.append(format("  Fc HKL NOT read in (not in internal list?): %d\n", nIgnore));
+                sb.append(format("  Fc HKL NOT read in (F/sigF cutoff):         %d\n", nCut));
+                sb.append(format("  HKL in internal list:                       %d\n",
                         reflectionList.hkllist.size()));
                 logger.info(sb.toString());
             }

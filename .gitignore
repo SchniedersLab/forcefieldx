@@ -12,6 +12,7 @@ conf/*.jar
 *.iml
 *.tmp
 nb-configuration.xml
+nbactions.xml
 catalog.xml
 .DS_Store
 .classpath

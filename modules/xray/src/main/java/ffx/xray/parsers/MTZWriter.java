@@ -177,7 +177,7 @@ public class MTZWriter {
         try {
             if (logger.isLoggable(Level.INFO)) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(format("\n Writing MTZ HKL file: \"%s\"\n", fileName));
+                sb.append(format("\n Writing MTZ HKL file: \"%s\"", fileName));
                 logger.info(sb.toString());
             }
 

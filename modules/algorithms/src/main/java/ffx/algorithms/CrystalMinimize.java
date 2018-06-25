@@ -81,7 +81,6 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
     private Crystal crystal;
     private Crystal unitCell;
 
-
     /**
      * <p>
      * Constructor for Minimize.</p>
@@ -203,22 +202,35 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
      * <p>
      * minimize</p>
      *
-     * @param eps a double.
+     * @param eps The minimization convergence criteria.
      * @return a {@link ffx.numerics.Potential} object.
      */
     public Potential minimize(double eps) {
-        return minimize(7, eps);
+        return minimize(7, eps, Integer.MAX_VALUE);
     }
 
     /**
      * <p>
      * minimize</p>
      *
-     * @param m   a int.
-     * @param eps a double.
+     * @param eps           The minimization convergence criteria.
+     * @param maxIterations The maximum number of minimization steps.
      * @return a {@link ffx.numerics.Potential} object.
      */
-    public Potential minimize(int m, double eps) {
+    public Potential minimize(double eps, int maxIterations) {
+        return minimize(7, eps, maxIterations);
+    }
+
+    /**
+     * <p>
+     * minimize</p>
+     *
+     * @param m             The number of previous steps used to estimate the Hessian.
+     * @param eps           The minimization convergence criteria.
+     * @param maxIterations The maximum number of minimization steps.
+     * @return a {@link ffx.numerics.Potential} object.
+     */
+    public Potential minimize(int m, double eps, int maxIterations) {
         time = System.nanoTime();
 
         xtalEnergy.setScaling(scaling);
@@ -233,7 +245,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
 
         done = false;
         energy = xtalEnergy.energyAndGradient(x, grad);
-        status = LBFGS.minimize(n, m, x, energy, grad, eps, xtalEnergy, this);
+        status = LBFGS.minimize(n, m, x, energy, grad, eps, maxIterations, xtalEnergy, this);
         done = true;
 
         switch (status) {
@@ -350,7 +362,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
                 c55 = dE2dA2(5, 5, delta, x, eps) * PRESCON * GPA / volume;
                 cavg = (c44 + c55) / 2.0;
                 c44 = c55 = cavg;
-                c66 = 0.5 * (c11-c12);
+                c66 = 0.5 * (c11 - c12);
                 break;
             case TRIGONAL:
                 c11 = dE2dA2(1, 1, delta, x, eps) * PRESCON * GPA / volume;
@@ -369,7 +381,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
                 c55 = dE2dA2(5, 5, delta, x, eps) * PRESCON * GPA / volume;
                 cavg = (c44 + c55) / 2.0;
                 c44 = c55 = cavg;
-                c66 = 0.5 * (c11-c12);
+                c66 = 0.5 * (c11 - c12);
 
                 // c14 and c24 should be equal and opposite sign.
                 c14 = dE2dA2(1, 4, delta, x, eps) * PRESCON * GPA / volume;
@@ -406,7 +418,7 @@ public class CrystalMinimize implements OptimizationListener, Terminatable {
                 pg = crystal.getUnitCell().spaceGroup.pointGroupName;
                 if (pg.equalsIgnoreCase("PG4")
                         || pg.equalsIgnoreCase("PG4bar")
-                    || pg.equalsIgnoreCase("PG4/m")) {
+                        || pg.equalsIgnoreCase("PG4/m")) {
                     // Should be equal in magnitude and opposite sign.
                     c16 = dE2dA2(1, 6, delta, x, eps) * PRESCON * GPA / volume;
                     c26 = dE2dA2(2, 6, delta, x, eps) * PRESCON * GPA / volume;

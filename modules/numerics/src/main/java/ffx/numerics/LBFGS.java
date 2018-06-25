@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -170,9 +170,7 @@ public class LBFGS {
      * @param g The components of the gradient <code>g</code> at the point
      * <code>x</code>.
      * @param eps Determines the accuracy with which the solution is to be
-     * found. The subroutine terminates when      <code>
-     *            G RMS &lt; EPS
-     * </code>
+     * found. The subroutine terminates when <code>G RMS &lt; EPS</code>
      * @param maxIterations Maximum number of optimization steps.
      * @param potential Implements the {@link Potential} interface to supply
      * function values and gradients.
@@ -183,8 +181,8 @@ public class LBFGS {
      * @since 1.0
      */
     public static int minimize(final int n, int mSave, final double[] x, double f, double[] g,
-            final double eps, final int maxIterations, Potential potential,
-            OptimizationListener listener) {
+                               final double eps, final int maxIterations, Potential potential,
+                               OptimizationListener listener) {
 
         assert (n > 0);
         assert (mSave > 0);
@@ -436,9 +434,7 @@ public class LBFGS {
      * @param g The components of the gradient <code>g</code> at the point
      * <code>x</code>.
      * @param eps Determines the accuracy with which the solution is to be
-     * found. The subroutine terminates when      <code>
-     *            G RMS &lt; EPS
-     * </code>
+     * found. The subroutine terminates when <code>G RMS &lt; EPS</code>
      * @param potential Implements the {@link Potential} interface to supply
      * function values and gradients.
      * @param listener Implements the {@link OptimizationListener} interface and
@@ -447,8 +443,8 @@ public class LBFGS {
      * @since 1.0
      */
     public static int minimize(int n, int mSave, double[] x, double f, double[] g,
-            double eps, Potential potential,
-            OptimizationListener listener) {
+                               double eps, Potential potential,
+                               OptimizationListener listener) {
         return minimize(n, mSave, x, f, g, eps, Integer.MAX_VALUE - 1, potential, listener);
     }
 
@@ -466,7 +462,7 @@ public class LBFGS {
      * @since 1.0
      */
     private static void log(int iter, int nfun, double grms, double xrms,
-            double f, double df, double angle, LineSearchResult info) {
+                            double f, double df, double angle, LineSearchResult info) {
         if (iter == 0) {
             logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n\n");
             logger.info(" QN Iter    F Value      G RMS     F Move    X Move    Angle  FG Call  Comment\n");
@@ -495,7 +491,7 @@ public class LBFGS {
      * @since 1.0
      */
     public static void aXplusY(final int n, final double a, final double[] x,
-            final int x0, final int dx, final double[] y, final int y0, final int dy) {
+                               final int x0, final int dx, final double[] y, final int y0, final int dy) {
         /**
          * Require the number of entries (n) to be greater than zero. If the
          * scalar (a) is zero, then the Y array is unchanged.
@@ -525,7 +521,7 @@ public class LBFGS {
      * @since 1.0
      */
     public static double XdotY(final int n, final double[] x, final int x0,
-            final int dx, final double[] y, final int y0, final int dy) {
+                               final int dx, final double[] y, final int y0, final int dy) {
 
         /**
          * Require the number of entries to be greater than zero.

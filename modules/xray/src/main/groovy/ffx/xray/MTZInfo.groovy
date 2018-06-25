@@ -1,10 +1,10 @@
 package ffx.xray
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.xray.parsers.MTZFilter
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
 
 /**
  * The MTZInfo script prints out MTZ reflection file header info.
@@ -13,57 +13,29 @@ import ffx.xray.parsers.MTZFilter
  * <br>
  * ffxc xray.MTZInfo &lt;filename&gt;
  */
-class MTZInfo extends Script {
+@Command(description = " Write out information on an MTZ file.", name = "ffxc xray.MTZInfo")
+class MTZInfo extends AlgorithmsScript {
 
     /**
-     * Options for the MTZInfo Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc xray.MTZInfo &lt;filename&gt;
+     * An MTZ filename.
      */
-    class Options {
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * The final argument should be an MTZ filename.
-         */
-        @Unparsed(description = 'The MTZ file.')
-        List<String> filename
-    }
+    @Parameters(arity = "1", paramLabel = "MTZ", description = "An MTZ diffraction file.")
+    private String filename = null;
 
     /**
      * Execute the script.
      */
     def run() {
 
-        def cli = new CliBuilder()
-        cli.name = "ffxc xray.MTZInfo"
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        List<String> arguments = options.filename
-        String mtzfile
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            mtzfile = arguments.get(0)
-        } else {
-            return cli.usage()
-        }
+        logger.info("\n Running MTZInfo on " + filename)
 
-        logger.info("\n Running MTZInfo on " + mtzfile)
-
-        File file = new File(mtzfile)
+        File file = new File(filename)
         if (!file.exists()) {
-            println(" File " + mtzfile + " was not found.")
+            println(" File " + filename + " was not found.")
             return
         }
 

@@ -1,11 +1,6 @@
-
 package ffx.potentials
 
 import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
 
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
@@ -13,8 +8,11 @@ import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+import ffx.potential.cli.PotentialScript
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The SaveRotamers script saves a file as a PDB file
@@ -23,186 +21,132 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc SaveRotamers [options] &lt;filename&gt;
  */
-class SaveRotamers extends Script {
+@Command(description = " Save out rotamers.", name = "ffxc SaveRotamers")
+class SaveRotamers extends PotentialScript {
+
     /**
-     * Options for the SaveRotamers
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc SaveRotamers [options] &lt;filename&gt;
+     * -c or --chain to specify chain
      */
-    public class Options{
-        /**
-         * -h or --help to print a help message
-         */
-        @Option(longName='help', shortName='h', defaultValue='false', description='Print this help message.') boolean help;
-        /**
-         * -c or --chain to specify chain
-         */
-        @Option(longName='chain', shortName='c', description='Single character chain name (default is \' \').') char chain;
-        /**
-         * -l or --library to select rotamer library 
-         */
-        @Option(longName='library', shortName='l', description='Available rotamer libraries are Ponder and Richards (1) or Richardson (2).') int library;
-        /**
-         * -r or --resid to select residue number 
-         */
-        @Option(longName='resid', shortName='r', description='Residue number.') int resid;
-        /**
-         * -i or --independent to draw nucleic acid rotamers independently of chain context
-         */ 
-        @Option(longName='independent', shortName='i', defaultValue='false', description='Independent draws nucleic acid rotamers independently of chain context (true if flag is present).') boolean independent;
-        /**
-         * -s or --start to select first rotamer to draw. Indexed form rotamer 0
-         */
-        @Option(longName='start', shortName='s', description='First rotamer to draw. Indexed from rotamer 0.') int start;
-        /**
-         * -f or --finish to select last rotamer to draw. Indexed from rotamer 0
-         */
-        @Option(longName='finish', shortName='f', description='Last rotamer to draw. Indexed from rotamer 0.') int finish;
-        /**
-         * -x or --all to draw all rotamers beginning from the passed rotamer number (overrides other options). Indexed from rotamer 0.
-         */
-        @Option(longName='all', shortName='x', description='Draw all rotamers beginning from the passed rotamer number (overrides other options). Indexed from rotamer 0.') int all;
-        /**
-         * -u or --upstreamPucker to adjust the pucker of the 5\' residue to match the rotamer. Use flag to turn on
-         */ 
-        @Option(longName='upstreamPucker', shortName='u', defaultValue='false', description='Adjusts the pucker of the 5\' residue to match the rotamer (true if flag is present)') boolean upstreamPucker;
-        /**
-         * The final argument(s) should be one or more filenames.
-         */
-        @Unparsed List<String> filenames;
-    }
+    @Option(names = ['--chain', '-c'], paramLabel = "\" \"",
+            description = 'Single character chain name.')
+    char c = ' '
+
+    /**
+     * -l or --library to select rotamer library 
+     */
+    @Option(names = ['--library', '-l'], paramLabel = "1",
+            description = 'Available rotamer libraries are (1) Ponder and Richards or (2) Richardson.')
+    int library = 1
+
+    /**
+     * -r or --resid to select residue number 
+     */
+    @Option(names = ['--resid', '-r'], paramLabel = "1",
+            description = 'Residue number.')
+    int resID = 1
+
+    /**
+     * -i or --independent to draw nucleic acid rotamers independently of chain context
+     */
+    @Option(names = ['--independent', '-i'], paramLabel = 'false',
+            description = 'Independent draws nucleic acid rotamers independently of chain context.')
+    boolean independent = false
+
+    /**
+     * -s or --start to select first rotamer to draw. Indexed form rotamer 0
+     */
+    @Option(names = ['--start', '-s'], paramLabel = "0",
+            description = 'First rotamer to draw (indexed from rotamer 0).')
+    int start = 0
+
+    /**
+     * -f or --finish to select last rotamer to draw. Indexed from rotamer 0
+     */
+    @Option(names = ['--finish', '-f'], paramLabel = "-1",
+            description = 'Last rotamer to draw (indexed from rotamer 0).')
+    int finish = -1
+
+    /**
+     * -x or --all to draw all rotamers beginning from the passed rotamer number (overrides other options). Indexed from rotamer 0.
+     */
+    @Option(names = ['--all', '-x'], paramLabel = "-1",
+            description = 'Draw all rotamers beginning from the passed index (overrides other options).')
+    int all = -1
+
+    /**
+     * -u or --upstreamPucker to adjust the pucker of the 5\' residue to match the rotamer. Use flag to turn on
+     */
+    @Option(names = ['--upstreamPucker', '-u'], paramLabel = 'false',
+            description = 'Adjusts the pucker of the 5\' residue to match the rotamer.')
+    boolean upstreamPucker = false
+
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1", paramLabel = "files",
+            description = "XYZ or PDB input file.")
+    private List<String> filenames
 
     /**
      * Execute the script.
      */
     def run() {
-        // Create the command line parser.
-        def cli = new CliBuilder(usage:' ffxc SaveRotamers [options] <PDB|XYZ>');
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-        if (options.help == true) {
-            return cli.usage()
-        }
-    
-        List<String> arguments = options.filenames;
-  
-        int resID = 1;
-        String chain = " ";
-        int library = 1;
-        boolean independent = false;
-        int start = -1;
-        int finish = -1;
-        int allStart = 0;
-        // Will be checked for validity, and set false if invalid.
-        boolean upstreamPucker = false;
-        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
-        // Residue number.
-        if (options.resid) {
-            resID = options.resid;
+        if (!init()) {
+            return
         }
 
-        // Chain Name.
-        if (options.chain) {
-            chain = Character.toString(options.chain);
-        }
-
-        // Rotamer Library.
-        if (options.library) {
-            library = options.library;
-        }
-
-        // Rotamer independence
-        if (options.independent) {
-            independent = options.independent;
-        }
-
-        // Default behavior: draw all rotamers starting from 0 (as though set -x 0).
-        boolean saveAllRotamers = true;
-
-        // Start point
-        if (options.start) {
-            start = options.start;
-            saveAllRotamers = false;
-        }
-
-        // Finish point
-        if (options.finish) {
-            finish = options.finish;
-        }
-
-        // Start from to all
-        if (options.all) {
-            allStart = options.all;
-            saveAllRotamers = true;
-            // Over-rides options.s
-        }
-
-        // Upstream pucker adjustment
-        if (options.upstreamPucker) {
-            upstreamPucker = options.upstreamPucker;
-        }
-
-        logger.info("\n Saving rotamers for residue number " + resID + " of chain " + chain + ".");
-        
-        PotentialsFunctions functions
-        try {
-            // Use a method closure to try to get an instance of UIUtils (the User Interfaces
-            // implementation, which interfaces with the GUI, etc.).
-            functions = getPotentialsFunctions()
-        } catch (MissingMethodException ex) {
-            // If Groovy can't find the appropriate closure, catch the exception and build
-            // an instance of the local implementation.
-            functions = new PotentialsUtils()
-        }
-
-        // Read in command line.
-        //String modelFilename = arguments.get(0);
-
-        // Open the file.
-        //systems = open(modelFilename);
-        // Read in command line.
-        String modelFilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelFilename = arguments.get(0)
-            //open(modelFilename)
-        } else if (active == null) {
-            return cli.usage()
+        String modelFilename
+        if (filenames != null && filenames.size() > 0) {
+            modelFilename = filenames.get(0)
+            MolecularAssembly[] assemblies = potentialFunctions.open(modelFilename)
+            activeAssembly = assemblies[0]
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelFilename = active.getFile()
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        MolecularAssembly[] assemblies = functions.open(modelFilename)
-        MolecularAssembly activeAssembly = assemblies[0]
-        RotamerLibrary.initializeDefaultAtomicCoordinates(activeAssembly.getChains());
-        Polymer polymer = activeAssembly.getChain(chain);
-        if (polymer == null) {
-            logger.info(" Polymer + " + chain + " does not exist.");
-            return;
+        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary()
+        String chain = Character.toString(c)
+
+        boolean saveAllRotamers = false
+        int allStart = 0
+        // Start from to all
+        if (all > -1) {
+            allStart = all
+            saveAllRotamers = true
         }
-        Residue residue = polymer.getResidue(resID);
+
+        logger.info("\n Saving rotamers for residue number " + resID + " of chain " + chain + ".")
+
+        RotamerLibrary.initializeDefaultAtomicCoordinates(activeAssembly.getChains())
+        Polymer polymer = activeAssembly.getChain(chain)
+        if (polymer == null) {
+            logger.info(" Polymer + " + chain + " does not exist.")
+            return
+        }
+        Residue residue = polymer.getResidue(resID)
         if (residue == null) {
-            logger.info(" Residue + " + resID + " does not exist.");
-            return;
+            logger.info(" Residue + " + resID + " does not exist.")
+            return
         }
 
         if (library == 1) {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
+            rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards)
         } else {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson)
         }
 
-        Rotamer[] rotamers = residue.getRotamers(rLib);
+        Rotamer[] rotamers = residue.getRotamers(rLib)
         if (rotamers == null) {
-            logger.severe(" There are no rotamers for residue + " + residue.toString());
+            logger.severe(" There are no rotamers for residue + " + residue.toString())
         }
-        int nrotamers = rotamers.length;
+        int nrotamers = rotamers.length
 
-        boolean isDeoxy = false; // Applies to prevResidue.
-        Residue prevResidue;
+        boolean isDeoxy = false // Applies to prevResidue.
+        Residue prevResidue
         // If upstreamPucker is specified true, ensure that it is valid to apply it
         // (residue is nucleic acid with an upstream partner), and set isDeoxy.
         // If it is invalid, set upstreamPucker false.
@@ -210,31 +154,31 @@ class SaveRotamers extends Script {
             // Exception gets thrown if it's an amino acid, since "NA" is undefined.
             try {
                 if (residue.getResidueType() == NA) {
-                    prevResidue = (Residue) residue.getPreviousResidue();
+                    prevResidue = (Residue) residue.getPreviousResidue()
                     // If no previous residue, set upstream pucker false.
                     // The method used will ensure prevResidue is a nucleic acid.
                     if (prevResidue == null) {
-                        upstreamPucker = false;
+                        upstreamPucker = false
                     } else {
-                        Atom HOs = (Atom) prevResidue.getAtomNode("HO\'");
+                        Atom HOs = (Atom) prevResidue.getAtomNode("HO\'")
                         if (HOs == null) {
-                            isDeoxy = true;
+                            isDeoxy = true
                         }
                     }
-                }  else {
-                    upstreamPucker = false;
+                } else {
+                    upstreamPucker = false
                 }
             } catch (Exception e) {
-                upstreamPucker = false;
+                upstreamPucker = false
             }
         }
 
-        String ext = FilenameUtils.getExtension(modelFilename);
-        modelFilename = FilenameUtils.removeExtension(modelFilename);
+        String ext = FilenameUtils.getExtension(modelFilename)
+        modelFilename = FilenameUtils.removeExtension(modelFilename)
 
         if (saveAllRotamers) {
             if (allStart >= nrotamers) {
-                logger.info(" Specified start range is outside of rotamer range. No action taken.");
+                logger.info(" Specified start range is outside of rotamer range. No action taken.")
             } else {
                 for (int i = allStart; i < nrotamers; i++) {
                     RotamerLibrary.applyRotamer(residue, rotamers[i], independent);
@@ -249,49 +193,46 @@ class SaveRotamers extends Script {
                     }
                     if (ext.toUpperCase().contains("XYZ")) {
                         logger.info(String.format("Saving rotamer %d", i))
-                        functions.saveAsXYZ(activeAssembly,new File(modelFilename + ".xyz"));
+                        potentialFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"));
                     } else {
-                        //functions.saveAsPDB(systems, new File(modelFilename + ".pdb"));
                         logger.info(String.format("Saving rotamer %d", i))
-                        functions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"));
+                        potentialFunctions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"))
                     }
                 }
             }
         } else {
             if (start >= nrotamers) {
-                logger.info(" Specified start range is outside of rotamer range. No action taken.");
+                logger.info(" Specified start range is outside of rotamer range. No action taken.")
             } else {
                 if (finish >= nrotamers) {
-                    finish = nrotamers - 1;
+                    finish = nrotamers - 1
                 } else if (finish < start) {
-                    logger.info(" Specified finish point is before the start point; drawing only rotamer " + start);
-                    finish = start;
+                    logger.info(" Specified finish point is before the start point drawing only rotamer " + start)
+                    finish = start
                 }
                 for (int i = start; i <= finish; i++) {
-                    RotamerLibrary.applyRotamer(residue, rotamers[i], independent);
+                    RotamerLibrary.applyRotamer(residue, rotamers[i], independent)
                     if (upstreamPucker) {
-                        double prevDelta = rotamers[i].chi1;
+                        double prevDelta = rotamers[i].chi1
                         if (RotamerLibrary.checkPucker(prevDelta) == 1) {
                             // North pucker
-                            RotamerLibrary.applySugarPucker(prevResidue, 1, isDeoxy, true);
+                            RotamerLibrary.applySugarPucker(prevResidue, 1, isDeoxy, true)
                         } else {
-                            RotamerLibrary.applySugarPucker(prevResidue, 2, isDeoxy, true);
+                            RotamerLibrary.applySugarPucker(prevResidue, 2, isDeoxy, true)
                         }
                     }
                     if (ext.toUpperCase().contains("XYZ")) {
                         logger.info(String.format("Saving rotamer %d", i))
-                        functions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"));
+                        potentialFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
                     } else {
-                        //saveAsPDB(systems, new File(modelFilename + ".pdb"));
                         logger.info(String.format("Saving rotamer %d", i))
-                        functions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"));
+                        potentialFunctions.saveAsPDB(activeAssembly, new File(modelFilename + ".pdb"))
                     }
                 }
             }
         }
     }
 }
-
 
 /**
  * Title: Force Field X.

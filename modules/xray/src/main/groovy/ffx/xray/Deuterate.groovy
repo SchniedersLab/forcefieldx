@@ -2,16 +2,14 @@ package xray
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
 import ffx.potential.bonded.Molecule
-import ffx.potential.utils.PotentialsFunctions
-import ffx.potential.utils.PotentialsUtils
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
 
 /**
  * Deuterate changes exchangeable hydrogen atoms to deuterium atoms for a PDB file.
@@ -20,96 +18,62 @@ import ffx.potential.utils.PotentialsUtils
  * <br>
  * ffxc xray.Deuterate &lt;pdbfile1&gt;
  */
-class Deuterate extends Script {
+@Command(description = " Deuterate exchangable hydrogens of the PDB model.", name = "ffxc Deuterate")
+class Deuterate extends AlgorithmsScript {
 
-	/**
-	 * Options for the X-ray Deuterate Script.
-	 * <br>
-	 * Usage:
-	 * <br>
-	 * ffxc xray.Deuterate &lt;pdbfile1&gt;
-	 */
-	class Options {
-		/**
-		 * -h or --help to print a help message
-		 */
-		@Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-		boolean help
-		/**
-		 * The final argument should be a PDB filename.
-		 */
-		@Unparsed(description = 'A PDB filename.')
-		List<String> filename
-	}
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+    private List<String> filenames
+    /**
+     * Execute the script.
+     */
+    def run() {
 
-	/**
-	 * Execute the script.
-	 */
-	def run() {
-		def cli = new CliBuilder()
-		cli.name = "ffxc xray.Deuterate"
+        if (!init()) {
+            return
+        }
 
-		def options = new Options()
-		cli.parseFromInstance(options, args)
+        String modelfilename
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
+        } else {
+            modelfilename = activeAssembly.getFile().getAbsolutePath();
+        }
 
-		if (options.help == true) {
-			return cli.usage()
-		}
+        logger.info("\n Running xray.Deuterate on " + modelfilename)
 
-		List<String> arguments = options.filename
+        for (int i = 0; i < assemblies.length; i++) {
+            Atom[] atoms = assemblies[i].getAtomArray()
+            for (Atom a : atoms) {
+                if (a.getAtomicNumber() == 1) {
+                    Atom b = a.getBonds().get(0).get1_2(a)
 
-		// Name of the PDB with crystal header information
-		String modelfilename
-		if (arguments != null && arguments.size() > 0) {
-			// Read in command line.
-			modelfilename = arguments.get(0)
-		}  else if (active == null) {
-			return cli.usage()
-		} else {
-			modelfilename = active.getFile()
-		}
+                    // Criteria for converting H to D
+                    if (b.getAtomicNumber() == 7
+                            || b.getAtomicNumber() == 8) {
+                        String name = a.getName().replaceFirst("H", "D")
+                        a.setName(name)
+                    }
+                }
+            }
 
-		logger.info("\n Running xray.Deuterate on " + modelfilename)
+            ArrayList<MSNode> waters = assemblies[i].getWaters()
+            for (MSNode node : waters) {
+                Molecule water = (Molecule) node
+                water.setName("DOD")
+            }
+        }
 
-		// This is an interface specifying the closure-like methods.
-		PotentialsFunctions functions
-		try {
-			// Use a method closure to try to get an instance of UIUtils (the User Interfaces
-			// implementation, which interfaces with the GUI, etc.).
-			functions = getPotentialsUtils()
-		} catch (MissingMethodException ex) {
-			// If Groovy can't find the appropriate closure, catch the exception and build
-			// an instance of the local implementation.
-			functions = new PotentialsUtils()
-		}
-
-		// Use PotentialsFunctions methods instead of Groovy method closures to do work.
-		MolecularAssembly[] systems = functions.open(modelfilename)
-
-		for (int i=0; i<systems.length; i++) {
-			Atom[] atoms = systems[i].getAtomArray()
-			for (Atom a : atoms) {
-				if (a.getAtomicNumber() == 1) {
-					Atom b = a.getBonds().get(0).get1_2(a)
-
-					// Criteria for converting H to D
-					if (b.getAtomicNumber() == 7
-							|| b.getAtomicNumber() == 8) {
-						String name = a.getName().replaceFirst("H", "D")
-						a.setName(name)
-					}
-				}
-			}
-
-			ArrayList<MSNode> waters = systems[i].getWaters()
-			for (MSNode node : waters) {
-				Molecule water = (Molecule) node
-				water.setName("DOD")
-			}
-		}
-
-		functions.saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"))
-	}
+        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"))
+    }
 }
 
 /**

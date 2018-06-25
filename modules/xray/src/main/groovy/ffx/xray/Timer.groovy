@@ -1,16 +1,17 @@
 package ffx.xray
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
-import ffx.algorithms.AlgorithmFunctions
-import ffx.algorithms.AlgorithmUtils
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
-import ffx.xray.CrystalReciprocalSpace.SolventModel
+import ffx.potential.cli.TimerOptions
 import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The X-ray Timer script.
@@ -19,152 +20,87 @@ import ffx.xray.parsers.DiffractionFile
  * <br>
  * ffxc xray.Timer [options] &lt;filename&gt;
  */
-class Timer extends Script {
+@Command(description = " Time calculation of the X-ray target.", name = "ffxc Timer")
+class Timer extends AlgorithmsScript {
+
+    @Mixin
+    TimerOptions timerOptions
+
+    @Mixin
+    XrayOptions xrayOptions
 
     /**
-     * Options for the Timer Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc xray.Timer [options] &lt;filename [file2...]&gt;
+     * -r or --mode sets the desired refinement mode
+     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
      */
-    class Options {
-        /**
-         * -h or --help to print a help message.
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * -n or --iterations to set the number of iterations
-         */
-        @Option(longName='iterations', shortName='n', defaultValue='5', description='Number of iterations.')
-        int iterations
-        /**
-         * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
-         */
-        @Option(longName='threads', shortName='c', defaultValue='0', description='Number of SMP threads (the default of 0 specifies use of all CPU cores)')
-        int threads
-        /**
-         * -g or --gradient to ignore computation of the atomic coordinates gradient
-         */
-        @Option(longName='gradient', shortName='g', defaultValue='false', description='Ignore computation of the atomic coordinates gradient')
-        boolean gradient
-        /**
-         * -r or --mode sets the desired refinement mode
-         * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
-         */
-        @Option(shortName = 'r', longName = 'mode', convert = { s -> return RefinementMinimize.parseMode(s) }, defaultValue = 'COORDINATES',
-                description = 'Refinement mode: coordinates, bfactors, occupancies.')
-        RefinementMode mode
-        /**
-         * -D or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-         */
-        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 3, valueSeparator = ',',
-                description = 'Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.')
-        String[] data
-        /**
-         * The final arguments should be a PDB filename and data filename (CIF or MTZ).
-         */
-        @Unparsed(description = "PDB file and a CIF or MTZ file.")
-        List<String> filenames
-    }
+    @Option(names = ['-r', '--mode'], paramLabel = "mode", description = 'Refinement mode: coordinates, bfactors and/or occupancies.')
+    String modeString
+
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+    private List<String> filenames
+
 
     def run() {
 
-        def cli = new CliBuilder()
-        cli.name = "ffxc xray.Timer"
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        AlgorithmFunctions aFuncts
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils()
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils()
-        }
+        xrayOptions.init()
 
-        List<String> arguments = options.filenames
-
-        String modelfilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelfilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
+        String modelfilename
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelfilename = active.getFile()
+            modelfilename = activeAssembly.getFile().getAbsolutePath();
         }
 
         logger.info("\n Running xray.Timer on " + modelfilename)
 
-        // Set the number of threads (needs to be done before opening the files).
-        if (options.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(options.threads))
-        }
-
-        MolecularAssembly[] systems = aFuncts.open(modelfilename)
-
         // Set up diffraction data (can be multiple files)
-        List diffractionfiles = new ArrayList()
-        if (arguments.size() > 1) {
-            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false)
-            diffractionfiles.add(diffractionfile)
-        }
+        List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
 
-        if (options.data) {
-            for (int i = 0; i < options.data.size(); i += 3) {
-                double wA = Double.parseDouble(options.data[i + 1])
-                boolean neutron = Boolean.parseBoolean(options.data[i + 2])
-                DiffractionFile diffractionfile = new DiffractionFile(options.data[i], wA, neutron)
-                diffractionfiles.add(diffractionfile)
-            }
-        }
+        DiffractionData diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
+                xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
 
-        if (diffractionfiles.size() == 0) {
-            DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false)
-            diffractionfiles.add(diffractionfile)
+        // Set the number of threads (needs to be done before opening the files).
+        if (timerOptions.threads > 0) {
+            System.setProperty("pj.nt", Integer.toString(timerOptions.threads))
         }
-
-        DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(),
-                SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
 
         diffractiondata.scaleBulkFit()
         diffractiondata.printStats()
 
-        aFuncts.energy(systems[0])
+        algorithmFunctions.energy(assemblies[0])
 
         // Type of refinement.
-        RefinementMode refinementmode = options.mode
+        RefinementMode refinementmode = RefinementMinimize.parseMode(modeString)
 
         RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode)
         int n = refinementEnergy.getNumberOfVariables()
         double[] x = new double[n]
         double[] g = new double[n]
         refinementEnergy.getCoordinates(x)
-
         Potential energy = refinementEnergy.getDataEnergy()
 
-        int nEvals = options.iterations
-
-        for (int i=0; i<nEvals; i++) {
+        for (int i = 0; i < timerOptions.iterations; i++) {
             long time = -System.nanoTime()
-
-            if (options.gradient) {
-                energy.energyAndGradient(x,g)
+            if (!timerOptions.gradient) {
+                energy.energyAndGradient(x, g)
             } else {
                 energy.energy(x)
             }
-
             time += System.nanoTime()
-
-            logger.info(String.format(" Time %12.8f", time * 1.0e-9))
+            logger.info(String.format(" Time %12.8f (sec)", time * 1.0e-9))
         }
     }
 }
