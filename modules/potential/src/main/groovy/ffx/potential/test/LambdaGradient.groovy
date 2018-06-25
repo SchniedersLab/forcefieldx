@@ -70,29 +70,28 @@ class LambdaGradient extends PotentialScript {
     @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
-    private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-    private int threadsPer = threadsAvail
-    MolecularAssembly[] topologies
-    CompositeConfiguration[] properties
-    ForceFieldEnergy[] energies
+    private int threadsAvail = ParallelTeam.getDefaultThreadCount();
+    private int threadsPer = threadsAvail;
+    MolecularAssembly[] topologies;
 
     private void openFile(String toOpen, int topNum) {
-        potentialFunctions.openAll(toOpen, threadsPer)
-        MolecularAssembly mola = potentialFunctions.getActiveAssembly()
-        processFile(mola, topNum)
+        potentialFunctions.openAll(toOpen, threadsPer);
+        MolecularAssembly mola = potentialFunctions.getActiveAssembly();
+        processFile(mola, topNum);
     }
 
-    private void processFile(MolecularAssembly mola, int topNum) {
+    private MolecularAssembly processFile(MolecularAssembly mola, int topNum) {
 
         int remainder = (topNum % 2) + 1
         switch (remainder) {
             case 1:
-                alchemical.setAlchemicalAtoms(mola)
-                alchemical.setUnchargedAtoms(mola)
+                alchemical.setFirstSystemAlchemistry(mola);
+                alchemical.setFirstSystemUnchargedAtoms(mola);
                 break
             case 2:
-                topology.setAlchemicalAtoms(mola)
-                topology.setUnchargedAtoms(mola)
+                topology.setSecondSystemAlchemistry(mola);
+                topology.setSecondSystemUnchargedAtoms(mola);
+                break;
         }
 
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
@@ -100,9 +99,8 @@ class LambdaGradient extends PotentialScript {
         energy.getCrystal().setSpecialPositionCutoff(0.0)
 
         // Save a reference to the topology.
-        properties[topNum] = mola.getProperties()
-        topologies[topNum] = mola
-        energies[topNum] = energy
+        topologies[topNum] = mola;
+        return mola;
     }
 
     /**
@@ -120,8 +118,6 @@ class LambdaGradient extends PotentialScript {
         nArgs = (nArgs < 1) ? 1 : nArgs
 
         topologies = new MolecularAssembly[nArgs]
-        properties = new CompositeConfiguration[nArgs]
-        energies = new ForceFieldEnergy[nArgs]
 
         int numParallel = topology.getNumParallel(threadsAvail, nArgs)
         threadsPer = threadsAvail / numParallel
@@ -135,15 +131,13 @@ class LambdaGradient extends PotentialScript {
         boolean debug = (System.getProperty("debug") != null)
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
-        boolean lambdaTerm = alchemical.ligAt1 || topology.ligAt2 || (alchemical.s1 > 0) || (topology.s2 > 0) || nArgs == 1
+        boolean lambdaTerm = (nArgs == 1 || alchemical.hasSoftcore() || topology.hasSoftcore());
 
         if (lambdaTerm) {
             System.setProperty("lambdaterm", "true")
         }
 
-        if (alchemical.initialLambda < 0.0 || alchemical.initialLambda > 1.0) {
-            alchemical.initialLambda = 0.0
-        }
+        double lam = alchemical.getInitialLambda();
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OSRW parameters than absolute free energies.
@@ -157,17 +151,17 @@ class LambdaGradient extends PotentialScript {
          * Read in files.
          */
         if (!arguments || arguments.isEmpty()) {
-            MolecularAssembly mola = potentialFunctions.getActiveAssembly()
+            MolecularAssembly mola = potentialFunctions.getActiveAssembly();
             if (mola == null) {
                 return helpString()
             }
-            arguments = new ArrayList<>()
-            arguments.add(mola.getFile().getName())
-            processFile(mola)
+            arguments = new ArrayList<>();
+            arguments.add(mola.getFile().getName());
+            processFile(mola);
         } else {
-            logger.info(String.format(" Initializing %d topologies...", nArgs))
+            logger.info(String.format(" Initializing %d topologies...", nArgs));
             for (int i = 0; i < nArgs; i++) {
-                openFile(arguments.get(i), i)
+                openFile(arguments.get(i), i);
             }
         }
 
@@ -175,31 +169,8 @@ class LambdaGradient extends PotentialScript {
          * Configure the potential to test.
          */
         StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
-        Potential potential
-        UnivariateSwitchingFunction sf = topology.getSwitchingFunction();
-        switch (nArgs) {
-            case 1:
-                potential = energies[0]
-                alchemical.setActiveAtoms(topologies[0]);
-                break
-            case 2:
-            case 4:
-            case 8:
-                List<Integer> uniqueA
-                List<Integer> uniqueB
-                if (nArgs >= 4) {
-                    uniqueA = topology.getUniqueAtoms(topologies[0], "A");
-                    uniqueB = topology.getUniqueAtoms(topologies[1], "B");
-                }
-                potential = topology.getTopology(topologies, sf, uniqueA, uniqueB, numParallel, sb)
-                break
-            default:
-                logger.severe(" Must have 1, 2, 4, or 8 topologies!")
-                break
-        }
+        Potential potential = topology.assemblePotential(topologies, threadsAvail, sb);
 
-        ArrayList<MolecularAssembly> topo = new ArrayList<>(Arrays.asList(topologies));
-        sb.append(topo.stream().map { t -> t.getFile().getName() }.collect(Collectors.joining(",", "[", "]")))
         logger.info(sb.toString())
 
         LambdaInterface linter = (LambdaInterface) potential
