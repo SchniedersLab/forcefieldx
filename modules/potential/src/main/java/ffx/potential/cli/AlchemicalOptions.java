@@ -37,13 +37,16 @@
  */
 package ffx.potential.cli;
 
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 
+import ffx.potential.utils.PotentialsFunctions;
 import picocli.CommandLine.Option;
 
 /**
@@ -225,5 +228,54 @@ public class AlchemicalOptions {
             initialLambda = 0.0;
         }
         return initialLambda;
+    }
+
+    /**
+     * Opens a File to a MolecularAssembly for alchemistry.
+     *
+     * @param potentialFunctions A utility object for opening Files into MolecularAssemblys.
+     * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
+     * @param threadsPer Number of threads to be used for this MolecularAssembly.
+     * @param toOpen The name of the File to be opened.
+     * @param topNum The index of this topology.
+     * @return The processed MolecularAssembly.
+     */
+    public MolecularAssembly openFile(PotentialsFunctions potentialFunctions, Optional<TopologyOptions> topOptions, int threadsPer, String toOpen, int topNum) {
+        potentialFunctions.openAll(toOpen, threadsPer);
+        MolecularAssembly mola = potentialFunctions.getActiveAssembly();
+        return processFile(topOptions, mola, topNum);
+    }
+
+    /**
+     * Performs processing on a MolecularAssembly for alchemistry.
+     *
+     * @param topOptions TopologyOptions in case a dual-topology or greater is to be used.
+     * @param mola The MolecularAssembly to be processed.
+     * @param topNum The index of this topology, 0-indexed.
+     * @return The processed MolecularAssembly.
+     */
+    public MolecularAssembly processFile(Optional<TopologyOptions> topOptions, MolecularAssembly mola, int topNum) {
+
+        int remainder = (topNum % 2) + 1;
+        switch (remainder) {
+            case 1:
+                setFirstSystemAlchemistry(mola);
+                setFirstSystemUnchargedAtoms(mola);
+                break;
+            case 2:
+                if (!topOptions.isPresent()) {
+                    throw new IllegalArgumentException(" For >= 2 systems, topOptions must not be empty!");
+                }
+                TopologyOptions topology = topOptions.get();
+                topology.setSecondSystemAlchemistry(mola);
+                topology.setSecondSystemUnchargedAtoms(mola);
+                break;
+        }
+
+        // Turn off checks for overlapping atoms, which is expected for lambda=0.
+        ForceFieldEnergy energy = mola.getPotentialEnergy();
+        energy.getCrystal().setSpecialPositionCutoff(0.0);
+
+        return mola;
     }
 }
