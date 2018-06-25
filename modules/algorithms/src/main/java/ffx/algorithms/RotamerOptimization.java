@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -4298,12 +4299,6 @@ public class RotamerOptimization implements Terminatable {
                         logger.warning(format("Exception writing to file: %s", file.getName()));
                     }
                 }
-                /*for (Residue residue : residueList) {
-                 if (residue instanceof MultiResidue) {
-                 ((MultiResidue) residue).setDefaultResidue();
-                 residue.reInitOriginalAtomList();
-                 }
-                 }*/
             } else {
                 logIfMaster(format(" Empty box: no residues found."));
             }
@@ -4427,72 +4422,38 @@ public class RotamerOptimization implements Terminatable {
     private void assignResiduesToCells(Crystal crystal, Residue[] residues, BoxOptCell[] cells) {
         // Search through residues, add them to all boxes containing their
         // fractional coordinates.
-        int numCells = cells.length;
-        int nResidues = residues.length;
-        for (int i = 0; i < nResidues; i++) {
-            Residue residuei = residues[i];
-            double[] atomFracCoords = new double[3];
-            boolean[] contained;
-            double[][] originalCoordinates;
-            switch (boxInclusionCriterion) {
-                // As case 1 is default, test other cases first.
-                case 2:
-                    // Residue coordinates defined by any original atomic coordinate.
-                    originalCoordinates = residuei.storeCoordinateArray();
-                    contained = new boolean[numCells];
-                    fill(contained, false);
-                    // Loop over atomic coordinates in originalCoordinates.
-                    for (int ai = 0; ai < originalCoordinates.length; ai++) {
-                        crystal.toFractionalCoordinates(originalCoordinates[ai], atomFracCoords);
-                        NeighborList.moveValuesBetweenZeroAndOne(atomFracCoords);
-                        for (int j = 0; j < numCells; j++) {
-                            if (!contained[j] && cells[j].checkIfContained(atomFracCoords)) {
-                                cells[j].addResidue(residuei);
-                                contained[j] = true;
-                            }
-                        }
-                    }
-                    break;
-                case 3:
-                    // Residue coordinates defined by any atomic coordinate in any rotamer.
-                    //originalCoordinates = storeSingleCoordinates(residuei, true);
-                    ResidueState origState = residuei.storeState();
-                    contained = new boolean[numCells];
-                    fill(contained, false);
-                    Rotamer[] rotamersi = residuei.getRotamers(library);
-                    for (Rotamer rotamer : rotamersi) {
-                        RotamerLibrary.applyRotamer(residuei, rotamer);
-                        double[][] currentCoordinates = residuei.storeCoordinateArray();
-                        for (int ai = 0; ai < currentCoordinates.length; ai++) {
-                            crystal.toFractionalCoordinates(currentCoordinates[ai], atomFracCoords);
-                            NeighborList.moveValuesBetweenZeroAndOne(atomFracCoords);
-                            for (int j = 0; j < numCells; j++) {
-                                if (!contained[j] && cells[j].checkIfContained(atomFracCoords)) {
-                                    cells[j].addResidue(residuei);
-                                    contained[j] = true;
-                                }
-                            }
-                        }
-                    }
-                    residuei.revertState(origState);
-                    //revertSingleResidueCoordinates(residuei, originalCoordinates, true);
-                    break;
-                case 1:
-                default:
-                    // Residue coordinates defined by C alpha (protein) or N1/9
-                    // (nucleic acids).
-                    double[] cAlphaCoords = new double[3];
-                    residuei.getReferenceAtom().getXYZ(cAlphaCoords);
-                    crystal.toFractionalCoordinates(cAlphaCoords, atomFracCoords);
-                    NeighborList.moveValuesBetweenZeroAndOne(atomFracCoords);
-                    for (int j = 0; j < numCells; j++) {
-                        if (cells[j].checkIfContained(atomFracCoords)) {
-                            cells[j].addResidue(residuei);
-                        }
-                    }
-                    break;
-            }
+        int nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
+        for (BoxOptCell cell : cells) {
+            Set<Residue> toAdd = new HashSet<>();
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
+                for (Residue residue : residues) {
+                    boolean contained;
+                    switch (boxInclusionCriterion) {
+                        case 2: {
+                            contained = cell.residueInsideCell(residue, crystal, symOp, true);
+                        }
+                        break;
+                        case 3: {
+                            contained = cell.anyRotamerInsideCell(residue, crystal, symOp, true);
+                        }
+                        break;
+                        case 1:
+                        default: {
+                            contained = cell.atomInsideCell(residue.getReferenceAtom(), crystal, symOp);
+                        }
+                    }
+                    if (contained) {
+                        toAdd.add(residue);
+                    }
+                }
+
+                // If the identity symop produces nothing, skip checking other symops.
+                if (toAdd.isEmpty()) {
+                    break;
+                }
+            }
         }
     }
 
@@ -8396,6 +8357,56 @@ public class RotamerOptimization implements Terminatable {
          */
         public void removeResidue(Residue residue) {
             residues.remove(residue);
+        }
+
+        /**
+         * Checks if any rotamer of a Residue is inside this BoxOptCell.
+         *
+         * @param residue Residue to check.
+         * @param crystal A Crystal.
+         * @param symOp A symmetry operator to apply.
+         * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
+         * @return If contained inside this BoxOptCell.
+         */
+        public boolean anyRotamerInsideCell(Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
+            ResidueState incomingState = residue.storeState();
+            Rotamer[] rotamers = residue.getRotamers(library);
+            boolean inside = Arrays.stream(rotamers).anyMatch((Rotamer r) -> {
+                RotamerLibrary.applyRotamer(residue, r);
+                return residueInsideCell(residue, crystal, symOp, variableOnly);
+            });
+            residue.revertState(incomingState);
+            return inside;
+        }
+
+        /**
+         * Checks if a Residue is inside this BoxOptCell.
+         *
+         * @param residue Residue to check.
+         * @param crystal A Crystal.
+         * @param symOp A symmetry operator to apply.
+         * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
+         * @return If contained inside this BoxOptCell.
+         */
+        public boolean residueInsideCell(Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
+            List<Atom> atoms = variableOnly ? residue.getVariableAtoms() : residue.getAtomList();
+            return atoms.stream().anyMatch(a -> atomInsideCell(a, crystal, symOp));
+        }
+
+        /**
+         * Checks if an Atom would be contained inside this cell.
+         * @param atom Atom to check.
+         * @param crystal A Crystal.
+         * @param symOp A symmetry operator to apply.
+         * @return If contained.
+         */
+        public boolean atomInsideCell(Atom atom, Crystal crystal, SymOp symOp) {
+            double[] atXYZ = new double[3];
+            atXYZ = atom.getXYZ(atXYZ);
+            crystal.toFractionalCoordinates(atXYZ, atXYZ);
+            NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
+            crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
+            return checkIfContained(atXYZ);
         }
 
         /**
