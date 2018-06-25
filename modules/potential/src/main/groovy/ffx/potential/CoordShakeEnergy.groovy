@@ -24,22 +24,29 @@ class CoordShakeEnergy extends PotentialScript {
      * -d or --deltaX to set the distance by which the coordinates should be moved. Applies a constant offset in x,
      * reverts, in y, reverts, then z, and reverts again.
      */
-    @Option(names = ['-d', '--deltaX'], paramLabel = "1.0", description = 'Distance to move coordinates (applies to all equally)')
+    @Option(names = ['-d', '--deltaX'], paramLabel = "1.0",
+            description = 'Distance to move coordinates (applies to all equally)')
     double dX = 1.0
+
     /**
      * -l or --lambda sets the lambda value to evaluate at.
      */
-    @Option(names = ['-l', '--lambda'], paramLabel = "-1", description = 'Lambda value (-1 indicates no lambda dependence).')
+    @Option(names = ['-l', '--lambda'], paramLabel = "-1",
+            description = 'Lambda value (-1 indicates no lambda dependence).')
     double initialLambda = -1
+
     /**
      * -s or --start sets the first atom to move.
      */
-    @Option(names = ['-s', '--start'], paramLabel = '1', description = 'Starting atom to test')
+    @Option(names = ['-s', '--start'], paramLabel = '1',
+            description = 'Starting atom to test')
     int start = 1
+
     /**
      * -f or --final sets the last atom to move.
      */
-    @Option(names = ['-f', '--final'], paramLabel = '-1', description = 'Last atom to test (-1 indicates last atom in the system).')
+    @Option(names = ['-f', '--final'], paramLabel = '-1',
+            description = 'Last atom to test (-1 indicates last atom in the system).')
     int last = -1
 
     /**

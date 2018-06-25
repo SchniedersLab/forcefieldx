@@ -68,49 +68,57 @@ public class TopologyOptions {
     /**
      * -s2 or --start2 defines the first softcored atom for the second topology.
      */
-    @Option(names = {"--s2", "--start2"}, paramLabel = "0", description = "Starting ligand atom for 2nd topology")
+    @Option(names = {"--s2", "--start2"}, paramLabel = "0",
+            description = "Starting ligand atom for 2nd topology")
     int s2 = 0;
 
     /**
      * -f2 or --final2 defines the last softcored atom for the second topology.
      */
-    @Option(names = {"--f2", "--final2"}, paramLabel = "-1", description = "Final ligand atom for the 2nd topology")
+    @Option(names = {"--f2", "--final2"}, paramLabel = "-1",
+            description = "Final ligand atom for the 2nd topology")
     int f2 = -1;
 
     /**
      * --la2 or -ligAtoms2 allows for multiple ranges and/or singletons of ligand atoms in the second topology, separated by periods.
      */
-    @Option(names = {"--la2", "--ligAtoms2"}, description = "Period-separated ranges of 2nd toplogy ligand atoms (e.g. 40-50.72-83)")
+    @Option(names = {"--la2", "--ligAtoms2"},
+            description = "Period-separated ranges of 2nd toplogy ligand atoms (e.g. 40-50.72-83)")
     String ligAt2 = null;
 
     /**
      * -es2 or --noElecStart2 defines the first atom of the second topology to have no electrostatics.
      */
-    @Option(names = {"--es2", "--noElecStart2"}, paramLabel = "1", description = "Starting no-electrostatics atom for 2nd topology")
+    @Option(names = {"--es2", "--noElecStart2"}, paramLabel = "1",
+            description = "Starting no-electrostatics atom for 2nd topology")
     int es2 = 1;
 
     /**
      * -ef2 or --noElecFinal2 defines the last atom of the second topology to have no electrostatics.
      */
-    @Option(names = {"--ef2", "--noElecFinal2"}, paramLabel = "-1", description = "Final no-electrostatics atom for 2nd topology")
+    @Option(names = {"--ef2", "--noElecFinal2"}, paramLabel = "-1",
+            description = "Final no-electrostatics atom for 2nd topology")
     int ef2 = -1;
 
     /**
      * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or 4.
      */
-    @Option(names = {"--np", "--nParallel"}, paramLabel = "1", description = "Number of topologies to evaluate in parallel")
+    @Option(names = {"--np", "--nParallel"}, paramLabel = "1",
+            description = "Number of topologies to evaluate in parallel")
     int nPar = 1;
 
     /**
      * -uaA or -unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
      */
-    @Option(names = {"--uaA", "--unsharedA"}, description = "Unshared atoms in the A dual topology (period-separated hyphenated ranges)")
+    @Option(names = {"--uaA", "--unsharedA"},
+            description = "Unshared atoms in the A dual topology (period-separated hyphenated ranges)")
     String unsharedA = null;
 
     /**
      * -uaB or -unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
      */
-    @Option(names = {"--uaB", "--unsharedB"}, description = "Unshared atoms in the B dual topology (period-separated hyphenated ranges)")
+    @Option(names = {"--uaB", "--unsharedB"},
+            description = "Unshared atoms in the B dual topology (period-separated hyphenated ranges)")
     String unsharedB = null;
 
     /**

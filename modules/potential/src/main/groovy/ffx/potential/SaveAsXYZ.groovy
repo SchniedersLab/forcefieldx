@@ -25,25 +25,29 @@ class SaveAsXYZ extends PotentialScript {
     /**
      * -p or --pos-offset to set the positive atom type offset
      */
-    @Option(names = ['--pos-offset', '-p'], paramLabel = "0", description = 'Positive offset of atom types in the new file')
+    @Option(names = ['--pos-offset', '-p'], paramLabel = "0",
+            description = 'Positive offset of atom types in the new file')
     int posOffset = 0
 
     /**
      * -n or --neg-offset to set the negative atom type offset
      */
-    @Option(names = ['--neg-offset', '-n'], paramLabel = "0", description = 'Negative offset of atom types in the new file.')
+    @Option(names = ['--neg-offset', '-n'], paramLabel = "0",
+            description = 'Negative offset of atom types in the new file.')
     int negOffset = 0
 
     /**
      * -r or --random to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
      */
-    @Option(names = ['--random', '-r'], description = 'Apply a random Cartesian SymOp with translation range -X .. X.')
+    @Option(names = ['--random', '-r'],
+            description = 'Apply a random Cartesian SymOp with translation range -X .. X.')
     double scalar = -1
 
     /**
      * The final argument(s) should be one or more filenames.
      */
-    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    @Parameters(arity = "1", paramLabel = "files",
+            description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
     /**

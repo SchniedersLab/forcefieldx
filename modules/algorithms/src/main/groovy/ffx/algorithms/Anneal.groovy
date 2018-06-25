@@ -30,7 +30,8 @@ class Anneal extends AlgorithmsScript {
     /**
      * One or more filenames.
      */
-    @Parameters(arity = "1", paramLabel = "files", description = "XYZ or PDB input files.")
+    @Parameters(arity = "1", paramLabel = "files",
+            description = "XYZ or PDB input files.")
     private List<String> filenames
 
     def run() {

@@ -56,50 +56,55 @@ public class DynamicsOptions {
      * -d or --dt sets the timestep in femtoseconds (default of 1.0). A value of
      * 2.0 is possible for the RESPA integrator.
      */
-    @Option(names = {"-d", "--dt"}, paramLabel = "1.0", description = "Time discretization step in femtoseconds.")
+    @Option(names = {"-d", "--dt"}, paramLabel = "1.0",
+            description = "Time discretization step in femtoseconds.")
     double dt = 1.0;
 
     /**
      * -b or --thermostat sets the desired thermostat: current choices are
      * Adiabatic, Berendsen, or Bussi.
      */
-    @Option(names = {"-b", "--thermostat"},
-            paramLabel = "Berendsen", description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
+    @Option(names = {"-b", "--thermostat"}, paramLabel = "Berendsen",
+            description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
     String thermostatString = "BERENDSEN";
 
     /**
      * -i or --integrator sets the desired integrator: current choices are
      * Beeman, RESPA, Velocity Verlet, or Stochastic (AKA Langevin dynamics).
      */
-    @Option(names = {"-i", "--integrator"},
-            paramLabel = "Beeman", description = "Integrator: [Beeman / Respa / Stochastic / VelocityVerlet].")
+    @Option(names = {"-i", "--integrator"}, paramLabel = "Beeman",
+            description = "Integrator: [Beeman / Respa / Stochastic / VelocityVerlet].")
     String integratorString = "VELOCITYVERLET";
 
     /**
      * -r or --report sets the thermodynamics reporting frequency in picoseconds
      * (0.1 psec default).
      */
-    @Option(names = {"-r", "--report"}, paramLabel = "0.25", description = "Interval to report thermodynamics (psec).")
+    @Option(names = {"-r", "--report"}, paramLabel = "0.25",
+            description = "Interval to report thermodynamics (psec).")
     double report = 0.25;
 
     /**
      * -w or --write sets snapshot save frequency in picoseconds (1.0 psec
      * default).
      */
-    @Option(names = {"-w", "--write"}, paramLabel = "10.0", description = "Interval to write out coordinates (psec).")
+    @Option(names = {"-w", "--write"}, paramLabel = "10.0",
+            description = "Interval to write out coordinates (psec).")
     double write = 10.0;
 
     /**
      * -t or --temperature sets the simulation temperature (Kelvin).
      */
-    @Option(names = {"-t", "--temperature"}, paramLabel = "298.15", description = "Temperature (Kelvin).")
+    @Option(names = {"-t", "--temperature"}, paramLabel = "298.15",
+            description = "Temperature (Kelvin).")
     double temp = 298.15;
 
     /**
      * -n or --steps sets the number of molecular dynamics steps (default is 1
      * nsec).
      */
-    @Option(names = {"-n"}, paramLabel = "1000000", description = "Number of molecular dynamics steps.")
+    @Option(names = {"-n"}, paramLabel = "1000000",
+            description = "Number of molecular dynamics steps.")
     int steps = 1000000;
 
     /**
@@ -113,7 +118,8 @@ public class DynamicsOptions {
     /**
      * -f or --file Choose the file type to write [PDB/XYZ].
      */
-    @Option(names = {"-f", "--file"}, paramLabel = "XYZ", description = "Choose file type to write [PDB/XYZ].")
+    @Option(names = {"-f", "--file"}, paramLabel = "XYZ",
+            description = "Choose file type to write [PDB/XYZ].")
     String fileType = "XYZ";
 
     /**
@@ -124,13 +130,24 @@ public class DynamicsOptions {
     /**
      * Integrator.
      */
-    public IntegratorEnum integrator; 
-    
+    public IntegratorEnum integrator;
+
+    /**
+     * Parse the thermostate and integrator.
+     */
     public void init() {
         thermostat = Thermostat.parseThermostat(thermostatString);
         integrator = Integrator.parseIntegrator(integratorString);        
     }
-    
+
+    /**
+     * Initialize a MolecularDynamics from the parsed options.
+     *
+     * @param potential
+     * @param activeAssembly
+     * @param sh
+     * @return
+     */
     public MolecularDynamics getDynamics(Potential potential,
             MolecularAssembly activeAssembly,
             AlgorithmListener sh) {

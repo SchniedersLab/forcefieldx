@@ -47,17 +47,20 @@ public class AnnealOptions {
     /**
      * -w or --windows Number of annealing windows (10).
      */
-    @Option(names = {"-W", "--windows"}, paramLabel="10", description="Number of annealing windows.")
+    @Option(names = {"-W", "--windows"}, paramLabel="10",
+            description="Number of annealing windows.")
     int windows = 10;
     /**
      * -l or --low Low temperature limit in degrees Kelvin (10.0).
      */
-    @Option(names = {"-l", "--low"}, paramLabel="10.0", description="Low temperature limit (Kelvin).")
+    @Option(names = {"-l", "--low"}, paramLabel="10.0",
+            description="Low temperature limit (Kelvin).")
     double low = 10.0;
     /**
      * -u or --upper Upper temperature limit in degrees Kelvin (1000.0).
      */
-    @Option(names = {"-u", "--upper"}, paramLabel="1000.0", description="High temperature limit (Kelvin).")
+    @Option(names = {"-u", "--upper"}, paramLabel="1000.0",
+            description="High temperature limit (Kelvin).")
     double upper = 1000.0;
 
 }

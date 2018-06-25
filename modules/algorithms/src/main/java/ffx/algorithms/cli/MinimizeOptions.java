@@ -47,13 +47,15 @@ public class MinimizeOptions {
     /**
      * -i or --iterations Number of minimization steps.
      */
-    @Option(names = {"-i", "--iterations"}, paramLabel = "Unlimited", description = "Number of minimization steps.")
+    @Option(names = {"-i", "--iterations"}, paramLabel = "Unlimited",
+            description = "Number of minimization steps.")
     int iterations = Integer.MAX_VALUE;
 
     /**
      * -e or --eps Convergence criteria.
      */
-    @Option(names = {"-e", "--eps"}, paramLabel = "1.0", description = "Convergence criteria.")
+    @Option(names = {"-e", "--eps"}, paramLabel = "1.0",
+            description = "Convergence criteria.")
     double eps = 1.0;
 
 }

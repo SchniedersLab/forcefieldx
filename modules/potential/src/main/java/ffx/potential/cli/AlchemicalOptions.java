@@ -59,53 +59,66 @@ public class AlchemicalOptions {
     /**
      * -l or --lambda sets the initial lambda value.
      */
-    @Option(names = {"-l", "--lambda"}, paramLabel = "-1", description = "Initial lambda value.")
+    @Option(names = {"-l", "--lambda"}, paramLabel = "-1",
+            description = "Initial lambda value.")
     double initialLambda = -1.0;
 
     /**
      * -s1 or --start1 defines the first softcored atom for the first topology.
      */
-    @Option(names = {"--s1", "--start1"}, paramLabel = "0", description = "Starting ligand atom for 1st topology.")
+    @Option(names = {"--s1", "--start1"}, paramLabel = "0",
+            description = "Starting ligand atom for 1st topology.")
     int s1 = 0;
 
     /**
      * -f1 or --final1 defines the last softcored atom for the first topology.
      */
-    @Option(names = {"--f1", "--final1"}, paramLabel = "-1", description = "Final ligand atom for the 1st topology.")
+    @Option(names = {"--f1", "--final1"}, paramLabel = "-1",
+            description = "Final ligand atom for the 1st topology.")
     int f1 = -1;
 
     /**
      * --la1 or -ligAtoms1 allows for multiple ranges and/or singletons of ligand atoms in the first topology, separated by periods.
      */
-    @Option(names = {"--la1", "--ligAtoms1"}, description = "Period-separated ranges of 1st topology ligand atoms (e.g. 40-50.72-83).")
+    @Option(names = {"--la1", "--ligAtoms1"},
+            description = "Period-separated ranges of 1st topology ligand atoms (e.g. 40-50.72-83).")
     String ligAt1 = null;
 
     /**
      * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
      */
-    @Option(names = {"--es1", "--noElecStart1"}, paramLabel = "1", description = "Starting no-electrostatics atom for 1st topology.")
+    @Option(names = {"--es1", "--noElecStart1"}, paramLabel = "1",
+            description = "Starting no-electrostatics atom for 1st topology.")
     int es1 = 1;
 
     /**
      * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
      */
-    @Option(names = {"--ef1", "--noElecFinal1"}, paramLabel = "-1", description = "Final no-electrostatics atom for 1st topology.")
+    @Option(names = {"--ef1", "--noElecFinal1"}, paramLabel = "-1",
+            description = "Final no-electrostatics atom for 1st topology.")
     int ef1 = -1;
 
     /**
      * -as or --activeStart starts an active set of atoms for single-topology lambda gradients.
      */
-    @Option(names = {"--as", "--activeStart"}, paramLabel = "1", description = "Starting active atom (single-topology only).")
+    @Option(names = {"--as", "--activeStart"}, paramLabel = "1",
+            description = "Starting active atom (single-topology only).")
     int actStart = 1;
 
     /**
      * -af or --activeFinal ends an active set of atoms for single-topology lambda gradients.
      */
-    @Option(names = {"--af", "--activeFinal"}, paramLabel = "-1", description = "Final active atom (single-topology only).")
+    @Option(names = {"--af", "--activeFinal"}, paramLabel = "-1",
+            description = "Final active atom (single-topology only).")
     int actFinal = -1;
 
-    public void setActiveAtoms(MolecularAssembly topology) {
-        Atom[] atoms = topology.getAtomArray();
+    /**
+     * Set active atoms for a MolecularAssembly.
+     *
+     * @param molecularAssembly
+     */
+    public void setActiveAtoms(MolecularAssembly molecularAssembly) {
+        Atom[] atoms = molecularAssembly.getAtomArray();
         if (actFinal > 0) {
             // Apply active atom selection
             int nAtoms = atoms.length;
@@ -125,12 +138,13 @@ public class AlchemicalOptions {
     }
 
     /**
-     * Set the alchemical atoms for this topology.
-     * @param topology
+     * Set the alchemical atoms for this molecularAssembly.
+     *
+     * @param molecularAssembly
      */
-    public void setAlchemicalAtoms(MolecularAssembly topology) {
+    public void setAlchemicalAtoms(MolecularAssembly molecularAssembly) {
 
-        Atom atoms[] = topology.getAtomArray();
+        Atom atoms[] = molecularAssembly.getAtomArray();
         if (s1 > 0) {
             for (int i = s1; i <= f1; i++) {
                 Atom ai = atoms[i - 1];
@@ -164,11 +178,12 @@ public class AlchemicalOptions {
     }
 
     /**
-     * Set uncharged atoms for this topology.
-     * @param topology
+     * Set uncharged atoms for this molecularAssembly.
+     *
+     * @param molecularAssembly
      */
-    public void setUnchargedAtoms(MolecularAssembly topology) {
-        Atom atoms[] = topology.getAtomArray();
+    public void setUnchargedAtoms(MolecularAssembly molecularAssembly) {
+        Atom atoms[] = molecularAssembly.getAtomArray();
         // Apply the no electrostatics atom selection
         int noElecStart = es1;
         noElecStart = (noElecStart < 1) ? 1 : noElecStart;

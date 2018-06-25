@@ -28,12 +28,14 @@ class ApplyTorsions extends AlgorithmsScript {
     /**
      * -c or --chain selects the chain name to use.
      */
-    @Option(names = ["-c", "--chain"], paramLabel = ' ', description = 'Single character chain name (default is \" \").')
+    @Option(names = ["-c", "--chain"], paramLabel = ' ',
+            description = 'Single character chain name (default is \" \").')
     String chain = " "
     /**
      * -r or --resid selects the residue to apply torsions to.
      */
-    @Option(names = ["-r", "--resid"], paramLabel = '1', description = 'Residue number.')
+    @Option(names = ["-r", "--resid"], paramLabel = '1',
+            description = 'Residue number.')
     int resID = 1
     /**
      * -t or --torsionSets is a variable-length, colon-delimited set of comma-separated torsion sets; e.g. colons separate rotamers, commas individual values. Should not be left as final argument, as then it attempts to include the filename.
@@ -44,18 +46,21 @@ class ApplyTorsions extends AlgorithmsScript {
     /**
      * -n or --nChi is the number of torsions available to this side chain; unspecified torsions are filled with 0.
      */
-    @Option(names = ["-n", "--nChi"], paramLabel = '1', description = 'Number of torsions (unspecified torsions are filled with 0).')
+    @Option(names = ["-n", "--nChi"], paramLabel = '1',
+            description = 'Number of torsions (unspecified torsions are filled with 0).')
     int nChi = 1
     /**
      * -v or --videoFile is the name of the file to print torsion snapshots to; defaults to filename_rots.pdb
      */
-    @Option(names = ["-v", "--videoFile"], description = 'File to print torsion snapshots to.')
+    @Option(names = ["-v", "--videoFile"],
+            description = 'File to print torsion snapshots to.')
     String vidFileName = null
 
     /**
      * One or more filenames.
      */
-    @Parameters(arity = "1", paramLabel = "files", description = "XYZ or PDB input files.")
+    @Parameters(arity = "1", paramLabel = "files",
+            description = "XYZ or PDB input files.")
     private List<String> filenames
 
     def run() {
