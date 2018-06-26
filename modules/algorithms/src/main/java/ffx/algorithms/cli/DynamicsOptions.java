@@ -45,6 +45,7 @@ import ffx.algorithms.thermostats.Thermostat;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 /**
@@ -123,6 +124,19 @@ public class DynamicsOptions {
     String fileType = "XYZ";
 
     /**
+     * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
+     */
+    @CommandLine.Option(names = {"-o", "--optimize"},
+            description = "Optimize and save low-energy snapshots.")
+    private boolean optimize = false;
+
+    /**
+     * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
+     */
+    @CommandLine.Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0", description = "Interval to write out restart files (.dyn, .his, etc).")
+    private double checkpoint = 1.0;
+
+    /**
      * Thermostat.
      */
     public ThermostatEnum thermostat;
@@ -160,4 +174,23 @@ public class DynamicsOptions {
         return molDyn;
     }
 
+    public double getTemp() {
+        return temp;
+    }
+
+    public double getDt() {
+        return dt;
+    }
+
+    public double getReport() {
+        return report;
+    }
+
+    public double getCheckpoint() {
+        return checkpoint;
+    }
+
+    public boolean getOptimize() {
+        return optimize;
+    }
 }
