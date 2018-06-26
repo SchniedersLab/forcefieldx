@@ -54,7 +54,10 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 import picocli.CommandLine.Option;
 
 /**
- * Xray options shared by Xray scripts that use the Pico CLI.
+ * Represents command line options for scripts that utilize X-ray data with a maximum likelihood target.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class XrayOptions {
 

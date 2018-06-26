@@ -51,7 +51,11 @@ import ffx.potential.utils.PotentialsFunctions;
 import picocli.CommandLine.Option;
 
 /**
- * Alchemical options shared by scripts that do alchemy on a single topology and use the Pico CLI.
+ * Represents command line options for scripts that utilize alchemistry on at least one topology.
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
 public class AlchemicalOptions {
 

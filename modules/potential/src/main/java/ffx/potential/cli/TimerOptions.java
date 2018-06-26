@@ -40,7 +40,10 @@ package ffx.potential.cli;
 import picocli.CommandLine.Option;
 
 /**
- * Timer options shared by Timer scripts that use the Pico CLI.
+ * Represents command line options for scripts that perform timings for energy and optionally gradients.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class TimerOptions {
     /**
