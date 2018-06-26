@@ -898,7 +898,7 @@ public class RotamerLibrary {
      * @param residueList Residues to be measured.
      * @param print Verbosity flag.
      */
-    public static void measureRotamers(ArrayList<Residue> residueList, boolean print) {
+    public static void measureRotamers(List<Residue> residueList, boolean print) {
         double chi[] = new double[7];
         for (Residue residue : residueList) {
             chi[0] = chi[1] = chi[2] = chi[3] = chi[4] = chi[5] = chi[6] = 0.0;

@@ -976,7 +976,7 @@ class Thermodynamics extends Script {
                 osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[1]);
             }
         }
-        osrw.setDeltaT(options.temperParam);
+        osrw.setTemperingParameter(options.temperParam);
 
         if (options.optimize) {
             osrw.setOptimization(true, topologies[0]);

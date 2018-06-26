@@ -1007,7 +1007,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
      *
      * @param temper
      */
-    public void setDeltaT(double temper) {
+    public void setTemperingParameter(double temper) {
         temperingFactor = temper;
         if (temperingFactor > 0.0) {
             deltaT = temperingFactor * R * temperature;

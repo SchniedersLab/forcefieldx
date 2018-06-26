@@ -19,6 +19,7 @@ import ffx.potential.bonded.LambdaInterface
  * <br>
  * ffxc MultiTopTimer [options] &lt;filename [file2...]&gt;
  */
+@CommandLine.Command(description = " Time energy and gradients for 1-4 topologies with optional lambda scaling.", name = "ffxc MultiTopTimer")
 class MultiTopTimer extends PotentialScript {
 
     @CommandLine.Mixin
