@@ -40,7 +40,11 @@ package ffx.algorithms.cli;
 import picocli.CommandLine.Option;
 
 /**
- * ManyBody options shared by ManyBody scripts that use the Pico CLI.
+ * Represents command line options for scripts that use a many-body expansion for global optimization.
+ *
+ * @author Michael J. Schnieders
+ * @author Mallory R. Tollefson
+ * @since 1.0
  */
 public class ManyBodyOptions {
 

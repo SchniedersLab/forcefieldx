@@ -49,7 +49,11 @@ import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 /**
- * Dynamics options shared by Dynamics scripts that use the Pico CLI.
+ * Represents command line options for scripts that calculate thermodynamics.
+ *
+ * @author Michael J. Schnieders
+ * @author Hernan V. Bernabe
+ * @since 1.0
  */
 public class DynamicsOptions {
 

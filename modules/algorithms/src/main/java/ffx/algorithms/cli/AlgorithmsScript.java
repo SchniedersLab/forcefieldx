@@ -43,7 +43,10 @@ import ffx.algorithms.AlgorithmUtils;
 import ffx.utilities.BaseScript;
 
 /**
- * Initialize support specific to the Potential package.
+ * Base class for scripts in the Algorithms package, providing some key functions.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class AlgorithmsScript extends BaseScript {
 
