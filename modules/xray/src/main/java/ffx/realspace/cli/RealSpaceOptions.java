@@ -48,7 +48,11 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 import picocli.CommandLine.Option;
 
 /**
- * Xray options shared by Xray scripts that use the Pico CLI.
+ * Represents command line options for scripts that utilize a real-space density map.
+ *
+ * @author Michael J. Schnieders
+ * @author Soham Ali
+ * @since 1.0
  */
 public class RealSpaceOptions {
 
