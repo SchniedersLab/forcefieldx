@@ -103,17 +103,9 @@ public class DynamicsOptions {
      * -n or --steps sets the number of molecular dynamics steps (default is 1
      * nsec).
      */
-    @Option(names = {"-n"}, paramLabel = "1000000",
+    @Option(names = {"-n", "--numberOfSteps"}, paramLabel = "1000000",
             description = "Number of molecular dynamics steps.")
     int steps = 1000000;
-
-    /**
-     * -p or --npt Specify use of a MC Barostat at the given pressure (default
-     * 1.0 atm).
-     */
-    @Option(names = {"-p", "--npt"}, paramLabel = "0",
-            description = "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
-    double pressure = 0;
 
     /**
      * -f or --file Choose the file type to write [PDB/XYZ].
@@ -133,7 +125,7 @@ public class DynamicsOptions {
     public IntegratorEnum integrator;
 
     /**
-     * Parse the thermostate and integrator.
+     * Parse the thermostat and integrator.
      */
     public void init() {
         thermostat = Thermostat.parseThermostat(thermostatString);
