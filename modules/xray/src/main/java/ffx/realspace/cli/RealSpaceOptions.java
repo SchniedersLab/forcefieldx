@@ -35,14 +35,14 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray.cli;
+package ffx.realspace.cli;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 import ffx.potential.MolecularAssembly;
-import ffx.realspace.RealSpaceFile;
+import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import picocli.CommandLine.Option;
@@ -115,7 +115,7 @@ public class RealSpaceOptions {
                         //
                     }
                 }
-                ffx.realspace.RealSpaceFile realspacefile = new ffx.realspace.RealSpaceFile(data[i], w);
+                ffx.realspace.parsers.RealSpaceFile realspacefile = new ffx.realspace.parsers.RealSpaceFile(data[i], w);
                 mapfiles.add(realspacefile);
             }
         }

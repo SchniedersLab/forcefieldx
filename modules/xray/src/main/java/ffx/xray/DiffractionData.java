@@ -315,7 +315,7 @@ public class DiffractionData implements DataContainer {
 
         if (logger.isLoggable(Level.INFO)) {
             StringBuilder sb = new StringBuilder();
-            sb.append(" X-ray Refinement Settings\n\n");
+            sb.append("\n X-ray Refinement Settings\n\n");
             sb.append("  Target Function\n");
             sb.append("   X-ray refinement weight: ").append(xWeight).append("\n");
             sb.append("   Use cctbx 3 Gaussians: ").append(use_3g).append("\n");
@@ -324,18 +324,18 @@ public class DiffractionData implements DataContainer {
             sb.append("   Resolution dependent spline scale: ").append(splineFit).append("\n");
             sb.append("   Solvent grid search: ").append(gridSearch).append("\n");
             sb.append("   X-ray scale fit tolerance: ").append(xrayScaleTol).append("\n");
-            sb.append("   Sigma A fit tolerance: ").append(sigmaATol).append("\n\n");
+            sb.append("   Sigma A fit tolerance: ").append(sigmaATol).append("\n");
             sb.append("  Reflections\n");
             sb.append("   F/sigF cutoff: ").append(fsigfCutoff).append("\n");
             sb.append("   R Free flag (-1 auto-determine from the data): ").append(rflag).append("\n");
-            sb.append("   Number of bins: ").append(reflectionList[0].nbins).append("\n\n");
+            sb.append("   Number of bins: ").append(reflectionList[0].nbins).append("\n");
             sb.append("  B-Factors\n");
             sb.append("   Similarity weight: ").append(bSimWeight).append("\n");
             // sb.append("  Non-zero weight (bnonzeroweight): ").append(bNonZeroWeight).append("\n");
             // sb.append("  Lagrangian mass (bmass): ").append(bMass).append("\n");
             sb.append("   Refine by residue: ").append(residueBFactor).append("\n");
             sb.append("    (if true, num. residues per B: ").append(nResidueBFactor).append(")\n");
-            sb.append("   Add ANISOU for refinement: ").append(addAnisou).append("\n\n");
+            sb.append("   Add ANISOU for refinement: ").append(addAnisou).append("\n");
             sb.append("  Occupancies\n");
             sb.append("   Refine on molecules: ").append(refineMolOcc).append("\n");
             // sb.append("  Lagrangian mass (occmass): ").append(occMass).append("\n");

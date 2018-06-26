@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.realspace;
+package ffx.realspace.parsers;
 
 import java.io.File;
 import java.io.IOException;
@@ -76,7 +76,7 @@ public class RealSpaceFile {
      * Read in a Real Space density file.
      *
      * @param fileName file name to read in
-     * @param weight the weight of the data
+     * @param weight   the weight of the data
      */
     public RealSpaceFile(String fileName, double weight) {
         File tmp = new File(fileName);
@@ -99,7 +99,7 @@ public class RealSpaceFile {
      * filename, using a weight of 1.0 and neutron value of false.
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     * filename will be determined.
+     *                 filename will be determined.
      */
     public RealSpaceFile(MolecularAssembly assembly[]) {
         this(assembly[0], 1.0);
@@ -110,7 +110,7 @@ public class RealSpaceFile {
      * filename, using a weight of 1.0.
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     * filename will be determined.
+     *                 filename will be determined.
      */
     public RealSpaceFile(MolecularAssembly assembly) {
         this(assembly, 1.0);
@@ -121,8 +121,8 @@ public class RealSpaceFile {
      * filename, using a weight of 1.0.
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
-     * filename will be determined
-     * @param weight the weight of the data
+     *                 filename will be determined
+     * @param weight   the weight of the data
      */
     public RealSpaceFile(MolecularAssembly assembly, double weight) {
         String name = removeExtension(assembly.getFile().getPath());

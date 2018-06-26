@@ -35,11 +35,12 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.realspace;
+package ffx.realspace.parsers;
 
 import org.apache.commons.configuration.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
+import ffx.realspace.RealSpaceRefinementData;
 
 /**
  * <p>

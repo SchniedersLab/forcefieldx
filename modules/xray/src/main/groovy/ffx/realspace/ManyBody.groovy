@@ -17,7 +17,7 @@ import ffx.potential.bonded.ResidueEnumerations.CommonAminoAcid3
 import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
 import ffx.realspace.RealSpaceData
-import ffx.realspace.RealSpaceFile
+import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.CrystalReciprocalSpace
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy

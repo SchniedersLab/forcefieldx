@@ -6,13 +6,11 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.TimerOptions
-import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
-import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
@@ -36,7 +34,6 @@ class Timer extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
-
 
     def run() {
 

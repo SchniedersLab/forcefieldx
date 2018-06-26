@@ -145,7 +145,7 @@ public class XrayOptions {
      * --sigmaATol
      */
     @Option(names = {"--sigmaATol"}, paramLabel = "0.05", description = "Sigma A optimization tolerance.")
-    double sigmaATol = 1.0e-4;
+    double sigmaATol = 0.05;
 
     /**
      * -B or --bSimWeight

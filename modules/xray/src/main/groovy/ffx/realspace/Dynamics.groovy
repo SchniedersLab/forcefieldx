@@ -2,7 +2,8 @@ package ffx.realspace
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
-import ffx.xray.cli.RealSpaceOptions
+import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.parsers.RealSpaceFile
 
 import org.apache.commons.io.FilenameUtils
 
