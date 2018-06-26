@@ -40,32 +40,34 @@ package ffx.algorithms.cli;
 import picocli.CommandLine;
 
 /**
- * Represents command line options for scripts that utilize a mobile lambda
- * particle, such as Thermodynamics.
+ * Represents command line options for scripts that can create multiple walkers,
+ * such as multi-walker OSRW. Should be kept agnostic to whether it is an MD-based
+ * algorithm, or some other flavor of Monte Carlo.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class LambdaParticleOptions {
-    /**
-     * -m or --lambdaMass to set the mass of the lambda particle.
-     */
-    @CommandLine.Option(names = {"--lm", "--lambdaMass"}, paramLabel = "1.0E-18",
-            description = "Mass of the lambda particle.")
-    private double lambdaMass = 1.0E-18;
-    /**
-     * -x or --lambdaFriction to set friction on the lambda particle
-     */
-    @CommandLine.Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "1.0E-18",
-            description = "Friction on the lambda particle.")
-    private double lambdaFriction = 1.0E-18;
+public class MultiDynamicsOptions {
 
-    public double getLambdaMass() {
-        return lambdaMass;
-    }
+    /**
+     * -S or --synchronous sets synchronous walker communication (not recommended)
+     */
+    @CommandLine.Option(names = {"-S", "--synchronous"},
+            description = "Walker communication is synchronous")
+    private boolean synchronous = false;
 
-    public double getLambdaFriction() {
-        return lambdaFriction;
+    /**
+     * -dw or --distributeWalkers allows walkers to start from multiple
+     * conformations; AUTO picks up per-walker conformations as
+     * filename.pdb_(walker number), and specifying a residue starts a
+     * rotamer optimization to generate side-chain configurations to start
+     * from.
+     */
+    @CommandLine.Option(names = {"--dw", "--distributeWalkers"}, paramLabel = "OFF", description = "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
+    private String distributeWalkersString;
+
+    public boolean isSynchronous() {
+        return synchronous;
     }
 }
