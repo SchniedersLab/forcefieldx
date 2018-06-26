@@ -72,7 +72,7 @@ public class ManyBodyOptions {
      */
     @Option(names = {"--dee", "--deadEnd"}, paramLabel = "false",
             description = "Use dead-end elimination criteria instead of Goldstein criteria.")
-    boolean dee;
+    boolean dee = false;
    
     /**
      * -c or --chain Single character chain ID of the residues to optimize.
@@ -107,7 +107,7 @@ public class ManyBodyOptions {
      */
     @Option(names = {"-t", "--threeBody"}, 
             description = "Include 3-Body interactions in the elimination criteria.")
-    boolean threeBody;
+    boolean threeBody = false;
     
     /**
      * --thC or --threeBodyCutoff Cutoff distance for three-body interactions.
@@ -136,7 +136,7 @@ public class ManyBodyOptions {
      */
     @Option(names = {"--eR", "--energyRestart"}, paramLabel = "none",
             description = "Load energy restart file from a previous run (requires that all parameters are the same).")
-    String energyRestart;       
+    String energyRestart = "none";       
                 
     /**
      * -m or --minimize Minimize the final structure to the given RMS gradient (Kcal/mole/A); the default is not
@@ -151,42 +151,42 @@ public class ManyBodyOptions {
      */
     @Option(names = {"-v", "--verbose"}, 
             description = "Prints beginning and default-conformation energies.")
-    boolean verbose;     
+    boolean verbose = false;     
 
     /**
      * -o or --original Do not include starting coordinates as their own rotamer.
      */
     @Option(names = {"-o", "--original"}, 
             description = "Do not include starting coordinates as their own rotamer.")
-    boolean original;    
+    boolean original = true;    
 
     /**
      * -d or --decompose Print energy decomposition for original-coordinates rotamers.
      */
     @Option(names = {"-d", "--decompose"}, 
             description = "Print energy decomposition for original-coordinates rotamers.")
-    boolean decompose;    
+    boolean decompose = false;    
 
     /**
      * --lR or --listResidues Choose a list of individual residues to optimize (eg. A11,A24,B40).
      */
     @Option(names = {"--lR", "--listResidues"}, paramLabel = "none", 
             description = "Choose a list of individual residues to optimize (eg. A11,A24,B40).")
-    String listResidues; 
+    String listResidues = "none"; 
         
     /**
      * --sO or --sequence Choose a list of individual residues to sequence optimize (example: A2.A3.A5).
      */
     @Option(names = {"--sO", "--sequence"}, paramLabel = "none", 
             description = "Choose a list of individual residues to sequence optimize (example: A2.A3.A5)")
-    String sequence; 
+    String sequence = "none"; 
 
     /**
      * --tO or --titrationOptimization Optimize the titration states for a list of residues (example: H2.H3.H5).
      */
     @Option(names = {"--tO", "--titrationOptimization"}, paramLabel = "none", 
             description = "Optimize the titration states for a list of residues (example: H2.H3.H5).")
-    String titrationOptimization; 
+    String titrationOptimization = "none"; 
     
     /**
      * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.
@@ -200,7 +200,7 @@ public class ManyBodyOptions {
      */
     @Option(names = {"-z", "--revert"}, 
             description = "Undo an unfavorable change.")
-    boolean noRevert;     
+    boolean noRevert = true;     
     
     /**
      * --fi or --file Choose the file type to write [PDB/XYZ].
@@ -209,6 +209,12 @@ public class ManyBodyOptions {
             description = "Choose file type to write [PDB/XYZ].")
     String fileType = "XYZ";
 
+    /**
+     * -out or --output Save eliminated singles and eliminated pairs to a text file (global and box optimization).
+     */
+    @Option(names = {"--out", "--output"}, paramLabel = "none",
+            description = "Save eliminated singles and eliminated pairs to a text file.")
+    boolean saveOutput = false;
 
 
     /**
@@ -279,7 +285,7 @@ public class ManyBodyOptions {
      */
     @Option(names = {"--bC", "--boxInclusionCriterion"}, paramLabel = "1",
             description = "Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer")
-    int boxInclusionCriterion =1;    
+    int boxInclusionCriterion = 1;    
 
         
  
