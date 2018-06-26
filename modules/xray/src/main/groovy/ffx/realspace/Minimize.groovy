@@ -1,17 +1,17 @@
-
 package ffx.realspace
 
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
-import ffx.algorithms.AlgorithmFunctions
-import ffx.algorithms.AlgorithmUtils
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.MinimizeOptions
 import ffx.potential.MolecularAssembly
+import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementMinimize
-import ffx.xray.RefinementMinimize.RefinementMode
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Parameters
 
 /**
  * The Real Space Minimize script.
@@ -20,126 +20,70 @@ import ffx.xray.RefinementMinimize.RefinementMode
  * <br>
  * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
  */
-class Minimize extends Script {
+@Command(description = " Refinement on a Real Space target.", name = "ffxc realspace.Minimize")
+class Minimize extends AlgorithmsScript {
+
+    @Mixin
+    MinimizeOptions minimizeOptions
+
+    @Mixin
+    RealSpaceOptions realSpaceOptions
 
     /**
-     * Options for the Real Space Minimize Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
+     * One or more filenames.
      */
-    class Options {
-        /**
-         * -h or --help to print a help message.
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * -e or --eps RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type).
-         */
-        @Option(shortName = 'e', longName = 'eps', defaultValue = '-1.0', description = 'RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type)')
-        double eps
-        /**
-         * -i or --iterations Maximum number of optimization iterations.
-         */
-        @Option(shortName = 'i', longName = 'iterations ', defaultValue = '1000', description = ' Maximum number of optimization iterations.')
-        int iterations
-        /**
-         * -D or --data Specify input data filename and weight applied to the data (wA).
-         */
-        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 2, valueSeparator = ',',
-                description = 'Specify input data filename and weight applied to the data (wA).')
-        String[] data
-        /**
-         * The final arguments should be a PDB filename and data filename (CIF or MTZ).
-         */
-        @Unparsed(description = "PDB file and a Real Space Map file.")
-        List<String> filenames
-    }
-    
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
+    private List<String> filenames
+
     def run() {
 
-        def cli = new CliBuilder()
-        cli.name = "ffxc realspace.Minimize"
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        AlgorithmFunctions aFuncts
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils()
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils()
+        realSpaceOptions.init()
+
+        String modelfilename
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
+        } else {
+            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            assemblies = { activeAssembly }
         }
 
-        List<String> arguments = options.filenames
+        logger.info("\n Running Real Space Minimization on " + modelfilename)
 
-        // RMS gradient per atom convergence criteria.
-        double eps = options.eps
-        
-        // Maximum number of refinement cycles.
-        int maxiter = options.iterations
-        
+        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
+
+        RealSpaceData realspaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
+                activeAssembly.getParallelTeam(),
+                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
+
+        algorithmFunctions.energy(assemblies[0])
+
         // Suffix to append to output data
         String suffix = "_refine"
 
-        String modelfilename
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelfilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
-        } else {
-            modelfilename = active.getFile()
-        }
+        RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData, realSpaceOptions.refinementMode)
 
-        logger.info("\n Running simulated annealing on " + modelfilename)
-
-        MolecularAssembly[] systems = aFuncts.open(modelfilename)
-
-        // set up real space map data (can be multiple files)
-        List mapfiles = new ArrayList()
-        if (arguments.size() > 1) {
-            ffx.realspace.parsers.RealSpaceFile realspacefile = new ffx.realspace.parsers.RealSpaceFile(arguments.get(1), 1.0)
-            mapfiles.add(realspacefile)
-        }
-        if (options.data) {
-            for (int i=0; i<options.data.size(); i+=2) {
-                double wA = Double.parseDouble(options.data[i+1])
-                ffx.realspace.parsers.RealSpaceFile realspacefile = new ffx.realspace.parsers.RealSpaceFile(options.data[i], wA)
-                mapfiles.add(realspacefile)
-            }
-        }
-
-        if (mapfiles.size() == 0) {
-            ffx.realspace.parsers.RealSpaceFile realspacefile = new ffx.realspace.parsers.RealSpaceFile(systems[0], 1.0)
-            mapfiles.add(realspacefile)
-        }
-
-        RealSpaceData realspacedata = new RealSpaceData(systems[0], systems[0].getProperties(), systems[0].getParallelTeam(),
-                mapfiles.toArray(new ffx.realspace.parsers.RealSpaceFile[mapfiles.size()]))
-
-        aFuncts.energy(systems[0])
-        
-        RefinementMinimize refinementMinimize = new RefinementMinimize(realspacedata, RefinementMode.COORDINATES)
-
+        double eps = minimizeOptions.eps
+        double maxiter = minimizeOptions.iterations
         if (eps < 0.0) {
             eps = 1.0
         }
-        
+
         logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter)
         refinementMinimize.minimize(eps, maxiter)
 
-        aFuncts.energy(systems[0])
-        aFuncts.saveAsPDB(systems, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
-        
+        algorithmFunctions.energy(activeAssembly)
+        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
+
     }
 }
 

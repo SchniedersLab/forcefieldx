@@ -64,8 +64,8 @@ public class RealSpaceOptions {
     /**
      * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
-    @Option(names = {"-x", "--data"}, split = ",",
-            description = "Specify input data filename and its weight (wA) (e.g. -X filename,1.0).")
+    @Option(names = {"-x", "--data"}, arity = "2",
+            description = "Specify input data filename and its weight (wA) (e.g. -x filename 1.0).")
     String[] data = null;
 
     /**
