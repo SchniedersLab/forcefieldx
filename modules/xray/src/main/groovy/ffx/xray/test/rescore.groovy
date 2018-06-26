@@ -46,7 +46,7 @@ import groovy.cli.picocli.CliBuilder
 import ffx.algorithms.AlgorithmFunctions
 import ffx.algorithms.AlgorithmUtils
 import ffx.potential.parsers.CoordinateFileFilter
-import ffx.realspace.RealSpaceFile
+import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.Rescore.RescoreStrategy
 import ffx.xray.parsers.DiffractionFile

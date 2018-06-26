@@ -109,14 +109,6 @@ public class DynamicsOptions {
     int steps = 1000000;
 
     /**
-     * -p or --npt Specify use of a MC Barostat at the given pressure (default
-     * 1.0 atm).
-     */
-    @Option(names = {"-p", "--npt"}, paramLabel = "0",
-            description = "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
-    double pressure = 0;
-
-    /**
      * -f or --file Choose the file type to write [PDB/XYZ].
      */
     @Option(names = {"-f", "--file"}, paramLabel = "XYZ",
@@ -147,7 +139,7 @@ public class DynamicsOptions {
     public IntegratorEnum integrator;
 
     /**
-     * Parse the thermostate and integrator.
+     * Parse the thermostat and integrator.
      */
     public void init() {
         thermostat = Thermostat.parseThermostat(thermostatString);

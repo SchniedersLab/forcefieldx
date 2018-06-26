@@ -35,40 +35,33 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.realspace;
+package ffx.potential.cli;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-
-import ffx.crystal.Crystal;
+import picocli.CommandLine.Option;
 
 /**
- * <p>
- * RealSpaceFileFilter interface.</p>
- *
- * @author Timothy D. Fenn
+ * Timer options shared by Timer scripts that use the Pico CLI.
  */
-public interface RealSpaceFileFilter {
+public class GradientOptions {
 
     /**
-     * <p>
-     * getCrystal</p>
-     *
-     * @param filename A {@link java.lang.String} object.
-     * @param properties A
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     * @return A {@link ffx.crystal.Crystal} object.
+     * -d or --dx to set the finite-difference step size.
      */
-    Crystal getCrystal(String filename, CompositeConfiguration properties);
+    @Option(names = {"-d", "--dx"}, paramLabel = "1.0e-5",
+            description = "The finite-difference step size.")
+    private double dx = 1.0e-5;
 
     /**
-     * Read in a Real Space file.
-     *
-     * @param filename File to read in.
-     * @param refinementData The {@link RealSpaceRefinementData} object to fill
-     * in.
-     * @param properties System properties.
-     * @return True if read in properly.
+     * -a or --atomID to set the first atom to test.
      */
-    boolean readFile(String filename, RealSpaceRefinementData refinementData,
-            CompositeConfiguration properties);
+    @Option(names = {"-a", "--atomID"}, paramLabel = "1",
+            description = "The first atom to test.")
+    private int atomID = 1;
+
+    /**
+     * -v or --verbose is a flag to print out energy at each step.
+     */
+    @Option(names = {"-v", "--verbose"}, paramLabel = "false", description = "Print out the energy for each step.")
+    boolean verbose = false;
+
 }

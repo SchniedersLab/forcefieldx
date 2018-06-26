@@ -145,7 +145,7 @@ public class XrayOptions {
      * --sigmaATol
      */
     @Option(names = {"--sigmaATol"}, paramLabel = "0.05", description = "Sigma A optimization tolerance.")
-    double sigmaATol = 1.0e-4;
+    double sigmaATol = 0.05;
 
     /**
      * -B or --bSimWeight
@@ -181,16 +181,16 @@ public class XrayOptions {
     /**
      * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
-    @Option(names = {"-x", "--data"}, split = ",",
-            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -D filename,1.0,false).")
+    @Option(names = {"-x", "--data"}, arity = "3",
+            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -x filename 1.0 false).")
     String[] data = null;
 
     /**
      * -r or --mode sets the desired refinement mode
      * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
      */
-    @Option(names = {"-m", "--mode"}, paramLabel = "coordinates", description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "coordinates";
+    @Option(names = {"-m", "--mode"}, paramLabel = "COORDINATES", description = "Refinement mode: coordinates, bfactors and/or occupancies.")
+    String modeString = "COORDINATES";
 
     /**
      * The refinement mode to use.

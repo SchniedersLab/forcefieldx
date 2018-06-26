@@ -35,14 +35,14 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.xray.cli;
+package ffx.realspace.cli;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 import ffx.potential.MolecularAssembly;
-import ffx.realspace.RealSpaceFile;
+import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.RefinementMinimize.RefinementMode;
 
 import picocli.CommandLine.Option;
@@ -64,8 +64,8 @@ public class RealSpaceOptions {
     /**
      * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
-    @Option(names = {"-x", "--data"}, split = ",",
-            description = "Specify input data filename and its weight (wA) (e.g. -X filename,1.0).")
+    @Option(names = {"-x", "--data"}, arity = "2",
+            description = "Specify input data filename and its weight (wA) (e.g. -x filename 1.0).")
     String[] data = null;
 
     /**
@@ -115,7 +115,7 @@ public class RealSpaceOptions {
                         //
                     }
                 }
-                ffx.realspace.RealSpaceFile realspacefile = new ffx.realspace.RealSpaceFile(data[i], w);
+                RealSpaceFile realspacefile = new RealSpaceFile(data[i], w);
                 mapfiles.add(realspacefile);
             }
         }
@@ -124,6 +124,17 @@ public class RealSpaceOptions {
             RealSpaceFile realspacefile = new RealSpaceFile(systems[0], wA);
             mapfiles.add(realspacefile);
         }
+
+        // TODO - write out map files if needed.
+//        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
+//        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(),
+//                SolventModel.POLYNOMIAL, diffractionFile);
+//        diffractionData.scaleBulkFit();
+//        diffractionData.printStats();
+//        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
+//        diffractionData.writeMaps(mapFileName);
+//        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
+
 
         return mapfiles;
     }

@@ -6,6 +6,7 @@ import edu.rit.pj.Comm
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.BarostatOptions
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
@@ -28,37 +29,9 @@ class Dynamics extends AlgorithmsScript {
 
     @Mixin
     DynamicsOptions dynamics;
-
-    /**
-     * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
-     */
-    @Option(names = ['--ld', '--minDensity'], paramLabel = '0.75',
-            description = 'Minimum density allowed by the barostat')
-    double minDensity = 0.75;
-    /**
-     * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
-     */
-    @Option(names = ['--hd', '--maxDensity'], paramLabel = '1.6',
-            description = 'Maximum density allowed by the barostat')
-    double maxDensity = 1.6;
-    /**
-     * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
-     */
-    @Option(names = ['--sm', '--maxSideMove'], paramLabel = '0.25',
-            description = 'Maximum side move allowed by the barostat in Angstroms')
-    double maxSideMove = 0.25;
-    /**
-     * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
-     */
-    @Option(names = ['--am', '--maxAngleMove'], paramLabel = '0.5',
-            description = 'Maximum angle move allowed by the barostat in degrees')
-    double maxAngleMove = 0.5;
-    /**
-     * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
-     */
-    @Option(names = ['--mi', '--meanInterval'], paramLabel = '10',
-            description = 'Mean number of MD steps between barostat move proposals.')
-    int meanInterval = 10;
+    
+    @Mixin
+    BarostatOptions barostatOpt;
 
     /**
      * -r or --repEx to execute temperature replica exchange.
@@ -109,19 +82,19 @@ class Dynamics extends AlgorithmsScript {
 
         potential.energy(x, true)
 
-        if (dynamics.pressure > 0) {
+        if (barostatOpt.pressure > 0) {
             if (potential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
                 logger.warning(" NPT with OpenMM acceleration is still experimental and may not function correctly.")
             }
-            logger.info(String.format(" Running NPT dynamics at pressure %7.4g", dynamics.pressure))
+            logger.info(String.format(" Running NPT dynamics at pressure %7.4g", barostatOpt.pressure))
             CrystalPotential crystalPotential = (CrystalPotential) potential
             Barostat barostat = new Barostat(activeAssembly, crystalPotential)
-            barostat.setPressure(dynamics.pressure)
-            barostat.setMaxDensity(maxDensity)
-            barostat.setMinDensity(minDensity)
-            barostat.setMaxSideMove(maxSideMove)
-            barostat.setMaxAngleMove(maxAngleMove)
-            barostat.setMeanBarostatInterval(meanInterval)
+            barostat.setPressure(barostatOpt.pressure)
+            barostat.setMaxDensity(barostatOpt.maxDensity)
+            barostat.setMinDensity(barostatOpt.minDensity)
+            barostat.setMaxSideMove(barostatOpt.maxSideMove)
+            barostat.setMaxAngleMove(barostatOpt.maxAngleMove)
+            barostat.setMeanBarostatInterval(barostatOpt.meanInterval)
             potential = barostat
         }
 

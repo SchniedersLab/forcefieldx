@@ -7,9 +7,10 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.potential.MolecularAssembly
+import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
-import ffx.xray.cli.RealSpaceOptions
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -68,8 +69,7 @@ class Anneal extends AlgorithmsScript {
         List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
 
         RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-                activeAssembly.getParallelTeam(),
-                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
+                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
         algorithmFunctions.energy(assemblies[0])
 
