@@ -182,7 +182,7 @@ public class XrayOptions {
      * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
     @Option(names = {"-x", "--data"}, split = ",",
-            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -D filename,1.0,false).")
+            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -x filename,1.0,false).")
     String[] data = null;
 
     /**
