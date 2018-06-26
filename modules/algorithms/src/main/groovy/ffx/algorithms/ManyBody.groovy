@@ -51,11 +51,11 @@ class ManyBody extends AlgorithmsScript {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
             active = assemblies[0]
             filename = filenames.get(0)
-        } else if (activeAssembly == null) {
+        } else if (active == null) {
             logger.info(helpString())
             return
         } else {
-            filename = activeAssembly.getFile().getAbsolutePath();
+            filename = active.getFile().getAbsolutePath();
         }
     
         /**
@@ -500,9 +500,9 @@ class ManyBody extends AlgorithmsScript {
             String ext = FilenameUtils.getExtension(filename);
             filename = FilenameUtils.removeExtension(filename);
             if (ext.toUpperCase().contains("XYZ")) {
-                algorithmFunctions.saveAsXYZ(new File(filename + ".xyz"));
+                algorithmFunctions.saveAsXYZ(active, new File(filename + ".xyz"));
             } else {
-                algorithmFunctions.saveAsPDB(new File(filename + ".pdb"));
+                algorithmFunctions.saveAsPDB(active, new File(filename + ".pdb"));
             }
         }
         
