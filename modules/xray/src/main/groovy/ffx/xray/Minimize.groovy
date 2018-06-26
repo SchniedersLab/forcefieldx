@@ -1,18 +1,19 @@
-
 package ffx.xray
 
+import org.apache.commons.configuration.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
-
-import ffx.algorithms.AlgorithmFunctions
-import ffx.algorithms.AlgorithmUtils
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.MinimizeOptions
 import ffx.potential.MolecularAssembly
-import ffx.xray.CrystalReciprocalSpace.SolventModel
 import ffx.xray.RefinementMinimize.RefinementMode
+import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
 /**
  * The X-ray Minimize script.
@@ -21,200 +22,139 @@ import ffx.xray.parsers.DiffractionFile
  * <br>
  * ffxc xray.Minimize [options] &lt;filename [file2...]&gt;
  */
-class Minimize extends Script {
+@Command(description = " Refine an X-ray/Neutron target.", name = "ffxc xray.Minimize")
+class Minimize extends AlgorithmsScript {
+
+    @Mixin
+    MinimizeOptions minimizeOptions
+
+    @Mixin
+    XrayOptions xrayOptions
 
     /**
-     * Options for the Anneal Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc xray.Minimize [options] &lt;filename [file2...]&gt;
+     * -t or --threeStage Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true).
      */
-    class Options {
-        /**
-         * -h or --help to print a help message.
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * -e or --eps RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type).
-         */
-        @Option(shortName='e', longName='eps', defaultValue='-1.0', description='RMS gradient convergence criteria (default of -1 automatically determines eps based on refinement type)')
-        double eps
-        /**
-         * -i or --iterations Maximum number of optimization iterations.
-         */
-        @Option(shortName='i', longName='iterations ', defaultValue='1000', description=' Maximum number of optimization iterations.')
-        int iterations
-        /**
-         * -r or --mode sets the desired refinement mode
-         * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
-         */
-        @Option(shortName = 'r', longName = 'mode', convert = { s -> return RefinementMinimize.parseMode(s) }, defaultValue = 'COORDINATES',
-                description = 'Refinement mode: coordinates, bfactors, occupancies.')
-        RefinementMode mode
-        /**
-         * -t or --threeStage Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true).
-         */
-        @Option(shortName='t', longName='threeStage', defaultValue='false',
-                description='Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true)')
-        boolean threeStage
-        /**
-         * -E or --eps3 RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determine eps for each stage).
-         */
-        @Option(shortName = 'E', longName = 'eps3', defaultValue = '-1.0,-1.0,-1.0', numberOfArguments = 3, valueSeparator = ',',
-                description = 'RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determine eps for each stage).')
-        double[] eps3
-        /**
-         * -D or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-         */
-        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 3, valueSeparator = ',',
-                description = 'Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.')
-        String[] data
-        /**
-         * -s or --suffix Specify the suffix to apply to output files. For example, for 1abc_refine.pdb, write out 1abc_refine_refine.[pdb|mtz] at the end.
-         */
-        @Option(shortName='s', longName='suffix', defaultValue = '_refine', description = 'Suffix to apply to files written out by minimization.')
-        String suffix;
-        /**
-         * The final arguments should be a PDB filename and data filename (CIF or MTZ).
-         */
-        @Unparsed(description = "PDB file and a CIF or MTZ file.")
-        List<String> filenames
-    }
+    @Option(names = ['-t', '--threeStage'], paramLabel = 'false',
+            description = 'Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true)')
+    boolean threeStage = false
+    /**
+     * -E or --eps3 RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determine eps for each stage).
+     */
+    @Option(names = ['-E', '--eps3'], paramLabel = '-1.0', split = ',', arity = '1',
+            description = 'RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determines eps for each stage).')
+    double[] eps3 = [-1.0, -1.0, -1.0]
+
+    /**
+     * -s or --suffix Specify the suffix to apply to output files. For example, for 1abc_refine.pdb, write out 1abc_refine_refine.[pdb|mtz] at the end.
+     */
+    @Option(names = ['--suffix'], paramLabel = '_refine',
+            description = 'Suffix to apply to files written out by minimization.')
+    String suffix = "_refine"
+
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
+    private List<String> filenames
 
     def run() {
 
-        def cli = new CliBuilder()
-        cli.name = "ffxc xray.Minimize"
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        AlgorithmFunctions aFuncts
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils()
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils()
-        }
+        xrayOptions.init()
 
-        List<String> arguments = options.filenames
-
-        // RMS gradient per atom convergence criteria.
-        double eps = options.eps
-
-        // Do 3 stage refinement (coordinates, then B, then occupancies).
-        boolean threestage = options.threeStage
-
-        // RMS gradient convergence criteria for three stage refinement
-        double coordeps = options.eps3[0]
-        double beps = options.eps3[1]
-        double occeps = options.eps3[2]
-
-        // Maximum number of refinement cycles.
-        int maxiter = options.iterations
-
-        // Type of refinement.
-        RefinementMode refinementmode = options.mode
-
-        String modelfilename = null
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelfilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
+        String modelfilename
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelfilename = active.getFile()
+            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            assemblies = [activeAssembly]
         }
 
-        logger.info("\n Running X-ray Minimize on " + modelfilename)
+        logger.info("\n Running xray.Minimize on " + modelfilename)
 
-        MolecularAssembly[] systems = aFuncts.open(modelfilename)
+        // Load parsed X-ray properties.
+        CompositeConfiguration properties = activeAssembly.getProperties()
+        xrayOptions.setProperties(properties)
 
         // Set up diffraction data (can be multiple files)
-        List diffractionfiles = new ArrayList()
-        if (arguments.size() > 1) {
-            DiffractionFile diffractionfile = new DiffractionFile(arguments.get(1), 1.0, false)
-            diffractionfiles.add(diffractionfile)
-        }
+        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
 
-        if (options.data) {
-            for (int i = 0; i < options.data.size(); i += 3) {
-                double wA = Double.parseDouble(options.data[i + 1])
-                boolean neutron = Boolean.parseBoolean(options.data[i + 2])
-                DiffractionFile diffractionfile = new DiffractionFile(options.data[i], wA, neutron)
-                diffractionfiles.add(diffractionfile)
-            }
-        }
+        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
+                xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
 
-        if (diffractionfiles.size() == 0) {
-            DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false)
-            diffractionfiles.add(diffractionfile)
-        }
+        diffractionData.scaleBulkFit()
+        diffractionData.printStats()
 
-        DiffractionData diffractiondata = new DiffractionData(systems, systems[0].getProperties(),
-                SolventModel.POLYNOMIAL, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+        algorithmFunctions.energy(activeAssembly)
 
-        diffractiondata.scaleBulkFit()
-        diffractiondata.printStats()
+        // RMS gradient convergence criteria for three stage refinement
+        double coordeps = eps3[0]
+        double beps = eps3[1]
+        double occeps = eps3[2]
 
-        aFuncts.energy(systems[0])
+        // Maximum number of refinement cycles.
+        int maxiter = minimizeOptions.iterations
 
-        if (threestage) {
-            RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.COORDINATES)
+        if (threeStage) {
+            RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.COORDINATES)
             if (coordeps < 0.0) {
                 coordeps = refinementMinimize.getEps()
             }
             logger.info("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter)
             refinementMinimize.minimize(coordeps, maxiter)
-            diffractiondata.scaleBulkFit()
-            diffractiondata.printStats()
+            diffractionData.scaleBulkFit()
+            diffractionData.printStats()
+            algorithmFunctions.energy(activeAssembly)
 
-            aFuncts.energy(systems[0])
-
-            refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.BFACTORS)
+            refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.BFACTORS)
             if (beps < 0.0) {
                 beps = refinementMinimize.getEps()
             }
             logger.info("\n RMS gradient convergence criteria: " + beps + "\n Maximum number of iterations: " + maxiter + "\n")
             refinementMinimize.minimize(beps, maxiter)
-            diffractiondata.scaleBulkFit()
-            diffractiondata.printStats()
+            diffractionData.scaleBulkFit()
+            diffractionData.printStats()
 
-            if (diffractiondata.getAltResidues().size() > 0
-                    || diffractiondata.getAltMolecules().size() > 0) {
-                refinementMinimize = new RefinementMinimize(diffractiondata, RefinementMode.OCCUPANCIES)
+            if (diffractionData.getAltResidues().size() > 0
+                    || diffractionData.getAltMolecules().size() > 0) {
+                refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.OCCUPANCIES)
                 if (occeps < 0.0) {
                     occeps = refinementMinimize.getEps()
                 }
                 logger.info("\n RMS gradient convergence criteria: " + occeps + " max number of iterations: " + maxiter)
                 refinementMinimize.minimize(occeps, maxiter)
-                diffractiondata.scaleBulkFit()
-                diffractiondata.printStats()
+                diffractionData.scaleBulkFit()
+                diffractionData.printStats()
             } else {
                 logger.info("Occupancy refinement not necessary, skipping")
             }
         } else {
-            RefinementMinimize refinementMinimize = new RefinementMinimize(diffractiondata, refinementmode)
+            // Type of refinement.
+            RefinementMode refinementMode = xrayOptions.refinementMode
+            RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData, refinementMode)
+            double eps = minimizeOptions.eps
             if (eps < 0.0) {
                 eps = refinementMinimize.getEps()
             }
             logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter)
             refinementMinimize.minimize(eps, maxiter)
-            diffractiondata.scaleBulkFit()
-            diffractiondata.printStats()
+            diffractionData.scaleBulkFit()
+            diffractionData.printStats()
         }
 
-        aFuncts.energy(systems[0])
+        algorithmFunctions.energy(activeAssembly)
 
-        diffractiondata.writeModel(FilenameUtils.removeExtension(modelfilename) + options.suffix + ".pdb")
-        diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + options.suffix + ".mtz")
+        diffractionData.writeModel(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb")
+        diffractionData.writeData(FilenameUtils.removeExtension(modelfilename) + suffix + ".mtz")
     }
 }
 

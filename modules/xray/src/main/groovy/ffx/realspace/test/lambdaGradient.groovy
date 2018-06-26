@@ -47,7 +47,7 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
 import ffx.realspace.RealSpaceData
-import ffx.realspace.RealSpaceFile
+import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.CrystalReciprocalSpace.SolventModel
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy

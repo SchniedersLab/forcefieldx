@@ -107,24 +107,24 @@ class Minimize extends Script {
         // set up real space map data (can be multiple files)
         List mapfiles = new ArrayList()
         if (arguments.size() > 1) {
-            RealSpaceFile realspacefile = new RealSpaceFile(arguments.get(1), 1.0)
+            ffx.realspace.parsers.RealSpaceFile realspacefile = new ffx.realspace.parsers.RealSpaceFile(arguments.get(1), 1.0)
             mapfiles.add(realspacefile)
         }
         if (options.data) {
             for (int i=0; i<options.data.size(); i+=2) {
                 double wA = Double.parseDouble(options.data[i+1])
-                RealSpaceFile realspacefile = new RealSpaceFile(options.data[i], wA)
+                ffx.realspace.parsers.RealSpaceFile realspacefile = new ffx.realspace.parsers.RealSpaceFile(options.data[i], wA)
                 mapfiles.add(realspacefile)
             }
         }
 
         if (mapfiles.size() == 0) {
-            RealSpaceFile realspacefile = new RealSpaceFile(systems[0], 1.0)
+            ffx.realspace.parsers.RealSpaceFile realspacefile = new ffx.realspace.parsers.RealSpaceFile(systems[0], 1.0)
             mapfiles.add(realspacefile)
         }
 
         RealSpaceData realspacedata = new RealSpaceData(systems[0], systems[0].getProperties(), systems[0].getParallelTeam(),
-                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
+                mapfiles.toArray(new ffx.realspace.parsers.RealSpaceFile[mapfiles.size()]))
 
         aFuncts.energy(systems[0])
         

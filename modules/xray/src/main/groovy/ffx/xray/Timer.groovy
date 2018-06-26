@@ -1,16 +1,16 @@
 package ffx.xray
 
+import org.apache.commons.configuration.CompositeConfiguration
+
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.TimerOptions
-import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
-import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
@@ -20,7 +20,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc xray.Timer [options] &lt;filename&gt;
  */
-@Command(description = " Time calculation of the X-ray target.", name = "ffxc Timer")
+@Command(description = " Time calculation of the X-ray target.", name = "ffxc xray.Timer")
 class Timer extends AlgorithmsScript {
 
     @Mixin
@@ -30,18 +30,10 @@ class Timer extends AlgorithmsScript {
     XrayOptions xrayOptions
 
     /**
-     * -r or --mode sets the desired refinement mode
-     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
-     */
-    @Option(names = ['-r', '--mode'], paramLabel = "mode", description = 'Refinement mode: coordinates, bfactors and/or occupancies.')
-    String modeString
-
-    /**
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
-
 
     def run() {
 
@@ -50,6 +42,11 @@ class Timer extends AlgorithmsScript {
         }
 
         xrayOptions.init()
+
+        // Set the number of threads (needs to be done before opening the files).
+        if (timerOptions.threads > 0) {
+            System.setProperty("pj.nt", Integer.toString(timerOptions.threads))
+        }
 
         String modelfilename
         MolecularAssembly[] assemblies
@@ -66,26 +63,22 @@ class Timer extends AlgorithmsScript {
 
         logger.info("\n Running xray.Timer on " + modelfilename)
 
+        // Load parsed X-ray properties.
+        CompositeConfiguration properties = assemblies[0].getProperties()
+        xrayOptions.setProperties(properties)
+
         // Set up diffraction data (can be multiple files)
-        List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
+        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
 
-        DiffractionData diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
-                xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
+                xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
 
-        // Set the number of threads (needs to be done before opening the files).
-        if (timerOptions.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(timerOptions.threads))
-        }
-
-        diffractiondata.scaleBulkFit()
-        diffractiondata.printStats()
+        diffractionData.scaleBulkFit()
+        diffractionData.printStats()
 
         algorithmFunctions.energy(assemblies[0])
 
-        // Type of refinement.
-        RefinementMode refinementmode = RefinementMinimize.parseMode(modeString)
-
-        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractiondata, refinementmode)
+        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
         int n = refinementEnergy.getNumberOfVariables()
         double[] x = new double[n]
         double[] g = new double[n]

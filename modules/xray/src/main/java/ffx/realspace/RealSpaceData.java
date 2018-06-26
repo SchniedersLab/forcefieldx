@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -59,6 +59,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
+import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.DataContainer;
 import ffx.xray.DiffractionData;
 import ffx.xray.RefinementMinimize.RefinementMode;
@@ -70,7 +71,6 @@ import static ffx.crystal.Crystal.mod;
  * RealSpaceData class.</p>
  *
  * @author Timothy D. Fenn
- *
  */
 public class RealSpaceData implements DataContainer {
 
@@ -144,17 +144,16 @@ public class RealSpaceData implements DataContainer {
      * with a weight of 1.0 using the same name as the molecular
      * molecularAssemblies.
      *
-     * @param molecularAssembly
-     * {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
-     * object, used as the atomic model for comparison against the data
-     * @param properties system properties file
+     * @param molecularAssembly {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
+     *                          object, used as the atomic model for comparison against the data
+     * @param properties        system properties file
      * @param parallelTeam
-     * @param diffractionData {@link ffx.xray.DiffractionData diffraction data}
+     * @param diffractionData   {@link ffx.xray.DiffractionData diffraction data}
      */
     public RealSpaceData(MolecularAssembly molecularAssembly,
-            CompositeConfiguration properties,
-            ParallelTeam parallelTeam,
-            DiffractionData diffractionData) {
+                         CompositeConfiguration properties,
+                         ParallelTeam parallelTeam,
+                         DiffractionData diffractionData) {
         this(new MolecularAssembly[]{molecularAssembly}, properties, parallelTeam, diffractionData);
     }
 
@@ -162,17 +161,16 @@ public class RealSpaceData implements DataContainer {
      * Construct a real space data molecularAssemblies, assumes a real space map
      * with a weight of 1.0 using the same name as the molecularAssemblies.
      *
-     * @param molecularAssemblies
-     * {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
-     * object, used as the atomic model for comparison against the data
-     * @param properties system properties file
+     * @param molecularAssemblies {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
+     *                            object, used as the atomic model for comparison against the data
+     * @param properties          system properties file
      * @param parallelTeam
-     * @param diffractionData {@link ffx.xray.DiffractionData diffraction data}
+     * @param diffractionData     {@link ffx.xray.DiffractionData diffraction data}
      */
     public RealSpaceData(MolecularAssembly molecularAssemblies[],
-            CompositeConfiguration properties,
-            ParallelTeam parallelTeam,
-            DiffractionData diffractionData) {
+                         CompositeConfiguration properties,
+                         ParallelTeam parallelTeam,
+                         DiffractionData diffractionData) {
         this.molecularAssemblies = molecularAssemblies;
         this.parallelTeam = parallelTeam;
         this.modelName = molecularAssemblies[0].getFile().getName();
@@ -241,15 +239,14 @@ public class RealSpaceData implements DataContainer {
      * with a weight of 1.0 using the same name as the molecular
      * molecularAssemblies.
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
-     * object, used as the atomic model for comparison against the data
-     * @param properties system properties file
+     * @param assembly     {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
+     *                     object, used as the atomic model for comparison against the data
+     * @param properties   system properties file
      * @param parallelTeam
      */
     public RealSpaceData(MolecularAssembly assembly,
-            CompositeConfiguration properties,
-            ParallelTeam parallelTeam) {
+                         CompositeConfiguration properties,
+                         ParallelTeam parallelTeam) {
         this(new MolecularAssembly[]{assembly}, properties,
                 parallelTeam, new RealSpaceFile(assembly));
     }
@@ -257,35 +254,33 @@ public class RealSpaceData implements DataContainer {
     /**
      * Construct a real space data molecularAssemblies.
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
-     * object, used as the atomic model for comparison against the data
-     * @param properties system properties file
+     * @param assembly     {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
+     *                     object, used as the atomic model for comparison against the data
+     * @param properties   system properties file
      * @param parallelTeam
-     * @param datafile one or more {@link RealSpaceFile} to be refined against
+     * @param datafile     one or more {@link RealSpaceFile} to be refined against
      */
     public RealSpaceData(MolecularAssembly assembly,
-            CompositeConfiguration properties,
-            ParallelTeam parallelTeam,
-            RealSpaceFile... datafile) {
+                         CompositeConfiguration properties,
+                         ParallelTeam parallelTeam,
+                         RealSpaceFile... datafile) {
         this(new MolecularAssembly[]{assembly}, properties, parallelTeam, datafile);
     }
 
     /**
      * Construct a real space data molecularAssemblies.
      *
-     * @param molecularAssemblies
-     * {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
-     * object array (typically containing alternate conformer assemblies), used
-     * as the atomic model for comparison against the data
-     * @param properties system properties file
+     * @param molecularAssemblies {@link ffx.potential.MolecularAssembly molecular molecularAssemblies}
+     *                            object array (typically containing alternate conformer assemblies), used
+     *                            as the atomic model for comparison against the data
+     * @param properties          system properties file
      * @param parallelTeam
-     * @param dataFile one or more {@link RealSpaceFile} to be refined against
+     * @param dataFile            one or more {@link RealSpaceFile} to be refined against
      */
     public RealSpaceData(MolecularAssembly molecularAssemblies[],
-            CompositeConfiguration properties,
-            ParallelTeam parallelTeam,
-            RealSpaceFile... dataFile) {
+                         CompositeConfiguration properties,
+                         ParallelTeam parallelTeam,
+                         RealSpaceFile... dataFile) {
 
         this.molecularAssemblies = molecularAssemblies;
         this.modelName = molecularAssemblies[0].getFile().getName();

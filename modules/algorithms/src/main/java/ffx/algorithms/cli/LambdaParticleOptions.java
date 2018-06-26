@@ -35,40 +35,38 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.realspace;
+package ffx.algorithms.cli;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-
-import ffx.crystal.Crystal;
+import groovy.cli.Option;
+import picocli.CommandLine;
 
 /**
- * <p>
- * RealSpaceFileFilter interface.</p>
+ * Represents command line options for scripts that utilize a mobile lambda
+ * particle, such as Thermodynamics.
  *
- * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
-public interface RealSpaceFileFilter {
-
+public class LambdaParticleOptions {
     /**
-     * <p>
-     * getCrystal</p>
-     *
-     * @param filename A {@link java.lang.String} object.
-     * @param properties A
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
-     * @return A {@link ffx.crystal.Crystal} object.
+     * -m or --lambdaMass to set the mass of the lambda particle.
      */
-    Crystal getCrystal(String filename, CompositeConfiguration properties);
-
+    @CommandLine.Option(names = {"--lm", "--lambdaMass"}, paramLabel = "1.0E-18",
+            description = "Mass of the lambda particle.")
+    private double lambdaMass = 1.0E-18;
     /**
-     * Read in a Real Space file.
-     *
-     * @param filename File to read in.
-     * @param refinementData The {@link RealSpaceRefinementData} object to fill
-     * in.
-     * @param properties System properties.
-     * @return True if read in properly.
+     * -x or --lambdaFriction to set friction on the lambda particle
      */
-    boolean readFile(String filename, RealSpaceRefinementData refinementData,
-            CompositeConfiguration properties);
+    @CommandLine.Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "1.0E-18",
+            description = "Friction on the lambda particle.")
+    private double lambdaFriction = 1.0E-18;
+
+    public double getLambdaMass() {
+        return lambdaMass;
+    }
+
+    public double getLambdaFriction() {
+        return lambdaFriction;
+    }
 }
