@@ -215,8 +215,11 @@ public final class ModelingShell extends Console implements AlgorithmListener {
         setVariable("superpose", new MethodClosure(this, "superpose"));
 
         // Obtain UIUtils object
-        setVariable("getAlgorithmUtils", new MethodClosure(this, "getUIAlgorithmUtils"));
-        setVariable("getPotentialsUtils", new MethodClosure(this, "getUIPotentialsUtils"));
+        setVariable("functions", new UIUtils(this, mainPanel));
+
+        // Define a listener variable to send updates back to the GUI.
+        setVariable("listener", this);
+
     }
 
     /**

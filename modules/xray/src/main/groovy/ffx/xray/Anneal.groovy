@@ -88,7 +88,7 @@ class Anneal extends AlgorithmsScript {
         RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
 
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy, properties,
-                refinementEnergy, dynamicsOptions.thermostat, dynamicsOptions.integrator)
+                algorithmListener, dynamicsOptions.thermostat, dynamicsOptions.integrator)
 
         simulatedAnnealing.anneal(annealOptions.upper, annealOptions.low, annealOptions.windows,
                 dynamicsOptions.steps, dynamicsOptions.dt)

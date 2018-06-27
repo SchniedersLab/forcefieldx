@@ -7,9 +7,10 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.potential.MolecularAssembly
+import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
-import ffx.realspace.cli.RealSpaceOptions
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -65,17 +66,16 @@ class Anneal extends AlgorithmsScript {
 
         logger.info("\n Running simulated annealing on " + modelfilename)
 
-        List<ffx.realspace.parsers.RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
+        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
 
         RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-                activeAssembly.getParallelTeam(),
-                mapfiles.toArray(new ffx.realspace.parsers.RealSpaceFile[mapfiles.size()]))
+                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
         algorithmFunctions.energy(assemblies[0])
 
         RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES)
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy,
-                activeAssembly.getProperties(), refinementEnergy,
+                activeAssembly.getProperties(), algorithmListener,
                 dynamicsOptions.thermostat, dynamicsOptions.integrator)
 
         simulatedAnnealing.anneal(annealOptions.upper, annealOptions.low, annealOptions.windows,

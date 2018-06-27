@@ -40,7 +40,10 @@ package ffx.algorithms.cli;
 import picocli.CommandLine.Option;
 
 /**
- * Dynamics options shared by Dynamics scripts that use the Pico CLI.
+ * Represents command line options for scripts that utilize simulated annealing.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class AnnealOptions {
     

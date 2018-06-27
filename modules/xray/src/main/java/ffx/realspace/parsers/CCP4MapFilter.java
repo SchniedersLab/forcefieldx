@@ -205,7 +205,7 @@ public class CCP4MapFilter implements RealSpaceFileFilter {
             }
             if (logger.isLoggable(Level.INFO)) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(String.format("\n Opening CCP4 map: %s\n", filename));
+                sb.append(String.format(" Opening CCP4 map: %s\n", filename));
                 //sb.append(String.format("file type (machine stamp): %s\n", stampString));
                 logger.info(sb.toString());
             }

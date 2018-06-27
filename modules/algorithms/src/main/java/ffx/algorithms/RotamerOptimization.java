@@ -2223,7 +2223,7 @@ public class RotamerOptimization implements Terminatable {
      * @param residueList
      * @return Added residues.
      */
-    public List<Residue> setResiduesIgnoreNull(ArrayList<Residue> residueList) {
+    public List<Residue> setResiduesIgnoreNull(List<Residue> residueList) {
         this.residueList = new ArrayList<>();
         logger.info(" Optimizing these residues: ");
         for (Residue r : residueList) {

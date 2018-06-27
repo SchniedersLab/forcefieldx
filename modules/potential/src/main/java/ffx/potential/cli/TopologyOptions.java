@@ -57,7 +57,11 @@ import ffx.potential.nonbonded.MultiplicativeSwitch;
 import picocli.CommandLine.Option;
 
 /**
- * Alchemical options shared by scripts that use Dual or Quad Topologies and use the Pico CLI.
+ * Represents command line options for scripts that utilize multiple physical topologies.
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
 public class TopologyOptions {
 

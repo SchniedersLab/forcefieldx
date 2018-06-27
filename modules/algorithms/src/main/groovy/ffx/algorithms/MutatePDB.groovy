@@ -140,7 +140,7 @@ class MutatePDB extends AlgorithmsScript {
             rLib.setUseOrigCoordsRotamer(true)
 
             // This does break encapsulation of our modules.
-            RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null)
+            RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, algorithmListener)
             rotamerOptimization.setThreeBodyEnergy(threeBody)
             rotamerOptimization.setForcedResidues(resID, resID)
             rotamerOptimization.setWindowSize(1)
