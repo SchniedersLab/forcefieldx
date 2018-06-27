@@ -182,16 +182,6 @@ class ManyBody extends AlgorithmsScript {
         int minimumNumberAcceptedNARotamers = manyBody.minimumAcceptedNARotamers
 
         /**
-         * Energy restart.
-         */
-        boolean useEnergyRestart = false;
-        File energyRestartFile = null;
-        if (!manyBody.energyRestart.equalsIgnoreCase("none")) {
-            useEnergyRestart = true;
-            energyRestartFile = new File(manyBody.energyRestart)
-        }
-
-        /**
          * Force residues.
          */
         String forceResidues = manyBody.forceResidues
@@ -282,29 +272,9 @@ class ManyBody extends AlgorithmsScript {
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(
                 activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
-
-        rotamerOptimization.setTwoBodyCutoff(manyBody.twoBodyCutoff);
-        rotamerOptimization.setThreeBodyCutoff(manyBody.threeBodyCutoff);
-        rotamerOptimization.setThreeBodyEnergy(manyBody.threeBody);
-        rotamerOptimization.setUseGoldstein(useGoldstein);
-        rotamerOptimization.setRevert(revert);
-        rotamerOptimization.setPruning(manyBody.prune);
-        rotamerOptimization.setWindowSize(manyBody.window);
-        rotamerOptimization.setIncrement(manyBody.increment);
-        rotamerOptimization.setDistanceCutoff(manyBody.cutoff);
-        rotamerOptimization.setNucleicCorrectionThreshold(manyBody.nucleicCorrectionThreshold);
-        rotamerOptimization.setMinimumNumberAcceptedNARotamers(manyBody.minimumAcceptedNARotamers);
-        rotamerOptimization.setVerboseEnergies(verboseEnergies);
-        rotamerOptimization.setBoxBorderSize(manyBody.boxBorderSize);
-        rotamerOptimization.setApproxBoxLength(manyBody.approxBoxLength);
-        rotamerOptimization.setNumXYZBoxes(numXYZBoxes);
-        rotamerOptimization.setBoxInclusionCriterion(manyBody.boxInclusionCriterion);
-        rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
-        rotamerOptimization.setMonteCarlo(monteCarlo, nMCSteps);
-
-        if (useEnergyRestart) {
-            rotamerOptimization.setEnergyRestartFile(energyRestartFile);
-        }
+            
+        manyBody.setRotamerOptimization(rotamerOptimization);
+        manyBody.setRotOptProperties(numXYZBoxes, forceResiduesStart, forceResiduesEnd);
 
         if (manyBody.library == 1) {
             rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
@@ -508,10 +478,7 @@ class ManyBody extends AlgorithmsScript {
             }
         }
         
-        if (manyBody.saveOutput) {
-            rotamerOptimization.outputEliminated();
-        }
-
+        manyBody.saveEliminatedRotamers();
     }
 }
 
