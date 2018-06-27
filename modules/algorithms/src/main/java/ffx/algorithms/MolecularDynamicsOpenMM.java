@@ -153,6 +153,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     private boolean NVE = false;
 
+    private boolean quiet = true;
+
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
      * dynamics using native OpenMM routines, avoiding the cost of communicating
@@ -506,7 +508,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                     break;
                 case RESPA:
                     integratorString = "RESPA";
-                    logger.info(String.format(" In RESPA integrator case"));
+                    //logger.info(String.format(" In RESPA integrator case"));
                     break;
                 default:
                     integratorString = "VERLET";
@@ -527,7 +529,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
         double currentTemperature = forceFieldEnergyOpenMM.getTemperature();
         if (currentTemperature != targetTemperature || currentTimeStp != dt || !currentIntegrator.equalsIgnoreCase(integratorString)) {
-            logger.info(String.format(" Creating OpenMM Context with step size %8.3f and target temperature %8.3f.", dt, targetTemperature));
+            if (!quiet) {
+                logger.info(String.format(" Creating OpenMM Context with step size %8.3f and target temperature %8.3f.", dt, targetTemperature));
+            }
             forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature);
             integrator = forceFieldEnergyOpenMM.getIntegrator();
             context = forceFieldEnergyOpenMM.getContext();
@@ -535,6 +539,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             integrator = forceFieldEnergyOpenMM.getIntegrator();
             context = forceFieldEnergyOpenMM.getContext();
         }
+        quiet = false;
     }
 
     /**

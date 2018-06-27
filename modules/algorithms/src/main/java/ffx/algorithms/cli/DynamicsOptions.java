@@ -115,7 +115,7 @@ public class DynamicsOptions {
     /**
      * -f or --file Choose the file type to write [PDB/XYZ].
      */
-    @Option(names = {"-f", "--file"}, paramLabel = "XYZ",
+    @Option(names = {"-F", "--fileFormat"}, paramLabel = "XYZ",
             description = "Choose file type to write [PDB/XYZ].")
     String fileType = "XYZ";
 
