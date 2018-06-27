@@ -40,7 +40,7 @@ class Minimize extends AlgorithmsScript {
     /**
      * -E or --eps3 RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determine eps for each stage).
      */
-    @Option(names = ['-E', '--eps3'], paramLabel = '-1.0', split = ',', arity = '1',
+    @Option(names = ['-E', '--eps3'], paramLabel = '-1.0', arity = '3',
             description = 'RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determines eps for each stage).')
     double[] eps3 = [-1.0, -1.0, -1.0]
 

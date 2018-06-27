@@ -107,8 +107,8 @@ class ApplyTorsions extends AlgorithmsScript {
             return
         }
 
-        AlgorithmListener aList = algorithmFunctions.getDefaultListener()
-        GenerateRotamers genr = new GenerateRotamers(activeAssembly, activeAssembly.getPotentialEnergy(), residue, outFile, nChi, aList)
+        GenerateRotamers genr = new GenerateRotamers(activeAssembly,
+                activeAssembly.getPotentialEnergy(), residue, outFile, nChi, algorithmListener)
         genr.setVideo(videoFile)
         genr.applyAndSaveTorsions(torSets)
 

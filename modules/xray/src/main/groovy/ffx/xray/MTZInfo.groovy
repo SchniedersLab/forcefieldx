@@ -39,9 +39,9 @@ class MTZInfo extends AlgorithmsScript {
             return
         }
 
-        MTZFilter mtzfilter = new MTZFilter()
-        mtzfilter.getReflectionList(file)
-        mtzfilter.printHeader()
+        MTZFilter mtzFilter = new MTZFilter()
+        mtzFilter.getReflectionList(file)
+        mtzFilter.printHeader()
     }
 }
 

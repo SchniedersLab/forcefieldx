@@ -49,7 +49,7 @@ class ManyBody extends AlgorithmsScript {
         String filename = null;
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
-            active = assemblies[0]
+            activeAssembly = assemblies[0]
             filename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -85,7 +85,7 @@ class ManyBody extends AlgorithmsScript {
 
         if (manyBody.algorithm != 5) {
             // Not Box optimization.
-            if (allStartResID < 1 && manyBody.listResidues == null) {
+            if (allStartResID < 1 && manyBody.listResidues.equalsIgnoreCase("none")) {
                 if (manyBody.finish < manyBody.start || manyBody.start < 0 || manyBody.finish < 0) {
                     logger.warning(" FFX shutting down: no residues specified for optimization.")
                     return;
@@ -186,7 +186,7 @@ class ManyBody extends AlgorithmsScript {
          */
         boolean useEnergyRestart = false;
         File energyRestartFile = null;
-        if (!manyBody.energyRestart == null) {
+        if (!manyBody.energyRestart.equalsIgnoreCase("none")) {
             useEnergyRestart = true;
             energyRestartFile = new File(manyBody.energyRestart)
         }
@@ -201,7 +201,7 @@ class ManyBody extends AlgorithmsScript {
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
         List<String> resList = new ArrayList<>();
-        if (!manyBody.listResidues == null) {
+        if (!manyBody.listResidues.equalsIgnoreCase("none")) {
             def tok = (manyBody.listResidues).tokenize('.');
             for (String t : tok) {
                 logger.info(" Adding " + t);
@@ -210,7 +210,7 @@ class ManyBody extends AlgorithmsScript {
         }
 
         List<String> sequenceOptimizationList = new ArrayList<>();
-        if (!manyBody.sequence == null) {
+        if (!manyBody.sequence.equalsIgnoreCase("none")) {
             def tok = manyBody.sequence.tokenize('.');
             for (String t : tok) {
                 logger.info(" Sequence optimizing " + t);
@@ -222,7 +222,7 @@ class ManyBody extends AlgorithmsScript {
         }
 
         List<String> titrationOptimizationList = new ArrayList<>();
-        if (!manyBody.titrationOptimization == null) {
+        if (!manyBody.titrationOptimization.equalsIgnoreCase("none")) {
             def tok = manyBody.titrationOptimization.tokenize('.');
             for (String t : tok) {
                 logger.info(" Optimizing protonation states of " + t);
@@ -259,7 +259,7 @@ class ManyBody extends AlgorithmsScript {
         }
 
         if (manyBody.algorithm != 5) {
-            if (!manyBody.listResidues == null) {
+            if (!manyBody.listResidues.equalsIgnoreCase("none")) {
                 String info = "\n Evaluating rotamers for residues ";
                 for (String i : resList) {
                     info += String.format("%s, ", i);
@@ -278,9 +278,11 @@ class ManyBody extends AlgorithmsScript {
             }
         }
 
-        active.getPotentialEnergy().setPrintOnFailure(false, false);
+        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
 
-        RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
+        RotamerOptimization rotamerOptimization = new RotamerOptimization(
+                activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
+
         rotamerOptimization.setTwoBodyCutoff(manyBody.twoBodyCutoff);
         rotamerOptimization.setThreeBodyCutoff(manyBody.threeBodyCutoff);
         rotamerOptimization.setThreeBodyEnergy(manyBody.threeBody);
@@ -318,7 +320,7 @@ class ManyBody extends AlgorithmsScript {
         if (manyBody.algorithm != 5) {
             if (allStartResID > 0) {
                 ArrayList<Residue> residueList = new ArrayList<Residue>();
-                Polymer[] polymers = active.getChains();
+                Polymer[] polymers = activeAssembly.getChains();
                 int nPolymers = polymers.length;
                 for (int p = 0; p < nPolymers; p++) {
                     Polymer polymer = polymers[p];
@@ -335,7 +337,7 @@ class ManyBody extends AlgorithmsScript {
                             if (counter >= allStartResID) {
                                 residueList.add(residue);
                             }
-                        } else if (!manyBody.forceResidues == null) {
+                        } else if (!manyBody.forceResidues.equalsIgnoreCase("none")) {
                             if (counter >= allStartResID && counter >= forceResiduesStart
                                 && counter <= forceResiduesEnd) {
                                 residueList.add(residue);
@@ -345,9 +347,9 @@ class ManyBody extends AlgorithmsScript {
                     }
                 }
                 rotamerOptimization.setResidues(residueList);
-            } else if (!manyBody.listResidues == null) {
+            } else if (!manyBody.listResidues.equalsIgnoreCase("none")) {
                 ArrayList<Residue> residueList = new ArrayList<>();
-                Polymer[] polymers = active.getChains();
+                Polymer[] polymers = activeAssembly.getChains();
                 int n = 0;
                 for (String s : resList) {
                     Character chainID = s.charAt(0);
@@ -383,7 +385,7 @@ class ManyBody extends AlgorithmsScript {
                 ignoreNA = true;
             }
             ArrayList<Residue> residueList = new ArrayList<Residue>();
-            Polymer[] polymers = active.getChains();
+            Polymer[] polymers = activeAssembly.getChains();
             int nPolymers = polymers.length;
             for (int p = 0; p < nPolymers; p++) {
                 Polymer polymer = polymers[p];
@@ -415,15 +417,16 @@ class ManyBody extends AlgorithmsScript {
 
         ArrayList<Residue> residueList = rotamerOptimization.getResidues();
 
-        if (!manyBody.sequence == null) {
+        if (!manyBody.sequence.equalsIgnoreCase("none")) {
             for (String s : sequenceOptimizationList) {
                 Character chainID = s.charAt(0);
                 int num = Integer.parseInt(s.substring(1));
                 for (int i = 0; i < residueList.size(); i++) {
                     Residue res = residueList.get(i);
                     if (res.getChainID() == chainID && res.getResidueNumber() == num) {
-                        MultiResidue multiRes = new MultiResidue(res, active.getForceField(), active.getPotentialEnergy());
-                        for (Polymer polymer : active.getChains()) {
+                        MultiResidue multiRes = new MultiResidue(res, activeAssembly.getForceField(),
+                                activeAssembly.getPotentialEnergy());
+                        for (Polymer polymer : activeAssembly.getChains()) {
                             if (polymer.getChainID() == chainID) {
                                 logger.info(String.format(" Adding multiresidue %s to chain %c.", multiRes, chainID));
                                 polymer.addMultiResidue(multiRes);
@@ -438,9 +441,8 @@ class ManyBody extends AlgorithmsScript {
                                 multiRes.addResidue(new Residue(aa.toString(), res.getResidueNumber(), ResidueType.AA));
                             }
                         }
-                        //multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
                         multiRes.setActiveResidue(res);
-                        active.getPotentialEnergy().reInit();
+                        activeAssembly.getPotentialEnergy().reInit();
                         residueList.remove(i);
                         residueList.add(i, multiRes);
                     }
@@ -448,7 +450,7 @@ class ManyBody extends AlgorithmsScript {
             }
         }
 
-        if (!manyBody.titrationOptimization == null) {
+        if (!manyBody.titrationOptimization.equalsIgnoreCase("none")) {
             ArrayList<Residue> titrating = new ArrayList<>();
             for (String s : titrationOptimizationList) {
                 Character chainID = s.charAt(0);
@@ -500,13 +502,13 @@ class ManyBody extends AlgorithmsScript {
             String ext = FilenameUtils.getExtension(filename);
             filename = FilenameUtils.removeExtension(filename);
             if (ext.toUpperCase().contains("XYZ")) {
-                saveAsXYZ(new File(filename + ".xyz"));
+                algorithmFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"));
             } else {
-                saveAsPDB(new File(filename + ".pdb"));
+                algorithmFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"));
             }
         }
         
-        if (saveOutput) {
+        if (manyBody.saveOutput) {
             rotamerOptimization.outputEliminated();
         }
 

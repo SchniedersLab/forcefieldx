@@ -54,7 +54,10 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 import picocli.CommandLine.Option;
 
 /**
- * Xray options shared by Xray scripts that use the Pico CLI.
+ * Represents command line options for scripts that utilize X-ray data with a maximum likelihood target.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class XrayOptions {
 
@@ -173,24 +176,24 @@ public class XrayOptions {
     boolean anisoU = false;
 
     /**
-     * -o or --refineMolOcc
+     * -O or --refineMolOcc
      */
-    @Option(names = {"-o", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
+    @Option(names = {"-O", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
     boolean refineMolOcc = false;
 
     /**
      * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
-    @Option(names = {"-x", "--data"}, split = ",",
-            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -x filename,1.0,false).")
+    @Option(names = {"-x", "--data"}, arity = "3",
+            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -x filename 1.0 false).")
     String[] data = null;
 
     /**
      * -r or --mode sets the desired refinement mode
      * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
      */
-    @Option(names = {"-m", "--mode"}, paramLabel = "coordinates", description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "coordinates";
+    @Option(names = {"-m", "--mode"}, paramLabel = "COORDINATES", description = "Refinement mode: coordinates, bfactors and/or occupancies.")
+    String modeString = "COORDINATES";
 
     /**
      * The refinement mode to use.

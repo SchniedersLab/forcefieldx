@@ -561,9 +561,9 @@ class ManyBody extends AlgorithmsScript {
             String ext = FilenameUtils.getExtension(modelfilename);
             modelfilename = FilenameUtils.removeExtension(modelfilename);
             if (ext.toUpperCase().contains("XYZ")) {
-                algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelfilename + ".xyz"));
+                algorithmFunctions.saveAsXYZ(assemblies, new File(modelfilename + ".xyz"));
             } else {
-                algorithmFunctions.saveAsPDB(activeAssembly, new File(modelfilename + ".pdb"));
+                algorithmFunctions.saveAsPDB(assemblies, new File(modelfilename + ".pdb"));
             }
         }
     }

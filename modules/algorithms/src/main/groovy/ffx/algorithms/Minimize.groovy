@@ -122,8 +122,7 @@ class Minimizer extends AlgorithmsScript {
         potential.getCoordinates(x)
         potential.energy(x, true)
 
-        AlgorithmListener theListener = algorithmFunctions.getDefaultListener()
-        Minimize minimize = new Minimize(topologies[0], potential, theListener)
+        Minimize minimize = new Minimize(topologies[0], potential, algorithmListener)
         minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations());
 
         potential.getCoordinates(x)

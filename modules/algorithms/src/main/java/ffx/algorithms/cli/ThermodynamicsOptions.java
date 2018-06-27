@@ -40,32 +40,31 @@ package ffx.algorithms.cli;
 import picocli.CommandLine;
 
 /**
- * Represents command line options for scripts that utilize a mobile lambda
- * particle, such as Thermodynamics.
+ * Represents command line options for scripts that calculate thermodynamics.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class LambdaParticleOptions {
-    /**
-     * -m or --lambdaMass to set the mass of the lambda particle.
-     */
-    @CommandLine.Option(names = {"--lm", "--lambdaMass"}, paramLabel = "1.0E-18",
-            description = "Mass of the lambda particle.")
-    private double lambdaMass = 1.0E-18;
-    /**
-     * -x or --lambdaFriction to set friction on the lambda particle
-     */
-    @CommandLine.Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "1.0E-18",
-            description = "Friction on the lambda particle.")
-    private double lambdaFriction = 1.0E-18;
+public class ThermodynamicsOptions {
 
-    public double getLambdaMass() {
-        return lambdaMass;
-    }
+    /**
+     * -Q or --equilibrate sets the number of equilibration steps prior to
+     * production ttOSRW counts begin.
+     */
+    @CommandLine.Option(names = {"-Q", "--equilibrate"}, paramLabel = "1000", description = "Number of equilibration steps before evaluation of thermodynamics.")
+    private int nEquil = 1000;
 
-    public double getLambdaFriction() {
-        return lambdaFriction;
+    /**
+     * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart
+     * files and thus resets the histogram; use -rn false to continue from
+     * the end of any prior simulation.
+     */
+    @CommandLine.Option(names = {"--rn", "--resetNumSteps"},
+            description = "Ignore prior steps logged in .lam or similar files")
+    private boolean resetNumSteps = false;
+
+    public boolean getResetNumSteps() {
+        return resetNumSteps;
     }
 }

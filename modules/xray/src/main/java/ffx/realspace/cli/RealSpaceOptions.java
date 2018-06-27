@@ -48,7 +48,11 @@ import ffx.xray.RefinementMinimize.RefinementMode;
 import picocli.CommandLine.Option;
 
 /**
- * Xray options shared by Xray scripts that use the Pico CLI.
+ * Represents command line options for scripts that utilize a real-space density map.
+ *
+ * @author Michael J. Schnieders
+ * @author Soham Ali
+ * @since 1.0
  */
 public class RealSpaceOptions {
 
@@ -115,7 +119,7 @@ public class RealSpaceOptions {
                         //
                     }
                 }
-                ffx.realspace.parsers.RealSpaceFile realspacefile = new ffx.realspace.parsers.RealSpaceFile(data[i], w);
+                RealSpaceFile realspacefile = new RealSpaceFile(data[i], w);
                 mapfiles.add(realspacefile);
             }
         }
@@ -124,6 +128,17 @@ public class RealSpaceOptions {
             RealSpaceFile realspacefile = new RealSpaceFile(systems[0], wA);
             mapfiles.add(realspacefile);
         }
+
+        // TODO - write out map files if needed.
+//        DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
+//        DiffractionData diffractionData = new DiffractionData(systems, systems[0].getProperties(),
+//                SolventModel.POLYNOMIAL, diffractionFile);
+//        diffractionData.scaleBulkFit();
+//        diffractionData.printStats();
+//        String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
+//        diffractionData.writeMaps(mapFileName);
+//        mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
+
 
         return mapfiles;
     }

@@ -1,13 +1,15 @@
-
 package ffx.realspace
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.realspace.parsers.RealSpaceFile
 import org.apache.commons.io.FilenameUtils
 
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.MinimizeOptions
 import ffx.potential.MolecularAssembly
+import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementMinimize
-import ffx.xray.RefinementMinimize.RefinementMode
 
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.realspace.cli.RealSpaceOptions
@@ -31,6 +33,9 @@ class Minimize extends AlgorithmsScript {
     @Mixin
     RealSpaceOptions realSpaceOptions
 
+    /**
+     * One or more filenames.
+     */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
 
@@ -41,15 +46,6 @@ class Minimize extends AlgorithmsScript {
         }
 
         realSpaceOptions.init()
-
-        // RMS gradient per atom convergence criteria.
-        double eps = minimizeOptions.eps
-        
-        // Maximum number of refinement cycles.
-        int maxiter = minimizeOptions.iterations
-        
-        // Suffix to append to output data
-        String suffix = "_refine"
 
         String modelfilename
         MolecularAssembly[] assemblies
@@ -62,33 +58,35 @@ class Minimize extends AlgorithmsScript {
             return
         } else {
             modelfilename = activeAssembly.getFile().getAbsolutePath()
-            assemblies = { activeAssembly };
+            assemblies = { activeAssembly }
         }
 
-        logger.info("\n Running minimization on " + modelfilename)
-
-        // set up real space map data (can be multiple files)
+        logger.info("\n Running Real Space Minimization on " + modelfilename)
 
         List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
 
-        RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
+        RealSpaceData realspaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
                 activeAssembly.getParallelTeam(),
                 mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
         algorithmFunctions.energy(assemblies[0])
 
-        RefinementMinimize refinementMinimize = new RefinementMinimize(realspacedata, RefinementMode.COORDINATES)
+        // Suffix to append to output data
+        String suffix = "_refine"
 
+        RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData, realSpaceOptions.refinementMode)
+
+        double eps = minimizeOptions.eps
+        double maxiter = minimizeOptions.iterations
         if (eps < 0.0) {
             eps = 1.0
         }
-        
+
         logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter)
         refinementMinimize.minimize(eps, maxiter)
 
         algorithmFunctions.energy(activeAssembly)
-        algorithmFunctions.saveAsPDB(activeAssembly, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
-        
+        algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
     }
 }
 

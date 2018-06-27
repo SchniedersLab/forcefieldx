@@ -40,7 +40,11 @@ package ffx.algorithms.cli;
 import picocli.CommandLine.Option;
 
 /**
- * Minimization options shared by optimizations scripts that use the Pico CLI.
+ * Represents command line options for scripts that involve local energy minimization.
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
 public class MinimizeOptions {
 

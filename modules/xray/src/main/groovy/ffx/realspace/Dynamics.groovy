@@ -1,20 +1,18 @@
 package ffx.realspace
 
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.DynamicsOptions
-import ffx.realspace.cli.RealSpaceOptions
-import ffx.realspace.parsers.RealSpaceFile
-
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.DynamicsOptions
 import ffx.potential.MolecularAssembly
+import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
 
-import picocli.CommandLine.Mixin
-import picocli.CommandLine.Option
 import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 /**
@@ -26,13 +24,6 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = " Molecular dynamics on a Real Space target.", name = "ffxc realspace.Dynamics")
 class Dynamics extends AlgorithmsScript {
-
-    /**
-     * -l or --log sets the thermodynamics logging frequency in picoseconds (0.1 psec default).
-     */
-    @Option(names = "--log", paramLabel = "0.25",
-            description = "Interval to report thermodynamics (psec).")
-    double log = 0.25
 
     @Mixin
     DynamicsOptions dynamicsOptions
@@ -86,13 +77,14 @@ class Dynamics extends AlgorithmsScript {
         if (!dyn.exists()) {
             dyn = null
         }
-        MolecularDynamics molDyn = new MolecularDynamics(activeAssembly, refinementEnergy,
-                activeAssembly.getProperties(), refinementEnergy, dynamicsOptions.thermostat, dynamicsOptions.integrator, null)
+
+        MolecularDynamics molDyn = dynamicsOptions.getDynamics(activeAssembly, refinementEnergy, activeAssembly.getProperties())
         refinementEnergy.setThermostat(molDyn.getThermostat())
 
         // Reset velocities (ignored if a restart file is given)
         boolean initVelocities = true
-        molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, log, dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
+        molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
+                dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
     }
 }
 

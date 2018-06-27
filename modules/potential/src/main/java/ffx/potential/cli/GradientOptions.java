@@ -35,37 +35,36 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms.cli;
+package ffx.potential.cli;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 /**
- * Represents command line options for scripts that utilize a mobile lambda
- * particle, such as Thermodynamics.
+ * Represents command line options for scripts that test gradients.
  *
  * @author Michael J. Schnieders
- * @author Jacob M. Litman
  * @since 1.0
  */
-public class LambdaParticleOptions {
-    /**
-     * -m or --lambdaMass to set the mass of the lambda particle.
-     */
-    @CommandLine.Option(names = {"--lm", "--lambdaMass"}, paramLabel = "1.0E-18",
-            description = "Mass of the lambda particle.")
-    private double lambdaMass = 1.0E-18;
-    /**
-     * -x or --lambdaFriction to set friction on the lambda particle
-     */
-    @CommandLine.Option(names = {"--lf", "--lambdaFriction"}, paramLabel = "1.0E-18",
-            description = "Friction on the lambda particle.")
-    private double lambdaFriction = 1.0E-18;
+public class GradientOptions {
 
-    public double getLambdaMass() {
-        return lambdaMass;
-    }
+    /**
+     * -d or --dx to set the finite-difference step size.
+     */
+    @Option(names = {"-d", "--dx"}, paramLabel = "1.0e-5",
+            description = "The finite-difference step size.")
+    private double dx = 1.0e-5;
 
-    public double getLambdaFriction() {
-        return lambdaFriction;
-    }
+    /**
+     * -a or --atomID to set the first atom to test.
+     */
+    @Option(names = {"-a", "--atomID"}, paramLabel = "1",
+            description = "The first atom to test.")
+    private int atomID = 1;
+
+    /**
+     * -v or --verbose is a flag to print out energy at each step.
+     */
+    @Option(names = {"-v", "--verbose"}, paramLabel = "false", description = "Print out the energy for each step.")
+    boolean verbose = false;
+
 }
