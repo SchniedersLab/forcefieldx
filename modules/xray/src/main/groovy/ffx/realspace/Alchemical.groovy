@@ -1,20 +1,15 @@
 package ffx.realspace
 
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.parsers.RealSpaceFile
 import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.Option
-import groovy.cli.Unparsed
-import groovy.cli.picocli.CliBuilder
 
 import edu.rit.pj.Comm
 
-import ffx.algorithms.AlgorithmFunctions
-import ffx.algorithms.AlgorithmUtils
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.TransitionTemperedOSRW
-import ffx.algorithms.integrators.Integrator
 import ffx.algorithms.integrators.IntegratorEnum
-import ffx.algorithms.thermostats.Thermostat
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
@@ -24,6 +19,16 @@ import ffx.potential.bonded.MSNode
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
 
+import ffx.algorithms.cli.DynamicsOptions
+//import ffx.realspace.cli.RealSpaceOptions
+
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Parameters
+import picocli.CommandLine.Option
+
+import java.util.logging.Logger
+
 /**
  * The Alchemical Changes script.
  * <br>
@@ -32,8 +37,73 @@ import ffx.xray.RefinementMinimize.RefinementMode
  * ffxc realspace.Alchemical [options] &lt;filename&gt;
  */
 
+@Command(description = " Simulated annealing on a Real Space target.", name = "ffxc realspace.Alchemical")
+class Alchemical extends AlgorithmsScript {
 
-class Alchemical extends Script {
+    @Mixin
+    DynamicsOptions dynamicsOptions
+
+//    @Mixin
+//    RealSpaceOptions realSpaceOptions
+
+    private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
+
+    /**
+     * -X or --wA The weight of the real space data (wA).
+     */
+    @Option(names = ["-X", "--wA"], paramLabel = "1.0",
+            description = "The weight of the real space data (wA).")
+    double wA = 1.0;
+
+    /**
+     * -y or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
+     */
+    @Option(names = ["-y", "--data"], split = ",",
+            description = "Specify input data filename and its weight (wA) (e.g. -y filename,1.0).")
+    String[] data = null;
+
+    /**
+     * -u or --mode sets the desired refinement mode
+     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
+     */
+    @Option(names = ["-u", "--mode"], paramLabel = "coordinates",
+            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
+    String modeString = "coordinates";
+
+    /**
+     * The refinement mode to use.
+     */
+    RefinementMode refinementMode = RefinementMode.COORDINATES;
+    /**
+     * --ions or --doions Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
+     */
+    @Option(names = ["--ions", "--doions"], paramLabel = '',
+            description = '* --ion Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
+    boolean opt_ions = false
+    /**
+     * --itype Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
+     */
+    @Option(names = ["--itype", "--iontype"], paramLabel = '',
+            description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
+    String [] iontype = ''
+    /**
+     * --neut or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
+     */
+    @Option(names = ["--neut", "--neutralize"], paramLabel = 'false',
+            description = 'Add more of the selected ion to neutralize the crystal\'s charge')
+    boolean neutralize = false
+    /**
+     * -W or --waters sets whether or not water positions are also optimized (default is false).
+     */
+    @Option(names = "--dowaters", paramLabel = 'true',
+            description = 'Specify whether or not to optimize water positions.')
+    boolean opt_waters = true
+
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
+    private List<String> filenames
 
     // Temperature in degrees Kelvin.
     double temperature = 298.15;
@@ -71,105 +141,29 @@ class Alchemical extends Script {
     // Frequency to write out restart information in picoseconds.
     double restartInterval = 1.0;
 
-    /**
-     * Options for the Alchemical Changes Script.
-     * <br>
-     * Usage:
-     * <br>
-     * ffxc realspace.Alchemical [options] &lt;filename [file2...]&gt;
-     */
-    class Options {
-        /**
-         * -h or --help to print a help message.
-         */
-        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-        boolean help
-        /**
-         * -n or --steps sets the number of molecular dynamics steps (default is 1 nsec).
-         */
-        @Option(shortName = 'n', defaultValue = '1000000', description = 'Number of molecular dynamics steps')
-        int steps
-        /**
-         * -d or --dt Time step in femtosceonds (1.0).
-         */
-        @Option(shortName = 'd', longName = 'dt', defaultValue = '1.0', description = 'Time step (fsec).')
-        double d
-        /**
-         * -l or --log sets the thermodynamics logging frequency in picoseconds (0.1 psec default).
-         */
-        @Option(shortName = 'l', longName = 'log', defaultValue = '0.25', description = 'Interval to report thermodynamics (psec).')
-        double log;
-        /**
-         * -w or --write sets snapshot save frequency in picoseconds (1.0 psec default).
-         */
-        @Option(shortName = 'w', longName = 'write', defaultValue = '10.0', description = 'Interval to write out coordinates (psec).')
-        double write
-        /**
-         * -t or --temperature sets the simulation temperature (Kelvin).
-         */
-        @Option(shortName = 't', longName = 'temperature', defaultValue = '298.15', description = 'Temperature (Kelvin)')
-        double temperature
-        /**
-         * -b or --thermostat sets the desired thermostat [Adiabatic, Berendsen, Bussi].
-         */
-        @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return Thermostat.parseThermostat(s) }, defaultValue = 'Adiabatic',
-                description = 'Thermostat: Adiabatic, Berendsen or Bussi.')
-        ThermostatEnum thermostat = ThermostatEnum.ADIABATIC
-        /**
-         * -i or --integrator sets the desired integrator [Beeman, RESPA, Stochastic].
-         */
-        @Option(shortName = 'i', longName = 'integrator', convert = { s -> return Integrator.parseIntegrator(s) }, defaultValue = 'Stochastic',
-                description = 'Integrator: Beeman, RESPA or Stochastic.')
-        IntegratorEnum integrator = IntegratorEnum.STOCHASTIC
-        /**
-         * -D or --data Specify input data filename and weight applied to the data (wA).
-         */
-        @Option(shortName = 'D', longName = 'data', defaultValue = '', numberOfArguments = 2, valueSeparator = ',',
-                description = 'Specify input data filename and weight applied to the data (wA).')
-        String[] data
-        /**
-         * The final arguments should be a PDB filename and data filename (CIF or MTZ).
-         */
-        @Unparsed(description = "PDB file and a Real Space Map file.")
-        List<String> filenames
-    }
-
     def run() {
 
-        def cli = new CliBuilder()
-        cli.name = "ffxc realspace.Alchemical"
-
-        def options = new Options()
-        cli.parseFromInstance(options, args)
-
-        if (options.help == true) {
-            return cli.usage()
+        if (!init()) {
+            return
         }
 
-        AlgorithmFunctions aFuncts
-        try {
-            // getAlgorithmUtils is a magic variable/closure passed in from ModelingShell
-            aFuncts = getAlgorithmUtils()
-        } catch (MissingMethodException ex) {
-            // This is the fallback, which does everything necessary without magic names
-            aFuncts = new AlgorithmUtils()
-        }
-
-        List<String> arguments = options.filenames
+        dynamicsOptions.init()
 
         String modelfilename
-        if (arguments != null && arguments.size() > 0) {
-            // Read in command line.
-            modelfilename = arguments.get(0)
-        } else if (active == null) {
-            return cli.usage()
+        MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
         } else {
-            modelfilename = active.getFile()
+            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            assemblies = { activeAssembly };
         }
 
         logger.info("\n Running Alchemical Changes on " + modelfilename)
-
-        MolecularAssembly[] systems = (MolecularAssembly[]) aFuncts.openAll(modelfilename)
 
         File structureFile = new File(FilenameUtils.normalize(modelfilename));
         structureFile = new File(structureFile.getAbsolutePath());
@@ -203,10 +197,10 @@ class Alchemical extends Script {
         }
 
         // Set built atoms active/use flags to true (false for other atoms).
-        Atom[] atoms = active.getAtomArray();
+        Atom[] atoms = activeAssembly.getAtomArray();
 
         // Get a reference to the first system's ForceFieldEnergy.
-        ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy();
         forceFieldEnergy.setPrintOnFailure(false, false);
 
         // Configure all atoms to:
@@ -220,66 +214,91 @@ class Alchemical extends Script {
             ai.setApplyLambda(false)
         }
 
-        ArrayList<MSNode> ions = systems[0].getIons()
+        double crystalCharge = activeAssembly.getCharge(true)
+        logger.info(" Overall crystal charge: " + crystalCharge)
+        ArrayList<MSNode> ions = assemblies[0].getIons()
+        ArrayList<MSNode> waters = assemblies[0].getWaters()
 
-        if (ions == null || ions.size() == 0) {
-            logger.info(" Please add an ion to the PDB file to scan with.")
-            return
+        if (opt_ions) {
+            if (ions == null || ions.size() == 0) {
+                logger.info("\n Please add an ion to the PDB file to scan with.")
+                return
+            }
+
+            for (MSNode msNode : ions) {
+                for (Atom atom : msNode.getAtomList()) {
+                    // Scan with the last ion in the file.
+                    atom.setUse(true)
+                    atom.setActive(true)
+                    atom.setApplyLambda(true)
+                    logger.info(" Alchemical atom: " + atom.toString())
+                }
+            }
         }
 
-        for (MSNode msNode : ions) {
-            for (Atom atom : msNode.getAtomList()) {
-                // Scan with the last ion in the file.
-                atom.setUse(true)
-                atom.setActive(true)
-                atom.setApplyLambda(true)
-                logger.info(" Alchemical atom: " + atom.toString())
+        // Lambdize waters for position optimization, if this option was set to true
+        if (opt_waters) {
+            for (MSNode msNode : waters) {
+                for (Atom atom : msNode.getAtomList()) {
+                    // Scan with the last ion in the file.
+                    atom.setUse(true)
+                    atom.setActive(true)
+                    atom.setApplyLambda(true)
+                    logger.info(" Water atom:      " + atom.toString())
+                }
             }
         }
 
         // set up real space map data (can be multiple files)
         List mapfiles = new ArrayList();
-        if (arguments.size() > 1) {
-            RealSpaceFile realspacefile = new RealSpaceFile(arguments.get(1), 1.0);
+        if (filenames.size() > 1) {
+            RealSpaceFile realspacefile = new RealSpaceFile(filenames.get(1), 1.0);
             mapfiles.add(realspacefile);
         }
-        if (options.data) {
-            for (int i = 0; i < options.data.size(); i += 2) {
-                double wA = Double.parseDouble(options.data[i + 1]);
-                RealSpaceFile realspacefile = new RealSpaceFile(options.data[i], wA);
+        if (data) {
+            for (int i = 0; i < data.size(); i += 2) {
+                double wA = Double.parseDouble(data[i + 1]);
+                RealSpaceFile realspacefile = new RealSpaceFile(data[i], wA);
                 mapfiles.add(realspacefile);
             }
         }
 
         if (mapfiles.size() == 0) {
-            RealSpaceFile realspacefile = new RealSpaceFile(systems[0], 1.0);
+            RealSpaceFile realspacefile = new RealSpaceFile(assemblies[0], 1.0);
             mapfiles.add(realspacefile);
         }
 
-        RealSpaceData realspaceData = new RealSpaceData(systems[0], systems[0].getProperties(), systems[0].getParallelTeam(),
-                mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
+        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
+                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(realspaceData, RefinementMode.COORDINATES, null);
+        // Replace map file set-up above with commented lines below once RealSpaceOptions can be used (after conflicting flags are resolved)
+//        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
+//
+//        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
+//                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
+//
+
+        RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
         refinementEnergy.setLambda(lambda);
 
         boolean asynchronous = true;
         Potential osrw;
 
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
-                systems[0].getProperties(), options.temperature, options.d, options.log,
-                options.write, true, false, aFuncts.getDefaultListener());
+                assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
+                dynamicsOptions.write, true, false, algorithmFunctions.getDefaultListener());
 
         osrw.setLambda(lambda);
         osrw.setThetaMass(5.0e-19);
-        osrw.setOptimization(true, active);
+        osrw.setOptimization(true, activeAssembly);
         // Create the MolecularDynamics instance.
-        MolecularDynamics molDyn = new MolecularDynamics(systems[0], osrw, systems[0].getProperties(),
-                null, options.thermostat, options.integrator);
+        MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], osrw, assemblies[0].getProperties(),
+                null, dynamicsOptions.thermostat, dynamicsOptions.integrator);
 
-        aFuncts.energy(systems[0]);
+        algorithmFunctions.energy(assemblies[0]);
 
-        molDyn.dynamic(options.steps, options.d, options.log, options.write, options.temperature, true,
-                fileType, options.write, dyn);
+        molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temp, true,
+                fileType, dynamicsOptions.write, dyn);
 
         logger.info(" Searching for low energy coordinates");
         double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
