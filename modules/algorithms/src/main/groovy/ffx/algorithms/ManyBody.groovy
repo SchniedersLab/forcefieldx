@@ -278,9 +278,11 @@ class ManyBody extends AlgorithmsScript {
             }
         }
 
-        active.getPotentialEnergy().setPrintOnFailure(false, false);
+        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
 
-        RotamerOptimization rotamerOptimization = new RotamerOptimization(active, active.getPotentialEnergy(), sh);
+        RotamerOptimization rotamerOptimization = new RotamerOptimization(
+                activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
+
         rotamerOptimization.setTwoBodyCutoff(manyBody.twoBodyCutoff);
         rotamerOptimization.setThreeBodyCutoff(manyBody.threeBodyCutoff);
         rotamerOptimization.setThreeBodyEnergy(manyBody.threeBody);

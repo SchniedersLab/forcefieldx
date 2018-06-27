@@ -81,7 +81,7 @@ class Dynamics extends AlgorithmsScript {
             dyn = null
         }
 
-        MolecularDynamics molDyn = dynamicsOptions.getDynamics(refinementEnergy, activeAssembly, sh)
+        MolecularDynamics molDyn = dynamicsOptions.getDynamics(refinementEnergy, activeAssembly, algorithmListener)
         refinementEnergy.setThermostat(molDyn.getThermostat())
         boolean initVelocities = true
         molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,

@@ -5,8 +5,8 @@ import org.apache.commons.io.FilenameUtils
 import edu.rit.pj.Comm
 
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.BarostatOptions
+import ffx.algorithms.cli.DynamicsOptions
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
@@ -29,7 +29,7 @@ class Dynamics extends AlgorithmsScript {
 
     @Mixin
     DynamicsOptions dynamics;
-    
+
     @Mixin
     BarostatOptions barostatOpt;
 
@@ -109,36 +109,36 @@ class Dynamics extends AlgorithmsScript {
                 dyn = null
             }
 
-            MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
+            MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, algorithmListener)
 
             molDyn.dynamic(dynamics.steps, dynamics.dt,
                     dynamics.report, dynamics.write, dynamics.temp, true, dyn)
 
         } else {
             logger.info("\n Running replica exchange molecular dynamics on " + modelfilename)
-            rank = world.rank()
+            int rank = world.rank()
             File rankDirectory = new File(structureFile.getParent() + File.separator
                     + Integer.toString(rank))
             if (!rankDirectory.exists()) {
                 rankDirectory.mkdir()
             }
-            withRankName = rankDirectory.getPath() + File.separator + baseFilename
-            dyn = new File(withRankName + ".dyn")
+            String withRankName = rankDirectory.getPath() + File.separator + baseFilename
+            File dyn = new File(withRankName + ".dyn")
             if (!dyn.exists()) {
                 dyn = null
             }
 
-            MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
-            ReplicaExchange replicaExchange = new ReplicaExchange(molecularDynamics, sh, dynamics.temp)
+            MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, algorithmListener)
+            ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener, dynamics.temp)
 
             int totalSteps = dynamics.steps
             int nSteps = 100
-            int cycles = totalSteps / dynamics.steps
+            int cycles = totalSteps / nSteps
             if (cycles <= 0) {
                 cycles = 1
             }
 
-            replicaExchange.sample(cycles, dynamics.steps, dynamics.dt, dynamics.report, dynamics.write)
+            replicaExchange.sample(cycles, nSteps, dynamics.dt, dynamics.report, dynamics.write)
         }
     }
 }

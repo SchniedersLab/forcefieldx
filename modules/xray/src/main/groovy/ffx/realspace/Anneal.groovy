@@ -75,7 +75,7 @@ class Anneal extends AlgorithmsScript {
 
         RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES)
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy,
-                activeAssembly.getProperties(), refinementEnergy,
+                activeAssembly.getProperties(), algorithmListener,
                 dynamicsOptions.thermostat, dynamicsOptions.integrator)
 
         simulatedAnnealing.anneal(annealOptions.upper, annealOptions.low, annealOptions.windows,

@@ -40,6 +40,7 @@ package ffx.algorithms.cli;
 import ffx.potential.MolecularAssembly;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmUtils;
+import ffx.algorithms.AlgorithmListener;
 import ffx.utilities.BaseScript;
 
 /**
@@ -62,6 +63,11 @@ public class AlgorithmsScript extends BaseScript {
     public MolecularAssembly activeAssembly;
 
     /**
+     * An instance of the AlgorithmListener interface.
+     */
+    public AlgorithmListener algorithmListener;
+
+    /**
      * Execute the BaseScript init method, then load algorithm functions.
      *
      * @return Returns true if the script should continue.
@@ -80,6 +86,11 @@ public class AlgorithmsScript extends BaseScript {
 
         activeAssembly = null;
         if (context.hasVariable("active")) {
+            activeAssembly = (MolecularAssembly) context.getVariable("active");
+        }
+
+        algorithmListener = null;
+        if (context.hasVariable("listener")) {
             activeAssembly = (MolecularAssembly) context.getVariable("active");
         }
 

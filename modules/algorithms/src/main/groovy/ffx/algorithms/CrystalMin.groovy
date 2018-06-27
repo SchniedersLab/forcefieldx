@@ -90,7 +90,7 @@ class CrystalMin extends AlgorithmsScript {
             }
         }
 
-        CrystalMinimize crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, sh)
+        CrystalMinimize crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
         crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
         double energy = crystalMinimize.getEnergy()
 
@@ -98,7 +98,7 @@ class CrystalMin extends AlgorithmsScript {
 
         // Complete rounds of coordinate and lattice optimization.
         if (coords) {
-            Minimize minimize = new Minimize(activeAssembly, forceFieldEnergy, sh)
+            Minimize minimize = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
             while (true) {
                 // Complete a round of coordinate optimization.
                 minimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)

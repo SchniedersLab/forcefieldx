@@ -57,8 +57,8 @@ class Anneal extends AlgorithmsScript {
         logger.info("\n Running simulated annealing on " + modelfilename + "\n")
 
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly,
-                activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(), null,
-                dynamics.thermostat, dynamics.integrator)
+                activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
+                algorithmListener, dynamics.thermostat, dynamics.integrator)
 
         simulatedAnnealing.anneal(anneal.upper, anneal.low, anneal.windows, dynamics.steps, dynamics.dt)
 

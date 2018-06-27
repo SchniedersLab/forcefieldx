@@ -80,14 +80,16 @@ class Histogram extends AlgorithmsScript {
 
         if (!untempered) {
             TransitionTemperedOSRW ttosrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
-                    activeAssembly.getProperties(), temperature, timeStep, printInterval, saveInterval, asynchronous, sh)
+                    activeAssembly.getProperties(), temperature, timeStep, printInterval,
+                    saveInterval, asynchronous, algorithmListener)
             if (pmf) {
                 ttosrw.evaluatePMF()
             }
         } else {
             // Wrap the potential energy inside an OSRW instance.
             OSRW osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart,
-                    activeAssembly.getProperties(), temperature, timeStep, printInterval, saveInterval, asynchronous, sh)
+                    activeAssembly.getProperties(), temperature, timeStep, printInterval,
+                    saveInterval, asynchronous, algorithmListener)
             if (pmf) {
                 osrw.evaluatePMF()
             }

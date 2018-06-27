@@ -176,9 +176,9 @@ public class XrayOptions {
     boolean anisoU = false;
 
     /**
-     * -o or --refineMolOcc
+     * -O or --refineMolOcc
      */
-    @Option(names = {"-o", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
+    @Option(names = {"-O", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
     boolean refineMolOcc = false;
 
     /**
