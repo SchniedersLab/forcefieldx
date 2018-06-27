@@ -445,7 +445,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Create the OpenMM System
         system = OpenMM_System_create();
-        logger.info(" Created OpenMM System");
+        logger.info(" Created OpenMM system and adding forces");
 
         ForceField forceField = molecularAssembly.getForceField();
 
@@ -1028,7 +1028,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_Force_setForceGroup(amoebaInPlaneAngleForce, fGroup);
         OpenMM_System_addForce(system, amoebaInPlaneAngleForce);
-        logger.log(Level.INFO, " In-plane Angles {0}", nAngles);
+        logger.log(Level.INFO, "  In-plane Angles {0}", nAngles);
     }
 
     private void addUreyBradleyForce(ForceField forceField) {
@@ -1321,7 +1321,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         OpenMM_Force_setForceGroup(amoebaTorsionTorsionForce, fGroup);
         OpenMM_System_addForce(system, amoebaTorsionTorsionForce);
-        logger.log(Level.INFO, " Torsion-Torsions {0}", nTorsionTorsions);
+        logger.log(Level.INFO, "  Torsion-Torsions {0}", nTorsionTorsions);
     }
 
     /**
@@ -2003,7 +2003,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_IntArray_resize(exclusions, 0);
         }
         OpenMM_IntArray_destroy(exclusions);
-        logger.log(Level.INFO, " Added van der Waals force.");
+        logger.log(Level.INFO, "  Added van der Waals force");
     }
 
     /**
