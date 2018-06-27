@@ -1,10 +1,8 @@
 package realspace
 
-import ffx.algorithms.cli.AnnealOptions
+import ffx.algorithms.AlgorithmFunctions
 import ffx.potential.MolecularAssembly
 import org.apache.commons.io.FilenameUtils
-
-import groovy.cli.picocli.CliBuilder
 
 import edu.rit.pj.Comm
 
@@ -24,16 +22,13 @@ import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize
 import ffx.xray.parsers.DiffractionFile
 
-import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
-import ffx.potential.cli.AlchemicalOptions
-import ffx.xray.cli.RealSpaceOptions
+import ffx.realspace.cli.RealSpaceOptions
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
-import picocli.CommandLine.Option
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -46,403 +41,14 @@ import picocli.CommandLine.Option
 class ManyBody extends AlgorithmsScript {
 
     @Mixin
-    AlchemicalOptions alchemicalOptions
-
-    @Mixin
-    AnnealOptions annealOptions
-
-    @Mixin
     RealSpaceOptions realSpaceOptions
 
     @Mixin
     ManyBodyOptions manyBodyOptions
 
-    /**
-     * -a or --algorithm Choices are independent residues (1), all with rotamer elimination (2),
-     * all brute force (3), sliding window (4), or box optimization (5).
-     */
-    @Option(names = ["-a", "--algorithm"], paramLabel = '2',
-            description = 'Algorithm: independent residues (1), all with rotamer elimination (2), all brute force (3), sliding window (4), or box optimization (5)')
-    int algorithm
-    /**
-     * -dee or --deadEnd Use dead-end elimination criteria instead of Goldstein criteria.
-     */
-    @Option(names = ["-dee", "-deadEnd"],
-            description = 'Use dead-end elimination criteria instead of Goldstein criteria.')
-    boolean dee
-    /**
-     * -i or --increment Sliding window increment (default = 3).
-     */
-    @Option(names = ["-i", "--increment"], paramLabel = '3',
-            description = 'Sliding window increment.')
-    int increment
-    /**
-     * -r or --cutoff The sliding window cutoff radius (Angstroms).
-     */
-    @Option(names = ["-r", "--cutoff"], paramLabel = '2.0',
-            description = 'The sliding window cutoff radius (Angstroms).')
-    double cutoff
-    /**
-     * -c or --chain Single character chain ID of the residues to optimize.
-     */
-    @Option(names = ["-c", "--chain"], paramLabel = '-1',
-            description = 'Single character chain ID of the residues to optimize.')
-    String chain
-    /**
-     * -s or --start Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.
-     */
-    @Option(names = ["-s", "--start"], paramLabel = '-1',
-            description = 'Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.')
-    int start
-    /**
-     * -f or --final Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.
-     */
-    @Option(names = ["-f", "--final"], paramLabel = '-1',
-            description = 'Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.')
-    int last
-    /**
-     * -m or --minimize Minimize the final structure to the given RMS gradient (Kcal/mole/A); the default is not
-     * to minimize.
-     */
-    @Option(names = ["-m", "--minimize"], paramLabel = '0.0',
-            description = 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).')
-    double minimize
-    /**
-     * -t or --threeBody Include 3-Body interactions in the elimination criteria.
-     */
-    @Option(names = ["-t", "--threeBody"],
-            description = 'Include 3-Body interactions in the elimination criteria.')
-    boolean threeBody
-    /**
-     * -p or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
-     */
-    @Option(names = ["-p", "--prune"], paramLabel = '2',
-            description = 'Prune no clashes (0), only single clashes (1), or all clashes (2)')
-    int prune
-    /**
-     * -w or --window Size of the sliding window with respect to adjacent residues (default = 7).
-     */
-    @Option(names = ["-w", "--window"], paramLabel = '7',
-            description = 'Size of the sliding window with respect to adjacent residues.')
-    int window
-    /**
-     * -x or --all Optimize all residues beginning from the passed value (overrides other options);
-     * for box optimization, optimizes all boxes beginning from the passed index.
-     */
-    @Option(names = ["-x", "--all"], paramLabel = '-1',
-            description = 'Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.')
-    int all
-    /**
-     * -v or --verbose Prints beginning and default-conformation energies.
-     */
-    @Option(names = ["-v", "--verbose"],
-            description = 'Prints beginning and default-conformation energies.')
-    boolean verbose
-    /**
-     * -o or --original Do not include starting coordinates as their own rotamer.
-     */
-    @Option(names = ["-o", "--original"],
-            description = 'Do not include starting coordinates as their own rotamer.')
-    boolean original
-    /**
-     * -d or --decompose Print energy decomposition for original-coordinates rotamers.
-     */
-    @Option(names = ["-d", "--decompose"],
-            description = 'Print energy decomposition for original-coordinates rotamers.')
-    boolean decompose
-    /**
-     * -eR or --energyRestart Load energy restart file from a previous run (requires that all parameters are the same).
-     */
-    @Option(names = ["-eR", "--energyRestart"], paramLabel = 'none',
-            description = 'Load energy restart file from a previous run (requires that all parameters are the same).')
-    String energyRestart
-    /**
-     * -nB or --numBoxes Specify number of boxes along X, Y, and Z (default: '3,3,3').
-     */
-    @Option(names = ["-nB", "numBoxes"], paramLabel = '3,3,3',
-            description = 'Specify number of boxes along X, Y, and Z (default: 3,3,3)')
-    String numBoxes
-    /**
-     * -bB or --boxBorderSize Extent of overlap between optimization boxes in Angstroms (default: 3.0).
-     */
-    @Option(names = ["-bB", "--boxBorderSize"], paramLabel = '3.0',
-            description = 'Extent of overlap between optimization boxes in Angstroms.')
-    double boxBorderSize
-    /**
-     * -bL or --approxBoxLength Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).
-     *  Box sizes are rounded up to make a whole number of boxes along each axis (default of 0 disables this function).
-     */
-    @Option(names = ["-bL", "--approxBoxLength"], paramLabel = '0.0',
-            description = 'Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).')
-    double approxBoxLength
-    /**
-     * -bC or --boxInclusionCriterion Criterion to use for adding residues to boxes.
-     *      (1) uses C alpha only (N1/9 for nucleic acids)
-     *      (2) uses any atom.
-     *      (3) uses any rotamer
-     */
-    @Option(names = ["-bC", "--boxInclusionCriterion"], paramLabel = '1',
-            description = 'Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer')
-    int boxInclusionCriterion
-    /**
-     * -fR or --forceResidues Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.
-     */
-    @Option(names = ["-fR", "--forceResidues"], paramLabel = '-1,-1',
-            description = 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.')
-    String forceResidues
-    /**
-     * -lR or --listResidues Choose a list of individual residues to optimize (eg. A11,A24,B40).
-     */
-    @Option(names = ["-lR", "--listResidues"], paramLabel = 'none',
-            description = 'Choose a list of individual residues to optimize (eg. A11,A24,B40).')
-    String listResidues
-    /**
-     * -sO or --sequence Choose a list of individual residues to sequence optimize (example: A2.A3.A5).
-     */
-    @Option(names = ["-sO", "--sequence"], paramLabel = 'none',
-            description = 'Choose a list of individual residues to sequence optimize (example: A2.A3.A5)')
-    String sequence
-    /**
-     * -tO or --titrationOptimization Optimize the titration states for a list of residues (example: H2.H3.H5).
-     */
-    @Option(names = ["-tO", "--titrationOptimization"], paramLabel = 'none',
-            description = 'Optimize the titration states for a list of residues (example: H2.H3.H5).')
-    String titrationOptimization
-    /**
-     * -nT or --nucleicCorrectionThreshold Nucleic acid rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).
-     */
-    @Option(names = ["-nT", "--nucleicCorrectionThreshold"], paramLabel = '0',
-            description = 'Nucleic acid rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).')
-    double nucleicCorrectionThreshold
-    /**
-     * -mN or --minimumAcceptedNARotamers Minimum number of NA rotamers to be accepted if a threshold distance is enabled.
-     */
-    @Option(names = ["-mN", "--minimumAcceptedNARotamers"], paramLabel = '10',
-            description = 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.')
-    int minimumAcceptedNARotamers
-    /**
-     * -mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.
-     */
-    @Option(names = ["-mC", "--monteCarlo"], paramLabel = '-1',
-            description = 'Follow elimination criteria with (n) Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.')
-    int monteCarlo
-    /**
-     * -z or --noRevert Do not revert an unfavorable change.
-     */
-    @Option(names = ["-z", "--revert"],
-            description = 'Undo an unfavorable change.')
-    boolean noRevert
-    /**
-     * -tC or --twoBodyCutoff Cutoff distance for two-body interactions.
-     */
-    @Option(names = ["-tC", "--twoBodyCutoff"], paramLabel = '-1.0',
-            description = 'Cutoff distance for two body interactions.')
-    double twoBodyCutoff
-    /**
-     * -thC or --threeBodyCutoff Cutoff distance for three-body interactions.
-     */
-    @Option(names = ["-thC", "--threeBodyCutoff"], paramLabel = '9.0',
-            description = 'Cutoff distance for three-body interactions.')
-    double threeBodyCutoff
-
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
-//    class Options {
-//
-//        /**
-//         * -h or --help to print a help message
-//         */
-//        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
-//        boolean help
-//        /**
-//         * -l or --library Choose either Ponder and Richards (1) or Richardson (2) rotamer library.
-//         */
-//        @Option(shortName = 'l', longName = 'library', defaultValue = '1',
-//                description = 'Ponder and Richards (1) or Richardson (2) rotamer library.')
-//        int library
 
-
-//        /**
-//         * -w or --window Size of the sliding window with respect to adjacent residues (default = 7).
-//         */
-//        @Option(shortName = 'w', longName = 'window', defaultValue = '7',
-//                description = 'Size of the sliding window with respect to adjacent residues.')
-//        int window
-//        /**
-//         * -i or --increment Sliding window increment (default = 3).
-//         */
-//        @Option(shortName = 'i', longName = 'increment', defaultValue = '3',
-//                description = 'Sliding window increment.')
-//        int increment
-//        /**
-//         * -r or --cutoff The sliding window cutoff radius (Angstroms).
-//         */
-//        @Option(shortName = 'r', longName = 'cutoff', defaultValue = '2.0',
-//                description = 'The sliding window cutoff radius (Angstroms).')
-//        double cutoff
-//        /**
-//         * -c or --chain Single character chain ID of the residues to optimize.
-//         */
-//        @Option(shortName = 'c', longName = 'chain', defaultValue = '-1',
-//                description = 'Single character chain ID of the residues to optimize.')
-//        String chain;
-//        /**
-//         * -s or --start Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.
-//         */
-//        @Option(shortName = 's', longName = 'start', defaultValue = '-1',
-//                description = 'Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.')
-//        int start
-//        /**
-//         * -f or --final Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.
-//         */
-//        @Option(shortName = 'f', longName = 'final', defaultValue = '-1',
-//                description = 'Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.')
-//        int last
-//        /**
-//         * -m or --minimize Minimize the final structure to the given RMS gradient (Kcal/mole/A); the default is not
-//         * to minimize.
-//         */
-//        @Option(shortName = 'm', longName = 'minimize', defaultValue = '0.0',
-//                description = 'Minimize the final structure to the given RMS gradient (Kcal/mole/A).')
-//        double minimize
-//        /**
-//         * -t or --threeBody Include 3-Body interactions in the elimination criteria.
-//         */
-//        @Option(shortName = 't', longName = 'threeBody',
-//                description = 'Include 3-Body interactions in the elimination criteria.')
-//        boolean threeBody
-//        /**
-//         * -p or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
-//         */
-//        @Option(shortName = 'p', longName = 'prune', defaultValue = '2',
-//                description = 'Prune no clashes (0), only single clashes (1), or all clashes (2)')
-//        int prune
-//        /**
-//         * -x or --all Optimize all residues beginning from the passed value (overrides other options);
-//         * for box optimization, optimizes all boxes beginning from the passed index.
-//         */
-//        @Option(shortName = 'x', longName = 'all', defaultValue = '-1',
-//                description = 'Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.')
-//        int all
-//        /**
-//         * -v or --verbose Prints beginning and default-conformation energies.
-//         */
-//        @Option(shortName = 'v', longName = 'verbose',
-//                description = 'Prints beginning and default-conformation energies.')
-//        boolean verbose
-//        /**
-//         * -o or --original Do not include starting coordinates as their own rotamer.
-//         */
-//        @Option(shortName = 'o', longName = 'original',
-//                description = 'Do not include starting coordinates as their own rotamer.')
-//        boolean original
-//        /**
-//         * -d or --decompose Print energy decomposition for original-coordinates rotamers.
-//         */
-//        @Option(shortName = 'd', longName = 'decompose',
-//                description = 'Print energy decomposition for original-coordinates rotamers.')
-//        boolean decompose
-//        /**
-//         * -eR or --energyRestart Load energy restart file from a previous run (requires that all parameters are the same).
-//         */
-//        @Option(shortName = 'eR', longName = 'energyRestart', defaultValue = 'none',
-//                description = 'Load energy restart file from a previous run (requires that all parameters are the same).')
-//        String energyRestart
-//        /**
-//         * -nB or --numBoxes Specify number of boxes along X, Y, and Z (default: '3,3,3').
-//         */
-//        @Option(shortName = 'nB', longName = 'numBoxes', defaultValue = '3,3,3',
-//                description = 'Specify number of boxes along X, Y, and Z (default: 3,3,3)')
-//        String numBoxes
-//        /**
-//         * -bB or --boxBorderSize Extent of overlap between optimization boxes in Angstroms (default: 3.0).
-//         */
-//        @Option(shortName = 'bB', longName = 'boxBorderSize', defaultValue = '3.0',
-//                description = 'Extent of overlap between optimization boxes in Angstroms.')
-//        double boxBorderSize
-//        /**
-//         * -bL or --approxBoxLength Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).
-//         *  Box sizes are rounded up to make a whole number of boxes along each axis (default of 0 disables this function).
-//         */
-//        @Option(shortName = 'bL', longName = 'approxBoxLength', defaultValue = '0.0',
-//                description = 'Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).')
-//        double approxBoxLength
-//        /**
-//         * -bC or --boxInclusionCriterion Criterion to use for adding residues to boxes.
-//         *      (1) uses C alpha only (N1/9 for nucleic acids)
-//         *      (2) uses any atom.
-//         *      (3) uses any rotamer
-//         */
-//        @Option(shortName = 'bC', longName = 'boxInclusionCriterion', defaultValue = '1',
-//                description = 'Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer')
-//        int boxInclusionCriterion
-//        /**
-//         * -fR or --forceResidues Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.
-//         */
-//        @Option(shortName = 'fR', longName = 'forceResidues', defaultValue = '-1,-1',
-//                description = 'Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.')
-//        String forceResidues
-//        /**
-//         * -lR or --listResidues Choose a list of individual residues to optimize (eg. A11,A24,B40).
-//         */
-//        @Option(shortName = 'lR', longName = 'listResidues', defaultValue = 'none',
-//                description = 'Choose a list of individual residues to optimize (eg. A11,A24,B40).')
-//        String listResidues
-//        /**
-//         * -sO or --sequence Choose a list of individual residues to sequence optimize (example: A2.A3.A5).
-//         */
-//        @Option(shortName = 'sO', longName = 'sequence', defaultValue = 'none',
-//                description = 'Choose a list of individual residues to sequence optimize (example: A2.A3.A5)')
-//        String sequence
-//        /**
-//         * -tO or --titrationOptimization Optimize the titration states for a list of residues (example: H2.H3.H5).
-//         */
-//        @Option(shortName = 'tO', longName = 'titrationOptimization', defaultValue = 'none',
-//                description = 'Optimize the titration states for a list of residues (example: H2.H3.H5).')
-//        String titrationOptimization
-//        /**
-//         * -nT or --nucleicCorrectionThreshold Nucleic acid rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).
-//         */
-//        @Option(shortName = 'nT', longName = 'nucleicCorrectionThreshold', defaultValue = '0',
-//                description = 'Nucleic acid rotamers adjusted by more than a threshold distance (A) are discarded (0 disables this function).')
-//        double nucleicCorrectionThreshold
-//        /**
-//         * -mN or --minimumAcceptedNARotamers Minimum number of NA rotamers to be accepted if a threshold distance is enabled.
-//         */
-//        @Option(shortName = 'mN', longName = 'minimumAcceptedNARotamers', defaultValue = '10',
-//                description = 'Minimum number of NA rotamers to be accepted if a threshold distance is enabled.')
-//        int minimumAcceptedNARotamers
-//        /**
-//         * -mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.
-//         */
-//        @Option(shortName = 'mC', longName = 'monteCarlo', defaultValue = '-1',
-//                description = 'Follow elimination criteria with (n) Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.')
-//        int monteCarlo
-//        /**
-//         * -z or --noRevert Do not revert an unfavorable change.
-//         */
-//        @Option(shortName = 'z', longName = 'revert',
-//                description = 'Undo an unfavorable change.')
-//        boolean noRevert
-//        /**
-//         * -tC or --twoBodyCutoff Cutoff distance for two-body interactions.
-//         */
-//        @Option(shortName = 'tC', longName = 'twoBodyCutoff', defaultValue = '-1.0',
-//                description = 'Cutoff distance for two body interactions.')
-//        double twoBodyCutoff
-//        /**
-//         * -thC or --threeBodyCutoff Cutoff distance for three-body interactions.
-//         */
-//        @Option(shortName = 'thC', longName = 'threeBodyCutoff', defaultValue = '9.0',
-//                description = 'Cutoff distance for three-body interactions.')
-//        double threeBodyCutoff
-//
-//        /**
-//         * The final argument(s) should be one or more filenames.
-//         */
-//        @Unparsed(description = "PDB file and a Real Space Map file.")
-//        List<String> filenames;
-//    }
     def run() {
 
         if (!init()) {
@@ -453,46 +59,57 @@ class ManyBody extends AlgorithmsScript {
 
         String modelfilename
         MolecularAssembly[] assemblies
+        if (filenames != null && filenames.size() > 0) {
+            assemblies = algorithmFunctions.open(filenames.get(0))
+            activeAssembly = assemblies[0]
+            modelfilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return
+        } else {
+            modelfilename = activeAssembly.getFile().getAbsolutePath()
+            assemblies = { activeAssembly }
+        }
         /**
          * Algorithm options.
          */
         int library = manyBodyOptions.library
-        int algorithm = algorithm
-        boolean useGoldstein = !dee
-        boolean threeBodyTerm = threeBody
-        int pruningType = prune
-        boolean revert = !noRevert
-        boolean useOrigCoordsRotamer = !original
-        boolean verboseEnergies = verbose
-        boolean decomposeOriginal = decompose
-        double twoBodyCutoff = twoBodyCutoff
-        double threeBodyCutoff = threeBodyCutoff
+        int algorithm = manyBodyOptions.algorithm
+        boolean useGoldstein = !manyBodyOptions.dee
+        boolean threeBodyTerm = manyBodyOptions.threeBody
+        int pruningType = manyBodyOptions.prune
+        boolean revert = !manyBodyOptions.noRevert
+        boolean useOrigCoordsRotamer = !manyBodyOptions.original
+        boolean verboseEnergies = manyBodyOptions.verbose
+        boolean decomposeOriginal = manyBodyOptions.decompose
+        double twoBodyCutoff = manyBodyOptions.twoBodyCutoff
+        double threeBodyCutoff = manyBodyOptions.threeBodyCutoff
         if (decomposeOriginal) {
-            useOrigCoordsRotamer = true;
+            useOrigCoordsRotamer = true
         }
 
         // By default, rotamer optimization should silence GK warnings, because occasionally we will have unreasonable configurations.
         if (System.getProperty("gk-suppressWarnings") == null) {
-            System.setProperty("gk-suppressWarnings", "true");
+            System.setProperty("gk-suppressWarnings", "true")
         }
 
         /**
          * Chain, Residue and/or Box selections.
          */
-        String chain = chain;
-        int startResID = start
-        int allStartResID = all
-        int finalResID = last
+        String chain = manyBodyOptions.chain
+        int startResID = manyBodyOptions.start
+        int allStartResID = manyBodyOptions.all
+        int finalResID = manyBodyOptions.finish
         // Internal machinery indexed 0 to (n-1)
-        int boxStart = start - 1
-        int boxEnd = last - 1
+        int boxStart = manyBodyOptions.start - 1
+        int boxEnd = manyBodyOptions.finish - 1
 
         if (algorithm != 5) {
             // Not Box optimization.
-            if (allStartResID < 1 && listResidues.equalsIgnoreCase('none')) {
+            if (allStartResID < 1 && manyBodyOptions.listResidues.equalsIgnoreCase('none')) {
                 if (finalResID < startResID || startResID < 0 || finalResID < 0) {
                     logger.warning(" FFX shutting down: no residues specified for optimization.")
-                    return;
+                    return
                 }
             }
         } else {
@@ -514,16 +131,16 @@ class ManyBody extends AlgorithmsScript {
         /**
          * Sliding window options.
          */
-        int windowSize = window
-        int increment = increment
-        double distance = cutoff
+        int windowSize = manyBodyOptions.window
+        int increment = manyBodyOptions.increment
+        double distance = manyBodyOptions.cutoff
 
         /**
          * Box optimization options.
          */
         int[] numXYZBoxes = new int[3];
         if (algorithm == 5) {
-            String input = numBoxes
+            String input = manyBodyOptions.numBoxes
             Scanner boxNumInput = new Scanner(input)
             boxNumInput.useDelimiter(",")
             int inputLoopCounter = 0
@@ -559,19 +176,19 @@ class ManyBody extends AlgorithmsScript {
             }
         }
 
-        double boxBorderSize = boxBorderSize
-        double approxBoxLength = approxBoxLength
+        double boxBorderSize = manyBodyOptions.boxBorderSize
+        double approxBoxLength = manyBodyOptions.approxBoxLength
         if (approxBoxLength < 0) {
             logger.info(" Negative box length value changed to -1 * input.")
             approxBoxLength *= -1
         }
-        int boxInclusionCriterion = boxInclusionCriterion
+        int boxInclusionCriterion = manyBodyOptions.boxInclusionCriterion
 
         /**
          * Minimize the final structure.
          */
         boolean min = false
-        double eps = minimize
+        double eps = manyBodyOptions.minimize
         if (eps > 0.0) {
             min = true
         }
@@ -588,31 +205,31 @@ class ManyBody extends AlgorithmsScript {
         /**
          * Nucleic acid options.
          */
-        double nucleicCorrectionThreshold = nucleicCorrectionThreshold
-        int minimumNumberAcceptedNARotamers = minimumAcceptedNARotamers
+        double nucleicCorrectionThreshold = manyBodyOptions.nucleicCorrectionThreshold
+        int minimumNumberAcceptedNARotamers = manyBodyOptions.minimumAcceptedNARotamers
 
         /**
          * Energy restart.
          */
         boolean useEnergyRestart = false
         File energyRestartFile = null
-        if (!energyRestart.equalsIgnoreCase('none')) {
+        if (!manyBodyOptions.energyRestart.equalsIgnoreCase('none')) {
             useEnergyRestart = true
-            energyRestartFile = new File(energyRestart)
+            energyRestartFile = new File(manyBodyOptions.energyRestart)
         }
 
         /**
          * Force residues.
          */
-        String forceResidues = forceResidues
+        String forceResidues = manyBodyOptions.forceResidues
         int forceResiduesStart = -1
         int forceResiduesEnd = -1
 
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
         List<String> resList = new ArrayList<>()
-        if (!listResidues.equalsIgnoreCase('none')) {
-            def tok = (listResidues).tokenize('.')
+        if (!manyBodyOptions.listResidues.equalsIgnoreCase('none')) {
+            def tok = (manyBodyOptions.listResidues).tokenize('.')
             for (String t : tok) {
                 logger.info(" Adding " + t)
                 resList.add(t)
@@ -620,8 +237,8 @@ class ManyBody extends AlgorithmsScript {
         }
 
         List<String> sequenceOptimizationList = new ArrayList<>()
-        if (!sequence.equalsIgnoreCase('none')) {
-            def tok = sequence.tokenize('.')
+        if (!manyBodyOptions.sequence.equalsIgnoreCase('none')) {
+            def tok = manyBodyOptions.sequence.tokenize('.')
             for (String t : tok) {
                 logger.info(" Sequence optimizing " + t)
                 sequenceOptimizationList.add(t)
@@ -632,8 +249,8 @@ class ManyBody extends AlgorithmsScript {
         }
 
         List<String> titrationOptimizationList = new ArrayList<>()
-        if (!titrationOptimization.equalsIgnoreCase('none')) {
-            def tok = titrationOptimization.tokenize('.')
+        if (!manyBodyOptions.titrationOptimization.equalsIgnoreCase('none')) {
+            def tok = manyBodyOptions.titrationOptimization.tokenize('.')
             for (String t : tok) {
                 logger.info(" Protonation state optimizing " + t)
                 titrationOptimizationList.add(t)
@@ -669,7 +286,7 @@ class ManyBody extends AlgorithmsScript {
         }
 
         if (algorithm != 5) {
-            if (!listResidues.equalsIgnoreCase('none')) {
+            if (!manyBodyOptions.listResidues.equalsIgnoreCase('none')) {
                 String info = "\n Evaluating rotamers for residues "
                 for (String i : resList) {
                     info += String.format("%s, ", i)
@@ -688,33 +305,33 @@ class ManyBody extends AlgorithmsScript {
             }
         }
 
-        open(filename);
-        active.getPotentialEnergy().setPrintOnFailure(false, false);
+        algorithmFunctions.open(modelfilename)
+        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
 
-        def mapFiles = [];
-        int nDiffractionData = 0;
-        if (arguments.size() > 1) {
-            String dataFileName = arguments.get(1);
+        def mapFiles = []
+        int nDiffractionData = 0
+        if (filenames.size() > 1) {
+            String dataFileName = filenames.get(1);
             if (FilenameUtils.isExtension(dataFileName, "map")) {
                 RealSpaceFile realspacefile = new RealSpaceFile(dataFileName, 1.0);
                 mapFiles.add(realspacefile);
             } else {
                 DiffractionFile diffractionFile = new DiffractionFile(dataFileName, 1.0, false);
-                DiffractionData diffractionData = new DiffractionData(active, active.getProperties(), CrystalReciprocalSpace.SolventModel.POLYNOMIAL, diffractionFile);
+                DiffractionData diffractionData = new DiffractionData(activeAssembly, activeAssembly.getProperties(), CrystalReciprocalSpace.SolventModel.POLYNOMIAL, diffractionFile);
                 diffractionData.scaleBulkFit();
                 diffractionData.printStats();
                 String mapFileName = String.format("%s_ffx_%d", FilenameUtils.removeExtension(dataFileName), ++nDiffractionData);
-                diffractionData.writeMaps(mapFileName);
+                diffractionData.writeMaps(mapFileName)
                 mapFiles.add(new RealSpaceFile(mapFileName + "_2fofc.map", 1.0));
             }
         } else {
-            RealSpaceFile realspacefile = new RealSpaceFile(active);
+            RealSpaceFile realspacefile = new RealSpaceFile(activeAssembly);
             mapFiles.add(realspacefile);
         }
 
 
-        RealSpaceData realSpaceData = new RealSpaceData(active,
-                active.getProperties(), active.getParallelTeam(),
+        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly,
+                activeAssembly.getProperties(), activeAssembly.getParallelTeam(),
                 mapFiles.toArray(new RealSpaceFile[mapFiles.size()]));
         RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMinimize.RefinementMode.COORDINATES, null);
 
@@ -722,7 +339,7 @@ class ManyBody extends AlgorithmsScript {
         x = refinementEnergy.getCoordinates(x);
         refinementEnergy.energy(x, true);
 
-        RotamerOptimization rotamerOptimization = new RotamerOptimization(active, refinementEnergy, sh);
+        RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, sh);
         rotamerOptimization.setTwoBodyCutoff(twoBodyCutoff);
         rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
         rotamerOptimization.setThreeBodyEnergy(threeBodyTerm);
@@ -743,13 +360,13 @@ class ManyBody extends AlgorithmsScript {
         rotamerOptimization.setMonteCarlo(monteCarlo, nMCSteps);
 
         if (useEnergyRestart) {
-            rotamerOptimization.setEnergyRestartFile(energyRestartFile);
+            rotamerOptimization.setEnergyRestartFile(energyRestartFile)
         }
 
         if (library == 1) {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards);
+            rLib.setLibrary(RotamerLibrary.ProteinLibrary.PonderAndRichards)
         } else {
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
+            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson)
         }
 
         if (useOrigCoordsRotamer) {
@@ -760,7 +377,7 @@ class ManyBody extends AlgorithmsScript {
         if (algorithm != 5) {
             if (allStartResID > 0) {
                 ArrayList<Residue> residueList = new ArrayList<Residue>();
-                Polymer[] polymers = active.getChains();
+                Polymer[] polymers = activeAssembly.getChains();
                 int nPolymers = polymers.length;
                 for (int p = 0; p < nPolymers; p++) {
                     Polymer polymer = polymers[p];
@@ -777,17 +394,17 @@ class ManyBody extends AlgorithmsScript {
                             if (counter >= allStartResID) {
                                 residueList.add(residue);
                             }
-                        } else if (!options.forceResidues.equalsIgnoreCase('none')) {
+                        } else if (!manyBodyOptions.forceResidues.equalsIgnoreCase('none')) {
                             if (counter >= allStartResID && counter >= forceResiduesStart
                                     && counter <= forceResiduesEnd) {
                                 residueList.add(residue);
                             }
                         }
-                        counter++;
+                        counter++
                     }
                 }
                 rotamerOptimization.setResidues(residueList);
-            } else if (!options.listResidues.equalsIgnoreCase('none')) {
+            } else if (!manyBodyOptions.listResidues.equalsIgnoreCase('none')) {
                 ArrayList<Residue> residueList = new ArrayList<>();
                 Polymer[] polymers = active.getChains();
                 int n = 0;
@@ -825,7 +442,7 @@ class ManyBody extends AlgorithmsScript {
                 ignoreNA = true;
             }
             ArrayList<Residue> residueList = new ArrayList<Residue>();
-            Polymer[] polymers = active.getChains();
+            Polymer[] polymers = activeAssembly.getChains();
             int nPolymers = polymers.length;
             for (int p = 0; p < nPolymers; p++) {
                 Polymer polymer = polymers[p];
@@ -857,15 +474,15 @@ class ManyBody extends AlgorithmsScript {
 
         ArrayList<Residue> residueList = rotamerOptimization.getResidues();
 
-        if (!options.sequence.equalsIgnoreCase('none')) {
+        if (!manyBodyOptions.sequence.equalsIgnoreCase('none')) {
             for (String s : sequenceOptimizationList) {
                 Character chainID = s.charAt(0);
                 int num = Integer.parseInt(s.substring(1));
                 for (int i = 0; i < residueList.size(); i++) {
                     Residue res = residueList.get(i);
                     if (res.getChainID() == chainID && res.getResidueNumber() == num) {
-                        MultiResidue multiRes = new MultiResidue(res, active.getForceField(), active.getPotentialEnergy());
-                        for (Polymer polymer : active.getChains()) {
+                        MultiResidue multiRes = new MultiResidue(res, activeAssembly.getForceField(), activeAssembly.getPotentialEnergy());
+                        for (Polymer polymer : activeAssembly.getChains()) {
                             if (polymer.getChainID() == chainID) {
                                 logger.info(String.format(" Adding multiresidue %s to chain %c.", multiRes, chainID));
                                 polymer.addMultiResidue(multiRes);
@@ -882,7 +499,7 @@ class ManyBody extends AlgorithmsScript {
                         }
                         //multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
                         multiRes.setActiveResidue(res);
-                        active.getPotentialEnergy().reInit();
+                        activeAssembly.getPotentialEnergy().reInit();
                         residueList.remove(i);
                         residueList.add(i, multiRes);
                     }
@@ -890,7 +507,7 @@ class ManyBody extends AlgorithmsScript {
             }
         }
 
-        if (!options.titrationOptimization.equalsIgnoreCase('none')) {
+        if (!manyBodyOptions.titrationOptimization.equalsIgnoreCase('none')) {
             ArrayList<Residue> titrating = new ArrayList<>();
             for (String s : titrationOptimizationList) {
                 Character chainID = s.charAt(0);
@@ -937,16 +554,16 @@ class ManyBody extends AlgorithmsScript {
 
         if (master) {
             if (min) {
-                minimize(eps);
+                manyBodyOptions.minimize(eps);
             }
             logger.info(" Final Minimum Energy");
-            energy();
-            String ext = FilenameUtils.getExtension(filename);
-            filename = FilenameUtils.removeExtension(filename);
+            algorithmFunctions.energy(activeAssembly);
+            String ext = FilenameUtils.getExtension(modelfilename);
+            modelfilename = FilenameUtils.removeExtension(modelfilename);
             if (ext.toUpperCase().contains("XYZ")) {
-                saveAsXYZ(new File(filename + ".xyz"));
+                algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelfilename + ".xyz"));
             } else {
-                saveAsPDB(new File(filename + ".pdb"));
+                algorithmFunctions.saveAsPDB(activeAssembly, new File(modelfilename + ".pdb"));
             }
         }
     }
