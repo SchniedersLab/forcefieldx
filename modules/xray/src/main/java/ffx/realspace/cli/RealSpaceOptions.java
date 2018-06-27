@@ -66,17 +66,17 @@ public class RealSpaceOptions {
     double wA = 1.0;
 
     /**
-     * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
+     * -y or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
-    @Option(names = {"-x", "--data"}, arity = "2",
-            description = "Specify input data filename and its weight (wA) (e.g. -x filename 1.0).")
+    @Option(names = {"-y", "--data"}, split = ",",
+            description = "Specify input data filename and its weight (wA) (e.g. -y filename,1.0).")
     String[] data = null;
 
     /**
      * -r or --mode sets the desired refinement mode
      * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
      */
-    @Option(names = {"-m", "--mode"}, paramLabel = "coordinates",
+    @Option(names = {"-r", "--mode"}, paramLabel = "coordinates",
             description = "Refinement mode: coordinates, bfactors and/or occupancies.")
     String modeString = "coordinates";
 

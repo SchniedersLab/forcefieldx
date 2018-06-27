@@ -1,5 +1,7 @@
 package ffx.realspace
 
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.realspace.parsers.RealSpaceFile
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -9,6 +11,8 @@ import ffx.realspace.cli.RealSpaceOptions
 import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementMinimize
 
+import ffx.algorithms.cli.MinimizeOptions
+import ffx.realspace.cli.RealSpaceOptions
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -20,7 +24,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Refinement on a Real Space target.", name = "ffxc realspace.Minimize")
+@Command(description = " Minimization on a Real Space target.", name = "ffxc realspace.Minimize")
 class Minimize extends AlgorithmsScript {
 
     @Mixin
@@ -83,7 +87,6 @@ class Minimize extends AlgorithmsScript {
 
         algorithmFunctions.energy(activeAssembly)
         algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
-
     }
 }
 
