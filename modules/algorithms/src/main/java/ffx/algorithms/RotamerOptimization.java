@@ -1493,11 +1493,11 @@ public class RotamerOptimization implements Terminatable {
                             comparisonEnergy - approximateEnergy, lowEnergy));
                 } else {
                     if (threeBodyTerm) {;
-                        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", evaluatedPermutations, "|", approximateEnergy, "|", lowEnergy, "|"));
+                        logIfMaster(format(" %12s %25f %25f", evaluatedPermutations, approximateEnergy, lowEnergy));
                         //logIfMaster(format(" %6e 3-Body: %12.4f (%12.4f)",
                         //       (double) evaluatedPermutations, approximateEnergy, lowEnergy));
                     } else {
-                        logIfMaster(format(" %12s %5s %25f %5s %25f %5s", evaluatedPermutations, "|", approximateEnergy, "|", lowEnergy, "|"));
+                        logIfMaster(format(" %12s %25f %25f", evaluatedPermutations, approximateEnergy, lowEnergy));
                         //logIfMaster(format(" %6e 2-Body: %12.4f (%12.4f)",
                         //        (double) evaluatedPermutations, approximateEnergy, lowEnergy));
                     }
@@ -1709,14 +1709,14 @@ public class RotamerOptimization implements Terminatable {
 
         double approximateEnergy = backboneEnergy + selfSum + pairSum + threeBodySum;
         if (print) {
-            logger.info(format(" Backbone:                  %s", formatEnergy(backboneEnergy)));
-            logger.info(format(" Self Energy:               %s", formatEnergy(selfSum)));
-            logger.info(format(" Pair Energy:               %s", formatEnergy(pairSum)));
+            logger.info(format(" Backbone                  %s", formatEnergy(backboneEnergy)));
+            logger.info(format(" Self Energy               %s", formatEnergy(selfSum)));
+            logger.info(format(" Pair Energy               %s", formatEnergy(pairSum)));
             if (!threeBodyTerm) {
-                logger.info(format(" Total Energy up to 2-Body: %s", formatEnergy(approximateEnergy)));
+                logger.info(format(" Total Energy up to 2-Body %s", formatEnergy(approximateEnergy)));
             } else {
-                logger.info(format(" 3-Body Energy:             %s", formatEnergy(threeBodySum)));
-                logger.info(format(" Total Energy up to 3-Body: %s", formatEnergy(approximateEnergy)));
+                logger.info(format(" 3-Body Energy             %s", formatEnergy(threeBodySum)));
+                logger.info(format(" Total Energy up to 3-Body %s", formatEnergy(approximateEnergy)));
             }
         }
         return approximateEnergy;
@@ -2932,18 +2932,14 @@ public class RotamerOptimization implements Terminatable {
                 ensembleFilter = new PDBFilter(new File(ensembleFile.getName()), molecularAssembly, null, null);
                 logger.info(format(" Ensemble file: %s", ensembleFile.getName()));
             }
-            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Condition", "|", "Number of Permutations Left", "|", "Removed", "|"));
-            logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------"));
-            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "No Eliminations", "|", permutations, "|", "", "|"));
-            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single Eliminations", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
-            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Pair Eliminations", "|", afterPairElim, "|", pairTotalElimination, "|"));
-            logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single and Pair Eliminations", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
-            logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------\n"));
+            logIfMaster(format("%30s %35s %35s", "Condition",  "Number of Permutations Left", "Number of Permutations Removed"));
+            logIfMaster(format("%30s %35s %35s", "No Eliminations", permutations, ""));
+            logIfMaster(format("%30s %35s %35s", "Single Eliminations", singletonPermutations, permutations - singletonPermutations));
+            logIfMaster(format("%30s %35s %35s", "Pair Eliminations", afterPairElim, pairTotalElimination));
+            logIfMaster(format("%30s %35s %35s", "Single and Pair Eliminations", (double) evaluatedPermutations, pairTotalElimination + (permutations - singletonPermutations)));
 
-            logIfMaster(format(" Energy of permutations:"));
-            logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
-            logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Permutation", "|", "Energy", "|", "Lowest Possible Energy", "|"));
-            logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+            logIfMaster(format("\n Energy of permutations:"));
+            logIfMaster(format(" %12s %25s %25s", "Permutation", "Energy", "Lowest Possible Energy"));
 
             double e;
             if (useMonteCarlo()) {
@@ -3011,18 +3007,16 @@ public class RotamerOptimization implements Terminatable {
             }
 
             logIfMaster(format(" Final rotamers:"));
-            logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
-            logIfMaster(format("%14s %3s %10s %3s %9s %3s %9s %3s %9s %3s", "Residue", "|", "Chi 1", "|", "Chi 2", "|", "Chi 3", "|", "Chi 4", "|"));
-            logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
+            logIfMaster(format("%17s %10s %11s %12s %11s", "Residue", "Chi 1", "Chi 2", "Chi 3", "Chi 4"));
             for (int i = 0; i < nResidues; i++) {
                 Residue residue = residues[i];
                 Rotamer[] rotamers = residue.getRotamers(library);
                 int ri = optimum[i];
                 Rotamer rotamer = rotamers[ri];
-                logIfMaster(format(" %c (%7s,2d) | %s", residue.getChainID(), residue, ri, rotamer.toAngleString()));
+                logIfMaster(format(" %c (%7s,2d) %s", residue.getChainID(), residue, ri, rotamer.toAngleString()));
                 RotamerLibrary.applyRotamer(residue, rotamer);
             }
-            logIfMaster(format("%s", " --------------------------------------------------------------------------------------------\n"));
+            logIfMaster(format("\n"));
 
             double sumSelfEnergy = 0;
             double sumPairEnergy = 0;
@@ -3051,10 +3045,9 @@ public class RotamerOptimization implements Terminatable {
                 logger.severe(String.format(" Exception %s in calculating current energy at the end of triples", ex.toString()));
             }
 
-            logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Type", "|", "Energy", "|", "Lowest Possible Energy", "|"));
-            logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
-            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Self:", "|", sumSelfEnergy, "|", "", "|"));
-            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Pair:", "|", sumPairEnergy, "|", "", "|"));
+            logIfMaster(format(" %12s %25s %25s", "Type", "Energy", "Lowest Possible Energy"));
+            logIfMaster(format(" %12s %25f %25s", "Self:", sumSelfEnergy, ""));
+            logIfMaster(format(" %12s %25f %25s", "Pair:", sumPairEnergy, ""));
 
             double approximateEnergy = backboneEnergy + sumSelfEnergy + sumPairEnergy;
 
@@ -3075,14 +3068,13 @@ public class RotamerOptimization implements Terminatable {
                 }
                 approximateEnergy += sumTrimerEnergy;
                 double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - sumTrimerEnergy - backboneEnergy;
-                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Trimer:", "|", sumTrimerEnergy, "|", "", "|"));
-                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
+                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Trimer:", sumTrimerEnergy, ""));
+                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", higherOrderEnergy, ""));
             } else {
                 double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - backboneEnergy;
-                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
+                logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Neglected:", higherOrderEnergy, ""));
             }
-            logIfMaster(format(" %12s %5s %25f %5s %25s %5s", "Approximate:", "|", approximateEnergy, "|", "", "|"));
-            logIfMaster(format("%s", " ----------------------------------------------------------------------------------\n"));
+            logIfMaster(format(" %12s %25f %25s", "Approximate:", approximateEnergy, ""));
             return e;
         }
 
@@ -3152,7 +3144,6 @@ public class RotamerOptimization implements Terminatable {
             }
 
             logIfMaster(format(" Collecting Permutations:"));
-            logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------"));
             dryRun(residues, 0, currentRotamers);
 
             double pairTotalElimination = singletonPermutations - (double) evaluatedPermutations;
@@ -3183,18 +3174,14 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(format(" Ensemble Search Stats: (buffer: %5.3f, current: %d, target: %d)", ensembleBuffer, currentEnsemble, ensembleNumber));
             }
             if (ensembleNumber == 1 || finalTry) {
-                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Condition", "|", "Number of Permutations Left", "|", "Number of Permutations Removed", "|"));
-                logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------"));
-                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "No Eliminations", "|", permutations, "|", "", "|"));
-                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single Eliminations", "|", singletonPermutations, "|", permutations - singletonPermutations, "|"));
-                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Pair Eliminations", "|", afterPairElim, "|", pairTotalElimination, "|"));
-                logIfMaster(format("%30s %5s %30s %5s %30s %5s", "Single and Pair Eliminations", "|", (double) evaluatedPermutations, "|", pairTotalElimination + (permutations - singletonPermutations), "|"));
-                logIfMaster(format("%s", " -------------------------------------------------------------------------------------------------------------\n"));
+                logIfMaster(format("%30s %35s %35s", "Condition", "Number of Permutations Left", "Number of Permutations Removed"));
+                logIfMaster(format("%30s %35s %35s", "No Eliminations", permutations, ""));
+                logIfMaster(format("%30s %35s %35s", "Single Eliminations", singletonPermutations, permutations - singletonPermutations));
+                logIfMaster(format("%30s %35s %35s", "Pair Eliminations", afterPairElim, pairTotalElimination));
+                logIfMaster(format("%30s %35s %35s", "Single and Pair Eliminations", (double) evaluatedPermutations, pairTotalElimination + (permutations - singletonPermutations)));
 
-                logIfMaster(format(" Energy of permutations:"));
-                logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
-                logIfMaster(format(" %12s %5s %25s %5s %25s %5s", "Permutation", "|", "Energy", "|", "Lowest Possible Energy", "|"));
-                logIfMaster(format("%s", " ----------------------------------------------------------------------------------"));
+                logIfMaster(format("\n Energy of permutations:"));
+                logIfMaster(format(" %12s %25s %25s", "Permutation", "Energy", "Lowest Possible Energy"));
 
                 break;
             }
@@ -3242,12 +3229,9 @@ public class RotamerOptimization implements Terminatable {
 
         double sumSelfEnergy = 0;
         double sumLowSelfEnergy = 0;
-        logIfMaster(format("%s", " ----------------------------------------------------------------------------------\n"));
 
-        logIfMaster(format(" Energy contributions:"));
-        logIfMaster(format("%s", " -------------------------------------------------------------------------------------"));
-        logIfMaster(format(" %15s %5s %25s %5s %25s %5s", "Type", "|", "Energy", "|", "Lowest Possible Energy", "|"));
-        logIfMaster(format("%s", " -------------------------------------------------------------------------------------"));
+        logIfMaster(format("\n Energy contributions:"));
+        logIfMaster(format(" %15s %25s %25s", "Type", "Energy", "Lowest Possible Energy"));
 
         for (int i = 0; i < nResidues; i++) {
             int ri = optimum[i];
@@ -3261,7 +3245,7 @@ public class RotamerOptimization implements Terminatable {
             double lowest = lowestSelfEnergy(residues, i);
             sumLowSelfEnergy += lowest;
             if (self - lowest > 10.0) {
-                logIfMaster(format(" %15s %5s %25f %5s %25f %5s", "Self (" + residues[i] + "," + ri + "):", "|", self, "|", lowest, "|"));
+                logIfMaster(format(" %15s %25f %25f", "Self (" + residues[i] + "," + ri + "):", self, lowest));
             }
         }
 
@@ -3294,7 +3278,7 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
             if (sumPairEnergyI - sumLowPairEnergyI > 10.0) {
-                logIfMaster(format(" %15s %5s %25f %5s %25f %5s", "Self (" + residues[i] + "," + ri + "):", "|", sumPairEnergyI, "|", sumLowPairEnergyI, "|"));
+                logIfMaster(format(" %15s %25f %25f", "Self (" + residues[i] + "," + ri + ")", sumPairEnergyI, sumLowPairEnergyI));
                 sb.trimToSize();
                 if (!sb.toString().isEmpty()) {
                     logIfMaster(sb.toString());
@@ -3308,9 +3292,9 @@ public class RotamerOptimization implements Terminatable {
         } catch (ArithmeticException ex) {
             logger.severe(String.format(" Exception %s in calculating current energy at the end of self and pairs", ex.toString()));
         }
-        logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Backbone:", "|", backboneEnergy, "|", "", "|"));
-        logIfMaster(format(" %15s %5s %25f %5s %25f %5s", "Self:", "|", sumSelfEnergy, "|", sumLowSelfEnergy, "|"));
-        logIfMaster(format(" %15s %5s %25f %5s %25f %5s", "Pair:", "|", sumPairEnergy, "|", sumLowPairEnergy, "|"));
+        logIfMaster(format(" %15s %25f %25s", "Backbone:", backboneEnergy, ""));
+        logIfMaster(format(" %15s %25f %25f", "Self:",  sumSelfEnergy, sumLowSelfEnergy));
+        logIfMaster(format(" %15s %25f %25f", "Pair:", sumPairEnergy, sumLowPairEnergy));
 
         double approximateEnergy = backboneEnergy + sumSelfEnergy + sumPairEnergy;
 
@@ -3337,30 +3321,27 @@ public class RotamerOptimization implements Terminatable {
             }
             approximateEnergy += sumTrimerEnergy;
             double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - sumTrimerEnergy - backboneEnergy;
-            logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Trimer:", "|", sumTrimerEnergy, "|", "", "|"));
-            logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
+            logIfMaster(format(" %15s %25f %25s", "Trimer:", sumTrimerEnergy, ""));
+            logIfMaster(format(" %15s %25f %25s", "Neglected:", higherOrderEnergy, ""));
         } else {
             double higherOrderEnergy = e - sumSelfEnergy - sumPairEnergy - backboneEnergy;
-            logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Neglected:", "|", higherOrderEnergy, "|", "", "|"));
+            logIfMaster(format(" %15s %25f %25s", "Neglected:", higherOrderEnergy, ""));
         }
 
-        logIfMaster(format(" %15s %5s %25f %5s %25s %5s", "Approximate:", "|", approximateEnergy, "|", "", "|"));
-        logIfMaster(format("%s", " -------------------------------------------------------------------------------------\n"));
+        logIfMaster(format(" %15s %25f %25s", "Approximate:", approximateEnergy, ""));
 
-        logIfMaster(format(" Final rotamers:"));
-        logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
-        logIfMaster(format("%17s %3s %10s %3s %9s %3s %9s %3s %9s %3s %10s %3s", "Residue", "|", "Chi 1", "|", "Chi 2", "|", "Chi 3", "|", "Chi 4", "|", "Energy", "|"));
-        logIfMaster(format("%s", " --------------------------------------------------------------------------------------------"));
+        logIfMaster(format("\n Final rotamers:"));
+        logIfMaster(format("%17s %10s %11s %12s %11s %14s", "Residue", "Chi 1", "Chi 2", "Chi 3", "Chi 4", "Energy"));
         for (int i = 0; i < nResidues; i++) {
             Residue residue = residues[i];
             Rotamer[] rotamers = residue.getRotamers(library);
             int ri = optimum[i];
             Rotamer rotamer = rotamers[ri];
-            logIfMaster(format(" %3d %c (%7s,%2d) | %s %12.4f |",
+            logIfMaster(format(" %3d %c (%7s,%2d) %s %12.4f ",
                     i + 1, residue.getChainID(), residue, ri, rotamer.toAngleString(), residueEnergy[i]));
             RotamerLibrary.applyRotamer(residue, rotamer);
         }
-        logIfMaster(format("%s", " --------------------------------------------------------------------------------------------\n"));
+        logIfMaster(format("\n"));
         return e;
     }
 
