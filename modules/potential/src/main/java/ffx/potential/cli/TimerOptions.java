@@ -53,9 +53,9 @@ public class TimerOptions {
             description = "Number of iterations.")
     private int iterations = 5;
     /**
-     * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
+     * --nt or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
      */
-    @Option(names = {"-c", "--threads"}, paramLabel = "0",
+    @Option(names = {"--nt", "--threads"}, paramLabel = "0",
             description = "Number of SMP threads (0 specifies use of all CPU cores).")
     private int threads = 0;
     /**

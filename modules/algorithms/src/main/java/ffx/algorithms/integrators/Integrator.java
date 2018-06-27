@@ -75,7 +75,13 @@ public abstract class Integrator {
     protected double aPrevious[];
     protected double mass[];
     protected int nVariables;
+    /**
+     * Time step (psec).
+     */
     protected double dt;
+    /**
+     * Half the time step (psec).
+     */
     protected double dt_2;
 
     /**
@@ -96,7 +102,7 @@ public abstract class Integrator {
         this.a = a;
         this.aPrevious = aPrevious;
         this.mass = mass;
-        dt = 1.0;
+        dt = 1.0e-3;
         dt_2 = dt / 2.0;
     }
 
@@ -117,7 +123,7 @@ public abstract class Integrator {
         this.mass = mass;
         //this.aPrevious = null;
         this.aPrevious = new double[nVariables];
-        dt = 1.0;
+        dt = 1.0e-3;
     }
 
     /**
@@ -161,7 +167,7 @@ public abstract class Integrator {
     /**
      * Get the time step.
      *
-     * @return the time step (fsec).
+     * @return the time step (psec).
      */
     public double getTimeStep() {
         return dt;
@@ -170,7 +176,7 @@ public abstract class Integrator {
     /**
      * Set the time step.
      *
-     * @param dt the time step (fsec).
+     * @param dt the time step (psec).
      */
     abstract public void setTimeStep(double dt);
 

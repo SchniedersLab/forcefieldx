@@ -64,10 +64,10 @@ public class XrayOptions {
     private static final Logger logger = Logger.getLogger(XrayOptions.class.getName());
 
     /**
-     * -s or --solvent Bulk solvent scattering model [Polynomial/Gaussian/Binary/None].
+     * -sol or --solvent Bulk solvent scattering model [Polynomial/Gaussian/Binary/None].
      */
 
-    @Option(names = {"-s", "--solvent"}, paramLabel = "POLYNOMIAL",
+    @Option(names = {"--sol", "--solvent"}, paramLabel = "POLYNOMIAL",
             description = "Bulk solvent scattering model [Polynomial/Gaussian/Binary/None]")
     private String solventString = "POLYNOMIAL";
 

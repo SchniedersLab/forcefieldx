@@ -37,7 +37,11 @@
  */
 package ffx.algorithms.cli;
 
+import ffx.potential.bonded.RotamerLibrary;
 import picocli.CommandLine.Option;
+import ffx.algorithms.RotamerOptimization;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Represents command line options for scripts that use a many-body expansion for global optimization.
@@ -58,6 +62,14 @@ public class ManyBodyOptions {
     @Option(names = {"-L", "--library"}, paramLabel = "1",
             description = "Ponder and Richards (1) or Richardson (2) rotamer library.")
     int library = 1;
+
+    /**
+     * -Ln or --libraryNucleic Choose a nucleic acid library: currently only Richardson available.
+     */
+    @Option(names = {"--Ln", "--libraryNucleic"}, paramLabel = "Richardson",
+            description = "Nucleic acid library to select: [Richardson]")
+    String naLibraryName = "Richardson";
+    //RotamerLibrary.NucleicAcidLibrary naLibrary = RotamerLibrary.NucleicAcidLibrary.RICHARDSON;
     
     /**
      * -a or --algorithm Choices are independent residues (1), all with rotamer elimination (2),
@@ -103,9 +115,9 @@ public class ManyBodyOptions {
     double twoBodyCutoff = -1.0;
     
     /**
-     * -t or --threeBody Include 3-Body interactions in the elimination criteria.
+     * -T or --threeBody Include 3-Body interactions in the elimination criteria.
      */
-    @Option(names = {"-t", "--threeBody"}, 
+    @Option(names = {"-T", "--threeBody"},
             description = "Include 3-Body interactions in the elimination criteria.")
     boolean threeBody = false;
     
@@ -117,9 +129,9 @@ public class ManyBodyOptions {
     double threeBodyCutoff = 9.0;
          
     /**
-     * -p or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
+     * -P or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
      */
-    @Option(names = {"-p", "--prune"}, paramLabel = "2",
+    @Option(names = {"-P", "--prune"}, paramLabel = "2",
             description = "Prune no clashes (0), only single clashes (1), or all clashes (2)")
     int prune = 2;
        
@@ -156,14 +168,14 @@ public class ManyBodyOptions {
     /**
      * -o or --original Do not include starting coordinates as their own rotamer.
      */
-    @Option(names = {"-o", "--original"}, 
+    @Option(names = {"-O", "--original"},
             description = "Do not include starting coordinates as their own rotamer.")
     boolean original = true;    
 
     /**
-     * -d or --decompose Print energy decomposition for original-coordinates rotamers.
+     * -D or --decompose Print energy decomposition for original-coordinates rotamers.
      */
-    @Option(names = {"-d", "--decompose"}, 
+    @Option(names = {"-D", "--decompose"},
             description = "Print energy decomposition for original-coordinates rotamers.")
     boolean decompose = false;    
 
@@ -222,23 +234,23 @@ public class ManyBodyOptions {
      */
     
     /**
-     * -w or --window Size of the sliding window with respect to adjacent residues (default = 7).
+     * --window Size of the sliding window with respect to adjacent residues (default = 7).
      */
-    @Option(names = {"-w", "--window"}, paramLabel = "7",
+    @Option(names = {"--window"}, paramLabel = "7",
             description = "Size of the sliding window with respect to adjacent residues.")
     int window = 7;
     
     /**
-     * -i or --increment Sliding window increment (default = 3).
+     * --increment Sliding window increment (default = 3).
      */
-    @Option(names = {"-I", "--INCREMENT"}, paramLabel = "3",
+    @Option(names = {"--increment"}, paramLabel = "3",
             description = "Sliding window increment.")
     int increment = 3;
     
     /**
-     * -r or --cutoff The sliding window cutoff radius (Angstroms).
+     * --radius The sliding window cutoff radius (Angstroms).
      */
-    @Option(names = {"--r", "--cutoff"}, paramLabel = "2.0",
+    @Option(names = {"--radius"}, paramLabel = "2.0",
             description = "The sliding window cutoff radius (Angstroms).")
     double cutoff = 2.0;
     
@@ -306,4 +318,48 @@ public class ManyBodyOptions {
     @Option(names = {"--mN", "--minimumAcceptedNARotamers"}, paramLabel = "10",
             description = "Minimum number of NA rotamers to be accepted if a threshold distance is enabled.")
     int minimumAcceptedNARotamers = 10;
+    
+    RotamerOptimization rotamerOptimization;
+    
+    public void setRotamerOptimization(RotamerOptimization rotamerOptimization) {
+        this.rotamerOptimization = rotamerOptimization;
+    }
+    
+    public void setRotOptProperties(int [] numXYZBoxes, int forceResiduesStart, int forceResiduesEnd) {
+        rotamerOptimization.setTwoBodyCutoff(twoBodyCutoff);
+        rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
+        rotamerOptimization.setThreeBodyEnergy(threeBody);
+        rotamerOptimization.setUseGoldstein(!dee);
+        rotamerOptimization.setRevert(!noRevert);
+        rotamerOptimization.setPruning(prune);
+        rotamerOptimization.setWindowSize(window);
+        rotamerOptimization.setIncrement(increment);
+        rotamerOptimization.setDistanceCutoff(cutoff);
+        rotamerOptimization.setNucleicCorrectionThreshold(nucleicCorrectionThreshold);
+        rotamerOptimization.setMinimumNumberAcceptedNARotamers(minimumAcceptedNARotamers);
+        rotamerOptimization.setVerboseEnergies(verbose);
+        rotamerOptimization.setBoxBorderSize(boxBorderSize);
+        rotamerOptimization.setApproxBoxLength(approxBoxLength);
+        rotamerOptimization.setNumXYZBoxes(numXYZBoxes);
+        rotamerOptimization.setBoxInclusionCriterion(boxInclusionCriterion);
+        rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
+        
+        boolean monteCarloBool = false;
+        if (monteCarlo > 1) {
+            monteCarloBool = true;
+        }
+        rotamerOptimization.setMonteCarlo(monteCarloBool, monteCarlo);
+        
+        File energyRestartFile = null;
+        if (!energyRestart.equalsIgnoreCase("none")) {
+            energyRestartFile = new File(energyRestart);
+            rotamerOptimization.setEnergyRestartFile(energyRestartFile);
+        }
+    }
+    
+    public void saveEliminatedRotamers () throws IOException {
+        if (saveOutput){
+            rotamerOptimization.outputEliminated();
+        }
+    }
 }
