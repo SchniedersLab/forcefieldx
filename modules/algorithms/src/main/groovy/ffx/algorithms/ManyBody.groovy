@@ -49,13 +49,13 @@ class ManyBody extends AlgorithmsScript {
         String filename = null;
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
-            active = assemblies[0]
+            activeAssembly = assemblies[0]
             filename = filenames.get(0)
-        } else if (active == null) {
+        } else if (activeAssembly == null) {
             logger.info(helpString())
             return
         } else {
-            filename = active.getFile().getAbsolutePath();
+            filename = activeAssembly.getFile().getAbsolutePath();
         }
     
         /**
@@ -320,7 +320,7 @@ class ManyBody extends AlgorithmsScript {
         if (manyBody.algorithm != 5) {
             if (allStartResID > 0) {
                 ArrayList<Residue> residueList = new ArrayList<Residue>();
-                Polymer[] polymers = active.getChains();
+                Polymer[] polymers = activeAssembly.getChains();
                 int nPolymers = polymers.length;
                 for (int p = 0; p < nPolymers; p++) {
                     Polymer polymer = polymers[p];
@@ -349,7 +349,7 @@ class ManyBody extends AlgorithmsScript {
                 rotamerOptimization.setResidues(residueList);
             } else if (!manyBody.listResidues.equalsIgnoreCase("none")) {
                 ArrayList<Residue> residueList = new ArrayList<>();
-                Polymer[] polymers = active.getChains();
+                Polymer[] polymers = activeAssembly.getChains();
                 int n = 0;
                 for (String s : resList) {
                     Character chainID = s.charAt(0);
@@ -385,7 +385,7 @@ class ManyBody extends AlgorithmsScript {
                 ignoreNA = true;
             }
             ArrayList<Residue> residueList = new ArrayList<Residue>();
-            Polymer[] polymers = active.getChains();
+            Polymer[] polymers = activeAssembly.getChains();
             int nPolymers = polymers.length;
             for (int p = 0; p < nPolymers; p++) {
                 Polymer polymer = polymers[p];
@@ -424,8 +424,9 @@ class ManyBody extends AlgorithmsScript {
                 for (int i = 0; i < residueList.size(); i++) {
                     Residue res = residueList.get(i);
                     if (res.getChainID() == chainID && res.getResidueNumber() == num) {
-                        MultiResidue multiRes = new MultiResidue(res, active.getForceField(), active.getPotentialEnergy());
-                        for (Polymer polymer : active.getChains()) {
+                        MultiResidue multiRes = new MultiResidue(res, activeAssembly.getForceField(),
+                                activeAssembly.getPotentialEnergy());
+                        for (Polymer polymer : activeAssembly.getChains()) {
                             if (polymer.getChainID() == chainID) {
                                 logger.info(String.format(" Adding multiresidue %s to chain %c.", multiRes, chainID));
                                 polymer.addMultiResidue(multiRes);
@@ -440,9 +441,8 @@ class ManyBody extends AlgorithmsScript {
                                 multiRes.addResidue(new Residue(aa.toString(), res.getResidueNumber(), ResidueType.AA));
                             }
                         }
-                        //multiRes.requestSetActiveResidue(ResidueEnumerations.AminoAcid3.valueOf(res.getName()));
                         multiRes.setActiveResidue(res);
-                        active.getPotentialEnergy().reInit();
+                        activeAssembly.getPotentialEnergy().reInit();
                         residueList.remove(i);
                         residueList.add(i, multiRes);
                     }
@@ -502,9 +502,9 @@ class ManyBody extends AlgorithmsScript {
             String ext = FilenameUtils.getExtension(filename);
             filename = FilenameUtils.removeExtension(filename);
             if (ext.toUpperCase().contains("XYZ")) {
-                algorithmFunctions.saveAsXYZ(active, new File(filename + ".xyz"));
+                algorithmFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"));
             } else {
-                algorithmFunctions.saveAsPDB(active, new File(filename + ".pdb"));
+                algorithmFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"));
             }
         }
         
