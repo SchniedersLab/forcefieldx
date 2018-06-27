@@ -37,6 +37,7 @@
  */
 package ffx.algorithms.cli;
 
+import ffx.potential.bonded.RotamerLibrary;
 import picocli.CommandLine.Option;
 
 /**
@@ -58,6 +59,13 @@ public class ManyBodyOptions {
     @Option(names = {"-L", "--library"}, paramLabel = "1",
             description = "Ponder and Richards (1) or Richardson (2) rotamer library.")
     int library = 1;
+
+    /**
+     * -Ln or --libraryNucleic Choose a nucleic acid library: currently only Richardson available.
+     */
+    @Option(names = {"--Ln", "--libraryNucleic"}, paramLabel = "Richardson",
+            description = "Nucleic acid library to select: [Richardson]")
+    RotamerLibrary.NucleicAcidLibrary naLibrary = RotamerLibrary.NucleicAcidLibrary.RICHARDSON;
     
     /**
      * -a or --algorithm Choices are independent residues (1), all with rotamer elimination (2),
