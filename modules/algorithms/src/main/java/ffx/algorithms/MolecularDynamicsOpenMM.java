@@ -155,8 +155,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     private boolean quiet = true;
 
-    private int quietInt = 0;
-
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
      * dynamics using native OpenMM routines, avoiding the cost of communicating
@@ -527,9 +525,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     public final void updateContext() {
-        if (quietInt == 1) {
-            quiet = false;
-        }
         String currentIntegrator = forceFieldEnergyOpenMM.getIntegratorString();
         double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
         double currentTemperature = forceFieldEnergyOpenMM.getTemperature();
@@ -544,7 +539,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             integrator = forceFieldEnergyOpenMM.getIntegrator();
             context = forceFieldEnergyOpenMM.getContext();
         }
-        quietInt++;
+        quiet = false;
     }
 
     /**

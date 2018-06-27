@@ -65,7 +65,8 @@ public class ManyBodyOptions {
      */
     @Option(names = {"--Ln", "--libraryNucleic"}, paramLabel = "Richardson",
             description = "Nucleic acid library to select: [Richardson]")
-    RotamerLibrary.NucleicAcidLibrary naLibrary = RotamerLibrary.NucleicAcidLibrary.RICHARDSON;
+    String naLibraryName = "Richardson";
+    //RotamerLibrary.NucleicAcidLibrary naLibrary = RotamerLibrary.NucleicAcidLibrary.RICHARDSON;
     
     /**
      * -a or --algorithm Choices are independent residues (1), all with rotamer elimination (2),
