@@ -39,6 +39,9 @@ package ffx.algorithms.cli;
 
 import ffx.potential.bonded.RotamerLibrary;
 import picocli.CommandLine.Option;
+import ffx.algorithms.RotamerOptimization;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Represents command line options for scripts that use a many-body expansion for global optimization.
@@ -315,4 +318,48 @@ public class ManyBodyOptions {
     @Option(names = {"--mN", "--minimumAcceptedNARotamers"}, paramLabel = "10",
             description = "Minimum number of NA rotamers to be accepted if a threshold distance is enabled.")
     int minimumAcceptedNARotamers = 10;
+    
+    RotamerOptimization rotamerOptimization;
+    
+    public void setRotamerOptimization(RotamerOptimization rotamerOptimization) {
+        this.rotamerOptimization = rotamerOptimization;
+    }
+    
+    public void setRotOptProperties(int [] numXYZBoxes, int forceResiduesStart, int forceResiduesEnd) {
+        rotamerOptimization.setTwoBodyCutoff(twoBodyCutoff);
+        rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
+        rotamerOptimization.setThreeBodyEnergy(threeBody);
+        rotamerOptimization.setUseGoldstein(!dee);
+        rotamerOptimization.setRevert(!noRevert);
+        rotamerOptimization.setPruning(prune);
+        rotamerOptimization.setWindowSize(window);
+        rotamerOptimization.setIncrement(increment);
+        rotamerOptimization.setDistanceCutoff(cutoff);
+        rotamerOptimization.setNucleicCorrectionThreshold(nucleicCorrectionThreshold);
+        rotamerOptimization.setMinimumNumberAcceptedNARotamers(minimumAcceptedNARotamers);
+        rotamerOptimization.setVerboseEnergies(verbose);
+        rotamerOptimization.setBoxBorderSize(boxBorderSize);
+        rotamerOptimization.setApproxBoxLength(approxBoxLength);
+        rotamerOptimization.setNumXYZBoxes(numXYZBoxes);
+        rotamerOptimization.setBoxInclusionCriterion(boxInclusionCriterion);
+        rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
+        
+        boolean monteCarloBool = false;
+        if (monteCarlo > 1) {
+            monteCarloBool = true;
+        }
+        rotamerOptimization.setMonteCarlo(monteCarloBool, monteCarlo);
+        
+        File energyRestartFile = null;
+        if (!energyRestart.equalsIgnoreCase("none")) {
+            energyRestartFile = new File(energyRestart);
+            rotamerOptimization.setEnergyRestartFile(energyRestartFile);
+        }
+    }
+    
+    public void saveEliminatedRotamers () throws IOException {
+        if (saveOutput){
+            rotamerOptimization.outputEliminated();
+        }
+    }
 }
