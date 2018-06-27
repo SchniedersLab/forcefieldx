@@ -103,9 +103,9 @@ public class ManyBodyOptions {
     double twoBodyCutoff = -1.0;
     
     /**
-     * -t or --threeBody Include 3-Body interactions in the elimination criteria.
+     * -T or --threeBody Include 3-Body interactions in the elimination criteria.
      */
-    @Option(names = {"-t", "--threeBody"}, 
+    @Option(names = {"-T", "--threeBody"},
             description = "Include 3-Body interactions in the elimination criteria.")
     boolean threeBody = false;
     
@@ -117,9 +117,9 @@ public class ManyBodyOptions {
     double threeBodyCutoff = 9.0;
          
     /**
-     * -p or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
+     * -P or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
      */
-    @Option(names = {"-p", "--prune"}, paramLabel = "2",
+    @Option(names = {"-P", "--prune"}, paramLabel = "2",
             description = "Prune no clashes (0), only single clashes (1), or all clashes (2)")
     int prune = 2;
        
@@ -156,14 +156,14 @@ public class ManyBodyOptions {
     /**
      * -o or --original Do not include starting coordinates as their own rotamer.
      */
-    @Option(names = {"-o", "--original"}, 
+    @Option(names = {"-O", "--original"},
             description = "Do not include starting coordinates as their own rotamer.")
     boolean original = true;    
 
     /**
-     * -d or --decompose Print energy decomposition for original-coordinates rotamers.
+     * -D or --decompose Print energy decomposition for original-coordinates rotamers.
      */
-    @Option(names = {"-d", "--decompose"}, 
+    @Option(names = {"-D", "--decompose"},
             description = "Print energy decomposition for original-coordinates rotamers.")
     boolean decompose = false;    
 
@@ -222,23 +222,23 @@ public class ManyBodyOptions {
      */
     
     /**
-     * -w or --window Size of the sliding window with respect to adjacent residues (default = 7).
+     * --window Size of the sliding window with respect to adjacent residues (default = 7).
      */
-    @Option(names = {"-w", "--window"}, paramLabel = "7",
+    @Option(names = {"--window"}, paramLabel = "7",
             description = "Size of the sliding window with respect to adjacent residues.")
     int window = 7;
     
     /**
-     * -i or --increment Sliding window increment (default = 3).
+     * --increment Sliding window increment (default = 3).
      */
-    @Option(names = {"-I", "--INCREMENT"}, paramLabel = "3",
+    @Option(names = {"--increment"}, paramLabel = "3",
             description = "Sliding window increment.")
     int increment = 3;
     
     /**
-     * -r or --cutoff The sliding window cutoff radius (Angstroms).
+     * --radius The sliding window cutoff radius (Angstroms).
      */
-    @Option(names = {"--r", "--cutoff"}, paramLabel = "2.0",
+    @Option(names = {"--radius"}, paramLabel = "2.0",
             description = "The sliding window cutoff radius (Angstroms).")
     double cutoff = 2.0;
     
