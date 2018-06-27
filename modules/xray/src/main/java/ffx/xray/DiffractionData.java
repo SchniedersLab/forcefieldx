@@ -334,7 +334,9 @@ public class DiffractionData implements DataContainer {
             // sb.append("  Non-zero weight (bnonzeroweight): ").append(bNonZeroWeight).append("\n");
             // sb.append("  Lagrangian mass (bmass): ").append(bMass).append("\n");
             sb.append("   Refine by residue: ").append(residueBFactor).append("\n");
-            sb.append("    (if true, num. residues per B: ").append(nResidueBFactor).append(")\n");
+            if (residueBFactor) {
+                sb.append("   Number of residues per B: ").append(nResidueBFactor).append(")\n");
+            }
             sb.append("   Add ANISOU for refinement: ").append(addAnisou).append("\n");
             sb.append("  Occupancies\n");
             sb.append("   Refine on molecules: ").append(refineMolOcc).append("\n");

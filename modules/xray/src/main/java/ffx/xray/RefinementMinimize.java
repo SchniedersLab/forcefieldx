@@ -185,7 +185,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         nOcc = refinementEnergy.nOccupancy;
         n = refinementEnergy.getNumberOfVariables();
 
-        // logger.info(String.format(" RefinementMinimize varianbles %d (nXYZ %d, nB %d, nOcc %d)", n, nXYZ, nB, nOcc));
+        // logger.info(String.format(" RefinementMinimize variables %d (nXYZ %d, nB %d, nOcc %d)", n, nXYZ, nB, nOcc));
 
         // Fill an active atom array.
         int count = 0;
@@ -208,6 +208,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
         scaling = new double[n];
 
         refinementEnergy.getCoordinates(x);
+        refinementEnergy.setScaling(scaling);
 
         double xyzscale = 1.0;
         double bisoscale = 1.0;

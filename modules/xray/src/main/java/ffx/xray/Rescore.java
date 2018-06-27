@@ -262,7 +262,13 @@ public class Rescore {
                     if (eps < 0.0) {
                         eps = refinementMinimize.getEps();
                     }
-                    logger.info(String.format("\n RMS gradient convergence criteria: %8.5f max number of iterations %d", eps, maxiter));
+
+                    if (maxiter < Integer.MAX_VALUE) {
+                        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter));
+                    } else {
+                        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
+                    }
+
                     refinementMinimize.minimize(eps, maxiter);
                     diffractionData.scaleBulkFit();
                     diffractionData.printStats();
@@ -309,8 +315,12 @@ public class Rescore {
                     if (eps < 0.0) {
                         eps = 1.0;
                     }
-                    logger.info(String.format("\n RMS gradient convergence criteria: %8.5f max number of iterations %d", eps, maxiter));
-                    refinementMinimize.minimize(eps, maxiter);
+
+                    if (maxiter < Integer.MAX_VALUE) {
+                        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter));
+                    } else {
+                        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
+                    }
 
                     ext = FilenameUtils.getExtension(filename);
                     ext = ".".concat(ext);

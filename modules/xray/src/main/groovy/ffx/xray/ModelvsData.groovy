@@ -11,6 +11,7 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import org.apache.commons.configuration.CompositeConfiguration
 
 /**
  * The X-ray ModelvsData script.
@@ -28,7 +29,7 @@ class ModelvsData extends AlgorithmsScript {
     /**
      * -m or --maps Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.
      */
-    @Option(names = ['-m', '--maps'], paramLabel = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
+    @Option(names = ['-p', '--maps'], paramLabel = 'false', description = 'Output sigmaA weighted 2Fo-Fc and Fo-Fc electron density maps.')
     boolean maps = false
     /**
      * -t or --timings Perform FFT timings.
@@ -71,10 +72,14 @@ class ModelvsData extends AlgorithmsScript {
 
         logger.info("\n Running xray.ModelvsData on " + modelfilename)
 
+        // Load parsed X-ray properties.
+        CompositeConfiguration properties = activeAssembly.getProperties()
+        xrayOptions.setProperties(properties)
+
         // Set up diffraction data (can be multiple files)
         List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
 
-        DiffractionData diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
+        DiffractionData diffractiondata = new DiffractionData(assemblies, properties,
                 xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
 
         diffractiondata.scaleBulkFit()

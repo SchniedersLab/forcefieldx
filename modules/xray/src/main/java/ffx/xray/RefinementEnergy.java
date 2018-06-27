@@ -574,6 +574,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 g[i] /= optimizationScaling[i];
             }
         }
+
+
         totalEnergy = e;
         return e;
     }

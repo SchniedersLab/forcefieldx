@@ -109,7 +109,13 @@ class Minimize extends AlgorithmsScript {
             if (coordeps < 0.0) {
                 coordeps = refinementMinimize.getEps()
             }
-            logger.info("\n RMS gradient convergence criteria: " + coordeps + " max number of iterations: " + maxiter)
+
+            if (maxiter < Integer.MAX_VALUE) {
+                logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", coordeps, maxiter));
+            } else {
+                logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", coordeps));
+            }
+
             refinementMinimize.minimize(coordeps, maxiter)
             diffractionData.scaleBulkFit()
             diffractionData.printStats()
@@ -119,7 +125,13 @@ class Minimize extends AlgorithmsScript {
             if (beps < 0.0) {
                 beps = refinementMinimize.getEps()
             }
-            logger.info("\n RMS gradient convergence criteria: " + beps + "\n Maximum number of iterations: " + maxiter + "\n")
+
+            if (maxiter < Integer.MAX_VALUE) {
+                logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", beps, maxiter));
+            } else {
+                logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", beps));
+            }
+
             refinementMinimize.minimize(beps, maxiter)
             diffractionData.scaleBulkFit()
             diffractionData.printStats()
@@ -130,7 +142,13 @@ class Minimize extends AlgorithmsScript {
                 if (occeps < 0.0) {
                     occeps = refinementMinimize.getEps()
                 }
-                logger.info("\n RMS gradient convergence criteria: " + occeps + " max number of iterations: " + maxiter)
+
+                if (maxiter < Integer.MAX_VALUE) {
+                    logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", occeps, maxiter));
+                } else {
+                    logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", occeps));
+                }
+
                 refinementMinimize.minimize(occeps, maxiter)
                 diffractionData.scaleBulkFit()
                 diffractionData.printStats()
@@ -145,7 +163,13 @@ class Minimize extends AlgorithmsScript {
             if (eps < 0.0) {
                 eps = refinementMinimize.getEps()
             }
-            logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter)
+
+            if (maxiter < Integer.MAX_VALUE) {
+                logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter));
+            } else {
+                logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
+            }
+
             refinementMinimize.minimize(eps, maxiter)
             diffractionData.scaleBulkFit()
             diffractionData.printStats()

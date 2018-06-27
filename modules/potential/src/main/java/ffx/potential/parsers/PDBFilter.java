@@ -974,7 +974,7 @@ public final class PDBFilter extends SystemFilter {
                             Character a1 = line.charAt(16);
                             Character a2 = line.charAt(46);
                             if (a1 != a2) {
-                                logger.info(format(" Ignoring LINK record as alternate locations do not match\n %s.", line));
+                                // logger.info(format(" Ignoring LINK record as alternate locations do not match\n %s.", line));
                                 break;
                             }
                             if (currentAltLoc == 'A') {

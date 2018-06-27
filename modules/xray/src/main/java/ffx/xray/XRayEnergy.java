@@ -164,8 +164,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             logger.info("  Similarity restraint weight: " + diffractionData.getbSimWeight());
         }
 
-        logger.info(String.format(" XRayEnergy variables:  %d (nXYZ %d, nB %d, nOcc %d)\n",
-                nXYZ + nB + nOCC, nXYZ, nB, nOCC));
+        // logger.info(String.format(" XRayEnergy variables:  %d (nXYZ %d, nB %d, nOcc %d)\n",
+        //         this.nXYZ + this.nB + this.nOCC, this.nXYZ, this.nB, this.nOCC));
     }
 
     /**
@@ -514,6 +514,18 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             }
             if (a.getAnisou(null) != null) {
                 grad = a.getAnisouGradient(grad);
+
+//                if (a.getXyzIndex() < 5) {
+//                    if (optimizationScaling != null) {
+//                        logger.info(String.format(" Getting anisou grad at %d for %s with scaling %6.3f",
+//                                index, a.toString(), optimizationScaling[index]));
+//                        ffx.numerics.VectorMath.printVector(grad);
+//                    } else {
+//                        logger.info(String.format(" Getting anisou grad at %d for %s", index, a.toString()));
+//                        ffx.numerics.VectorMath.printVector(grad);
+//                    }
+//                }
+
                 g[index++] = grad[0];
                 g[index++] = grad[1];
                 g[index++] = grad[2];
@@ -656,12 +668,25 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 }
                 if (a.getAnisou(null) != null) {
                     anisou = a.getAnisou(anisou);
+
+//                    if (a.getXyzIndex() < 5) {
+//                        if (optimizationScaling != null) {
+//                            logger.info(String.format(" Loading anisou at %d for %s with scaling %6.3f",
+//                                    index, a.toString(), optimizationScaling[index]));
+//                            ffx.numerics.VectorMath.printVector(anisou);
+//                        } else {
+//                            logger.info(String.format(" Loading anisou at %d for %s", index, a.toString()));
+//                           ffx.numerics.VectorMath.printVector(anisou);
+//                        }
+//                    }
+
                     x[index++] = anisou[0];
                     x[index++] = anisou[1];
                     x[index++] = anisou[2];
                     x[index++] = anisou[3];
                     x[index++] = anisou[4];
                     x[index++] = anisou[5];
+
                 } else if (diffractionData.isResidueBFactor()) {
                     if (resnum != a.getResidueNumber()) {
                         if (nres >= diffractionData.getnResidueBFactor()) {
@@ -737,6 +762,11 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 continue;
             }
             if (a.getAnisou(null) == null) {
+
+                if (a.getXyzIndex() < 10) {
+                    logger.info(" Setting null anisou for " + a.toString());
+                }
+
                 double biso = x[index];
                 if (diffractionData.isResidueBFactor()) {
                     if (resnum != a.getResidueNumber()) {
@@ -767,6 +797,18 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 }
             } else {
                 double anisou[] = a.getAnisou(null);
+
+//                if (a.getXyzIndex() < 5) {
+//                    if (optimizationScaling != null) {
+//                        logger.info(String.format(" Setting anisou at %d for %s with scaling %6.3f",
+//                                index, a.toString(), optimizationScaling[index]));
+//                        ffx.numerics.VectorMath.printVector(anisou);
+//                    } else {
+//                        logger.info(String.format(" Setting anisou at %d for %s", index, a.toString()));
+//                        ffx.numerics.VectorMath.printVector(anisou);
+//                    }
+//                }
+
                 tmpanisou[0] = x[index++];
                 tmpanisou[1] = x[index++];
                 tmpanisou[2] = x[index++];

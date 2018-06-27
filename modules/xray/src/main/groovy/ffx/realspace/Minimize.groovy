@@ -82,7 +82,12 @@ class Minimize extends AlgorithmsScript {
             eps = 1.0
         }
 
-        logger.info("\n RMS gradient convergence criteria: " + eps + " max number of iterations: " + maxiter)
+        if (maxiter < Integer.MAX_VALUE) {
+            logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter));
+        } else {
+            logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
+        }
+
         refinementMinimize.minimize(eps, maxiter)
 
         algorithmFunctions.energy(activeAssembly)
