@@ -1728,7 +1728,7 @@ public class RotamerOptimization implements Terminatable {
      * @param decomposeOriginal If true, decompose the energy of the structure
      * without optimizing.
      */
-    private void setDecomposeOriginal(boolean decomposeOriginal) {
+    public void setDecomposeOriginal(boolean decomposeOriginal) {
         this.decomposeOriginal = true;
     }
 
