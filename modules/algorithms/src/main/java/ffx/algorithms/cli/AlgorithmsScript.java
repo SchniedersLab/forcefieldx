@@ -91,7 +91,7 @@ public class AlgorithmsScript extends BaseScript {
 
         algorithmListener = null;
         if (context.hasVariable("listener")) {
-            activeAssembly = (MolecularAssembly) context.getVariable("active");
+            algorithmListener = (AlgorithmListener) context.getVariable("listener");
         }
 
         return true;
