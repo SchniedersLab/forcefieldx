@@ -106,9 +106,7 @@
                     Alternatively, the previous command can be excuted using OpenMM.
                     Please be sure OpenMM is configured by following the instructions here: <a href="modules/openmm/index.html">OpenMM Installation</a>.
                 </p>
-                <source>
-                    ffxc ManyBody -a 2 -l 2 -x 1 1uao.pdb_2 -Dplatform=omm
-                </source>
+                <source>ffxc ManyBody -a 2 -l 2 -x 1 1uao.pdb_2 -Dplatform=omm</source>
             </subsection>
             <subsection name="Optimization of a Deafness Related Protein With a GPU">
                 <p> This next example is based on the deafness related COCH protein. Start by installing OpenMM by following the instructions here: <a href="modules/openmm/index.html">OpenMM Installation</a>. 
@@ -116,7 +114,7 @@
                     (PDB <a href="https://modbase.compbio.ucsf.edu/modbase-cgi/model_details.cgi?queryfile=1527719589_2942&amp;searchmode=default&amp;displaymode=moddetail&amp;referer=yes&amp;snpflag=&amp;">COCH</a>). 
                     Perform a minimization and a GPU accelerated side-chain optimization by using the commands below:
                     <source>ffxc Minimize COCH.pdb</source>
-                    <source> ffxc ManyBody -Dplatform=OMM -a 2 -l 2 -tC 1000 -x 1 -p 1 COCH.pdb_2</source>
+                    <source>ffxc ManyBody -Dplatform=OMM -a 2 -l 2 -tC 1000 -x 1 -p 1 COCH.pdb_2</source>
                 </p>
                 <p>When using a GPU with the OpenMM platform, energy evaluations on side-chains will occur approximately 25x faster than without a GPU. 
                     This simulation should finish within one hour on a GPU. The resulting PDB file is automatically saved as COCH.pdb_3.
