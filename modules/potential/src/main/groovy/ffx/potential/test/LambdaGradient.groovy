@@ -155,12 +155,12 @@ class LambdaGradient extends PotentialScript {
         double lambda = 0.0
         linter.setLambda(lambda)
         potential.getCoordinates(x)
-        double e0 = potential.energyAndGradient(x, gradient)
+        double e0 = potential.energy(x)
 
         // Compute the Lambda = 1.0 energy.
         lambda = 1.0
         linter.setLambda(lambda)
-        double e1 = potential.energyAndGradient(x, gradient)
+        double e1 = potential.energy(x)
 
         logger.info(String.format(" E(0):      %20.8f.", e0))
         logger.info(String.format(" E(1):      %20.8f.", e1))

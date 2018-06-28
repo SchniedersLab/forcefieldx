@@ -171,7 +171,7 @@ public class AlchemicalOptions {
             for (int i = start; i <= fin; i++) {
                 Atom ai = atoms[i-1];
                 ai.setApplyLambda(true);
-                // ai.print();
+                ai.print();
             }
         }
         if (ligAt != null) {

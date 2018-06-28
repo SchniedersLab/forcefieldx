@@ -1850,10 +1850,13 @@ public class VanDerWaals implements MaskingInterface,
                         if (r2 <= nonbondedCutoff.off2 && mask[k] > 0 && irv > 0) {
                             final double r = sqrt(r2);
                             boolean sameMolecule = (moleculei == molecule[k]);
-                            boolean soft = softCorei[k]
-                                    || (intermolecularSoftcore && !sameMolecule)
-                                    || (intramolecularSoftcore && sameMolecule)
-                                    || esvi || esvk;
+                            boolean soft = softCorei[k] || esvi || esvk;
+                            if (intermolecularSoftcore & isSoft[i] && isSoft[k] && !sameMolecule) {
+                                soft = true;
+                            }
+                            if (intramolecularSoftcore & isSoft[i] && isSoft[k] && sameMolecule) {
+                                soft = true;
+                            }
                             /**
                              * The setFactors(i,k) method is empty unless ESVs
                              * are present. If OSRW lambda present,
