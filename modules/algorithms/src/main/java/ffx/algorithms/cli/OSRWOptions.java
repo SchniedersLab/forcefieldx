@@ -79,9 +79,9 @@ public class OSRWOptions {
     private int countFreq = 10;
 
     /**
-     * -b or --bias sets the initial Gaussian bias magnitude in kcal/mol.
+     * --bM or --biasMag sets the initial Gaussian bias magnitude in kcal/mol.
      */
-    @CommandLine.Option(names = {"-B", "--biasMag"}, paramLabel = "0.05", description = "OSRW Gaussian bias magnitude (kcal/mol).")
+    @CommandLine.Option(names = {"--bM", "--biasMag"}, paramLabel = "0.05", description = "OSRW Gaussian bias magnitude (kcal/mol).")
     private double biasMag = 0.05;
 
     /**

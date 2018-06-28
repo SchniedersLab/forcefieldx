@@ -968,6 +968,9 @@ public class RotamerOptimization implements Terminatable {
             maxRotCheckDepth = defaultMaxRotCheckDepth;
         }
 
+        prop = System.getProperty("revertUnfavorable", "false");
+        revert = Boolean.parseBoolean(prop);
+
         allAssemblies = new ArrayList<>();
         allAssemblies.add(molecularAssembly);
     }

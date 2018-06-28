@@ -67,9 +67,9 @@ class Timer extends PotentialScript {
         int halfnEvals = (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1 // Halfway point
         for (int i = 0; i < nEvals; i++) {
             long time = -System.nanoTime()
-            double e = energy.energy(!timer.gradient, !timer.quiet)
+            double e = energy.energy(!timer.gradient, timer.getVerbose())
             time += System.nanoTime()
-            if (!timer.quiet) {
+            if (timer.getVerbose()) {
                 logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
             }
             minTime = time < minTime ? time : minTime;

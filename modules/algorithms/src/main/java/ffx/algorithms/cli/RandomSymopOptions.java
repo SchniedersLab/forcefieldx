@@ -40,34 +40,26 @@ package ffx.algorithms.cli;
 import picocli.CommandLine;
 
 /**
- * Represents command line options for scripts that can create multiple walkers,
- * such as multi-walker OSRW. Should be kept agnostic to whether it is an MD-based
- * algorithm, or some other flavor of Monte Carlo.
+ * Represents command line options for scripts that create randomized unit cells.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class MultiDynamicsOptions {
+public class RandomSymopOptions {
 
     /**
-     * -y or --synchronous sets synchronous walker communication (not recommended)
+     * --rsym or --randomSymOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
      */
-    @CommandLine.Option(names = {"-y", "--synchronous"},
-            description = "Walker communication is synchronous")
-    private boolean synchronous = false;
+    @CommandLine.Option(names = {"--rsym", "--randomSymOp"}, paramLabel = "-1.0",
+            description = "Apply a random Cartesian symmetry operator with a random translation in the range -X .. X; < 0 disables.")
+    double symScalar = -1.0;
 
     /**
-     * -dw or --distributeWalkers allows walkers to start from multiple
-     * conformations; AUTO picks up per-walker conformations as
-     * filename.pdb_(walker number), and specifying a residue starts a
-     * rotamer optimization to generate side-chain configurations to start
-     * from.
+     * --ruc or --randomUnitCell random unit cell axes will be used achieve the specified density (g/cc) (no default density).
      */
-    @CommandLine.Option(names = {"--dw", "--distributeWalkers"}, paramLabel = "OFF", description = "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
-    private String distributeWalkersString;
+    @CommandLine.Option(names = {"--ruc", "--randomUnitCell"}, paramLabel = "-1.0",
+            description = "Apply random unit cell axes to achieve the specified density (g/cc).")
+    double ucDensity = -1.0;
 
-    public boolean isSynchronous() {
-        return synchronous;
-    }
 }

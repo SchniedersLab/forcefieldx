@@ -164,14 +164,6 @@ public class ManyBodyOptions {
     String energyRestart = "none";
 
     /**
-     * -m or --minimize Minimize the final structure to the given RMS gradient (Kcal/mole/A); the default is not
-     * to minimize.
-     */
-    @Option(names = {"-m", "--minimize"}, paramLabel = "0.0",
-            description = "Minimize the final structure to the given RMS gradient (Kcal/mole/A).")
-    double minimize = 0.0;
-
-    /**
      * -v or --verbose Prints beginning and default-conformation energies.
      */
     @Option(names = {"-v", "--verbose"},
@@ -219,20 +211,6 @@ public class ManyBodyOptions {
     @Option(names = {"--mC", "--monteCarlo"}, paramLabel = "-1",
             description = "Follow elimination criteria with (n) Monte Carlo steps, or enumerate all remaining conformations, whichever is smaller.")
     int monteCarlo = -1;
-
-    /**
-     * -z or --noRevert Do not revert an unfavorable change.
-     */
-    @Option(names = {"-z", "--revert"},
-            description = "Undo an unfavorable change.")
-    boolean noRevert = true;
-
-    /**
-     * --fi or --file Choose the file type to write [PDB/XYZ].
-     */
-    @Option(names = {"--fi", "--file"}, paramLabel = "XYZ",
-            description = "Choose file type to write [PDB/XYZ].")
-    String fileType = "XYZ";
 
     /**
      * -out or --output Save eliminated singles and eliminated pairs to a text file (global and box optimization).
@@ -609,7 +587,7 @@ public class ManyBodyOptions {
         rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
         rotamerOptimization.setThreeBodyEnergy(threeBody);
         rotamerOptimization.setUseGoldstein(!dee);
-        rotamerOptimization.setRevert(!noRevert);
+        //rotamerOptimization.setRevert(!noRevert);
         rotamerOptimization.setPruning(prune);
         rotamerOptimization.setDistanceCutoff(cutoff);
         rotamerOptimization.setVerboseEnergies(verbose);
