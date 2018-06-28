@@ -68,7 +68,7 @@ class Minimize extends AlgorithmsScript {
         String modelfilename
         MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.open(filenames.get(0))
+            assemblies = algorithmFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
             modelfilename = filenames.get(0)
         } else if (activeAssembly == null) {
@@ -80,6 +80,10 @@ class Minimize extends AlgorithmsScript {
         }
 
         logger.info("\n Running xray.Minimize on " + modelfilename)
+
+        if (assemblies.length > 1) {
+            logger.info(assemblies.toString())
+        }
 
         // Load parsed X-ray properties.
         CompositeConfiguration properties = activeAssembly.getProperties()
