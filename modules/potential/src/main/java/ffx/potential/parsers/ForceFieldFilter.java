@@ -100,7 +100,9 @@ public class ForceFieldFilter {
     private static final ForceFieldName DEFAULT_FORCE_FIELD = ForceFieldName.AMOEBA_BIO_2018;
 
     private ForceField forceField = null;
+
     private final CompositeConfiguration properties;
+
     private final File forceFieldFile;
 
     private boolean convertRadiusToDiameter = false;
@@ -137,6 +139,7 @@ public class ForceFieldFilter {
             String fileName = properties.getString("parameters");
             if (properties.containsKey("propertyFile")) {
                 String propertyName = properties.getString("propertyFile");
+                logger.info(" Property File: " + propertyName);
                 File propertyFile = new File(propertyName);
                 forceFieldFile = parseParameterLocation(fileName, propertyFile);
             } else {
@@ -209,7 +212,7 @@ public class ForceFieldFilter {
                     logger.info(" Loading force field: " + ff.toString());
                 } catch (Exception e) {
                     ff = DEFAULT_FORCE_FIELD;
-                    logger.warning("Defaulting to force field: " + ff.toString());
+                    logger.warning(" Defaulting to force field: " + ff.toString());
                 }
                 URL url = ForceField.getForceFieldURL(ff);
                 if (url != null) {
