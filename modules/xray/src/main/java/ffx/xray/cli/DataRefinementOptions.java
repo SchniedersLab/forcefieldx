@@ -35,66 +35,50 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms.cli;
+package ffx.xray.cli;
 
-import ffx.potential.MolecularAssembly;
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmUtils;
-import ffx.algorithms.AlgorithmListener;
-import ffx.utilities.BaseScript;
+import ffx.xray.RefinementMinimize;
+import picocli.CommandLine;
 
 /**
- * Base class for scripts in the Algorithms package, providing some key functions.
+ * Represents command line options for scripts that utilize some form of crystallographic data.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class AlgorithmsScript extends BaseScript {
+public abstract class DataRefinementOptions {
 
     /**
-     * An instance of AlgorithmFunctions passed into the current context.
+     * The refinement mode to use.
      */
-    public AlgorithmFunctions algorithmFunctions;
+    protected RefinementMinimize.RefinementMode refinementMode = RefinementMinimize.RefinementMode.COORDINATES;
 
     /**
-     * An active MolecularAssembly passed into the current context or loaded by
-     * the Script from a file argument.
+     * Parse options.
      */
-    public MolecularAssembly activeAssembly;
-
-    /**
-     * An instance of the AlgorithmListener interface.
-     */
-    public AlgorithmListener algorithmListener;
-
-    /**
-     * Execute the BaseScript init method, then load algorithm functions.
-     *
-     * @return Returns true if the script should continue.
-     */
-    @Override
-    public boolean init() {
-        if (!super.init()) {
-            return false;
-        }
-
-        if (context.hasVariable("functions")) {
-            algorithmFunctions = (AlgorithmFunctions) context.getVariable("functions");
-        } else {
-            algorithmFunctions = new AlgorithmUtils();
-        }
-
-        activeAssembly = null;
-        if (context.hasVariable("active")) {
-            activeAssembly = (MolecularAssembly) context.getVariable("active");
-        }
-
-        algorithmListener = null;
-        if (context.hasVariable("listener")) {
-            algorithmListener = (AlgorithmListener) context.getVariable("listener");
-        }
-
-        return true;
+    public void init() {
+        refinementMode = RefinementMinimize.parseMode(modeString);
     }
 
+    /**
+     * --wA or --dataWeight The weight of the data (wA).
+     */
+    @CommandLine.Option(names = {"--wA", "--dataWeight"}, paramLabel = "1.0",
+            description = "The weight of the real space data (wA).")
+    protected double wA = 1.0;
+
+    /**
+     * -m or --mode sets the desired refinement mode
+     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
+     */
+    @CommandLine.Option(names = {"-m", "--mode"}, paramLabel = "coordinates",
+            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
+    String modeString = "coordinates";
+
+    public double getwA() {
+        return wA;
+    }
+
+    // TODO: Make DiffractionData and RealSpaceData implement the same interface.
+    // TODO: Create public abstract List<ThatFileType> processData(List<String> filenames, MolecularAssembly systems[])
 }

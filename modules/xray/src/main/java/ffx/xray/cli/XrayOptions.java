@@ -59,7 +59,7 @@ import picocli.CommandLine.Option;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class XrayOptions {
+public class XrayOptions extends DataRefinementOptions {
 
     private static final Logger logger = Logger.getLogger(XrayOptions.class.getName());
 
@@ -84,30 +84,23 @@ public class XrayOptions {
     boolean gridSearch = false;
 
     /**
-     * -N or --nBins
+     * --nBins sets the number of reflection bins to use.
      */
-    @Option(names = {"-N", "--nBins"}, paramLabel = "10",
+    @Option(names = {"--nBins"}, paramLabel = "10",
             description = "The number of refection bins.")
     int nBins = 10;
 
     /**
-     * -F or --FSigFCutoff
+     * --FSigFCutoff
      */
-    @Option(names = {"-F", "--FSigFCutoff"}, paramLabel = "-1.0",
+    @Option(names = {"--FSigFCutoff"}, paramLabel = "-1.0",
             description = "F / SigF cutoff (-1.0 is no cutoff).")
     double fSigFCutoff = -1.0;
 
     /**
-     * -X or --wA The weight of the X-ray data (wA).
+     * --aRadBuffer
      */
-    @Option(names = {"-X", "--wA"}, paramLabel = "1.0",
-            description = "The weight of the X-ray data (wA).")
-    double wA = 1.0;
-
-    /**
-     * -a or -aRadBuffer
-     */
-    @Option(names = {"-a", "--aRadBuffer"}, paramLabel = "0.75",
+    @Option(names = {"--aRadBuffer"}, paramLabel = "0.75",
             description = "Set the distance beyond the atomic radius to evaluate scattering (A).")
     double aRadBuffer = 0.75;
 
@@ -157,17 +150,11 @@ public class XrayOptions {
     double bSimWeight = 1.0;
 
     /**
-     * --residueBFactor
-     */
-    @Option(names = {"--residueBFactor"}, paramLabel = "false", description = "Refine B-factors by residue.")
-    boolean residueBFactor = false;
-
-    /**
      * --nResidueBFactor
      */
-    @Option(names = {"--nResidueBFactor"}, paramLabel = "1",
-            description = "Number of residues per B-factor, if refining by B-factors by residue.")
-    int nResidueBFactor = 1;
+    @Option(names = {"--nResidueBFactor"}, paramLabel = "0",
+            description = "Number of residues per B-factor. 0 uses atomic B-factors (default).")
+    int nResidueBFactor = 0;
 
     /**
      * -u or --addAnisoU
@@ -176,24 +163,17 @@ public class XrayOptions {
     boolean anisoU = false;
 
     /**
-     * -O or --refineMolOcc
+     * --rmo or --refineMolOcc
      */
-    @Option(names = {"-O", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
+    @Option(names = {"--rmo", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
     boolean refineMolOcc = false;
 
     /**
-     * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
+     * -X or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
-    @Option(names = {"-x", "--data"}, arity = "3",
-            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -x filename 1.0 false).")
+    @Option(names = {"-X", "--data"}, arity = "3",
+            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -X filename 1.0 false).")
     String[] data = null;
-
-    /**
-     * -r or --mode sets the desired refinement mode
-     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
-     */
-    @Option(names = {"-m", "--mode"}, paramLabel = "COORDINATES", description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "COORDINATES";
 
     /**
      * The refinement mode to use.
@@ -204,8 +184,8 @@ public class XrayOptions {
      * Parse options.
      */
     public void init() {
+        super.init();
         solventModel = CrystalReciprocalSpace.parseSolventModel(solventString);
-        refinementMode = RefinementMinimize.parseMode(modeString);
     }
 
     public void setProperties(CompositeConfiguration properties) {
@@ -221,8 +201,12 @@ public class XrayOptions {
         properties.setProperty("use_3g", !useAll);
         properties.setProperty("xrayscaletol", xrayScaleTol);
         properties.setProperty("sigmaatol", sigmaATol);
-        properties.setProperty("residuebfactor", residueBFactor);
-        properties.setProperty("nresiduebfactor", nResidueBFactor);
+        if (nResidueBFactor > 0) {
+            properties.setProperty("residuebfactor", "true");
+        } else {
+            properties.setProperty("residuebfactor", "false");
+        }
+        properties.setProperty("nresiduebfactor", Integer.toString(nResidueBFactor));
         properties.setProperty("addanisou", anisoU);
         properties.setProperty("refinemolocc", refineMolOcc);
     }

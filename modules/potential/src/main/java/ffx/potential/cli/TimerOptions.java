@@ -65,11 +65,11 @@ public class TimerOptions {
             description = "Ignore computation of the atomic coordinates gradient.")
     private boolean gradient = false;
     /**
-     * -q or --quiet to suppress printing of the energy for each iteration
+     * -v or --verbose to suppress printing of the energy for each iteration
      */
-    @Option(names = {"-q", "--quiet"},
-            description = "Suppress printing of the energy for each iteration.")
-    private boolean quiet = false;
+    @Option(names = {"-v", "--verbose"},
+            description = "Print the energy for each iteration.")
+    private boolean verbose = false;
 
     public int getIterations() {
         return iterations;
@@ -83,7 +83,7 @@ public class TimerOptions {
         return gradient;
     }
 
-    public boolean getQuiet() {
-        return quiet;
+    public boolean getVerbose() {
+        return verbose;
     }
 }

@@ -37,10 +37,15 @@
  */
 package ffx.algorithms;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,21 +68,11 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FilenameFilter;
-import java.io.PrintWriter;
-
-// FastUtil libraries for large collections.
-import ffx.potential.DualTopologyEnergy;
-import ffx.potential.QuadTopologyEnergy;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.math3.util.CombinatoricsUtils;
+import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.BooleanBuf;
@@ -99,9 +94,11 @@ import ffx.algorithms.mc.MCMove;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
-import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
+import ffx.potential.DualTopologyEnergy;
 import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.QuadTopologyEnergy;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.MultiResidue;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -114,11 +111,13 @@ import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.ObjectPair;
-import org.apache.commons.math3.util.CombinatoricsUtils;
-import org.apache.commons.math3.util.FastMath;
-
 import static ffx.potential.bonded.Residue.ResidueType.NA;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
+
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+
+// FastUtil libraries for large collections.
 
 /**
  * Optimize protein side-chain conformations and nucleic acid backbone
@@ -968,6 +967,9 @@ public class RotamerOptimization implements Terminatable {
             maxRotCheckDepth = defaultMaxRotCheckDepth;
         }
 
+        prop = System.getProperty("revertUnfavorable", "false");
+        revert = Boolean.parseBoolean(prop);
+
         allAssemblies = new ArrayList<>();
         allAssemblies.add(molecularAssembly);
     }
@@ -1729,7 +1731,7 @@ public class RotamerOptimization implements Terminatable {
      * without optimizing.
      */
     public void setDecomposeOriginal(boolean decomposeOriginal) {
-        this.decomposeOriginal = true;
+        this.decomposeOriginal = decomposeOriginal;
     }
 
     /**
@@ -5175,6 +5177,9 @@ public class RotamerOptimization implements Terminatable {
         turnOnResidue(residues[i], ri);
         double energy;
         try {
+            if (algorithmListener != null) {
+                algorithmListener.algorithmUpdate(molecularAssembly);
+            }
             energy = currentEnergy(residues) - backboneEnergy;
         } finally {
             turnOffResidue(residues[i]);
@@ -5200,6 +5205,9 @@ public class RotamerOptimization implements Terminatable {
         turnOnResidue(residues[j], rj);
         double energy;
         try {
+            if (algorithmListener != null) {
+                algorithmListener.algorithmUpdate(molecularAssembly);
+            }
             energy = currentEnergy(residues) - backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
         } finally {
             // Revert if the currentEnergy call throws an exception.
@@ -5231,6 +5239,9 @@ public class RotamerOptimization implements Terminatable {
         turnOnResidue(residues[k], rk);
         double energy;
         try {
+            if (algorithmListener != null) {
+                algorithmListener.algorithmUpdate(molecularAssembly);
+            }
             energy = currentEnergy(residues) - backboneEnergy - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk)
                     - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(j, rj, k, rk);
         } finally {
@@ -5266,6 +5277,9 @@ public class RotamerOptimization implements Terminatable {
         turnOnResidue(residues[l], rl);
         double energy;
         try {
+            if (algorithmListener != null) {
+                algorithmListener.algorithmUpdate(molecularAssembly);
+            }
             energy = currentEnergy(residues) - backboneEnergy
                     - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk) - getSelf(l, rl)
                     - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(i, ri, l, rl)
@@ -8821,10 +8835,6 @@ public class RotamerOptimization implements Terminatable {
                     double anEnergy[] = {i, ri, selfEnergy};
                     DoubleBuf anEnergyBuf = DoubleBuf.buffer(anEnergy);
                     multicastBuf(anEnergyBuf);
-
-                    if (algorithmListener != null) {
-                        algorithmListener.algorithmUpdate(molecularAssembly);
-                    }
                 }
             }
         }
@@ -8972,10 +8982,6 @@ public class RotamerOptimization implements Terminatable {
                     double commEnergy[] = {i, ri, j, rj, twoBodyEnergy};
                     DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
                     multicastBuf(commEnergyBuf);
-
-                    if (algorithmListener != null) {
-                        algorithmListener.algorithmUpdate(molecularAssembly);
-                    }
                 }
             }
         }
@@ -9132,10 +9138,6 @@ public class RotamerOptimization implements Terminatable {
                     double commEnergy[] = {i, ri, j, rj, k, rk, threeBodyEnergy};
                     DoubleBuf commEnergyBuf = DoubleBuf.buffer(commEnergy);
                     multicastBuf(commEnergyBuf);
-
-                    if (algorithmListener != null) {
-                        algorithmListener.algorithmUpdate(molecularAssembly);
-                    }
                 }
             }
         }

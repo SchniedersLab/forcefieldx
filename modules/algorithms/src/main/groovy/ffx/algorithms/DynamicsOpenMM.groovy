@@ -1,6 +1,7 @@
 
 package ffx.algorithms
 
+import ffx.algorithms.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -24,6 +25,9 @@ class DynamicsOpenMM extends AlgorithmsScript{
     
     @Mixin
     DynamicsOptions dynamics;
+
+    @Mixin
+    WriteoutOptions writeout;
     
     /**
      * -z or --trajSteps sets the length of the MD trajectory run on the GPU in femtoseconds(defaul is 100 femtoseconds)
@@ -128,7 +132,7 @@ class DynamicsOpenMM extends AlgorithmsScript{
         //MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
         if (moldyn instanceof MolecularDynamicsOpenMM){
             moldyn.setRestartFrequency(dynamics.write);
-            moldyn.setFileType(dynamics.fileType);
+            moldyn.setFileType(writeout.getFileType());
             moldyn.setIntervalSteps(trajSteps);
             moldyn.dynamic(dynamics.steps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp, initVelocities, dyn);
         }

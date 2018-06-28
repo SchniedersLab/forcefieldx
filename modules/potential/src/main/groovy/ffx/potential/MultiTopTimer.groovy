@@ -118,7 +118,7 @@ class MultiTopTimer extends PotentialScript {
         int nEvals = timerOptions.getIterations();
         int numRMSevals = ((nEvals - 1) / 2) + 1;
         double rmsTime = 0;
-        boolean print = ! timerOptions.getQuiet();
+        boolean print = timerOptions.getVerbose();
 
         int nVars = potential.getNumberOfVariables();
         double[] x = new double[nVars];

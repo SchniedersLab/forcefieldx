@@ -1,5 +1,6 @@
 package ffx.algorithms
 
+import ffx.algorithms.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
@@ -32,6 +33,9 @@ class Dynamics extends AlgorithmsScript {
 
     @Mixin
     BarostatOptions barostatOpt;
+
+    @Mixin
+    WriteoutOptions writeout;
 
     /**
      * -r or --repEx to execute temperature replica exchange.
@@ -109,7 +113,7 @@ class Dynamics extends AlgorithmsScript {
                 dyn = null
             }
 
-            MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, algorithmListener)
+            MolecularDynamics molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
 
             molDyn.dynamic(dynamics.steps, dynamics.dt,
                     dynamics.report, dynamics.write, dynamics.temp, true, dyn)
@@ -128,7 +132,7 @@ class Dynamics extends AlgorithmsScript {
                 dyn = null
             }
 
-            MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, algorithmListener)
+            MolecularDynamics molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener, dynamics.temp)
 
             int totalSteps = dynamics.steps

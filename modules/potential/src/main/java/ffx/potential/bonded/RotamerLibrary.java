@@ -46,7 +46,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -3923,7 +3922,6 @@ public class RotamerLibrary {
         PonderAndRichards (1), Richardson (2), None(-1);
 
         private final int oldIntegerConstant;
-        private Function<AminoAcid3, Rotamer[]> getter;
 
         ProteinLibrary(int oldConst) {
             this.oldIntegerConstant = oldConst;

@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import ffx.potential.MolecularAssembly;
 import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.cli.DataRefinementOptions;
 
 import picocli.CommandLine.Option;
 
@@ -54,31 +55,16 @@ import picocli.CommandLine.Option;
  * @author Soham Ali
  * @since 1.0
  */
-public class RealSpaceOptions {
+public class RealSpaceOptions extends DataRefinementOptions {
 
     private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
 
     /**
-     * -X or --wA The weight of the real space data (wA).
+     * -X or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
-    @Option(names = {"-X", "--wA"}, paramLabel = "1.0",
-            description = "The weight of the real space data (wA).")
-    double wA = 1.0;
-
-    /**
-     * -y or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-     */
-    @Option(names = {"-y", "--data"}, split = ",",
-            description = "Specify input data filename and its weight (wA) (e.g. -y filename,1.0).")
+    @Option(names = {"-X", "--data"}, arity = "2",
+            description = "Specify input data filename, and its weight (wA) (e.g. -X filename 1.0).")
     String[] data = null;
-
-    /**
-     * -r or --mode sets the desired refinement mode
-     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
-     */
-    @Option(names = {"-r", "--mode"}, paramLabel = "coordinates",
-            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "coordinates";
 
     /**
      * The refinement mode to use.
@@ -89,7 +75,7 @@ public class RealSpaceOptions {
      * Parse options.
      */
     public void init() {
-        refinementMode = ffx.xray.RefinementMinimize.parseMode(modeString);
+        super.init();
     }
 
     /**

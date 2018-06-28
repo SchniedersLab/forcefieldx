@@ -51,9 +51,9 @@ import picocli.CommandLine;
 public class MultiDynamicsOptions {
 
     /**
-     * -S or --synchronous sets synchronous walker communication (not recommended)
+     * -y or --synchronous sets synchronous walker communication (not recommended)
      */
-    @CommandLine.Option(names = {"-S", "--synchronous"},
+    @CommandLine.Option(names = {"-y", "--synchronous"},
             description = "Walker communication is synchronous")
     private boolean synchronous = false;
 

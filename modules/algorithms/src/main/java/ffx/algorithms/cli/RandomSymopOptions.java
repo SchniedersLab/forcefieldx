@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- * <p>
+ *
  * Description: Force Field X - Software for Molecular Biophysics.
- * <p>
+ *
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- * <p>
+ *
  * This file is part of Force Field X.
- * <p>
+ *
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- * <p>
+ *
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- * <p>
+ *
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- * <p>
+ *
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- * <p>
+ *
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -37,64 +37,29 @@
  */
 package ffx.algorithms.cli;
 
-import ffx.potential.MolecularAssembly;
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmUtils;
-import ffx.algorithms.AlgorithmListener;
-import ffx.utilities.BaseScript;
+import picocli.CommandLine;
 
 /**
- * Base class for scripts in the Algorithms package, providing some key functions.
+ * Represents command line options for scripts that create randomized unit cells.
  *
  * @author Michael J. Schnieders
+ * @author Jacob M. Litman
  * @since 1.0
  */
-public class AlgorithmsScript extends BaseScript {
+public class RandomSymopOptions {
 
     /**
-     * An instance of AlgorithmFunctions passed into the current context.
+     * --rsym or --randomSymOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
      */
-    public AlgorithmFunctions algorithmFunctions;
+    @CommandLine.Option(names = {"--rsym", "--randomSymOp"}, paramLabel = "-1.0",
+            description = "Apply a random Cartesian symmetry operator with a random translation in the range -X .. X; < 0 disables.")
+    double symScalar = -1.0;
 
     /**
-     * An active MolecularAssembly passed into the current context or loaded by
-     * the Script from a file argument.
+     * --ruc or --randomUnitCell random unit cell axes will be used achieve the specified density (g/cc) (no default density).
      */
-    public MolecularAssembly activeAssembly;
-
-    /**
-     * An instance of the AlgorithmListener interface.
-     */
-    public AlgorithmListener algorithmListener;
-
-    /**
-     * Execute the BaseScript init method, then load algorithm functions.
-     *
-     * @return Returns true if the script should continue.
-     */
-    @Override
-    public boolean init() {
-        if (!super.init()) {
-            return false;
-        }
-
-        if (context.hasVariable("functions")) {
-            algorithmFunctions = (AlgorithmFunctions) context.getVariable("functions");
-        } else {
-            algorithmFunctions = new AlgorithmUtils();
-        }
-
-        activeAssembly = null;
-        if (context.hasVariable("active")) {
-            activeAssembly = (MolecularAssembly) context.getVariable("active");
-        }
-
-        algorithmListener = null;
-        if (context.hasVariable("listener")) {
-            algorithmListener = (AlgorithmListener) context.getVariable("listener");
-        }
-
-        return true;
-    }
+    @CommandLine.Option(names = {"--ruc", "--randomUnitCell"}, paramLabel = "-1.0",
+            description = "Apply random unit cell axes to achieve the specified density (g/cc).")
+    double ucDensity = -1.0;
 
 }

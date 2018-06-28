@@ -113,13 +113,6 @@ public class DynamicsOptions {
     int steps = 1000000;
 
     /**
-     * -f or --file Choose the file type to write [PDB/XYZ].
-     */
-    @Option(names = {"-F", "--fileFormat"}, paramLabel = "XYZ",
-            description = "Choose file type to write [PDB/XYZ].")
-    String fileType = "XYZ";
-
-    /**
      * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
      */
     @CommandLine.Option(names = {"-o", "--optimize"},
@@ -158,13 +151,14 @@ public class DynamicsOptions {
      * @param sh
      * @return
      */
-    public MolecularDynamics getDynamics(Potential potential,
+    public MolecularDynamics getDynamics(WriteoutOptions writeout,
+            Potential potential,
             MolecularAssembly activeAssembly,
             AlgorithmListener sh) {
                 
         MolecularDynamics molDyn = new MolecularDynamics(activeAssembly, potential,
                 activeAssembly.getProperties(), sh, thermostat, integrator);
-        molDyn.setFileType(fileType);
+        molDyn.setFileType(writeout.getFileType());
         molDyn.setRestartFrequency(write);
 
         return molDyn;

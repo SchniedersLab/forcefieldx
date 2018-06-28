@@ -37,64 +37,25 @@
  */
 package ffx.algorithms.cli;
 
-import ffx.potential.MolecularAssembly;
-import ffx.algorithms.AlgorithmFunctions;
-import ffx.algorithms.AlgorithmUtils;
-import ffx.algorithms.AlgorithmListener;
-import ffx.utilities.BaseScript;
+import picocli.CommandLine;
 
 /**
- * Base class for scripts in the Algorithms package, providing some key functions.
+ * Represents command line options for scripts that periodically write out structures.
  *
  * @author Michael J. Schnieders
+ * @author Soham Ali
  * @since 1.0
  */
-public class AlgorithmsScript extends BaseScript {
+public class WriteoutOptions {
 
     /**
-     * An instance of AlgorithmFunctions passed into the current context.
+     * -F or --fileFormat Choose the file type to write [PDB/XYZ].
      */
-    public AlgorithmFunctions algorithmFunctions;
+    @CommandLine.Option(names = {"-F", "--fileFormat"}, paramLabel = "XYZ",
+            description = "Choose file type to write [PDB/XYZ].")
+    private String fileType = "XYZ";
 
-    /**
-     * An active MolecularAssembly passed into the current context or loaded by
-     * the Script from a file argument.
-     */
-    public MolecularAssembly activeAssembly;
-
-    /**
-     * An instance of the AlgorithmListener interface.
-     */
-    public AlgorithmListener algorithmListener;
-
-    /**
-     * Execute the BaseScript init method, then load algorithm functions.
-     *
-     * @return Returns true if the script should continue.
-     */
-    @Override
-    public boolean init() {
-        if (!super.init()) {
-            return false;
-        }
-
-        if (context.hasVariable("functions")) {
-            algorithmFunctions = (AlgorithmFunctions) context.getVariable("functions");
-        } else {
-            algorithmFunctions = new AlgorithmUtils();
-        }
-
-        activeAssembly = null;
-        if (context.hasVariable("active")) {
-            activeAssembly = (MolecularAssembly) context.getVariable("active");
-        }
-
-        algorithmListener = null;
-        if (context.hasVariable("listener")) {
-            algorithmListener = (AlgorithmListener) context.getVariable("listener");
-        }
-
-        return true;
+    public String getFileType() {
+        return fileType;
     }
-
 }
