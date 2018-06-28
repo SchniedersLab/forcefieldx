@@ -178,10 +178,10 @@ public class ManyBodyOptions {
     boolean original = true;
 
     /**
-     * -D or --decompose Print energy decomposition for original-coordinates rotamers.
+     * -E or --decompose Print energy decomposition for the input structure (no optimization).
      */
-    @Option(names = {"-D", "--decompose"},
-            description = "Print energy decomposition for original-coordinates rotamers.")
+    @Option(names = {"-E", "--decompose"},
+            description = "Print energy decomposition for the input structure (no optimization!).")
     boolean decompose = false;
 
     /**
