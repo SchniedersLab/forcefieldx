@@ -366,7 +366,7 @@ public class ManyBodyOptions {
         /**
          * Box optimization options.
          */
-        int[] numXYZBoxes = new int[3];
+        numXYZBoxes = new int[3];
         if (algorithm == 5) {
             String input = numBoxes;
             Scanner boxNumInput = new java.util.Scanner(input);
@@ -409,8 +409,8 @@ public class ManyBodyOptions {
         /**
          * Force residues.
          */
-        int forceResiduesStart = -1;
-        int forceResiduesEnd = -1;
+        forceResiduesStart = -1;
+        forceResiduesEnd = -1;
 
         List<String> resList = new ArrayList<>();
         if (!listResidues.equalsIgnoreCase("none")) {
