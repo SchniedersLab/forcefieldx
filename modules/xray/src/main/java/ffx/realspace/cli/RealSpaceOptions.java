@@ -44,9 +44,8 @@ import java.util.logging.Logger;
 import ffx.potential.MolecularAssembly;
 import ffx.realspace.parsers.RealSpaceFile;
 import ffx.xray.RefinementMinimize.RefinementMode;
-
 import ffx.xray.cli.DataRefinementOptions;
-import javafx.scene.chart.PieChart;
+
 import picocli.CommandLine.Option;
 
 /**
