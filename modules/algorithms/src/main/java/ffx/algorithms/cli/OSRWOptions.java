@@ -37,27 +37,18 @@
  */
 package ffx.algorithms.cli;
 
-import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.RotamerOptimization;
+import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.crystal.CrystalPotential;
-import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.cli.AlchemicalOptions;
 import org.apache.commons.configuration.CompositeConfiguration;
 import picocli.CommandLine;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Represents command line options for scripts that utilize variants of the
@@ -97,8 +88,7 @@ public class OSRWOptions {
 
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
                                                 MolecularAssembly firstAssembly, DynamicsOptions dynamics,
-                                                LambdaParticleOptions lpo, MinimizeOptions min, MultiDynamicsOptions mdo,
-                                                ThermodynamicsOptions thermo, AlchemicalOptions alch, AlgorithmListener aListener) {
+                                                MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
 
         LambdaInterface linter = (LambdaInterface) potential;
         CompositeConfiguration firstProps = firstAssembly.getProperties();
@@ -111,17 +101,31 @@ public class OSRWOptions {
         TransitionTemperedOSRW ttOSRW = new TransitionTemperedOSRW(linter, potential, lambdaRestart,
                 histogramRestart, firstProps, temp, dT, report, ckpt, async, resetNSteps, aListener);
 
-        // Do NOT run applyOptionsToTTOSRW here, because that can mutate the TT-OSRW to a Barostat.
+        // Do NOT run applyOSRWOptions here, because that can mutate the TT-OSRW to a Barostat.
         return ttOSRW;
     }
 
-    public CrystalPotential applyOptionsToTTOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly firstAssembly, DynamicsOptions dynamics,
-                                     LambdaParticleOptions lpo, MinimizeOptions min, MultiDynamicsOptions mdo,
-                                     ThermodynamicsOptions thermo, AlchemicalOptions alch, boolean lamExists, boolean hisExists) {
+    /**
+     * Applies relevant options to a TransitionTemperedOSRW, and returns either the TTOSRW
+     * object or something that wraps the TTOSRW (such as a Barostat).
+     * 
+     * @param ttOSRW Transition-Tempered Orthogonal Space Random Walk.
+     * @param firstAssembly Primary assembly in ttOSRW.
+     * @param dynamics MD options.
+     * @param lpo Lambda particle options.
+     * @param alch Alchemy options.
+     * @param barostat NPT options.
+     * @param lamExists If the lambda file exists for this walker.
+     * @param histogramExists If the histogram file exists already.
+     * @return TTOSRW, possibly wrapped.
+     */
+    public CrystalPotential applyAllOSRWOptions(TransitionTemperedOSRW ttOSRW, MolecularAssembly firstAssembly,
+                                                DynamicsOptions dynamics, LambdaParticleOptions lpo, AlchemicalOptions alch,
+                                                BarostatOptions barostat, boolean lamExists, boolean histogramExists) {
 
         CrystalPotential cpot = ttOSRW;
-        applyOptionsToTTOSRW(ttOSRW, hisExists);
-        if (hisExists) {
+        applyOSRWOptions(ttOSRW, histogramExists);
+        if (histogramExists) {
             ttOSRW.setThetaFrication(lpo.getLambdaFriction());
             ttOSRW.setThetaMass(lpo.getLambdaMass());
         }
@@ -131,82 +135,17 @@ public class OSRWOptions {
             // TODO: Apply other minimization parameters.
         }
 
-        if (lamExists) {
-            ttOSRW.setLambda(alch.getInitialLambda());
+        if (!lamExists) {
+            double lam = alch.getInitialLambda();
+            logger.info(String.format(" Setting lambda to %5.3f", lam));
+            ttOSRW.setLambda(lam);
         }
-
-        // TODO: cpot = PressureOptions.applyPressureOptions(cpot);
+        cpot = barostat.checkNPT(firstAssembly, cpot);
+        
         return cpot;
-        /*
-        if (options.mc) {
-            MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, options.integrator);
-
-            if (options.nEquil > 0) {
-                logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
-                mcOSRW.setEquilibration(true)
-                mcOSRW.setMDMoveParameters(options.nEquil, options.mcMD, options.dt)
-                mcOSRW.sample()
-                mcOSRW.setEquilibration(false)
-                logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
-            }
-
-            logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
-            mcOSRW.setLambdaStdDev(options.mcL)
-            mcOSRW.setMDMoveParameters(options.steps, options.mcMD, options.dt)
-            mcOSRW.sample()
-        } else {
-            // Create the MolecularDynamics instance.
-            // If we switch over to using the factory method, request the FFX Dynamics engine.
-            MolecularDynamics molDyn = new MolecularDynamics(topologies[0], potential,
-                topologies[0].getProperties(), null, options.tstat, options.integrator);
-            for (int i = 1; i < topologies.size(); i++) {
-                molDyn.addAssembly(topologies.get(i), properties.get(i));
-            }
-
-            boolean initVelocities = true;
-            double restartInterval = options.write;
-            String fileType = "XYZ";
-            int nSteps = options.steps;
-            molDyn.setRestartFrequency(options.checkpoint);
-            // Start sampling.
-            if (options.nEquil > 0) {
-                logger.info(" Beginning equilibration");
-                osrw.setPropagateLambda(false);
-                molDyn.dynamic(options.nEquil, options.dt, options.report, options.write, options.temp, initVelocities, dyn);
-                logger.info(" Beginning Transition-Tempered OSRW sampling");
-                osrw.setPropagateLambda(true);
-                molDyn.dynamic(nSteps, options.dt, options.report, options.write, options.temp, false,
-                    fileType, restartInterval, dyn);
-            } else {
-                logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
-                boolean resetSteps = true;
-                if (options.resetStepsString) {
-                    if (options.resetStepsString.equalsIgnoreCase("false")) {
-                        resetSteps = false;
-                    }
-                }
-                if (!resetSteps) {
-                    int nEnergyCount = osrw.getEnergyCount();
-                    if (nEnergyCount > 0) {
-                        nSteps -= nEnergyCount;
-                        logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
-                        initVelocities = false;
-                    }
-                }
-                if (nSteps > 0) {
-                    molDyn.dynamic(nSteps, options.dt, options.report, options.write, options.temp, initVelocities,
-                        fileType, restartInterval, dyn);
-                } else {
-                    logger.info(" No steps remaining for this process!");
-                }
-            }
-        }
-         */
-
     }
 
-    public void applyOptionsToTTOSRW(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
+    public void applyOSRWOptions(TransitionTemperedOSRW ttOSRW, boolean histogramExists) {
         ttOSRW.setTemperingParameter(temperParam);
         if (!histogramExists) {
             ttOSRW.setCountInterval(countFreq);
@@ -215,98 +154,57 @@ public class OSRWOptions {
     }
 
     /**
-     * Distribute side-chain conformations of mola.
-     *
-     * @param mola To distribute
-     * @param pot Potential to use
+     * Begins MD-OSRW sampling from an assembled TT-OSRW.
+     * @param ttOSRW The TT-OSRW object.
+     * @param topologies All MolecularAssemblys.
+     * @param potential The top-layer CrystalPotential.
+     * @param dynamics Dynamics options.
+     * @param thermo Thermodynamics options.
+     * @param dyn The .dyn dynamics restart file.
+     * @param aListener AlgorithmListener
      */
-    private void optStructure(MolecularAssembly mola, Potential pot, String[] distribRes, AlgorithmFunctions aFuncts, int rank, int worldSize) {
-        RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
-        if (distribRes == null || distribRes.length == 0) {
-            throw new IllegalArgumentException(" Programming error: Must have list of residues to split on!");
+    public void beginMDOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential, 
+                            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermo,
+                            File dyn, AlgorithmListener aListener) {
+        // Create the MolecularDynamics instance.
+        MolecularAssembly firstTop = topologies[0];
+        CompositeConfiguration props = firstTop.getProperties();
+        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(firstTop, potential, props, 
+                aListener, dynamics.thermostat, dynamics.integrator, MolecularDynamics.DynamicsEngine.FFX);
+        for (int i = 1; i < topologies.length; i++) {
+            molDyn.addAssembly(topologies[i], topologies[i].getProperties());
         }
 
-        LambdaInterface linter = (pot instanceof LambdaInterface) ? (LambdaInterface) pot : null;
-        double initLam = -1.0;
-        if (linter != null) {
-            initLam = linter.getLambda();
-            linter.setLambda(0.5);
-        }
-
-        Pattern chainMatcher = Pattern.compile("^([a-zA-Z])?([0-9]+)$");
-
-        List<Residue> residueList = new ArrayList<>(distribRes.length);
-
-        for (String ts : distribRes) {
-            Matcher m = chainMatcher.matcher(ts);
-            Character chainID;
-            int resNum;
-            if (m.find()) {
-                if (m.groupCount() == 2) {
-                    chainID = m.group(1).charAt(0);
-                    resNum = Integer.parseInt(m.group(2));
-                } else {
-                    chainID = ' ';
-                    resNum = Integer.parseInt(m.group(1));
-                }
-            } else {
-                logger.warning(String.format(" Could not parse %s as a valid residue!", ts));
-                continue;
-            }
-            logger.info(String.format(" Looking for chain %c residue %d", chainID, resNum));
-
-            for (Polymer p : mola.getChains()) {
-                if (p.getChainID() == chainID) {
-                    for (Residue r : p.getResidues()) {
-                        if (r.getResidueNumber() == resNum && r.getRotamers(rLib) != null) {
-                            residueList.add(r);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (residueList.isEmpty()) {
-            throw new IllegalArgumentException(" No valid entries for distWalkers!");
-        }
-
-        AlgorithmListener alist = aFuncts.getDefaultListener();
-        RotamerOptimization ropt = new RotamerOptimization(mola, pot, alist);
-
-        ropt.setThreeBodyEnergy(false);
-        ropt.setVerboseEnergies(true);
-        if (System.getProperty("ro-ensembleNumber") == null && System.getProperty("ro-ensembleEnergy") == null) {
-            logger.info(String.format(" Setting ensemble to default of number of walkers %d", worldSize));
-            ropt.setEnsemble(worldSize);
-        }
-        ropt.setPrintFiles(false);
-        ropt.setResiduesIgnoreNull(residueList);
-
-        rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-        rLib.setUseOrigCoordsRotamer(false);
-        RotamerLibrary.measureRotamers(residueList, false);
-
-        String oldLazyMat = System.getProperty("ro-lazyMatrix");
-        System.setProperty("ro-lazyMatrix", "true");
-
-        ropt.optimize(RotamerOptimization.Algorithm.ALL);
-        ropt.setCoordinatesToEnsemble(rank);
-
-        // One final energy call to ensure the coordinates are properly set at the
-        // end of rotamer optimization.
-        double[] xyz = new double[pot.getNumberOfVariables()];
-        pot.getCoordinates(xyz);
-        logger.info(" Final Optimized Energy:");
-        pot.energy(xyz, true);
-
-        if (linter != null) {
-            linter.setLambda(initLam);
-        }
-
-        if (oldLazyMat != null) {
-            System.setProperty("ro-lazyMatrix", oldLazyMat);
+        boolean initVelocities = true;
+        int nSteps = dynamics.steps;
+        molDyn.setRestartFrequency(dynamics.getCheckpoint());
+        // Start sampling.
+        int nEquil = thermo.getEquilSteps();
+        if (nEquil > 0) {
+            logger.info(" Beginning equilibration");
+            ttOSRW.setPropagateLambda(false);
+            runDynamics(molDyn, nEquil, dynamics, writeout, true, dyn);
+            logger.info(" Beginning Transition-Tempered OSRW sampling");
+            ttOSRW.setPropagateLambda(true);
         } else {
-            System.clearProperty("ro-lazyMatrix");
+            logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
+            if (!thermo.getResetNumSteps()) {
+                int nEnergyCount = ttOSRW.getEnergyCount();
+                if (nEnergyCount > 0) {
+                    nSteps -= nEnergyCount;
+                    logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
+                    initVelocities = false;
+                }
+            }
         }
+        if (nSteps > 0) {
+            runDynamics(molDyn, nSteps, dynamics, writeout, initVelocities, dyn);
+        } else {
+            logger.info(" No steps remaining for this process!");
+        }
+    }
+
+    private void runDynamics(MolecularDynamics molDyn, int numSteps, DynamicsOptions dynamics, WriteoutOptions writeout, boolean initVelocities, File dyn) {
+        molDyn.dynamic(numSteps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp, initVelocities, writeout.getFileType(), dynamics.getCheckpoint(), dyn);
     }
 }

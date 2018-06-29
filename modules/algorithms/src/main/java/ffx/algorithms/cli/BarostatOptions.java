@@ -37,7 +37,12 @@
  */
 package ffx.algorithms.cli;
 
+import ffx.algorithms.Barostat;
+import ffx.crystal.CrystalPotential;
+import ffx.potential.MolecularAssembly;
 import picocli.CommandLine.Option;
+
+import java.util.logging.Logger;
 
 /**
  * Represents command line options for scripts that use a barostat/NPT.
@@ -48,9 +53,10 @@ import picocli.CommandLine.Option;
  */
 public class BarostatOptions {
 
+    private static final Logger logger = Logger.getLogger(BarostatOptions.class.getName());
+
     /**
-     * -p or --npt Specify use of a MC Barostat at the given pressure (default
-     * 0.0 atm).
+     * -p or --npt Specify use of a MC Barostat at the given pressure (default 0 = constant volume).
      */
     @Option(names = {"-p", "--npt"}, paramLabel = "0",
             description = "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
@@ -85,4 +91,51 @@ public class BarostatOptions {
     @Option(names = {"--mi", "--meanInterval"}, paramLabel = "10",
             description = "Mean number of MD steps between barostat move proposals.")
     int meanInterval = 10;
+
+    /**
+     * If pressure has been set > 0, creates a Barostat around a CrystalPotential, else
+     * returns the original, unmodified CrystalPotential.
+     *
+     * @param assembly Primary assembly of the CrystalPotential.
+     * @param cpot A CrystalPotential.
+     * @return Either a Barostat (NPT enabled) or cpot.
+     */
+    public CrystalPotential checkNPT(MolecularAssembly assembly, CrystalPotential cpot) {
+        if (pressure > 0) {
+            return createBarostat(assembly, cpot);
+        } else {
+            return cpot;
+        }
+    }
+
+    /**
+     * Creates a Barostat around a CrystalPotential.
+     *
+     * @param assembly Primary assembly of the CrystalPotential.
+     * @param cpot A CrystalPotential.
+     * @return An NPT potential.
+     * @thros IllegalArgumentException If this BarostatOptions has pressure <= 0.
+     */
+    public Barostat createBarostat(MolecularAssembly assembly, CrystalPotential cpot) throws IllegalArgumentException {
+        if (pressure > 0) {
+            Barostat barostat = new Barostat(assembly, cpot);
+            barostat.setPressure(pressure);
+            barostat.setMaxDensity(maxDensity);
+            barostat.setMinDensity(minDensity);
+            double dens = barostat.density();
+            if (dens < minDensity) {
+                logger.info(String.format(" Barostat: initial density %9.4g < minimum density %9.4g, resetting to minimum density", dens, minDensity));
+                barostat.setDensity(minDensity);
+            } else if (dens > maxDensity) {
+                logger.info(String.format(" Barostat: initial density %9.4g > maximum density %9.4g, resetting to maximum density", dens, minDensity));
+                barostat.setDensity(maxDensity);
+            }
+            barostat.setMaxSideMove(maxSideMove);
+            barostat.setMaxAngleMove(maxAngleMove);
+            barostat.setMeanBarostatInterval(meanInterval);
+            return barostat;
+        } else {
+            throw new IllegalArgumentException(" Pressure is <= 0; cannot create a Barostat!");
+        }
+    }
 }

@@ -53,12 +53,9 @@ public abstract class DataRefinementOptions {
      */
     protected RefinementMinimize.RefinementMode refinementMode = RefinementMinimize.RefinementMode.COORDINATES;
 
-    /**
-     * Parse options.
-     */
-    public void init() {
+    /*public void init() {
         refinementMode = RefinementMinimize.parseMode(modeString);
-    }
+    }*/
 
     /**
      * --wA or --dataWeight The weight of the data (wA).
@@ -66,14 +63,6 @@ public abstract class DataRefinementOptions {
     @CommandLine.Option(names = {"--wA", "--dataWeight"}, paramLabel = "1.0",
             description = "The weight of the real space data (wA).")
     protected double wA = 1.0;
-
-    /**
-     * -m or --mode sets the desired refinement mode
-     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
-     */
-    @CommandLine.Option(names = {"-m", "--mode"}, paramLabel = "coordinates",
-            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "coordinates";
 
     public double getwA() {
         return wA;
