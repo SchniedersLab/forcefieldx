@@ -1,4 +1,4 @@
-package realspace
+package xray
 
 import org.apache.commons.configuration.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
