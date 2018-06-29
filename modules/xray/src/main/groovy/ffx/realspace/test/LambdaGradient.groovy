@@ -209,9 +209,10 @@ class LambdaGradient extends AlgorithmsScript {
             logger.info("")
         }
 
+        boolean loopPrint = gradientOptions.verbose
         lambdaInterface.setLambda(initialLambda)
         potential.getCoordinates(x)
-        potential.energyAndGradient(x, gradient)
+        potential.energyAndGradient(x, gradient, loopPrint)
 
         logger.info(String.format(" Checking Cartesian coordinate gradient"))
 
@@ -231,27 +232,27 @@ class LambdaGradient extends AlgorithmsScript {
             // Find numeric dX
             double orig = x[i0]
             x[i0] = x[i0] + step
-            double e = potential.energyAndGradient(x, lambdaGradFD[0])
+            double e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
             x[i0] = orig - step
-            e -= potential.energyAndGradient(x, lambdaGradFD[1])
+            e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
             x[i0] = orig
             numeric[0] = e / width
 
             // Find numeric dY
             orig = x[i1]
             x[i1] = x[i1] + step
-            e = potential.energyAndGradient(x, lambdaGradFD[0])
+            e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
             x[i1] = orig - step
-            e -= potential.energyAndGradient(x, lambdaGradFD[1])
+            e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
             x[i1] = orig
             numeric[1] = e / width
 
             // Find numeric dZ
             orig = x[i2]
             x[i2] = x[i2] + step
-            e = potential.energyAndGradient(x, lambdaGradFD[0])
+            e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
             x[i2] = orig - step
-            e -= potential.energyAndGradient(x, lambdaGradFD[1])
+            e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
             x[i2] = orig
             numeric[2] = e / width
 

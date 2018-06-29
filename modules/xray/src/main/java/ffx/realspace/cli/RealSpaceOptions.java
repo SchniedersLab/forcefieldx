@@ -72,13 +72,6 @@ public class RealSpaceOptions extends DataRefinementOptions {
     RefinementMode refinementMode = RefinementMode.COORDINATES;
 
     /**
-     * Parse options.
-     */
-    public void init() {
-        super.init();
-    }
-
-    /**
      * Process input to collect Real Space Files.
      *
      * @param filenames Input filenames (first filename is ignored).

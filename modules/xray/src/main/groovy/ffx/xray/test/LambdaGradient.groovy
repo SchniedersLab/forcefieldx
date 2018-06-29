@@ -216,8 +216,9 @@ class LambdaGradient extends AlgorithmsScript {
             logger.info("")
         }
 
+        boolean loopPrint = gradientOptions.verbose
         refinementEnergy.getCoordinates(x)
-        refinementEnergy.energyAndGradient(x, gradient)
+        refinementEnergy.energyAndGradient(x, gradient, loopPrint)
 
         double[] numeric = new double[3]
         double avLen = 0.0
@@ -233,27 +234,27 @@ class LambdaGradient extends AlgorithmsScript {
             // Find numeric dX
             double orig = x[i0]
             x[i0] = x[i0] + step
-            double e = refinementEnergy.energy(x)
+            double e = refinementEnergy.energy(x, loopPrint)
             x[i0] = orig - step
-            e -= refinementEnergy.energy(x)
+            e -= refinementEnergy.energy(x, loopPrint)
             x[i0] = orig
             numeric[0] = e / width
 
             // Find numeric dY
             orig = x[i1]
             x[i1] = x[i1] + step
-            e = refinementEnergy.energy(x)
+            e = refinementEnergy.energy(x, loopPrint)
             x[i1] = orig - step
-            e -= refinementEnergy.energy(x)
+            e -= refinementEnergy.energy(x, loopPrint)
             x[i1] = orig
             numeric[1] = e / width
 
             // Find numeric dZ
             orig = x[i2]
             x[i2] = x[i2] + step
-            e = refinementEnergy.energy(x)
+            e = refinementEnergy.energy(x, loopPrint)
             x[i2] = orig - step
-            e -= refinementEnergy.energy(x)
+            e -= refinementEnergy.energy(x, loopPrint)
             x[i2] = orig
             numeric[2] = e / width
 

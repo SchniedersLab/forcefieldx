@@ -276,9 +276,10 @@ class LambdaGradient extends PotentialScript {
             logger.info("")
         }
 
+        boolean loopPrint = gradientOptions.verbose
         linter.setLambda(alchemical.initialLambda)
         potential.getCoordinates(x)
-        potential.energyAndGradient(x, gradient, gradientOptions.verbose)
+        potential.energyAndGradient(x, gradient, loopPrint)
 
         if (!skipAtomGradients) {
             logger.info(String.format(" Checking Cartesian coordinate gradient."))
@@ -287,7 +288,6 @@ class LambdaGradient extends PotentialScript {
             int nFailures = 0
             double avGrad = 0.0
 
-            boolean print = gradientOptions.verbose
             double step = gradientOptions.dx
             int firstAtom = gradientOptions.atomID - 1
 
@@ -300,27 +300,27 @@ class LambdaGradient extends PotentialScript {
                 // Find numeric dX
                 double orig = x[i0]
                 x[i0] = x[i0] + step
-                double e = potential.energyAndGradient(x, lambdaGradFD[0], print)
+                double e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
                 x[i0] = orig - step
-                e -= potential.energyAndGradient(x, lambdaGradFD[1], print)
+                e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
                 x[i0] = orig
                 numeric[0] = e / width
 
                 // Find numeric dY
                 orig = x[i1]
                 x[i1] = x[i1] + step
-                e = potential.energyAndGradient(x, lambdaGradFD[0], print)
+                e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
                 x[i1] = orig - step
-                e -= potential.energyAndGradient(x, lambdaGradFD[1], print)
+                e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
                 x[i1] = orig
                 numeric[1] = e / width
 
                 // Find numeric dZ
                 orig = x[i2]
                 x[i2] = x[i2] + step
-                e = potential.energyAndGradient(x, lambdaGradFD[0], print)
+                e = potential.energyAndGradient(x, lambdaGradFD[0], loopPrint)
                 x[i2] = orig - step
-                e -= potential.energyAndGradient(x, lambdaGradFD[1], print)
+                e -= potential.energyAndGradient(x, lambdaGradFD[1], loopPrint)
                 x[i2] = orig
                 numeric[2] = e / width
 
