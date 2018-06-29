@@ -1,5 +1,6 @@
 package realspace
 
+import org.apache.commons.configuration.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
@@ -10,11 +11,10 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
-import ffx.realspace.RealSpaceData
-import ffx.realspace.cli.RealSpaceOptions
-import ffx.realspace.parsers.RealSpaceFile
+import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
-import ffx.xray.RefinementMinimize
+import ffx.xray.cli.XrayOptions
+import ffx.xray.parsers.DiffractionFile
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -31,7 +31,7 @@ import picocli.CommandLine.Parameters
 class ManyBody extends AlgorithmsScript {
 
     @Mixin
-    RealSpaceOptions realSpace
+    XrayOptions xrayOptions
 
     @Mixin
     ManyBodyOptions manyBody
@@ -47,6 +47,8 @@ class ManyBody extends AlgorithmsScript {
         if (!init()) {
             return
         }
+
+        xrayOptions.init()
 
         String filename
         MolecularAssembly[] assemblies
@@ -68,21 +70,25 @@ class ManyBody extends AlgorithmsScript {
 
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
 
-        List<RealSpaceFile> mapFiles = realSpace.processData(filenames, assemblies)
-        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly,
-                activeAssembly.getProperties(), activeAssembly.getParallelTeam(),
-                mapFiles.toArray(new RealSpaceFile[mapFiles.size()]))
+        // Load parsed X-ray properties.
+        CompositeConfiguration properties = assemblies[0].getProperties()
+        xrayOptions.setProperties(properties)
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMinimize.RefinementMode.COORDINATES, null);
+        // Set up diffraction data (can be multiple files)
+        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
+        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
+                xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
 
-        RotamerOptimization rotamerOptimization = new RotamerOptimization(
-                activeAssembly, refinementEnergy, algorithmListener)
+        diffractionData.scaleBulkFit()
+        diffractionData.printStats()
 
-        manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
-
+        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
         double[] x = new double[refinementEnergy.getNumberOfVariables()];
         x = refinementEnergy.getCoordinates(x);
         refinementEnergy.energy(x, true);
+
+        RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, algorithmListener)
+        manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
         ArrayList<Residue> residueList = rotamerOptimization.getResidues()
         RotamerLibrary.measureRotamers(residueList, false);
