@@ -176,6 +176,14 @@ public class XrayOptions extends DataRefinementOptions {
     String[] data = null;
 
     /**
+     * -m or --mode sets the desired refinement mode
+     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
+     */
+    @Option(names = {"-m", "--mode"}, paramLabel = "coordinates",
+            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
+    String modeString = "coordinates";
+
+    /**
      * The refinement mode to use.
      */
     RefinementMode refinementMode = RefinementMode.COORDINATES;
@@ -184,7 +192,7 @@ public class XrayOptions extends DataRefinementOptions {
      * Parse options.
      */
     public void init() {
-        super.init();
+        refinementMode = RefinementMinimize.parseMode(modeString);
         solventModel = CrystalReciprocalSpace.parseSolventModel(solventString);
     }
 

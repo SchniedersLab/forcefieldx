@@ -65,6 +65,9 @@ public class GradientOptions {
      * -v or --verbose is a flag to print out energy at each step.
      */
     @Option(names = {"-v", "--verbose"}, paramLabel = "false", description = "Print out the energy for each step.")
-    boolean verbose = false;
+    private boolean verbose = false;
 
+    public boolean getVerbose() {
+        return verbose;
+    }
 }

@@ -56,8 +56,7 @@ public class BarostatOptions {
     private static final Logger logger = Logger.getLogger(BarostatOptions.class.getName());
 
     /**
-     * -p or --npt Specify use of a MC Barostat at the given pressure (default
-     * 0.0 atm).
+     * -p or --npt Specify use of a MC Barostat at the given pressure (default 0 = constant volume).
      */
     @Option(names = {"-p", "--npt"}, paramLabel = "0",
             description = "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
