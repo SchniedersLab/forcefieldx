@@ -37,7 +37,14 @@
  */
 package ffx.algorithms.cli;
 
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
+import ffx.crystal.SymOp;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
 import picocli.CommandLine;
+
+import java.util.logging.Logger;
 
 /**
  * Represents command line options for scripts that create randomized unit cells.
@@ -47,6 +54,8 @@ import picocli.CommandLine;
  * @since 1.0
  */
 public class RandomSymopOptions {
+
+    private static final Logger logger = Logger.getLogger(RandomSymopOptions.class.getName());
 
     /**
      * --rsym or --randomSymOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
@@ -62,4 +71,58 @@ public class RandomSymopOptions {
             description = "Apply random unit cell axes to achieve the specified density (g/cc).")
     double ucDensity = -1.0;
 
+    public void randomize(MolecularAssembly assembly, CrystalPotential potential) {
+        applyRandomSymop(assembly);
+        applyRandomDensity(assembly, potential);
+    }
+
+    /**
+     * Randomizes position in the unit cell by applying a Cartesian symop with a random translation.
+     *
+     * @param assembly Assembly to randomize position of.
+     */
+    public void applyRandomSymop(MolecularAssembly assembly) {
+        if (symScalar > 0) {
+            SymOp symOp = SymOp.randomSymOpFactory(symScalar);
+            logger.info(String.format("\n Applying random Cartesian SymOp:\n%s", symOp.toString()));
+            Crystal crystal = assembly.getCrystal();
+            Atom[] atoms = assembly.getAtomArray();
+            double[] xyz = new double[3];
+            for (int i = 0; i < atoms.length; i++) {
+                atoms[i].getXYZ(xyz);
+                crystal.applyCartesianSymOp(xyz, xyz, symOp);
+                atoms[i].setXYZ(xyz);
+            }
+        }
+    }
+
+    /**
+     * Applies a randomly drawn density to a molecular system's crystal.
+     *
+     * @param assembly Assembly to randomize the density of.
+     */
+    public void applyRandomDensity(MolecularAssembly assembly) throws IllegalArgumentException {
+        applyRandomDensity(assembly, assembly.getPotentialEnergy());
+    }
+
+    /**
+     * Applies a randomly drawn density to a molecular system's crystal.
+     *
+     * @param assembly Assembly to randomize the density of.
+     * @param potential CrystalPotential to apply the new Crystal parameters to.
+     */
+    public void applyRandomDensity(MolecularAssembly assembly, CrystalPotential potential) {
+        if (ucDensity > 0) {
+            logger.info(String.format("\n Applying random unit cell axes with target density of %6.3f\n",
+                    ucDensity));
+            Crystal crystal = assembly.getCrystal();
+            if (!crystal.aperiodic()) {
+                double mass = assembly.getMass();
+                crystal.randomParameters(ucDensity, mass);
+                potential.setCrystal(crystal);
+            } else {
+                logger.fine(String.format(" Potential %s is an aperiodic system!", potential));
+            }
+        }
+    }
 }

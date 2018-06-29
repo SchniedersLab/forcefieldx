@@ -39,6 +39,11 @@ class ManyBody extends AlgorithmsScript {
             return
         }
 
+        String priorGKwarn = System.getProperty("gk-suppressWarnings");
+        if (priorGKwarn == null || priorGKwarn.isEmpty()) {
+            System.setProperty("gk-suppressWarnings", "true");
+        }
+
         String filename
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
@@ -49,11 +54,6 @@ class ManyBody extends AlgorithmsScript {
             return
         } else {
             filename = activeAssembly.getFile().getAbsolutePath();
-        }
-
-        // By default, rotamer optimization should silence GK warnings, because occasionally we will have unreasonable configurations.
-        if (System.getProperty("gk-suppressWarnings") == null) {
-            System.setProperty("gk-suppressWarnings", "true")
         }
 
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
@@ -104,6 +104,10 @@ class ManyBody extends AlgorithmsScript {
         }
 
         manyBody.saveEliminatedRotamers();
+
+        if (priorGKwarn == null) {
+            System.clearProperty("gk-suppressWarnings");
+        }
     }
 }
 

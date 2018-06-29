@@ -47,41 +47,33 @@ class Alchemical extends AlgorithmsScript {
 //    RealSpaceOptions realSpaceOptions
 
     private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
-
     /**
      * -X or --wA The weight of the real space data (wA).
      */
     @Option(names = ["-X", "--wA"], paramLabel = "1.0",
             description = "The weight of the real space data (wA).")
-    double wA = 1.0;
-
+    double wA = 1.0
     /**
      * -y or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
     @Option(names = ["-y", "--data"], split = ",",
             description = "Specify input data filename and its weight (wA) (e.g. -y filename,1.0).")
-    String[] data = null;
-
+    String[] data = null
     /**
      * -u or --mode sets the desired refinement mode
      * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
      */
-    @Option(names = ["-u", "--mode"], paramLabel = "coordinates",
+    @Option(names = ["-m", "--mode"], paramLabel = "coordinates",
             description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "coordinates";
-
+    String modeString = "coordinates"
     /**
-     * The refinement mode to use.
+     * -I or --doions sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
      */
-    RefinementMode refinementMode = RefinementMode.COORDINATES;
-    /**
-     * --ions or --doions Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
-     */
-    @Option(names = ["--ions", "--doions"], paramLabel = '',
-            description = '* --ion Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
+    @Option(names = ["-I", "--doions"], paramLabel = 'false',
+            description = 'Set whether or not to optimize ion positions (of a single type of ion).')
     boolean opt_ions = false
     /**
-     * --itype Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
+     * --itype or --iontype Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
      */
     @Option(names = ["--itype", "--iontype"], paramLabel = '',
             description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
@@ -93,11 +85,15 @@ class Alchemical extends AlgorithmsScript {
             description = 'Add more of the selected ion to neutralize the crystal\'s charge')
     boolean neutralize = false
     /**
-     * -W or --waters sets whether or not water positions are also optimized (default is false).
+     * -W or --dowaters sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
      */
-    @Option(names = "--dowaters", paramLabel = 'true',
-            description = 'Specify whether or not to optimize water positions.')
-    boolean opt_waters = true
+    @Option(names = ["-W", "--dowaters"], paramLabel = 'false',
+            description = 'Set whether or not to optimize water positions.')
+    boolean opt_waters = false
+    /**
+     * The refinement mode to use.
+     */
+    RefinementMode refinementMode = RefinementMode.COORDINATES
 
     /**
      * One or more filenames.
@@ -105,45 +101,32 @@ class Alchemical extends AlgorithmsScript {
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
 
-    // Temperature in degrees Kelvin.
-    double temperature = 298.15;
-
-    // Time step in femtoseconds.
-    double timeStep = 1.0;
-
-    // Frequency to log thermodynamics information in picoseconds.
-    double printInterval = 0.01;
-
-    // Frequency to write out coordinates in picoseconds.
-    double saveInterval = 100;
-
     // Value of Lambda.
-    double lambda = 1.0;
+    double lambda = 1.0
 
     // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
-    ThermostatEnum thermostat = ThermostatEnum.ADIABATIC;
+    ThermostatEnum thermostat = ThermostatEnum.ADIABATIC
 
     // IntegratorEnum [ BEEMAN, RESPA, STOCHASTIC ]
-    IntegratorEnum integrator = IntegratorEnum.STOCHASTIC;
-
-    // OSRW
-    boolean runOSRW = true;
-
-    // Number of molecular dynamics steps: default is 100 nanoseconds.
-    int nSteps = 50000;
-
-    // Reset velocities (ignored if a restart file is given)
-    boolean initVelocities = true;
+    IntegratorEnum integrator = IntegratorEnum.STOCHASTIC
 
     // File type of coordinate snapshots to write out.
-    String fileType = "PDB";
+    String fileType = "PDB"
 
-    // Frequency to write out restart information in picoseconds.
-    double restartInterval = 1.0;
+    // OSRW
+    boolean runOSRW = true
+
+    // Reset velocities (ignored if a restart file is given)
+    boolean initVelocities = true
 
     def run() {
 
         if (!init()) {
+            return
+        }
+
+        if (!opt_waters && !opt_ions){
+            logger.info("\n Please choose to optimize either water (-W), ions (-I), or both.")
             return
         }
 
@@ -160,48 +143,48 @@ class Alchemical extends AlgorithmsScript {
             return
         } else {
             modelfilename = activeAssembly.getFile().getAbsolutePath()
-            assemblies = { activeAssembly };
+            assemblies = { activeAssembly }
         }
 
         logger.info("\n Running Alchemical Changes on " + modelfilename)
 
-        File structureFile = new File(FilenameUtils.normalize(modelfilename));
-        structureFile = new File(structureFile.getAbsolutePath());
-        String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
-        File histogramRestart = new File(baseFilename + ".his");
-        File lambdaRestart = new File(baseFilename + ".lam");
-        File dyn = new File(baseFilename + ".dyn");
+        File structureFile = new File(FilenameUtils.normalize(modelfilename))
+        structureFile = new File(structureFile.getAbsolutePath())
+        String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+        File histogramRestart = new File(baseFilename + ".his")
+        File lambdaRestart = new File(baseFilename + ".lam")
+        File dyn = new File(baseFilename + ".dyn")
 
-        Comm world = Comm.world();
-        int size = world.size();
-        int rank = 0;
-        double[] energyArray = new double[world.size()];
+        Comm world = Comm.world()
+        int size = world.size()
+        int rank = 0
+        double[] energyArray = new double[world.size()]
         for (int i = 0; i < world.size(); i++) {
-            energyArray[i] = Double.MAX_VALUE;
+            energyArray[i] = Double.MAX_VALUE
         }
 
         // For a multi-process job, try to get the restart files from rank sub-directories.
         if (size > 1) {
-            rank = world.rank();
-            File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank));
+            rank = world.rank()
+            File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
             if (!rankDirectory.exists()) {
-                rankDirectory.mkdir();
+                rankDirectory.mkdir()
             }
-            lambdaRestart = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam");
-            dyn = new File(rankDirectory.getPath() + File.separator + baseFilename + ".dyn");
-            structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName());
+            lambdaRestart = new File(rankDirectory.getPath() + File.separator + baseFilename + ".lam")
+            dyn = new File(rankDirectory.getPath() + File.separator + baseFilename + ".dyn")
+            structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName())
         }
 
         if (!dyn.exists()) {
-            dyn = null;
+            dyn = null
         }
 
         // Set built atoms active/use flags to true (false for other atoms).
-        Atom[] atoms = activeAssembly.getAtomArray();
+        Atom[] atoms = activeAssembly.getAtomArray()
 
         // Get a reference to the first system's ForceFieldEnergy.
-        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy();
-        forceFieldEnergy.setPrintOnFailure(false, false);
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+        forceFieldEnergy.setPrintOnFailure(false, false)
 
         // Configure all atoms to:
         // 1) be used in the potential
@@ -250,26 +233,26 @@ class Alchemical extends AlgorithmsScript {
         }
 
         // set up real space map data (can be multiple files)
-        List mapfiles = new ArrayList();
+        List mapfiles = new ArrayList()
         if (filenames.size() > 1) {
-            RealSpaceFile realspacefile = new RealSpaceFile(filenames.get(1), 1.0);
-            mapfiles.add(realspacefile);
+            RealSpaceFile realspacefile = new RealSpaceFile(filenames.get(1), 1.0)
+            mapfiles.add(realspacefile)
         }
         if (data) {
             for (int i = 0; i < data.size(); i += 2) {
                 double wA = Double.parseDouble(data[i + 1]);
-                RealSpaceFile realspacefile = new RealSpaceFile(data[i], wA);
-                mapfiles.add(realspacefile);
+                RealSpaceFile realspacefile = new RealSpaceFile(data[i], wA)
+                mapfiles.add(realspacefile)
             }
         }
 
         if (mapfiles.size() == 0) {
-            RealSpaceFile realspacefile = new RealSpaceFile(assemblies[0], 1.0);
-            mapfiles.add(realspacefile);
+            RealSpaceFile realspacefile = new RealSpaceFile(assemblies[0], 1.0)
+            mapfiles.add(realspacefile)
         }
 
         RealSpaceData realSpaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]));
+                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
         // Replace map file set-up above with commented lines below once RealSpaceOptions can be used (after conflicting flags are resolved)
 //        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
@@ -278,35 +261,35 @@ class Alchemical extends AlgorithmsScript {
 //                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 //
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null);
-        refinementEnergy.setLambda(lambda);
+        RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null)
+        refinementEnergy.setLambda(lambda)
 
-        boolean asynchronous = true;
-        Potential osrw;
+        boolean asynchronous = true
+        Potential osrw
 
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
                 assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
-                dynamicsOptions.write, true, false, algorithmFunctions.getDefaultListener());
+                dynamicsOptions.write, true, false, algorithmFunctions.getDefaultListener())
 
         osrw.setLambda(lambda);
         osrw.setThetaMass(5.0e-19);
         osrw.setOptimization(true, activeAssembly);
         // Create the MolecularDynamics instance.
         MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], osrw, assemblies[0].getProperties(),
-                null, dynamicsOptions.thermostat, dynamicsOptions.integrator);
+                null, thermostat, integrator)
 
-        algorithmFunctions.energy(assemblies[0]);
+        algorithmFunctions.energy(assemblies[0])
 
         molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temp, true,
-                fileType, dynamicsOptions.write, dyn);
+                fileType, dynamicsOptions.write, dyn)
 
-        logger.info(" Searching for low energy coordinates");
-        double[] lowEnergyCoordinates = osrw.getLowEnergyLoop();
-        double currentOSRWOptimum = osrw.getOSRWOptimum();
+        logger.info(" Searching for low energy coordinates")
+        double[] lowEnergyCoordinates = osrw.getLowEnergyLoop()
+        double currentOSRWOptimum = osrw.getOSRWOptimum()
         if (lowEnergyCoordinates != null) {
-            forceFieldEnergy.setCoordinates(lowEnergyCoordinates);
+            forceFieldEnergy.setCoordinates(lowEnergyCoordinates)
         } else {
-            logger.info(" OSRW stage did not succeed in finding a minimum.");
+            logger.info(" OSRW stage did not succeed in finding a minimum.")
         }
     }
 }
