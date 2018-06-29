@@ -115,6 +115,34 @@ class NewThermodynamics extends AlgorithmsScript {
         int size = world.size();
         int rank = (size > 1) ? world.rank() : 0;
 
+        // Segment of code for MultiDynamics and OSRW.
+        String filename = arguments.get(0);
+        File structureFile = new File(FilenameUtils.normalize(filename));
+        structureFile = new File(structureFile.getAbsolutePath());
+        String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
+        File histogramRestart = new File(baseFilename + ".his");
+
+        // For a multi-process job, try to get the restart files from rank sub-directories.
+        String withRankName = baseFilename;
+        if (size > 1) {
+            File rankDirectory = new File(structureFile.getParent() + File.separator
+                    + Integer.toString(rank));
+            if (!rankDirectory.exists()) {
+                rankDirectory.mkdir();
+            }
+            withRankName = rankDirectory.getPath() + File.separator + baseFilename;
+            structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName());
+        }
+
+        File lambdaRestart = new File(withRankName + ".lam");
+        File dyn = new File(withRankName + ".dyn");
+        /**
+         * Used for the obsolete traversals option.
+         * File lambdaOneFile = new File(withRankName + ".lam1");
+         * File lambdaZeroFile = new File(withRankName + ".lam0");
+         */
+        // End multidynamics-relevant code.
+
         /**
          * Read in files.
          */
@@ -129,7 +157,7 @@ class NewThermodynamics extends AlgorithmsScript {
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
-                topologyList.add(multidynamics.openFile(algorithmFunctions, Optional.of(topology), threadsPer, arguments.get(i), i, alchemical, rank));
+                topologyList.add(multidynamics.openFile(algorithmFunctions, Optional.of(topology), threadsPer, arguments.get(i), i, alchemical, structureFile, rank));
             }
         }
 
@@ -146,34 +174,6 @@ class NewThermodynamics extends AlgorithmsScript {
         LambdaInterface linter = (LambdaInterface) potential;
 
         // End of boilerplate code.
-
-        // Section 2: Assemble various files, some specific to the rank.
-
-        String filename = arguments.get(0);
-        File structureFile = new File(FilenameUtils.normalize(filename));
-        structureFile = new File(structureFile.getAbsolutePath());
-        String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
-        File histogramRestart = new File(baseFilename + ".his");
-
-        // For a multi-process job, try to get the restart files from rank sub-directories.
-        String withRankName = baseFilename;
-        if (size > 1) {
-            File rankDirectory = new File(structureFile.getParent() + File.separator
-                    + Integer.toString(rank));
-            if (!rankDirectory.exists()) {
-                rankDirectory.mkdir();
-            }
-            withRankName = rankDirectory.getPath() + File.separator + baseFilename;
-            // structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName());
-        }
-
-        File lambdaRestart = new File(withRankName + ".lam");
-        File dyn = new File(withRankName + ".dyn");
-        /**
-         * Used for the obsolete traversals option.
-         * File lambdaOneFile = new File(withRankName + ".lam1");
-         * File lambdaZeroFile = new File(withRankName + ".lam0");
-         */
 
         if (!dyn.exists()) {
             dyn = null;

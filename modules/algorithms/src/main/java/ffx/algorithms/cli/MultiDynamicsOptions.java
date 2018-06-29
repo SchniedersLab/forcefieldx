@@ -107,7 +107,7 @@ public class MultiDynamicsOptions {
      * @param alchemy Alchemical Options.
      * @param rank Rank in the world communicator.
      */
-    public MolecularAssembly openFile(AlgorithmFunctions afuncts, Optional<TopologyOptions> topOptions, int threadsPer, String toOpen, int topNum, AlchemicalOptions alchemy, int rank) {
+    public MolecularAssembly openFile(AlgorithmFunctions afuncts, Optional<TopologyOptions> topOptions, int threadsPer, String toOpen, int topNum, AlchemicalOptions alchemy, File structureFile, int rank) {
         boolean autoDist = distributeWalkersString.equalsIgnoreCase("AUTO");
 
         if (autoDist) {
@@ -119,7 +119,9 @@ public class MultiDynamicsOptions {
                 logger.warning(String.format(" File %s does not exist; using default %s", openName, toOpen));
             }
         }
-        return alchemy.openFile(afuncts, topOptions, threadsPer, toOpen, topNum);
+        MolecularAssembly assembly = alchemy.openFile(afuncts, topOptions, threadsPer, toOpen, topNum);
+        assembly.setFile(structureFile);
+        return assembly;
     }
 
     /**
