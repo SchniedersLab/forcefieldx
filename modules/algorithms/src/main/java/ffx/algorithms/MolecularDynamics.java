@@ -81,7 +81,7 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
 /**
- * Run NVE or NVT molecular dynamics.
+ * Run NVE, NVT, or NPT molecular dynamics.
  *
  * @author Michael J. Schnieders
  * @since 1.0
