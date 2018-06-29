@@ -395,6 +395,11 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
 
     @Override
     public double energy(double[] x) {
+        return energy(x, false);
+    }
+
+    @Override
+    public double energy(double[] x, boolean print) {
         double weight = data.getWeight();
         double e = 0.0;
 
@@ -416,7 +421,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energy(xChemical[i]);
+                    double curE = fe.energy(xChemical[i], print);
                     e += (curE - e) / (i + 1);
                 }
                 double chemE = e;
@@ -440,7 +445,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energy(xChemical[i]);
+                    double curE = fe.energy(xChemical[i], print);
                     e += (curE - e) / (i + 1);
                 }
                 e += weight * dataEnergy.energy(x);
@@ -468,6 +473,17 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
+        return energyAndGradient(x, g, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Implementation of the {@link CrystalPotential} interface for the
+     * RefinementEnergy.
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g, boolean print) {
         double weight = data.getWeight();
         double e = 0.0;
         fill(g, 0.0);
@@ -490,7 +506,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
+                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i], print);
                     e += (curE - e) / (i + 1);
                     setAssemblyi(i, g, gChemical[i]);
                 }
@@ -533,7 +549,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
+                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i], print);
                     e += (curE - e) / (i + 1);
                     setAssemblyi(i, g, gChemical[i]);
                 }
