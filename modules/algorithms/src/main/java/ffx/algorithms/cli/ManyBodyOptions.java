@@ -100,9 +100,9 @@ public class ManyBodyOptions {
     boolean dee = false;
 
     /**
-     * -c or --chain Single character chain ID of the residues to optimize.
+     * --ch or --chain Single character chain ID of the residues to optimize.
      */
-    @Option(names = {"-c", "--chain"}, paramLabel = "-1",
+    @Option(names = {"--ch", "--chain"}, paramLabel = "-1",
             description = "Single character chain ID of the residues to optimize.")
     String chain = "-1";
 
@@ -114,9 +114,9 @@ public class ManyBodyOptions {
     int start = -1;
 
     /**
-     * -f or --final Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.
+     * --fi or --final Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.
      */
-    @Option(names = {"-f", "--final"}, paramLabel = "-1",
+    @Option(names = {"--fi", "--final"}, paramLabel = "-1",
             description = "Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.")
     int finish = -1;
 
@@ -142,9 +142,9 @@ public class ManyBodyOptions {
     double threeBodyCutoff = 9.0;
 
     /**
-     * -P or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
+     * --pr or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
      */
-    @Option(names = {"-P", "--prune"}, paramLabel = "2",
+    @Option(names = {"--pr", "--prune"}, paramLabel = "2",
             description = "Prune no clashes (0), only single clashes (1), or all clashes (2)")
     int prune = 2;
 
