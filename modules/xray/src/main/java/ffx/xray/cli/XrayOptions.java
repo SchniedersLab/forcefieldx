@@ -125,10 +125,10 @@ public class XrayOptions extends DataRefinementOptions {
     boolean splineFit = true;
 
     /**
-     * -A or --all
+     * -A or --allGaussians
      */
-    @Option(names = {"-A", "--all"}, paramLabel = "false",
-            description = "Use all defined Gaussians for atomic scattering density (the default is to use the top 3).")
+    @Option(names = {"-A", "--allGaussians"}, paramLabel = "false",
+            description = "Use all defined Gaussiansfor atomic scattering density (the default is to use the top 3).")
     boolean useAll = false;
 
     /**
