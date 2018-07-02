@@ -131,6 +131,9 @@ public class RefinementModel {
                 if (!a.getUse()) {
                     continue;
                 }
+                if (a.getAltLoc() == null) {
+                    logger.severe(String.format(" Atom %s has a null alternate location. Likely cause: attempting X-ray refinement from a .xyz file", a));
+                }
                 if (!a.getAltLoc().equals(' ')
                         || a.getOccupancy() < 1.0) {
                     if (iNode instanceof Residue) {
