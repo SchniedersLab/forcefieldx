@@ -139,6 +139,14 @@ public class RotamerOptimization implements Terminatable {
      */
     protected final MolecularAssembly molecularAssembly;
     /**
+     * The Potential to evaluate during rotamer optimization.
+     */
+    protected Potential potential;
+    /**
+     * AlgorithmListener who should receive updates as the optimization runs.
+     */
+    protected AlgorithmListener algorithmListener;
+    /**
      * List of Assemblies associated with a multi-topology Potential.
      */
     protected final List<MolecularAssembly> allAssemblies;
@@ -175,14 +183,6 @@ public class RotamerOptimization implements Terminatable {
      * (done == true).
      */
     private boolean done = true;
-    /**
-     * AlgorithmListener who should receive updates as the optimization runs.
-     */
-    protected AlgorithmListener algorithmListener;
-    /**
-     * The Potential to evaluate during rotamer optimization.
-     */
-    protected Potential potential;
     /**
      * The potential energy of the system with all side-chains to be optimized
      * turned off.

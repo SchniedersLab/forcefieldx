@@ -62,7 +62,8 @@ import static ffx.numerics.VectorMath.u2b;
 /**
  * Combine the X-ray target and chemical potential energy.
  *
- * @author Timothy D. Fenn and Michael J. Schnieders
+ * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
  *
  * @since 1.0
  */

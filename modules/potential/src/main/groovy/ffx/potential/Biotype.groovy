@@ -46,6 +46,9 @@ class Biotype extends PotentialScript {
             mol = mol.substring(0, 3)
         }
 
+        // Create a List of bioptype String entries.
+        List<String> biotypes = new ArrayList<>()
+
         int index = 1
         for (Atom atom : atoms) {
             StringBuilder sb = new StringBuilder()
@@ -56,8 +59,12 @@ class Biotype extends PotentialScript {
                     sb.append(String.format(" %4s", bond.get1_2(atom).getName()))
                 }
             }
+            biotypes.add(sb.toString())
             logger.info(sb.toString())
         }
+
+        // Pass back the result of the script.
+        binding.setVariable("biotypes", biotypes)
     }
 
 }
