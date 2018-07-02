@@ -66,9 +66,9 @@ class Anneal extends AlgorithmsScript {
         modelfilename = FilenameUtils.removeExtension(modelfilename)
 
         if (ext.toUpperCase().contains("XYZ")) {
-            algorithmFunctions.saveAsXYZ(new File(modelfilename + ".xyz"));
+            algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelfilename + ".xyz"));
         } else {
-            algorithmFunctions.saveAsPDB(new File(modelfilename + ".pdb"));
+            algorithmFunctions.saveAsPDB(activeAssembly, new File(modelfilename + ".pdb"));
         }
     }
 }
