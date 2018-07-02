@@ -65,7 +65,7 @@ class Timer extends AlgorithmsScript {
 
         // Load parsed X-ray properties.
         CompositeConfiguration properties = assemblies[0].getProperties()
-        xrayOptions.setProperties(properties)
+        xrayOptions.setProperties(parseResult, properties)
 
         // Set up diffraction data (can be multiple files)
         List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)

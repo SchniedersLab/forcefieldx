@@ -387,11 +387,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Langevin friction coefficient.
      */
-    private double frictionCoeff;
+    private double frictionCoeff = 0.01;
     /**
-     * Langevin collision frequency.
+     * Andersen thermostat collision frequency.
      */
-    private double collisionFreq;
+    private double collisionFreq = 91.0;
     /**
      * Value of the state variable Lambda.
      */
@@ -785,6 +785,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     public double getTimeStep() {
         return timeStep;
+    }
+
+    public void setCoeffOfFriction(double coeffOfFriction) {
+        this.frictionCoeff = coeffOfFriction;
+    }
+
+    public void setCollisionFreq(double collisionFreq) {
+        this.collisionFreq = collisionFreq;
     }
 
     /**

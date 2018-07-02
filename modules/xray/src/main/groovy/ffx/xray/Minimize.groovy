@@ -87,7 +87,7 @@ class Minimize extends AlgorithmsScript {
 
         // Load parsed X-ray properties.
         CompositeConfiguration properties = activeAssembly.getProperties()
-        xrayOptions.setProperties(properties)
+        xrayOptions.setProperties(parseResult, properties)
 
         // Set up diffraction data (can be multiple files)
         List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)

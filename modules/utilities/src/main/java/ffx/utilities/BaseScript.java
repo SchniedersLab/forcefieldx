@@ -48,6 +48,7 @@ import groovy.lang.Script;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParseResult;
 
 public class BaseScript extends Script {
 
@@ -74,6 +75,11 @@ public class BaseScript extends Script {
     public String[] args;
 
     /**
+     * Parse Result.
+     */
+    public ParseResult parseResult = null;
+
+    /**
      * -h or --help to print a help message
      */
     @Option(names = {"-h", "--help"}, usageHelp = true, description = "Print this help message.")
@@ -98,8 +104,10 @@ public class BaseScript extends Script {
     public boolean init() {
         context = getBinding();
         args = (String[]) context.getProperty("args");
+        
+        CommandLine commandLine = new CommandLine(this);
+        parseResult = commandLine.parseArgs(args);
 
-        CommandLine.populateCommand(this, args);
         if (help) {
             logger.info(helpString());
             return false;
