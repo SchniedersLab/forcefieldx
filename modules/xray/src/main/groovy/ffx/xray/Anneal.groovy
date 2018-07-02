@@ -66,7 +66,7 @@ class Anneal extends AlgorithmsScript {
 
         // Load parsed X-ray properties.
         CompositeConfiguration properties = assemblies[0].getProperties()
-        xrayOptions.setProperties(properties)
+        xrayOptions.setProperties(parseResult, properties)
 
 
         logger.info("\n Running simulated annealing on " + modelfilename)

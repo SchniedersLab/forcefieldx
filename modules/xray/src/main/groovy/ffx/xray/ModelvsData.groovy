@@ -74,7 +74,7 @@ class ModelvsData extends AlgorithmsScript {
 
         // Load parsed X-ray properties.
         CompositeConfiguration properties = activeAssembly.getProperties()
-        xrayOptions.setProperties(properties)
+        xrayOptions.setProperties(parseResult, properties)
 
         // Set up diffraction data (can be multiple files)
         List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);

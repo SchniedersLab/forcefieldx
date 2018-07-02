@@ -47,10 +47,11 @@ import org.apache.commons.io.FilenameUtils;
 import ffx.potential.MolecularAssembly;
 import ffx.xray.CrystalReciprocalSpace;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.parsers.DiffractionFile;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
+import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Option;
 
 /**
@@ -129,7 +130,7 @@ public class XrayOptions extends DataRefinementOptions {
      */
     @Option(names = {"-A", "--allGaussians"}, paramLabel = "false",
             description = "Use all defined Gaussiansfor atomic scattering density (the default is to use the top 3).")
-    boolean useAll = false;
+    boolean allGaussians = false;
 
     /**
      * --xrayScaleTol
@@ -196,26 +197,98 @@ public class XrayOptions extends DataRefinementOptions {
         solventModel = CrystalReciprocalSpace.parseSolventModel(solventString);
     }
 
-    public void setProperties(CompositeConfiguration properties) {
+    public void setProperties(ParseResult parseResult, CompositeConfiguration properties) {
+        // wA
+        if (!parseResult.hasMatchedOption("wA")) {
+            wA = properties.getDouble("xweight", wA);
+        }
         properties.setProperty("xweight", wA);
+
+        // bSimWeight
+        if (!parseResult.hasMatchedOption("bSimWeight")) {
+            bSimWeight = properties.getDouble("bsimweight", bSimWeight);
+        }
         properties.setProperty("bsimweight", bSimWeight);
+
+        // F/SigF Cutoff
+        if (!parseResult.hasMatchedOption("fsigfcutoff")) {
+            fSigFCutoff = properties.getDouble("fsigfcutoff", fSigFCutoff);
+        }
         properties.setProperty("fsigfcutoff", fSigFCutoff);
+
+        // Solvent Grid Search
+        if (!parseResult.hasMatchedOption("gridSearch")) {
+            gridSearch = properties.getBoolean("gridsearch", gridSearch);
+        }
         properties.setProperty("gridsearch", gridSearch);
+
+        // Number of Bins
+        if (!parseResult.hasMatchedOption("nBins")) {
+            nBins = properties.getInt("nbins", nBins);
+        }
         properties.setProperty("nbins", nBins);
+
+        // Grid Sampling
+        if (!parseResult.hasMatchedOption("sampling")) {
+            sampling = properties.getDouble("sampling", sampling);
+        }
         properties.setProperty("sampling", sampling);
+
+        // Atomic Radius Buffer
+        if (!parseResult.hasMatchedOption("aRadBuffer")) {
+            aRadBuffer = properties.getDouble("aradbuff", aRadBuffer);
+        }
         properties.setProperty("aradbuff", aRadBuffer);
+
+        // RFreeFlag
+        if (!parseResult.hasMatchedOption("rFreeFlag")) {
+            rFreeFlag = properties.getInt("rrfreeflag", rFreeFlag);
+        }
         properties.setProperty("rrfreeflag", rFreeFlag);
+
+        // Spline Fit
+        if (!parseResult.hasMatchedOption("splineFit")) {
+            splineFit = properties.getBoolean("splinefit", splineFit);
+        }
         properties.setProperty("splinefit", splineFit);
-        properties.setProperty("use_3g", !useAll);
+
+        // Use All Gaussians
+        if (!parseResult.hasMatchedOption("allGaussians")) {
+            allGaussians = properties.getBoolean("use_3g", allGaussians);
+        }
+        properties.setProperty("use_3g", !allGaussians);
+
+        // X-ray Scale Tolerance
+        if (!parseResult.hasMatchedOption("xrayScaleTol")) {
+            xrayScaleTol = properties.getDouble("xrayscaletol", xrayScaleTol);
+        }
         properties.setProperty("xrayscaletol", xrayScaleTol);
+
+        // Sigma A Tolerance
+        if (!parseResult.hasMatchedOption("sigmaATol")) {
+            sigmaATol = properties.getDouble("sigmaatol", sigmaATol);
+        }
         properties.setProperty("sigmaatol", sigmaATol);
-        if (nResidueBFactor > 0) {
-            properties.setProperty("residuebfactor", "true");
-        } else {
-            properties.setProperty("residuebfactor", "false");
+
+        // Number of Residues per B-Factor
+        if (!parseResult.hasMatchedOption("nResidueBFactor")) {
+            nResidueBFactor = properties.getInt("nresiduebfactor", nResidueBFactor);
         }
         properties.setProperty("nresiduebfactor", Integer.toString(nResidueBFactor));
+        if (nResidueBFactor > 0) {
+            properties.setProperty("residuebfactor", "true");
+        }
+
+        // Add AnisoU B-Factors to the Refinement
+        if (!parseResult.hasMatchedOption("anisoU")) {
+            anisoU = properties.getBoolean("addanisou", anisoU);
+        }
         properties.setProperty("addanisou", anisoU);
+
+        // Refine Molecular Occupancies
+        if (!parseResult.hasMatchedOption("refineMolOcc")) {
+            refineMolOcc = properties.getBoolean("refinemolocc", refineMolOcc);
+        }
         properties.setProperty("refinemolocc", refineMolOcc);
     }
 
