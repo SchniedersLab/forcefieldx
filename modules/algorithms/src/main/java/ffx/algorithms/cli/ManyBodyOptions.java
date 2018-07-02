@@ -640,9 +640,10 @@ public class ManyBodyOptions {
      logger.info(" Sequence optimizing " + t);
      sequenceOptimizationList.add(t);
      }
-     if (System.getProperty("relative-solvation") == null) {
-     System.setProperty("relative-solvation", "AUTO");
-     }
+     // Get the ForceFieldString properly instead.
+     //if (System.getProperty("relative-solvation") == null) {
+     //System.setProperty("relative-solvation", "AUTO");
+     //}
      }
 
      List<String> titrationOptimizationList = new ArrayList<>();
