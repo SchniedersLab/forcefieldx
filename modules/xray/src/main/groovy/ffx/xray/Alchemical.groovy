@@ -1,4 +1,4 @@
-package ffx.realspace
+package ffx.xray
 
 import java.util.logging.Logger
 
@@ -35,10 +35,10 @@ import picocli.CommandLine.Parameters
  * <br>
  * Usage:
  * <br>
- * ffxc realspace.Alchemical [options] &lt;filename&gt;
+ * ffxc xray.Alchemical [options] &lt;filename&gt;
  */
 
-@Command(description = " Simulated annealing on a Real Space target.", name = "ffxc realspace.Alchemical")
+@Command(description = " Simulated annealing on an X-ray target.", name = "ffxc xray.Alchemical")
 class Alchemical extends AlgorithmsScript {
 
     @Mixin
@@ -48,25 +48,6 @@ class Alchemical extends AlgorithmsScript {
     XrayOptions xrayOptions
 
     private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
-    /**
-     * -X or --wA The weight of the real space data (wA).
-     */
-    @Option(names = ["-X", "--wA"], paramLabel = "1.0",
-            description = "The weight of the real space data (wA).")
-    double wA = 1.0
-    /**
-     * -y or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-     */
-    @Option(names = ["-y", "--data"], split = ",",
-            description = "Specify input data filename and its weight (wA) (e.g. -y filename,1.0).")
-    String[] data = null
-    /**
-     * -u or --mode sets the desired refinement mode
-     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
-     */
-    @Option(names = ["-m", "--mode"], paramLabel = "coordinates",
-            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "coordinates"
     /**
      * -I or --doions sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
      */
@@ -133,6 +114,7 @@ class Alchemical extends AlgorithmsScript {
 
         dynamicsOptions.init()
         xrayOptions.init()
+        System.setProperty("lambdaterm", "true")
 
         String modelfilename
         MolecularAssembly[] assemblies

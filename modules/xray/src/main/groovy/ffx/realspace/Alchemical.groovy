@@ -1,7 +1,6 @@
 package ffx.realspace
 
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.realspace.cli.RealSpaceOptions
 import ffx.realspace.parsers.RealSpaceFile
 import org.apache.commons.io.FilenameUtils
 
@@ -17,10 +16,9 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
 import ffx.xray.RefinementEnergy
-import ffx.xray.RefinementMinimize.RefinementMode
 
 import ffx.algorithms.cli.DynamicsOptions
-//import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.cli.RealSpaceOptions
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -37,63 +35,44 @@ import java.util.logging.Logger
  * ffxc realspace.Alchemical [options] &lt;filename&gt;
  */
 
-@Command(description = " Simulated annealing on a Real Space target.", name = "ffxc realspace.Alchemical")
+@Command(description = " Alchemical changes on a Real Space target.", name = "ffxc realspace.Alchemical")
 class Alchemical extends AlgorithmsScript {
 
     @Mixin
     DynamicsOptions dynamicsOptions
 
-//    @Mixin
-//    RealSpaceOptions realSpaceOptions
+    @Mixin
+    RealSpaceOptions realSpaceOptions
 
-    private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
-    /**
-     * -X or --wA The weight of the real space data (wA).
-     */
-    @Option(names = ["-X", "--wA"], paramLabel = "1.0",
-            description = "The weight of the real space data (wA).")
-    double wA = 1.0
-    /**
-     * -y or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
-     */
-    @Option(names = ["-y", "--data"], split = ",",
-            description = "Specify input data filename and its weight (wA) (e.g. -y filename,1.0).")
-    String[] data = null
-    /**
-     * -u or --mode sets the desired refinement mode
-     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
-     */
-    @Option(names = ["-m", "--mode"], paramLabel = "coordinates",
-            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "coordinates"
+    private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName())
+
     /**
      * -I or --doions sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
      */
     @Option(names = ["-I", "--doions"], paramLabel = 'false',
             description = 'Set whether or not to optimize ion positions (of a single type of ion).')
     boolean opt_ions = false
+
     /**
      * --itype or --iontype Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
      */
     @Option(names = ["--itype", "--iontype"], paramLabel = '',
             description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
     String [] iontype = ''
+
     /**
      * --neut or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
      */
     @Option(names = ["--neut", "--neutralize"], paramLabel = 'false',
             description = 'Add more of the selected ion to neutralize the crystal\'s charge')
     boolean neutralize = false
+
     /**
      * -W or --dowaters sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
      */
     @Option(names = ["-W", "--dowaters"], paramLabel = 'false',
             description = 'Set whether or not to optimize water positions.')
     boolean opt_waters = false
-    /**
-     * The refinement mode to use.
-     */
-    RefinementMode refinementMode = RefinementMode.COORDINATES
 
     /**
      * One or more filenames.
@@ -102,7 +81,7 @@ class Alchemical extends AlgorithmsScript {
     private List<String> filenames
 
     // Value of Lambda.
-    double lambda = 1.0
+    double lambda = 0.0
 
     // ThermostatEnum [ ADIABATIC, BERENDSEN, BUSSI ]
     ThermostatEnum thermostat = ThermostatEnum.ADIABATIC
@@ -131,6 +110,7 @@ class Alchemical extends AlgorithmsScript {
         }
 
         dynamicsOptions.init()
+        System.setProperty("lambdaterm", "true")
 
         String modelfilename
         MolecularAssembly[] assemblies
@@ -202,12 +182,13 @@ class Alchemical extends AlgorithmsScript {
         ArrayList<MSNode> ions = assemblies[0].getIons()
         ArrayList<MSNode> waters = assemblies[0].getWaters()
 
+//      Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
+
         if (opt_ions) {
             if (ions == null || ions.size() == 0) {
                 logger.info("\n Please add an ion to the PDB file to scan with.")
                 return
             }
-
             for (MSNode msNode : ions) {
                 for (Atom atom : msNode.getAtomList()) {
                     // Scan with the last ion in the file.
@@ -232,36 +213,12 @@ class Alchemical extends AlgorithmsScript {
             }
         }
 
-        // set up real space map data (can be multiple files)
-        List mapfiles = new ArrayList()
-        if (filenames.size() > 1) {
-            RealSpaceFile realspacefile = new RealSpaceFile(filenames.get(1), 1.0)
-            mapfiles.add(realspacefile)
-        }
-        if (data) {
-            for (int i = 0; i < data.size(); i += 2) {
-                double wA = Double.parseDouble(data[i + 1]);
-                RealSpaceFile realspacefile = new RealSpaceFile(data[i], wA)
-                mapfiles.add(realspacefile)
-            }
-        }
-
-        if (mapfiles.size() == 0) {
-            RealSpaceFile realspacefile = new RealSpaceFile(assemblies[0], 1.0)
-            mapfiles.add(realspacefile)
-        }
+        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
 
         RealSpaceData realSpaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
                 activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
-
-        // Replace map file set-up above with commented lines below once RealSpaceOptions can be used (after conflicting flags are resolved)
-//        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
 //
-//        RealSpaceData realSpaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-//                activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
-//
-
-        RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMode.COORDINATES, null)
+        RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, realSpaceOptions.refinementMode, null)
         refinementEnergy.setLambda(lambda)
 
         boolean asynchronous = true
@@ -288,6 +245,7 @@ class Alchemical extends AlgorithmsScript {
         double currentOSRWOptimum = osrw.getOSRWOptimum()
         if (lowEnergyCoordinates != null) {
             forceFieldEnergy.setCoordinates(lowEnergyCoordinates)
+            logger.info("\n Minimum coordinates found: " + lowEnergyCoordinates)
         } else {
             logger.info(" OSRW stage did not succeed in finding a minimum.")
         }

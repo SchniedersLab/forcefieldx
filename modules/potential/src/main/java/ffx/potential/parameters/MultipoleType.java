@@ -325,6 +325,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         MultipoleType multipoleType = forceField.getMultipoleType(key);
         if (multipoleType != null) {
             atom.setMultipoleType(multipoleType);
+            // Atom axisAtom = null;
+            // atom.setAxisAtoms(axisAtom);
             atom.setAxisAtoms(null);
             return multipoleType;
         }

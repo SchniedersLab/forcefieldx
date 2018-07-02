@@ -100,7 +100,6 @@ public class DiffractionData implements DataContainer {
     private ParallelTeam parallelTeam;
     private boolean scaled[];
     // settings
-    private int rFreeFlag;
     private final double fsigfCutoff;
     private final boolean use_3g;
     private final double aRadBuff;
@@ -115,7 +114,6 @@ public class DiffractionData implements DataContainer {
     private final boolean addAnisou;
     private final boolean refineMolOcc;
     private final double occMass;
-    // public boolean lambdaTerm;
 
     /**
      * If true, perform a grid search for bulk solvent parameters.
@@ -1138,13 +1136,6 @@ public class DiffractionData implements DataContainer {
      */
     public boolean[] getScaled() {
         return scaled;
-    }
-
-    /**
-     * @return the rFreeFlag
-     */
-    public int getRFreeFlag() {
-        return rFreeFlag;
     }
 
     /**
