@@ -292,15 +292,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private final Level GK_WARN_LEVEL;
 
-    /*static {
-        String suppressGKwarnings = System.getProperty("gk-suppressWarnings");
-        if (suppressGKwarnings != null && Boolean.parseBoolean(suppressGKwarnings)) {
-            GK_WARN_LEVEL = Level.FINE;
-        } else {
-            GK_WARN_LEVEL = Level.WARNING;
-        }
-    }*/
-
     public double[] getOverlapScale() {
         return overlapScale;
     }

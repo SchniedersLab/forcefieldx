@@ -1811,7 +1811,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 saveMutualInducedDipoles();
             }
 
-            if (System.getProperty("printInducedDipoles") != null) {
+            if (printInducedDipoles) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("     Atom                                         Induced Dipole \n");
                 sb.append("    ======                                       ================\n");

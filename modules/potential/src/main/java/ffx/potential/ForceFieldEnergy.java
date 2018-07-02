@@ -907,6 +907,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (noHeader) {
             logger.setLevel(logger.getParent().getLevel());
         }
+        if (lambdaTerm) {
+            this.setLambda(1.0);
+        }
     }
 
     /**
