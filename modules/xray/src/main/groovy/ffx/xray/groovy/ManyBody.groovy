@@ -15,6 +15,7 @@ import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
+import ffx.xray.RefinementMinimize.RefinementMode
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -25,9 +26,9 @@ import picocli.CommandLine.Parameters
  * <br>
  * Usage:
  * <br>
- * ffxc ManyBody [options] &lt;filename&gt;
+ * ffxc xray.ManyBody [options] &lt;filename&gt;
  */
-@Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "ffxc realspace.ManyBody")
+@Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "ffxc xray.ManyBody")
 class ManyBody extends AlgorithmsScript {
 
     @Mixin
@@ -83,41 +84,49 @@ class ManyBody extends AlgorithmsScript {
         diffractionData.scaleBulkFit()
         diffractionData.printStats()
 
+        // The refinement mode must be coordinates.
+        if (xrayOptions.refinementMode != RefinementMode.COORDINATES) {
+            logger.info(" Refinement mode set to COORDINATES.")
+            xrayOptions.refinementMode = RefinementMode.COORDINATES
+        }
         RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
-        double[] x = new double[refinementEnergy.getNumberOfVariables()];
-        x = refinementEnergy.getCoordinates(x);
-        refinementEnergy.energy(x, true);
+        refinementEnergy.setScaling(null);
+        int n = refinementEnergy.getNumberOfVariables()
+        double[] x = new double[n]
+        refinementEnergy.getCoordinates(x)
+        double e = refinementEnergy.energy(x, true)
+        logger.info(String.format(" Starting energy: %16.8f ", e))
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, algorithmListener)
         manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
         ArrayList<Residue> residueList = rotamerOptimization.getResidues()
-        RotamerLibrary.measureRotamers(residueList, false);
+        RotamerLibrary.measureRotamers(residueList, false)
 
         if (manyBody.algorithm == 1) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.INDEPENDENT)
         } else if (manyBody.algorithm == 2) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL)
         } else if (manyBody.algorithm == 3) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.BRUTE_FORCE)
         } else if (manyBody.algorithm == 4) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW)
         } else if (manyBody.algorithm == 5) {
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX);
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.BOX)
         }
 
-        boolean master = true;
+        boolean master = true
         if (Comm.world().size() > 1) {
-            int rank = Comm.world().rank();
+            int rank = Comm.world().rank()
             if (rank != 0) {
-                master = false;
+                master = false
             }
         }
 
         if (master) {
-            logger.info(" Final Minimum Energy")
-
-            algorithmFunctions.energy(activeAssembly)
+            refinementEnergy.getCoordinates(x)
+            e = refinementEnergy.energy(x, true)
+            logger.info(String.format(" Final energy: %16.8f ", e))
 
             String ext = FilenameUtils.getExtension(filename);
             filename = FilenameUtils.removeExtension(filename);

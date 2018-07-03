@@ -2330,8 +2330,7 @@ public class RotamerOptimization implements Terminatable {
 
         /*
          * Distance matrix is  used to add residues to the sliding window
-         * based on distance cutoff, and to automatically set some 3-body terms
-         * to 0 at > 10 angstroms.
+         * based on distance cutoff, and for cutoff distances.
          *
          * The memory and compute overhead can be a problem for some very large
          * structures.
@@ -4739,7 +4738,7 @@ public class RotamerOptimization implements Terminatable {
             int nVar = potential.getNumberOfVariables();
             x = new double[nVar];
         }
-        x = potential.getCoordinates(x);
+        potential.getCoordinates(x);
         return potential.energy(x);
     }
 
@@ -4792,19 +4791,6 @@ public class RotamerOptimization implements Terminatable {
         int nAtoms = atoms.length;
         allocateEliminationMemory(residues);
 
-        boolean containsNA = Arrays.stream(residues).anyMatch((Residue r) -> r.getResidueType() == Residue.ResidueType.NA);
-
-        //if (containsNA) {
-            /*
-         * Must pin 5' ends of nucleic acids which are attached to nucleic acids
-         * outside the window, to those prior residues' sugar puckers.  Then,
-         * if a correction threshold is set, eliminate rotamers with excessive
-         * correction vectors (up to a maximum defined by minNumberAcceptedNARotamers).
-         */
-            //logIfMaster(" Eliminating nucleic acid rotamers that conflict at their 5' end with residues outside the optimization range.");
-        //reconcileNARotamersWithPriorResidues(residues);
-        //eliminateNABackboneRotamers(residues);
-        //}
         if (decomposeOriginal) {
             assert library.getUsingOrigCoordsRotamer();
             for (int i = 0; i < nResidues; i++) {
@@ -4827,7 +4813,7 @@ public class RotamerOptimization implements Terminatable {
         }
 
         if (!usingBoxOptimization) {
-            energiesToWrite = Collections.synchronizedList(new ArrayList<String>());
+            energiesToWrite = Collections.synchronizedList(new ArrayList<>());
             receiveThread = new ReceiveThread(residues);
             receiveThread.start();
             if (master && writeEnergyRestart && printFiles) {
@@ -5137,10 +5123,16 @@ public class RotamerOptimization implements Terminatable {
      * found.
      */
     private double computeBackboneEnergy(Residue[] residues) throws ArithmeticException {
-        turnOffAllResidues(residues);
-        for (Residue residue : residues) {
-            applyDefaultRotamer(residue);
+        // Set all atoms to be used.
+        Atom atoms[] = molecularAssembly.getAtomArray();
+        for (Atom atom : atoms) {
+            atom.setUse(true);
         }
+
+        // Turn off all Residues and set them to their default conformation.
+        turnOffAllResidues(residues);
+
+        // Compute and return the backbone energy.
         return currentEnergy(residues);
     }
 
@@ -5150,16 +5142,6 @@ public class RotamerOptimization implements Terminatable {
      * @param residue Residue to apply a default rotamer for.
      */
     private void applyDefaultRotamer(Residue residue) {
-        /*switch (residue.getResidueType()) {
-         case NA:
-         //RotamerLibrary.applyRotamer(residue, defaultNucleicRotamers.get(residue));
-         RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
-         break;
-         case AA:
-         default:
-         RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
-         break;
-         }*/
         RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
     }
 
@@ -7361,6 +7343,7 @@ public class RotamerOptimization implements Terminatable {
             } catch (ArithmeticException ex) {
                 logger.severe(String.format(" Exception %s in calculating backbone energy; FFX shutting down.", ex.toString()));
             }
+            logIfMaster(format(" Backbone energy:  %s\n", formatEnergy(backboneEnergy)));
 
             if (usingBoxOptimization && boxIteration >= 0) {
                 boolean foundBox = false;

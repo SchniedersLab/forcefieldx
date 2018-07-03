@@ -3,6 +3,7 @@ package ffx.potential.groovy
 import edu.rit.pj.ParallelTeam
 
 import ffx.numerics.Potential
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.PotentialScript
@@ -41,7 +42,7 @@ class MultiTopTimer extends PotentialScript {
 
     private int threadsAvail = ParallelTeam.getDefaultThreadCount();
     private int threadsPer = threadsAvail;
-    ffx.potential.MolecularAssembly[] topologies;
+    MolecularAssembly[] topologies;
 
     @Override
     MultiTopTimer run() {
@@ -55,7 +56,7 @@ class MultiTopTimer extends PotentialScript {
         int nArgs = arguments ? arguments.size() : 1;
         nArgs = (nArgs < 1) ? 1 : nArgs;
 
-        topologies = new ffx.potential.MolecularAssembly[nArgs];
+        topologies = new MolecularAssembly[nArgs];
 
         int numParallel = topology.getNumParallel(threadsAvail, nArgs);
         threadsPer = threadsAvail / numParallel;
@@ -77,13 +78,13 @@ class MultiTopTimer extends PotentialScript {
             System.setProperty("ligand-vapor-elec", "false");
         }
 
-        List<ffx.potential.MolecularAssembly> topologyList = new ArrayList<>(4);
+        List<MolecularAssembly> topologyList = new ArrayList<>(4);
 
         /**
          * Read in files.
          */
         if (!arguments || arguments.isEmpty()) {
-            ffx.potential.MolecularAssembly mola = potentialFunctions.getActiveAssembly();
+            MolecularAssembly mola = potentialFunctions.getActiveAssembly();
             if (mola == null) {
                 return helpString();
             }
@@ -97,7 +98,7 @@ class MultiTopTimer extends PotentialScript {
             }
         }
 
-        ffx.potential.MolecularAssembly[] topologies = topologyList.toArray(new ffx.potential.MolecularAssembly[topologyList.size()]);
+        MolecularAssembly[] topologies = topologyList.toArray(new MolecularAssembly[topologyList.size()]);
 
         /**
          * Configure the potential to test.

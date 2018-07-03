@@ -6,6 +6,8 @@ import org.apache.commons.io.FilenameUtils
 import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
 import ffx.crystal.SymOp
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 
@@ -89,7 +91,7 @@ class PrepareSpaceGroups extends PotentialScript {
             return this
         }
 
-        ffx.potential.MolecularAssembly[] assemblies
+        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
@@ -103,7 +105,7 @@ class PrepareSpaceGroups extends PotentialScript {
         logger.info("\n Preparing space group directories for " + modelFilename)
         System.setProperty("ewald-alpha", "0.0")
 
-        ffx.potential.ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
+        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
         CompositeConfiguration config = activeAssembly.getProperties()
 
         File coordFile = activeAssembly.getFile()

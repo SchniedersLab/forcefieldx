@@ -1,5 +1,6 @@
 package ffx.potential.groovy
 
+import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 
 import picocli.CommandLine.Command
@@ -31,7 +32,7 @@ class SaveAsP1 extends PotentialScript {
             return
         }
 
-        ffx.potential.MolecularAssembly[] assemblies
+        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]

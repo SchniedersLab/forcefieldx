@@ -1,6 +1,8 @@
 package ffx.potential.groovy
 
 import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergyOpenMM
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.PotentialScript
@@ -66,7 +68,7 @@ class CoordShakeEnergy extends PotentialScript {
         }
 
         if (filenames != null && filenames.size() > 0) {
-            ffx.potential.MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -93,8 +95,8 @@ class CoordShakeEnergy extends PotentialScript {
         }
 
         def eFunct
-        if (thePotential instanceof ffx.potential.ForceFieldEnergyOpenMM) {
-            ffx.potential.ForceFieldEnergyOpenMM ommE = (ffx.potential.ForceFieldEnergyOpenMM) thePotential
+        if (thePotential instanceof ForceFieldEnergyOpenMM) {
+            ForceFieldEnergyOpenMM ommE = (ForceFieldEnergyOpenMM) thePotential
             eFunct = { double[] coords -> return ommE.energyVsFFX(coords, true) }
         } else {
             eFunct = { double[] coords -> return thePotential.energy(coords, true) }

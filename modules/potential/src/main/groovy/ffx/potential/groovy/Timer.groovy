@@ -1,5 +1,7 @@
 package ffx.potential.groovy
 
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.TimerOptions
 
@@ -41,7 +43,7 @@ class Timer extends PotentialScript {
         }
 
         if (filenames != null && filenames.size() > 0) {
-            ffx.potential.MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -60,12 +62,12 @@ class Timer extends PotentialScript {
 
         logger.info("\n Timing energy and gradient for " + activeAssembly.toString());
 
-        ffx.potential.ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
+        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
 
         logger.info("\n Beginning timing\n")
         long minTime = Long.MAX_VALUE
         double sumTime2 = 0.0
-        int halfnEvals = (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1 // Halfway point
+        int halfnEvals = (int) (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1 // Halfway point
         for (int i = 0; i < nEvals; i++) {
             long time = -System.nanoTime()
             double e = energy.energy(!timer.gradient, timer.getVerbose())

@@ -63,7 +63,7 @@ import picocli.CommandLine.Option;
  */
 public class ManyBodyOptions {
 
-    private static final java.util.logging.Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
+    private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
     /**
      * PARAMETERS SHARED BY ALL ALGORITHMS. 
@@ -175,7 +175,7 @@ public class ManyBodyOptions {
      */
     @Option(names = {"-O", "--original"},
             description = "Do not include starting coordinates as their own rotamer.")
-    boolean original = true;
+    boolean original = false;
 
     /**
      * -E or --decompose Print energy decomposition for the input structure (no optimization).

@@ -4,6 +4,7 @@ import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
 import ffx.crystal.SymOp
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
@@ -60,7 +61,7 @@ class SaveAsXYZ extends PotentialScript {
             return this
         }
 
-        ffx.potential.MolecularAssembly[] assemblies
+        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]

@@ -2,6 +2,7 @@ package ffx.potential.groovy
 
 import org.apache.commons.io.FilenameUtils
 
+import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
@@ -36,7 +37,7 @@ class SaveAsPDB extends PotentialScript {
             return this
         }
 
-        ffx.potential.MolecularAssembly[] assemblies
+        MolecularAssembly[] assemblies
         SystemFilter openFilter = null
         if (filenames != null && filenames.size() > 0) {
             assemblies = potentialFunctions.open(filenames.get(0))

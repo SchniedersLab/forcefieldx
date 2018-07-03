@@ -1,5 +1,8 @@
 package ffx.potential.groovy
 
+import ffx.potential.ForceFieldEnergy
+import ffx.potential.ForceFieldEnergyOpenMM
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 
@@ -55,7 +58,7 @@ class Energy extends PotentialScript {
         }
 
         if (filenames != null && filenames.size() > 0) {
-            ffx.potential.MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
+            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -65,7 +68,7 @@ class Energy extends PotentialScript {
         String filename = activeAssembly.getFile().getAbsolutePath()
         logger.info("\n Running Energy on " + filename)
 
-        ffx.potential.ForceFieldEnergy pe = activeAssembly.getPotentialEnergy()
+        ForceFieldEnergy pe = activeAssembly.getPotentialEnergy()
         Atom[] atoms = activeAssembly.getAtomArray()
 
         // Apply the no electrostatics atom selection
@@ -88,9 +91,9 @@ class Energy extends PotentialScript {
         if (gradient) {
             double[] g = new double[nVars]
             int nAts = nVars / 3
-            if (pe instanceof ffx.potential.ForceFieldEnergyOpenMM) {
+            if (pe instanceof ForceFieldEnergyOpenMM) {
                 double[] gOMM = new double[nVars]
-                ffx.potential.ForceFieldEnergyOpenMM ope = (ffx.potential.ForceFieldEnergyOpenMM) pe
+                ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe
                 ope.energyAndGradVsFFX(x, g, gOMM, true)
                 for (int i = 0; i < nAts; i++) {
                     int i3 = 3 * i
@@ -107,8 +110,8 @@ class Energy extends PotentialScript {
                     logger.info(String.format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
                 }
             }
-        } else if (pe instanceof ffx.potential.ForceFieldEnergyOpenMM) {
-            ffx.potential.ForceFieldEnergyOpenMM ope = (ffx.potential.ForceFieldEnergyOpenMM) pe
+        } else if (pe instanceof ForceFieldEnergyOpenMM) {
+            ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe
             ope.energyVsFFX(x, true)
         } else {
             pe.energy(x, true)

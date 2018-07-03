@@ -36,57 +36,59 @@
  * exception statement from your version.
  */
 
-package ffx.utilities.test;
+package ffx.utilities.test
 
 import groovy.cli.picocli.CliBuilder
 
-boolean testMode = false;
-Optional<Double> psPerHisto = Optional.empty();
-Optional<Integer> blockSizeStep = Optional.empty();
-Optional<Integer> maxBlockSize = Optional.empty();
-Optional<String> grepCmd = Optional.empty();
+import ffx.utilities.BlockAverager
+
+boolean testMode = false
+Optional<Double> psPerHisto = Optional.empty()
+Optional<Integer> blockSizeStep = Optional.empty()
+Optional<Integer> maxBlockSize = Optional.empty()
+Optional<String> grepCmd = Optional.empty()
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc utilities.blockAverage [options] <logFile>');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.dt(longOpt:'psPerHisto', args:1, argName:'1.0', 'Number of picoseconds between each input histogram.');
-cli.g(longOpt:'grepCmd', args:1, argName:'grep', 'Location of grep executable on non-UNIX systems.');
-cli.m(longOpt:'maxBlockSize', args:1, argName:'-1', 'Maximum block size to attempt, else uses numHistograms.');
-cli.s(longOpt:'blockSizeStep', args:1, argName:'100', 'Step increment for block size.');
-cli.gt(longOpt:'generateTestData', args:1, argName:'1000', 'Create correlated and uncorrelated validation sets.');
-cli.t(longOpt:'operateTestData', 'Operate on headerless, two-column data.');
+def cli = new CliBuilder(usage: ' ffxc utilities.blockAverage [options] <logFile>')
+cli.h(longOpt: 'help', 'Print this help message.')
+cli.dt(longOpt: 'psPerHisto', args: 1, argName: '1.0', 'Number of picoseconds between each input histogram.')
+cli.g(longOpt: 'grepCmd', args: 1, argName: 'grep', 'Location of grep executable on non-UNIX systems.')
+cli.m(longOpt: 'maxBlockSize', args: 1, argName: '-1', 'Maximum block size to attempt, else uses numHistograms.')
+cli.s(longOpt: 'blockSizeStep', args: 1, argName: '100', 'Step increment for block size.')
+cli.gt(longOpt: 'generateTestData', args: 1, argName: '1000', 'Create correlated and uncorrelated validation sets.')
+cli.t(longOpt: 'operateTestData', 'Operate on headerless, two-column data.')
 
-def options = cli.parse(args);
-List<String> arguments = options.arguments();
+def options = cli.parse(args)
+List<String> arguments = options.arguments()
 if (options.h || arguments == null || arguments.size() != 1) {
-    return cli.usage();
+    return cli.usage()
 }
 
 // Read in command line.
-String filename = arguments.get(0);
+String filename = arguments.get(0)
 
 if (options.gt) {
-    int size = Integer.parseInt(options.gt);
-    ffx.utilities.BlockAverager.generateTestData(filename, size);
-    return;
+    int size = Integer.parseInt(options.gt)
+    BlockAverager.generateTestData(filename, size)
+    return
 }
 
 if (options.dt) {
-    psPerHisto = Optional.of(Double.parseDouble(options.t));
+    psPerHisto = Optional.of(Double.parseDouble(options.t))
 }
 if (options.s) {
-    blockSizeStep = Optional.of(Integer.parseInt(options.s));
+    blockSizeStep = Optional.of(Integer.parseInt(options.s))
 }
 if (options.m) {
-    maxBlockSize = Optional.of(Integer.parseInt(options.m));
+    maxBlockSize = Optional.of(Integer.parseInt(options.m))
 }
 if (options.g) {
-    grepCmd = Optional.of(options.g);
+    grepCmd = Optional.of(options.g)
 }
 if (options.t) {
-    testMode = true;
+    testMode = true
 }
 
-ffx.utilities.BlockAverager ba = new ffx.utilities.BlockAverager(filename, testMode, grepCmd, psPerHisto, blockSizeStep, maxBlockSize);
-double[] binStdErrors = ba.computeBinUncertainties();
-double totalStdError = ba.computeTotalUncertainty();
+BlockAverager ba = new BlockAverager(filename, testMode, grepCmd, psPerHisto, blockSizeStep, maxBlockSize)
+double[] binStdErrors = ba.computeBinUncertainties()
+double totalStdError = ba.computeTotalUncertainty()

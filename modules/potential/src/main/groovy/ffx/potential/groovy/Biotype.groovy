@@ -1,5 +1,6 @@
 package ffx.potential.groovy
 
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Bond
 import ffx.potential.cli.PotentialScript
@@ -33,7 +34,7 @@ class Biotype extends PotentialScript {
         }
 
         if (xyzFile != null && xyzFile.size() > 0) {
-            ffx.potential.MolecularAssembly[] assemblies = potentialFunctions.open(xyzFile.get(0))
+            MolecularAssembly[] assemblies = potentialFunctions.open(xyzFile.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())

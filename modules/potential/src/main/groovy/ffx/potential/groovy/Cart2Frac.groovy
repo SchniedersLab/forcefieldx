@@ -3,6 +3,7 @@ package ffx.potential.groovy
 import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 
@@ -40,7 +41,7 @@ class Cart2Frac extends PotentialScript {
             return
         }
 
-        ffx.potential.MolecularAssembly[] assemblies
+        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]

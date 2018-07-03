@@ -515,18 +515,6 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             }
             if (a.getAnisou(null) != null) {
                 grad = a.getAnisouGradient(grad);
-
-//                if (a.getXyzIndex() < 5) {
-//                    if (optimizationScaling != null) {
-//                        logger.info(String.format(" Getting anisou grad at %d for %s with scaling %6.3f",
-//                                index, a.toString(), optimizationScaling[index]));
-//                        ffx.numerics.VectorMath.printVector(grad);
-//                    } else {
-//                        logger.info(String.format(" Getting anisou grad at %d for %s", index, a.toString()));
-//                        ffx.numerics.VectorMath.printVector(grad);
-//                    }
-//                }
-
                 g[index++] = grad[0];
                 g[index++] = grad[1];
                 g[index++] = grad[2];
@@ -669,25 +657,12 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 }
                 if (a.getAnisou(null) != null) {
                     anisou = a.getAnisou(anisou);
-
-//                    if (a.getXyzIndex() < 5) {
-//                        if (optimizationScaling != null) {
-//                            logger.info(String.format(" Loading anisou at %d for %s with scaling %6.3f",
-//                                    index, a.toString(), optimizationScaling[index]));
-//                            ffx.numerics.VectorMath.printVector(anisou);
-//                        } else {
-//                            logger.info(String.format(" Loading anisou at %d for %s", index, a.toString()));
-//                           ffx.numerics.VectorMath.printVector(anisou);
-//                        }
-//                    }
-
                     x[index++] = anisou[0];
                     x[index++] = anisou[1];
                     x[index++] = anisou[2];
                     x[index++] = anisou[3];
                     x[index++] = anisou[4];
                     x[index++] = anisou[5];
-
                 } else if (diffractionData.isResidueBFactor()) {
                     if (resnum != a.getResidueNumber()) {
                         if (nres >= diffractionData.getnResidueBFactor()) {

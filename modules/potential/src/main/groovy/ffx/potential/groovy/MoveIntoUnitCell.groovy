@@ -3,6 +3,7 @@ package ffx.potential.groovy
 import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
 import ffx.potential.bonded.Molecule
@@ -39,7 +40,7 @@ class MoveIntoUnitCell extends PotentialScript {
             return
         }
 
-        ffx.potential.MolecularAssembly[] assemblies
+        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
@@ -55,7 +56,7 @@ class MoveIntoUnitCell extends PotentialScript {
 
         // Loop over each system.
         for (int i = 0; i < assemblies.length; i++) {
-            ffx.potential.MolecularAssembly molecularAssembly = assemblies[i]
+            MolecularAssembly molecularAssembly = assemblies[i]
             Crystal crystal = molecularAssembly.getCrystal().getUnitCell()
 
             int nAtoms = 0
