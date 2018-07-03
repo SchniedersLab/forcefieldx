@@ -55,7 +55,7 @@
                 </includes>
             </resource>
             <resource>
-                <directory>${basedir}/src/main/groovy/ffx/potential</directory>
+                <directory>${basedir}/src/main/groovy/ffx/potential/groovy</directory>
                 <targetPath>ffx/scripts</targetPath>
             </resource>
         </resources>

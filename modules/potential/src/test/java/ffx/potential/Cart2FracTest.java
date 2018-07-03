@@ -35,54 +35,47 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.cli;
+package ffx.potential;
 
-import ffx.potential.MolecularAssembly;
-import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.BaseScript;
+import org.junit.Assert;
+import org.junit.Test;
+
+import ffx.potential.groovy.Cart2Frac;
+
+import groovy.lang.Binding;
 
 /**
- * Base class for scripts in the Potentials package, providing some key functions.
- *
- * @author Michael J. Schnieders
- * @since 1.0
+ * Test the Cart2Frac script.
  */
-public class PotentialScript extends BaseScript {
+public class Cart2FracTest {
 
-    /**
-     * An instance of PotentialFunctions passed into the current context.
-     */
-    public PotentialsFunctions potentialFunctions;
+    @Test
+    public void testCart2Frac() {
+        Binding binding = new groovy.lang.Binding();
 
-    /**
-     * An active MolecularAssembly passed into the current context or loaded by the Script from a file argument.
-     */
-    public MolecularAssembly activeAssembly;
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"src/main/java/ffx/potential/structures/acetanilide.xyz"};
+        binding.setVariable("args", args);
 
-    /**
-     * Execute the BaseScript init method, then load potential functions.
-     *
-     * @return Returns true if the script should continue.
-     */
-    @Override
-    public boolean init() {
-        if (!super.init()) {
-            return false;
-        }
+        // Evaluate the script.
+        Cart2Frac cart2Frac = new Cart2Frac();
+        cart2Frac.setBinding(binding);
+        cart2Frac.writeFiles = false;
+        cart2Frac.run();
 
-        if (context.hasVariable("functions")) {
-            potentialFunctions = (PotentialsFunctions) context.getVariable("functions");
-        } else {
-            potentialFunctions = new PotentialsUtils();
-        }
+        // Pull out the Cart2Frac results to check.
+        double cartCoordinates[][] = cart2Frac.cartCoordinates;
+        Assert.assertNotNull(cartCoordinates);
+        Assert.assertEquals(19, cartCoordinates.length);
+        Assert.assertEquals(7.98011035, cartCoordinates[0][0], 1.0e-6);
+        Assert.assertEquals(0.70504091, cartCoordinates[0][1], 1.0e-6);
+        Assert.assertEquals(0.99860734, cartCoordinates[0][2], 1.0e-6);
 
-        activeAssembly = null;
-        if (context.hasVariable("active")) {
-            activeAssembly = (MolecularAssembly) context.getVariable("active");
-        }
-
-        return true;
+        double fracCoordinates[][] = cart2Frac.fracCoordinates;
+        Assert.assertNotNull(fracCoordinates);
+        Assert.assertEquals(19, fracCoordinates.length);
+        Assert.assertEquals(0.4063192642, fracCoordinates[0][0], 1.0e-6);
+        Assert.assertEquals(0.0743478761, fracCoordinates[0][1], 1.0e-6);
+        Assert.assertEquals(0.1251544479, fracCoordinates[0][2], 1.0e-6);
     }
-
 }

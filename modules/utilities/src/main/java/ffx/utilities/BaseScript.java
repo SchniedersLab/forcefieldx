@@ -136,9 +136,9 @@ public class BaseScript extends Script {
      * Execute the script.
      */
     @Override
-    public Object run() {
+    public BaseScript run() {
         logger.info(helpString());
-        return null;
+        return this;
     }
 
 }

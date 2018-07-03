@@ -1,3 +1,5 @@
+package ffx.potential.groovy.test
+
 /**
  * Title: Force Field X.
  *
@@ -36,57 +38,69 @@
  * exception statement from your version.
  */
 
-package ffx.utilities.test;
+// Convert from PRM to Property
+
+import org.apache.commons.configuration.CompositeConfiguration
 
 import groovy.cli.picocli.CliBuilder
 
-boolean testMode = false;
-Optional<Double> psPerHisto = Optional.empty();
-Optional<Integer> blockSizeStep = Optional.empty();
-Optional<Integer> maxBlockSize = Optional.empty();
-Optional<String> grepCmd = Optional.empty();
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.ForceFieldFilter
+import ffx.utilities.Keyword
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc utilities.blockAverage [options] <logFile>');
+def cli = new CliBuilder(usage:' ffxc test.prmToProperty <prm> [prm] ...');
 cli.h(longOpt:'help', 'Print this help message.');
-cli.dt(longOpt:'psPerHisto', args:1, argName:'1.0', 'Number of picoseconds between each input histogram.');
-cli.g(longOpt:'grepCmd', args:1, argName:'grep', 'Location of grep executable on non-UNIX systems.');
-cli.m(longOpt:'maxBlockSize', args:1, argName:'-1', 'Maximum block size to attempt, else uses numHistograms.');
-cli.s(longOpt:'blockSizeStep', args:1, argName:'100', 'Step increment for block size.');
-cli.gt(longOpt:'generateTestData', args:1, argName:'1000', 'Create correlated and uncorrelated validation sets.');
-cli.t(longOpt:'operateTestData', 'Operate on headerless, two-column data.');
+cli.i(longOpt:'improper', args:1, argName:'1.0', 'Scale Improper Torsions');
+cli.r(longOpt:'radii', args:1, argName:'false', 'Convert vdW Radii values to Diameters');
+cli.s(longOpt:'sigma', args:1, argName:'false', 'Convert vdW Sigma values to R-Min');
+cli.t(longOpt:'torsion', args:1, argName:'1.0', 'Scale Torsions');
 
 def options = cli.parse(args);
+
 List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() != 1) {
+if (options.h || arguments == null || arguments.size() < 1) {
     return cli.usage();
 }
 
-// Read in command line.
-String filename = arguments.get(0);
+// Read in the command line file.
+String xyzname = arguments.get(0);
+CompositeConfiguration properties = Keyword.loadProperties(null);
+properties.setProperty("parameters", xyzname);
+ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
 
-if (options.gt) {
-    int size = Integer.parseInt(options.gt);
-    ffx.utilities.BlockAverager.generateTestData(filename, size);
-    return;
+if (options.i) {
+    improperTorsionScale = Double.parseDouble(options.i);
+    forceFieldFilter.setImproperTorsionScale(improperTorsionScale);
 }
 
-if (options.dt) {
-    psPerHisto = Optional.of(Double.parseDouble(options.t));
+if (options.r) {
+    convertRadiusToDiameter = Boolean.parseBoolean(options.r);
+    forceFieldFilter.setConvertRadiusToDiameter(convertRadiusToDiameter);
 }
+
 if (options.s) {
-    blockSizeStep = Optional.of(Integer.parseInt(options.s));
-}
-if (options.m) {
-    maxBlockSize = Optional.of(Integer.parseInt(options.m));
-}
-if (options.g) {
-    grepCmd = Optional.of(options.g);
-}
-if (options.t) {
-    testMode = true;
+    convertSigmaToRMin = Boolean.parseBoolean(options.s);
+    forceFieldFilter.setConvertSigmaToRMin(convertSigmaToRMin);
 }
 
-ffx.utilities.BlockAverager ba = new ffx.utilities.BlockAverager(filename, testMode, grepCmd, psPerHisto, blockSizeStep, maxBlockSize);
-double[] binStdErrors = ba.computeBinUncertainties();
-double totalStdError = ba.computeTotalUncertainty();
+if (options.t) {
+    torsionScale = Double.parseDouble(options.t);
+    forceFieldFilter.setTorsionScale(torsionScale);
+}
+
+ForceField forceField = forceFieldFilter.parse();
+
+int prms = arguments.size();
+for (int i=1; i<prms; i++) {
+    xyzname = arguments.get(i);
+    properties = Keyword.loadProperties(null);
+    properties.setProperty("parameters", xyzname);
+    forceFieldFilter = new ForceFieldFilter(properties);
+    ForceField forceField2 = forceFieldFilter.parse();
+    forceField.append(forceField2);
+}
+
+if (forceField != null) {
+    forceField.print();
+}

@@ -37,49 +37,39 @@
  */
 package ffx.potential;
 
-import java.io.File;
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
+import ffx.potential.groovy.Biotype;
+
 import groovy.lang.Binding;
-import groovy.lang.GroovyShell;
 
 /**
  * Test the Biotype script.
  */
 public class BiotypeTest {
-    private GroovyShell shell;
-    private Binding binding;
 
-    @Before
-    public void setUp() {
-        binding = new Binding();
-        shell = new GroovyShell(binding);
-    }
-
-    @SuppressWarnings("unchecked")
     @Test
     public void testBiotype() {
-        try {
-            // Set-up the input arguments for the Biotype script.
-            String args[] = {"src/main/java/ffx/potential/structures/acetanilide.xyz"};
-            binding.setVariable("args", args);
+        Binding binding = new groovy.lang.Binding();
 
-            // Evaluate the script.
-            shell.evaluate(new File("src/main/groovy/ffx/potential/Biotype.groovy"));
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"src/main/java/ffx/potential/structures/acetanilide.xyz"};
+        binding.setVariable("args", args);
 
-            // Pull out the biotype results to check.
-            List<String> biotypes = (List<String>) binding.getVariable("biotypes");
-            Assert.assertNotNull(biotypes);
-            Assert.assertEquals(19, biotypes.size());
-            Assert.assertTrue(" Check the value of the first Biotype.",
-                    biotypes.get(0).trim().equalsIgnoreCase("biotype   1    C \"ace\" 405    C    C    N"));
-        } catch (Exception e) {
-            System.out.println(e.toString());
-            Assert.fail(" Failed to evaluate the Biotype script.");
-        }
+        // Evaluate the script.
+        Biotype biotype = new Biotype();
+        biotype.setBinding(binding);
+        biotype.run();
+
+        // Pull out the biotype results to check.
+        List<String> biotypes = biotype.biotypes;
+        Assert.assertNotNull(biotypes);
+        Assert.assertEquals(19, biotypes.size());
+        Assert.assertTrue(" Check the value of the first Biotype.",
+                biotypes.get(0).trim().equalsIgnoreCase("biotype   1    C \"ace\" 405    C    C    N"));
     }
+
 }
