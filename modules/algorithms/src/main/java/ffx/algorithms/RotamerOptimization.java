@@ -7787,7 +7787,7 @@ public class RotamerOptimization implements Terminatable {
      *
      * @return If the 3-body map already existed.
      */
-    private boolean alloc3BodyMap(Residue[] residues) {
+    protected boolean alloc3BodyMap(Residue[] residues) {
         boolean retValue = (threeBodyEnergies != null);
 
         if (retValue) {
