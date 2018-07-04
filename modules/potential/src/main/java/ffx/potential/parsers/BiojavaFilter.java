@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -140,10 +140,10 @@ import static ffx.potential.bonded.NucleicAcidUtils.NA_H1;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H21;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H22;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H3;
-import static ffx.potential.bonded.NucleicAcidUtils.NA_HO3T;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H4;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H51;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_H52;
+import static ffx.potential.bonded.NucleicAcidUtils.NA_HO3T;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_HO5T;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_O2;
 import static ffx.potential.bonded.NucleicAcidUtils.NA_O3;
@@ -304,6 +304,7 @@ public class BiojavaFilter extends ConversionFilter {
 
         return newSegID;
     }
+
     /**
      * Keep track of ATOM record serial numbers to match them with ANISOU
      * records.
@@ -592,9 +593,10 @@ public class BiojavaFilter extends ConversionFilter {
                 }
             }
         }
-        List<Molecule> molecules = activeMolecularAssembly.getMolecules();
-        for (Molecule n : molecules) {
-            n.reOrderAtoms();
+        List<MSNode> molecules = activeMolecularAssembly.getMolecules();
+        for (MSNode n : molecules) {
+            MSGroup m = (MSGroup) n;
+            m.reOrderAtoms();
         }
         List<MSNode> waters = activeMolecularAssembly.getWaters();
         for (MSNode n : waters) {
@@ -812,7 +814,7 @@ public class BiojavaFilter extends ConversionFilter {
         }
 
         // Assign small molecule atom types.
-        ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
+        ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
         for (MSNode m : molecules) {
             Molecule molecule = (Molecule) m;
             String moleculeName = molecule.getResidueName();
@@ -1194,7 +1196,7 @@ public class BiojavaFilter extends ConversionFilter {
             } else /**
              * Assume ribose (RNA) since there is an O2* atom.
              */
-             if (residueName.startsWith("D")) {
+                if (residueName.startsWith("D")) {
                     switch (nucleicAcid) {
                         case DAD:
                             nucleicAcid = NucleicAcid3.ADE;
@@ -1374,21 +1376,21 @@ public class BiojavaFilter extends ConversionFilter {
      * @since 1.0
      */
     private void assignNucleicAcidBaseAtomTypes(NucleicAcid3 nucleicAcid, Residue residue, Atom C1s,
-            Atom O4s, Atom C2s)
+                                                Atom O4s, Atom C2s)
             throws MissingHeavyAtomException {
         double glyco = 0;
         switch (nucleicAcid) {
             case ADE:
                 Atom N9,
-                 C8,
-                 N7,
-                 C5,
-                 C6,
-                 N6,
-                 N1,
-                 C2,
-                 N3,
-                 C4;
+                        C8,
+                        N7,
+                        C5,
+                        C6,
+                        N6,
+                        N1,
+                        C2,
+                        N3,
+                        C4;
                 N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1017);
                 C8 = buildHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180, 0, 1021);
                 N7 = buildHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1020);
@@ -1493,25 +1495,25 @@ public class BiojavaFilter extends ConversionFilter {
                 break;
             case YYG:
                 Atom C10,
-                 C11,
-                 C12,
-                 C3,
-                 C13,
-                 C14,
-                 C15,
-                 C16,
-                 O17,
-                 O18,
-                 C19,
-                 N20,
-                 C21,
-                 O22,
-                 O23,
-                 C24,
-                 H31,
-                 H101,
-                 H191,
-                 H241;
+                        C11,
+                        C12,
+                        C3,
+                        C13,
+                        C14,
+                        C15,
+                        C16,
+                        O17,
+                        O18,
+                        C19,
+                        N20,
+                        C21,
+                        O22,
+                        O23,
+                        C24,
+                        H31,
+                        H101,
+                        H191,
+                        H241;
                 N9 = buildHeavy(residue, "N9", C1s, 1640);
                 C8 = buildHeavy(residue, "C8", N9, 1644);
                 N7 = buildHeavy(residue, "N7", C8, 1643);
@@ -1787,7 +1789,7 @@ public class BiojavaFilter extends ConversionFilter {
      * @throws MissingHeavyAtomException
      */
     private void checkForMissingHeavyAtoms(int aminoAcidNumber, AminoAcid3 aminoAcid,
-            ResiduePosition position, Residue residue) throws MissingHeavyAtomException {
+                                           ResiduePosition position, Residue residue) throws MissingHeavyAtomException {
         int expected = aminoAcidHeavyAtoms[aminoAcidNumber];
         if (aminoAcid != AminoAcid3.GLY && expected >= 4) {
             int actual = 0;
@@ -2111,7 +2113,7 @@ public class BiojavaFilter extends ConversionFilter {
      * built.
      */
     public void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
-            Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
+                                         Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
         int k = AA_CB[aminoAcid.ordinal()];
         switch (aminoAcid) {
             case GLY:
@@ -2500,7 +2502,7 @@ public class BiojavaFilter extends ConversionFilter {
             /**
              * Loop over molecules, ions and then water.
              */
-            ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
+            ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
             for (int i = 0; i < molecules.size(); i++) {
                 Molecule molecule = (Molecule) molecules.get(i);
                 Character chainID = molecule.getChainID();
@@ -2904,7 +2906,7 @@ public class BiojavaFilter extends ConversionFilter {
             /**
              * Loop over molecules, ions and then water.
              */
-            ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
+            ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
             for (int i = 0; i < molecules.size(); i++) {
                 Molecule molecule = (Molecule) molecules.get(i);
                 Character chainID = molecule.getChainID();
@@ -3055,7 +3057,7 @@ public class BiojavaFilter extends ConversionFilter {
      * @throws java.io.IOException if any.
      */
     public void writeAtom(Atom atom, int serial, StringBuilder sb,
-            StringBuilder anisouSB, BufferedWriter bw)
+                          StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
         String name = atom.getName();
         if (name.length() > 4) {
@@ -3127,7 +3129,7 @@ public class BiojavaFilter extends ConversionFilter {
     }
 
     public void writeSIFTAtom(Atom atom, int serial, StringBuilder sb,
-            StringBuilder anisouSB, BufferedWriter bw, String siftScore)
+                              StringBuilder anisouSB, BufferedWriter bw, String siftScore)
             throws IOException {
         String name = atom.getName();
         if (name.length() > 4) {
@@ -3709,18 +3711,18 @@ public class BiojavaFilter extends ConversionFilter {
     }
 
     private Atom buildHeavy(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, int lookUp) {
+                            Atom ic, double angle2, int chiral, int lookUp) {
         return BondedUtils.buildHeavy(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, lookUp,
                 forceField, bondList);
     }
 
     private Atom buildHydrogen(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, int lookUp) {
+                               Atom ic, double angle2, int chiral, int lookUp) {
         return BondedUtils.buildHydrogen(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, lookUp, forceField, bondList);
     }
 
     private Atom buildHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, AtomType atomType) {
+                                   Atom ic, double angle2, int chiral, AtomType atomType) {
         return BondedUtils.buildHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType,
                 forceField, bondList);
     }

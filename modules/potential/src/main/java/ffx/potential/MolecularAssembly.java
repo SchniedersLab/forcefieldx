@@ -220,7 +220,7 @@ public class MolecularAssembly extends MSGroup {
                 if (polymers != null && polymers.length > 0) {
                     count += polymers.length;
                 }
-                List<Molecule> molecules = getMolecules();
+                List<MSNode> molecules = getMolecules();
                 if (molecules != null) {
                     count += molecules.size();
                 }
@@ -288,7 +288,7 @@ public class MolecularAssembly extends MSGroup {
                 }
 
                 // Loop over each molecule
-                List<Molecule> molecules = getMolecules();
+                List<MSNode> molecules = getMolecules();
                 for (MSNode molecule : molecules) {
                     List<Atom> list = molecule.getAtomList();
                     // Find the center of mass
@@ -417,7 +417,7 @@ public class MolecularAssembly extends MSGroup {
                 }
 
                 // Loop over each molecule
-                List<Molecule> molecules = getMolecules();
+                List<MSNode> molecules = getMolecules();
                 for (MSNode molecule : molecules) {
                     List<Atom> list = molecule.getAtomList();
                     // Find the center of mass
@@ -1031,7 +1031,7 @@ public class MolecularAssembly extends MSGroup {
             }
             return null;
         } else {
-            ArrayList<Molecule> list = getMolecules();
+            ArrayList<MSNode> list = getMolecules();
             for (MSNode node : list) {
                 Molecule m = (Molecule) node;
                 if (m.getSegID().equalsIgnoreCase(atom.getSegID())
@@ -1451,13 +1451,7 @@ public class MolecularAssembly extends MSGroup {
      *
      * @return a {@link java.util.ArrayList} object.
      */
-    public ArrayList<Molecule> getMolecules() {
-        ArrayList<Molecule> ret = new ArrayList<>();
-        for (MSNode node : molecules.getChildList()) {
-            ret.add((Molecule) node);
-        }
-        return ret;
-    }
+    public ArrayList<MSNode> getMolecules() { return molecules.getChildList(); }
 
     /**
      * <p>
@@ -2203,12 +2197,7 @@ public class MolecularAssembly extends MSGroup {
         moveIntoUnitCell(getChains());
         moveIntoUnitCell(getWaters());
         moveIntoUnitCell(getIons());
-
-        // Unsure why this mapping is flagged as necessary
-        List<MSNode> molNodes = getMolecules().stream().
-                map((Molecule m) -> (MSNode) m).
-                collect(Collectors.toList());
-        moveIntoUnitCell(molNodes);
+        moveIntoUnitCell(getMolecules());
     }
 
     private void moveIntoUnitCell(MSNode[] groups) {
@@ -2223,34 +2212,35 @@ public class MolecularAssembly extends MSGroup {
      * @param groups
      */
     private void moveIntoUnitCell(List<MSNode> groups) {
-        Crystal cryst = getCrystal();
+        Crystal cryst = getCrystal().getUnitCell();
         if (cryst.aperiodic()) {
             return;
         }
-
         for (MSNode group : groups) {
             double[] com = new double[3];
             double[] xyz = new double[3];
             double[] translate = new double[3];
-
             List<Atom> atoms = group.getAtomList();
             double totMass = 0;
-
             for (Atom atom : atoms) {
                 double mass = atom.getMass();
                 totMass += mass;
                 xyz = atom.getXYZ(xyz);
-                for (int i = 0; i < 3; i++) {
-                    double diff = xyz[i] - com[i];
-                    diff /= totMass;
-                    com[i] += diff;
-                }
+                com[0] += mass * xyz[0];
+                com[1] += mass * xyz[1];
+                com[2] += mass * xyz[2];
             }
+            com[0] /= totMass;
+            com[1] /= totMass;
+            com[2] /= totMass;
 
+            // Move the COM to the primary unit cell
             cryst.toPrimaryCell(com, translate);
-            for (int i = 0; i < 3; i++) {
-                translate[i] -= com[i];
-            }
+
+            // The translation vector is difference between the new location and the cureent COM.
+            translate[0] -= com[0];
+            translate[1] -= com[1];
+            translate[2] -= com[2];
 
             for (Atom atom : atoms) {
                 atom.move(translate);

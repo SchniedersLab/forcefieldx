@@ -27,6 +27,10 @@ class Frac2Cart extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
+    public double[][] cartCoordinates = null
+    public double[][] fracCoordinates = null
+    public writeFiles = true
+
     /**
      * Execute the script.
      */
@@ -57,22 +61,37 @@ class Frac2Cart extends PotentialScript {
             Crystal crystal = system.getCrystal().getUnitCell()
 
             List<Atom> atoms = system.getAtomList()
+            fracCoordinates = new double[atoms.size()][3]
+            cartCoordinates = new double[atoms.size()][3]
+
             double[] frac = new double[3]
             double[] cart = new double[3]
 
+            int index = 0;
             for (Atom atom in atoms) {
                 atom.getXYZ(frac)
                 crystal.toCartesianCoordinates(frac, cart)
                 atom.moveTo(cart)
+
+                cartCoordinates[index][0] = cart[0]
+                cartCoordinates[index][1] = cart[1]
+                cartCoordinates[index][2] = cart[2]
+
+                fracCoordinates[index][0] = frac[0]
+                fracCoordinates[index][1] = frac[1]
+                fracCoordinates[index++][2] = frac[2]
+
             }
         }
 
-        String ext = FilenameUtils.getExtension(filename)
-        filename = FilenameUtils.removeExtension(filename)
-        if (ext.toUpperCase().contains("XYZ")) {
-            potentialFunctions.saveAsXYZ(assemblies[0], new File(filename + ".xyz"))
-        } else {
-            potentialFunctions.saveAsPDB(assemblies, new File(filename + ".pdb"))
+        if (writeFiles) {
+            String ext = FilenameUtils.getExtension(filename)
+            filename = FilenameUtils.removeExtension(filename)
+            if (ext.toUpperCase().contains("XYZ")) {
+                potentialFunctions.saveAsXYZ(assemblies[0], new File(filename + ".xyz"))
+            } else {
+                potentialFunctions.saveAsPDB(assemblies, new File(filename + ".pdb"))
+            }
         }
 
         return this

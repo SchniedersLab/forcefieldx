@@ -62,7 +62,7 @@ public class COMRestraint implements LambdaInterface {
     private final Atom atoms[];
     private final int nAtoms;
     private final Polymer polymers[];
-    private final List<Molecule> molecules;
+    private final List<MSNode> molecules;
     private final List<MSNode> waters;
     private final List<MSNode> ions;
     private final int nMolecules;
@@ -97,7 +97,7 @@ public class COMRestraint implements LambdaInterface {
      * @param ions the system Ion List.
      * @param forceField the ForceField to apply.
      */
-    public COMRestraint(Atom atoms[], Polymer polymers[], List<Molecule> molecules,
+    public COMRestraint(Atom atoms[], Polymer polymers[], List<MSNode> molecules,
             List<MSNode> waters, List<MSNode> ions, ForceField forceField) {
         this.atoms = atoms;
         nAtoms = atoms.length;

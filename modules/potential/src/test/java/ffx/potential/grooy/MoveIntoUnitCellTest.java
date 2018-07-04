@@ -35,47 +35,70 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential;
+package ffx.potential.grooy;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.Cart2Frac;
+import ffx.potential.groovy.MoveIntoUnitCell;
 
 import groovy.lang.Binding;
 
 /**
  * Test the Cart2Frac script.
  */
-public class Cart2FracTest {
+public class MoveIntoUnitCellTest {
+
+    Binding binding;
+    MoveIntoUnitCell moveIntoUnitCell;
+
+    @Before
+    public void before() {
+        binding = new Binding();
+        moveIntoUnitCell = new MoveIntoUnitCell();
+        moveIntoUnitCell.setBinding(binding);
+    }
 
     @Test
-    public void testCart2Frac() {
-        Binding binding = new groovy.lang.Binding();
-
+    public void testMoveIntoUnitCellHelp() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/ffx/potential/structures/acetanilide.xyz"};
+        String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        Cart2Frac cart2Frac = new Cart2Frac();
-        cart2Frac.setBinding(binding);
-        cart2Frac.writeFiles = false;
-        cart2Frac.run();
+        moveIntoUnitCell.run();
+
+        // Pull out the biotype results to check.
+        Assert.assertNull(moveIntoUnitCell.origCoordinates);
+        Assert.assertNull(moveIntoUnitCell.unitCellCoordinates);
+    }
+
+    @Test
+    public void testMoveIntoUnitCell() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"src/main/java/ffx/potential/structures/watertiny.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        moveIntoUnitCell.writeFiles = false;
+        moveIntoUnitCell.run();
 
         // Pull out the Cart2Frac results to check.
-        double cartCoordinates[][] = cart2Frac.cartCoordinates;
-        Assert.assertNotNull(cartCoordinates);
-        Assert.assertEquals(19, cartCoordinates.length);
-        Assert.assertEquals(7.98011035, cartCoordinates[0][0], 1.0e-6);
-        Assert.assertEquals(0.70504091, cartCoordinates[0][1], 1.0e-6);
-        Assert.assertEquals(0.99860734, cartCoordinates[0][2], 1.0e-6);
+        double origCoordinates[][] = moveIntoUnitCell.origCoordinates;
+        org.junit.Assert.assertNotNull(origCoordinates);
+        org.junit.Assert.assertEquals(81, origCoordinates.length);
+        // 7  O     -0.382446    1.447602   -0.456106     1     8     9
+        org.junit.Assert.assertEquals(-0.382446, origCoordinates[6][0], 1.0e-6);
+        org.junit.Assert.assertEquals(1.447602, origCoordinates[6][1], 1.0e-6);
+        org.junit.Assert.assertEquals(-0.456106, origCoordinates[6][2], 1.0e-6);
 
-        double fracCoordinates[][] = cart2Frac.fracCoordinates;
-        Assert.assertNotNull(fracCoordinates);
-        Assert.assertEquals(19, fracCoordinates.length);
-        Assert.assertEquals(0.4063192642, fracCoordinates[0][0], 1.0e-6);
-        Assert.assertEquals(0.0743478761, fracCoordinates[0][1], 1.0e-6);
-        Assert.assertEquals(0.1251544479, fracCoordinates[0][2], 1.0e-6);
+        double unitCellCoordinates[][] = moveIntoUnitCell.unitCellCoordinates;
+        org.junit.Assert.assertNotNull(unitCellCoordinates);
+        org.junit.Assert.assertEquals(81, unitCellCoordinates.length);
+        //  7   O    8.93905400    1.44760200    8.86539400     1       8       9
+        org.junit.Assert.assertEquals(8.93905400, unitCellCoordinates[6][0], 1.0e-6);
+        org.junit.Assert.assertEquals(1.44760200, unitCellCoordinates[6][1], 1.0e-6);
+        org.junit.Assert.assertEquals(8.86539400, unitCellCoordinates[6][2], 1.0e-6);
     }
 }

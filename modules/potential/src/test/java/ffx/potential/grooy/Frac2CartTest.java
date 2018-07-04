@@ -35,41 +35,68 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential;
-
-import java.util.List;
+package ffx.potential.grooy;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.Biotype;
+import ffx.potential.groovy.Frac2Cart;
 
 import groovy.lang.Binding;
 
 /**
- * Test the Biotype script.
+ * Test the Cart2Frac script.
  */
-public class BiotypeTest {
+public class Frac2CartTest {
+
+    Binding binding;
+    Frac2Cart frac2Cart;
+
+    @Before
+    public void before() {
+        binding = new Binding();
+        frac2Cart = new Frac2Cart();
+        frac2Cart.setBinding(binding);
+    }
 
     @Test
-    public void testBiotype() {
-        Binding binding = new groovy.lang.Binding();
-
+    public void testFrac2CartHelp() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/ffx/potential/structures/acetanilide.xyz"};
+        String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        Biotype biotype = new Biotype();
-        biotype.setBinding(binding);
-        biotype.run();
+        frac2Cart.run();
 
         // Pull out the biotype results to check.
-        List<String> biotypes = biotype.biotypes;
-        Assert.assertNotNull(biotypes);
-        Assert.assertEquals(19, biotypes.size());
-        Assert.assertTrue(" Check the value of the first Biotype.",
-                biotypes.get(0).trim().equalsIgnoreCase("biotype   1    C \"ace\" 405    C    C    N"));
+        Assert.assertNull(frac2Cart.cartCoordinates);
+        Assert.assertNull(frac2Cart.fracCoordinates);
     }
 
+    @Test
+    public void testFrac2Cart() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"src/main/java/ffx/potential/structures/acetanilide.frac.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        frac2Cart.writeFiles = false;
+        frac2Cart.run();
+
+        // Pull out the Cart2Frac results to check.
+        double cartCoordinates[][] = frac2Cart.cartCoordinates;
+        Assert.assertNotNull(cartCoordinates);
+        Assert.assertEquals(19, cartCoordinates.length);
+        Assert.assertEquals(7.98011035, cartCoordinates[0][0], 1.0e-6);
+        Assert.assertEquals(0.70504091, cartCoordinates[0][1], 1.0e-6);
+        Assert.assertEquals(0.99860734, cartCoordinates[0][2], 1.0e-6);
+
+        double fracCoordinates[][] = frac2Cart.fracCoordinates;
+        Assert.assertNotNull(fracCoordinates);
+        Assert.assertEquals(19, fracCoordinates.length);
+        Assert.assertEquals(0.4063192642, fracCoordinates[0][0], 1.0e-6);
+        Assert.assertEquals(0.0743478761, fracCoordinates[0][1], 1.0e-6);
+        Assert.assertEquals(0.1251544479, fracCoordinates[0][2], 1.0e-6);
+    }
 }

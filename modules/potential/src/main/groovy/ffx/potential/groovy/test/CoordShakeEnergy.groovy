@@ -1,4 +1,4 @@
-package ffx.potential.groovy
+package test
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergyOpenMM
@@ -56,6 +56,8 @@ class CoordShakeEnergy extends PotentialScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
+
+    Double energy = 0.0
 
     /**
      * Execute the script.

@@ -1423,9 +1423,9 @@ public class Crystal {
      */
     public void toPrimaryCell(double in[], double out[]) {
         toFractionalCoordinates(in, out);
-        out[0] = mod(out[0], 1.0) - 0.5;
-        out[1] = mod(out[1], 1.0) - 0.5;
-        out[2] = mod(out[2], 1.0) - 0.5;
+        out[0] = mod(out[0], 1.0);
+        out[1] = mod(out[1], 1.0);
+        out[2] = mod(out[2], 1.0);
         toCartesianCoordinates(out, out);
     }
 

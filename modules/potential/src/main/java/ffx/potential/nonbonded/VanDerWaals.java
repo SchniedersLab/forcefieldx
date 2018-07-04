@@ -321,7 +321,8 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * VanDerWaals cutoff.
      */
-    double vdwcut;
+    private double vdwCutoff;
+    private double neighborListCutoff;
 
     /**
      * The VanDerWaals class constructor.
@@ -335,12 +336,15 @@ public class VanDerWaals implements MaskingInterface,
      * @since 1.0
      */
     public VanDerWaals(Atom atoms[], int molecule[], Crystal crystal, ForceField forceField,
-                       ParallelTeam parallelTeam) {
+                       ParallelTeam parallelTeam, double vdwCutoff, double nlistCutoff) {
         this.atoms = atoms;
         this.molecule = molecule;
         this.crystal = crystal;
         this.parallelTeam = parallelTeam;
         this.forceField = forceField;
+        this.vdwCutoff = vdwCutoff;
+        this.neighborListCutoff = nlistCutoff;
+
         nAtoms = atoms.length;
         nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
@@ -406,73 +410,15 @@ public class VanDerWaals implements MaskingInterface,
         initAtomArrays();
 
         /**
-         * Set up the cutoff and polynomial switch.
-         */
-        double buff = 2.0;
-        double cut;
-        double off;
-
-        // Check for a frozen neighbor list.
-        boolean disabledNeighborUpdates = forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
-
-        // Default vdW cut is 12.0 for periodic systems, a function of system size for aperiodic.
-        double defaultVdwCut = 12.0;
-        if (crystal.aperiodic()) {
-            double maxDim = Math.max(Math.max(crystal.a, crystal.b), crystal.c);
-            defaultVdwCut = (maxDim * 0.5) - (buff + 1.0);
-        }
-        vdwcut = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, defaultVdwCut);
-
-        // Now make sure vdW cutoff is at least as large as the electrostatics cutoff.
-        double ewaldOff = crystal.aperiodic() ? ParticleMeshEwald.APERIODIC_DEFAULT_EWALD_CUTOFF : ParticleMeshEwald.PERIODIC_DEFAULT_EWALD_CUTOFF;
-        ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, ewaldOff);
-        if (ewaldOff > vdwcut) {
-            vdwcut = ewaldOff;
-            logger.info(" The Van der Waals cutoff must be at least as large as the Ewald cutoff.");
-            logger.info(String.format(" The Van der Waals cutoff has been set to %-12.4g", ewaldOff));
-        }
-
-        /**
          * Define the multiplicative switch, which sets vdW energy to zero
          * at the cutoff distance using a window that begin at 90% of the
          * cutoff distance.
          */
-        double vdwtaper = 0.9 * vdwcut;
-        cut = vdwtaper;
-        off = vdwcut;
-        nonbondedCutoff = new NonbondedCutoff(off, cut, buff);
-        multiplicativeSwitch = new MultiplicativeSwitch(off, cut);
-
-        /**
-         * Neighbor list cutoff is at least max(PME cutoff, vdW cutoff).
-         * For a non-frozen neighbor list, it is max(PME, vdW, GK).
-         * Then, if a larger neighbor-list cutoff is specified, we use that.
-         *
-         * GK cutoff may be > neighbor-list cutoff for frozen neighbor lists.
-         * This indicates we are running full real-space GK on a frozen neighbor list.
-         *
-         * Error is indicated for a frozen neighbor list if a specified NL cutoff < PME,vdW.
-         * Error is indicated for a non-frozen neighbor list if the NL cutoff was specified by the user.
-         */
-        double nlistCutoff = off;
-
-        if (disabledNeighborUpdates) {
-            nlistCutoff = forceField.getDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF, off);
-            logger.info(String.format(" Neighbor list updates disabled; interactions will " +
-                    "only be calculated between atoms that started the simulation " +
-                    "within a radius of %9.3g Angstroms of each other", nlistCutoff));
-            if (nlistCutoff < off) {
-                logger.severe(String.format(" Specified a neighbor-list cutoff %10.4g < max(PME, vdW) cutoff %10.4g !", nlistCutoff, off));
-            }
-        } else {
-            nlistCutoff = Math.max(forceField.getDouble(ForceFieldDouble.GK_CUTOFF, 0), nlistCutoff);
-            if (forceField.hasDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF)) {
-                logger.severe(" Specified a neighbor list cutoff for a non-frozen neighbor list!");
-            }
-        }
-
+        double vdwTaper = 0.9 * vdwCutoff;
+        double buff = 2.0;
+        nonbondedCutoff = new NonbondedCutoff(vdwCutoff, vdwTaper, buff);
+        multiplicativeSwitch = new MultiplicativeSwitch(vdwCutoff, vdwTaper);
         neighborList = new NeighborList(null, this.crystal, atoms, nlistCutoff, buff, parallelTeam);
-
         pairwiseSchedule = neighborList.getPairwiseSchedule();
         neighborLists = new int[nSymm][][];
 
@@ -481,12 +427,13 @@ public class VanDerWaals implements MaskingInterface,
          * the first neighborlist.
          */
         buildNeighborList(atoms);
+
         // Then, optionally, prevent that neighbor list from ever updating.
         neighborList.setDisableUpdates(forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false));
 
         logger.info("\n  Van der Waals");
-        logger.info(format("   Switch Start:                         %6.3f (A)", cut));
-        logger.info(format("   Cut-Off:                              %6.3f (A)", off));
+        logger.info(format("   Switch Start:                         %6.3f (A)", vdwTaper));
+        logger.info(format("   Cut-Off:                              %6.3f (A)", vdwCutoff));
         logger.info(format("   Long-Range Correction:                %b", doLongRangeCorrection));
 
         if (lambdaTerm) {
@@ -911,7 +858,7 @@ public class VanDerWaals implements MaskingInterface,
     
     
     public double getVDWcutoff(){
-        return vdwcut;
+        return vdwCutoff;
     }
 
     /**

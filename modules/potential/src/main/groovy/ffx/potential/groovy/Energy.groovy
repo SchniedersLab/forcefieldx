@@ -48,6 +48,8 @@ class Energy extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     private List<String> filenames = null
 
+    public double energy = 0.0;
+
     /**
      * Execute the script.
      */
@@ -94,7 +96,7 @@ class Energy extends PotentialScript {
             if (pe instanceof ForceFieldEnergyOpenMM) {
                 double[] gOMM = new double[nVars]
                 ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe
-                ope.energyAndGradVsFFX(x, g, gOMM, true)
+                energy = ope.energyAndGradVsFFX(x, g, gOMM, true)
                 for (int i = 0; i < nAts; i++) {
                     int i3 = 3 * i
                     logger.info(String.format(" Atom %d OpenMM gradient:      %14.9g %14.9g %14.9g",
@@ -103,7 +105,7 @@ class Energy extends PotentialScript {
                             i, gOMM[i3] - g[i3], gOMM[i3 + 1] - g[i3 + 1], gOMM[i3 + 2] - g[i3 + 2]))
                 }
             } else {
-                pe.energyAndGradient(x, g, true)
+                energy = pe.energyAndGradient(x, g, true)
                 logger.info(String.format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
                 for (int i = 0; i < nAts; i++) {
                     int i3 = 3 * i
@@ -112,9 +114,9 @@ class Energy extends PotentialScript {
             }
         } else if (pe instanceof ForceFieldEnergyOpenMM) {
             ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe
-            ope.energyVsFFX(x, true)
+            energy = ope.energyVsFFX(x, true)
         } else {
-            pe.energy(x, true)
+            energy = pe.energy(x, true)
         }
 
         return this

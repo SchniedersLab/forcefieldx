@@ -131,11 +131,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     protected final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
-    /**
-     * Contains ALL atoms, both foreground and background. Background atoms need
-     * to be present to be included in bonded terms
-     */
-    private Atom[] atomsExtended;
     private Crystal crystal;
     private final ParallelTeam parallelTeam;
     private BondedRegion bondedRegion;
@@ -384,18 +379,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         restrainTermOrig = restrainTerm;
         comTermOrig = comTerm;
 
-        // Define the cutoff lengths.
-        double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, 9.0);
-        double ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 7.0);
-        double neighborOff = forceField.getDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF, ewaldOff);
-        if (ewaldOff > vdwOff) {
-            vdwOff = ewaldOff;
-        }
-        double buff = 2.0;
-        double cutOff2 = max(max(vdwOff, ewaldOff), neighborOff);
-        cutOff2 += buff;
-        cutOff2 *= 2.0;
-
         // Determine the unit cell dimensions and Spacegroup
         String spacegroup;
         double a, b, c, alpha, beta, gamma;
@@ -448,91 +431,60 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             gamma = 90.0;
         }
         Crystal unitCell = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
-        // MTRIXn to be permuted with standard space group in NCSCrystal.java for experimental refinement.
-        if(forceField.getProperties().containsKey("MTRIX1") && forceField.getProperties().containsKey("MTRIX2") && forceField.getProperties().containsKey("MTRIX3")) {
-            Crystal unitCell2 = new Crystal(a, b, c, alpha, beta, gamma, spacegroup); // Objects in java passed by reference
-            SpaceGroup spaceGroup = unitCell2.spaceGroup;
-            // Separate string list MTRIXn into Double matricies then pass into symops
-            CompositeConfiguration properties = forceField.getProperties();
-            String MTRX1List[] = properties.getStringArray("MTRIX1");
-            String MTRX2List[] = properties.getStringArray("MTRIX2");
-            String MTRX3List[] = properties.getStringArray("MTRIX3");
-            spaceGroup.symOps.clear();
-            double number1 = 0;
-            double number2 = 0;
-            double number3 = 0;
-            for (int i=0;i< MTRX1List.length;i++) {
-                double [][] Rot_MTRX = {{0,0,0},{0,0,0},{0,0,0}};
-                double [] Tr_MTRX = {0,0,0};
-                String tokens1[] = MTRX1List[i].trim().split(" +"); // 4 items: rot [0][1-3] * trans[0]
-                String tokens2[] = MTRX2List[i].trim().split(" +"); // 4 items: rot [1][1-3] * trans[1]
-                String tokens3[] = MTRX3List[i].trim().split(" +"); // 4 items: rot [2][1-3] * trans[2]
-                for (int k=0; k<4;k++) {
-                    number1 = Double.parseDouble(tokens1[k]);
-                    number2 = Double.parseDouble(tokens2[k]);
-                    number3 = Double.parseDouble(tokens3[k]);
-                    if(k!=3) {
-                        Rot_MTRX[0][k] = number1;
-                        Rot_MTRX[1][k] = number2;
-                        Rot_MTRX[2][k] = number3;
-                    }else{
-                        Tr_MTRX[0] = number1;
-                        Tr_MTRX[1] = number2;
-                        Tr_MTRX[2] = number3;
-                    }
-                }
-                SymOp symOp = new SymOp(Rot_MTRX, Tr_MTRX);
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.info(format(" MTRIXn SymOp: %d of %d\n" + symOp.toString(), i + 1, MTRX1List.length));
-                }
-                spaceGroup.symOps.add(symOp);
-            }
-            unitCell = NCSCrystal.NCSCrystalFactory(unitCell, spaceGroup.symOps);
-            unitCell.updateCrystal();
-        }
-        /**
-         * If necessary, applies non-crystallographic symmetry operations to obtain biologically relevant SymOps.
-         * Need to alter NCSCrystal.java in order to effectively use this code...
-         * See: NCSCrystal.java or REMARK 350 in .pdb files.
-         */
-//        if(forceField.getProperties().containsKey("BIOMTn")) {
-//            Crystal unitCell2 = new Crystal(a, b, c, alpha, beta, gamma, spacegroup); // Objects in java passed by reference
-//            SpaceGroup spaceGroup = unitCell2.spaceGroup;
-//            // Separate string list BIOMTn into Double matricies then pass into symops
-//            CompositeConfiguration properties = forceField.getProperties();
-//            String biomtList[] = properties.getStringArray("BIOMTn"); //Contains all rotation and translation
-//            spaceGroup.symOps.clear();
-//            double number = 0;
-//            for (int i=0;i< biomtList.length;i+=3) {
-//                double [][] Rot_biomt = {{0,0,0},{0,0,0},{0,0,0}};
-//                double [] Tr_biomt = {0,0,0};
-//                for (int j=0;j<3;j++) {
-//                    String tokens[] = biomtList[i+j].trim().split(" +"); // 4 items: rot [j][1-3] * trans[j]
-//                    for (int k=0; k<4;k++) {
-//                        number = Double.parseDouble(tokens[k]);
-//                        if(k!=3) {
-//                            Rot_biomt[j][k] = number;
-//                        }else{
-//                            Tr_biomt[j] = number;
-//                        }
-//                    }
-//                }
-//                SymOp symOp = new SymOp(Rot_biomt, Tr_biomt);
-//                if (logger.isLoggable(Level.FINEST)) {
-//                    logger.finest(format(" BIOMTn SymOp: %d of %d\n" + symOp.toString(), (i / 3) + 1, biomtList.length / 3));
-//                }
-//                spaceGroup.symOps.add(symOp);
-//            }
-//            unitCell = NCSCrystal.NCSCrystalFactory(unitCell, spaceGroup.symOps);
-//            unitCell.updateCrystal();
-//        }
-
         unitCell.setAperiodic(aperiodic);
+
+        // Define the cutoff lengths.
+        double buff = 2.0;
+        double defaultVdwCut = 12.0;
+        if (unitCell.aperiodic()) {
+            double maxDim = Math.max(Math.max(unitCell.a, unitCell.b), unitCell.c);
+            defaultVdwCut = (maxDim * 0.5) - (buff + 1.0);
+        }
+        double vdwOff = forceField.getDouble(ForceFieldDouble.VDW_CUTOFF, defaultVdwCut);
+        double ewaldOff = aperiodic ? ParticleMeshEwald.APERIODIC_DEFAULT_EWALD_CUTOFF : ParticleMeshEwald.PERIODIC_DEFAULT_EWALD_CUTOFF;
+        ewaldOff = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, ewaldOff);
+        if (ewaldOff > vdwOff) {
+            vdwOff = ewaldOff;
+            logger.info(" The Van der Waals cutoff must be at least as large as the Ewald cutoff.");
+            logger.info(String.format(" The Van der Waals cutoff has been set to %-12.4g", ewaldOff));
+        }
+
+        /**
+         * Neighbor list cutoff is at least max(PME cutoff, vdW cutoff).
+         * For a non-frozen neighbor list, it is max(PME, vdW, GK).
+         * Then, if a larger neighbor-list cutoff is specified, we use that.
+         *
+         * GK cutoff may be > neighbor-list cutoff for frozen neighbor lists.
+         * This indicates we are running full real-space GK on a frozen neighbor list.
+         *
+         * Error is indicated for a frozen neighbor list if a specified NL cutoff < PME,vdW.
+         * Error is indicated for a non-frozen neighbor list if the NL cutoff was specified by the user.
+         */
+        double nlistCutoff = vdwOff;
+        // Check for a frozen neighbor list.
+        boolean disabledNeighborUpdates = forceField.getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false);
+        if (disabledNeighborUpdates) {
+            nlistCutoff = forceField.getDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF, vdwOff);
+            logger.info(String.format(" Neighbor list updates disabled; interactions will " +
+                    "only be calculated between atoms that started the simulation " +
+                    "within a radius of %9.3g Angstroms of each other", nlistCutoff));
+            if (nlistCutoff < vdwOff) {
+                logger.severe(String.format(" Specified a neighbor-list cutoff %10.4g < max(PME, vdW) cutoff %10.4g !", nlistCutoff, vdwOff));
+            }
+        } else {
+            nlistCutoff = Math.max(forceField.getDouble(ForceFieldDouble.GK_CUTOFF, 0), nlistCutoff);
+            if (forceField.hasDouble(ForceFieldDouble.NEIGHBOR_LIST_CUTOFF)) {
+                logger.severe(" Specified a neighbor list cutoff for a non-frozen neighbor list!");
+            }
+        }
+
+        unitCell = configureNCS(forceField, unitCell);
 
         /**
          * If necessary, create a ReplicatesCrystal.
          */
         if (!aperiodic) {
+            double cutOff2 = 2.0 * (nlistCutoff + buff);
             this.crystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, cutOff2);
             logger.info(format("\n Density:                                %6.3f (g/cc)", crystal.getDensity(molecularAssembly.getMass())));
             logger.info(crystal.toString());
@@ -792,7 +744,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         int molecule[] = molecularAssembly.getMoleculeNumbers();
         if (vanderWaalsTerm) {
-            vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField, parallelTeam);
+            vanderWaals = new VanDerWaals(atoms, molecule, crystal, forceField, parallelTeam, vdwOff, nlistCutoff);
         } else {
             vanderWaals = null;
         }
@@ -843,7 +795,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         if (comTerm) {
             Polymer polymers[] = molecularAssembly.getChains();
-            List<Molecule> molecules = molecularAssembly.getMolecules();
+            List<MSNode> molecules = molecularAssembly.getMolecules();
             List<MSNode> waters = molecularAssembly.getWaters();
             List<MSNode> ions = molecularAssembly.getIons();
             comRestraint = new COMRestraint(atoms, polymers, molecules, waters, ions, forceField);
@@ -2693,6 +2645,95 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
          * operators and periodic boundary conditions.
          */
     }
+
+
+    private Crystal configureNCS(ForceField forceField, Crystal unitCell) {
+
+        // MTRIXn to be permuted with standard space group in NCSCrystal.java for experimental refinement.
+        if(forceField.getProperties().containsKey("MTRIX1") && forceField.getProperties().containsKey("MTRIX2") && forceField.getProperties().containsKey("MTRIX3")) {
+            Crystal unitCell2 = new Crystal(unitCell.a, unitCell.b, unitCell.c, unitCell.alpha,
+                    unitCell.beta, unitCell.gamma, unitCell.spaceGroup.pdbName);
+            SpaceGroup spaceGroup = unitCell2.spaceGroup;
+            // Separate string list MTRIXn into Double matricies then pass into symops
+            CompositeConfiguration properties = forceField.getProperties();
+            String MTRX1List[] = properties.getStringArray("MTRIX1");
+            String MTRX2List[] = properties.getStringArray("MTRIX2");
+            String MTRX3List[] = properties.getStringArray("MTRIX3");
+            spaceGroup.symOps.clear();
+            double number1 = 0;
+            double number2 = 0;
+            double number3 = 0;
+            for (int i=0;i< MTRX1List.length;i++) {
+                double [][] Rot_MTRX = {{0,0,0},{0,0,0},{0,0,0}};
+                double [] Tr_MTRX = {0,0,0};
+                String tokens1[] = MTRX1List[i].trim().split(" +"); // 4 items: rot [0][1-3] * trans[0]
+                String tokens2[] = MTRX2List[i].trim().split(" +"); // 4 items: rot [1][1-3] * trans[1]
+                String tokens3[] = MTRX3List[i].trim().split(" +"); // 4 items: rot [2][1-3] * trans[2]
+                for (int k=0; k<4;k++) {
+                    number1 = Double.parseDouble(tokens1[k]);
+                    number2 = Double.parseDouble(tokens2[k]);
+                    number3 = Double.parseDouble(tokens3[k]);
+                    if(k!=3) {
+                        Rot_MTRX[0][k] = number1;
+                        Rot_MTRX[1][k] = number2;
+                        Rot_MTRX[2][k] = number3;
+                    }else{
+                        Tr_MTRX[0] = number1;
+                        Tr_MTRX[1] = number2;
+                        Tr_MTRX[2] = number3;
+                    }
+                }
+                SymOp symOp = new SymOp(Rot_MTRX, Tr_MTRX);
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.info(format(" MTRIXn SymOp: %d of %d\n" + symOp.toString(), i + 1, MTRX1List.length));
+                }
+                spaceGroup.symOps.add(symOp);
+            }
+            unitCell = NCSCrystal.NCSCrystalFactory(unitCell, spaceGroup.symOps);
+            unitCell.updateCrystal();
+        }
+
+        /**
+         * If necessary, applies non-crystallographic symmetry operations to obtain biologically relevant SymOps.
+         * Need to alter NCSCrystal.java in order to effectively use this code...
+         * See: NCSCrystal.java or REMARK 350 in .pdb files.
+         */
+//        if(forceField.getProperties().containsKey("BIOMTn")) {
+//            Crystal unitCell2 = new Crystal(a, b, c, alpha, beta, gamma, spacegroup); // Objects in java passed by reference
+//            SpaceGroup spaceGroup = unitCell2.spaceGroup;
+//            // Separate string list BIOMTn into Double matricies then pass into symops
+//            CompositeConfiguration properties = forceField.getProperties();
+//            String biomtList[] = properties.getStringArray("BIOMTn"); //Contains all rotation and translation
+//            spaceGroup.symOps.clear();
+//            double number = 0;
+//            for (int i=0;i< biomtList.length;i+=3) {
+//                double [][] Rot_biomt = {{0,0,0},{0,0,0},{0,0,0}};
+//                double [] Tr_biomt = {0,0,0};
+//                for (int j=0;j<3;j++) {
+//                    String tokens[] = biomtList[i+j].trim().split(" +"); // 4 items: rot [j][1-3] * trans[j]
+//                    for (int k=0; k<4;k++) {
+//                        number = Double.parseDouble(tokens[k]);
+//                        if(k!=3) {
+//                            Rot_biomt[j][k] = number;
+//                        }else{
+//                            Tr_biomt[j] = number;
+//                        }
+//                    }
+//                }
+//                SymOp symOp = new SymOp(Rot_biomt, Tr_biomt);
+//                if (logger.isLoggable(Level.FINEST)) {
+//                    logger.finest(format(" BIOMTn SymOp: %d of %d\n" + symOp.toString(), (i / 3) + 1, biomtList.length / 3));
+//                }
+//                spaceGroup.symOps.add(symOp);
+//            }
+//            unitCell = NCSCrystal.NCSCrystalFactory(unitCell, spaceGroup.symOps);
+//            unitCell.updateCrystal();
+//        }
+
+        return unitCell;
+
+    }
+
 
     public void destroy() throws Exception {
         if (destroyed) {
