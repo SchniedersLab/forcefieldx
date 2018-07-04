@@ -132,6 +132,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     protected final MolecularAssembly molecularAssembly;
     private Atom[] atoms;
     private Crystal crystal;
+    private double cutoffPlusBuffer;
     private final ParallelTeam parallelTeam;
     private BondedRegion bondedRegion;
     private STATE state = STATE.BOTH;
@@ -478,13 +479,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             }
         }
 
+        cutoffPlusBuffer = nlistCutoff + buff;
         unitCell = configureNCS(forceField, unitCell);
 
         /**
          * If necessary, create a ReplicatesCrystal.
          */
         if (!aperiodic) {
-            double cutOff2 = 2.0 * (nlistCutoff + buff);
+            double cutOff2 = 2.0 * cutoffPlusBuffer;
             this.crystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, cutOff2);
             logger.info(format("\n Density:                                %6.3f (g/cc)", crystal.getDensity(molecularAssembly.getMass())));
             logger.info(crystal.toString());
@@ -1922,6 +1924,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     @Override
     public Crystal getCrystal() {
         return crystal;
+    }
+
+    public double getCutoffPlusBuffer() {
+        return cutoffPlusBuffer;
     }
 
     /**

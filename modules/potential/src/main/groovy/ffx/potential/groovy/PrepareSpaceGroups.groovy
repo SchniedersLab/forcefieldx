@@ -81,6 +81,9 @@ class PrepareSpaceGroups extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
+    public int numberCreated = 0
+    public File baseDir = null
+
     /**
      * Execute the script.
      */
@@ -103,6 +106,7 @@ class PrepareSpaceGroups extends PotentialScript {
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
 
         logger.info("\n Preparing space group directories for " + modelFilename)
+
         System.setProperty("ewald-alpha", "0.0")
 
         ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
@@ -110,6 +114,7 @@ class PrepareSpaceGroups extends PotentialScript {
 
         File coordFile = activeAssembly.getFile()
         String coordName = FilenameUtils.getName(coordFile.getPath())
+
         File propertyFile = new File(config.getProperty("propertyFile"))
 
         Atom[] atoms = activeAssembly.getAtomArray()
@@ -153,7 +158,14 @@ class PrepareSpaceGroups extends PotentialScript {
 
             // Create the directory.
             String sgDirName = spacegroup.shortName.replace('/', '_')
-            File sgDir = new File(FilenameUtils.getFullPath(coordFile.getAbsolutePath()) + sgDirName)
+
+            File sgDir
+            if (baseDir == null || !baseDir.exists() || !baseDir.canWrite()) {
+                sgDir = new File(FilenameUtils.getFullPath(coordFile.getAbsolutePath()) + sgDirName)
+            } else {
+                sgDir = new File(baseDir.getAbsolutePath() + sgDirName)
+            }
+
             if (!sgDir.exists()) {
                 logger.info("\n Creating space group directory: " + sgDir.toString())
                 sgDir.mkdir()
@@ -162,6 +174,8 @@ class PrepareSpaceGroups extends PotentialScript {
             double[] abc = spacegroup.randomUnitCellParams()
             Crystal crystal = new Crystal(abc[0], abc[1], abc[2], abc[3], abc[4], abc[5], spacegroup.shortName)
             crystal.setDensity(density, mass)
+            double cutoff2 = energy.getCutoffPlusBuffer() * 2.0;
+            crystal = ffx.crystal.ReplicatesCrystal.replicatesCrystalFactory(crystal, cutoff2);
             energy.setCrystal(crystal)
 
             if (symScalar > 0.0) {
@@ -182,6 +196,8 @@ class PrepareSpaceGroups extends PotentialScript {
 
             File keyFile = new File(FilenameUtils.removeExtension(sgFile.getAbsolutePath()) + ".properties")
             logger.info(" Saving " + sgDirName + " properties to: " + keyFile.toString())
+
+            numberCreated++
 
             PrintWriter out = null
             BufferedReader keyReader = null

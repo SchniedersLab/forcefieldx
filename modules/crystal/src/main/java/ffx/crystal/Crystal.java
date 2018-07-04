@@ -638,14 +638,11 @@ public class Crystal {
 
     public void setDensity(double dens, double mass) {
         double currentDensity = getDensity(mass);
-
         double scale = cbrt(currentDensity / dens);
-        Crystal uc = getUnitCell();
-        changeUnitCellParameters(uc.a * scale, uc.b * scale, uc.c * scale, alpha, beta, gamma);
+        changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
         currentDensity = getDensity(mass);
-
         logger.info(format(" Updated density %6.3f (g/cc) with unit cell %s.",
-                currentDensity, uc.toShortString()));
+                currentDensity, toShortString()));
     }
 
     public void randomParameters(double dens, double mass) {
