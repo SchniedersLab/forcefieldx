@@ -7824,10 +7824,12 @@ public class RotamerOptimization implements Terminatable {
             Residue resi = residues[i];
             Rotamer[] rotsi = resi.getRotamers(library);
             int lenri = rotsi.length;
+            int indI = allResiduesList.indexOf(resi);
             for (int j = i + 1; j < nResidues; j++) {
                 Residue resj = residues[j];
                 Rotamer[] rotsj = resj.getRotamers(library);
                 int lenrj = rotsj.length;
+                int indJ = allResiduesList.indexOf(resj);
 
                 double minPair = Double.MAX_VALUE;
                 int minRI = -1;
@@ -7839,7 +7841,7 @@ public class RotamerOptimization implements Terminatable {
                         continue;
                     }
                     for (int rj = 0; rj < lenrj; rj++) {
-                        if (check(j, rj) || check(i, ri, j, rj) || checkPairDistThreshold(i, ri, j, rj)) {
+                        if (check(j, rj) || check(i, ri, j, rj) || checkPairDistThreshold(indI, ri, indJ, rj)) {
                             continue;
                         }
                         cutoffPair = false;
