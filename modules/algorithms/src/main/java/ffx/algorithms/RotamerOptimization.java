@@ -4435,6 +4435,7 @@ public class RotamerOptimization implements Terminatable {
                     break;
                 }
             }
+            toAdd.forEach(cell::addResidue);
         }
     }
 
