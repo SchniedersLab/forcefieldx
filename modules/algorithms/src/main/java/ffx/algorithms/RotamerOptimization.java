@@ -3544,16 +3544,37 @@ public class RotamerOptimization implements Terminatable {
         if (distanceMethod == DistanceMethod.ROTAMER) {
             return checkDistMatrix(i, ri, j, rj);
         } else {
-            double minDist = Double.MAX_VALUE;
-            final int lenri = distanceMatrix[i].length;
-            final int lenrj = distanceMatrix[i][ri][j].length;
-            for (int roti = 0; roti < lenri; roti++) {
-                for (int rotj = 0; rotj < lenrj; rotj++) {
-                    minDist = Math.min(minDist, checkDistMatrix(i, roti, j, rotj));
-                }
-            }
-            return minDist;
+            return getResidueDistance(i, ri, j, rj);
         }
+    }
+    
+    /* Checks the distance matrix, finding the shortest distance between the closest rotamers of two residues.
+     * 
+     * @param i Residue i
+     * @param ri Rotamer for i
+     * @param j Residue j
+     * @param rj Rotamer for j
+     * @return Shortest distance
+     */
+    private double getResidueDistance(int i, int ri, int j, int rj) {
+        if (i > j) {
+            int temp = i;
+            i = j;
+            j = temp;
+            temp = ri;
+            ri = rj;
+            rj = temp;
+        }
+
+        double minDist = Double.MAX_VALUE;
+        final int lenri = distanceMatrix[i].length;
+        final int lenrj = distanceMatrix[i][ri][j].length;
+        for (int roti = 0; roti < lenri; roti++) {
+            for (int rotj = 0; rotj < lenrj; rotj++) {
+                minDist = Math.min(minDist, checkDistMatrix(i, roti, j, rotj));
+            }
+        }
+        return minDist;
     }
 
     /**
@@ -8929,6 +8950,12 @@ public class RotamerOptimization implements Terminatable {
                     Residue residueJ = residues[j];
                     int indexI = allResiduesList.indexOf(residueI);
                     int indexJ = allResiduesList.indexOf(residueJ);
+                    double resDist = getResidueDistance(indexI, ri, indexJ, rj);
+                    String resDistString = format("large");
+                    if (resDist < Double.MAX_VALUE) {
+                        resDistString = format("%5.3f", resDist);
+                    }
+                    
                     double dist = checkDistMatrix(indexI, ri, indexJ, rj);
 
                     String distString = format("     large");
@@ -8940,25 +8967,25 @@ public class RotamerOptimization implements Terminatable {
                     if (dist < superpositionThreshold) {
                         // Set the energy to NaN for superposed atoms.
                         twoBodyEnergy = Double.NaN;
-                        logger.info(format(" Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang < %5.3f Ang",
-                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, dist, superpositionThreshold));
+                        logger.info(format(" Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang (%s Ang by residue) < %5.3f Ang",
+                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, dist, resDist, superpositionThreshold));
                     } else if (checkPairDistThreshold(indexI, ri, indexJ, rj)) {
                         // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                         twoBodyEnergy = 0.0;
                         time += System.nanoTime();
-                        logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s (Ang) in %6.4f (sec).",
-                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, time * 1.0e-9));
+                        logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
                     } else {
                         try {
                             twoBodyEnergy = compute2BodyEnergy(residues, i, ri, j, rj);
                             time += System.nanoTime();
-                            logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s (Ang) in %6.4f (sec).",
-                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, time * 1.0e-9));
+                            logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
                         } catch (ArithmeticException ex) {
                             twoBodyEnergy = Double.NaN;
                             time += System.nanoTime();
-                            logger.info(format(" Pair %8s %-2d, %8s %-2d:              NaN at %s (Ang) in %6.4f (sec).",
-                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, distString, time * 1.0e-9));
+                            logger.info(format(" Pair %8s %-2d, %8s %-2d:              NaN at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, distString, resDistString, time * 1.0e-9));
                         }
                     }
 
