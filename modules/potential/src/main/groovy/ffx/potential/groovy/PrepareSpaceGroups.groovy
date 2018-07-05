@@ -4,6 +4,7 @@ import org.apache.commons.configuration.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
+import ffx.crystal.ReplicatesCrystal
 import ffx.crystal.SpaceGroup
 import ffx.crystal.SymOp
 import ffx.potential.ForceFieldEnergy
@@ -107,8 +108,6 @@ class PrepareSpaceGroups extends PotentialScript {
 
         logger.info("\n Preparing space group directories for " + modelFilename)
 
-        System.setProperty("ewald-alpha", "0.0")
-
         ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
         CompositeConfiguration config = activeAssembly.getProperties()
 
@@ -175,7 +174,7 @@ class PrepareSpaceGroups extends PotentialScript {
             Crystal crystal = new Crystal(abc[0], abc[1], abc[2], abc[3], abc[4], abc[5], spacegroup.shortName)
             crystal.setDensity(density, mass)
             double cutoff2 = energy.getCutoffPlusBuffer() * 2.0;
-            crystal = ffx.crystal.ReplicatesCrystal.replicatesCrystalFactory(crystal, cutoff2);
+            crystal = ReplicatesCrystal.replicatesCrystalFactory(crystal, cutoff2);
             energy.setCrystal(crystal)
 
             if (symScalar > 0.0) {
