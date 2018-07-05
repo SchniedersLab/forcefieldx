@@ -801,25 +801,11 @@
                         <configuration>
                             <generateHtml>true</generateHtml>
                             <generateXml>true</generateXml>
+                            <excludes>
+                                <exclude>edu/**/*.java</exclude>
+                            </excludes>
+                            <includesTestSourceRoots>false</includesTestSourceRoots>
                         </configuration>
-                        <executions>
-                            <execution>
-                                <id>main</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>instrument</goal>
-                                    <goal>aggregate</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>site</id>
-                                <phase>pre-site</phase>
-                                <goals>
-                                    <goal>instrument</goal>
-                                    <goal>aggregate</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
