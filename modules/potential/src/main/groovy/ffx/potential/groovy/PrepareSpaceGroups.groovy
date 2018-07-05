@@ -159,7 +159,7 @@ class PrepareSpaceGroups extends PotentialScript {
             String sgDirName = spacegroup.shortName.replace('/', '_')
 
             File sgDir
-            if (baseDir == null || !baseDir.exists() || !baseDir.canWrite()) {
+            if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
                 sgDir = new File(FilenameUtils.getFullPath(coordFile.getAbsolutePath()) + sgDirName)
             } else {
                 sgDir = new File(baseDir.getAbsolutePath() + sgDirName)

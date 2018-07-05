@@ -37,11 +37,16 @@
  */
 package ffx.potential.grooy;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import ffx.potential.groovy.MoveIntoUnitCell;
+import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
 
@@ -80,8 +85,15 @@ public class MoveIntoUnitCellTest {
         String[] args = {"src/main/java/ffx/potential/structures/watertiny.xyz"};
         binding.setVariable("args", args);
 
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("MoveIntoUnitCell");
+            moveIntoUnitCell.setBaseDir(path.toFile());
+        } catch (java.io.IOException e) {
+            Assert.fail(" Could not create a temporary directory.");
+        }
+
         // Evaluate the script.
-        moveIntoUnitCell.writeFiles = false;
         moveIntoUnitCell.run();
 
         // Pull out the Cart2Frac results to check.
@@ -100,5 +112,13 @@ public class MoveIntoUnitCellTest {
         org.junit.Assert.assertEquals(8.93905400, unitCellCoordinates[6][0], 1.0e-6);
         org.junit.Assert.assertEquals(1.44760200, unitCellCoordinates[6][1], 1.0e-6);
         org.junit.Assert.assertEquals(8.86539400, unitCellCoordinates[6][2], 1.0e-6);
+
+        // Delate all created space grouop directories.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by Frac2Cart.");
+        }
     }
 }

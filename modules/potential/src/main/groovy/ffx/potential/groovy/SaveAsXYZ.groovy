@@ -51,6 +51,12 @@ class SaveAsXYZ extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
+
     /**
      * Execute the script.
      */
@@ -87,8 +93,6 @@ class SaveAsXYZ extends PotentialScript {
 
         logger.info("\n Writing out XYZ for " + modelFilename)
 
-        modelFilename = FilenameUtils.removeExtension(modelFilename) + ".xyz"
-
         // Offset atom type numbers.
         if (offset != 0) {
             logger.info("\n Offset atom types by " + offset)
@@ -97,9 +101,7 @@ class SaveAsXYZ extends PotentialScript {
         }
 
         if (scalar > 0.0) {
-
             SymOp symOp = SymOp.randomSymOpFactory(scalar)
-
             logger.info(String.format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()))
             Crystal crystal = activeAssembly.getCrystal()
             Atom[] atoms = activeAssembly.getAtomArray()
@@ -111,7 +113,16 @@ class SaveAsXYZ extends PotentialScript {
             }
         }
 
-        potentialFunctions.save(activeAssembly, new File(modelFilename))
+        File saveDir = baseDir
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
+        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+        String fileName = FilenameUtils.getName(modelFilename)
+        fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
+        File modelFile = new File(dirName + fileName)
+
+        potentialFunctions.save(activeAssembly, modelFile)
 
         return this
     }

@@ -1,4 +1,4 @@
-package ffx.potential.groovy
+package ffx.potential.groovy.test
 
 import org.apache.commons.io.FilenameUtils
 

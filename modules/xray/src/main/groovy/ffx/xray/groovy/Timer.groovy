@@ -88,7 +88,7 @@ class Timer extends AlgorithmsScript {
 
         for (int i = 0; i < timerOptions.iterations; i++) {
             long time = -System.nanoTime()
-            if (!timerOptions.gradient) {
+            if (!timerOptions.noGradient) {
                 energy.energyAndGradient(x, g)
             } else {
                 energy.energy(x)

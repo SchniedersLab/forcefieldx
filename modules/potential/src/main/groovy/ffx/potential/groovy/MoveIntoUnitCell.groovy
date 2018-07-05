@@ -26,9 +26,14 @@ class MoveIntoUnitCell extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
-    public writeFiles = true
-    public double[][] origCoordinates = null;
-    public double[][] unitCellCoordinates = null;
+    public double[][] origCoordinates = null
+    public double[][] unitCellCoordinates = null
+
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
 
     /**
      * Execute the script.
@@ -42,7 +47,7 @@ class MoveIntoUnitCell extends PotentialScript {
 
         MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
+            assemblies = potentialFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -77,14 +82,21 @@ class MoveIntoUnitCell extends PotentialScript {
             }
         }
 
-        if (writeFiles) {
-            String ext = FilenameUtils.getExtension(modelFilename)
-            modelFilename = FilenameUtils.removeExtension(modelFilename)
-            if (ext.toUpperCase().contains("XYZ")) {
-                potentialFunctions.saveAsXYZ(assemblies[0], new File(modelFilename + ".xyz"))
-            } else {
-                potentialFunctions.saveAsPDB(assemblies, new File(modelFilename + ".pdb"))
-            }
+        File saveDir = baseDir
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
+
+        String fileName = FilenameUtils.getName(modelFilename)
+        String ext = FilenameUtils.getExtension(fileName)
+        fileName = FilenameUtils.removeExtension(fileName)
+
+        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+
+        if (ext.toUpperCase().contains("XYZ")) {
+            potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
+        } else {
+            potentialFunctions.saveAsPDB(assemblies, new File(dirName + fileName + ".pdb"))
         }
 
         return this

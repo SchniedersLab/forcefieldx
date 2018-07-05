@@ -104,7 +104,7 @@ class MultiTopTimer extends PotentialScript {
          * Configure the potential to test.
          */
         StringBuilder sb = new StringBuilder("\n Testing energies ");
-        boolean gradient = timerOptions.getGradient();
+        boolean gradient = !timerOptions.getNoGradient();
         if (gradient) {
             sb.append("and gradients ");
         }

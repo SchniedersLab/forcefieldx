@@ -1,5 +1,7 @@
 package ffx.potential.groovy
 
+import org.apache.commons.io.FilenameUtils
+
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 
@@ -23,6 +25,12 @@ class SaveAsP1 extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
+
     /**
      * Execute the script.
      */
@@ -34,17 +42,26 @@ class SaveAsP1 extends PotentialScript {
 
         MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
+            assemblies = potentialFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
-            return
+            return this
         }
 
         String modelFilename = activeAssembly.getFile().getAbsolutePath()
         logger.info("\n Expanding to P1 for " + modelFilename)
 
-        potentialFunctions.saveAsP1(activeAssembly, new File(modelFilename))
+        File saveDir = baseDir
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() ||  !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
+
+        String fileName = FilenameUtils.getName(modelFilename)
+        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+        File saveLocation = new File(dirName + fileName)
+
+        potentialFunctions.saveAsP1(activeAssembly, saveLocation)
 
         return this
     }

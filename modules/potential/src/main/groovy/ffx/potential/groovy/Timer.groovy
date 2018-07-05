@@ -60,17 +60,21 @@ class Timer extends PotentialScript {
             System.setProperty("pj.nt", Integer.toString(timer.threads));
         }
 
-        logger.info("\n Timing energy and gradient for " + activeAssembly.toString());
+        if (timer.noGradient) {
+            logger.info("\n Timing energy for " + activeAssembly.toString())
+        } else {
+            logger.info("\n Timing energy and gradient for " + activeAssembly.toString())
+        }
 
         ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
 
         logger.info("\n Beginning timing\n")
         long minTime = Long.MAX_VALUE
         double sumTime2 = 0.0
-        int halfnEvals = (int) (nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1 // Halfway point
+        int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1) // Halfway point
         for (int i = 0; i < nEvals; i++) {
             long time = -System.nanoTime()
-            double e = energy.energy(!timer.gradient, timer.getVerbose())
+            double e = energy.energy(!timer.noGradient, timer.getVerbose())
             time += System.nanoTime()
             if (timer.getVerbose()) {
                 logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))

@@ -35,76 +35,43 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.grooy;
+package ffx.utilities;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+public class DirectoryUtils {
 
-import ffx.potential.groovy.PrepareSpaceGroups;
-import ffx.utilities.DirectoryUtils;
+    /**
+     * Recursively delete the contents of a directory.
+     *
+     * @param path
+     * @throws IOException
+     */
+    public static void deleteDirectoryTree(Path path) throws IOException {
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
 
-import groovy.lang.Binding;
-
-/**
- * Test the Energy script.
- */
-public class PrepareSpaceGroupsTest {
-
-    Binding binding;
-    PrepareSpaceGroups prepareSpaceGroups;
-
-    @Before
-    public void before() {
-        binding = new Binding();
-        prepareSpaceGroups = new PrepareSpaceGroups();
-        prepareSpaceGroups.setBinding(binding);
-    }
-
-    @Test
-    public void testPrepareSpaceGroupHelp() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        prepareSpaceGroups.run();
-
-        // Pull out the biotype results to check.
-        Assert.assertEquals(0, prepareSpaceGroups.numberCreated);
-    }
-
-    @Test
-    public void testPrepareSpaceGroups() {
-        // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/ffx/potential/structures/paracetamol.xyz"};
-        binding.setVariable("args", args);
-
-        Path path = null;
-        try {
-            path = Files.createTempDirectory("spacegroups");
-            prepareSpaceGroups.baseDir = path.toFile();
-        } catch (IOException e) {
-            Assert.fail(" Could not create a temporary directory");
-        }
-
-        // Evaluate the script.
-        prepareSpaceGroups.run();
-
-        // Pull out the Cart2Frac results to check.
-        Assert.assertEquals(230, prepareSpaceGroups.numberCreated);
-
-        // Delate all created space grouop directories.
-        try {
-            DirectoryUtils.deleteDirectoryTree(path);
-        } catch (IOException e) {
-            System.out.println(e.toString());
-            Assert.fail(" Exception deleting files created by PrepareSpaceGroups.");
-        }
-
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException e)
+                    throws IOException {
+                if (e == null) {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                } else {
+                    // directory iteration failed
+                    throw e;
+                }
+            }
+        });
     }
 }

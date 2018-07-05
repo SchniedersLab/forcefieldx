@@ -37,74 +37,46 @@
  */
 package ffx.potential.grooy;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.PrepareSpaceGroups;
-import ffx.utilities.DirectoryUtils;
+import ffx.potential.groovy.Timer;
 
 import groovy.lang.Binding;
 
 /**
  * Test the Energy script.
  */
-public class PrepareSpaceGroupsTest {
+public class TimerTest {
 
     Binding binding;
-    PrepareSpaceGroups prepareSpaceGroups;
+    Timer timer;
 
     @Before
     public void before() {
         binding = new Binding();
-        prepareSpaceGroups = new PrepareSpaceGroups();
-        prepareSpaceGroups.setBinding(binding);
+        timer = new Timer();
+        timer.setBinding(binding);
     }
 
     @Test
-    public void testPrepareSpaceGroupHelp() {
+    public void testTimerHelp() {
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        prepareSpaceGroups.run();
-
-        // Pull out the biotype results to check.
-        Assert.assertEquals(0, prepareSpaceGroups.numberCreated);
+        timer.run();
     }
 
     @Test
-    public void testPrepareSpaceGroups() {
+    public void testTimer() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/ffx/potential/structures/paracetamol.xyz"};
+        String[] args = {"-n", "2", "-v", "--nt", "2", "-g",
+                "src/main/java/ffx/potential/structures/peptide-oplsaal.xyz"};
         binding.setVariable("args", args);
 
-        Path path = null;
-        try {
-            path = Files.createTempDirectory("spacegroups");
-            prepareSpaceGroups.baseDir = path.toFile();
-        } catch (IOException e) {
-            Assert.fail(" Could not create a temporary directory");
-        }
-
         // Evaluate the script.
-        prepareSpaceGroups.run();
-
-        // Pull out the Cart2Frac results to check.
-        Assert.assertEquals(230, prepareSpaceGroups.numberCreated);
-
-        // Delate all created space grouop directories.
-        try {
-            DirectoryUtils.deleteDirectoryTree(path);
-        } catch (IOException e) {
-            System.out.println(e.toString());
-            Assert.fail(" Exception deleting files created by PrepareSpaceGroups.");
-        }
-
+        timer.run();
     }
 }

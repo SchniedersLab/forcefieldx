@@ -37,11 +37,16 @@
  */
 package ffx.potential.grooy;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import ffx.potential.groovy.Cart2Frac;
+import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
 
@@ -80,8 +85,15 @@ public class Cart2FracTest {
         String[] args = {"src/main/java/ffx/potential/structures/acetanilide.xyz"};
         binding.setVariable("args", args);
 
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("Cart2Frac");
+            cart2Frac.setBaseDir(path.toFile());
+        } catch (java.io.IOException e) {
+            Assert.fail(" Could not create a temporary directory.");
+        }
+
         // Evaluate the script.
-        cart2Frac.writeFiles = false;
         cart2Frac.run();
 
         // Pull out the Cart2Frac results to check.
@@ -98,5 +110,13 @@ public class Cart2FracTest {
         Assert.assertEquals(0.4063192642, fracCoordinates[0][0], 1.0e-6);
         Assert.assertEquals(0.0743478761, fracCoordinates[0][1], 1.0e-6);
         Assert.assertEquals(0.1251544479, fracCoordinates[0][2], 1.0e-6);
+
+        // Delate all created space grouop directories.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by Cart2Frac.");
+        }
     }
 }

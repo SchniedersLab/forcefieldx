@@ -29,7 +29,12 @@ class Frac2Cart extends PotentialScript {
 
     public double[][] cartCoordinates = null
     public double[][] fracCoordinates = null
-    public writeFiles = true
+
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
 
     /**
      * Execute the script.
@@ -43,7 +48,7 @@ class Frac2Cart extends PotentialScript {
 
         MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = potentialFunctions.open(filenames.get(0))
+            assemblies = potentialFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -52,8 +57,8 @@ class Frac2Cart extends PotentialScript {
             assemblies = [activeAssembly]
         }
 
-        String filename = activeAssembly.getFile().getAbsolutePath()
-        logger.info("\n Converting from fractional to Cartesian coordinates for " + filename)
+        String modelFilename = activeAssembly.getFile().getAbsolutePath()
+        logger.info("\n Converting from fractional to Cartesian coordinates for " + modelFilename)
 
         // Loop over each system.
         for (int i = 0; i < assemblies.length; i++) {
@@ -84,14 +89,21 @@ class Frac2Cart extends PotentialScript {
             }
         }
 
-        if (writeFiles) {
-            String ext = FilenameUtils.getExtension(filename)
-            filename = FilenameUtils.removeExtension(filename)
-            if (ext.toUpperCase().contains("XYZ")) {
-                potentialFunctions.saveAsXYZ(assemblies[0], new File(filename + ".xyz"))
-            } else {
-                potentialFunctions.saveAsPDB(assemblies, new File(filename + ".pdb"))
-            }
+        File saveDir = baseDir
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
+
+        String fileName = FilenameUtils.getName(modelFilename)
+        String ext = FilenameUtils.getExtension(fileName)
+        fileName = FilenameUtils.removeExtension(fileName)
+
+        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+
+        if (ext.toUpperCase().contains("XYZ")) {
+            potentialFunctions.saveAsXYZ(assemblies[0], new File(dirName + fileName + ".xyz"))
+        } else {
+            potentialFunctions.saveAsPDB(assemblies, new File(dirName + fileName + ".pdb"))
         }
 
         return this

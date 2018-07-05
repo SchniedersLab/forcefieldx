@@ -27,6 +27,12 @@ class SaveAsPDB extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
+
     /**
      * Execute the script.
      */
@@ -52,8 +58,14 @@ class SaveAsPDB extends PotentialScript {
 
         logger.info("\n Saving PDB for " + modelFilename)
 
-        modelFilename = FilenameUtils.removeExtension(modelFilename) + ".pdb"
-        File modelFile = new File(modelFilename)
+        File saveDir = baseDir
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+        }
+        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+        String fileName = FilenameUtils.getName(modelFilename)
+        fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+        File modelFile = new File(dirName + fileName)
 
         potentialFunctions.saveAsPDB(activeAssembly, modelFile)
         PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()
