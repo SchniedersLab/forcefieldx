@@ -459,6 +459,7 @@ public class RotamerOptimizationTest {
                 counter++;
             }
         }
+        Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
         rotamerOptimization.setThreeBodyEnergy(useThreeBody);
@@ -661,12 +662,12 @@ public class RotamerOptimizationTest {
                             }
                         }
 
-                        double lowEnergy = rotamerOptimization.get3Body(tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
+                        double lowEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
                             if (rotamerOptimization.checkPrunedSingles(k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
                                 continue;
                             } else {
-                                double tripleEnergy = rotamerOptimization.get3Body(tripleResidue1, ri, tripleResidue2, rj, k, rk);
+                                double tripleEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rk);
                                 if (tripleEnergy < lowEnergy) {
                                     lowEnergy = tripleEnergy;
                                 }   
@@ -703,13 +704,13 @@ public class RotamerOptimizationTest {
                 while( rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) &&  rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {   
                     rotCounter++;
                 }
-                double lowEnergy = rotamerOptimization.get3Body(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
+                double lowEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {
                     if (rotamerOptimization.checkPrunedSingles(k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1,bestRotI,k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2,bestRotJ,k,rk)) {    
                         continue;
                     } else {
-                        double tripleEnergy = rotamerOptimization.get3Body(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
+                        double tripleEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
                         if (tripleEnergy < lowEnergy) {
                             lowEnergy = tripleEnergy;
                             bestRotK = rk;
@@ -768,6 +769,7 @@ public class RotamerOptimizationTest {
                 counter++;
             }
         }
+        Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
         rotamerOptimization.setThreeBodyEnergy(useThreeBody);
@@ -981,12 +983,12 @@ public class RotamerOptimizationTest {
                             }
                         }
 
-                        double lowEnergy = rotamerOptimization.get3Body(tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
+                        double lowEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
                             if (rotamerOptimization.checkPrunedSingles(k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
                                 continue;
                             } else {
-                                double tripleEnergy = rotamerOptimization.get3Body(tripleResidue1, ri, tripleResidue2, rj, k, rk);
+                                double tripleEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rk);
                                 if (tripleEnergy < lowEnergy) {
                                     lowEnergy = tripleEnergy;
                                 }   
@@ -1023,13 +1025,13 @@ public class RotamerOptimizationTest {
                 while( rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) &&  rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {   
                     rotCounter++;
                 }
-                double lowEnergy = rotamerOptimization.get3Body(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
+                double lowEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {
                     if (rotamerOptimization.checkPrunedSingles(k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1,bestRotI,k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2,bestRotJ,k,rk)) {    
                         continue;
                     } else {
-                        double tripleEnergy = rotamerOptimization.get3Body(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
+                        double tripleEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
                         if (tripleEnergy < lowEnergy) {
                             lowEnergy = tripleEnergy;
                             bestRotK = rk;

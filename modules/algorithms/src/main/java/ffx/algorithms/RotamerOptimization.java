@@ -2044,9 +2044,9 @@ public class RotamerOptimization implements Terminatable {
             for (int i = 0; i < nRes; i++) {
                 for (int j = i + 1; j < nRes; j++) {
                     for (int k = j + 1; k < nRes; k++) {
-                        if (Math.abs(get3Body(i, 0, j, 0, k, 0)) >= trimerCutoff) {
+                        if (Math.abs(get3Body(residues, i, 0, j, 0, k, 0)) >= trimerCutoff) {
                             logger.info(format(" Large Trimer  %s %s %s:    %16.5f",
-                                    residues[i].toFormattedString(false, true), residues[j].toFormattedString(false, true), residues[k].toFormattedString(false, true), get3Body(i, 0, j, 0, k, 0)));
+                                    residues[i].toFormattedString(false, true), residues[j].toFormattedString(false, true), residues[k].toFormattedString(false, true), get3Body(residues, i, 0, j, 0, k, 0)));
                         }
                     }
                 }
@@ -2090,10 +2090,10 @@ public class RotamerOptimization implements Terminatable {
                             Rotamer rotk[] = resk.getRotamers(library);
                             for (int rk = 0; rk < rotk.length; rk++) {
                                 try {
-                                    if (Math.abs(get3Body(i, ri, j, rj, k, rk)) >= trimerCutoff) {
+                                    if (Math.abs(get3Body(residues, i, ri, j, rj, k, rk)) >= trimerCutoff) {
                                         logger.info(format(" Large Trimer %8s %-2d, %8s %-2d, %8s %-2d: %s",
                                                 resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk,
-                                                formatEnergy(get3Body(i, ri, j, rj, k, rk))));
+                                                formatEnergy(get3Body(residues, i, ri, j, rj, k, rk))));
                                     }
                                 } catch (Exception ex) {
                                 }
@@ -3060,7 +3060,7 @@ public class RotamerOptimization implements Terminatable {
                         for (int k = j + 1; k < nResidues; k++) {
                             int rk = optimum[k];
                             try {
-                                sumTrimerEnergy += get3Body(i, ri, j, rj, k, rk);
+                                sumTrimerEnergy += get3Body(residues, i, ri, j, rj, k, rk);
                             } catch (Exception ex) {
                                 logger.warning(ex.toString());
                             }
@@ -3308,7 +3308,7 @@ public class RotamerOptimization implements Terminatable {
                     for (int k = j + 1; k < nResidues; k++) {
                         int rk = optimum[k];
                         try {
-                            double triple = get3Body(i, ri, j, rj, k, rk);
+                            double triple = get3Body(residues, i, ri, j, rj, k, rk);
                             double thirdTrip = triple / 3.0;
                             residueEnergy[i] += thirdTrip;
                             residueEnergy[j] += thirdTrip;
@@ -5266,7 +5266,7 @@ public class RotamerOptimization implements Terminatable {
                     - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk) - getSelf(l, rl)
                     - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(i, ri, l, rl)
                     - get2Body(j, rj, k, rk) - get2Body(j, rj, l, rl) - get2Body(k, rk, l, rl)
-                    - get3Body(i, ri, j, rj, k, rk) - get3Body(i, ri, j, rj, l, rl) - get3Body(i, ri, k, rk, l, rl) - get3Body(j, rj, k, rk, l, rl);
+                    - get3Body(residues, i, ri, j, rj, k, rk) - get3Body(residues, i, ri, j, rj, l, rl) - get3Body(residues, i, ri, k, rk, l, rl) - get3Body(residues, j, rj, k, rk, l, rl);
 
         } finally {
             // Revert if the currentEnergy call throws an exception.
@@ -5925,7 +5925,7 @@ public class RotamerOptimization implements Terminatable {
                     double currentMax = currentMin;
                     if (threeBodyTerm) {
                         // If the 3-Body eliminated, would fill max to Double.NaN.
-                        currentMin += get3Body(i, ri, j, rj, k, rk);
+                        currentMin += get3Body(residues, i, ri, j, rj, k, rk);
                         currentMax = currentMin;
 
                         // Obtain min and max summations over l.
@@ -6041,7 +6041,7 @@ public class RotamerOptimization implements Terminatable {
                     current = Double.NaN;
                 } else {
                     // ri-rj-rl is accounted for at a different part of the summation as ri-rj-rk.
-                    current = get3Body(i, ri, k, rk, l, rl) + get3Body(j, rj, k, rk, l, rl);
+                    current = get3Body(residues, i, ri, k, rk, l, rl) + get3Body(residues, j, rj, k, rk, l, rl);
                 }
 
                 // TODO: Add quads to the DEE summation.
@@ -6195,7 +6195,7 @@ public class RotamerOptimization implements Terminatable {
                     // k,rk conflicts with i,ri or j,rj, so the max is now Double.NaN. No effect on minimum.
                     currentMax = Double.NaN;
                 } else {
-                    double current = get3Body(i, ri, j, rj, k, rk);
+                    double current = get3Body(residues, i, ri, j, rj, k, rk);
                     if (Double.isFinite(current) && current < currentMin) {
                         currentMin = current;
                     } // Else, no new minimum found.
@@ -6353,7 +6353,7 @@ public class RotamerOptimization implements Terminatable {
                             }
 
                             rkEvals++;
-                            double e = get3Body(i, riA, j, rj, k, rk) - get3Body(i, riB, j, rj, k, rk);
+                            double e = get3Body(residues, i, riA, j, rj, k, rk) - get3Body(residues, i, riB, j, rj, k, rk);
                             if (e < minForResK) {
                                 minForResK = e;
                             }
@@ -6571,7 +6571,7 @@ public class RotamerOptimization implements Terminatable {
                 double currentResK = get2Body(i, riA, k, rk) - get2Body(i, riB, k, rk) + get2Body(j, rjC, k, rk) - get2Body(j, rjD, k, rk);
                 // Include 3-body effects.
                 if (threeBodyTerm) {
-                    double sumOverL = (get3Body(i, riA, j, rjC, k, rk) - get3Body(i, riB, j, rjD, k, rk));
+                    double sumOverL = (get3Body(residues, i, riA, j, rjC, k, rk) - get3Body(residues, i, riB, j, rjD, k, rk));
                     // Loop over a 4th residue l.
                     for (int l = 0; l < nres; l++) {
                         if (l == k || l == i || l == j) {
@@ -6595,8 +6595,8 @@ public class RotamerOptimization implements Terminatable {
                                 return Double.NaN;
                             }
                             rlEvaluations++;
-                            double e = get3Body(i, riA, k, rk, l, rl) - get3Body(i, riB, k, rk, l, rl)
-                                    + get3Body(j, rjC, k, rk, l, rl) - get3Body(j, rjD, k, rk, l, rl);
+                            double e = get3Body(residues, i, riA, k, rk, l, rl) - get3Body(residues, i, riB, k, rk, l, rl)
+                                    + get3Body(residues, j, rjC, k, rk, l, rl) - get3Body(residues, j, rjD, k, rk, l, rl);
                             if (e < minForResL) {
                                 minForResL = e;
                             }
@@ -6950,7 +6950,7 @@ public class RotamerOptimization implements Terminatable {
      * @param rk Rotamer rk of residue k.
      * @return The 3-Body energy.
      */
-    public double get3Body(int i, int ri, int j, int rj, int k, int rk) {
+    public double get3Body(Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
         if (!threeBodyTerm) {
             return 0.0;
         }
@@ -6979,9 +6979,12 @@ public class RotamerOptimization implements Terminatable {
             rk = jrj;
         }
         IntegerKeyset ijk = new IntegerKeyset(i, ri, j, rj, k, rk);
+        int indexI = allResiduesList.indexOf(residues[i]);
+        int indexJ = allResiduesList.indexOf(residues[j]);
+        int indexK = allResiduesList.indexOf(residues[k]);
         if (threeBodyEnergies.containsKey(ijk)) {
             return threeBodyEnergies.getOrDefault(ijk, 0);
-        } else if (checkTriDistThreshold(i, ri, j, rj, k, rk)) {
+        } else if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
             return 0.00000000;
         } else {
             String message = String.format(" Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
@@ -7976,6 +7979,7 @@ public class RotamerOptimization implements Terminatable {
         private SharedDouble twoBody;
         private SharedDouble threeBody;
         private EnergyLoop energyLoops[];
+        private Residue[] residues;
         private int rotamers[];
         private int nResidues;
 
@@ -7989,6 +7993,7 @@ public class RotamerOptimization implements Terminatable {
         public void init(Residue residues[], int rotamers[]) {
             this.rotamers = rotamers;
             this.nResidues = residues.length;
+            this.residues = Arrays.copyOf(residues, nResidues);
         }
 
         public void start() {
@@ -8058,7 +8063,7 @@ public class RotamerOptimization implements Terminatable {
                         if (threeBodyTerm) {
                             for (int c = b + 1; c < nResidues; c++) {
                                 int ci = rotamers[c];
-                                threeBodySum += get3Body(a, ai, b, bi, c, ci);
+                                threeBodySum += get3Body(residues, a, ai, b, bi, c, ci);
                             }
                         }
                     }
@@ -9039,7 +9044,7 @@ public class RotamerOptimization implements Terminatable {
                                             continue;
                                         }
                                         logger.info(format(" 3-Body energy %8s %-2d, %8s %-2d, %8s %-2d: %s",
-                                                resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, formatEnergy(get3Body(i, ri, j, rj, k, rk))));
+                                                resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, formatEnergy(get3Body(residues, i, ri, j, rj, k, rk))));
                                     }
                                 }
                             }
@@ -9243,10 +9248,10 @@ public class RotamerOptimization implements Terminatable {
                                 sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, k, rk, get2Body(j, rj, k, rk)));
                                 sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, l, rl, get2Body(j, rj, l, rl)));
                                 sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", k, rk, l, rl, get2Body(k, rk, l, rl)));
-                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, k, rk, get3Body(i, ri, j, rj, k, rk)));
-                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, l, rl, get3Body(i, ri, j, rj, l, rl)));
-                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, k, rk, l, rl, get3Body(i, ri, k, rk, l, rl)));
-                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", j, rj, k, rk, l, rl, get3Body(j, rj, k, rk, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, k, rk, get3Body(residues, i, ri, j, rj, k, rk)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, l, rl, get3Body(residues, i, ri, j, rj, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, k, rk, l, rl, get3Body(residues, i, ri, k, rk, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", j, rj, k, rk, l, rl, get3Body(residues, j, rj, k, rk, l, rl)));
                                 sb.append(format("     backbone:                      %.3f\n", backboneEnergy));
                                 sb.append(format("     quadEnergy:                 %.3f\n", fourBodyEnergy));
                                 sb.append(format("     --s--\n"));
