@@ -109,68 +109,12 @@ import static ffx.numerics.fft.Complex3D.iComplex3D;
 public class CrystalReciprocalSpace {
 
     private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
-
-    /**
-     * The possible solvent model methods
-     */
-    public enum SolventModel {
-
-        /**
-         * Do not model solvent scattering.
-         */
-        NONE,
-        /**
-         * The classic binary (0, 1) model.
-         */
-        BINARY,
-        /**
-         * Smooth the boundary of the classic model using Gaussians.
-         */
-        GAUSSIAN,
-        /**
-         * Smooth the boundar of the classic model using a cubic polynomial
-         * switch (default).
-         */
-        POLYNOMIAL
-    }
-
-
-    /**
-     * Parse a solvent model string and return a SolventModel enum.
-     * @param str The solvent model String.
-     * @return The SolventModel to use.
-     */
-    public static SolventModel parseSolventModel(String str) {
-        try {
-            return SolventModel.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
-        } catch (Exception e) {
-            logger.info(String.format(" Could not parse %s as a Solvent Model; defaulting to Polynomial.", str));
-            return SolventModel.POLYNOMIAL;
-        }
-    }
-
-    public enum GridMethod {
-
-        SPATIAL, SLICE, ROW
-    }
-
     private static double toSeconds = 1.0e-9;
-    private boolean solvent = false;
     private final boolean neutron;
-    private boolean useThreeGaussians = true;
-    protected boolean lambdaTerm = false;
-    // not final for purposes of finite differences
-    private double coordinates[][][];
     private final double bAdd;
-    private double aRad;
-    private double weight = 1.0;
-    protected double solventA;
-    protected double solventB;
     private final double fftScale;
     private final double densityGrid[];
     private final double solventGrid[];
-    private int aRadGrid;
-    protected SolventModel solventModel;
     private final int nSymm;
     private final int bulkNSymm;
     private final int nAtoms;
@@ -180,7 +124,6 @@ public class CrystalReciprocalSpace {
     private final int complexFFT3DSpace;
     private final int threadCount;
     private final int bufferSize = 3;
-
     //Slice Scheduling
     private final SharedIntegerArray optSliceWeightAtomic;
     private final SharedIntegerArray optSliceWeightSolvent;
@@ -191,7 +134,6 @@ public class CrystalReciprocalSpace {
     private final SliceSchedule atomicSliceSchedule;
     private final SliceSchedule solventSliceSchedule;
     private final SliceSchedule bulkSolventSliceSchedule;
-
     //Row Scheduling
     private final SharedIntegerArray optRowWeightAtomic;
     private final SharedIntegerArray optRowWeightSolvent;
@@ -202,7 +144,6 @@ public class CrystalReciprocalSpace {
     private final RowSchedule atomicRowSchedule;
     private final RowSchedule solventRowSchedule;
     private final RowSchedule bulkSolventRowSchedule;
-
     private final ParallelTeam parallelTeam;
     private final Atom atoms[];
     private final Crystal crystal;
@@ -211,11 +152,9 @@ public class CrystalReciprocalSpace {
     private final FormFactor atomFormFactors[][];
     private final FormFactor solventFormFactors[][];
     private final GridMethod gridMethod;
-
     private final SharedIntegerArray optAtomicGradientWeight;
     private final int previousOptAtomicGradientWeight[];
     private final GradientSchedule atomicGradientSchedule;
-
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
      * 3D spatial decomposition.
@@ -225,7 +164,6 @@ public class CrystalReciprocalSpace {
     private final SpatialDensityRegion solventDensityRegion;
     private final SolventDensityLoop solventDensityLoops[];
     private final SolventDensityLoop bulkSolventDensityLoops[];
-
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
      * slice-based decomposition.
@@ -235,7 +173,6 @@ public class CrystalReciprocalSpace {
     private final SliceRegion solventSliceRegion;
     private final SolventSliceLoop solventSliceLoops[];
     private final BulkSolventSliceLoop bulkSolventSliceLoops[];
-
     /**
      * Parallelization of putting atomic form factors onto the 3D grid using a
      * row-based decomposition.
@@ -245,7 +182,6 @@ public class CrystalReciprocalSpace {
     private final RowRegion solventRowRegion;
     private final SolventRowLoop solventRowLoops[];
     private final BulkSolventRowLoop bulkSolventRowLoops[];
-
     /**
      * Parallelization over atomic structure factor loops.
      */
@@ -253,7 +189,6 @@ public class CrystalReciprocalSpace {
     private final ExtractRegion extractRegion;
     private final AtomicScaleRegion atomicScaleRegion;
     private final AtomicGradientRegion atomicGradientRegion;
-
     /**
      * Parallelization over solvent structure factor loops.
      */
@@ -261,10 +196,23 @@ public class CrystalReciprocalSpace {
     private final SolventGridRegion solventGridRegion;
     private final SolventScaleRegion solventScaleRegion;
     private final SolventGradientRegion solventGradientRegion;
-
     private final ParallelTeam fftTeam;
     private final Complex3DParallel complexFFT3D;
-
+    protected boolean lambdaTerm = false;
+    protected double solventA;
+    protected double solventB;
+    protected SolventModel solventModel;
+    private boolean solvent = false;
+    private boolean useThreeGaussians = true;
+    // not final for purposes of finite differences
+    private double coordinates[][][];
+    private double aRad;
+    private double weight = 1.0;
+    private int aRadGrid;
+    /**
+     * If the "Native Environment Approximation" is true, the "use" flag is ignored.
+     */
+    private boolean nativeEnvironmentApproximation = false;
     /**
      * Crystal Reciprocal Space constructor, assumes this is not a bulk solvent
      * mask and is not a neutron data set
@@ -301,7 +249,6 @@ public class CrystalReciprocalSpace {
         this(reflectionList, atoms, fftTeam, parallelTeam, solventMask, false,
                 SolventModel.POLYNOMIAL);
     }
-
     /**
      * Crystal Reciprocal Space constructor, assumes a polynomial bulk solvent
      * mask if needed
@@ -389,7 +336,7 @@ public class CrystalReciprocalSpace {
         complexFFT3DSpace = fftX * fftY * fftZ * 2;
         densityGrid = new double[complexFFT3DSpace];
 
-        //Slice Method Variables
+        // Slice Method Variables
         optSliceWeightAtomic = new SharedIntegerArray(fftZ);
         optSliceWeightSolvent = new SharedIntegerArray(fftZ);
         optSliceWeightBulkSolvent = new SharedIntegerArray(fftZ);
@@ -400,7 +347,7 @@ public class CrystalReciprocalSpace {
         solventSliceSchedule = new SliceSchedule(threadCount, fftZ);
         bulkSolventSliceSchedule = new SliceSchedule(threadCount, fftZ);
 
-        //Row Method Variables
+        // Row Method Variables
         optRowWeightAtomic = new SharedIntegerArray(fftZ * fftY);
         optRowWeightSolvent = new SharedIntegerArray(fftZ * fftY);
         optRowWeightBulkSolvent = new SharedIntegerArray(fftZ * fftY);
@@ -761,6 +708,24 @@ public class CrystalReciprocalSpace {
         solventScaleRegion = new SolventScaleRegion(threadCount);
         atomicScaleRegion = new AtomicScaleRegion(threadCount);
         complexFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam);
+    }
+
+    /**
+     * Parse a solvent model string and return a SolventModel enum.
+     * @param str The solvent model String.
+     * @return The SolventModel to use.
+     */
+    public static SolventModel parseSolventModel(String str) {
+        try {
+            return SolventModel.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
+        } catch (Exception e) {
+            logger.info(String.format(" Could not parse %s as a Solvent Model; defaulting to Polynomial.", str));
+            return SolventModel.POLYNOMIAL;
+        }
+    }
+
+    public void setNativeEnvironmentApproximation(boolean nativeEnvironmentApproximation) {
+        this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
     }
 
     /**
@@ -1758,6 +1723,35 @@ public class CrystalReciprocalSpace {
         }
     }
 
+    /**
+     * The possible solvent model methods
+     */
+    public enum SolventModel {
+
+        /**
+         * Do not model solvent scattering.
+         */
+        NONE,
+        /**
+         * The classic binary (0, 1) model.
+         */
+        BINARY,
+        /**
+         * Smooth the boundary of the classic model using Gaussians.
+         */
+        GAUSSIAN,
+        /**
+         * Smooth the boundar of the classic model using a cubic polynomial
+         * switch (default).
+         */
+        POLYNOMIAL
+    }
+
+    public enum GridMethod {
+
+        SPATIAL, SLICE, ROW
+    }
+
     private class AtomicDensityLoop extends SpatialDensityLoop {
 
         final double xyz[] = new double[3];
@@ -1773,7 +1767,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            if (!atoms[n].getUse()) {
+            if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
 
@@ -1835,7 +1829,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int n) {
-            if (!atoms[n].getUse()) {
+            if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
 
@@ -1954,7 +1948,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse()) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -1984,7 +1978,7 @@ public class CrystalReciprocalSpace {
                     zyAtListBuild[iSymm][iAtom][0] = 0;
                     zyAtListBuild[iSymm][iAtom][1] = 0;
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse()) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2030,7 +2024,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2076,7 +2070,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
 
@@ -2141,8 +2135,8 @@ public class CrystalReciprocalSpace {
         final double xc[] = new double[3];
         final double xf[] = new double[3];
         final double grid[];
-        long timer;
         final int optLocal[];
+        long timer;
         int previousUB, previousLB;
         int actualWeight;
 
@@ -2169,7 +2163,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse()) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2199,7 +2193,7 @@ public class CrystalReciprocalSpace {
                     zyAtListBuild[iSymm][iAtom][0] = 0;
                     zyAtListBuild[iSymm][iAtom][1] = 0;
                     if (rowRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse()) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2245,7 +2239,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2311,7 +2305,7 @@ public class CrystalReciprocalSpace {
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
 
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
 
@@ -2391,10 +2385,10 @@ public class CrystalReciprocalSpace {
         final double xc[] = new double[3];
         final double xf[] = new double[3];
         final double grid[];
+        final int optLocal[];
         long timer;
         int threadWeights[];
         int threadBounds[];
-        final int optLocal[];
 
         public BulkSolventRowLoop(RowRegion region) {
             super(region.getNatoms(), region.getNsymm(), region);
@@ -2440,7 +2434,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
 
@@ -2524,6 +2518,12 @@ public class CrystalReciprocalSpace {
         int previousUB, previousLB;
         int actualWeight;
 
+        public AtomicSliceLoop(SliceRegion region) {
+            super(region.getNatoms(), region.getNsymm(), region);
+            grid = region.getGrid();
+            optLocal = new int[fftZ];
+        }
+
         public double getThreadTime() {
             return timer;
         }
@@ -2539,12 +2539,6 @@ public class CrystalReciprocalSpace {
         @Override
         public IntegerSchedule schedule() {
             return atomicSliceSchedule;
-        }
-
-        public AtomicSliceLoop(SliceRegion region) {
-            super(region.getNatoms(), region.getNsymm(), region);
-            grid = region.getGrid();
-            optLocal = new int[fftZ];
         }
 
         @Override
@@ -2567,7 +2561,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse()) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2592,7 +2586,7 @@ public class CrystalReciprocalSpace {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     zAtListBuild[iSymm][iAtom] = 0;
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse()) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2634,7 +2628,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2663,7 +2657,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
 
@@ -2750,7 +2744,7 @@ public class CrystalReciprocalSpace {
         }
 
         public void buildList(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
             xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2782,7 +2776,7 @@ public class CrystalReciprocalSpace {
             for (int iSymm = 0; iSymm < nSymm; iSymm++) {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse()) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2807,7 +2801,7 @@ public class CrystalReciprocalSpace {
                 for (int iAtom = 0; iAtom < nAtoms; iAtom++) {
                     zAtListBuild[iSymm][iAtom] = 0;
                     if (sliceRegion.select[iSymm][iAtom]) {
-                        if (!atoms[iAtom].getUse()) {
+                        if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                             continue;
                         }
                         xyz[0] = coordinates[iSymm][0][iAtom];
@@ -2865,7 +2859,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
 
@@ -2987,7 +2981,7 @@ public class CrystalReciprocalSpace {
 
         @Override
         public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-            if (!atoms[iAtom].getUse()) {
+            if (!atoms[iAtom].getUse() && !nativeEnvironmentApproximation) {
                 return;
             }
 
@@ -3118,7 +3112,7 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    if (!atoms[n].getUse()) {
+                    if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
                         continue;
                     }
                     if (lambdaTerm && atoms[n].applyLambda()) {
@@ -3208,7 +3202,7 @@ public class CrystalReciprocalSpace {
             @Override
             public void run(final int lb, final int ub) {
                 for (int n = lb; n <= ub; n++) {
-                    if (!atoms[n].getUse()) {
+                    if (!atoms[n].getUse() && !nativeEnvironmentApproximation) {
                         continue;
                     }
                     if (lambdaTerm && atoms[n].applyLambda()) {

@@ -41,26 +41,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.MolecularAssembly;
 import ffx.xray.CrystalReciprocalSpace;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+import ffx.xray.RefinementMinimize;
+import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
 
+import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Option;
 
 /**
- * Xray options shared by Xray scripts that use the Pico CLI.
+ * Represents command line options for scripts that utilize X-ray data with a maximum likelihood target.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
-public class XrayOptions {
+public class XrayOptions extends DataRefinementOptions {
 
     private static final Logger logger = Logger.getLogger(XrayOptions.class.getName());
 
     /**
-     * -s or --solvent Bulk solvent scattering model [Polynomial/Gaussian/Binary/None].
+     * -sol or --solvent Bulk solvent scattering model [Polynomial/Gaussian/Binary/None].
      */
-    @Option(names = {"-s", "--solvent"}, paramLabel = "solvent", description = "Bulk solvent scattering model [Polynomial/Gaussian/Binary/None]")
+
+    @Option(names = {"--sol", "--solvent"}, paramLabel = "POLYNOMIAL",
+            description = "Bulk solvent scattering model [Polynomial/Gaussian/Binary/None]")
     private String solventString = "POLYNOMIAL";
 
     /**
@@ -69,17 +78,218 @@ public class XrayOptions {
     SolventModel solventModel = SolventModel.POLYNOMIAL;
 
     /**
-     * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
+     * -S or --solventGridSearch
      */
-    @Option(names = {"-x", "--data"}, split = ",",
-            description = "Specify input data filename, its weight (wA) and its from a neutron experiment (e.g. -D filename,1.0,false).")
+    @Option(names = {"-S", "--solventGridSearch"}, paramLabel = "false",
+            description = "Perform a grid search for optimal bulk solvent parameters.")
+    boolean gridSearch = false;
+
+    /**
+     * --nBins sets the number of reflection bins to use.
+     */
+    @Option(names = {"--nBins"}, paramLabel = "10",
+            description = "The number of refection bins.")
+    int nBins = 10;
+
+    /**
+     * --FSigFCutoff
+     */
+    @Option(names = {"--FSigFCutoff"}, paramLabel = "-1.0",
+            description = "F / SigF cutoff (-1.0 is no cutoff).")
+    double fSigFCutoff = -1.0;
+
+    /**
+     * --aRadBuffer
+     */
+    @Option(names = {"--aRadBuffer"}, paramLabel = "0.75",
+            description = "Set the distance beyond the atomic radius to evaluate scattering (A).")
+    double aRadBuffer = 0.75;
+
+    /**
+     * -G or --sampling
+     */
+    @Option(names = {"-G", "--sampling"}, paramLabel = "0.6", description = "The number of grid spaces per Angstrom for the scattering FFT grid.")
+    double sampling = 0.6;
+
+    /**
+     * -R or --rFreeFlag
+     */
+    @Option(names = {"-R", "--rFreeFlag"}, paramLabel = "-1",
+            description = "R-Free Flag value (-1 attempts to auto-determine from the data).")
+    int rFreeFlag = -1;
+
+    /**
+     * --sf or --splineFit
+     */
+    @Option(names = {"--sf", "--splineFit"}, paramLabel = "true",
+            description = "Use a resolution dependent spline scale.")
+    boolean splineFit = true;
+
+    /**
+     * -A or --allGaussians
+     */
+    @Option(names = {"-A", "--allGaussians"}, paramLabel = "false",
+            description = "Use all defined Gaussiansfor atomic scattering density (the default is to use the top 3).")
+    boolean allGaussians = false;
+
+    /**
+     * --xrayScaleTol
+     */
+    @Option(names = {"--xrayScaleTol"}, paramLabel = "1.0e-4", description = "X-ray scale optimization tolerance.")
+    double xrayScaleTol = 1.0e-4;
+
+    /**
+     * --sigmaATol
+     */
+    @Option(names = {"--sigmaATol"}, paramLabel = "0.05", description = "Sigma A optimization tolerance.")
+    double sigmaATol = 0.05;
+
+    /**
+     * -B or --bSimWeight
+     */
+    @Option(names = {"-B", "--bSimWeight"}, paramLabel = "1.0", description = "B-Factor similarity weight.")
+    double bSimWeight = 1.0;
+
+    /**
+     * --nResidueBFactor
+     */
+    @Option(names = {"--nResidueBFactor"}, paramLabel = "0",
+            description = "Number of residues per B-factor. 0 uses atomic B-factors (default).")
+    int nResidueBFactor = 0;
+
+    /**
+     * -u or --addAnisoU
+     */
+    @Option(names = {"-U", "--addAnisoU"}, paramLabel = "false", description = "Add Anisotropic B-Factors to refinement.")
+    boolean anisoU = false;
+
+    /**
+     * --rmo or --refineMolOcc
+     */
+    @Option(names = {"--rmo", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
+    boolean refineMolOcc = false;
+
+    /**
+     * -X or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
+     */
+    @Option(names = {"-X", "--data"}, arity = "3",
+            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -X filename 1.0 false).")
     String[] data = null;
+
+    /**
+     * -m or --mode sets the desired refinement mode
+     * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
+     */
+    @Option(names = {"-m", "--mode"}, paramLabel = "coordinates",
+            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
+    String modeString = "coordinates";
+
+    /**
+     * The refinement mode to use.
+     */
+    RefinementMode refinementMode = RefinementMode.COORDINATES;
 
     /**
      * Parse options.
      */
     public void init() {
+        refinementMode = RefinementMinimize.parseMode(modeString);
         solventModel = CrystalReciprocalSpace.parseSolventModel(solventString);
+    }
+
+    public void setProperties(ParseResult parseResult, CompositeConfiguration properties) {
+        // wA
+        if (!parseResult.hasMatchedOption("wA")) {
+            wA = properties.getDouble("xweight", wA);
+        }
+        properties.setProperty("xweight", wA);
+
+        // bSimWeight
+        if (!parseResult.hasMatchedOption("bSimWeight")) {
+            bSimWeight = properties.getDouble("bsimweight", bSimWeight);
+        }
+        properties.setProperty("bsimweight", bSimWeight);
+
+        // F/SigF Cutoff
+        if (!parseResult.hasMatchedOption("fsigfcutoff")) {
+            fSigFCutoff = properties.getDouble("fsigfcutoff", fSigFCutoff);
+        }
+        properties.setProperty("fsigfcutoff", fSigFCutoff);
+
+        // Solvent Grid Search
+        if (!parseResult.hasMatchedOption("gridSearch")) {
+            gridSearch = properties.getBoolean("gridsearch", gridSearch);
+        }
+        properties.setProperty("gridsearch", gridSearch);
+
+        // Number of Bins
+        if (!parseResult.hasMatchedOption("nBins")) {
+            nBins = properties.getInt("nbins", nBins);
+        }
+        properties.setProperty("nbins", nBins);
+
+        // Grid Sampling
+        if (!parseResult.hasMatchedOption("sampling")) {
+            sampling = properties.getDouble("sampling", sampling);
+        }
+        properties.setProperty("sampling", sampling);
+
+        // Atomic Radius Buffer
+        if (!parseResult.hasMatchedOption("aRadBuffer")) {
+            aRadBuffer = properties.getDouble("aradbuff", aRadBuffer);
+        }
+        properties.setProperty("aradbuff", aRadBuffer);
+
+        // RFreeFlag
+        if (!parseResult.hasMatchedOption("rFreeFlag")) {
+            rFreeFlag = properties.getInt("rrfreeflag", rFreeFlag);
+        }
+        properties.setProperty("rrfreeflag", rFreeFlag);
+
+        // Spline Fit
+        if (!parseResult.hasMatchedOption("splineFit")) {
+            splineFit = properties.getBoolean("splinefit", splineFit);
+        }
+        properties.setProperty("splinefit", splineFit);
+
+        // Use All Gaussians
+        if (!parseResult.hasMatchedOption("allGaussians")) {
+            allGaussians = properties.getBoolean("use_3g", allGaussians);
+        }
+        properties.setProperty("use_3g", !allGaussians);
+
+        // X-ray Scale Tolerance
+        if (!parseResult.hasMatchedOption("xrayScaleTol")) {
+            xrayScaleTol = properties.getDouble("xrayscaletol", xrayScaleTol);
+        }
+        properties.setProperty("xrayscaletol", xrayScaleTol);
+
+        // Sigma A Tolerance
+        if (!parseResult.hasMatchedOption("sigmaATol")) {
+            sigmaATol = properties.getDouble("sigmaatol", sigmaATol);
+        }
+        properties.setProperty("sigmaatol", sigmaATol);
+
+        // Number of Residues per B-Factor
+        if (!parseResult.hasMatchedOption("nResidueBFactor")) {
+            nResidueBFactor = properties.getInt("nresiduebfactor", nResidueBFactor);
+        }
+        properties.setProperty("nresiduebfactor", Integer.toString(nResidueBFactor));
+        if (nResidueBFactor > 0) {
+            properties.setProperty("residuebfactor", "true");
+        }
+
+        // Add AnisoU B-Factors to the Refinement
+        if (!parseResult.hasMatchedOption("anisoU")) {
+            anisoU = properties.getBoolean("addanisou", anisoU);
+        }
+        properties.setProperty("addanisou", anisoU);
+
+        // Refine Molecular Occupancies
+        if (!parseResult.hasMatchedOption("refineMolOcc")) {
+            refineMolOcc = properties.getBoolean("refinemolocc", refineMolOcc);
+        }
+        properties.setProperty("refinemolocc", refineMolOcc);
     }
 
     /**
@@ -96,19 +306,19 @@ public class XrayOptions {
 
         if (filenames.size() > 1) {
             logger.info(String.format(" Diffraction file = %s, weight = %3.1f, neutron = %b",
-                    filenames.get(1), 1.0, Boolean.FALSE));
+                    filenames.get(1), wA, Boolean.FALSE));
 
-            DiffractionFile diffractionfile = new DiffractionFile(filenames.get(1), 1.0, false);
+            DiffractionFile diffractionfile = new DiffractionFile(filenames.get(1), wA, false);
             diffractionfiles.add(diffractionfile);
         }
 
         if (data != null) {
             for (int i = 0; i < data.length; i += 3) {
-                double wA = 1.0;
                 boolean neutron = false;
+                double w = wA;
                 if (data.length > i + 1) {
                     try {
-                        wA = Double.parseDouble(data[i + 1]);
+                        w = Double.parseDouble(data[i + 1]);
                     } catch (Exception e) {
                         //
                     }
@@ -120,10 +330,8 @@ public class XrayOptions {
                         //
                     }
                 }
-
-                logger.info(String.format(" Diffraction file = %s, weight = %3.1f, neutron = %b", data[i], wA, neutron));
-
-                DiffractionFile diffractionfile = new DiffractionFile(data[i], wA, neutron);
+                logger.info(String.format(" Diffraction file = %s, weight = %3.1f, neutron = %b", data[i], w, neutron));
+                DiffractionFile diffractionfile = new DiffractionFile(data[i], w, neutron);
                 diffractionfiles.add(diffractionfile);
             }
         }
@@ -133,7 +341,7 @@ public class XrayOptions {
             filename = FilenameUtils.removeExtension(filename);
             filename = FilenameUtils.getBaseName(filename);
 
-            logger.info(String.format(" Diffraction from = %s, weight = %3.1f, neutron = %b", filename, 1.0, false));
+            logger.info(String.format(" Diffraction from = %s, weight = %3.1f, neutron = %b", filename, wA, false));
             DiffractionFile diffractionfile = new DiffractionFile(systems, 1.0, false);
             diffractionfiles.add(diffractionfile);
         }

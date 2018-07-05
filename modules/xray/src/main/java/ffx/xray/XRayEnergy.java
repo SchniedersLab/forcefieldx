@@ -62,7 +62,8 @@ import static ffx.numerics.VectorMath.u2b;
 /**
  * Combine the X-ray target and chemical potential energy.
  *
- * @author Timothy D. Fenn and Michael J. Schnieders
+ * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
  *
  * @since 1.0
  */
@@ -164,8 +165,8 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
             logger.info("  Similarity restraint weight: " + diffractionData.getbSimWeight());
         }
 
-        logger.info(String.format(" XRayEnergy variables:  %d (nXYZ %d, nB %d, nOcc %d)\n",
-                nXYZ + nB + nOCC, nXYZ, nB, nOCC));
+        // logger.info(String.format(" XRayEnergy variables:  %d (nXYZ %d, nB %d, nOcc %d)\n",
+        //         this.nXYZ + this.nB + this.nOCC, this.nXYZ, this.nB, this.nOCC));
     }
 
     /**
@@ -737,6 +738,11 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 continue;
             }
             if (a.getAnisou(null) == null) {
+
+                if (a.getXyzIndex() < 10) {
+                    logger.info(" Setting null anisou for " + a.toString());
+                }
+
                 double biso = x[index];
                 if (diffractionData.isResidueBFactor()) {
                     if (resnum != a.getResidueNumber()) {
@@ -767,6 +773,18 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 }
             } else {
                 double anisou[] = a.getAnisou(null);
+
+//                if (a.getXyzIndex() < 5) {
+//                    if (optimizationScaling != null) {
+//                        logger.info(String.format(" Setting anisou at %d for %s with scaling %6.3f",
+//                                index, a.toString(), optimizationScaling[index]));
+//                        ffx.numerics.VectorMath.printVector(anisou);
+//                    } else {
+//                        logger.info(String.format(" Setting anisou at %d for %s", index, a.toString()));
+//                        ffx.numerics.VectorMath.printVector(anisou);
+//                    }
+//                }
+
                 tmpanisou[0] = x[index++];
                 tmpanisou[1] = x[index++];
                 tmpanisou[2] = x[index++];

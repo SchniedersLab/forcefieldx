@@ -199,13 +199,6 @@
             <timezone>-5</timezone>
         </contributor>
         <contributor>
-            <name>Guohui Li</name>
-            <email>ghli@dicp.ac.cn</email>
-            <organization>Dalian Institute of Chemical Physics, Chinese Academy of Sciences</organization>
-            <organizationUrl>http://combio.dicp.ac.cn/</organizationUrl>
-            <timezone>+8</timezone>
-        </contributor>
-        <contributor>
             <name>Zhen Xia</name>
             <email>oversnow@gmail.com</email>
             <organization>Postdoc, Ren Lab, The U. of Texas at Austin</organization>
@@ -431,7 +424,7 @@
                                 <encoding>UTF-8</encoding>
                                 <resources>
                                     <resource>
-                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}</directory>
+                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}/groovy</directory>
                                     </resource>
                                 </resources>
                                 <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
@@ -448,7 +441,7 @@
                                 <encoding>UTF-8</encoding>
                                 <resources>
                                     <resource>
-                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}</directory>
+                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}/groovy</directory>
                                     </resource>
                                 </resources>
                                 <outputDirectory>${basedir}/../../scripts</outputDirectory>
@@ -460,6 +453,51 @@
                 <plugin>
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>${antrun.version}</version>
+                    <inherited>true</inherited>
+                    <executions>
+                        <execution>
+                            <id>compile</id>
+                            <phase>compile</phase>
+                            <configuration>
+                                <target>
+                                    <mkdir dir="${basedir}/src/main/groovy"/>
+                                    <taskdef name="groovyc"
+                                             classname="org.codehaus.groovy.ant.Groovyc">
+                                        <classpath refid="maven.compile.classpath"/>
+                                    </taskdef>
+                                    <mkdir dir="${project.build.outputDirectory}"/>
+                                    <groovyc destdir="${project.build.outputDirectory}"
+                                             srcdir="${basedir}/src/main/groovy/" listfiles="false">
+                                        <classpath refid="maven.compile.classpath"/>
+                                    </groovyc>
+                                </target>
+                            </configuration>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>test-compile</id>
+                            <phase>test-compile</phase>
+                            <configuration>
+                                <target>
+                                    <mkdir dir="${basedir}/src/test/groovy"/>
+                                    <taskdef name="groovyc"
+                                             classname="org.codehaus.groovy.ant.Groovyc">
+                                        <classpath refid="maven.test.classpath"/>
+                                    </taskdef>
+                                    <mkdir dir="${project.build.testOutputDirectory}"/>
+                                    <groovyc destdir="${project.build.testOutputDirectory}"
+                                             srcdir="${basedir}/src/test/groovy/" listfiles="false">
+                                        <classpath refid="maven.test.classpath"/>
+                                    </groovyc>
+                                </target>
+                            </configuration>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -763,25 +801,11 @@
                         <configuration>
                             <generateHtml>true</generateHtml>
                             <generateXml>true</generateXml>
+                            <excludes>
+                                <exclude>edu/**/*.java</exclude>
+                            </excludes>
+                            <includesTestSourceRoots>false</includesTestSourceRoots>
                         </configuration>
-                        <executions>
-                            <execution>
-                                <id>main</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>instrument</goal>
-                                    <goal>aggregate</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>site</id>
-                                <phase>pre-site</phase>
-                                <goals>
-                                    <goal>instrument</goal>
-                                    <goal>aggregate</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>

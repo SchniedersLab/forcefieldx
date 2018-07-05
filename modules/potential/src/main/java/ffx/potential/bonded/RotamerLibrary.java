@@ -898,7 +898,7 @@ public class RotamerLibrary {
      * @param residueList Residues to be measured.
      * @param print Verbosity flag.
      */
-    public static void measureRotamers(ArrayList<Residue> residueList, boolean print) {
+    public static void measureRotamers(List<Residue> residueList, boolean print) {
         double chi[] = new double[7];
         for (Residue residue : residueList) {
             chi[0] = chi[1] = chi[2] = chi[3] = chi[4] = chi[5] = chi[6] = 0.0;
@@ -3919,7 +3919,66 @@ public class RotamerLibrary {
 
     public enum ProteinLibrary {
 
-        PonderAndRichards, Richardson, None
+        PonderAndRichards (1), Richardson (2), None(-1);
+
+        private final int oldIntegerConstant;
+
+        ProteinLibrary(int oldConst) {
+            this.oldIntegerConstant = oldConst;
+        }
+
+        /**
+         * Parses a String input to a ProteinLibrary. Can be either a name, or an integer constant.
+         *
+         * The name is preferred, but the integer constant is allowed for legacy reasons.
+         *
+         * @param input Input to parse.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        public static ProteinLibrary getProteinLibrary(String input) throws IllegalArgumentException {
+            if (input.matches("^\\d+$")) {
+                return int2Library(Integer.parseInt(input));
+            } else {
+                return Arrays.stream(ProteinLibrary.values()).
+                        filter((ProteinLibrary pl) -> pl.toString().equalsIgnoreCase(input)).
+                        findAny().
+                        orElseThrow(() -> new IllegalArgumentException(" No protein library found that corresponds to " + input));
+            }
+        }
+
+        /**
+         * Converts an integer to a corresponding ProteinLibrary. Deprecated in favor of using the actual name.
+         *
+         * @param library Index of the library.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        @Deprecated
+        public static ProteinLibrary intToProteinLibrary(int library) throws IllegalArgumentException {
+            return int2Library(library);
+        }
+
+        /**
+         * Converts an integer to a corresponding ProteinLibrary. Wrapped by deprecated intToProteinLibrary.
+         *
+         * @param library Index of the library.
+         * @return A ProteinLibrary.
+         * @throws IllegalArgumentException If no matching ProteinLibrary found.
+         */
+        private static ProteinLibrary int2Library(int library) throws IllegalArgumentException {
+            for (ProteinLibrary lib : ProteinLibrary.values()) {
+                if (library == lib.oldIntegerConstant) {
+                    return lib;
+                }
+            }
+            throw new IllegalArgumentException(String.format(" Could not find a " +
+                    "protein rotamer library to correspond with %d!", library));
+        }
+    }
+
+    public enum NucleicAcidLibrary {
+        RICHARDSON
     }
     
     /**

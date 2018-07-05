@@ -39,6 +39,7 @@ package ffx.algorithms.integrators;
 
 import ffx.algorithms.thermostats.Thermostat;
 import ffx.numerics.Potential;
+import static java.lang.System.out;
 
 /**
  * Respa performs multiple time step molecular dynamics using the reversible
@@ -54,29 +55,20 @@ import ffx.numerics.Potential;
 public class Respa extends Integrator {
 
     /**
-     * Target inner time step in psec.
-     */
-    private double dalt;
-
-    /**
      * Number of inner time steps.
      */
     private int nalt;
 
     /**
-     * Actual inner time step in psec.
+     * Inner time step in psec.
      */
     private double dta;
 
     /**
-     * Half the actual inner time step.
+     * Half the inner time step.
      */
     private double dta_2;
 
-    /**
-     * Small increase in the target inner time step when computing the number of inner time steps.
-     */
-    private final double eps = .00000001;
     private double halfStepEnergy = 0;
 
     /**
@@ -93,10 +85,8 @@ public class Respa extends Integrator {
             double aPrevious[], double mass[]) {
         super(nVariables, x, v, a, aPrevious, mass);
 
-        dalt = 0.00025;
-        nalt = ((int) (dt / (dalt + eps))) + 1;
-        dalt = (double) nalt;
-        dta = dt / dalt;
+        nalt = 4;
+        dta = dt / nalt;
         dta_2 = 0.5 * dta;
     }
 
@@ -153,7 +143,7 @@ public class Respa extends Integrator {
     }
 
     /**
-     * Set outer Respa time step. The inner time step is fixed at 0.25 fsec.
+     * Set outer Respa time step.
      *
      * @param dt Outer time step (dt must be .GE. 0.5 fsec).
      */
@@ -165,10 +155,25 @@ public class Respa extends Integrator {
 
         this.dt = dt;
         dt_2 = 0.5 * dt;
-        dalt = 0.00025;
-        nalt = ((int) (dt / (dalt + eps))) + 1;
-        dalt = (double) nalt;
-        dta = dt / dalt;
+        dta = dt / nalt;
         dta_2 = 0.5 * dta;
+        
+        
+        System.out.printf(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, dta);
+    }
+    
+    /**
+     * Set inner Respa number of time steps.
+     * @param n Number of inner time steps (must be greater than or equal to 2).
+     */
+    public void setInnerTimeSteps(int n){
+        if (n < 2) {
+            n = 2;
+        }
+        
+        nalt = n;
+        
+        // Update inner time step
+        setTimeStep(dt);
     }
 }

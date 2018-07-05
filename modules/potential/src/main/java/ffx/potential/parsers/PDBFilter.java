@@ -974,7 +974,7 @@ public final class PDBFilter extends SystemFilter {
                             Character a1 = line.charAt(16);
                             Character a2 = line.charAt(46);
                             if (a1 != a2) {
-                                logger.info(format(" Ignoring LINK record as alternate locations do not match\n %s.", line));
+                                // logger.info(format(" Ignoring LINK record as alternate locations do not match\n %s.", line));
                                 break;
                             }
                             if (currentAltLoc == 'A') {
@@ -1535,7 +1535,7 @@ public final class PDBFilter extends SystemFilter {
             /**
              * Loop over molecules, ions and then water.
              */
-            ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
+            ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
             for (int i = 0; i < molecules.size(); i++) {
                 Molecule molecule = (Molecule) molecules.get(i);
                 Character chainID = molecule.getChainID();
@@ -1911,7 +1911,7 @@ public final class PDBFilter extends SystemFilter {
             /**
              * Loop over molecules, ions and then water.
              */
-            ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
+            ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
             for (int i = 0; i < molecules.size(); i++) {
                 Molecule molecule = (Molecule) molecules.get(i);
                 Character chainID = molecule.getChainID();
@@ -2352,9 +2352,10 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
         }
-        List<Molecule> molecules = activeMolecularAssembly.getMolecules();
-        for (Molecule n : molecules) {
-            n.reOrderAtoms();
+        List<MSNode> molecules = activeMolecularAssembly.getMolecules();
+        for (MSNode n : molecules) {
+            MSGroup m = (MSGroup) n;
+            m.reOrderAtoms();
         }
         List<MSNode> waters = activeMolecularAssembly.getWaters();
         for (MSNode n : waters) {
@@ -2580,7 +2581,7 @@ public final class PDBFilter extends SystemFilter {
         }
 
         // Assign small molecule atom types.
-        ArrayList<Molecule> molecules = activeMolecularAssembly.getMolecules();
+        ArrayList<MSNode> molecules = activeMolecularAssembly.getMolecules();
         for (MSNode m : molecules) {
             Molecule molecule = (Molecule) m;
             String moleculeName = molecule.getResidueName();
@@ -2793,7 +2794,7 @@ public final class PDBFilter extends SystemFilter {
      *
      * @param molecules List of Molecules in the molecular assembly.
      */
-    private void resolvePolymerLinks(List<Molecule> molecules) {
+    private void resolvePolymerLinks(List<MSNode> molecules) {
         CompositeConfiguration ffProps = forceField.getProperties();
         for (String polyLink : ffProps.getStringArray("polymerlink")) {
             logger.info(" Experimental: linking a cyclic hetero group: " + polyLink);
@@ -2808,11 +2809,20 @@ public final class PDBFilter extends SystemFilter {
                 cyclicLen = Integer.parseInt(toks[3]);
             }
 
-            Molecule[] matches = molecules.stream().
-                    filter((Molecule m) -> m.getResidueName().equalsIgnoreCase(resName)).
-                    toArray(Molecule[]::new);
-            for (int i = 0; i < matches.length; i++) {
-                Molecule mi = matches[i];
+            ArrayList<Molecule> matches = new ArrayList<>();
+            for (MSNode node : molecules) {
+                Molecule m = (Molecule) node;
+                if (m.getResidueName().equalsIgnoreCase(resName)) {
+                    matches.add(m);
+                }
+            }
+
+//            Molecule[] matches = molecules.stream().
+//                    filter((Molecule m) -> m.getResidueName().equalsIgnoreCase(resName)).
+//                    toArray(Molecule[]::new);
+
+            for (int i = 0; i < matches.size(); i++) {
+                Molecule mi = matches.get(i);
                 int ii = i + 1;
                 if (cyclicLen < 1) {
                     logger.severe(" No current support for polymeric, non-cyclic hetero groups");
@@ -2820,10 +2830,10 @@ public final class PDBFilter extends SystemFilter {
                 } else {
                     Molecule next;
                     if (ii % cyclicLen == 0) {
-                        next = matches[ii - cyclicLen];
+                        next = matches.get(ii - cyclicLen);
                         logger.info(String.format(" Cyclizing molecule %s to %s", mi, next));
                     } else {
-                        next = matches[ii];
+                        next = matches.get(ii);
                         logger.info(String.format(" Extending chain from %s to %s.", mi, next));
                     }
                     Atom from = mi.getAtomByName(name1, true);
@@ -2938,7 +2948,7 @@ public final class PDBFilter extends SystemFilter {
      *
      * @param residues The residues to assign atom types to.
      *
-     * @throws ffx.potential.parsers.PDBFilter.MissingHeavyAtomException
+     * @throws MissingHeavyAtomException
      *
      * @since 1.0
      */

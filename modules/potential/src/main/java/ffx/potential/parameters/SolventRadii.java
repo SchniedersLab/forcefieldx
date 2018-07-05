@@ -83,10 +83,6 @@ public class SolventRadii {
         
         // Parse properties and command-line overrides.
         overlapScale = forceField.getDouble(ForceField.ForceFieldDouble.GK_OVERLAPSCALE, overlapScale);
-        /*String shctProp = System.getProperty("gk-overlapScale");
-        if (shctProp != null) {
-            overlapScale = Double.parseDouble(shctProp);
-        }*/
     }
     
     public double getDefaultBondi() {

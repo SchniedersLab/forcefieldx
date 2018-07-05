@@ -20,12 +20,11 @@
     <build>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/groovy/ffx/algorithms</directory>
+                <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
                 <targetPath>ffx/scripts</targetPath>
             </resource>
             <resource>
-                <directory>${basedir}/src/main/java/ffx/algorithms/structures
-                </directory>
+                <directory>${basedir}/src/main/java/ffx/algorithms/structures</directory>
                 <targetPath>ffx/algorithms/structures</targetPath>
                 <includes>
                     <include>*</include>

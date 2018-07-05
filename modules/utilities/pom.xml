@@ -21,7 +21,7 @@
     <build>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/groovy/ffx/utilities</directory>
+                <directory>${basedir}/src/main/groovy/ffx/utilities/groovy</directory>
                 <targetPath>ffx/scripts</targetPath>
             </resource>
         </resources>

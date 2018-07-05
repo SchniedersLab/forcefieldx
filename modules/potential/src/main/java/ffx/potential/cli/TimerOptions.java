@@ -40,7 +40,10 @@ package ffx.potential.cli;
 import picocli.CommandLine.Option;
 
 /**
- * Timer options shared by Timer scripts that use the Pico CLI.
+ * Represents command line options for scripts that perform timings for energy and optionally gradients.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class TimerOptions {
     /**
@@ -49,22 +52,41 @@ public class TimerOptions {
     @Option(names = {"-n", "--iterations"}, paramLabel = "5",
             description = "Number of iterations.")
     private int iterations = 5;
+
     /**
-     * -c or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
+     * --nt or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU cores)
      */
-    @Option(names = {"-c", "--threads"}, paramLabel = "0",
-            description = "Number of SMP threads (0 specifies use of all CPU cores)")
+    @Option(names = {"--nt", "--threads"}, paramLabel = "0",
+            description = "Number of SMP threads (0 specifies use of all CPU cores).")
     private int threads = 0;
+
     /**
-     * -g or --gradient to ignore computation of the atomic coordinates gradient
+     * -g or --noGradient to ignore computation of the atomic coordinates noGradient
      */
-    @Option(names = {"-g", "--gradient"},
-            description = "Ignore computation of the atomic coordinates gradient")
-    private boolean gradient = false;
+    @Option(names = {"-g", "--noGradient"},
+            description = "Ignore computation of the atomic coordinates noGradient.")
+    private boolean noGradient = false;
+
     /**
-     * -q or --quiet to suppress printing of the energy for each iteration
+     * -v or --verbose to suppress printing of the energy for each iteration
      */
-    @Option(names = {"-q", "--quiet"},
-            description = "Suppress printing of the energy for each iteration")
-    private boolean quiet = false;
+    @Option(names = {"-v", "--verbose"},
+            description = "Print the energy for each iteration.")
+    private boolean verbose = false;
+
+    public int getIterations() {
+        return iterations;
+    }
+
+    public int getThreads() {
+        return threads;
+    }
+
+    public boolean getNoGradient() {
+        return noGradient;
+    }
+
+    public boolean getVerbose() {
+        return verbose;
+    }
 }

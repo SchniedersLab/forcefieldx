@@ -38,6 +38,7 @@
 package ffx.potential.cli;
 
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,7 +51,11 @@ import ffx.potential.utils.PotentialsFunctions;
 import picocli.CommandLine.Option;
 
 /**
- * Alchemical options shared by scripts that do alchemy on a single topology and use the Pico CLI.
+ * Represents command line options for scripts that utilize alchemistry on at least one topology.
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
 public class AlchemicalOptions {
 
@@ -219,7 +224,7 @@ public class AlchemicalOptions {
         for (int i = noElecStart; i <= noElecStop; i++) {
             Atom ai = atoms[i - 1];
             ai.setElectrostatics(false);
-            ai.print();
+            // ai.print();
         }
     }
 
@@ -234,11 +239,23 @@ public class AlchemicalOptions {
 
     /**
      * Gets the initial value of lambda.
+     *
      * @return Initial lambda.
      */
     public double getInitialLambda() {
+        return getInitialLambda(true);
+    }
+
+    /**
+     * Gets the initial value of lambda.
+     *
+     * @param quiet If true, do not warn about lambda not being in the range 0-1.
+     * @return Initial lambda.
+     */
+    public double getInitialLambda(boolean quiet) {
+        Level toLog = quiet ? Level.OFF : Level.WARNING;
         if (initialLambda < 0.0 || initialLambda > 1.0) {
-            logger.warning(String.format(" Initial alchemical lambda reset " +
+            logger.log(toLog, String.format(" Initial alchemical lambda reset " +
                     "to 0.0 from %8.4g; must be between 0 and 1!", initialLambda));
             initialLambda = 0.0;
         }

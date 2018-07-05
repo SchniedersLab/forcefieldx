@@ -293,7 +293,7 @@ public class CrystalEnergyTest {
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
         PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.openQuietly(structure.getAbsolutePath());
+        molecularAssembly = potentialUtils.open(structure.getAbsolutePath());
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
         pmeName = (forceFieldEnergy.getPmeNode() instanceof ParticleMeshEwaldQI) ? "Quasi-internal" : "Cartesian";

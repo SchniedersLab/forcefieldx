@@ -40,14 +40,18 @@ package ffx.algorithms.cli;
 import picocli.CommandLine.Option;
 
 /**
- * Minimization options shared by optimizations scripts that use the Pico CLI.
+ * Represents command line options for scripts that involve local energy minimization.
+ *
+ * @author Michael J. Schnieders
+ * @author Jacob M. Litman
+ * @since 1.0
  */
 public class MinimizeOptions {
 
     /**
      * -i or --iterations Number of minimization steps.
      */
-    @Option(names = {"-i", "--iterations"}, paramLabel = "Unlimited",
+    @Option(names = {"-I", "--iterations"}, paramLabel = "Unlimited",
             description = "Number of minimization steps.")
     int iterations = Integer.MAX_VALUE;
 
@@ -58,4 +62,11 @@ public class MinimizeOptions {
             description = "Convergence criteria.")
     double eps = 1.0;
 
+    public int getIterations() {
+        return iterations;
+    }
+
+    public double getEps() {
+        return eps;
+    }
 }

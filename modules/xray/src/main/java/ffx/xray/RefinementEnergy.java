@@ -68,7 +68,6 @@ import static ffx.numerics.VectorMath.b2u;
  * {@link CrystalPotential} interface
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
- *
  * @since 1.0
  */
 public class RefinementEnergy implements LambdaInterface, CrystalPotential, AlgorithmListener {
@@ -175,9 +174,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     /**
      * RefinementEnergy Constructor.
      *
-     * @param data input {@link DiffractionData data} for refinement
+     * @param data           input {@link DiffractionData data} for refinement
      * @param refinementMode {@link RefinementMinimize.RefinementMode} for
-     * refinement
+     *                       refinement
      */
     public RefinementEnergy(DataContainer data, RefinementMode refinementMode) {
         this(data, refinementMode, null);
@@ -186,9 +185,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     /**
      * RefinementEnergy Constructor.
      *
-     * @param data input {@link DiffractionData data} for refinement
-     * @param refinementMode {@link RefinementMinimize.RefinementMode} for
-     * refinement
+     * @param data                input {@link DiffractionData data} for refinement
+     * @param refinementMode      {@link RefinementMinimize.RefinementMode} for
+     *                            refinement
      * @param optimizationScaling scaling of refinement parameters
      */
     public RefinementEnergy(DataContainer data,
@@ -368,7 +367,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * unphysical self and 2-Body configurations, so the algorithm should not
      * print out a large number of error PDBs.
      *
-     * @param onFail To set
+     * @param onFail   To set
      * @param override Override properties
      */
     public void setPrintOnFailure(boolean onFail, boolean override) {
@@ -395,6 +394,11 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
 
     @Override
     public double energy(double[] x) {
+        return energy(x, false);
+    }
+
+    @Override
+    public double energy(double[] x, boolean print) {
         double weight = data.getWeight();
         double e = 0.0;
 
@@ -416,7 +420,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energy(xChemical[i]);
+                    double curE = fe.energy(xChemical[i], print);
                     e += (curE - e) / (i + 1);
                 }
                 double chemE = e;
@@ -424,14 +428,14 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 e = chemE * kTScale;
 
                 // Compute the X-ray target energy.
-                double xE = dataEnergy.energy(x);
+                double xE = dataEnergy.energy(x, print);
                 e += weight * xE;
                 break;
             case BFACTORS:
             case OCCUPANCIES:
             case BFACTORS_AND_OCCUPANCIES:
                 // Compute the X-ray target energy and gradient.
-                e = dataEnergy.energy(x);
+                e = dataEnergy.energy(x, print);
                 break;
             case COORDINATES_AND_BFACTORS:
             case COORDINATES_AND_OCCUPANCIES:
@@ -440,10 +444,10 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energy(xChemical[i]);
+                    double curE = fe.energy(xChemical[i], print);
                     e += (curE - e) / (i + 1);
                 }
-                e += weight * dataEnergy.energy(x);
+                e += weight * dataEnergy.energy(x, print);
                 break;
             default:
                 String message = "Unknown refinement mode.";
@@ -462,12 +466,23 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Implementation of the {@link CrystalPotential} interface for the
      * RefinementEnergy.
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
+        return energyAndGradient(x, g, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation of the {@link CrystalPotential} interface for the
+     * RefinementEnergy.
+     */
+    @Override
+    public double energyAndGradient(double[] x, double[] g, boolean print) {
         double weight = data.getWeight();
         double e = 0.0;
         fill(g, 0.0);
@@ -490,7 +505,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
+                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i], print);
                     e += (curE - e) / (i + 1);
                     setAssemblyi(i, g, gChemical[i]);
                 }
@@ -533,7 +548,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 for (int i = 0; i < assemblysize; i++) {
                     ForceFieldEnergy fe = molecularAssemblies[i].getPotentialEnergy();
                     getAssemblyi(i, x, xChemical[i]);
-                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i]);
+                    double curE = fe.energyAndGradient(xChemical[i], gChemical[i], print);
                     e += (curE - e) / (i + 1);
                     setAssemblyi(i, g, gChemical[i]);
                 }
@@ -574,6 +589,8 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
                 g[i] /= optimizationScaling[i];
             }
         }
+
+
         totalEnergy = e;
         return e;
     }
@@ -581,10 +598,10 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     /**
      * Get the MolecularAssembly associated with index i of n; put in xChem.
      *
-     * @param i The desired MolecularAssembly index for xChem.
-     * @param x All parameters.
+     * @param i     The desired MolecularAssembly index for xChem.
+     * @param x     All parameters.
      * @param xChem The xChem parameters for the particular MolecularAssembly
-     * that will be passed to {@link ForceFieldEnergy}.
+     *              that will be passed to {@link ForceFieldEnergy}.
      */
     public void getAssemblyi(int i, double x[], double xChem[]) {
         assert (x != null && xChem != null);
@@ -600,10 +617,10 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     /**
      * Set the MolecularAssembly associated with index i of n; put in x.
      *
-     * @param i the desired MolecularAssembly index for "setting" x.
-     * @param x All parameters.
+     * @param i     the desired MolecularAssembly index for "setting" x.
+     * @param x     All parameters.
      * @param xChem The xChem parameters for the particular MolecularAssembly
-     * that will be passed to {@link ForceFieldEnergy}.
+     *              that will be passed to {@link ForceFieldEnergy}.
      */
     public void setAssemblyi(int i, double x[], double xChem[]) {
         assert (x != null && xChem != null);

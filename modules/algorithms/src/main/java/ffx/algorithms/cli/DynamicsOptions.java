@@ -45,10 +45,15 @@ import ffx.algorithms.thermostats.Thermostat;
 import ffx.algorithms.thermostats.ThermostatEnum;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
 /**
- * Dynamics options shared by Dynamics scripts that use the Pico CLI.
+ * Represents command line options for scripts that calculate thermodynamics.
+ *
+ * @author Michael J. Schnieders
+ * @author Hernan V. Bernabe
+ * @since 1.0
  */
 public class DynamicsOptions {
 
@@ -103,24 +108,22 @@ public class DynamicsOptions {
      * -n or --steps sets the number of molecular dynamics steps (default is 1
      * nsec).
      */
-    @Option(names = {"-n"}, paramLabel = "1000000",
+    @Option(names = {"-n", "--numberOfSteps"}, paramLabel = "1000000",
             description = "Number of molecular dynamics steps.")
     int steps = 1000000;
 
     /**
-     * -p or --npt Specify use of a MC Barostat at the given pressure (default
-     * 1.0 atm).
+     * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
      */
-    @Option(names = {"-p", "--npt"}, paramLabel = "0",
-            description = "Specify use of a MC Barostat at the given pressure; the default 0 disables NPT (atm).")
-    double pressure = 0;
+    @CommandLine.Option(names = {"-o", "--optimize"},
+            description = "Optimize and save low-energy snapshots.")
+    private boolean optimize = false;
 
     /**
-     * -f or --file Choose the file type to write [PDB/XYZ].
+     * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
      */
-    @Option(names = {"-f", "--file"}, paramLabel = "XYZ",
-            description = "Choose file type to write [PDB/XYZ].")
-    String fileType = "XYZ";
+    @CommandLine.Option(names = {"-k", "--checkpoint"}, paramLabel = "1.0", description = "Interval to write out restart files (.dyn, .his, etc).")
+    private double checkpoint = 1.0;
 
     /**
      * Thermostat.
@@ -133,7 +136,7 @@ public class DynamicsOptions {
     public IntegratorEnum integrator;
 
     /**
-     * Parse the thermostate and integrator.
+     * Parse the thermostat and integrator.
      */
     public void init() {
         thermostat = Thermostat.parseThermostat(thermostatString);
@@ -148,16 +151,36 @@ public class DynamicsOptions {
      * @param sh
      * @return
      */
-    public MolecularDynamics getDynamics(Potential potential,
+    public MolecularDynamics getDynamics(WriteoutOptions writeout,
+            Potential potential,
             MolecularAssembly activeAssembly,
             AlgorithmListener sh) {
                 
         MolecularDynamics molDyn = new MolecularDynamics(activeAssembly, potential,
                 activeAssembly.getProperties(), sh, thermostat, integrator);
-        molDyn.setFileType(fileType);
+        molDyn.setFileType(writeout.getFileType());
         molDyn.setRestartFrequency(write);
 
         return molDyn;
     }
 
+    public double getTemp() {
+        return temp;
+    }
+
+    public double getDt() {
+        return dt;
+    }
+
+    public double getReport() {
+        return report;
+    }
+
+    public double getCheckpoint() {
+        return checkpoint;
+    }
+
+    public boolean getOptimize() {
+        return optimize;
+    }
 }

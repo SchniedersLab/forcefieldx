@@ -43,7 +43,10 @@ import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.BaseScript;
 
 /**
- * Initialize support specific to the Potential package.
+ * Base class for scripts in the Potentials package, providing some key functions.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class PotentialScript extends BaseScript {
 
@@ -81,6 +84,5 @@ public class PotentialScript extends BaseScript {
 
         return true;
     }
-
 
 }

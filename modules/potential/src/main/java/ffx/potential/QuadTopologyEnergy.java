@@ -625,6 +625,22 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         return dualTopA.getCrystal();
     }
 
+    /**
+     * Returns the first component DualTopologyEnergy.
+     * @return Dual topology A.
+     */
+    public DualTopologyEnergy getDualTopA() {
+        return dualTopA;
+    }
+
+    /**
+     * Returns the second component DualTopologyEnergy.
+     * @return Dual topology B.
+     */
+    public DualTopologyEnergy getDualTopB() {
+        return dualTopB;
+    }
+
     @Override
     public void setCrystal(Crystal crystal) {
         dualTopA.setCrystal(crystal);

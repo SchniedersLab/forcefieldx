@@ -707,9 +707,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, APERIODIC_DEFAULT_EWALD_CUTOFF);
         }
 
-        double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
-
+        // double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
         //aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
+
         aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, 0.545);
         setEwaldParameters(off, aewald);
 
@@ -1811,7 +1811,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
                 saveMutualInducedDipoles();
             }
 
-            if (System.getProperty("printInducedDipoles") != null) {
+            if (printInducedDipoles) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("     Atom                                         Induced Dipole \n");
                 sb.append("    ======                                       ================\n");

@@ -45,6 +45,8 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -308,7 +310,7 @@ public final class PotentialEnergyTest {
     /**
      * Backup system properties for restoration.
      */
-    @org.junit.BeforeClass
+    @BeforeClass
     public static void setUpClass() {
         initialSystemConfig = (Properties) System.getProperties().clone();
     }
@@ -317,10 +319,11 @@ public final class PotentialEnergyTest {
         /**
          * Load the test system.
          */
+        PotentialsUtils potentialUtils = new PotentialsUtils();
         ClassLoader cl = this.getClass().getClassLoader();
         structure = new File(cl.getResource(filename).getPath());
-        PotentialsUtils potentialUtils = new PotentialsUtils();
-        molecularAssembly = potentialUtils.openQuietly(structure.getAbsolutePath());
+        String absPath = structure.getAbsolutePath();
+        molecularAssembly = potentialUtils.open(absPath);
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         mpoleTerm = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.MPOLETERM, true);
         generalizedKirkwood = molecularAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.GKTERM, false);
@@ -362,7 +365,7 @@ public final class PotentialEnergyTest {
         }
     }
 
-    @org.junit.Test
+    @Test
     public void testLauncherCart() {
         System.setProperty("pme.qi", "false");
         load();
@@ -370,7 +373,7 @@ public final class PotentialEnergyTest {
         System.clearProperty("pme.qi");
     }
 
-    @org.junit.Test
+    @Test
     public void testLauncherQi() {
         if (generalizedKirkwood) return;
         System.setProperty("pme.qi", "true");

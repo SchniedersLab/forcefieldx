@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -80,7 +80,7 @@ import edu.rit.pj.ParallelTeam;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.potential.MolecularAssembly;
 import ffx.realspace.RealSpaceData;
-import ffx.realspace.RealSpaceFile;
+import ffx.realspace.parsers.RealSpaceFile;
 import ffx.utilities.DoubleIndexPair;
 import ffx.utilities.Keyword;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
@@ -195,7 +195,7 @@ public class Rescore {
      * given valid files to be run on; use CoordinateFileFilter.acceptDeep(File
      * file) before sending files to this method.
      *
-     * @param modelFiles Files to rescore.
+     * @param modelFiles Files to xray.groovy.test.rescore.
      */
     public void runRsc(File[] modelFiles) {
         int numFiles = modelFiles.length;
@@ -262,7 +262,13 @@ public class Rescore {
                     if (eps < 0.0) {
                         eps = refinementMinimize.getEps();
                     }
-                    logger.info(String.format("\n RMS gradient convergence criteria: %8.5f max number of iterations %d", eps, maxiter));
+
+                    if (maxiter < Integer.MAX_VALUE) {
+                        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter));
+                    } else {
+                        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
+                    }
+
                     refinementMinimize.minimize(eps, maxiter);
                     diffractionData.scaleBulkFit();
                     diffractionData.printStats();
@@ -309,8 +315,12 @@ public class Rescore {
                     if (eps < 0.0) {
                         eps = 1.0;
                     }
-                    logger.info(String.format("\n RMS gradient convergence criteria: %8.5f max number of iterations %d", eps, maxiter));
-                    refinementMinimize.minimize(eps, maxiter);
+
+                    if (maxiter < Integer.MAX_VALUE) {
+                        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f, Maximum iterations %d", eps, maxiter));
+                    } else {
+                        logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps));
+                    }
 
                     ext = FilenameUtils.getExtension(filename);
                     ext = ".".concat(ext);
@@ -338,7 +348,7 @@ public class Rescore {
                     }
                     break;
                 default:
-                    logger.severe(" No valid rescore type: FFX will not continue.");
+                    logger.severe(" No valid xray.groovy.test.rescore type: FFX will not continue.");
             }
             double e = utils.returnEnergy(assembly);
             energies[i] = new DoubleIndexPair(i, e);
@@ -401,7 +411,7 @@ public class Rescore {
             Path rscFilePath = generatePath(resultsFile);
             String rscFileName = pwdPath.relativize(rscFilePath).toString();
 
-            logger.info(String.format(" Printing accepted files to rescore file %s", rscFileName));
+            logger.info(String.format(" Printing accepted files to xray.groovy.test.rescore file %s", rscFileName));
 
             if (acceptThreshold > 0.0) {
                 String message = String.format("Minimum potential energy: %f, threshold = %6.4f", minEnergy, acceptThreshold);
@@ -446,7 +456,7 @@ public class Rescore {
                         bw.newLine();
                     }
                 } catch (IOException ex) {
-                    logger.warning(String.format(" File %s had exception printing to rescore file %s", relPath, ex.toString()));
+                    logger.warning(String.format(" File %s had exception printing to xray.groovy.test.rescore file %s", relPath, ex.toString()));
                 }
             }
             message = String.format("\n Number of files not accepted: %d", numFiles - numAccepted);
@@ -468,12 +478,12 @@ public class Rescore {
                         bw.write(message);
                         bw.newLine();
                     } catch (IOException ex) {
-                        logger.warning(String.format(" File %s had exception printing to rescore file %s", relPath, ex.toString()));
+                        logger.warning(String.format(" File %s had exception printing to xray.groovy.test.rescore file %s", relPath, ex.toString()));
                     }
                 }
             }
         } catch (IOException ex) {
-            logger.warning(String.format(" Exception in writing rescore file: %s", ex.toString()));
+            logger.warning(String.format(" Exception in writing xray.groovy.test.rescore file: %s", ex.toString()));
         }
         return rescoredFiles;
     }

@@ -90,7 +90,7 @@ import static ffx.numerics.VectorMath.vec3Mat3;
  */
 public final class XRayFormFactor implements FormFactor {
 
-    private static final Logger logger = Logger.getLogger(ffx.xray.XRayFormFactor.class.getName());
+    private static final Logger logger = Logger.getLogger(XRayFormFactor.class.getName());
 
     private final Atom atom;
     private final double xyz[] = new double[3];
@@ -323,7 +323,7 @@ public final class XRayFormFactor implements FormFactor {
      * @return a double.
      */
     public double rhoN(double f, double lambda, double xyz[], int nGaussians) {
-        assert (nGaussians > 0 && nGaussians <= nGaussians);
+        assert (nGaussians > 0 && nGaussians <= this.nGaussians);
         diff(this.xyz, xyz, xyz);
 
         /**
