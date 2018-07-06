@@ -50,6 +50,7 @@ import static org.junit.Assert.assertEquals;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.groovy.Energy;
 import ffx.potential.groovy.test.Gradient;
+import ffx.potential.groovy.test.LambdaGradient;
 
 import groovy.lang.Binding;
 
@@ -135,6 +136,7 @@ public class OPLSEnergyTest {
     private Binding binding;
     private Energy energy;
     private Gradient gradient;
+    private LambdaGradient lambdaGradient;
 
     public OPLSEnergyTest(String info, String filename, int nAtoms,
                           double bondEnergy, int nBonds,
@@ -170,6 +172,9 @@ public class OPLSEnergyTest {
 
         gradient = new Gradient();
         gradient.setBinding(binding);
+
+        lambdaGradient = new LambdaGradient();
+        lambdaGradient.setBinding(binding);
     }
 
     @org.junit.Test
@@ -218,5 +223,31 @@ public class OPLSEnergyTest {
         gradient.run();
 
         assertEquals(info + " gradient failures: ", 0, gradient.nFailures);
+    }
+
+    @Test
+    public void testLambdaGradient() {
+        // Choose a random atom to test dEdX gradient.
+        int atomID = (int) Math.floor(Math.random() * nAtoms);
+        double stepSize = 1.0e-5;
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-a", Integer.toString(atomID),
+                "--dx", Double.toString(stepSize),
+                "--tol", Double.toString(tolerance),
+                "--s1", "1",
+                "--f1", Integer.toString(nAtoms),
+                "-l", "0.5",
+                "src/main/java/" + filename};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        lambdaGradient.run();
+
+        System.clearProperty("lambdaterm");
+
+        assertEquals(info + " dEdL failures: ", 0, lambdaGradient.ndEdLFailures);
+        assertEquals(info + " d2EdL2 failures: ", 0, lambdaGradient.nd2EdL2Failures);
+        assertEquals(info + " dEdXdL failures: ", 0, lambdaGradient.ndEdXdLFailures);
+        assertEquals(info + " dEdX failures: ", 0, lambdaGradient.ndEdXFailures);
     }
 }

@@ -36,12 +36,6 @@ class LambdaGradient extends PotentialScript {
     GradientOptions gradientOptions
 
     /**
-     * -qi or --quasi-internal sets use of the quasi-internal multipole tensor formulation; not presently recommended for production use.
-     */
-    @Option(names = ['--qi', '--quasi-internal'], paramLabel = 'false', description = 'Use quasi-internal multipole tensors.')
-    boolean qi = false
-
-    /**
      * -sdX or --skipdX disables the very long atomic gradient tests and
      * only performs dU/dL, dU2/dL2, and dU2/dLdX tests. Useful if the
      * script is being used to generate a dU/dL profile.
@@ -59,6 +53,11 @@ class LambdaGradient extends PotentialScript {
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
+
+    public int ndEdLFailures = 0
+    public int ndEdXFailures = 0
+    public int nd2EdL2Failures = 0
+    public int ndEdXdLFailures = 0
 
     /**
      * Script run method.
@@ -80,12 +79,6 @@ class LambdaGradient extends PotentialScript {
         int numParallel = topology.getNumParallel(threadsAvail, nArgs)
         threadsPer = threadsAvail / numParallel
 
-        if (qi) {
-            System.setProperty("pme.qi", "true")
-            System.setProperty("no-ligand-condensed-scf", "false")
-            System.setProperty("ligand-vapor-elec", "false")
-            System.setProperty("polarization", "NONE")
-        }
         boolean debug = (System.getProperty("debug") != null)
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
@@ -172,7 +165,8 @@ class LambdaGradient extends PotentialScript {
         double width = 2.0 * gradientOptions.dx
 
         // Error tolerence
-        double errTol = 1.0e-3
+        double errTol = gradientOptions.tolerance
+
         // Upper bound for typical gradient sizes (expected gradient)
         double expGrad = 1000.0
 
@@ -225,6 +219,7 @@ class LambdaGradient extends PotentialScript {
                 logger.info(String.format(" dE/dL passed:   %10.6f", err))
             } else {
                 logger.info(String.format(" dE/dL failed: %10.6f", err))
+                ndEdLFailures++
             }
             logger.info(String.format(" Numeric:   %15.8f", dEdLFD))
             logger.info(String.format(" Analytic:  %15.8f", dEdL))
@@ -234,12 +229,10 @@ class LambdaGradient extends PotentialScript {
                 logger.info(String.format(" d2E/dL2 passed: %10.6f", err))
             } else {
                 logger.info(String.format(" d2E/dL2 failed: %10.6f", err))
+                nd2EdL2Failures++
             }
             logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD))
             logger.info(String.format(" Analytic:  %15.8f", d2EdL2))
-
-            //boolean passed = true
-            int ndEdXdLFails = 0
 
             double rmsError = 0
             for (int i = 0; i < nAtoms; i++) {
@@ -265,11 +258,11 @@ class LambdaGradient extends PotentialScript {
                     logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error))
                     logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
                     logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
-                    ndEdXdLFails++
+                    ndEdXdLFailures++
                 }
             }
             rmsError = Math.sqrt(rmsError / nAtoms)
-            if (ndEdXdLFails == 0) {
+            if (ndEdXdLFailures == 0) {
                 logger.info(String.format(" dE/dX/dL passed for all atoms: RMS error %15.8f", rmsError))
             } else {
                 logger.info(String.format(" dE/dX/dL failed for %d of %d atoms: RMS error %15.8f", ndEdXdLFails, nAtoms, rmsError))
@@ -287,13 +280,31 @@ class LambdaGradient extends PotentialScript {
             logger.info(String.format(" Checking Cartesian coordinate gradient."))
             double[] numeric = new double[3]
             double avLen = 0.0
-            int nFailures = 0
             double avGrad = 0.0
 
             double step = gradientOptions.dx
             int firstAtom = gradientOptions.atomID - 1
 
-            for (int i = firstAtom; i < nAtoms; i++) {
+            // First atom to test.
+            int atomID = gradientOptions.atomID - 1
+            if (atomID >= n) {
+                atomID = 0
+            }
+            logger.info("\n First atom to test:\t\t" + (atomID + 1))
+
+            // First atom to test.
+            int lastAtomID = gradientOptions.lastAtomID - 1
+
+            if (lastAtomID < atomID) {
+                lastAtomID = atomID
+            } else if (lastAtomID >= n) {
+                lastAtomID = n - 1
+            }
+
+            logger.info("\n Last atom to test:\t\t" + (lastAtomID + 1))
+
+
+            for (int i = firstAtom; i <= lastAtomID; i++) {
                 int i3 = i * 3
                 int i0 = i3 + 0
                 int i1 = i3 + 1
@@ -340,8 +351,7 @@ class LambdaGradient extends PotentialScript {
                     logger.info(String.format(" Atom %d failed: %10.6f.", i + 1, len)
                             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
                             + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
-                    ++nFailures
-                    //return
+                    ++ndEdXFailures
                 } else {
                     logger.info(String.format(" Atom %d passed: %10.6f.", i + 1, len)
                             + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", gradient[i0], gradient[i1], gradient[i2])
@@ -361,7 +371,7 @@ class LambdaGradient extends PotentialScript {
             } else {
                 logger.info(String.format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol))
             }
-            logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures))
+            logger.info(String.format(" Number of atoms failing gradient test: %d", ndEdXFailures))
 
             avGrad = avGrad / nAtoms
             avGrad = Math.sqrt(avGrad)
