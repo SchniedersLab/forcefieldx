@@ -3664,6 +3664,29 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
+     * Returns the RMS separation distance for the closest rotamers of three residues' 2-body distances. Defaults
+     * to Double.MAX_VALUE when there are pair distances outside cutoffs.
+     *
+     * @param i Residue i
+     * @param ri Rotamer for i
+     * @param j Residue j
+     * @param rj Rotamer for j
+     * @param k Residue k
+     * @param rk Rotamer for k
+     * @return RMS separation distance
+     */
+    private double get3BodyResidueDistance(int i, int ri, int j, int rj, int k, int rk) {
+        double ij = getResidueDistance(i, ri, j, rj);
+        double ik = getResidueDistance(i, ri, k, rk);
+        double jk = getResidueDistance(j, rj, k, rk);
+        if (areFiniteAndNotMax(ij, ik, jk)) {
+            return sqrt((ij * ij + ik * ik + jk * jk) / 3.0);
+        } else {
+            return Double.MAX_VALUE;
+        }
+    }
+    
+    /**
      * Returns the RMS separation distance of 6 2-body distances. Defaults to
      * Double.MAX_VALUE when there are pair distances outside cutoffs.
      *
@@ -3684,6 +3707,34 @@ public class RotamerOptimization implements Terminatable {
         double jk = get2BodyDistance(j, rj, k, rk);
         double jl = get2BodyDistance(j, rj, l, rl);
         double kl = get2BodyDistance(k, rk, l, rl);
+        if (areFiniteAndNotMax(ij, ik, il, jk, jl, kl)) {
+            return sqrt((ij * ij + ik * ik + il * il + jk * jk + jl * jl + kl * kl) / 6.0);
+        } else {
+            return Double.MAX_VALUE;
+        }
+    }
+    
+    /**
+     * Returns the RMS separation distance for the closest rotamers of 6 2-body distances from four residues. Defaults to
+     * Double.MAX_VALUE when there are pair distances outside cutoffs.
+     *
+     * @param i Residue i
+     * @param ri Rotamer for i
+     * @param j Residue j
+     * @param rj Rotamer for j
+     * @param k Residue k
+     * @param rk Rotamer for k
+     * @param l Residue l
+     * @param rl Rotamer for l
+     * @return RMS separation distance
+     */
+    private double get4BodyResidueDistance(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+        double ij = getResidueDistance(i, ri, j, rj);
+        double ik = getResidueDistance(i, ri, k, rk);
+        double il = getResidueDistance(i, ri, l, rl);
+        double jk = getResidueDistance(j, rj, k, rk);
+        double jl = getResidueDistance(j, rj, l, rl);
+        double kl = getResidueDistance(k, rk, l, rl);
         if (areFiniteAndNotMax(ij, ik, il, jk, jl, kl)) {
             return sqrt((ij * ij + ik * ik + il * il + jk * jk + jl * jl + kl * kl) / 6.0);
         } else {
@@ -9130,7 +9181,13 @@ public class RotamerOptimization implements Terminatable {
                     double dIK = checkDistMatrix(indexI, ri, indexK, rk);
                     double dJK = checkDistMatrix(indexJ, rj, indexK, rk);
                     double minDist = Math.min(Math.min(dIJ, dIK), dJK);
-
+                    
+                    double resDist = get3BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk);
+                    String resDistString = format("     large");
+                    if (resDist < Double.MAX_VALUE){
+                        resDistString = format("%5.3f", resDist);
+                    }
+                    
                     String distString = format("     large");
                     if (rawDist < Double.MAX_VALUE) {
                         distString = format("%10.3f", rawDist);
@@ -9139,27 +9196,27 @@ public class RotamerOptimization implements Terminatable {
                     double threeBodyEnergy = 0.0;
                     if (minDist < superpositionThreshold) {
                         threeBodyEnergy = Double.NaN;
-                        logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %13.6f Ang < %5.3f Ang.",
-                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk, minDist, superpositionThreshold));
+                        logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %13.6f Ang (%s Ang by residue) < %5.3f Ang.",
+                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk, minDist, resDistString, superpositionThreshold));
                     } else if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
                         // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                         threeBodyEnergy = 0.0;
                         time += System.nanoTime();
-                        logger.fine(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s (Ang) in %6.4f (sec).",
+                        logger.fine(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
                                 residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk,
-                                formatEnergy(threeBodyEnergy), distString, time * 1.0e-9));
+                                formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
                     } else {
                         try {
                             threeBodyEnergy = compute3BodyEnergy(residues, i, ri, j, rj, k, rk);
                             time += System.nanoTime();
-                            logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s (Ang) in %6.4f (sec).",
+                            logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
                                     residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk,
-                                    formatEnergy(threeBodyEnergy), distString, time * 1.0e-9));
+                                    formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
                         } catch (ArithmeticException ex) {
                             threeBodyEnergy = Double.NaN;
                             time += System.nanoTime();
-                            logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %s (Ang) in %6.4f (sec).",
-                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk, distString, time * 1.0e-9));
+                            logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk, distString, resDistString, time * 1.0e-9));
                         }
                     }
 
@@ -9254,29 +9311,35 @@ public class RotamerOptimization implements Terminatable {
                     if (rawDist < Double.MAX_VALUE) {
                         distString = format("%10.3f", rawDist);
                     }
+                    
+                    double resDist = get4BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk, indexL, rl);
+                    String resDistString = format("     large");
+                    if (resDist < Double.MAX_VALUE){
+                        resDistString = format("%5.3f", resDist);
+                    }
 
                     double fourBodyEnergy = 0.0;
                     if (minDist < superpositionThreshold) {
                         fourBodyEnergy = Double.NaN;
-                        logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d:   set to NaN at %13.6f Ang < %5.3f Ang.",
-                                residues[i], ri, residues[j].toFormattedString(false, true), rj, residues[k].toFormattedString(false, true), rk, residues[l].toFormattedString(false, true), rl, minDist, superpositionThreshold));
+                        logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d:   set to NaN at %13.6f Ang (%s Ang by residue)  < %5.3f Ang.",
+                                residues[i], ri, residues[j].toFormattedString(false, true), rj, residues[k].toFormattedString(false, true), rk, residues[l].toFormattedString(false, true), rl, minDist, resDistString, superpositionThreshold));
                     } //else if (quadCutoff && (dist < quadCutoffDist)) {
                     else if (checkQuadDistThreshold(indexI, ri, indexJ, rj, indexK, rk, indexL, rl)) {
                         // Set the 4-body energy to 0.0 for separation distances larger than the 4-body cutoff.
                         fourBodyEnergy = 0.0;
                         time += System.nanoTime();
-                        logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang.",
-                                resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, resl.toFormattedString(false, true), rl, formatEnergy(fourBodyEnergy), distString));
+                        logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                                resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, resl.toFormattedString(false, true), rl, formatEnergy(fourBodyEnergy), distString, resDistString));
                     } else {
                         try {
                             fourBodyEnergy = compute4BodyEnergy(residues, i, ri, j, rj, k, rk, l, rl);
                             time += System.nanoTime();
-                            logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang.",
-                                    resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, resl.toFormattedString(false, true), rl, formatEnergy(fourBodyEnergy), distString));
+                            logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                                    resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, resl.toFormattedString(false, true), rl, formatEnergy(fourBodyEnergy), distString, resDistString));
                             if (abs(fourBodyEnergy) > 1.0) {
                                 StringBuilder sb = new StringBuilder();
-                                sb.append(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang.\n",
-                                        resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, resl.toFormattedString(false, true), rl, formatEnergy(fourBodyEnergy), distString));
+                                sb.append(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).\n",
+                                        resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, resl.toFormattedString(false, true), rl, formatEnergy(fourBodyEnergy), distString, resDistString));
                                 sb.append(format("   Explain: (ref %d) \n", key));
                                 sb.append(format("     Self %3d %3d:                  %.3f\n", i, ri, getSelf(i, ri)));
                                 sb.append(format("     Self %3d %3d:                  %.3f\n", j, rj, getSelf(j, rj)));
@@ -9307,8 +9370,8 @@ public class RotamerOptimization implements Terminatable {
                         } catch (ArithmeticException ex) {
                             fourBodyEnergy = Double.NaN;
                             time += System.nanoTime();
-                            logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: NaN at %s Ang.",
-                                    resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, resl.toFormattedString(false, true), rl, distString));
+                            logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: NaN at %s Ang (%s Ang by residue).",
+                                    resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, resl.toFormattedString(false, true), rl, distString, resDistString));
                         }
                     }
                 }
