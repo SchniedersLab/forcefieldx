@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2044,9 +2045,9 @@ public class RotamerOptimization implements Terminatable {
             for (int i = 0; i < nRes; i++) {
                 for (int j = i + 1; j < nRes; j++) {
                     for (int k = j + 1; k < nRes; k++) {
-                        if (Math.abs(get3Body(i, 0, j, 0, k, 0)) >= trimerCutoff) {
+                        if (Math.abs(get3Body(residues, i, 0, j, 0, k, 0)) >= trimerCutoff) {
                             logger.info(format(" Large Trimer  %s %s %s:    %16.5f",
-                                    residues[i].toFormattedString(false, true), residues[j].toFormattedString(false, true), residues[k].toFormattedString(false, true), get3Body(i, 0, j, 0, k, 0)));
+                                    residues[i].toFormattedString(false, true), residues[j].toFormattedString(false, true), residues[k].toFormattedString(false, true), get3Body(residues, i, 0, j, 0, k, 0)));
                         }
                     }
                 }
@@ -2090,10 +2091,10 @@ public class RotamerOptimization implements Terminatable {
                             Rotamer rotk[] = resk.getRotamers(library);
                             for (int rk = 0; rk < rotk.length; rk++) {
                                 try {
-                                    if (Math.abs(get3Body(i, ri, j, rj, k, rk)) >= trimerCutoff) {
+                                    if (Math.abs(get3Body(residues, i, ri, j, rj, k, rk)) >= trimerCutoff) {
                                         logger.info(format(" Large Trimer %8s %-2d, %8s %-2d, %8s %-2d: %s",
                                                 resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk,
-                                                formatEnergy(get3Body(i, ri, j, rj, k, rk))));
+                                                formatEnergy(get3Body(residues, i, ri, j, rj, k, rk))));
                                     }
                                 } catch (Exception ex) {
                                 }
@@ -3060,7 +3061,7 @@ public class RotamerOptimization implements Terminatable {
                         for (int k = j + 1; k < nResidues; k++) {
                             int rk = optimum[k];
                             try {
-                                sumTrimerEnergy += get3Body(i, ri, j, rj, k, rk);
+                                sumTrimerEnergy += get3Body(residues, i, ri, j, rj, k, rk);
                             } catch (Exception ex) {
                                 logger.warning(ex.toString());
                             }
@@ -3308,7 +3309,7 @@ public class RotamerOptimization implements Terminatable {
                     for (int k = j + 1; k < nResidues; k++) {
                         int rk = optimum[k];
                         try {
-                            double triple = get3Body(i, ri, j, rj, k, rk);
+                            double triple = get3Body(residues, i, ri, j, rj, k, rk);
                             double thirdTrip = triple / 3.0;
                             residueEnergy[i] += thirdTrip;
                             residueEnergy[j] += thirdTrip;
@@ -3544,16 +3545,37 @@ public class RotamerOptimization implements Terminatable {
         if (distanceMethod == DistanceMethod.ROTAMER) {
             return checkDistMatrix(i, ri, j, rj);
         } else {
-            double minDist = Double.MAX_VALUE;
-            final int lenri = distanceMatrix[i].length;
-            final int lenrj = distanceMatrix[i][ri][j].length;
-            for (int roti = 0; roti < lenri; roti++) {
-                for (int rotj = 0; rotj < lenrj; rotj++) {
-                    minDist = Math.min(minDist, checkDistMatrix(i, roti, j, rotj));
-                }
-            }
-            return minDist;
+            return getResidueDistance(i, ri, j, rj);
         }
+    }
+    
+    /* Checks the distance matrix, finding the shortest distance between the closest rotamers of two residues.
+     * 
+     * @param i Residue i
+     * @param ri Rotamer for i
+     * @param j Residue j
+     * @param rj Rotamer for j
+     * @return Shortest distance
+     */
+    private double getResidueDistance(int i, int ri, int j, int rj) {
+        if (i > j) {
+            int temp = i;
+            i = j;
+            j = temp;
+            temp = ri;
+            ri = rj;
+            rj = temp;
+        }
+
+        double minDist = Double.MAX_VALUE;
+        final int lenri = distanceMatrix[i].length;
+        final int lenrj = distanceMatrix[i][ri][j].length;
+        for (int roti = 0; roti < lenri; roti++) {
+            for (int rotj = 0; rotj < lenrj; rotj++) {
+                minDist = Math.min(minDist, checkDistMatrix(i, roti, j, rotj));
+            }
+        }
+        return minDist;
     }
 
     /**
@@ -4280,12 +4302,6 @@ public class RotamerOptimization implements Terminatable {
                         logger.warning(format("Exception writing to file: %s", file.getName()));
                     }
                 }
-                /*for (Residue residue : residueList) {
-                 if (residue instanceof MultiResidue) {
-                 ((MultiResidue) residue).setDefaultResidue();
-                 residue.reInitOriginalAtomList();
-                 }
-                 }*/
             } else {
                 logIfMaster(format(" Empty box: no residues found."));
             }
@@ -4409,72 +4425,38 @@ public class RotamerOptimization implements Terminatable {
     private void assignResiduesToCells(Crystal crystal, Residue[] residues, BoxOptCell[] cells) {
         // Search through residues, add them to all boxes containing their
         // fractional coordinates.
-        int numCells = cells.length;
-        int nResidues = residues.length;
-        for (int i = 0; i < nResidues; i++) {
-            Residue residuei = residues[i];
-            double[] atomFracCoords = new double[3];
-            boolean[] contained;
-            double[][] originalCoordinates;
-            switch (boxInclusionCriterion) {
-                // As case 1 is default, test other cases first.
-                case 2:
-                    // Residue coordinates defined by any original atomic coordinate.
-                    originalCoordinates = residuei.storeCoordinateArray();
-                    contained = new boolean[numCells];
-                    fill(contained, false);
-                    // Loop over atomic coordinates in originalCoordinates.
-                    for (int ai = 0; ai < originalCoordinates.length; ai++) {
-                        crystal.toFractionalCoordinates(originalCoordinates[ai], atomFracCoords);
-                        NeighborList.moveValuesBetweenZeroAndOne(atomFracCoords);
-                        for (int j = 0; j < numCells; j++) {
-                            if (!contained[j] && cells[j].checkIfContained(atomFracCoords)) {
-                                cells[j].addResidue(residuei);
-                                contained[j] = true;
-                            }
-                        }
-                    }
-                    break;
-                case 3:
-                    // Residue coordinates defined by any atomic coordinate in any rotamer.
-                    //originalCoordinates = storeSingleCoordinates(residuei, true);
-                    ResidueState origState = residuei.storeState();
-                    contained = new boolean[numCells];
-                    fill(contained, false);
-                    Rotamer[] rotamersi = residuei.getRotamers(library);
-                    for (Rotamer rotamer : rotamersi) {
-                        RotamerLibrary.applyRotamer(residuei, rotamer);
-                        double[][] currentCoordinates = residuei.storeCoordinateArray();
-                        for (int ai = 0; ai < currentCoordinates.length; ai++) {
-                            crystal.toFractionalCoordinates(currentCoordinates[ai], atomFracCoords);
-                            NeighborList.moveValuesBetweenZeroAndOne(atomFracCoords);
-                            for (int j = 0; j < numCells; j++) {
-                                if (!contained[j] && cells[j].checkIfContained(atomFracCoords)) {
-                                    cells[j].addResidue(residuei);
-                                    contained[j] = true;
-                                }
-                            }
-                        }
-                    }
-                    residuei.revertState(origState);
-                    //revertSingleResidueCoordinates(residuei, originalCoordinates, true);
-                    break;
-                case 1:
-                default:
-                    // Residue coordinates defined by C alpha (protein) or N1/9
-                    // (nucleic acids).
-                    double[] cAlphaCoords = new double[3];
-                    residuei.getReferenceAtom().getXYZ(cAlphaCoords);
-                    crystal.toFractionalCoordinates(cAlphaCoords, atomFracCoords);
-                    NeighborList.moveValuesBetweenZeroAndOne(atomFracCoords);
-                    for (int j = 0; j < numCells; j++) {
-                        if (cells[j].checkIfContained(atomFracCoords)) {
-                            cells[j].addResidue(residuei);
-                        }
-                    }
-                    break;
-            }
+        int nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
+        for (BoxOptCell cell : cells) {
+            Set<Residue> toAdd = new HashSet<>();
+            for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+                SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
+                for (Residue residue : residues) {
+                    boolean contained;
+                    switch (boxInclusionCriterion) {
+                        case 2: {
+                            contained = cell.residueInsideCell(residue, crystal, symOp, true);
+                        }
+                        break;
+                        case 3: {
+                            contained = cell.anyRotamerInsideCell(residue, crystal, symOp, true);
+                        }
+                        break;
+                        case 1:
+                        default: {
+                            contained = cell.atomInsideCell(residue.getReferenceAtom(), crystal, symOp);
+                        }
+                    }
+                    if (contained) {
+                        toAdd.add(residue);
+                    }
+                }
+                // If the identity symop produces nothing, skip checking other symops.
+                if (toAdd.isEmpty()) {
+                    break;
+                }
+            }
+            toAdd.forEach(cell::addResidue);
         }
     }
 
@@ -5266,7 +5248,7 @@ public class RotamerOptimization implements Terminatable {
                     - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk) - getSelf(l, rl)
                     - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(i, ri, l, rl)
                     - get2Body(j, rj, k, rk) - get2Body(j, rj, l, rl) - get2Body(k, rk, l, rl)
-                    - get3Body(i, ri, j, rj, k, rk) - get3Body(i, ri, j, rj, l, rl) - get3Body(i, ri, k, rk, l, rl) - get3Body(j, rj, k, rk, l, rl);
+                    - get3Body(residues, i, ri, j, rj, k, rk) - get3Body(residues, i, ri, j, rj, l, rl) - get3Body(residues, i, ri, k, rk, l, rl) - get3Body(residues, j, rj, k, rk, l, rl);
 
         } finally {
             // Revert if the currentEnergy call throws an exception.
@@ -5925,7 +5907,7 @@ public class RotamerOptimization implements Terminatable {
                     double currentMax = currentMin;
                     if (threeBodyTerm) {
                         // If the 3-Body eliminated, would fill max to Double.NaN.
-                        currentMin += get3Body(i, ri, j, rj, k, rk);
+                        currentMin += get3Body(residues, i, ri, j, rj, k, rk);
                         currentMax = currentMin;
 
                         // Obtain min and max summations over l.
@@ -6041,7 +6023,7 @@ public class RotamerOptimization implements Terminatable {
                     current = Double.NaN;
                 } else {
                     // ri-rj-rl is accounted for at a different part of the summation as ri-rj-rk.
-                    current = get3Body(i, ri, k, rk, l, rl) + get3Body(j, rj, k, rk, l, rl);
+                    current = get3Body(residues, i, ri, k, rk, l, rl) + get3Body(residues, j, rj, k, rk, l, rl);
                 }
 
                 // TODO: Add quads to the DEE summation.
@@ -6195,7 +6177,7 @@ public class RotamerOptimization implements Terminatable {
                     // k,rk conflicts with i,ri or j,rj, so the max is now Double.NaN. No effect on minimum.
                     currentMax = Double.NaN;
                 } else {
-                    double current = get3Body(i, ri, j, rj, k, rk);
+                    double current = get3Body(residues, i, ri, j, rj, k, rk);
                     if (Double.isFinite(current) && current < currentMin) {
                         currentMin = current;
                     } // Else, no new minimum found.
@@ -6353,7 +6335,7 @@ public class RotamerOptimization implements Terminatable {
                             }
 
                             rkEvals++;
-                            double e = get3Body(i, riA, j, rj, k, rk) - get3Body(i, riB, j, rj, k, rk);
+                            double e = get3Body(residues, i, riA, j, rj, k, rk) - get3Body(residues, i, riB, j, rj, k, rk);
                             if (e < minForResK) {
                                 minForResK = e;
                             }
@@ -6571,7 +6553,7 @@ public class RotamerOptimization implements Terminatable {
                 double currentResK = get2Body(i, riA, k, rk) - get2Body(i, riB, k, rk) + get2Body(j, rjC, k, rk) - get2Body(j, rjD, k, rk);
                 // Include 3-body effects.
                 if (threeBodyTerm) {
-                    double sumOverL = (get3Body(i, riA, j, rjC, k, rk) - get3Body(i, riB, j, rjD, k, rk));
+                    double sumOverL = (get3Body(residues, i, riA, j, rjC, k, rk) - get3Body(residues, i, riB, j, rjD, k, rk));
                     // Loop over a 4th residue l.
                     for (int l = 0; l < nres; l++) {
                         if (l == k || l == i || l == j) {
@@ -6595,8 +6577,8 @@ public class RotamerOptimization implements Terminatable {
                                 return Double.NaN;
                             }
                             rlEvaluations++;
-                            double e = get3Body(i, riA, k, rk, l, rl) - get3Body(i, riB, k, rk, l, rl)
-                                    + get3Body(j, rjC, k, rk, l, rl) - get3Body(j, rjD, k, rk, l, rl);
+                            double e = get3Body(residues, i, riA, k, rk, l, rl) - get3Body(residues, i, riB, k, rk, l, rl)
+                                    + get3Body(residues, j, rjC, k, rk, l, rl) - get3Body(residues, j, rjD, k, rk, l, rl);
                             if (e < minForResL) {
                                 minForResL = e;
                             }
@@ -6950,7 +6932,7 @@ public class RotamerOptimization implements Terminatable {
      * @param rk Rotamer rk of residue k.
      * @return The 3-Body energy.
      */
-    public double get3Body(int i, int ri, int j, int rj, int k, int rk) {
+    public double get3Body(Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
         if (!threeBodyTerm) {
             return 0.0;
         }
@@ -6979,9 +6961,12 @@ public class RotamerOptimization implements Terminatable {
             rk = jrj;
         }
         IntegerKeyset ijk = new IntegerKeyset(i, ri, j, rj, k, rk);
+        int indexI = allResiduesList.indexOf(residues[i]);
+        int indexJ = allResiduesList.indexOf(residues[j]);
+        int indexK = allResiduesList.indexOf(residues[k]);
         if (threeBodyEnergies.containsKey(ijk)) {
             return threeBodyEnergies.getOrDefault(ijk, 0);
-        } else if (checkTriDistThreshold(i, ri, j, rj, k, rk)) {
+        } else if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
             return 0.00000000;
         } else {
             String message = String.format(" Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j, rj, k, rk);
@@ -7821,10 +7806,12 @@ public class RotamerOptimization implements Terminatable {
             Residue resi = residues[i];
             Rotamer[] rotsi = resi.getRotamers(library);
             int lenri = rotsi.length;
+            int indI = allResiduesList.indexOf(resi);
             for (int j = i + 1; j < nResidues; j++) {
                 Residue resj = residues[j];
                 Rotamer[] rotsj = resj.getRotamers(library);
                 int lenrj = rotsj.length;
+                int indJ = allResiduesList.indexOf(resj);
 
                 double minPair = Double.MAX_VALUE;
                 int minRI = -1;
@@ -7836,7 +7823,7 @@ public class RotamerOptimization implements Terminatable {
                         continue;
                     }
                     for (int rj = 0; rj < lenrj; rj++) {
-                        if (check(j, rj) || check(i, ri, j, rj) || checkPairDistThreshold(i, ri, j, rj)) {
+                        if (check(j, rj) || check(i, ri, j, rj) || checkPairDistThreshold(indI, ri, indJ, rj)) {
                             continue;
                         }
                         cutoffPair = false;
@@ -7976,6 +7963,7 @@ public class RotamerOptimization implements Terminatable {
         private SharedDouble twoBody;
         private SharedDouble threeBody;
         private EnergyLoop energyLoops[];
+        private Residue[] residues;
         private int rotamers[];
         private int nResidues;
 
@@ -7989,6 +7977,7 @@ public class RotamerOptimization implements Terminatable {
         public void init(Residue residues[], int rotamers[]) {
             this.rotamers = rotamers;
             this.nResidues = residues.length;
+            this.residues = Arrays.copyOf(residues, nResidues);
         }
 
         public void start() {
@@ -8058,7 +8047,7 @@ public class RotamerOptimization implements Terminatable {
                         if (threeBodyTerm) {
                             for (int c = b + 1; c < nResidues; c++) {
                                 int ci = rotamers[c];
-                                threeBodySum += get3Body(a, ai, b, bi, c, ci);
+                                threeBodySum += get3Body(residues, a, ai, b, bi, c, ci);
                             }
                         }
                     }
@@ -8374,6 +8363,56 @@ public class RotamerOptimization implements Terminatable {
          */
         public void removeResidue(Residue residue) {
             residues.remove(residue);
+        }
+
+        /**
+         * Checks if any rotamer of a Residue is inside this BoxOptCell.
+         *
+         * @param residue Residue to check.
+         * @param crystal A Crystal.
+         * @param symOp A symmetry operator to apply.
+         * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
+         * @return If contained inside this BoxOptCell.
+         */
+        public boolean anyRotamerInsideCell(Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
+            ResidueState incomingState = residue.storeState();
+            Rotamer[] rotamers = residue.getRotamers(library);
+            boolean inside = Arrays.stream(rotamers).anyMatch((Rotamer r) -> {
+                RotamerLibrary.applyRotamer(residue, r);
+                return residueInsideCell(residue, crystal, symOp, variableOnly);
+            });
+            residue.revertState(incomingState);
+            return inside;
+        }
+
+        /**
+         * Checks if a Residue is inside this BoxOptCell.
+         *
+         * @param residue Residue to check.
+         * @param crystal A Crystal.
+         * @param symOp A symmetry operator to apply.
+         * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
+         * @return If contained inside this BoxOptCell.
+         */
+        public boolean residueInsideCell(Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
+            List<Atom> atoms = variableOnly ? residue.getVariableAtoms() : residue.getAtomList();
+            return atoms.stream().anyMatch(a -> atomInsideCell(a, crystal, symOp));
+        }
+
+        /**
+         * Checks if an Atom would be contained inside this cell.
+         * @param atom Atom to check.
+         * @param crystal A Crystal.
+         * @param symOp A symmetry operator to apply.
+         * @return If contained.
+         */
+        public boolean atomInsideCell(Atom atom, Crystal crystal, SymOp symOp) {
+            double[] atXYZ = new double[3];
+            atXYZ = atom.getXYZ(atXYZ);
+            crystal.toFractionalCoordinates(atXYZ, atXYZ);
+            NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
+            crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
+            return checkIfContained(atXYZ);
         }
 
         /**
@@ -8924,6 +8963,12 @@ public class RotamerOptimization implements Terminatable {
                     Residue residueJ = residues[j];
                     int indexI = allResiduesList.indexOf(residueI);
                     int indexJ = allResiduesList.indexOf(residueJ);
+                    double resDist = getResidueDistance(indexI, ri, indexJ, rj);
+                    String resDistString = format("large");
+                    if (resDist < Double.MAX_VALUE) {
+                        resDistString = format("%5.3f", resDist);
+                    }
+                    
                     double dist = checkDistMatrix(indexI, ri, indexJ, rj);
 
                     String distString = format("     large");
@@ -8935,25 +8980,25 @@ public class RotamerOptimization implements Terminatable {
                     if (dist < superpositionThreshold) {
                         // Set the energy to NaN for superposed atoms.
                         twoBodyEnergy = Double.NaN;
-                        logger.info(format(" Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang < %5.3f Ang",
-                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, dist, superpositionThreshold));
+                        logger.info(format(" Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang (%s Ang by residue) < %5.3f Ang",
+                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, dist, resDist, superpositionThreshold));
                     } else if (checkPairDistThreshold(indexI, ri, indexJ, rj)) {
                         // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
                         twoBodyEnergy = 0.0;
                         time += System.nanoTime();
-                        logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s (Ang) in %6.4f (sec).",
-                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, time * 1.0e-9));
+                        logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                                residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
                     } else {
                         try {
                             twoBodyEnergy = compute2BodyEnergy(residues, i, ri, j, rj);
                             time += System.nanoTime();
-                            logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s (Ang) in %6.4f (sec).",
-                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, time * 1.0e-9));
+                            logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
                         } catch (ArithmeticException ex) {
                             twoBodyEnergy = Double.NaN;
                             time += System.nanoTime();
-                            logger.info(format(" Pair %8s %-2d, %8s %-2d:              NaN at %s (Ang) in %6.4f (sec).",
-                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, distString, time * 1.0e-9));
+                            logger.info(format(" Pair %8s %-2d, %8s %-2d:              NaN at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                                    residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, distString, resDistString, time * 1.0e-9));
                         }
                     }
 
@@ -9039,7 +9084,7 @@ public class RotamerOptimization implements Terminatable {
                                             continue;
                                         }
                                         logger.info(format(" 3-Body energy %8s %-2d, %8s %-2d, %8s %-2d: %s",
-                                                resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, formatEnergy(get3Body(i, ri, j, rj, k, rk))));
+                                                resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj, resk.toFormattedString(false, true), rk, formatEnergy(get3Body(residues, i, ri, j, rj, k, rk))));
                                     }
                                 }
                             }
@@ -9243,10 +9288,10 @@ public class RotamerOptimization implements Terminatable {
                                 sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, k, rk, get2Body(j, rj, k, rk)));
                                 sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", j, rj, l, rl, get2Body(j, rj, l, rl)));
                                 sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n", k, rk, l, rl, get2Body(k, rk, l, rl)));
-                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, k, rk, get3Body(i, ri, j, rj, k, rk)));
-                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, l, rl, get3Body(i, ri, j, rj, l, rl)));
-                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, k, rk, l, rl, get3Body(i, ri, k, rk, l, rl)));
-                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", j, rj, k, rk, l, rl, get3Body(j, rj, k, rk, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, k, rk, get3Body(residues, i, ri, j, rj, k, rk)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, j, rj, l, rl, get3Body(residues, i, ri, j, rj, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", i, ri, k, rk, l, rl, get3Body(residues, i, ri, k, rk, l, rl)));
+                                sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n", j, rj, k, rk, l, rl, get3Body(residues, j, rj, k, rk, l, rl)));
                                 sb.append(format("     backbone:                      %.3f\n", backboneEnergy));
                                 sb.append(format("     quadEnergy:                 %.3f\n", fourBodyEnergy));
                                 sb.append(format("     --s--\n"));
