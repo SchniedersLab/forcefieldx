@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -40,8 +40,6 @@ package ffx.potential.nonbonded;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.numerics.UnivariateSwitchingFunction;
-
-//import java.util.logging.Logger;
 
 /**
  * The 6 coefficients of the multiplicative polynomial switch are unique given
@@ -71,27 +69,25 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     private final double fourC4;
     private final double fiveC5;
 
-    //private final static Logger logger = Logger.getLogger(MultiplicativeSwitch.class.getName());
-    
     /**
-     * Constructs a MultiplicativeSwitch that starts at 0 at 0, ends at 1.0 at 1,
+     * Constructs a MultiplicativeSwitch that starts at 0.0, ends at 1.0,
      * and smoothly interpolates between them via a sinusoid with zero first and
      * second derivatives at 0 and 1.
      */
     public MultiplicativeSwitch() {
         this(0.0, 1.0);
     }
-    
+
     /**
-     * Constructs a multiplicative switch which starts at 0 at off and ends at 
-     * 1.0 at cut, which can smoothly interpolate 0-1 across that range, with 
+     * Constructs a multiplicative switch which starts at off and ends at cut,
+     * which smoothly interpolates between 0-1 across that range, with
      * zero first and second derivatives at off and cut.
-     * 
+     *
      * @param off Zero point of the switch
      * @param cut End point of the switch
      */
     public MultiplicativeSwitch(double off, double cut) {
-        
+
         this.off = off;
         this.cut = cut;
 
@@ -110,33 +106,36 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
         fourC4 = 4.0 * c4;
         fiveC5 = 5.0 * c5;
     }
-    
+
     /**
      * Value of the switching function at r.
+     *
      * @param r r
      * @return Value of switch at r
-     */ 
+     */
     public double taper(double r) {
         // Minimize number of multiply operations by storing r^2, r^3.
-        double r2 = r*r;
-        double r3 = r2*r;
-        return taper(r, r2, r3, r2*r2, r3*r2);
+        double r2 = r * r;
+        double r3 = r2 * r;
+        return taper(r, r2, r3, r2 * r2, r3 * r2);
     }
-    
+
     /**
      * First derivative of the switching function at r.
+     *
      * @param r r
      * @return First derivative of switch at r
      */
     public double dtaper(double r) {
         // Minimize number of multiply operations by storing r^2.
-        double r2 = r*r;
-        return dtaper(r, r2, r2*r, r2*r2);
+        double r2 = r * r;
+        return dtaper(r, r2, r2 * r, r2 * r2);
     }
 
     /**
      * Value of the switching function at r.
-     * @param r r
+     *
+     * @param r  r
      * @param r2 r^2
      * @param r3 r^3
      * @param r4 r^4
@@ -146,10 +145,11 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     public double taper(double r, double r2, double r3, double r4, double r5) {
         return c5 * r5 + c4 * r4 + c3 * r3 + c2 * r2 + c1 * r + c0;
     }
-    
+
     /**
      * First derivative of the switching function at r.
-     * @param r r
+     *
+     * @param r  r
      * @param r2 r^2
      * @param r3 r^3
      * @param r4 r^4
@@ -168,12 +168,12 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     public double getOneBound() {
         return cut > off ? cut : off;
     }
-    
+
     @Override
     public boolean constantOutsideBounds() {
         return false;
     }
-    
+
     @Override
     public boolean validOutsideBounds() {
         return false;
@@ -183,7 +183,7 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     public int getHighestOrderZeroDerivative() {
         return 2;
     }
-    
+
     @Override
     public boolean symmetricToUnity() {
         return true;
@@ -205,7 +205,7 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
         val += c4 * 12.0 * x*x;
         val += c3 * 6.0 *x;
         val += c2 * 2.0;*/
-        double x2 = x*x;
+        double x2 = x * x;
         double val = 20.0 * c5 * x2 * x;
         val += 12.0 * c4 * x2;
         val += 6.0 * c3 * x;
@@ -218,13 +218,13 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
         if (order < 1) {
             throw new IllegalArgumentException("Order must be >= 1");
         }
-        switch(order) {
+        switch (order) {
             case 1:
                 return dtaper(x);
             case 2:
                 return secondDerivative(x);
             case 3:
-                double val = 60 * c5 * x*x;
+                double val = 60 * c5 * x * x;
                 val += 24 * c4 * x;
                 val += 6 * c3;
                 return val;
@@ -238,11 +238,11 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
                 return 0;
         }
     }
-    
+
     @Override
     public String toString() {
         return String.format("Multiplicative switch of form f(x) = %8.4g*x^5 + "
-                + "%8.4g*x^4 + %8.4g*x^3 + %8.4g*x^2 + %8.4g*x + %8.4g", 
+                        + "%8.4g*x^4 + %8.4g*x^3 + %8.4g*x^2 + %8.4g*x + %8.4g",
                 c5, c4, c3, c2, c1, c0);
     }
 }

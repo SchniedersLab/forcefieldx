@@ -55,11 +55,25 @@ public class GradientOptions {
     private double dx = 1.0e-5;
 
     /**
+     * -d or --dx to set the finite-difference step size.
+     */
+    @Option(names = {"--tol", "--tolerance"}, paramLabel = "1.0e-3",
+            description = "The analytic vs. finite-difference gradient error tolerance.")
+    private double tolerance = 1.0e-3;
+
+    /**
      * -a or --atomID to set the first atom to test.
      */
     @Option(names = {"-a", "--atomID"}, paramLabel = "1",
-            description = "The first atom to test.")
+            description = "The first atom to test (default is Atom 1)")
     private int atomID = 1;
+
+    /**
+     * --la or --lastAtomID to set the last atom to test.
+     */
+    @Option(names = {"--la", "--lastAtomID"}, paramLabel = "-1",
+            description = "The last atom to test (default is the last Atom if no first atom is specified).")
+    private int lastAtomID = -1;
 
     /**
      * -v or --verbose is a flag to print out energy at each step.

@@ -1,4 +1,3 @@
-
 package ffx.potential.groovy.test
 
 import ffx.potential.ForceFieldEnergy
@@ -28,6 +27,8 @@ class Gradient extends PotentialScript {
     @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
+    public int nFailures = 0
+
     /**
      * Execute the script.
      */
@@ -41,7 +42,7 @@ class Gradient extends PotentialScript {
         String modelFilename
         if (filenames != null && filenames.size() > 0) {
             modelFilename = filenames.get(0)
-            MolecularAssembly[] assemblies = potentialFunctions.open(modelFilename)
+            MolecularAssembly[] assemblies = potentialFunctions.openAll(modelFilename)
             activeAssembly = assemblies[0]
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -63,6 +64,17 @@ class Gradient extends PotentialScript {
         }
         logger.info("\n First atom to test:\t\t" + (atomID + 1))
 
+        // First atom to test.
+        int lastAtomID = gradientOptions.lastAtomID - 1
+
+        if (lastAtomID < atomID) {
+            lastAtomID = atomID
+        } else if (lastAtomID >= n) {
+            lastAtomID = n - 1
+        }
+
+        logger.info("\n Last atom to test:\t\t" + (lastAtomID + 1))
+
         // Finite-difference step size in Angstroms.
         double step = gradientOptions.dx
         logger.info(" Finite-difference step size:\t" + step)
@@ -73,17 +85,16 @@ class Gradient extends PotentialScript {
 
         // Upper bound for typical gradient sizes (expected gradient)
         double expGrad = 1000.0
-        double gradientTolerance = 1.0e-3
+        double gradientTolerance = gradientOptions.tolerance
         double width = 2.0 * step
         double[] x = new double[n * 3]
         double[] analytic = new double[3]
         double[] numeric = new double[3]
 
         double avLen = 0.0
-        int nFailures = 0
         double avGrad = 0.0
         double expGrad2 = expGrad * expGrad
-        for (int i = atomID; i < n; i++) {
+        for (int i = atomID; i <= lastAtomID; i++) {
             Atom a0 = atoms[i]
             int i3 = i * 3
             int i0 = i3 + 0

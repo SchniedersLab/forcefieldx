@@ -48,7 +48,8 @@ class Energy extends PotentialScript {
             description = 'The atomic coordinate file in PDB or XYZ format.')
     private List<String> filenames = null
 
-    public double energy = 0.0;
+    public double energy = 0.0
+    public ForceFieldEnergy forceFieldEnergy = null
 
     /**
      * Execute the script.
@@ -70,7 +71,7 @@ class Energy extends PotentialScript {
         String filename = activeAssembly.getFile().getAbsolutePath()
         logger.info("\n Running Energy on " + filename)
 
-        ForceFieldEnergy pe = activeAssembly.getPotentialEnergy()
+        forceFieldEnergy = activeAssembly.getPotentialEnergy()
         Atom[] atoms = activeAssembly.getAtomArray()
 
         // Apply the no electrostatics atom selection
@@ -86,16 +87,16 @@ class Energy extends PotentialScript {
             ai.print()
         }
 
-        int nVars = pe.getNumberOfVariables()
+        int nVars = forceFieldEnergy.getNumberOfVariables()
         double[] x = new double[nVars]
-        pe.getCoordinates(x)
+        forceFieldEnergy.getCoordinates(x)
 
         if (gradient) {
             double[] g = new double[nVars]
             int nAts = nVars / 3
-            if (pe instanceof ForceFieldEnergyOpenMM) {
+            if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
                 double[] gOMM = new double[nVars]
-                ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe
+                ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) forceFieldEnergy
                 energy = ope.energyAndGradVsFFX(x, g, gOMM, true)
                 for (int i = 0; i < nAts; i++) {
                     int i3 = 3 * i
@@ -112,11 +113,11 @@ class Energy extends PotentialScript {
                     logger.info(String.format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
                 }
             }
-        } else if (pe instanceof ForceFieldEnergyOpenMM) {
-            ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) pe
+        } else if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
+            ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) forceFieldEnergy
             energy = ope.energyVsFFX(x, true)
         } else {
-            energy = pe.energy(x, true)
+            energy = forceFieldEnergy.energy(x, true)
         }
 
         return this

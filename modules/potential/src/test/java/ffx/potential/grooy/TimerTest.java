@@ -72,8 +72,8 @@ public class TimerTest {
     @Test
     public void testTimer() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"-n", "2", "-v", "--nt", "2", "-g",
-                "src/main/java/ffx/potential/structures/peptide-oplsaal.xyz"};
+        String[] args = {"-n", "2", "-v", "-g",
+                "src/main/java/ffx/potential/structures/ubiquitin.xyz"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
