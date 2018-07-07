@@ -72,7 +72,7 @@ public class GradientOptions {
      * --la or --lastAtomID to set the last atom to test.
      */
     @Option(names = {"--la", "--lastAtomID"}, paramLabel = "-1",
-            description = "The last atom to test (default is the last Atom if no first atom is specified).")
+            description = "The last atom to test (default is to test all Atoms, unless a first atom is specified).")
     private int lastAtomID = -1;
 
     /**

@@ -62,10 +62,10 @@ class SaveAsPDB extends PotentialScript {
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
-        String dirName = saveDir.toString() + File.separator;
+        String dirName = saveDir.toString() + File.separator
         String fileName = FilenameUtils.getName(modelFilename)
         fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-        File modelFile = new File(dirName + fileName);
+        File modelFile = new File(dirName + fileName)
 
         potentialFunctions.saveAsPDB(activeAssembly, modelFile)
         PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()

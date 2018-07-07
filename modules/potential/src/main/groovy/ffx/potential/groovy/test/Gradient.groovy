@@ -6,6 +6,7 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
 
+import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
@@ -16,6 +17,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc test.Gradient [options] &lt;filename&gt;
  */
+@Command(description = " Test the potential energy gradient.", name = "ffxc test.Gradient")
 class Gradient extends PotentialScript {
 
     @Mixin
