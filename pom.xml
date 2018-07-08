@@ -1092,36 +1092,41 @@
         <clustering.version>1.1.0</clustering.version>
         <fastutil.version>8.2.1</fastutil.version>
         <picocli.version>3.2.0</picocli.version>
-        <!-- Maven Plugin Version -->
-        <assembly.version>3.1.0</assembly.version>
-        <changes.version>2.12.1</changes.version>
-        <checkstyle.version>3.0.0</checkstyle.version>
+        <!-- Maven Core Plugin Versions -->
         <clean.version>3.1.0</clean.version>
         <compiler.version>3.7.0</compiler.version>
-        <dependency.version>3.1.1</dependency.version>
         <deploy.version>2.8.2</deploy.version>
-        <enforcer.version>3.0.0-M2</enforcer.version>
         <install.version>2.5.2</install.version>
+        <resources.version>3.1.0</resources.version>
+        <site.version>3.7.1</site.version>
+        <surefire.version>2.22.0</surefire.version>
+        <!-- Maven Packaging Tools Plugin Versions -->
         <jar.version>3.1.0</jar.version>
-        <jarsigner.version>1.4</jarsigner.version>
+        <source.version>3.0.1</source.version>
+        <!-- Maven Reporting Plugin Versions -->
+        <changes.version>2.12.1</changes.version>
+        <checkstyle.version>3.0.0</checkstyle.version>
         <javadoc.version>3.0.1</javadoc.version>
         <jxr.version>2.5</jxr.version>
         <linkcheck.version>1.2</linkcheck.version>
         <pmd.version>3.10.0</pmd.version>
-        <project-info-reports.version>2.9</project-info-reports.version>
-        <scm.version>1.10.0</scm.version>
-        <site.version>3.7.1</site.version>
-        <source.version>3.0.1</source.version>
-        <surefire.version>2.22.0</surefire.version>
-        <release.version>2.5.3</release.version>
-        <resources.version>3.1.0</resources.version>
+        <project-info-reports.version>3.0.0</project-info-reports.version>
+        <!-- Maven Tools Plugin Versions -->
         <antrun.version>1.8</antrun.version>
-        <exec.version>1.6.0</exec.version>
+        <assembly.version>3.1.0</assembly.version>
+        <dependency.version>3.1.1</dependency.version>
+        <enforcer.version>3.0.0-M2</enforcer.version>
+        <jarsigner.version>1.4</jarsigner.version>
+        <release.version>2.5.3</release.version>
+        <scm.version>1.10.0</scm.version>
+        <!-- MojoHaus Plugins -->
         <jdepend.version>2.0</jdepend.version>
-        <properties.version>1.0.0</properties.version>
-        <versions.version>2.5</versions.version>
-        <buildnumber.version>1.2.10</buildnumber.version>
         <appassembler.version>1.10</appassembler.version>
+        <buildnumber.version>1.2.10</buildnumber.version>
+        <exec.version>1.6.0</exec.version>
+        <versions.version>2.5</versions.version>
+        <properties.version>1.0.0</properties.version>
+        <!-- Clover Plugin -->
         <clover.version>4.2.0</clover.version>
     </properties>
     <dependencies>
@@ -1135,7 +1140,6 @@
         <dependency>
             <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
             <groupId>javax.xml.bind</groupId>
-            <!-- This is needed for the GroovyDoc Ant Task on JDK 9+ -->
             <artifactId>jaxb-api</artifactId>
             <version>2.3.0</version>
             <type>jar</type>
