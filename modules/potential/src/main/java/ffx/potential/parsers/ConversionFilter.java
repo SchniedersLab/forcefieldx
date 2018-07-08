@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;

@@ -49,7 +49,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import edu.rit.pj.reduction.SharedDouble;
 
@@ -113,46 +113,9 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
 
     public static class ExtendedSystemConfig {
 
-        public boolean useWhitelists = false;
-        private int[] permanentWhitelist, inducedWhitelist;
-
-        public void setPermanentWhitelist(int[] list) {
-            permanentWhitelist = ArrayUtils.clone(list);
-        }
-
-        public void setInducedWhitelist(int[] list) {
-            inducedWhitelist = ArrayUtils.clone(list);
-        }
-
-        public boolean permanentWhitelist(int i) {
-            return (useWhitelists && permanentWhitelist != null)
-                    ? ArrayUtils.contains(permanentWhitelist, i)
-                    : true;
-        }
-
-        public boolean inducedWhitelist(int i) {
-            return (useWhitelists && inducedWhitelist != null)
-                    ? ArrayUtils.contains(inducedWhitelist, i)
-                    : true;
-        }
-
         /**
          * Use polarizability scaling by default.
          */
-        public final boolean scaleAlpha = prop("esv.scaleAlpha", true);
-
-        public final boolean allowSymOps = prop("esv.allowSymOps", true);
-        public final boolean allowScreening = prop("esv.allowScreening", true);
-        public final boolean allowTholeDamping = prop("esv.allowTholeDamping", true);
-        public final boolean allowRecipRegion = prop("esv.allowRecipRegion", true);
-        public final boolean allowMaskPerm = prop("esv.allowMaskPerm", true);
-        public final boolean allowMaskPolarD = prop("esv.allowMaskPolarD", true);
-        public final boolean allowMaskPolarP = prop("esv.allowMaskPolarP", true);
-        public final List<Double> cdqScales
-                = prop("esv.cdqScales", Arrays.asList(1.0, 1.0, 1.0));
-        public final boolean recipFieldEffects = prop("esv.recipFieldEffects", true);
-
-        // terms activation and logging
         public final boolean bonded = prop("esv.bonded", true);
         public final boolean vanDerWaals = prop("esv.vanDerWaals", true);
         public final boolean electrostatics = prop("esv.electrostatics", true);
@@ -176,7 +139,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         public final double thetaFriction = prop("esv.thetaFriction", 1.0e-19);	// from OSRW, reasonably 60/ps
 
         // Options below are untested and/or dangerous if changed.
-        public final boolean windowElec = prop("esv.windowElec", false);	// use whole lambda range until window CR implemented
         public final boolean cloneXyzIndices = prop("esv.cloneXyzIndices", true);	// set bg_idx = fg_idx
 
         public static void print(ExtendedSystemConfig config) {
@@ -221,7 +183,7 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     private Double constantSystemPh;
     private int numESVs;
     private List<ExtendedVariable> esvList;
-    private boolean phTerm, vdwTerm, mpoleTerm;
+    private boolean vdwTerm, mpoleTerm;
     private Double currentTemperature;
 
     // Potential Objects
@@ -352,23 +314,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         populate(tokens);
     }
 
-    public void setLambdas(String[] lambdas) {
-        if (lambdas.length != numESVs) {
-            throw new IllegalArgumentException();
-        }
-        for (int i = 0; i < lambdas.length; i++) {
-            double lambda = Double.parseDouble(lambdas[i]);
-            setLambda(i, lambda);
-        }
-    }
-
-    public void setLambdas(String lambdas) {
-        String[] tokens
-                = (lambdas.split(",").length > 1) ? lambdas.split(",")
-                : new String[]{lambdas};
-        setLambdas(tokens);
-    }
-
     public ExtendedSystemConfig getConfig() {
         return config;
     }
@@ -446,15 +391,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return getEsv(esvIdChar - 'A').getLambda();
     }
 
-    /**
-     * Allows PME to request updated scaling after multipole rotation.
-     */
-    public void updateMultipoles() {
-        for (ExtendedVariable esv : this) {
-            esv.updateMultipoleTypes();
-        }
-    }
-
     protected void updateListeners() {
         if (config.vanDerWaals) {
             vdw.updateEsvLambda();
@@ -497,10 +433,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             biasEnergySum += esv.getTotalBias(temperature, false);
         }
         return biasEnergySum;
-    }
-
-    public void propagateESVs(double dt, double currentTimePs) {
-        propagateESVs(currentTemperature, dt, currentTimePs);
     }
 
     /**
@@ -554,7 +486,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             if (constantSystemPh == null) {
                 logger.severe("Set ExtendedSystem (constant) pH before adding TitrationESVs.");
             }
-            phTerm = true;
         }
 
         for (int i = 0; i < nAtomsExt; i++) {
@@ -582,7 +513,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             logger.severe("Attempted to modify an existing constant pH value.");
         }
         constantSystemPh = pH;
-        phTerm = true;
     }
 
     public double getConstantPh() {
@@ -681,14 +611,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
             default:
                 throw new AssertionError(dd.name());
         }
-    }
-
-    public double getDerivativeComponent(PotentialComponent component) {
-        double dUdComp = 0.0;
-        for (int i = 0; i < numESVs; i++) {
-            dUdComp += getDerivativeComponent(component, i);
-        }
-        return dUdComp;
     }
 
     private double getDerivative(int esvID) {
@@ -869,14 +791,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
         return sb.toString();
     }
 
-    public double[] getLambdas() {
-        double[] lambdas = new double[numESVs];
-        for (int i = 0; i < lambdas.length; i++) {
-            lambdas[i] = esvList.get(i).getLambda();
-        }
-        return lambdas;
-    }
-
     /**
      * Allows simple iteration over ESV via "for (ExtendedVariable :
      * ExtendedSystem)".
@@ -884,14 +798,6 @@ public class ExtendedSystem implements Iterable<ExtendedVariable> {
     @Override
     public Iterator<ExtendedVariable> iterator() {
         return esvList.iterator();
-    }
-
-    public double getLargestLambda() {
-        double ret = 0.0;
-        for (ExtendedVariable esv : this) {
-            ret = (esv.getLambda() > ret) ? esv.getLambda() : ret;
-        }
-        return ret;
     }
 
     /**

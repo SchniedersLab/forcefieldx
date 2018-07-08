@@ -1,5 +1,6 @@
 package ffx.xray.groovy
 
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -8,7 +9,6 @@ import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
 import ffx.xray.parsers.MTZWriter
 import ffx.xray.parsers.MTZWriter.MTZType
-import org.apache.commons.configuration.CompositeConfiguration
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin

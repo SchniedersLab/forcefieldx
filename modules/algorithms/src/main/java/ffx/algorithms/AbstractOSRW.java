@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.asin;

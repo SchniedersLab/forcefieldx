@@ -74,7 +74,7 @@ import static java.lang.String.format;
 
 import com.sun.j3d.utils.picking.PickTool;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.jdesktop.j3d.loaders.vrml97.VrmlLoader;
 import org.jdesktop.j3d.loaders.vrml97.VrmlScene;
 

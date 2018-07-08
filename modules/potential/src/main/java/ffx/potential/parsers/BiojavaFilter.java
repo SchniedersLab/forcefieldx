@@ -48,7 +48,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.biojava.bio.structure.Chain;
 import org.biojava.bio.structure.Group;
 import org.biojava.bio.structure.PDBCrystallographicInfo;

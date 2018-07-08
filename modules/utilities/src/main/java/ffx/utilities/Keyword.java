@@ -45,10 +45,14 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.SystemConfiguration;
+import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -196,7 +200,7 @@ public class Keyword {
      *
      * @since 1.0
      * @param file a {@link java.io.File} object.
-     * @return a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration}
      * object.
      */
     public static CompositeConfiguration loadProperties(File file) {
@@ -219,8 +223,17 @@ public class Keyword {
                 File structurePropFile = new File(propertyFilename);
                 if (structurePropFile.canRead()) {
                     try {
-                        properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
+                        FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+                                new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                                        .configure(new Parameters().properties()
+                                                .setFile(structurePropFile)
+                                                .setThrowExceptionOnMissing(true)
+                                                //.setListDelimiterHandler(new DefaultListDelimiterHandler(','))
+                                                .setIncludesAllowed(false));
+                        properties.addConfiguration(builder.getConfiguration());
                         properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
+                        // properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
+                        // properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
                     } catch (ConfigurationException | IOException e) {
                         logger.log(Level.INFO, " Error loading {0}.", structureBasename);
                     }
@@ -244,7 +257,15 @@ public class Keyword {
         File userPropFile = new File(filename);
         if (userPropFile.exists() && userPropFile.canRead()) {
             try {
-                properties.addConfiguration(new PropertiesConfiguration(userPropFile));
+                FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+                        new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                                .configure(new Parameters().properties()
+                                        .setFile(userPropFile)
+                                        .setThrowExceptionOnMissing(true)
+                                        //.setListDelimiterHandler(new DefaultListDelimiterHandler(','))
+                                        .setIncludesAllowed(false));
+                properties.addConfiguration(builder.getConfiguration());
+                // properties.addConfiguration(new PropertiesConfiguration(userPropFile));
             } catch (ConfigurationException e) {
                 logger.log(Level.INFO, " Error loading {0}.", filename);
             }
@@ -258,7 +279,15 @@ public class Keyword {
             File systemPropFile = new File(filename);
             if (systemPropFile.exists() && systemPropFile.canRead()) {
                 try {
-                    properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
+                    FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+                            new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                                    .configure(new Parameters().properties()
+                                            .setFile(systemPropFile)
+                                            .setThrowExceptionOnMissing(true)
+                                            //.setListDelimiterHandler(new DefaultListDelimiterHandler(','))
+                                            .setIncludesAllowed(false));
+                    properties.addConfiguration(builder.getConfiguration());
+                    // properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
                 } catch (ConfigurationException e) {
                     logger.log(Level.INFO, " Error loading {0}.", filename);
                 }

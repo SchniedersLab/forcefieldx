@@ -1,6 +1,6 @@
 package ffx.algorithms.groovy
 
-import org.apache.commons.configuration.CompositeConfiguration
+import org.apache.commons.configuration2.CompositeConfiguration
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.ForceFieldEnergy

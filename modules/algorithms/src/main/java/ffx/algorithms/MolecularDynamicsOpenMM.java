@@ -45,7 +45,7 @@ import static java.lang.System.arraycopy;
 
 import com.sun.jna.ptr.PointerByReference;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;

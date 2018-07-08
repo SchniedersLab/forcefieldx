@@ -98,10 +98,22 @@
             <version>${commons-io.version}</version>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang3</artifactId>
             <type>jar</type>
-            <version>${commons-configuration.version}</version>
+            <version>${commons-lang3.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <type>jar</type>
+            <version>${commons-configuration2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <type>jar</type>
+            <version>${commons-beanutils.version}</version>
         </dependency>
         <dependency>
             <groupId>java3d</groupId>

@@ -1073,7 +1073,9 @@
         <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
         <commons-cli.version>1.4</commons-cli.version>
         <!-- Commons Configuration 2.1 is available, but is not backwards compatible with 1.10 -->
+        <commons-beanutils.version>1.9.3</commons-beanutils.version>
         <commons-configuration.version>1.10</commons-configuration.version>
+        <commons-configuration2.version>2.2</commons-configuration2.version>
         <commons-io.version>2.6</commons-io.version>
         <commons-lang3.version>3.5</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>

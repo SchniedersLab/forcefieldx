@@ -39,7 +39,7 @@ package ffx.algorithms.cli;
 
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.algorithms.Barostat;
 import ffx.crystal.CrystalPotential;

@@ -52,7 +52,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.integrators.BetterBeeman;
@@ -234,7 +234,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param assembly a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
      * {@link ffx.algorithms.thermostats.ThermostatEnum} object.

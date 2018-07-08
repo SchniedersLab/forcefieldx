@@ -43,7 +43,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

@@ -40,7 +40,7 @@ package ffx.potential.groovy.test
 
 // Convert from PRM to Property
 
-import org.apache.commons.configuration.CompositeConfiguration
+import org.apache.commons.configuration2.CompositeConfiguration
 
 import groovy.cli.picocli.CliBuilder
 

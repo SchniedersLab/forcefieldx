@@ -53,7 +53,7 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.exp;
 

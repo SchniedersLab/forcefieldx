@@ -1,5 +1,6 @@
 package ffx.xray.groovy
 
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -11,7 +12,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-import org.apache.commons.configuration.CompositeConfiguration
 
 /**
  * The X-ray ModelvsData script.

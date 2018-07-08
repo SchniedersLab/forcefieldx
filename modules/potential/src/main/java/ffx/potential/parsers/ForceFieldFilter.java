@@ -50,14 +50,16 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import static org.apache.commons.math3.util.FastMath.abs;
 
-import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AngleTorsionType;
+import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
@@ -131,7 +133,7 @@ public class ForceFieldFilter {
      * Constructor for ForceFieldFilter.</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public ForceFieldFilter(CompositeConfiguration properties) {
         this.properties = properties;
@@ -218,9 +220,18 @@ public class ForceFieldFilter {
                 if (url != null) {
                     forceField.forceFieldURL = url;
                     try {
-                        PropertiesConfiguration config = new PropertiesConfiguration(url);
-                        properties.addConfiguration(config);
+                        FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+                                new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                                        .configure(
+                                                new Parameters().properties().setURL(url).setThrowExceptionOnMissing(true)
+                                                //.setListDelimiterHandler(new DefaultListDelimiterHandler(','))
+                                                .setIncludesAllowed(false));
+                        properties.addConfiguration(builder.getConfiguration());
+
+                        // PropertiesConfiguration config = new PropertiesConfiguration(url);
+                        // properties.addConfiguration(config);
                     } catch (ConfigurationException e) {
+                        e.printStackTrace();
                         logger.warning(e.toString());
                     }
                 }
@@ -251,6 +262,9 @@ public class ForceFieldFilter {
              */
             for (int n = numConfigs - 1; n >= 0; n--) {
                 Configuration config = properties.getConfiguration(n);
+
+                logger.info(" Config " + config.toString());
+
                 Iterator i = config.getKeys();
                 while (i.hasNext()) {
                     String key = (String) i.next();

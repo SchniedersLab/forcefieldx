@@ -2,7 +2,7 @@ package ffx.xray.groovy
 
 import java.util.logging.Logger
 
-import org.apache.commons.configuration.CompositeConfiguration
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm

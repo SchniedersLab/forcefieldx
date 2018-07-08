@@ -44,7 +44,7 @@ import java.nio.ByteOrder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
@@ -57,15 +57,12 @@ import ffx.realspace.RealSpaceRefinementData;
  * @author Timothy D. Fenn
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
- *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
  * target="_blank">CCP4 library documentation</a>
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
- *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
  * target="_blank">CCP4 library documentation</a>
- *
  * @since 1.0
  */
 public class CCP4MapFilter implements RealSpaceFileFilter {

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -45,8 +45,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.IntRange;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -84,18 +83,13 @@ public class ExtendedVariableTest {
 
     private static final String dilysine = "lys-lys.pdb";
     private static final String[] dilysStates = {"lyd-lyd.pdb", "lyd-lys.pdb",
-        "lys-lyd.pdb", "lys-lys.pdb"};
+            "lys-lyd.pdb", "lys-lys.pdb"};
     private static final String dilysineCryst = "lys-lys-cryst.pdb";
     private static final String[] dilysStatesCryst = {"lyd-lyd-cryst.pdb", "lyd-lys-cryst.pdb",
-        "lys-lyd-cryst.pdb", "lys-lys-cryst.pdb"};
+            "lys-lyd-cryst.pdb", "lys-lys-cryst.pdb"};
     private static final List<Double> stdLambdaTestPoints = Arrays.asList(0.25, 0.5, 1.0);
     private static final List<Double> ciLambdaTestPoints = Arrays.asList(0.0, 0.25, 0.5, 0.75, 1.0);
     private static final boolean yes = true;
-    private static final int lys2_nz = 16;
-    private static final int ala3_c = 30;
-    private static final int lys4_nz = 48;
-    private static final int[] allAtoms = (new IntRange(0, 67)).toArray();
-
     private static final Polarization decompPolarState = Polarization.DIRECT;
     private static final Polarization decompPolarComplement
             = (decompPolarState == Polarization.MUTUAL) ? Polarization.DIRECT : Polarization.MUTUAL;
@@ -107,10 +101,10 @@ public class ExtendedVariableTest {
     private static final String resourcePrefix = "ffx/potential/structures/";
 
     private static final boolean includeManualQiEndStates = true;
-    private static final boolean oneSidedFiniteAtExtremes = false;	// TODO analyze bonded behavior
+    private static final boolean oneSidedFiniteAtExtremes = false;    // TODO analyze bonded behavior
     private static final boolean smoothnessDecomposition = false;
     private static final boolean singleThreaded = false;
-    private static final boolean assertions = false;	// TODO enable
+    private static final boolean assertions = false;    // TODO enable
     private List<Double> lambdaValuesToTest;
 
     /**
@@ -123,17 +117,14 @@ public class ExtendedVariableTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {EsvTest.EndStates, Interactions.All, CellType.Crystal},
-            {EsvTest.Deriv_OneEsv, Interactions.All, CellType.Crystal}
+                {EsvTest.EndStates, Interactions.All, CellType.Crystal},
+                {EsvTest.Deriv_OneEsv, Interactions.All, CellType.Crystal}
         });
     }
 
     // Setup control of PME lambda derivative calculation.
     private ExtendedSystemConfig setDebugParameters() {
-        setProp("esv.allowSymOps", true);	// symmetry operators
-        setProp("esv.recipFieldEffects", true);	// reciprocal space contributions to field
         setProp("sys.reuseTensors", false);
-        setProp("esv.scaleAlpha", true);	// polarizability scaling and associated derivative term
         setProp("polarization", Polarization.MUTUAL);
         setProp("scf-algorithm", SCFAlgorithm.CG);
 
@@ -142,52 +133,17 @@ public class ExtendedVariableTest {
         setProp("use-quadrupoles", yes);
 
         ExtendedSystemConfig esvConfig = new ExtendedSystemConfig();
-        // Alternatively,
-        // activateAll();
-
-        switch (interactions) {
-            default:
-            case All:
-                esvConfig.setPermanentWhitelist(null);
-                esvConfig.setInducedWhitelist(null);
-                esvConfig.useWhitelists = false;
-                break;
-            case OnePermOneInd:
-                esvConfig.setPermanentWhitelist(new int[]{lys2_nz});
-                esvConfig.setInducedWhitelist(new int[]{ala3_c});
-                esvConfig.useWhitelists = true;
-                break;
-            case TwoPermOneInd:
-                esvConfig.setPermanentWhitelist(new int[]{lys2_nz, lys4_nz});
-                esvConfig.setInducedWhitelist(new int[]{ala3_c});
-                esvConfig.useWhitelists = true;
-                break;
-            case OnePermTwoInd:
-                esvConfig.setPermanentWhitelist(new int[]{lys2_nz});
-                esvConfig.setInducedWhitelist(new int[]{ala3_c, lys4_nz});
-                esvConfig.useWhitelists = true;
-                break;
-            case OnePermAllInd:
-                esvConfig.setPermanentWhitelist(new int[]{lys2_nz});
-                esvConfig.setInducedWhitelist(allAtoms);
-                esvConfig.useWhitelists = true;
-                break;
-            case AllPermOneInd:
-                esvConfig.setPermanentWhitelist(allAtoms);
-                esvConfig.setInducedWhitelist(new int[]{ala3_c});
-                esvConfig.useWhitelists = true;
-                break;
-        }
         return esvConfig;
     }
 
-    private static Properties originalSystemConfig;	// properties as they existed before class setup
+    private static Properties originalSystemConfig;    // properties as they existed before class setup
 
     private Interactions interactions;
 
     public enum Interactions {
         All, OnePermOneInd, TwoPermOneInd, OnePermTwoInd, OnePermAllInd, AllPermOneInd;
     }
+
     private final EsvTest test;
 
     public enum EsvTest {
@@ -272,10 +228,10 @@ public class ExtendedVariableTest {
         // Potential Settings
         setProp("permanent-lambda-alpha", 0.0);
         setProp("permanent-lambda-exponent", 3.0);
-        setProp("polarization-lambda-exponent", 3.0);	// polarization not softcored, only prefactored
+        setProp("polarization-lambda-exponent", 3.0);    // polarization not softcored, only prefactored
         setProp("pme.noWindowing", true);  // perm+polLambdaStart = 0.0; perm+polLambdaEnd = 1.0;
-        setProp("ligand-vapor-elec", false);	// cancels when reference is solution phase
-        setProp("no-ligand-condensed-scf", false);	// don't need condensed phase polarization
+        setProp("ligand-vapor-elec", false);    // cancels when reference is solution phase
+        setProp("no-ligand-condensed-scf", false);    // don't need condensed phase polarization
         setProp("intramolecular-softcore", false);
         setProp("intermolecular-softcore", false);
 
@@ -285,9 +241,9 @@ public class ExtendedVariableTest {
         // Use multipole scaling in all cases; don't allow ESV particle dynamics.
         setProp(false, "esv.propagation");
         setProp("esv.verbose", false);
-        setProp("esv.allowLambdaSwitch", false);	// if false, Lswith == L && dLswitch == 1.0
-        setProp("esv.nonlinearMultipoles", false);	// if false, disallow Lswitch for PME specifically
-        setProp("esv.cloneXyzIndices", yes);	// background atoms receive foreground indexes
+        setProp("esv.allowLambdaSwitch", false);    // if false, Lswith == L && dLswitch == 1.0
+        setProp("esv.nonlinearMultipoles", false);    // if false, disallow Lswitch for PME specifically
+        setProp("esv.cloneXyzIndices", yes);    // background atoms receive foreground indexes
 
         // System Settings
         // Fold bonded into one line; print components of PME: {real,recip}*{self,perm,ind}
@@ -429,8 +385,8 @@ public class ExtendedVariableTest {
                     center = (lambda - step < 0.0)
                             ? lambda + step
                             : (lambda + step > 1.0)
-                                    ? lambda - step
-                                    : lambda;
+                            ? lambda - step
+                            : lambda;
                     low = center - step;
                     high = center + step;
                 }
@@ -527,9 +483,9 @@ public class ExtendedVariableTest {
                     assertEquals("IndRecip Deriv Error", 0.0, indRecipErr, tolerance);
                     assertEquals("Total Deriv Error", 0.0, totalErr, tolerance);
                 }
-            }	// lambda loop
-        }	// ESV loop
-    }	// testDerivatives method
+            }    // lambda loop
+        }    // ESV loop
+    }    // testDerivatives method
 
     private static String err(double analytic, double numeric) {
         return err(analytic, numeric, errorThreshold);
@@ -544,20 +500,9 @@ public class ExtendedVariableTest {
     }
 
     private static ExtendedSystemConfig activateAll() {
-        setProp("esv.allowMaskPerm", yes);
-        setProp("esv.allowMaskPolarD", yes);
-        setProp("esv.allowMaskPolarP", yes);
-
         setProp("polarization", Polarization.MUTUAL);
         setProp("scf-algorithm", SCFAlgorithm.CG);
-        setProp("esv.scaleAlpha", yes);	// scale polarizability of titrating H+
-        setProp("rotate-multipoles", yes);	// global frame
-        setProp("esv.allowSymOps", yes);	// symmetry operators
-        setProp("esv.allowScreening", yes);	// SCREENED_COULOMB tensors
-        setProp("esv.allowTholeDamping", yes);	// THOLE_FIELD tensors
-        setProp("esv.recipFieldEffects", yes);	// reciprocal space contributions to field
-
-        setProp("esv.cdqScales", Arrays.asList(1.0, 1.0, 1.0));
+        setProp("rotate-multipoles", yes);
         setProp("esv.verbose", false);
         setProp("esv.allowLambdaSwitch", false);
         setProp("esv.nonlinearMultipoles", false);
@@ -575,9 +520,11 @@ public class ExtendedVariableTest {
     public void testEndStates() {
         ExtendedSystemConfig esvConfig = activateAll();
         MolecularAssembly mola = openResource(stateFilenames[3], true);
+
         ExtendedSystem esvSystem = (esvConfig != null)
                 ? new ExtendedSystem(mola, esvConfig)
                 : new ExtendedSystem(mola);
+
         esvSystem.setConstantPh(7.4);
         esvSystem.populate(esvResidueIDs);
         mola.getPotentialEnergy().attachExtendedSystem(esvSystem);
@@ -780,21 +727,21 @@ public class ExtendedVariableTest {
                     "Error (Cart-ESV)"));
         }
         double[][] esvResult = new double[][]{totalEsv, vdwEsv,
-            permEsv, directEsv, mutualEsv,
-            permRealEsv, permSelfEsv, permRecipEsv,
-            indRealEsv, indSelfEsv, indRecipEsv};
+                permEsv, directEsv, mutualEsv,
+                permRealEsv, permSelfEsv, permRecipEsv,
+                indRealEsv, indSelfEsv, indRecipEsv};
         double[][] qiResult = new double[][]{totalQi, vdwQi,
-            permQi, directQi, mutualQi,
-            permRealQi, permSelfQi, permRecipQi,
-            indRealQi, indSelfQi, indRecipQi};
+                permQi, directQi, mutualQi,
+                permRealQi, permSelfQi, permRecipQi,
+                indRealQi, indSelfQi, indRecipQi};
         double[][] cartResult = new double[][]{totalCart, vdwCart,
-            permCart, directCart, mutualCart,
-            permRealCart, permSelfCart, permRecipCart,
-            indRealCart, indSelfCart, indRecipCart};
+                permCart, directCart, mutualCart,
+                permRealCart, permSelfCart, permRecipCart,
+                indRealCart, indSelfCart, indRecipCart};
         String[] names = new String[]{"Total", "VanWaals",
-            "Permanent", "Direct", "Mutual",
-            "PermReal", "PermSelf", "PermRecip",
-            "IndReal", "IndSelf", "IndRecip"};
+                "Permanent", "Direct", "Mutual",
+                "PermReal", "PermSelf", "PermRecip",
+                "IndReal", "IndSelf", "IndRecip"};
         for (int component = 0; component < names.length; component++) {
             for (int state = 0; state < numStates; state++) {
                 String name = (state == 0) ? names[component] : "";

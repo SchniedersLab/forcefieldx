@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;

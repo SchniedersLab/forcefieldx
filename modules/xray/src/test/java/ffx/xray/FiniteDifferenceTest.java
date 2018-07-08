@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -42,7 +42,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -74,12 +74,12 @@ public class FiniteDifferenceTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {true,
-                "ala met anisou",
-                NONE,
-                new int[]{91, 105, 119},
-                "ffx/xray/structures/alamet.pdb",
-                "ffx/xray/structures/alamet.mtz"}
+                {true,
+                        "ala met anisou",
+                        NONE,
+                        new int[]{91, 105, 119},
+                        "ffx/xray/structures/alamet.pdb",
+                        "ffx/xray/structures/alamet.mtz"}
         });
     }
 
@@ -91,12 +91,12 @@ public class FiniteDifferenceTest {
     private final SigmaAMinimize sigmaAMinimize;
 
     public FiniteDifferenceTest(boolean ciOnly,
-            String info, SolventModel solventModel, int[] atoms,
-            String pdbName, String mtzName) {
+                                String info, SolventModel solventModel, int[] atoms,
+                                String pdbName, String mtzName) {
         this.ciOnly = ciOnly;
         this.atoms = atoms;
 
-        ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
+        ci = System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             atomArray = null;
             refinementData = null;
@@ -122,7 +122,7 @@ public class FiniteDifferenceTest {
 
         // load any properties associated with it
         CompositeConfiguration properties = mola.getProperties();
-        
+
         // read in Fo/sigFo/FreeR
         MTZFilter mtzFilter = new MTZFilter();
         ReflectionList reflectionList;

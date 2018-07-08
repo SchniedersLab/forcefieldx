@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -37,6 +37,11 @@
  */
 package ffx.algorithms.cli;
 
+import java.io.File;
+import java.util.logging.Logger;
+
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.TransitionTemperedOSRW;
@@ -44,11 +49,8 @@ import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.cli.AlchemicalOptions;
-import org.apache.commons.configuration.CompositeConfiguration;
-import picocli.CommandLine;
 
-import java.io.File;
-import java.util.logging.Logger;
+import picocli.CommandLine;
 
 /**
  * Represents command line options for scripts that utilize variants of the
@@ -96,7 +98,7 @@ public class OSRWOptions {
         double dT = dynamics.getDt();
         double report = dynamics.getReport();
         double ckpt = dynamics.getCheckpoint();
-        boolean async = ! mdo.isSynchronous();
+        boolean async = !mdo.isSynchronous();
         boolean resetNSteps = thermo.getResetNumSteps();
         TransitionTemperedOSRW ttOSRW = new TransitionTemperedOSRW(linter, potential, lambdaRestart,
                 histogramRestart, firstProps, temp, dT, report, ckpt, async, resetNSteps, aListener);
@@ -108,7 +110,7 @@ public class OSRWOptions {
     /**
      * Applies relevant options to a TransitionTemperedOSRW, and returns either the TTOSRW
      * object or something that wraps the TTOSRW (such as a Barostat).
-     * 
+     *
      * @param ttOSRW Transition-Tempered Orthogonal Space Random Walk.
      * @param firstAssembly Primary assembly in ttOSRW.
      * @param dynamics MD options.
@@ -141,7 +143,7 @@ public class OSRWOptions {
             ttOSRW.setLambda(lam);
         }
         cpot = barostat.checkNPT(firstAssembly, cpot);
-        
+
         return cpot;
     }
 
@@ -163,13 +165,13 @@ public class OSRWOptions {
      * @param dyn The .dyn dynamics restart file.
      * @param aListener AlgorithmListener
      */
-    public void beginMDOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential, 
+    public void beginMDOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
                             DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermo,
                             File dyn, AlgorithmListener aListener) {
         // Create the MolecularDynamics instance.
         MolecularAssembly firstTop = topologies[0];
         CompositeConfiguration props = firstTop.getProperties();
-        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(firstTop, potential, props, 
+        MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(firstTop, potential, props,
                 aListener, dynamics.thermostat, dynamics.integrator, MolecularDynamics.DynamicsEngine.FFX);
         for (int i = 1; i < topologies.length; i++) {
             molDyn.addAssembly(topologies[i], topologies[i].getProperties());

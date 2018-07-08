@@ -43,7 +43,7 @@ package ffx.potential.groovy.test
 import java.util.logging.Logger
 import static java.lang.String.format
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 
 import groovy.cli.picocli.CliBuilder
 
