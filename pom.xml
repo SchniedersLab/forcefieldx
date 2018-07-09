@@ -467,7 +467,10 @@
                                     </taskdef>
                                     <mkdir dir="${project.build.outputDirectory}"/>
                                     <groovyc destdir="${project.build.outputDirectory}"
-                                             srcdir="${basedir}/src/main/groovy/" listfiles="false">
+                                             srcdir="${basedir}/src/main/groovy/"
+                                             listfiles="false" verbose="true"
+                                             stacktrace="true" parameters="true">
+
                                         <classpath refid="maven.compile.classpath"/>
                                     </groovyc>
                                 </target>
@@ -488,7 +491,9 @@
                                     </taskdef>
                                     <mkdir dir="${project.build.testOutputDirectory}"/>
                                     <groovyc destdir="${project.build.testOutputDirectory}"
-                                             srcdir="${basedir}/src/test/groovy/" listfiles="false">
+                                             srcdir="${basedir}/src/test/groovy/"
+                                             listfiles="false" verbose="true"
+                                             stacktrace="true" parameters="true">
                                         <classpath refid="maven.test.classpath"/>
                                     </groovyc>
                                 </target>
@@ -1081,6 +1086,7 @@
         <commons-math3.version>3.6.1</commons-math3.version>
         <commons-collections4.version>4.1</commons-collections4.version>
         <groovy-all.version>2.5.0.1</groovy-all.version>
+        <!-- groovy-all.version>3.0.0-alpha-3</groovy-all.version -->
         <javahelp.version>2.0.05</javahelp.version>
         <java3d.version>1.6.0</java3d.version>
         <jogamp-fat.version>2.3.2</jogamp-fat.version>
