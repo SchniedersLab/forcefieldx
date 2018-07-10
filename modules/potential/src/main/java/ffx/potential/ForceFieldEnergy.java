@@ -1907,7 +1907,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             sb.append(String.format("\n  %s %16.8f", "Replicates Cell   ",
                     totalEnergy * nsymm));
         }
-        sb.append("\n");
         return sb.toString();
     }
 

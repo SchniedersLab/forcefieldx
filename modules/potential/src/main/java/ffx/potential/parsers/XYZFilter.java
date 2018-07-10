@@ -142,7 +142,7 @@ public class XYZFilter extends SystemFilter {
             if (tokens.length == 2) {
                 getActiveMolecularSystem().setName(tokens[1]);
             }
-            logger.info(format("\n Opening %s with %d atoms\n", xyzFile.getName(), numberOfAtoms));
+            logger.info(format(" Opening %s with %d atoms\n", xyzFile.getName(), numberOfAtoms));
 
             // The header line is reasonable. Check for periodic box dimensions.
             br.mark(10000);

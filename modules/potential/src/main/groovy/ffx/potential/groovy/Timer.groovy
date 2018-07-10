@@ -42,6 +42,11 @@ class Timer extends PotentialScript {
             return this
         }
 
+        // Set the number of threads.
+        if (timer.threads > 0) {
+            System.setProperty("pj.nt", Integer.toString(timer.threads));
+        }
+
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
@@ -50,25 +55,17 @@ class Timer extends PotentialScript {
             return this
         }
 
-        logger.info("\n Running Timer on " + activeAssembly.toString())
+        if (timer.noGradient) {
+            logger.info(" Timing energy for " + activeAssembly.toString())
+        } else {
+            logger.info(" Timing energy and gradient for " + activeAssembly.toString())
+        }
 
         // The number of iterations.
         int nEvals = timer.iterations
 
-        // Set the number of threads.
-        if (timer.threads > 0) {
-            System.setProperty("pj.nt", Integer.toString(timer.threads));
-        }
-
-        if (timer.noGradient) {
-            logger.info("\n Timing energy for " + activeAssembly.toString())
-        } else {
-            logger.info("\n Timing energy and gradient for " + activeAssembly.toString())
-        }
-
         ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
 
-        logger.info("\n Beginning timing\n")
         long minTime = Long.MAX_VALUE
         double sumTime2 = 0.0
         int halfnEvals = (int) ((nEvals % 2 == 1) ? (nEvals / 2) : (nEvals / 2) - 1) // Halfway point
@@ -76,7 +73,7 @@ class Timer extends PotentialScript {
             long time = -System.nanoTime()
             double e = energy.energy(!timer.noGradient, timer.getVerbose())
             time += System.nanoTime()
-            if (timer.getVerbose()) {
+            if (!timer.getVerbose()) {
                 logger.info(String.format(" Energy %16.8f in %6.3f (sec)", e, time * 1.0E-9))
             }
             minTime = time < minTime ? time : minTime;

@@ -763,12 +763,12 @@ public class ForceField {
                 return;
             }
             // properties.clearProperty(key);
-            logger.info(String.format(" Existing %s %8.3f", key, old));
+            logger.info(String.format("  Existing %s %8.3f", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" Added    %s %8.3f", key, value));
+            logger.info(String.format("  Added    %s %8.3f", key, value));
         }
     }
 
@@ -788,12 +788,12 @@ public class ForceField {
             if (old == value) {
                 return;
             }
-            logger.info(String.format(" Existing %s %d", key, old));
+            logger.info(String.format("  Existing %s %d", key, old));
             // properties.clearProperty(key);
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
-            logger.info(String.format(" Added    %s %d", key, value));
+            logger.info(String.format("  Added    %s %d", key, value));
             properties.addProperty(key, value);
         }
     }
@@ -850,12 +850,12 @@ public class ForceField {
                 return;
             }
             //properties.clearProperty(key);
-            logger.info(String.format(" Existing %s %s.", key, old));
+            logger.info(String.format("  Existing %s %s.", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" Added    %s %s", key, value));
+            logger.info(String.format("  Added    %s %s", key, value));
         }
     }
 
@@ -876,12 +876,12 @@ public class ForceField {
                 return;
             }
             // properties.clearProperty(key);
-            logger.info(String.format(" Existing %s %s", key, Boolean.toString(old)));
+            logger.info(String.format("  Existing %s %s", key, Boolean.toString(old)));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" Added    %s %s", key, Boolean.toString(value)));
+            logger.info(String.format("  Added    %s %s", key, Boolean.toString(value)));
         }
     }
 

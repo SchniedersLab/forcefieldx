@@ -210,7 +210,19 @@ public class Keyword {
         CompositeConfiguration properties = new CompositeConfiguration();
 
         /**
-         * Structure specific options are first.
+         * JVM system properties are read first.
+         *
+         * a.) -Dkey=value from the Java command line
+         *
+         * b.) System.setProperty("key","value") within Java code.
+         */
+        PropertiesConfiguration systemConfiguration = new PropertiesConfiguration();
+        systemConfiguration.append(new SystemConfiguration());
+        systemConfiguration.setHeader("JVM system properties (i.e. command line -Dkey=value pairs).");
+        properties.addConfiguration(systemConfiguration);
+
+        /**
+         * Structure specific options are 2md.
          */
         if (file != null) {
             String structureBasename = FilenameUtils.removeExtension(file.getAbsolutePath());
@@ -230,25 +242,16 @@ public class Keyword {
                                                 .setThrowExceptionOnMissing(true)
                                                 //.setListDelimiterHandler(new DefaultListDelimiterHandler(','))
                                                 .setIncludesAllowed(false));
-                        properties.addConfiguration(builder.getConfiguration());
+                        PropertiesConfiguration propertyConfiguration = builder.getConfiguration();
+                        propertyConfiguration.setHeader("Structure properties from (" + propertyFilename + ").");
+                        properties.addConfiguration(propertyConfiguration);
                         properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
-                        // properties.addConfiguration(new PropertiesConfiguration(structurePropFile));
-                        // properties.addProperty("propertyFile", structurePropFile.getCanonicalPath());
                     } catch (ConfigurationException | IOException e) {
                         logger.log(Level.INFO, " Error loading {0}.", structureBasename);
                     }
                 }
             }
         }
-
-        /**
-         * Java system properties
-         *
-         * a.) -Dkey=value from the Java command line
-         *
-         * b.) System.setProperty("key","value") within Java code.
-         */
-        properties.addConfiguration(new SystemConfiguration());
 
         /**
          * User specific options are 3rd.
@@ -264,8 +267,9 @@ public class Keyword {
                                         .setThrowExceptionOnMissing(true)
                                         //.setListDelimiterHandler(new DefaultListDelimiterHandler(','))
                                         .setIncludesAllowed(false));
-                properties.addConfiguration(builder.getConfiguration());
-                // properties.addConfiguration(new PropertiesConfiguration(userPropFile));
+                PropertiesConfiguration ffxConfiguration = builder.getConfiguration();
+                ffxConfiguration.setHeader("FFX user property file (" + filename + ").");
+                properties.addConfiguration(ffxConfiguration);
             } catch (ConfigurationException e) {
                 logger.log(Level.INFO, " Error loading {0}.", filename);
             }
@@ -286,8 +290,9 @@ public class Keyword {
                                             .setThrowExceptionOnMissing(true)
                                             //.setListDelimiterHandler(new DefaultListDelimiterHandler(','))
                                             .setIncludesAllowed(false));
-                    properties.addConfiguration(builder.getConfiguration());
-                    // properties.addConfiguration(new PropertiesConfiguration(systemPropFile));
+                    PropertiesConfiguration envConfiguration = builder.getConfiguration();
+                    envConfiguration.setHeader("Environment variable FFX_PROPERTIES (" + filename + ").");
+                    properties.addConfiguration(envConfiguration);
                 } catch (ConfigurationException e) {
                     logger.log(Level.INFO, " Error loading {0}.", filename);
                 }
@@ -298,13 +303,11 @@ public class Keyword {
          * Echo the interpolated configuration.
          */
         if (logger.isLoggable(Level.FINE)) {
-            //Configuration config = properties.interpolatedConfiguration();
             Iterator<String> i = properties.getKeys();
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("\n %-30s %s\n", "Property", "Value"));
             while (i.hasNext()) {
                 String s = i.next();
-                //sb.append(String.format(" %-30s %s\n", s, Arrays.toString(config.getList(s).toArray())));
                 sb.append(String.format(" %-30s %s\n", s, Arrays.toString(properties.getList(s).toArray())));
             }
             logger.fine(sb.toString());

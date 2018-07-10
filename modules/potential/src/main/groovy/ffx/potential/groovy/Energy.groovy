@@ -69,7 +69,7 @@ class Energy extends PotentialScript {
         }
 
         String filename = activeAssembly.getFile().getAbsolutePath()
-        logger.info("\n Running Energy on " + filename)
+        logger.info(" Running Energy on " + filename)
 
         forceFieldEnergy = activeAssembly.getPotentialEnergy()
         Atom[] atoms = activeAssembly.getAtomArray()
