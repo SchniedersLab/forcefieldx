@@ -150,11 +150,11 @@ public class ManyBodyOptions {
 
     /**
      * -x or --all Optimize all residues beginning from the passed value (overrides other options);
-     * for box optimization, optimizes all boxes beginning from the passed index.
+     * for box optimization, optimizes all boxes beginning from the passed index. Default is to optimize all residues.
      */
-    @Option(names = {"-x", "--all"}, paramLabel = "-1",
+    @Option(names = {"-x", "--all"}, paramLabel = "1",
             description = "Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.")
-    int all = -1;
+    int all = 1;
 
     /**
      * --eR or --energyRestart Load energy restart file from a previous run (requires that all parameters are the same).
@@ -171,11 +171,11 @@ public class ManyBodyOptions {
     boolean verbose = false;
 
     /**
-     * -o or --original Do not include starting coordinates as their own rotamer.
+     * -o or --noOriginal Do not include starting coordinates as their own rotamer.
      */
-    @Option(names = {"-O", "--original"},
+    @Option(names = {"-O", "--noOriginal"},
             description = "Do not include starting coordinates as their own rotamer.")
-    boolean original = false;
+    boolean noOriginal = false;
 
     /**
      * -E or --decompose Print energy decomposition for the input structure (no optimization).
@@ -312,7 +312,7 @@ public class ManyBodyOptions {
             rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
         }
 
-        boolean useOrigCoordsRotamer = !original;
+        boolean useOrigCoordsRotamer = !noOriginal;
         if (decompose) {
             useOrigCoordsRotamer = true;
         }
