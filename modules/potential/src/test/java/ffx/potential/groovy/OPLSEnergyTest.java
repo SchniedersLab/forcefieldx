@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.grooy;
+package ffx.potential.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
