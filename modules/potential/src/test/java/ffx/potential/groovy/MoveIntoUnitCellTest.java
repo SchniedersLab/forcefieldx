@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.grooy;
+package ffx.potential.groovy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,59 +45,80 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.SaveAsPDB;
+import ffx.potential.groovy.MoveIntoUnitCell;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
 
 /**
- * Test the SaveAsPDB script.
+ * Test the Cart2Frac script.
  */
-public class SaveAsPDBTest {
+public class MoveIntoUnitCellTest {
 
     Binding binding;
-    SaveAsPDB saveAsPDB;
+    MoveIntoUnitCell moveIntoUnitCell;
 
     @Before
     public void before() {
         binding = new Binding();
-        saveAsPDB = new SaveAsPDB();
-        saveAsPDB.setBinding(binding);
+        moveIntoUnitCell = new MoveIntoUnitCell();
+        moveIntoUnitCell.setBinding(binding);
     }
 
     @Test
-    public void testSaveAsPDBHelp() {
+    public void testMoveIntoUnitCellHelp() {
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        saveAsPDB.run();
+        moveIntoUnitCell.run();
+
+        // Pull out the biotype results to check.
+        Assert.assertNull(moveIntoUnitCell.origCoordinates);
+        Assert.assertNull(moveIntoUnitCell.unitCellCoordinates);
     }
 
     @Test
-    public void testSaveAsPDB() {
+    public void testMoveIntoUnitCell() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/ffx/potential/structures/peptide-amber99sb.xyz"};
+        String[] args = {"src/main/java/ffx/potential/structures/watertiny.xyz"};
         binding.setVariable("args", args);
 
         Path path = null;
         try {
-            path = Files.createTempDirectory("SaveAsPDB");
-            saveAsPDB.setBaseDir(path.toFile());
-        } catch (IOException e) {
+            path = Files.createTempDirectory("MoveIntoUnitCell");
+            moveIntoUnitCell.setBaseDir(path.toFile());
+        } catch (java.io.IOException e) {
             Assert.fail(" Could not create a temporary directory.");
         }
 
         // Evaluate the script.
-        saveAsPDB.run();
+        moveIntoUnitCell.run();
+
+        // Pull out the Cart2Frac results to check.
+        double origCoordinates[][] = moveIntoUnitCell.origCoordinates;
+        org.junit.Assert.assertNotNull(origCoordinates);
+        org.junit.Assert.assertEquals(81, origCoordinates.length);
+        // 7  O     -0.382446    1.447602   -0.456106     1     8     9
+        org.junit.Assert.assertEquals(-0.382446, origCoordinates[6][0], 1.0e-6);
+        org.junit.Assert.assertEquals(1.447602, origCoordinates[6][1], 1.0e-6);
+        org.junit.Assert.assertEquals(-0.456106, origCoordinates[6][2], 1.0e-6);
+
+        double unitCellCoordinates[][] = moveIntoUnitCell.unitCellCoordinates;
+        org.junit.Assert.assertNotNull(unitCellCoordinates);
+        org.junit.Assert.assertEquals(81, unitCellCoordinates.length);
+        //  7   O    8.93905400    1.44760200    8.86539400     1       8       9
+        org.junit.Assert.assertEquals(8.93905400, unitCellCoordinates[6][0], 1.0e-6);
+        org.junit.Assert.assertEquals(1.44760200, unitCellCoordinates[6][1], 1.0e-6);
+        org.junit.Assert.assertEquals(8.86539400, unitCellCoordinates[6][2], 1.0e-6);
 
         // Delate all created space grouop directories.
         try {
             DirectoryUtils.deleteDirectoryTree(path);
         } catch (IOException e) {
             System.out.println(e.toString());
-            Assert.fail(" Exception deleting files created by SaveAsPDB.");
+            Assert.fail(" Exception deleting files created by Frac2Cart.");
         }
     }
 }

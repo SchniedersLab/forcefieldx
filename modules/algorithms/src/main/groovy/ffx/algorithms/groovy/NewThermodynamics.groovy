@@ -2,6 +2,7 @@
 package ffx.algorithms.groovy
 
 import edu.rit.pj.ParallelTeam
+import ffx.algorithms.TransitionTemperedOSRW
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
@@ -20,6 +21,8 @@ import ffx.crystal.CrystalPotential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
 import ffx.potential.parameters.ForceField
+
+import java.util.stream.Collectors
 
 /**
  * The Thermodynamics script uses the Transition-Tempered Orthogonal Space Random Walk
@@ -117,22 +120,28 @@ class NewThermodynamics extends AlgorithmsScript {
         int rank = (size > 1) ? world.rank() : 0;
 
         // Segment of code for MultiDynamics and OSRW.
-        String filename = arguments.get(0);
-        File structureFile = new File(FilenameUtils.normalize(filename));
-        structureFile = new File(structureFile.getAbsolutePath());
-        String baseFilename = FilenameUtils.removeExtension(structureFile.getName());
+        List<File> structureFiles = arguments.stream().
+                map{fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath())}.
+                collect(Collectors.toList())
+
+        File firstStructure = structureFiles.get(0);
+        String baseFilename = FilenameUtils.removeExtension(firstStructure.getName());
         File histogramRestart = new File(baseFilename + ".his");
 
         // For a multi-process job, try to get the restart files from rank sub-directories.
         String withRankName = baseFilename;
         if (size > 1) {
-            File rankDirectory = new File(structureFile.getParent() + File.separator
-                    + Integer.toString(rank));
-            if (!rankDirectory.exists()) {
-                rankDirectory.mkdir();
+            List<File> rankedFiles = new ArrayList<>(nArgs);
+            for (File structureFile : structureFiles) {
+                File rankDirectory = new File(structureFile.getParent() + File.separator
+                        + Integer.toString(rank));
+                if (!rankDirectory.exists()) {
+                    rankDirectory.mkdir();
+                }
+                withRankName = rankDirectory.getPath() + File.separator + baseFilename;
+                rankedFiles.add(new File(rankDirectory.getPath() + File.separator + structureFile.getName()));
             }
-            withRankName = rankDirectory.getPath() + File.separator + baseFilename;
-            structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName());
+            structureFiles = rankedFiles;
         }
 
         File lambdaRestart = new File(withRankName + ".lam");
@@ -158,7 +167,7 @@ class NewThermodynamics extends AlgorithmsScript {
         } else {
             logger.info(String.format(" Initializing %d topologies...", nArgs))
             for (int i = 0; i < nArgs; i++) {
-                topologyList.add(multidynamics.openFile(algorithmFunctions, Optional.of(topology), threadsPer, arguments.get(i), i, alchemical, structureFile, rank));
+                topologyList.add(multidynamics.openFile(algorithmFunctions, Optional.of(topology), threadsPer, arguments.get(i), i, alchemical, structureFiles.get(i), rank));
             }
         }
 
@@ -199,7 +208,7 @@ class NewThermodynamics extends AlgorithmsScript {
 
         multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size);
 
-        ffx.algorithms.TransitionTemperedOSRW osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0], dynamics, multidynamics, thermodynamics, algorithmListener);
+        TransitionTemperedOSRW osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0], dynamics, multidynamics, thermodynamics, algorithmListener);
 
         potential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0], dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists);
 

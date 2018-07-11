@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.grooy;
+package ffx.potential.groovy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,59 +45,59 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.SaveAsP1;
+import ffx.potential.groovy.SaveAsPDB;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
 
 /**
- * Test the Energy script.
+ * Test the SaveAsPDB script.
  */
-public class SaveAsP1Test {
+public class SaveAsPDBTest {
 
     Binding binding;
-    SaveAsP1 saveAsP1;
+    SaveAsPDB saveAsPDB;
 
     @Before
     public void before() {
         binding = new Binding();
-        saveAsP1 = new SaveAsP1();
-        saveAsP1.setBinding(binding);
+        saveAsPDB = new SaveAsPDB();
+        saveAsPDB.setBinding(binding);
     }
 
     @Test
-    public void testSaveAsP1Help() {
+    public void testSaveAsPDBHelp() {
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        saveAsP1.run();
+        saveAsPDB.run();
     }
 
     @Test
-    public void testSaveAsP1() {
+    public void testSaveAsPDB() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/ffx/potential/structures/1n7s.P212121.xyz"};
+        String[] args = {"src/main/java/ffx/potential/structures/peptide-amber99sb.xyz"};
         binding.setVariable("args", args);
 
         Path path = null;
         try {
-            path = Files.createTempDirectory("saveAsP1");
-            saveAsP1.setBaseDir(path.toFile());
+            path = Files.createTempDirectory("SaveAsPDB");
+            saveAsPDB.setBaseDir(path.toFile());
         } catch (IOException e) {
-            Assert.fail(" Could not create a temporary directory");
+            Assert.fail(" Could not create a temporary directory.");
         }
 
         // Evaluate the script.
-        saveAsP1.run();
+        saveAsPDB.run();
 
         // Delate all created space grouop directories.
         try {
             DirectoryUtils.deleteDirectoryTree(path);
         } catch (IOException e) {
             System.out.println(e.toString());
-            Assert.fail(" Exception deleting files created by SaveAsP1.");
+            Assert.fail(" Exception deleting files created by SaveAsPDB.");
         }
     }
 }

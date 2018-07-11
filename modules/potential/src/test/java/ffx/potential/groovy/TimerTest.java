@@ -35,88 +35,48 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.grooy;
+package ffx.potential.groovy;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.Cart2Frac;
-import ffx.utilities.DirectoryUtils;
+import ffx.potential.groovy.Timer;
 
 import groovy.lang.Binding;
 
 /**
- * Test the Cart2Frac script.
+ * Test the Energy script.
  */
-public class Cart2FracTest {
+public class TimerTest {
 
     Binding binding;
-    Cart2Frac cart2Frac;
+    Timer timer;
 
     @Before
     public void before() {
         binding = new Binding();
-        cart2Frac = new Cart2Frac();
-        cart2Frac.setBinding(binding);
+        timer = new Timer();
+        timer.setBinding(binding);
     }
 
     @Test
-    public void testCart2FractHelp() {
+    public void testTimerHelp() {
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        cart2Frac.run();
-
-        // Pull out the biotype results to check.
-        Assert.assertNull(cart2Frac.cartCoordinates);
-        Assert.assertNull(cart2Frac.fracCoordinates);
+        timer.run();
     }
 
     @Test
-    public void testCart2Frac() {
+    public void testTimer() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/ffx/potential/structures/acetanilide.xyz"};
+        String[] args = {"-n", "2", "-v", "-g",
+                "src/main/java/ffx/potential/structures/ubiquitin.xyz"};
         binding.setVariable("args", args);
 
-        Path path = null;
-        try {
-            path = Files.createTempDirectory("Cart2Frac");
-            cart2Frac.setBaseDir(path.toFile());
-        } catch (java.io.IOException e) {
-            Assert.fail(" Could not create a temporary directory.");
-        }
-
         // Evaluate the script.
-        cart2Frac.run();
-
-        // Pull out the Cart2Frac results to check.
-        double cartCoordinates[][] = cart2Frac.cartCoordinates;
-        Assert.assertNotNull(cartCoordinates);
-        Assert.assertEquals(19, cartCoordinates.length);
-        Assert.assertEquals(7.98011035, cartCoordinates[0][0], 1.0e-6);
-        Assert.assertEquals(0.70504091, cartCoordinates[0][1], 1.0e-6);
-        Assert.assertEquals(0.99860734, cartCoordinates[0][2], 1.0e-6);
-
-        double fracCoordinates[][] = cart2Frac.fracCoordinates;
-        Assert.assertNotNull(fracCoordinates);
-        Assert.assertEquals(19, fracCoordinates.length);
-        Assert.assertEquals(0.4063192642, fracCoordinates[0][0], 1.0e-6);
-        Assert.assertEquals(0.0743478761, fracCoordinates[0][1], 1.0e-6);
-        Assert.assertEquals(0.1251544479, fracCoordinates[0][2], 1.0e-6);
-
-        // Delate all created space grouop directories.
-        try {
-            DirectoryUtils.deleteDirectoryTree(path);
-        } catch (IOException e) {
-            System.out.println(e.toString());
-            Assert.fail(" Exception deleting files created by Cart2Frac.");
-        }
+        timer.run();
     }
 }

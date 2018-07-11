@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.grooy;
+package ffx.potential.groovy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,78 +45,59 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.Frac2Cart;
+import ffx.potential.groovy.SaveAsP1;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
 
 /**
- * Test the Cart2Frac script.
+ * Test the Energy script.
  */
-public class Frac2CartTest {
+public class SaveAsP1Test {
 
     Binding binding;
-    Frac2Cart frac2Cart;
+    SaveAsP1 saveAsP1;
 
     @Before
     public void before() {
         binding = new Binding();
-        frac2Cart = new Frac2Cart();
-        frac2Cart.setBinding(binding);
+        saveAsP1 = new SaveAsP1();
+        saveAsP1.setBinding(binding);
     }
 
     @Test
-    public void testFrac2CartHelp() {
+    public void testSaveAsP1Help() {
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        frac2Cart.run();
-
-        // Pull out the biotype results to check.
-        Assert.assertNull(frac2Cart.cartCoordinates);
-        Assert.assertNull(frac2Cart.fracCoordinates);
+        saveAsP1.run();
     }
 
     @Test
-    public void testFrac2Cart() {
+    public void testSaveAsP1() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"src/main/java/ffx/potential/structures/acetanilide.frac.xyz"};
+        String[] args = {"src/main/java/ffx/potential/structures/1n7s.P212121.xyz"};
         binding.setVariable("args", args);
 
         Path path = null;
         try {
-            path = Files.createTempDirectory("Frac2Cart");
-            frac2Cart.setBaseDir(path.toFile());
-        } catch (java.io.IOException e) {
-            Assert.fail(" Could not create a temporary directory.");
+            path = Files.createTempDirectory("saveAsP1");
+            saveAsP1.setBaseDir(path.toFile());
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory");
         }
 
         // Evaluate the script.
-        frac2Cart.run();
-
-        // Pull out the Cart2Frac results to check.
-        double cartCoordinates[][] = frac2Cart.cartCoordinates;
-        Assert.assertNotNull(cartCoordinates);
-        Assert.assertEquals(19, cartCoordinates.length);
-        Assert.assertEquals(7.98011035, cartCoordinates[0][0], 1.0e-6);
-        Assert.assertEquals(0.70504091, cartCoordinates[0][1], 1.0e-6);
-        Assert.assertEquals(0.99860734, cartCoordinates[0][2], 1.0e-6);
-
-        double fracCoordinates[][] = frac2Cart.fracCoordinates;
-        Assert.assertNotNull(fracCoordinates);
-        Assert.assertEquals(19, fracCoordinates.length);
-        Assert.assertEquals(0.4063192642, fracCoordinates[0][0], 1.0e-6);
-        Assert.assertEquals(0.0743478761, fracCoordinates[0][1], 1.0e-6);
-        Assert.assertEquals(0.1251544479, fracCoordinates[0][2], 1.0e-6);
+        saveAsP1.run();
 
         // Delate all created space grouop directories.
         try {
             DirectoryUtils.deleteDirectoryTree(path);
         } catch (IOException e) {
             System.out.println(e.toString());
-            Assert.fail(" Exception deleting files created by Frac2Cart.");
+            Assert.fail(" Exception deleting files created by SaveAsP1.");
         }
     }
 }

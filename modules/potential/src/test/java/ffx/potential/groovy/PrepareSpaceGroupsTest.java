@@ -35,48 +35,76 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.potential.grooy;
+package ffx.potential.groovy;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import ffx.potential.groovy.Timer;
+import ffx.potential.groovy.PrepareSpaceGroups;
+import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
 
 /**
  * Test the Energy script.
  */
-public class TimerTest {
+public class PrepareSpaceGroupsTest {
 
     Binding binding;
-    Timer timer;
+    PrepareSpaceGroups prepareSpaceGroups;
 
     @Before
     public void before() {
         binding = new Binding();
-        timer = new Timer();
-        timer.setBinding(binding);
+        prepareSpaceGroups = new PrepareSpaceGroups();
+        prepareSpaceGroups.setBinding(binding);
     }
 
     @Test
-    public void testTimerHelp() {
+    public void testPrepareSpaceGroupHelp() {
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-h"};
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        timer.run();
+        prepareSpaceGroups.run();
+
+        // Pull out the biotype results to check.
+        Assert.assertEquals(0, prepareSpaceGroups.numberCreated);
     }
 
     @Test
-    public void testTimer() {
+    public void testPrepareSpaceGroups() {
         // Set-up the input arguments for the Biotype script.
-        String[] args = {"-n", "2", "-v", "-g",
-                "src/main/java/ffx/potential/structures/ubiquitin.xyz"};
+        String[] args = {"src/main/java/ffx/potential/structures/paracetamol.xyz"};
         binding.setVariable("args", args);
 
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("spacegroups");
+            prepareSpaceGroups.baseDir = path.toFile();
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory");
+        }
+
         // Evaluate the script.
-        timer.run();
+        prepareSpaceGroups.run();
+
+        // Pull out the Cart2Frac results to check.
+        Assert.assertEquals(230, prepareSpaceGroups.numberCreated);
+
+        // Delate all created space grouop directories.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by PrepareSpaceGroups.");
+        }
+
     }
 }
