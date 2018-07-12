@@ -2165,6 +2165,10 @@ public class RotamerOptimization implements Terminatable {
             }
         }
     }
+    
+    public File getRestartFile(){
+        return energyRestartFile;
+    }
 
     /**
      * Return the residue list.
@@ -8519,6 +8523,7 @@ public class RotamerOptimization implements Terminatable {
 //                    }
 //                }
                 restartFile = restartPath.toFile();
+                energyRestartFile = restartFile;
             }
             try {
                 bw = new BufferedWriter(new FileWriter(restartFile, true));

@@ -628,7 +628,10 @@ public class ManyBodyOptions {
             rotamerOptimization.outputEliminated();
         }
     }
-
+    
+    public File getRestartFile() {
+        return rotamerOptimization.getRestartFile();
+    }
 
     /**
      List<String> sequenceOptimizationList = new ArrayList<>();
