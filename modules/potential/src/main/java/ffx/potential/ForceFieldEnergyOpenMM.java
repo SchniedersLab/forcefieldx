@@ -661,9 +661,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 break;
         }
 
-        Comm world = Comm.world();
-        int size = world.size();
+        int size = 1;
         int defDeviceIndex = 0;
+        Comm world = null;
+
+        try {
+            world = Comm.world();
+            size = world.size();
+            defDeviceIndex = 0;
+        } catch (IllegalStateException e) {
+            // Assume a single process.
+        }
+
         if (size > 1) {
             int rank = world.rank();
             CompositeConfiguration props = molecularAssembly.getProperties();

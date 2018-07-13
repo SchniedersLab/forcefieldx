@@ -79,7 +79,7 @@ public class EnergyTest {
                         4003.27183547, 741643,
                         -12303.93157019, 332114,
                         -2811.45683671, 332114,
-                        0.0, 0},
+                        0.0, 0, false},
                 {
                         "SNARE P1",
                         "ffx/potential/structures/1n7s.P1.xyz",
@@ -96,7 +96,7 @@ public class EnergyTest {
                         16013.08734188, 2966572,
                         -49215.72628076, 1328456,
                         -11245.82734685, 1328456,
-                        0.0, 0},
+                        0.0, 0, true},
                 {
                         "DHFR Benchmark",
                         "ffx/potential/structures/dhfr.xyz",
@@ -113,7 +113,7 @@ public class EnergyTest {
                         32630.94057333, 3480445,
                         -79396.71166429, 1463353,
                         -32141.39930772, 1463353,
-                        0.0, 0},
+                        0.0, 0, true},
                 {
                         "AMBER99SB GB (no dispersion) Capped DMHD",
                         "ffx/potential/structures/dmhd-amber99sb.xyz",
@@ -130,7 +130,7 @@ public class EnergyTest {
                         -4.31922323, 2290,
                         -71.00737570, 2485,
                         0.0, 2485,
-                        -146.65788271605072, 2556},
+                        -146.65788271605072, 2556, true},
                 {
                         "AMOEBA Protein 2013 GK Capped DMHD",
                         "ffx/potential/structures/dmhd-amoebapro13.xyz",
@@ -147,7 +147,7 @@ public class EnergyTest {
                         22.07765097, 2290,
                         -169.24655738, 2485,
                         -11.347374225964598, 2485,
-                        -160.76619512583423, 2556},
+                        -160.76619512583423, 2556, true},
                 {
                         "Amber99sb Peptide",
                         "ffx/potential/structures/peptide-amber99sb.xyz",
@@ -164,7 +164,7 @@ public class EnergyTest {
                         111362.79687915, 52696,
                         -413.54328593, 53628,
                         0.0, 53628,
-                        0.0, 0},
+                        0.0, 0, true},
                 {
                         "OPLS-AA/L Peptide",
                         "ffx/potential/structures/peptide-oplsaal.xyz",
@@ -181,7 +181,7 @@ public class EnergyTest {
                         112122.04255274, 40511,
                         -671.66812023, 53628,
                         0.0, 53628,
-                        0.0, 0},
+                        0.0, 0, true},
                 {
                         "Ubiquitin Benchmark",
                         "ffx/potential/structures/ubiquitin.xyz",
@@ -198,7 +198,7 @@ public class EnergyTest {
                         13183.92864934, 1483768,
                         -33012.66179952, 623490,
                         -13041.30955459, 623490,
-                        0.0, 0},
+                        0.0, 0, true},
                 {
                         "Acetanilide Benchmark",
                         "ffx/potential/structures/acetanilide.xyz",
@@ -215,7 +215,7 @@ public class EnergyTest {
                         -3.62572228, 7295,
                         -26.0720131242538, 2231,
                         -1.9856761645305, 2231,
-                        0.0, 0},
+                        0.0, 0, false},
                 {
                         "Ethylparaben Benchmark",
                         "ffx/potential/structures/ethylparaben.xyz",
@@ -232,7 +232,7 @@ public class EnergyTest {
                         -4.52561611, 16755,
                         -45.55012417320137, 5012,
                         -3.97079858673400, 5012,
-                        0.0, 0},
+                        0.0, 0, false},
                 {
                         "Methylparaben Benchmark",
                         "ffx/potential/structures/methylparaben.xyz",
@@ -249,7 +249,7 @@ public class EnergyTest {
                         0.20573979, 7639,
                         -26.558577471708134, 2314,
                         -2.35904592, 2314,
-                        0.0, 0},
+                        0.0, 0, false},
                 {
                         "Paracetamol Benchmark",
                         "ffx/potential/structures/paracetamol.xyz",
@@ -266,7 +266,7 @@ public class EnergyTest {
                         0.76621272, 7832,
                         -32.02011297249507, 2357,
                         -4.96649992387851, 2357,
-                        0.0, 0},
+                        0.0, 0, false},
                 {
                         "Phenacetin Benchmark",
                         "ffx/potential/structures/phenacetin.xyz",
@@ -283,7 +283,7 @@ public class EnergyTest {
                         -5.62144406, 10340,
                         -25.42173449818894, 3138,
                         -2.09385416786188, 3138,
-                        0.0, 0}
+                        0.0, 0, false}
         });
     }
 
@@ -316,6 +316,8 @@ public class EnergyTest {
     private final double permanentEnergy;
     private final double polarizationEnergy;
     private final double gkEnergy;
+    private final double totalEnergy;
+    private final boolean testOpenMM;
     private final double tolerance = 1.0e-2;
 
     private Binding binding;
@@ -323,6 +325,7 @@ public class EnergyTest {
     private Gradient gradient;
     private LambdaGradient lambdaGradient;
     private boolean ffxCI;
+    private boolean ffxOpenMM;
 
     public EnergyTest(String info, String filename, int nAtoms,
                       double bondEnergy, int nBonds,
@@ -337,7 +340,7 @@ public class EnergyTest {
                       double vanDerWaalsEnergy, int nVanDerWaals,
                       double permanentEnergy, int nPermanent,
                       double polarizationEnergy, int nPolar,
-                      double gkEnergy, int nGK) {
+                      double gkEnergy, int nGK, boolean testOpenMM) {
         this.filename = filename;
         this.info = info;
         this.nAtoms = nAtoms;
@@ -367,13 +370,22 @@ public class EnergyTest {
         this.nPolar = nPolar;
         this.gkEnergy = gkEnergy;
         this.nGK = nGK;
+        this.testOpenMM = testOpenMM;
+
+        totalEnergy = bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
+                + torsionEnergy + improperTorsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy
+                + vanDerWaalsEnergy + permanentEnergy + polarizationEnergy + gkEnergy;
 
         ffxCI = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
+        ffxOpenMM = System.getProperty("ffx.openMM","false").equalsIgnoreCase("true");
     }
 
     @Before
     public void before() {
+
         binding = new Binding();
+
+        System.clearProperty("platform");
     }
 
     @Test
@@ -433,6 +445,31 @@ public class EnergyTest {
         // GK Energy
         assertEquals(info + " Solvation", gkEnergy, forceFieldEnergy.getSolvationEnergy(), tolerance);
         assertEquals(info + " Solvation Count", nGK, forceFieldEnergy.getSolvationInteractions());
+    }
+
+    @Test
+    public void testOpenMMEnergy() {
+        if (!testOpenMM || !ffxOpenMM) {
+            return;
+        }
+
+        energy = new Energy();
+        energy.setBinding(binding);
+
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"src/main/java/" + filename};
+        binding.setVariable("args", args);
+
+        System.setProperty("platform", "OMM");
+
+        // Evaluate the script.
+        energy.run();
+
+        System.clearProperty("platform");
+
+        ForceFieldEnergy forceFieldEnergy = energy.forceFieldEnergy;
+
+        assertEquals(info + " OpenMM Energy", totalEnergy, forceFieldEnergy.getTotalEnergy(), tolerance);
     }
 
     @Test
