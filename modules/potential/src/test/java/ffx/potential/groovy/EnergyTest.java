@@ -81,6 +81,7 @@ public class EnergyTest {
                         -2811.45683671, 332114,
                         0.0, 0, false},
                 {
+                        // OpenMM does not handle this correctly yet.
                         "SNARE P1",
                         "ffx/potential/structures/1n7s.P1.xyz",
                         21428,
@@ -96,7 +97,7 @@ public class EnergyTest {
                         16013.08734188, 2966572,
                         -49215.72628076, 1328456,
                         -11245.82734685, 1328456,
-                        0.0, 0, true},
+                        0.0, 0, false},
                 {
                         "DHFR Benchmark",
                         "ffx/potential/structures/dhfr.xyz",
