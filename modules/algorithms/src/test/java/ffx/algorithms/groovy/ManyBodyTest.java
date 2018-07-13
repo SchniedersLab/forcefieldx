@@ -39,13 +39,20 @@ package ffx.algorithms.groovy;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
+
 import groovy.lang.Binding;
 
 import edu.rit.pj.Comm;
-import static ffx.potential.utils.PotentialsFunctions.logger;
-import java.util.logging.Level;
 
+import static ffx.potential.utils.PotentialsFunctions.logger;
+import ffx.utilities.DirectoryUtils;
 import ffx.algorithms.groovy.ManyBody;
+
+import java.util.logging.Level;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  *
@@ -73,7 +80,7 @@ public class ManyBodyTest {
         manyBody.run();
     }
 
-    /* @Test
+    @Test
     public void testManyBodyGlobal() {
 
         // Initialize Parallel Java
@@ -97,14 +104,31 @@ public class ManyBodyTest {
             "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("ManyBodyTest");
+            manyBody.setBaseDir(path.toFile());
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory.");
+        }
+
         // Evaluate the script.
         manyBody.run();
-        
+
         // assertEquals(); Total Potential: -208.15485393
+        // Delate all created space grouop directories.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by ManyBodyTest.");
+        }
+        
+        manyBody.getManyBody().getRestartFile().delete();
     }
-    
-    @Test
+
+    /*@Test
     public void testManyBodyBoxOptimization() {
-    } */
+    }*/
 
 }

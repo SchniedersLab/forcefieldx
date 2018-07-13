@@ -152,9 +152,9 @@ public class ManyBodyOptions {
      * -x or --all Optimize all residues beginning from the passed value (overrides other options);
      * for box optimization, optimizes all boxes beginning from the passed index. Default is to optimize all residues.
      */
-    @Option(names = {"-x", "--all"}, paramLabel = "1",
+    @Option(names = {"-x", "--all"}, paramLabel = "-1",
             description = "Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.")
-    int all = 1;
+    int all = -1;
 
     /**
      * --eR or --energyRestart Load energy restart file from a previous run (requires that all parameters are the same).
@@ -332,10 +332,17 @@ public class ManyBodyOptions {
         /**
          * Chain, Residue and/or Box selections.
          */
-        allStartResID = all;
         // Internal machinery indexed 0 to (n-1)
-        boxStart = start - 1;
-        boxEnd = finish - 1;
+        if (start < 0 && finish < 0 && all < 0){
+            allStartResID = 1;
+            boxStart = start - 1;
+            boxEnd = finish - 1;
+        }
+        else {
+            allStartResID = all;
+            boxStart = start - 1;
+            boxEnd = finish - 1;
+        }
 
         if (algorithm != 5) {
             // Not Box optimization.
@@ -628,7 +635,10 @@ public class ManyBodyOptions {
             rotamerOptimization.outputEliminated();
         }
     }
-
+    
+    public File getRestartFile() {
+        return rotamerOptimization.getRestartFile();
+    }
 
     /**
      List<String> sequenceOptimizationList = new ArrayList<>();

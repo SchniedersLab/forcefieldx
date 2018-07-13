@@ -30,9 +30,15 @@ class ManyBody extends AlgorithmsScript {
     /**
      * One or more filenames.
      */
-    @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
     private List<String> filenames
 
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
+    
     @Override
     ManyBody run() {
 
@@ -60,7 +66,7 @@ class ManyBody extends AlgorithmsScript {
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
 
         ffx.algorithms.RotamerOptimization rotamerOptimization = new ffx.algorithms.RotamerOptimization(
-                activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
+            activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
 
         manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly);
 
@@ -95,13 +101,15 @@ class ManyBody extends AlgorithmsScript {
 
             algorithmFunctions.energy(activeAssembly)
 
-            String ext = FilenameUtils.getExtension(filename);
-            filename = FilenameUtils.removeExtension(filename);
-            if (ext.toUpperCase().contains("XYZ")) {
-                algorithmFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"));
-            } else {
-                algorithmFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"));
+            File saveDir = baseDir
+            if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+                saveDir = new File(FilenameUtils.getFullPath(filename))
             }
+            String dirName = saveDir.toString() + File.separator
+            String fileName = FilenameUtils.getName(filename)
+            fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+            File modelFile = new File(dirName + fileName)
+            algorithmFunctions.saveAsPDB(activeAssembly, modelFile);
         }
 
         manyBody.saveEliminatedRotamers();
