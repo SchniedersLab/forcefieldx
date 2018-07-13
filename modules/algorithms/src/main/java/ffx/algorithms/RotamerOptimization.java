@@ -2165,6 +2165,10 @@ public class RotamerOptimization implements Terminatable {
             }
         }
     }
+    
+    public File getRestartFile(){
+        return energyRestartFile;
+    }
 
     /**
      * Return the residue list.
@@ -3549,7 +3553,7 @@ public class RotamerOptimization implements Terminatable {
         }
     }
     
-    /* Checks the distance matrix, finding the shortest distance between the closest rotamers of two residues.
+    /** Checks the distance matrix, finding the shortest distance between the closest rotamers of two residues.
      * 
      * @param i Residue i
      * @param ri Rotamer for i
@@ -4890,6 +4894,7 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             }
+
             // broadcast that this proc is done with startup and allocation; ready for singles
             boolean thisProcReady = true;
             BooleanBuf thisProcReadyBuf = BooleanBuf.buffer(thisProcReady);
@@ -4954,8 +4959,8 @@ public class RotamerOptimization implements Terminatable {
             }
 
             logger.info(String.format(" Number of 2-body energies to calculate: %d", twoBodyEnergyMap.size()));
-
             energyWorkerTeam.execute(pairsRegion);
+
             long pairsTime = System.nanoTime() - (singlesTime + energyStartTime);
             long triplesTime = 0;
             long quadsTime = 0;
@@ -5009,6 +5014,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                     }
                 }
+
                 // broadcast that this proc is done with pruning and allocation; ready for trimers
                 multicastBuf(thisProcReadyBuf);
                 // launch parallel 3-Body calculation
@@ -5017,7 +5023,6 @@ public class RotamerOptimization implements Terminatable {
                 }
 
                 logger.info(String.format(" Number of 3-Body energies to calculate: %d", threeBodyEnergyMap.size()));
-
                 energyWorkerTeam.execute(triplesRegion);
                 triplesTime = System.nanoTime() - (pairsTime + singlesTime + energyStartTime);
                 logIfMaster(format(" Time for 3-Body energies: %12.4g", (triplesTime * 1.0E-9)));
@@ -5108,11 +5113,11 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
 
+
                 // broadcast that this proc is done with pruning and allocation; ready for quads
-//                    logger.info(format(" Proc %d broadcasting ready for quads.", world.rank()));
+                // logger.info(format(" Proc %d broadcasting ready for quads.", world.rank()));
                 multicastBuf(thisProcReadyBuf);
                 // launch parallel 3-Body calculation
-                int waiting = 0;
                 while (!readyFor4Body) {
                     Thread.sleep(POLLING_FREQUENCY);
                 }
@@ -8519,6 +8524,7 @@ public class RotamerOptimization implements Terminatable {
 //                    }
 //                }
                 restartFile = restartPath.toFile();
+                energyRestartFile = restartFile;
             }
             try {
                 bw = new BufferedWriter(new FileWriter(restartFile, true));
