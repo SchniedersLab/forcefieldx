@@ -708,7 +708,7 @@
                 </dependencies>
                 <configuration>
                     <useSystemClassLoader>false</useSystemClassLoader>
-                    <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=jogl -Dffx.ci=${ffx.ci}</argLine>
+                    <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=jogl</argLine>
                 </configuration>
             </plugin>
             <!-- plugin>
@@ -924,7 +924,6 @@
                 <configuration>
                     <showAvatarImages>true</showAvatarImages>
                     <dependencyDetailsEnabled>${dependencyDetails}</dependencyDetailsEnabled>
-                    <dependencyLocationsEnabled>${dependencyDetails}</dependencyLocationsEnabled>
                 </configuration>
             </plugin>
             <plugin>
@@ -1076,15 +1075,12 @@
         <skipTests>true</skipTests>
         <!-- Specify versions of Dependencies to Use -->
         <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
-        <commons-cli.version>1.4</commons-cli.version>
-        <!-- Commons Configuration 2.1 is available, but is not backwards compatible with 1.10 -->
         <commons-beanutils.version>1.9.3</commons-beanutils.version>
-        <commons-configuration.version>1.10</commons-configuration.version>
+        <commons-collections4.version>4.1</commons-collections4.version>
         <commons-configuration2.version>2.2</commons-configuration2.version>
         <commons-io.version>2.6</commons-io.version>
-        <commons-lang3.version>3.5</commons-lang3.version>
+        <commons-lang3.version>3.7</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
-        <commons-collections4.version>4.1</commons-collections4.version>
         <groovy-all.version>2.5.0.1</groovy-all.version>
         <!-- groovy-all.version>3.0.0-alpha-3</groovy-all.version -->
         <javahelp.version>2.0.05</javahelp.version>

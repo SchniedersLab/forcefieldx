@@ -322,7 +322,7 @@ public class EnergyTest {
     private Energy energy;
     private Gradient gradient;
     private LambdaGradient lambdaGradient;
-    private boolean ffxCI = false;
+    private boolean ffxCI;
 
     public EnergyTest(String info, String filename, int nAtoms,
                       double bondEnergy, int nBonds,
@@ -374,15 +374,6 @@ public class EnergyTest {
     @Before
     public void before() {
         binding = new Binding();
-
-        energy = new Energy();
-        energy.setBinding(binding);
-
-        gradient = new Gradient();
-        gradient.setBinding(binding);
-
-        lambdaGradient = new LambdaGradient();
-        lambdaGradient.setBinding(binding);
     }
 
     @Test
@@ -390,6 +381,9 @@ public class EnergyTest {
         if (nAtoms > 10000 && !ffxCI) {
             return;
         }
+
+        energy = new Energy();
+        energy.setBinding(binding);
 
         // Set-up the input arguments for the Biotype script.
         String[] args = {"src/main/java/" + filename};
@@ -447,6 +441,9 @@ public class EnergyTest {
             return;
         }
 
+        gradient = new Gradient();
+        gradient.setBinding(binding);
+
         // Choose a random atom to test.
         int atomID = (int) Math.floor(Math.random() * nAtoms);
         double stepSize = 1.0e-5;
@@ -468,6 +465,9 @@ public class EnergyTest {
         if (nAtoms > 5000 && !ffxCI) {
             return;
         }
+
+        lambdaGradient = new LambdaGradient();
+        lambdaGradient.setBinding(binding);
 
         // Choose a random atom to test dEdX gradient.
         int atomID = (int) Math.floor(Math.random() * nAtoms);
