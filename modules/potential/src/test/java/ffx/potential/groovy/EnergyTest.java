@@ -467,9 +467,7 @@ public class EnergyTest {
 
         System.clearProperty("platform");
 
-        ForceFieldEnergy forceFieldEnergy = energy.forceFieldEnergy;
-
-        assertEquals(info + " OpenMM Energy", totalEnergy, forceFieldEnergy.getTotalEnergy(), tolerance);
+        assertEquals(info + " OpenMM Energy", totalEnergy, energy.energy, tolerance);
     }
 
     @Test

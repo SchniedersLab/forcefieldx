@@ -220,12 +220,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private double vanDerWaalsEnergy;
     private double permanentMultipoleEnergy;
     private double permanentRealSpaceEnergy;
-    private double permanentSelfEnergy;
-    private double permanentReciprocalEnergy;
     private double polarizationEnergy;
-    private double inducedRealSpaceEnergy;
-    private double inducedSelfEnergy;
-    private double inducedReciprocalEnergy;
     private double totalMultipoleEnergy;
     private double totalNonBondedEnergy;
     private double solvationEnergy;
@@ -1457,12 +1452,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             vanDerWaalsEnergy = 0.0;
             permanentMultipoleEnergy = 0.0;
             permanentRealSpaceEnergy = 0.0;
-            permanentSelfEnergy = 0.0;
-            permanentReciprocalEnergy = 0.0;
             polarizationEnergy = 0.0;
-            inducedRealSpaceEnergy = 0.0;
-            inducedSelfEnergy = 0.0;
-            inducedReciprocalEnergy = 0.0;
             totalMultipoleEnergy = 0.0;
             totalNonBondedEnergy = 0.0;
 
@@ -1535,13 +1525,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                     totalMultipoleEnergy = particleMeshEwald.energy(gradient, print);
                     permanentMultipoleEnergy = particleMeshEwald.getPermanentEnergy();
                     permanentRealSpaceEnergy = particleMeshEwald.getPermRealEnergy();
-                    permanentSelfEnergy = particleMeshEwald.getPermSelfEnergy();
-                    permanentReciprocalEnergy = particleMeshEwald.getPermRecipEnergy();
-
                     polarizationEnergy = particleMeshEwald.getPolarizationEnergy();
-                    inducedRealSpaceEnergy = particleMeshEwald.getIndRealEnergy();
-                    inducedSelfEnergy = particleMeshEwald.getIndSelfEnergy();
-                    inducedReciprocalEnergy = particleMeshEwald.getIndRecipEnergy();
                     nPermanentInteractions = particleMeshEwald.getInteractions();
                     solvationEnergy = particleMeshEwald.getGKEnergy();
                     nGKInteractions = particleMeshEwald.getGKInteractions();
