@@ -96,7 +96,7 @@ public class EnergyTest {
                         16013.08734188, 2966572,
                         -49215.72628076, 1328456,
                         -11245.82734685, 1328456,
-                        0.0, 0, true},
+                        0.0, 0, false},
                 {
                         "DHFR Benchmark",
                         "ffx/potential/structures/dhfr.xyz",
@@ -130,7 +130,7 @@ public class EnergyTest {
                         -4.31922323, 2290,
                         -71.00737570, 2485,
                         0.0, 2485,
-                        -146.65788271605072, 2556, true},
+                        -149.96337057, 2556, true},
                 {
                         "AMOEBA Protein 2013 GK Capped DMHD",
                         "ffx/potential/structures/dmhd-amoebapro13.xyz",
@@ -147,7 +147,7 @@ public class EnergyTest {
                         22.07765097, 2290,
                         -169.24655738, 2485,
                         -11.347374225964598, 2485,
-                        -160.76619512583423, 2556, true},
+                        -228.32243321, 2556, true},
                 {
                         "Amber99sb Peptide",
                         "ffx/potential/structures/peptide-amber99sb.xyz",
@@ -181,7 +181,7 @@ public class EnergyTest {
                         112122.04255274, 40511,
                         -671.66812023, 53628,
                         0.0, 53628,
-                        0.0, 0, true},
+                        0.0, 0, false},
                 {
                         "Ubiquitin Benchmark",
                         "ffx/potential/structures/ubiquitin.xyz",
@@ -319,6 +319,7 @@ public class EnergyTest {
     private final double totalEnergy;
     private final boolean testOpenMM;
     private final double tolerance = 1.0e-2;
+    private final double openMMTolerance = 0.5;
 
     private Binding binding;
     private Energy energy;
@@ -467,7 +468,7 @@ public class EnergyTest {
 
         System.clearProperty("platform");
 
-        assertEquals(info + " OpenMM Energy", totalEnergy, energy.energy, tolerance);
+        assertEquals(info + " OpenMM Energy", totalEnergy, energy.energy, openMMTolerance);
     }
 
     @Test
