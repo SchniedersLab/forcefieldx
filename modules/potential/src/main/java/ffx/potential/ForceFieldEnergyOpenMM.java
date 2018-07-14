@@ -1942,17 +1942,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                         + "maxI = 1/(3.0*radius^3)",
                 OpenMM_CustomGBForce_SingleParticle);
 
-        double sTens = gk.getSurfaceTension();
-        logger.info(String.format(" FFX surface tension: %9.5g kcal/mol/Ang^2", sTens));
-        sTens *= OpenMM_KJPerKcal;
-        sTens *= 100.0; // 100 square Angstroms per square nanometer.
-        logger.info(String.format(" OpenMM surface tension: %9.5g kJ/mol/nm^2", sTens));
+        double sTens = 0.0;
+        if (gk.getNonPolarModel() == NonPolar.BORN_SOLV || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
+            sTens = gk.getSurfaceTension();
+            sTens *= OpenMM_KJPerKcal;
+            sTens *= 100.0; // 100 square Angstroms per square nanometer.
+            // logger.info(String.format(" FFX surface tension: %9.5g kcal/mol/Ang^2", sTens));
+            // logger.info(String.format(" OpenMM surface tension: %9.5g kJ/mol/nm^2", sTens));
+        }
         String surfaceTension = Double.toString(sTens);
-
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
-                surfaceTension
-                        + "*(radius+probeRadius+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
-                OpenMM_CustomGBForce_SingleParticle);
+                surfaceTension + "*(radius+probeRadius+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
+                    OpenMM_CustomGBForce_SingleParticle);
 
         /**
          * Particle pair term is the generalized Born cross term.
