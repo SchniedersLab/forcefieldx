@@ -41,6 +41,7 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.MolecularDynamics;
@@ -91,9 +92,19 @@ public class OSRWOptions {
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
                                                 MolecularAssembly firstAssembly, DynamicsOptions dynamics,
                                                 MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
+        return constructOSRW(potential, lambdaRestart, histogramRestart, firstAssembly, null, dynamics, mdo, thermo, aListener);
+    }
+
+    public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
+                                                MolecularAssembly firstAssembly, Configuration addedProperties,
+                                                DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
+                                                AlgorithmListener aListener) {
 
         LambdaInterface linter = (LambdaInterface) potential;
-        CompositeConfiguration firstProps = firstAssembly.getProperties();
+        CompositeConfiguration allProperties = new CompositeConfiguration(firstAssembly.getProperties());
+        if (addedProperties != null) {
+            allProperties.addConfiguration(addedProperties);
+        }
         double temp = dynamics.getTemp();
         double dT = dynamics.getDt();
         double report = dynamics.getReport();
@@ -101,7 +112,7 @@ public class OSRWOptions {
         boolean async = !mdo.isSynchronous();
         boolean resetNSteps = thermo.getResetNumSteps();
         TransitionTemperedOSRW ttOSRW = new TransitionTemperedOSRW(linter, potential, lambdaRestart,
-                histogramRestart, firstProps, temp, dT, report, ckpt, async, resetNSteps, aListener);
+                histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
 
         // Do NOT run applyOSRWOptions here, because that can mutate the TT-OSRW to a Barostat.
         return ttOSRW;
