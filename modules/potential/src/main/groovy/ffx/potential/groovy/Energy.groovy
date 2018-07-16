@@ -94,28 +94,12 @@ class Energy extends PotentialScript {
         if (gradient) {
             double[] g = new double[nVars]
             int nAts = nVars / 3
-            if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
-                double[] gOMM = new double[nVars]
-                ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) forceFieldEnergy
-                energy = ope.energyAndGradVsFFX(x, g, gOMM, true)
-                for (int i = 0; i < nAts; i++) {
-                    int i3 = 3 * i
-                    logger.info(String.format(" Atom %d OpenMM gradient:      %14.9g %14.9g %14.9g",
-                            i, gOMM[i3], gOMM[i3 + 1], gOMM[i3 + 2]))
-                    logger.info(String.format(" Atom %d gradient discrepancy: %14.9g %14.9g %14.9g",
-                            i, gOMM[i3] - g[i3], gOMM[i3 + 1] - g[i3 + 1], gOMM[i3 + 2] - g[i3 + 2]))
-                }
-            } else {
-                energy = pe.energyAndGradient(x, g, true)
-                logger.info(String.format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
-                for (int i = 0; i < nAts; i++) {
-                    int i3 = 3 * i
-                    logger.info(String.format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
-                }
+            energy = pe.energyAndGradient(x, g, true)
+            logger.info(String.format("    Atom       X, Y and Z Gradient Components (Kcal/mole/A)"))
+            for (int i = 0; i < nAts; i++) {
+                int i3 = 3 * i
+                logger.info(String.format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
             }
-        } else if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
-            ForceFieldEnergyOpenMM ope = (ForceFieldEnergyOpenMM) forceFieldEnergy
-            energy = ope.energyVsFFX(x, true)
         } else {
             energy = forceFieldEnergy.energy(x, true)
         }
