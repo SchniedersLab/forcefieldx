@@ -12,6 +12,7 @@ import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.parameters.ForceField
+import ffx.algorithms.MolecularDynamics
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -50,6 +51,19 @@ class Dynamics extends AlgorithmsScript {
     @Parameters(arity = "1..*", paramLabel = "files",
             description = "XYZ or PDB input files.")
     private List<String> filenames
+    
+    // Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field. Originally it is declared in
+    // the run method
+    public Potential potential = null;
+    public MolecularDynamics molDyn = null;
+    
+    public MolecularDynamics getMolecularDynamics(){
+        return molDyn;
+    }
+    
+    public Potential getPotentialObject(){
+        return potential;
+    }
 
     @Override
     Dynamics run() {
@@ -76,7 +90,9 @@ class Dynamics extends AlgorithmsScript {
         structureFile = new File(structureFile.getAbsolutePath())
         String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
 
-        Potential potential = activeAssembly.getPotentialEnergy()
+        // test line below to try and work out a JUnit test, original line is commented out below (the one with the Potential object instantiated in this scope)
+        potential = activeAssembly.getPotentialEnergy();
+        //Potential potential = activeAssembly.getPotentialEnergy()
         logger.info(" Starting energy (before .dyn restart loaded):")
         boolean updatesDisabled = activeAssembly.getForceField().getBoolean(ForceField.ForceFieldBoolean.DISABLE_NEIGHBOR_UPDATES, false)
         if (updatesDisabled) {
@@ -114,7 +130,7 @@ class Dynamics extends AlgorithmsScript {
                 dyn = null
             }
 
-            ffx.algorithms.MolecularDynamics molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
+            molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
 
             molDyn.dynamic(dynamics.steps, dynamics.dt,
                     dynamics.report, dynamics.write, dynamics.temp, true, dyn)
@@ -133,7 +149,7 @@ class Dynamics extends AlgorithmsScript {
                 dyn = null
             }
 
-            ffx.algorithms.MolecularDynamics molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
+            molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
             ffx.algorithms.ReplicaExchange replicaExchange = new ffx.algorithms.ReplicaExchange(molDyn, algorithmListener, dynamics.temp)
 
             int totalSteps = dynamics.steps
