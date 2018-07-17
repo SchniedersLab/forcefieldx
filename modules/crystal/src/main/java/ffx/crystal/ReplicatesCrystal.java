@@ -216,7 +216,8 @@ public class ReplicatesCrystal extends Crystal {
         while (unitCell.interfacialRadiusC * nn < cutOff) {
             nn++;
         }
-        if (super.changeUnitCellParameters(a * ll, b * mm, c * nn, alpha, beta, gamma)) {
+        if (super.changeUnitCellParameters(unitCell.a * ll, unitCell.b * mm, unitCell.c * nn,
+                unitCell.alpha, unitCell.beta, unitCell.gamma)) {
             l = ll;
             m = mm;
             n = nn;
