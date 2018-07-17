@@ -323,7 +323,7 @@ public class RotamerOptimization implements Terminatable {
      * The energy buffer applied to each elimination criteria to affect an
      * ensemble.
      */
-    private double ensembleBuffer = 0.0;
+    private double ensembleBuffer = 0.5;
     /**
      * The step value of the energy buffer for use with ensemble search.
      */
