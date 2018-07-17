@@ -640,6 +640,10 @@ public class ManyBodyOptions {
         return rotamerOptimization.getRestartFile();
     }
 
+    public int getAlgorithmNumber() {
+        return algorithm;
+    }
+
     /**
      List<String> sequenceOptimizationList = new ArrayList<>();
      if(!manyBody.sequence.equalsIgnoreCase("none"))
