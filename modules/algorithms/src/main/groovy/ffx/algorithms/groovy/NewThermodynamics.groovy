@@ -2,7 +2,7 @@
 package ffx.algorithms.groovy
 
 import edu.rit.pj.ParallelTeam
-import ffx.algorithms.TransitionTemperedOSRW
+import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
@@ -14,6 +14,7 @@ import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
+import org.apache.commons.configuration2.Configuration
 import picocli.CommandLine
 import org.apache.commons.io.FilenameUtils
 import edu.rit.pj.Comm
@@ -69,11 +70,24 @@ class NewThermodynamics extends AlgorithmsScript {
      * The final argument(s) should be one or more filenames.
      */
     @CommandLine.Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
-    List<String> filenames = null
+    List<String> filenames = null;
 
-    private int threadsAvail = ParallelTeam.getDefaultThreadCount()
-    private int threadsPer = threadsAvail
-    MolecularAssembly[] topologies
+    private int threadsAvail = ParallelTeam.getDefaultThreadCount();
+    private int threadsPer = threadsAvail;
+    MolecularAssembly[] topologies;
+
+    CrystalPotential potential;
+    AbstractOSRW osrw;
+
+    private Configuration additionalProperties;
+
+    /**
+     * Sets an optional Configuration with additional properties.
+     * @param additionalProps
+     */
+    void setProperties(Configuration additionalProps) {
+        this.additionalProperties = additionalProps;
+    }
 
     @Override
     NewThermodynamics run() {
@@ -177,7 +191,7 @@ class NewThermodynamics extends AlgorithmsScript {
          * Configure the potential to test.
          */
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ")
-        CrystalPotential potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
+        potential = (CrystalPotential) topology.assemblePotential(topologies, threadsAvail, sb)
 
         logger.info(sb.toString());
 
@@ -208,7 +222,7 @@ class NewThermodynamics extends AlgorithmsScript {
 
         multidynamics.distribute(topologies, potential, algorithmFunctions, rank, size);
 
-        TransitionTemperedOSRW osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0], dynamics, multidynamics, thermodynamics, algorithmListener);
+        osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0], additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener);
 
         potential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0], dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists);
 
@@ -245,7 +259,15 @@ class NewThermodynamics extends AlgorithmsScript {
             osrwOptions.beginMDOSRW(osrw, topologies, potential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
         }
 
-        return this
+        return this;
+    }
+
+    public AbstractOSRW getOSRW() {
+        return osrw;
+    }
+
+    public CrystalPotential getPotential() {
+        return potential;
     }
 }
 
