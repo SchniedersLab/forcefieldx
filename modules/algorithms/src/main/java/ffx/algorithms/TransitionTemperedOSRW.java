@@ -80,9 +80,13 @@ import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS
  * An implementation of Transition-Tempered Orthogonal Space Random Walk
  * algorithm.
  *
+ * Only partially implements LambdaInterface; does not return 2'nd lambda
+ * derivatives, as 2'nd derivatives of the bias require 3'rd derivatives of
+ * the underlying Hamiltonian.
+ *
  * @author Michael J. Schnieders, James Dama, Wei Yang and Pengyu Ren
  */
-public class TransitionTemperedOSRW extends AbstractOSRW {
+public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterface {
 
     private static final Logger logger = Logger.getLogger(TransitionTemperedOSRW.class.getName());
 
@@ -1108,6 +1112,32 @@ public class TransitionTemperedOSRW extends AbstractOSRW {
             receiveThread.interrupt();
         }
         return true;
+    }
+
+    @Override
+    public double getdEdL() {
+        return getTotaldEdLambda();
+    }
+
+    @Override
+    public double getd2EdL2() {
+        // TODO: Add in a finite-difference implementation of d2U/dL2.
+        // TODO: Add in support for analytic third derivatives ONLY for non-softcore systems.
+        // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
+        throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
+    }
+
+    @Override
+    public void getdEdXdL(double[] gradient) {
+        // TODO: Add in a finite-difference implementation of d2U/dXdL.
+        // TODO: Add in support for analytic third derivatives ONLY for non-softcore systems.
+        // TODO: Derive d^3U/dL^3 for AMOEBA. This would not be easy.
+        throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
+    }
+
+    @Override
+    public boolean dEdLZeroAtEnds() {
+        return false;
     }
 
     private class ReceiveThread extends Thread {

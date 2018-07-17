@@ -692,14 +692,18 @@ public class RotamerOptimizationTest {
 
         // Initialize Parallel Java
         try {
-            String args[] = new String[0];
-            Comm.init(args);
-        } catch (Exception e) {
-            String message = String.format(" Exception starting up the Parallel Java communication layer.");
-            logger.log(Level.WARNING, message, e.toString());
-            message = String.format(" Skipping rotamer optimization test.");
-            logger.log(Level.WARNING, message, e.toString());
-            return;
+            Comm.world();
+        } catch (IllegalArgumentException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping rotamer optimization test.");
+                logger.log(Level.WARNING, message, e.toString());
+                return;
+            }
         }
 
         // Run the optimization.

@@ -99,7 +99,7 @@ public class ManyBodyTest {
             }
         }
 
-        // Set-up the input arguments for the Biotype script.
+        // Set-up the input arguments for the script.
         String[] args = {"-a", "2", "-L", "2", "--tC", "2",
             "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
