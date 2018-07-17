@@ -122,7 +122,7 @@ public class DYNFilter {
             double gamma = Double.parseDouble(tokens[2]);
 
             crystal.changeUnitCellParameters(aaxis, baxis, caxis, alpha, beta, gamma);
-            
+
             // Atomic coordinates
             br.readLine();
             for (int i = 0; i < numatoms; i++) {

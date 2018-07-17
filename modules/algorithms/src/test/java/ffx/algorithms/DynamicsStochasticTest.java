@@ -10,23 +10,21 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import edu.rit.pj.Comm;
-
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assume.assumeTrue;
 
-import groovy.lang.Binding;
+import edu.rit.pj.Comm;
 
 import ffx.algorithms.groovy.Dynamics;
 
+import groovy.lang.Binding;
+
 
 /**
- *
  * @author hbernabe
  */
 @RunWith(Parameterized.class)
@@ -50,19 +48,19 @@ public class DynamicsStochasticTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {
-                "Acetamide Peptide Restart and Stochastic Random Seed",  // info
-                "ffx/algorithms/structures/acetamide_res_stoch.xyz",     // filename
-                "ffx/algorithms/structures/acetamide_res_stoch.dyn",     // restartFile
-                6.7599,                                                  // endKineticEnergy
-                4.2177,                                                  // endPotentialEnergy
-                10.9776                                                  // endTotalEnergy
-            }
+                {
+                        "Acetamide Peptide Restart and Stochastic Random Seed",  // info
+                        "ffx/algorithms/structures/acetamide_res_stoch.xyz",     // filename
+                        "ffx/algorithms/structures/acetamide_res_stoch.dyn",     // restartFile
+                        6.8546,                                                  // endKineticEnergy
+                        -26.9921,                                                 // endPotentialEnergy
+                        -20.1375                                                 // endTotalEnergy
+                }
         });
     }
 
     public DynamicsStochasticTest(String info, String filename, String restartFile, double endKineticEnergy,
-            double endPotentialEnergy, double endTotalEnergy) {
+                                  double endPotentialEnergy, double endTotalEnergy) {
 
         this.info = info;
         this.filename = filename;
@@ -89,10 +87,6 @@ public class DynamicsStochasticTest {
 
     @Test
     public void testDynamicsStochasticRandomSeed() {
-        
-        //DynamicsStochasticTest.class.getClassLoader().setClassAssertionStatus(DynamicsStochasticTest.class.getName(), false);
-        
-        //assumeTrue(assertionsDisabled());
 
         // Set-up the input arguments for the script.
         String[] args = {"-n", "10", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
@@ -105,11 +99,6 @@ public class DynamicsStochasticTest {
 
         // Assert that the end energies are the same meaning that the Stochastic integrator works as intended.
         assertEquals(info + " End total energy for stochastic random seed test", endTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
-    }
-    
-    public static boolean assertionsDisabled(){
-        
-        return !DynamicsStochasticTest.class.desiredAssertionStatus();
     }
 
 }
