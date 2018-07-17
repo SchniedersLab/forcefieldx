@@ -94,7 +94,7 @@ public class ReflectionList {
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param resolution a {@link ffx.crystal.Resolution} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public ReflectionList(Crystal crystal, Resolution resolution,
             CompositeConfiguration properties) {

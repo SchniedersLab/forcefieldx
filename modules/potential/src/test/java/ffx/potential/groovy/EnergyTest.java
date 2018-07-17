@@ -81,6 +81,7 @@ public class EnergyTest {
                         -2811.45683671, 332114,
                         0.0, 0, false},
                 {
+                        // OpenMM does not handle this correctly yet.
                         "SNARE P1",
                         "ffx/potential/structures/1n7s.P1.xyz",
                         21428,

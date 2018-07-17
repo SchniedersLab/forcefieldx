@@ -60,7 +60,7 @@ public class Adiabatic extends Thermostat {
      * @param type the VARIABLE_TYPE of each variable.
      */
     public Adiabatic(int n, double x[], double v[], double mass[], VARIABLE_TYPE type[]) {
-        super(n, x, v, mass, type, 0.0);
+        super(n, x, v, mass, type, 1.0);
         this.name = ThermostatEnum.ADIABATIC;
     }
 
