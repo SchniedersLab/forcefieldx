@@ -6,6 +6,7 @@ import edu.rit.pj.Comm
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
+import ffx.algorithms.RotamerOptimization;
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
@@ -65,7 +66,7 @@ class ManyBody extends AlgorithmsScript {
 
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
 
-        ffx.algorithms.RotamerOptimization rotamerOptimization = new ffx.algorithms.RotamerOptimization(
+        RotamerOptimization rotamerOptimization = new RotamerOptimization(
             activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
 
         manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly);
@@ -84,17 +85,27 @@ class ManyBody extends AlgorithmsScript {
 
         RotamerLibrary.measureRotamers(residueList, false);
 
-        if (manyBody.algorithm == 1) {
-            rotamerOptimization.optimize(ffx.algorithms.RotamerOptimization.Algorithm.INDEPENDENT);
-        } else if (manyBody.algorithm == 2) {
-            rotamerOptimization.optimize(ffx.algorithms.RotamerOptimization.Algorithm.ALL);
-        } else if (manyBody.algorithm == 3) {
-            rotamerOptimization.optimize(ffx.algorithms.RotamerOptimization.Algorithm.BRUTE_FORCE);
-        } else if (manyBody.algorithm == 4) {
-            rotamerOptimization.optimize(ffx.algorithms.RotamerOptimization.Algorithm.WINDOW);
-        } else if (manyBody.algorithm == 5) {
-            rotamerOptimization.optimize(ffx.algorithms.RotamerOptimization.Algorithm.BOX);
+        RotamerOptimization.Algorithm algo;
+        switch (manyBody.getAlgorithmNumber()) {
+            case 1:
+                algo = RotamerOptimization.Algorithm.INDEPENDENT;
+                break;
+            case 2:
+                algo = RotamerOptimization.Algorithm.ALL;
+                break;
+            case 3:
+                algo = RotamerOptimization.Algorithm.BRUTE_FORCE;
+                break;
+            case 4:
+                algo = RotamerOptimization.Algorithm.WINDOW;
+                break;
+            case 5:
+                algo = RotamerOptimization.Algorithm.BOX;
+                break;
+            default:
+                throw new IllegalArgumentException(String.format(" Algorithm choice was %d, not in range 1-5!", manyBody.getAlgorithmNumber()));
         }
+        rotamerOptimization.optimize(algo);
 
         if (master) {
             logger.info(" Final Minimum Energy");
