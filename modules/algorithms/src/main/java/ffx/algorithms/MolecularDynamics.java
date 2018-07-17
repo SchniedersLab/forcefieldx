@@ -1253,6 +1253,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
     public double getPotentialEnergy() {
         return currentPotentialEnergy;
     }
+    
+    /**
+     * Get the current temperature of the system
+     * @return currentTemperature
+     */
+    public double getTemperature(){
+        return currentTemperature;
+    }
 
     /**
      * {@inheritDoc}
