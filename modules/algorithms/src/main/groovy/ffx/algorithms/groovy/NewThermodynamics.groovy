@@ -224,7 +224,9 @@ class NewThermodynamics extends AlgorithmsScript {
 
         osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0], additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener);
 
-        potential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0], dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists);
+        // Can be either the TT-OSRW or a Barostat on top of it.
+        // Cannot be the Potential underneath the TT-OSRW.
+        CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0], dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists);
 
         // Old code for obsolete options.
 
@@ -256,7 +258,7 @@ class NewThermodynamics extends AlgorithmsScript {
             mcOSRW.setMDMoveParameters(options.steps, options.mcMD, options.dt)
             mcOSRW.sample()*/
         } else {
-            osrwOptions.beginMDOSRW(osrw, topologies, potential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
+            osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
         }
 
         return this;
