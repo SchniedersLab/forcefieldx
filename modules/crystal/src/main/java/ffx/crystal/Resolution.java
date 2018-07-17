@@ -82,7 +82,7 @@ public class Resolution {
      * checkProperties</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return a {@link ffx.crystal.Resolution} object.
      */
     public static Resolution checkProperties(CompositeConfiguration properties) {
