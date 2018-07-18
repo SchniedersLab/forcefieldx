@@ -6,6 +6,7 @@ import edu.rit.pj.Comm
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
+import ffx.potential.ForceFieldEnergy
 import ffx.algorithms.RotamerOptimization;
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
@@ -35,6 +36,8 @@ class ManyBody extends AlgorithmsScript {
     private List<String> filenames
 
     private File baseDir = null
+    
+    ForceFieldEnergy potentialEnergy;
 
     void setBaseDir(File baseDir) {
         this.baseDir = baseDir
@@ -65,6 +68,7 @@ class ManyBody extends AlgorithmsScript {
         }
 
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
+        potentialEnergy = activeAssembly.getPotentialEnergy();
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(
             activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
@@ -130,6 +134,10 @@ class ManyBody extends AlgorithmsScript {
         }
 
         return this
+    }
+    
+    public ForceFieldEnergy getPotential(){
+        return potentialEnergy;
     }
 }
 
