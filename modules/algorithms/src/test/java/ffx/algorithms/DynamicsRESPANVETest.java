@@ -24,49 +24,43 @@ import ffx.algorithms.groovy.Dynamics;
 import groovy.lang.Binding;
 
 /**
+ *
  * @author hbernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsStochasticTest {
+public class DynamicsRESPANVETest {
 
     private String info;
     private String filename;
     private String restartFile;
-    private double endKineticEnergy;
-    private double kineticEnergyTolerance = 2.0;
-    private double endPotentialEnergy;
-    private double potentialEnergyTolerance = 2.0;
-    private double endTotalEnergy;
-    private double totalEnergyTolerance = 2.0;
+    private double startingTotalEnergy;
+    private double totalEnergyTolerance = 0.5;
 
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsStochasticTest.class.getName());
+    private static final Logger logger = Logger.getLogger(DynamicsRESPANVETest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
             {
-                "Acetamide Peptide Restart and Stochastic Random Seed", // info
-                "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
-                "ffx/algorithms/structures/acetamide_res_stoch.dyn", // restartFile
-                6.8546, // endKineticEnergy
-                -26.9921, // endPotentialEnergy
-                -20.1375 // endTotalEnergy
+                "Acetamide RESPA NVE", // info
+                "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+                "ffx/algorithms/structures/acetamide_NVE.dyn", // restartFile
+                -25.1958 // startingTotalEnergy
             }
+
         });
+
     }
 
-    public DynamicsStochasticTest(String info, String filename, String restartFile, double endKineticEnergy,
-            double endPotentialEnergy, double endTotalEnergy) {
+    public DynamicsRESPANVETest(String info, String filename, String restartFile, double startingTotalEnergy) {
 
         this.info = info;
         this.filename = filename;
         this.restartFile = restartFile;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
+        this.startingTotalEnergy = startingTotalEnergy;
     }
 
     @Before
@@ -85,19 +79,19 @@ public class DynamicsStochasticTest {
     }
 
     @Test
-    public void testDynamicsStochasticRandomSeed() {
+    public void testRESPANVE() {
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
 
-        //Evaluate the script.
+        // Evaluate the script.
         dynamics.run();
 
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-        // Assert that the end energies are the same meaning that the Stochastic integrator works as intended.
-        assertEquals(info + " End total energy for stochastic random seed test", endTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
+        // Assert that the final total energy is within the tolerance for the molecular dynamics trajectory
+        assertEquals(info + "End total energy for RESPA integrator NVE", startingTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
     }
 
 }

@@ -34,6 +34,8 @@ public class DynamicsNVTTest {
     private String restartFile;
     private double startingTemp;
     private double tempTolerance = 6.0;
+    private double endTotalEnergy;
+    private double energyTolerance = 50.0;
 
     private Binding binding;
     private Dynamics dynamics;
@@ -43,20 +45,22 @@ public class DynamicsNVTTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                {
-                        "Water Box NVT",                                                // info
-                        "ffx/algorithms/structures/waterbox_eq.xyz",                    // filename
-                        "ffx/algorithms/structures/waterbox_eq.dyn",                    // restartFile
-                        298.15                                                          // startingTemp
-                }
+            {
+                "Water Box NVT", // info
+                "ffx/algorithms/structures/waterbox_eq.xyz", // filename
+                "ffx/algorithms/structures/waterbox_eq.dyn", // restartFile
+                298.15, // startingTemp
+                -25240.00
+            }
         });
     }
 
-    public DynamicsNVTTest(String info, String filename, String restartFile, double startingTemp) {
+    public DynamicsNVTTest(String info, String filename, String restartFile, double startingTemp, double endTotalEnergy) {
         this.info = info;
         this.filename = filename;
         this.restartFile = restartFile;
         this.startingTemp = startingTemp;
+        this.endTotalEnergy = endTotalEnergy;
     }
 
     @Before
@@ -88,5 +92,8 @@ public class DynamicsNVTTest {
 
         // Assert that temperature is within tolerance at the end of the dynamics trajectory.
         assertEquals(info + " End temperature for NVT test", startingTemp, molDyn.getTemperature(), tempTolerance);
+
+        // Assert that the end total energy is withing the tolerance at the end of the dynamics trajectory.
+        assertEquals(info + " End total energy for NVT test and set random seed", endTotalEnergy, molDyn.getTotalEnergy(), energyTolerance);
     }
 }
