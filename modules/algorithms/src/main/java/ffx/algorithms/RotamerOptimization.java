@@ -462,6 +462,10 @@ public class RotamerOptimization implements Terminatable {
      */
     private File energyRestartFile;
     /**
+     * Partial restart file for box optimization.
+     */
+    private File partialFile;
+    /**
      * ParallelTeam instance.
      */
     private ParallelTeam parallelTeam;
@@ -2166,8 +2170,19 @@ public class RotamerOptimization implements Terminatable {
         }
     }
     
+    /**
+     * Returns the restart file.
+     * @return energyRestartFile File with saved side-chain energies.
+     */
     public File getRestartFile(){
         return energyRestartFile;
+    }
+    /**
+     * Returns the partial file.
+     * @return partialFile File with saved box optimization energies.
+     */
+    public File getPartial(){
+        return partialFile;
     }
 
     /**
@@ -4336,17 +4351,17 @@ public class RotamerOptimization implements Terminatable {
                 }
                 if (master && printFiles) {
                     String filename = FilenameUtils.removeExtension(molecularAssembly.getFile().getAbsolutePath()) + ".partial";
-                    File file = new File(filename);
+                    partialFile = new File(filename);
                     if (firstCellSaved) {
-                        file.delete();
+                        partialFile.delete();
                     }
                     // Don't write a file if it's the final iteration.
                     if (i == (numCells - 1)) {
                         continue;
                     }
-                    PDBFilter windowFilter = new PDBFilter(file, molecularAssembly, null, null);
+                    PDBFilter windowFilter = new PDBFilter(partialFile, molecularAssembly, null, null);
                     try {
-                        windowFilter.writeFile(file, false);
+                        windowFilter.writeFile(partialFile, false);
                         if (firstResidue != lastResidue) {
                             logIfMaster(format(" File with residues %s ... %s in window written.", firstResidue.toString(), lastResidue.toString()));
                         } else {
@@ -4354,7 +4369,7 @@ public class RotamerOptimization implements Terminatable {
                         }
                         firstCellSaved = true;
                     } catch (Exception e) {
-                        logger.warning(format("Exception writing to file: %s", file.getName()));
+                        logger.warning(format("Exception writing to file: %s", partialFile.getName()));
                     }
                 }
             } else {

@@ -39,7 +39,6 @@ package ffx.algorithms.groovy;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Assert;
 
 import groovy.lang.Binding;
 
@@ -48,11 +47,14 @@ import edu.rit.pj.Comm;
 import static ffx.potential.utils.PotentialsFunctions.logger;
 import ffx.utilities.DirectoryUtils;
 import ffx.algorithms.groovy.ManyBody;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.PotentialComponent;
 
 import java.util.logging.Level;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.testng.Assert;
 
 /**
  *
@@ -114,8 +116,12 @@ public class ManyBodyTest {
 
         // Evaluate the script.
         manyBody.run();
+        double expectedTotalPotential = -208.15485392;
+        
+        
+        double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
 
-        // assertEquals(); Total Potential: -208.15485393
         // Delate all created space grouop directories.
         try {
             DirectoryUtils.deleteDirectoryTree(path);
@@ -123,12 +129,59 @@ public class ManyBodyTest {
             System.out.println(e.toString());
             Assert.fail(" Exception deleting files created by ManyBodyTest.");
         }
-        
+
         manyBody.getManyBody().getRestartFile().delete();
     }
 
-    /*@Test
+    @Test
     public void testManyBodyBoxOptimization() {
-    }*/
+
+        // Initialize Parallel Java
+        try {
+            Comm.world();
+        } catch (IllegalStateException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping rotamer optimization test.");
+                logger.log(Level.WARNING, message, e.toString());
+                return;
+            }
+        }
+
+        // Set-up the input arguments for the script.
+        String[] args = {"-a", "5", "-L", "2", "--bL", "10", "--bB", "2", "--tC", "2", "--pr", "2",
+            "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+        binding.setVariable("args", args);
+
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("ManyBodyTest");
+            manyBody.setBaseDir(path.toFile());
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory.");
+        }
+
+        // Evaluate the script.
+        manyBody.run();
+        
+        double expectedTotalPotential = -208.72994232;
+        double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+        manyBody.getManyBody();
+
+        // Delete all created space group directories.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by ManyBodyTest.");
+        }
+
+        manyBody.getManyBody().getPartial().delete();
+    }
 
 }
