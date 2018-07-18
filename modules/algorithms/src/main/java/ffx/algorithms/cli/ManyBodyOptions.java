@@ -639,7 +639,11 @@ public class ManyBodyOptions {
     public File getRestartFile() {
         return rotamerOptimization.getRestartFile();
     }
-
+    
+    public File getPartial() {
+        return rotamerOptimization.getPartial();
+    }
+    
     public int getAlgorithmNumber() {
         return algorithm;
     }
