@@ -42,10 +42,6 @@ public class DynamicsNVETest {
     private double potentialEnergyTolerance = 2.0;
     private double endTotalEnergy;
     private double totalEnergyTolerance = 2.0;
-    private boolean testNVE;
-    private boolean testNVT;
-    private boolean testRestart;
-    private boolean testStochasticRandomSeed;
 
     private Binding binding;
     private Dynamics dynamics;
@@ -55,25 +51,21 @@ public class DynamicsNVETest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                {
-                        "Acetamide Peptide NVE",                                        // info
-                        "ffx/algorithms/structures/acetamide_NVE.xyz",                  // filename
-                        "ffx/algorithms/structures/acetamide_NVE.dyn",                  // restartFile
-                        -25.1958,                                                       // startingTotalEnergy
-                        298.15,                                                         // startingTemp
-                        4.5625,                                                         // endKineticEnergy
-                        -29.8043,                                                       // endPotentialEnergy
-                        -25.2418,                                                       // endTotalEnergy
-                        true,                                                           // testNVE
-                        false,                                                          // testNVT
-                        false,                                                          // testRestart
-                        false                                                           // testStochasticRandomSeed
-                }
+            {
+                "Acetamide Peptide NVE", // info
+                "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+                "ffx/algorithms/structures/acetamide_NVE.dyn", // restartFile
+                -25.1958, // startingTotalEnergy
+                298.15, // startingTemp
+                4.5625, // endKineticEnergy
+                -29.8043, // endPotentialEnergy
+                -25.2418 // endTotalEnergy
+            }
         });
     }
 
     public DynamicsNVETest(String info, String filename, String restartFile, double startingTotalEnergy, double startingTemp, double endKineticEnergy,
-                           double endPotentialEnergy, double endTotalEnergy, boolean testNVE, boolean testNVT, boolean testRestart, boolean testStochasticRandomSeed) {
+            double endPotentialEnergy, double endTotalEnergy) {
         this.info = info;
         this.filename = filename;
         this.restartFile = restartFile;
@@ -82,10 +74,6 @@ public class DynamicsNVETest {
         this.endKineticEnergy = endKineticEnergy;
         this.endPotentialEnergy = endPotentialEnergy;
         this.endTotalEnergy = endTotalEnergy;
-        this.testNVE = testNVE;
-        this.testNVT = testNVT;
-        this.testRestart = testRestart;
-        this.testStochasticRandomSeed = testStochasticRandomSeed;
     }
 
     @Before
@@ -104,7 +92,6 @@ public class DynamicsNVETest {
         }
 
     }
-
 
     @Test
     public void testDynamicsHelp() {
