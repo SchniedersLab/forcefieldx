@@ -1,4 +1,3 @@
-package ffx.xray;
 /**
  * Title: Force Field X.
  * <p>
@@ -36,22 +35,20 @@ package ffx.xray;
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
+package ffx.xray;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import edu.rit.pj.Comm;
 
 import ffx.realspace.cli.RealSpaceOptions;
 import ffx.realspace.groovy.Alchemical;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
 
 import groovy.lang.Binding;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Test the Energy script.
@@ -99,8 +96,9 @@ public class AlchemicalTest {
             }
         }
         // Set-up the input arguments for the Alchemical script.
-        String[] args = {"-N", "ffx/xray/structures/5zck.pdb",
-                "ffx/xray/structures/5zck_ffx_2fofc.map"};
+
+        String[] args = {"-N", "-n", "10", "-r", "0.01", "src/main/java/ffx/xray/structures/5zck.pdb",
+                "src/main/java/ffx/xray/structures/5zck_ffx_2fofc.map"};
         binding.setVariable("args", args);
 
         alchemical.run();
