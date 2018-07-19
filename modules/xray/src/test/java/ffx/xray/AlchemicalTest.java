@@ -99,8 +99,8 @@ public class AlchemicalTest {
             }
         }
         // Set-up the input arguments for the Alchemical script.
-        String[] args = {"-N", "/Users/sohali/Desktop/alchemicalTestCases/5zck/5zck.pdb",
-                "/Users/sohali/Desktop/alchemicalTestCases/5zck/5zck_ffx_2fofc.map"};
+        String[] args = {"-N", "ffx/xray/structures/5zck.pdb",
+                "ffx/xray/structures/5zck_ffx_2fofc.map"};
         binding.setVariable("args", args);
 
         alchemical.run();
