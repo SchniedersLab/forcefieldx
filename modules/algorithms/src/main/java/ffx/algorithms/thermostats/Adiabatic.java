@@ -91,4 +91,18 @@ public class Adiabatic extends Thermostat {
     public void fullStep(double dt) {
         return;
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * No temperature-value assertions are made; temperature is irrelevant for adiabatic thermostat.
+     */
+    @Override
+    public void setTargetTemperature(double t) {
+        /**
+         * Obey the Third Law of Thermodynamics.
+         */
+        targetTemperature = t;
+        kT = t * kB;
+    }
 }
