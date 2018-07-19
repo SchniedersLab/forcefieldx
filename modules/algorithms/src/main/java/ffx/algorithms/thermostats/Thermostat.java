@@ -156,7 +156,7 @@ public abstract class Thermostat {
      */
     protected boolean removeCenterOfMassMotion;
     /**
-     * The random number generator that the Thermostat will use.
+     * The random number generator that the Thermostat will use to initialize velocities.
      */
     protected Random random;
     /**
