@@ -1,7 +1,39 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * Title: Force Field X.
+ * <p>
+ * Description: Force Field X - Software for Molecular Biophysics.
+ * <p>
+ * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
+ * <p>
+ * This file is part of Force Field X.
+ * <p>
+ * Force Field X is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
+ * <p>
+ * Force Field X is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ * <p>
+ * You should have received a copy of the GNU General Public License along with
+ * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA
+ * <p>
+ * Linking this library statically or dynamically with other modules is making a
+ * combined work based on this library. Thus, the terms and conditions of the
+ * GNU General Public License cover the whole combination.
+ * <p>
+ * As a special exception, the copyright holders of this library give you
+ * permission to link this library with independent modules to produce an
+ * executable, regardless of the license terms of these independent modules, and
+ * to copy and distribute the resulting executable under terms of your choice,
+ * provided that you also meet, for each linked independent module, the terms
+ * and conditions of the license of that module. An independent module is a
+ * module which is not derived from or based on this library. If you modify this
+ * library, you may extend this exception to your version of the library, but
+ * you are not obligated to do so. If you do not wish to do so, delete this
+ * exception statement from your version.
  */
 package ffx.algorithms;
 
@@ -24,17 +56,15 @@ import ffx.algorithms.groovy.Dynamics;
 import groovy.lang.Binding;
 
 /**
- *
- * @author hbernabe
+ * @author Hernan Bernabe
  */
 @RunWith(Parameterized.class)
 public class DynamicsRESPANVETest {
 
     private String info;
     private String filename;
-    private String restartFile;
     private double startingTotalEnergy;
-    private double totalEnergyTolerance = 0.5;
+    private double tolerance = 0.2;
 
     private Binding binding;
     private Dynamics dynamics;
@@ -44,22 +74,20 @@ public class DynamicsRESPANVETest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {
-                "Acetamide RESPA NVE", // info
-                "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-                "ffx/algorithms/structures/acetamide_NVE.dyn", // restartFile
-                -25.1958 // startingTotalEnergy
-            }
+                {
+                        "Acetamide RESPA NVE", // info
+                        "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
+                        -25.1958 // startingTotalEnergy
+                }
 
         });
 
     }
 
-    public DynamicsRESPANVETest(String info, String filename, String restartFile, double startingTotalEnergy) {
+    public DynamicsRESPANVETest(String info, String filename, double startingTotalEnergy) {
 
         this.info = info;
         this.filename = filename;
-        this.restartFile = restartFile;
         this.startingTotalEnergy = startingTotalEnergy;
     }
 
@@ -91,7 +119,7 @@ public class DynamicsRESPANVETest {
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
         // Assert that the final total energy is within the tolerance for the molecular dynamics trajectory
-        assertEquals(info + "End total energy for RESPA integrator NVE", startingTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
+        assertEquals(info + "End total energy for RESPA integrator NVE", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
     }
 
 }
