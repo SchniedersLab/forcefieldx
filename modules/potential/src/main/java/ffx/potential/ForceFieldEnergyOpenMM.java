@@ -595,9 +595,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         // Print out the OpenMM plugin directory.
         Pointer pluginDir = OpenMM_Platform_getDefaultPluginsDirectory();
         String pluginDirString = pluginDir.getString(0);
-        if (SystemUtils.IS_OS_WINDOWS) {
-            pluginDirString = pluginDirString + "/plugins";
-        }
         logger.log(Level.INFO, " OpenMM Plugin Dir: {0}", pluginDirString);
 
         /**
