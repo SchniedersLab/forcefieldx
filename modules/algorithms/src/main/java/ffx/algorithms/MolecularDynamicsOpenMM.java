@@ -45,7 +45,7 @@ import static java.lang.System.arraycopy;
 
 import com.sun.jna.ptr.PointerByReference;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import static simtk.openmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
@@ -154,8 +154,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     private boolean NVE = false;
 
     private boolean quiet = true;
-
-    private int quietInt = 0;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -527,9 +525,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     public final void updateContext() {
-        if (quietInt == 1) {
-            quiet = false;
-        }
         String currentIntegrator = forceFieldEnergyOpenMM.getIntegratorString();
         double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
         double currentTemperature = forceFieldEnergyOpenMM.getTemperature();
@@ -544,7 +539,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             integrator = forceFieldEnergyOpenMM.getIntegrator();
             context = forceFieldEnergyOpenMM.getContext();
         }
-        quietInt++;
+        quiet = false;
     }
 
     /**

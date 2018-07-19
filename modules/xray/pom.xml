@@ -54,11 +54,16 @@
                         <configuration>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/src/main/groovy/ffx</directory>
+                                    <directory>${basedir}/src/main/groovy/ffx/xray/groovy</directory>
+                                    <targetPath>xray</targetPath>
+                                </resource>
+                                <resource>
+                                    <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
+                                    <targetPath>realsapace</targetPath>
                                 </resource>
                             </resources>
-                            <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
                             <overwrite>true</overwrite>
+                            <outputDirectory>${basedir}/src/site/resources/scripts</outputDirectory>
                         </configuration>
                     </execution>
                     <execution>
@@ -70,11 +75,16 @@
                         <configuration>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/src/main/groovy/ffx</directory>
+                                    <directory>${basedir}/src/main/groovy/ffx/xray/groovy</directory>
+                                    <targetPath>xray</targetPath>
+                                </resource>
+                                <resource>
+                                    <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
+                                    <targetPath>realspace</targetPath>
                                 </resource>
                             </resources>
-                            <outputDirectory>${basedir}/../../scripts</outputDirectory>
                             <overwrite>true</overwrite>
+                            <outputDirectory>${basedir}/../../scripts</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -82,8 +92,12 @@
         </plugins>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/groovy/ffx</directory>
-                <targetPath>ffx/scripts</targetPath>
+                <directory>${basedir}/src/main/groovy/ffx/xray/groovy</directory>
+                <targetPath>ffx/scripts/xray</targetPath>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/groovy/ffx/realspace/groovy</directory>
+                <targetPath>ffx/scripts/realspace</targetPath>
             </resource>
             <resource>
                 <directory>${basedir}/src/main/java/ffx/xray/structures</directory>
@@ -133,9 +147,9 @@
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
+            <artifactId>commons-configuration2</artifactId>
             <type>jar</type>
-            <version>${commons-configuration.version}</version>
+            <version>${commons-configuration2.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

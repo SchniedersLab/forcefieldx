@@ -58,9 +58,9 @@
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
+            <artifactId>commons-configuration2</artifactId>
             <type>jar</type>
-            <version>${commons-configuration.version}</version>
+            <version>${commons-configuration2.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-math</groupId>

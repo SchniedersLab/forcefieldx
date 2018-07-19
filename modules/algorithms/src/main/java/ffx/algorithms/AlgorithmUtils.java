@@ -40,7 +40,7 @@ package ffx.algorithms;
 import java.io.File;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.algorithms.integrators.IntegratorEnum;
 import ffx.algorithms.thermostats.ThermostatEnum;

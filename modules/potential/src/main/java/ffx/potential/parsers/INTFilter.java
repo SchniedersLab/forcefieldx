@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
@@ -76,7 +76,7 @@ public class INTFilter extends SystemFilter {
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public INTFilter(List<File> files, MolecularAssembly molecularAssembly,
             ForceField forceField, CompositeConfiguration properties) {
@@ -93,7 +93,7 @@ public class INTFilter extends SystemFilter {
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public INTFilter(File file, MolecularAssembly molecularAssembly,
             ForceField forceField, CompositeConfiguration properties) {

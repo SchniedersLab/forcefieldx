@@ -52,7 +52,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.algorithms.integrators.BetterBeeman;
@@ -81,7 +81,7 @@ import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 
 /**
- * Run NVE or NVT molecular dynamics.
+ * Run NVE, NVT, or NPT molecular dynamics.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -234,7 +234,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
      * @param assembly a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
      * {@link ffx.algorithms.thermostats.ThermostatEnum} object.
@@ -337,6 +337,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
             case BUSSI:
                 tau = properties.getDouble("tau-temperature", 0.2);
                 thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), targetTemperature, tau);
+                if (properties.containsKey("randomseed")) {
+                    thermostat.setRandomSeed(properties.getInt("randomseed", 0));
+                }
                 break;
             case ADIABATIC:
             default:
@@ -1252,6 +1255,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
      */
     public double getPotentialEnergy() {
         return currentPotentialEnergy;
+    }
+    
+    /**
+     * Get the current temperature of the system
+     * @return currentTemperature
+     */
+    public double getTemperature(){
+        return currentTemperature;
     }
 
     /**

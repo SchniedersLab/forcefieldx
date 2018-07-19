@@ -52,7 +52,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * The ForceField class organizes parameters for a molecular mechanics force
@@ -133,7 +133,7 @@ public class ForceField {
      * ForceField Constructor.
      *
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param parameterFile a {@link java.io.File} object.
      */
     public ForceField(CompositeConfiguration properties, File parameterFile) {
@@ -145,7 +145,7 @@ public class ForceField {
      * ForceField Constructor.
      *
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public ForceField(CompositeConfiguration properties) {
         this.properties = properties;
@@ -762,13 +762,13 @@ public class ForceField {
             if (old == value) {
                 return;
             }
-            properties.clearProperty(key);
-            logger.info(String.format(" Removed %s %8.3f", key, old));
+            // properties.clearProperty(key);
+            logger.info(String.format("  Existing %s %8.3f", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" %s %8.3f", key, value));
+            logger.info(String.format("  Added    %s %8.3f", key, value));
         }
     }
 
@@ -788,12 +788,12 @@ public class ForceField {
             if (old == value) {
                 return;
             }
-            logger.info(String.format(" Clearing %s %d", key, old));
-            properties.clearProperty(key);
+            logger.info(String.format("  Existing %s %d", key, old));
+            // properties.clearProperty(key);
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
-            logger.info(String.format(" %s %d", key, value));
+            logger.info(String.format("  Added    %s %d", key, value));
             properties.addProperty(key, value);
         }
     }
@@ -849,20 +849,20 @@ public class ForceField {
             if (old.equalsIgnoreCase(value)) {
                 return;
             }
-            properties.clearProperty(key);
-            logger.info(String.format(" Removed %s %s.", key, old));
+            //properties.clearProperty(key);
+            logger.info(String.format("  Existing %s %s.", key, old));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" %s %s", key, value));
+            logger.info(String.format("  Added    %s %s", key, value));
         }
     }
 
     /**
      * Store a force field keyword that is represented by a Boolean.
      *
-     * @param forceFieldBoolean ForceFielBoolean
+     * @param forceFieldBoolean ForceFieldBoolean
      * @param value Boolean
      */
     public void addForceFieldBoolean(ForceFieldBoolean forceFieldBoolean, Boolean value) {
@@ -875,13 +875,13 @@ public class ForceField {
             if (old == value) {
                 return;
             }
-            properties.clearProperty(key);
-            logger.info(String.format(" Cleared %s %s", key, Boolean.toString(old)));
+            // properties.clearProperty(key);
+            logger.info(String.format("  Existing %s %s", key, Boolean.toString(old)));
         } catch (Exception e) {
             // Property does not exist yet.
         } finally {
             properties.addProperty(key, value);
-            logger.info(String.format(" %s %s", key, Boolean.toString(value)));
+            logger.info(String.format("  Added    %s %s", key, Boolean.toString(value)));
         }
     }
 

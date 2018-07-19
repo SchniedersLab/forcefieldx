@@ -39,7 +39,7 @@ package ffx.xray.parsers;
 
 import java.io.File;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;

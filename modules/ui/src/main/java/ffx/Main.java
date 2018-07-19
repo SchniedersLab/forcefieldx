@@ -39,6 +39,7 @@ package ffx;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import java.awt.GraphicsEnvironment;
@@ -69,7 +70,6 @@ import edu.rit.pj.Comm;
 import ffx.ui.LogHandler;
 import ffx.ui.MainPanel;
 import ffx.ui.OSXAdapter;
-import static ffx.potential.extended.ExtUtils.prop;
 
 import sun.misc.Unsafe;
 
@@ -78,15 +78,14 @@ import sun.misc.Unsafe;
  * Force Field X.
  *
  * @author Michael J. Schnieders
- * @since 1.0
  *
+ * @since 1.0
  */
 public final class Main extends JFrame {
 
     private static final Logger logger = Logger.getLogger(Main.class.getName());
     private static Level level;
     private static LogHandler logHandler;
-    private static final boolean noHeader = prop("sys.noHeader", false);
 
     /**
      * Process any "-D" command line flags.
@@ -306,7 +305,7 @@ public final class Main extends JFrame {
      * @param args an array of {@link java.lang.String} objects.
      * @throws java.lang.Exception if any.
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         /**
          * Process any "-D" command line flags.
          */
@@ -378,45 +377,18 @@ public final class Main extends JFrame {
      * Main does some window initializations.
      *
      * @param commandLineFile a {@link java.io.File} object.
-     * @param argList a {@link java.util.List} object.
+     * @param argList         a {@link java.util.List} object.
      */
     public Main(File commandLineFile, List<String> argList) {
         super("Force Field X");
         // Start the clock.
         stopWatch.start();
-        setVisible(false);
 
-        // Create the MainPanel and MainMenu, then add them to the JFrame
-        java.awt.Toolkit.getDefaultToolkit().setDynamicLayout(true);
-        mainPanel = new MainPanel(this);
-        logHandler.setMainPanel(mainPanel);
-        add(mainPanel);
-        mainPanel.initialize();
-        setJMenuBar(mainPanel.getMainMenu());
-        // Set the Title and Icon
-        setTitle("Force Field X");
-        URL iconURL = getClass().getClassLoader().getResource(
-                "ffx/ui/icons/icon64.png");
-        ImageIcon icon = new ImageIcon(iconURL);
-        setIconImage(icon.getImage());
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                if (mainPanel != null) {
-                    mainPanel.exit();
-                }
-                System.exit(0);
-            }
-        });
-        // This is a hack to get GraphicsCanvis to initialize on some
-        // platform/Java3D combinations.
-        mainPanel.setPanel(MainPanel.KEYWORDS);
-        setVisible(true);
-        mainPanel.setPanel(MainPanel.GRAPHICS);
-        // Mac OS X specific features that help Force Field X look native
-        // on Macs. This needs to be done after the MainPanel is created.
-        if (SystemUtils.IS_OS_MAC_OSX) {
-            osxAdapter = new OSXAdapter(mainPanel);
+        // Init the GUI.
+        try {
+            SwingUtilities.invokeAndWait(initGUI);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         // Finally, open the supplied file if necessary.
@@ -468,8 +440,49 @@ public final class Main extends JFrame {
     }
 
     /**
+     * This Runnable is used to init the GUI using SwingUtilities.
+     */
+    final private Runnable initGUI = new Runnable() {
+        public void run() {
+            setVisible(false);
+            // Create the MainPanel and MainMenu, then add them to the JFrame
+            java.awt.Toolkit.getDefaultToolkit().setDynamicLayout(true);
+            mainPanel = new MainPanel(Main.this);
+            logHandler.setMainPanel(mainPanel);
+            add(mainPanel);
+            mainPanel.initialize();
+            setJMenuBar(mainPanel.getMainMenu());
+            // Set the Title and Icon
+            setTitle("Force Field X");
+            URL iconURL = getClass().getClassLoader().getResource(
+                    "ffx/ui/icons/icon64.png");
+            ImageIcon icon = new ImageIcon(iconURL);
+            setIconImage(icon.getImage());
+            addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    if (mainPanel != null) {
+                        mainPanel.exit();
+                    }
+                    System.exit(0);
+                }
+            });
+            // This is a hack to get GraphicsCanvis to initialize on some
+            // platform/Java3D combinations.
+            mainPanel.setPanel(MainPanel.KEYWORDS);
+            setVisible(true);
+            mainPanel.setPanel(MainPanel.GRAPHICS);
+            // Mac OS X specific features that help Force Field X look native
+            // on Macs. This needs to be done after the MainPanel is created.
+            if (SystemUtils.IS_OS_MAC_OSX) {
+                osxAdapter = new OSXAdapter(mainPanel);
+            }
+        }
+    };
+
+    /**
      * {@inheritDoc}
-     *
+     * <p>
      * Commons.Lang Style toString.
      */
     @Override
@@ -487,8 +500,10 @@ public final class Main extends JFrame {
      * This is the main application wrapper.
      */
     public static MainPanel mainPanel;
+    /**
+     * An Adapter class to integrate with OSX.
+     */
     public static OSXAdapter osxAdapter;
-
     /**
      * Rank of this process for a multi-process Parallel Java FFX job.
      */

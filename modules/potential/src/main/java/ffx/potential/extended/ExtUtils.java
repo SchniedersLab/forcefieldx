@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -55,11 +55,9 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.configuration.AbstractConfiguration;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.IntRange;
+import org.apache.commons.configuration2.AbstractConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.bonded.Atom;
@@ -77,6 +75,7 @@ public final class ExtUtils {
 
     private ExtUtils() {
     }   // static class
+
     private static final Logger logger = Logger.getLogger(ExtUtils.class.getName());
 
     public static <T> void setProp(String key, T set) {
@@ -115,7 +114,7 @@ public final class ExtUtils {
                     return false;
                 })
                 .forEach(key -> SB.append(String.format("   %-30s %s",
-                key.toString() + ":", System.getProperty(key.toString()))));
+                        key.toString() + ":", System.getProperty(key.toString()))));
         if (!SB.toString().isEmpty()) {
             if (header != null) {
                 SB.insert(0, format(" %s", header));
@@ -172,7 +171,19 @@ public final class ExtUtils {
     }
 
     public static List<Integer> intRange(int start, int end) {
-        return Arrays.asList(ArrayUtils.toObject(new IntRange(start, end).toArray()));
+        List<Integer> intArray = new ArrayList<>();
+        for (int i = start; i <= end; i++) {
+            intArray.add(i);
+        }
+        return intArray;
+    }
+
+    public static int[] intRangeArray(int start, int end) {
+        int array[] = new int[end - start + 1];
+        for (int i = start; i <= end; i++) {
+            array[i-start] = i;
+        }
+        return array;
     }
 
     public static List<Integer> intRange(int single) {
@@ -319,6 +330,10 @@ public final class ExtUtils {
         } catch (RuntimeException ex) {
             logger.warning(String.format("Error parsing property %s with value %s; the default is %s.",
                     key, properties.getString(key, "null"), defaultVal.toString()));
+
+            logger.info(ex.toString());
+            ex.printStackTrace();
+
             throw ex;
         }
     }

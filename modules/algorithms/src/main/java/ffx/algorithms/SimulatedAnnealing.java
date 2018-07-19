@@ -40,7 +40,7 @@ package ffx.algorithms;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.algorithms.integrators.IntegratorEnum;
 import ffx.algorithms.thermostats.ThermostatEnum;
@@ -75,7 +75,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * @param assembly a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      */
     public SimulatedAnnealing(MolecularAssembly assembly,
@@ -94,7 +94,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
      * @param assembly a {@link ffx.potential.MolecularAssembly} object.
      * @param potentialEnergy a {@link ffx.numerics.Potential} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
      * @param requestedThermostat a
      * {@link ffx.algorithms.thermostats.ThermostatEnum}

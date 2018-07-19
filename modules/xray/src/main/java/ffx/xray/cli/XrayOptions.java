@@ -41,16 +41,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.MolecularAssembly;
 import ffx.xray.CrystalReciprocalSpace;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
-import ffx.xray.parsers.DiffractionFile;
 import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
+import ffx.xray.parsers.DiffractionFile;
 
+import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Option;
 
 /**
@@ -59,7 +60,7 @@ import picocli.CommandLine.Option;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class XrayOptions {
+public class XrayOptions extends DataRefinementOptions {
 
     private static final Logger logger = Logger.getLogger(XrayOptions.class.getName());
 
@@ -84,30 +85,23 @@ public class XrayOptions {
     boolean gridSearch = false;
 
     /**
-     * -N or --nBins
+     * --nBins sets the number of reflection bins to use.
      */
-    @Option(names = {"-N", "--nBins"}, paramLabel = "10",
+    @Option(names = {"--nBins"}, paramLabel = "10",
             description = "The number of refection bins.")
     int nBins = 10;
 
     /**
-     * -F or --FSigFCutoff
+     * --FSigFCutoff
      */
-    @Option(names = {"-F", "--FSigFCutoff"}, paramLabel = "-1.0",
+    @Option(names = {"--FSigFCutoff"}, paramLabel = "-1.0",
             description = "F / SigF cutoff (-1.0 is no cutoff).")
     double fSigFCutoff = -1.0;
 
     /**
-     * -X or --wA The weight of the X-ray data (wA).
+     * --aRadBuffer
      */
-    @Option(names = {"-X", "--wA"}, paramLabel = "1.0",
-            description = "The weight of the X-ray data (wA).")
-    double wA = 1.0;
-
-    /**
-     * -a or -aRadBuffer
-     */
-    @Option(names = {"-a", "--aRadBuffer"}, paramLabel = "0.75",
+    @Option(names = {"--aRadBuffer"}, paramLabel = "0.75",
             description = "Set the distance beyond the atomic radius to evaluate scattering (A).")
     double aRadBuffer = 0.75;
 
@@ -132,11 +126,11 @@ public class XrayOptions {
     boolean splineFit = true;
 
     /**
-     * -A or --all
+     * -A or --allGaussians
      */
-    @Option(names = {"-A", "--all"}, paramLabel = "false",
-            description = "Use all defined Gaussians for atomic scattering density (the default is to use the top 3).")
-    boolean useAll = false;
+    @Option(names = {"-A", "--allGaussians"}, paramLabel = "false",
+            description = "Use all defined Gaussiansfor atomic scattering density (the default is to use the top 3).")
+    boolean allGaussians = false;
 
     /**
      * --xrayScaleTol
@@ -157,17 +151,11 @@ public class XrayOptions {
     double bSimWeight = 1.0;
 
     /**
-     * --residueBFactor
-     */
-    @Option(names = {"--residueBFactor"}, paramLabel = "false", description = "Refine B-factors by residue.")
-    boolean residueBFactor = false;
-
-    /**
      * --nResidueBFactor
      */
-    @Option(names = {"--nResidueBFactor"}, paramLabel = "1",
-            description = "Number of residues per B-factor, if refining by B-factors by residue.")
-    int nResidueBFactor = 1;
+    @Option(names = {"--nResidueBFactor"}, paramLabel = "0",
+            description = "Number of residues per B-factor. 0 uses atomic B-factors (default).")
+    int nResidueBFactor = 0;
 
     /**
      * -u or --addAnisoU
@@ -176,24 +164,25 @@ public class XrayOptions {
     boolean anisoU = false;
 
     /**
-     * -O or --refineMolOcc
+     * --rmo or --refineMolOcc
      */
-    @Option(names = {"-O", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
+    @Option(names = {"--rmo", "--refineMolOcc"}, paramLabel = "false", description = "Refine on molecules.")
     boolean refineMolOcc = false;
 
     /**
-     * -x or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
+     * -X or --data Specify input data filename, weight applied to the data (wA) and if the data is from a neutron experiment.
      */
-    @Option(names = {"-x", "--data"}, arity = "3",
-            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -x filename 1.0 false).")
+    @Option(names = {"-X", "--data"}, arity = "3",
+            description = "Specify input data filename, its weight (wA) and if its from a neutron experiment (e.g. -X filename 1.0 false).")
     String[] data = null;
 
     /**
-     * -r or --mode sets the desired refinement mode
+     * -m or --mode sets the desired refinement mode
      * [COORDINATES, BFACTORS, COORDINATES_AND_BFACTORS, OCCUPANCIES, BFACTORS_AND_OCCUPANCIES, COORDINATES_AND_OCCUPANCIES, COORDINATES_AND_BFACTORS_AND_OCCUPANCIES].
      */
-    @Option(names = {"-m", "--mode"}, paramLabel = "COORDINATES", description = "Refinement mode: coordinates, bfactors and/or occupancies.")
-    String modeString = "COORDINATES";
+    @Option(names = {"-m", "--mode"}, paramLabel = "coordinates",
+            description = "Refinement mode: coordinates, bfactors and/or occupancies.")
+    String modeString = "coordinates";
 
     /**
      * The refinement mode to use.
@@ -204,26 +193,102 @@ public class XrayOptions {
      * Parse options.
      */
     public void init() {
-        solventModel = CrystalReciprocalSpace.parseSolventModel(solventString);
         refinementMode = RefinementMinimize.parseMode(modeString);
+        solventModel = CrystalReciprocalSpace.parseSolventModel(solventString);
     }
 
-    public void setProperties(CompositeConfiguration properties) {
+    public void setProperties(ParseResult parseResult, CompositeConfiguration properties) {
+        // wA
+        if (!parseResult.hasMatchedOption("wA")) {
+            wA = properties.getDouble("xweight", wA);
+        }
         properties.setProperty("xweight", wA);
+
+        // bSimWeight
+        if (!parseResult.hasMatchedOption("bSimWeight")) {
+            bSimWeight = properties.getDouble("bsimweight", bSimWeight);
+        }
         properties.setProperty("bsimweight", bSimWeight);
+
+        // F/SigF Cutoff
+        if (!parseResult.hasMatchedOption("fsigfcutoff")) {
+            fSigFCutoff = properties.getDouble("fsigfcutoff", fSigFCutoff);
+        }
         properties.setProperty("fsigfcutoff", fSigFCutoff);
+
+        // Solvent Grid Search
+        if (!parseResult.hasMatchedOption("gridSearch")) {
+            gridSearch = properties.getBoolean("gridsearch", gridSearch);
+        }
         properties.setProperty("gridsearch", gridSearch);
+
+        // Number of Bins
+        if (!parseResult.hasMatchedOption("nBins")) {
+            nBins = properties.getInt("nbins", nBins);
+        }
         properties.setProperty("nbins", nBins);
+
+        // Grid Sampling
+        if (!parseResult.hasMatchedOption("sampling")) {
+            sampling = properties.getDouble("sampling", sampling);
+        }
         properties.setProperty("sampling", sampling);
+
+        // Atomic Radius Buffer
+        if (!parseResult.hasMatchedOption("aRadBuffer")) {
+            aRadBuffer = properties.getDouble("aradbuff", aRadBuffer);
+        }
         properties.setProperty("aradbuff", aRadBuffer);
+
+        // RFreeFlag
+        if (!parseResult.hasMatchedOption("rFreeFlag")) {
+            rFreeFlag = properties.getInt("rrfreeflag", rFreeFlag);
+        }
         properties.setProperty("rrfreeflag", rFreeFlag);
+
+        // Spline Fit
+        if (!parseResult.hasMatchedOption("splineFit")) {
+            splineFit = properties.getBoolean("splinefit", splineFit);
+        }
         properties.setProperty("splinefit", splineFit);
-        properties.setProperty("use_3g", !useAll);
+
+        // Use All Gaussians
+        if (!parseResult.hasMatchedOption("allGaussians")) {
+            allGaussians = properties.getBoolean("use_3g", allGaussians);
+        }
+        properties.setProperty("use_3g", !allGaussians);
+
+        // X-ray Scale Tolerance
+        if (!parseResult.hasMatchedOption("xrayScaleTol")) {
+            xrayScaleTol = properties.getDouble("xrayscaletol", xrayScaleTol);
+        }
         properties.setProperty("xrayscaletol", xrayScaleTol);
+
+        // Sigma A Tolerance
+        if (!parseResult.hasMatchedOption("sigmaATol")) {
+            sigmaATol = properties.getDouble("sigmaatol", sigmaATol);
+        }
         properties.setProperty("sigmaatol", sigmaATol);
-        properties.setProperty("residuebfactor", residueBFactor);
-        properties.setProperty("nresiduebfactor", nResidueBFactor);
+
+        // Number of Residues per B-Factor
+        if (!parseResult.hasMatchedOption("nResidueBFactor")) {
+            nResidueBFactor = properties.getInt("nresiduebfactor", nResidueBFactor);
+        }
+        properties.setProperty("nresiduebfactor", Integer.toString(nResidueBFactor));
+        if (nResidueBFactor > 0) {
+            properties.setProperty("residuebfactor", "true");
+        }
+
+        // Add AnisoU B-Factors to the Refinement
+        if (!parseResult.hasMatchedOption("anisoU")) {
+            anisoU = properties.getBoolean("addanisou", anisoU);
+        }
         properties.setProperty("addanisou", anisoU);
+
+        // Refine Molecular Occupancies
+        if (!parseResult.hasMatchedOption("refineMolOcc")) {
+            refineMolOcc = properties.getBoolean("refinemolocc", refineMolOcc);
+        }
         properties.setProperty("refinemolocc", refineMolOcc);
     }
 

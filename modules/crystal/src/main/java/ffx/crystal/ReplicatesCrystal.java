@@ -43,6 +43,7 @@ import java.util.logging.Logger;
 import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import static ffx.numerics.VectorMath.dot;
@@ -192,29 +193,39 @@ public class ReplicatesCrystal extends Crystal {
              * Then, update the parameters of the ReplicatesCrystal and possibly
              * the number of replicates.
              */
-            int ll = 1;
-            int mm = 1;
-            int nn = 1;
-
-            while (unitCell.interfacialRadiusA * ll < cutOff) {
-                ll++;
-            }
-            while (unitCell.interfacialRadiusB * mm < cutOff) {
-                mm++;
-            }
-            while (unitCell.interfacialRadiusC * nn < cutOff) {
-                nn++;
-            }
-            if (super.changeUnitCellParameters(a * ll, b * mm, c * nn, alpha, beta, gamma)) {
-                l = ll;
-                m = mm;
-                n = nn;
-                updateReplicateOperators();
-                return true;
-            }
+            return updateReplicatesDimentions();
         }
         return false;
+    }
 
+    private boolean updateReplicatesDimentions() {
+        /**
+         * Then, update the parameters of the ReplicatesCrystal and possibly
+         * the number of replicates.
+         */
+        int ll = 1;
+        int mm = 1;
+        int nn = 1;
+
+        while (unitCell.interfacialRadiusA * ll < cutOff) {
+            ll++;
+        }
+        while (unitCell.interfacialRadiusB * mm < cutOff) {
+            mm++;
+        }
+        while (unitCell.interfacialRadiusC * nn < cutOff) {
+            nn++;
+        }
+        if (super.changeUnitCellParameters(unitCell.a * ll, unitCell.b * mm, unitCell.c * nn,
+                unitCell.alpha, unitCell.beta, unitCell.gamma)) {
+            l = ll;
+            m = mm;
+            n = nn;
+            updateReplicateOperators();
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -268,6 +279,20 @@ public class ReplicatesCrystal extends Crystal {
     @Override
     public Crystal getUnitCell() {
         return unitCell;
+    }
+
+    public double getDensity(double mass) {
+        return unitCell.getDensity(mass);
+    }
+
+    public void setDensity(double dens, double mass) {
+        unitCell.setDensity(dens, mass);
+        updateReplicatesDimentions();
+    }
+
+    public void randomParameters(double dens, double mass) {
+        unitCell.randomParameters(dens, mass);
+        updateReplicatesDimentions();
     }
 
     /**

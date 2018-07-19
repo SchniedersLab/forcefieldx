@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
@@ -544,7 +544,7 @@ public abstract class ConversionFilter {
             try {
                 int[] inactiveRange = parseAtNumArg("inactive", inactiveKey, nmolaAtoms);
                 logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
-                        + "used", inactiveRange[0]+1, inactiveRange[1]+1));
+                        + "active", inactiveRange[0]+1, inactiveRange[1]+1));
                 for (int i = inactiveRange[0]; i <= inactiveRange[1]; i++) {
                     molaAtoms[i].setActive(false);
                 }

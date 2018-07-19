@@ -60,7 +60,7 @@ public class Adiabatic extends Thermostat {
      * @param type the VARIABLE_TYPE of each variable.
      */
     public Adiabatic(int n, double x[], double v[], double mass[], VARIABLE_TYPE type[]) {
-        super(n, x, v, mass, type, 0.0);
+        super(n, x, v, mass, type, 1.0);
         this.name = ThermostatEnum.ADIABATIC;
     }
 
@@ -90,5 +90,19 @@ public class Adiabatic extends Thermostat {
     @Override
     public void fullStep(double dt) {
         return;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * No temperature-value assertions are made; temperature is irrelevant for adiabatic thermostat.
+     */
+    @Override
+    public void setTargetTemperature(double t) {
+        /**
+         * Obey the Third Law of Thermodynamics.
+         */
+        targetTemperature = t;
+        kT = t * kB;
     }
 }

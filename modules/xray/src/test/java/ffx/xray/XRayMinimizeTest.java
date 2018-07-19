@@ -43,7 +43,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -243,9 +243,9 @@ public class XRayMinimizeTest {
         crystalStats.printRStats();
 
         assertEquals(info + " R value",
-                r, crystalStats.getR(), 0.01);
+                r, crystalStats.getR(), 0.02);
         assertEquals(info + " Rfree value",
-                rFree, crystalStats.getRFree(), 0.01);
+                rFree, crystalStats.getRFree(), 0.02);
         assertEquals(info + " sigmaA s",
                 sigmaA, crystalStats.getSigmaA(), 0.001);
         assertEquals(info + " sigmaA w",

@@ -67,4 +67,8 @@ public class ThermodynamicsOptions {
     public boolean getResetNumSteps() {
         return resetNumSteps;
     }
+
+    public int getEquilSteps() {
+        return nEquil;
+    }
 }

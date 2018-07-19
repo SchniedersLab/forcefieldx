@@ -37,7 +37,7 @@
  */
 package ffx.crystal;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.abs;
 
 /**
@@ -82,7 +82,7 @@ public class Resolution {
      * checkProperties</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return a {@link ffx.crystal.Resolution} object.
      */
     public static Resolution checkProperties(CompositeConfiguration properties) {

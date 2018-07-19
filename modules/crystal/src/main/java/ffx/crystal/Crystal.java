@@ -43,7 +43,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -638,14 +638,11 @@ public class Crystal {
 
     public void setDensity(double dens, double mass) {
         double currentDensity = getDensity(mass);
-
         double scale = cbrt(currentDensity / dens);
-        Crystal uc = getUnitCell();
-        changeUnitCellParameters(uc.a * scale, uc.b * scale, uc.c * scale, alpha, beta, gamma);
+        changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
         currentDensity = getDensity(mass);
-
         logger.info(format(" Updated density %6.3f (g/cc) with unit cell %s.",
-                currentDensity, uc.toShortString()));
+                currentDensity, toShortString()));
     }
 
     public void randomParameters(double dens, double mass) {
@@ -1423,9 +1420,9 @@ public class Crystal {
      */
     public void toPrimaryCell(double in[], double out[]) {
         toFractionalCoordinates(in, out);
-        out[0] = mod(out[0], 1.0) - 0.5;
-        out[1] = mod(out[1], 1.0) - 0.5;
-        out[2] = mod(out[2], 1.0) - 0.5;
+        out[0] = mod(out[0], 1.0);
+        out[1] = mod(out[1], 1.0);
+        out[2] = mod(out[2], 1.0);
         toCartesianCoordinates(out, out);
     }
 

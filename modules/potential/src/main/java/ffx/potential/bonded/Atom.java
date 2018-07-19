@@ -60,7 +60,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;

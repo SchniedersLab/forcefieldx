@@ -41,7 +41,7 @@ import java.io.File;
 import java.util.Hashtable;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import ffx.potential.MolecularAssembly;
@@ -95,7 +95,7 @@ public class FFXSystem extends MolecularAssembly {
      * <p>
      * Getter for the field <code>properties</code>.</p>
      *
-     * @return a {@link org.apache.commons.configuration.CompositeConfiguration}
+     * @return a {@link org.apache.commons.configuration2.CompositeConfiguration}
      * object.
      */
     @Override

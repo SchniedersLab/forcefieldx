@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -50,14 +50,16 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import static org.apache.commons.math3.util.FastMath.abs;
 
-import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AngleTorsionType;
+import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
@@ -100,7 +102,9 @@ public class ForceFieldFilter {
     private static final ForceFieldName DEFAULT_FORCE_FIELD = ForceFieldName.AMOEBA_BIO_2018;
 
     private ForceField forceField = null;
+
     private final CompositeConfiguration properties;
+
     private final File forceFieldFile;
 
     private boolean convertRadiusToDiameter = false;
@@ -129,7 +133,7 @@ public class ForceFieldFilter {
      * Constructor for ForceFieldFilter.</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public ForceFieldFilter(CompositeConfiguration properties) {
         this.properties = properties;
@@ -137,6 +141,7 @@ public class ForceFieldFilter {
             String fileName = properties.getString("parameters");
             if (properties.containsKey("propertyFile")) {
                 String propertyName = properties.getString("propertyFile");
+                logger.info(" Property File: " + propertyName);
                 File propertyFile = new File(propertyName);
                 forceFieldFile = parseParameterLocation(fileName, propertyFile);
             } else {
@@ -206,18 +211,26 @@ public class ForceFieldFilter {
                 ForceFieldName ff;
                 try {
                     ff = ForceField.ForceFieldName.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
-                    logger.info(" Loading force field: " + ff.toString());
                 } catch (Exception e) {
+                    logger.info(String.format(" The forcefield property %s was not recognized.\n", forceFieldString));
                     ff = DEFAULT_FORCE_FIELD;
-                    logger.warning("Defaulting to force field: " + ff.toString());
                 }
                 URL url = ForceField.getForceFieldURL(ff);
                 if (url != null) {
                     forceField.forceFieldURL = url;
                     try {
-                        PropertiesConfiguration config = new PropertiesConfiguration(url);
-                        properties.addConfiguration(config);
+                        FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+                                new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                                        .configure(
+                                                new Parameters().properties().setURL(url).setThrowExceptionOnMissing(true)
+                                                        //.setListDelimiterHandler(new DefaultListDelimiterHandler(','))
+                                                        .setIncludesAllowed(false));
+                        PropertiesConfiguration forcefieldConfiguration = builder.getConfiguration();
+                        String name = ForceField.toPropertyForm(ff.toString());
+                        forcefieldConfiguration.setHeader("Internal force field (" + name + ").");
+                        properties.addConfiguration(forcefieldConfiguration);
                     } catch (ConfigurationException e) {
+                        e.printStackTrace();
                         logger.warning(e.toString());
                     }
                 }
@@ -241,6 +254,11 @@ public class ForceFieldFilter {
     private void parse(CompositeConfiguration properties) {
         try {
             int numConfigs = properties.getNumberOfConfigurations();
+
+            if (numConfigs > 0) {
+                logger.info(" Parsing properties from: ");
+            }
+
             /**
              * Loop over the configurations starting with lowest precedence.
              * This way higher precedence entries will overwrite lower
@@ -248,6 +266,13 @@ public class ForceFieldFilter {
              */
             for (int n = numConfigs - 1; n >= 0; n--) {
                 Configuration config = properties.getConfiguration(n);
+                if (config instanceof PropertiesConfiguration) {
+                    PropertiesConfiguration propertiesConfiguration = (PropertiesConfiguration) config;
+                    if (propertiesConfiguration.getHeader() != null) {
+                        logger.info("  " + propertiesConfiguration.getHeader());
+                    }
+                }
+
                 Iterator i = config.getKeys();
                 while (i.hasNext()) {
                     String key = (String) i.next();
@@ -268,11 +293,6 @@ public class ForceFieldFilter {
                         // Split the line on the pound symbol to remove comments.
                         String input = s.split("#+")[0];
                         String tokens[] = input.trim().split(" +");
-
-                        // Parse keywords.
-                        if (parseKeyword(tokens)) {
-                            continue;
-                        }
 
                         // Parse force field types.
                         ForceFieldType type;
@@ -351,6 +371,8 @@ public class ForceFieldFilter {
             String message = "Exception parsing force field.";
             logger.log(Level.WARNING, message, e);
         }
+
+        logger.info("");
     }
 
     private void parse(InputStream stream) {
@@ -535,7 +557,7 @@ public class ForceFieldFilter {
             String message = "Exception parsing RELATIVE_SOLVATION type:\n" + input + "\n";
             logger.log(Level.SEVERE, message, ex);
         }
-        
+
     }
 
     private void parseAngle(String input, String tokens[]) {
@@ -1069,7 +1091,7 @@ public class ForceFieldFilter {
     }
 
     private void parseTorsionTorsion(String input, String[] tokens,
-            BufferedReader br) {
+                                     BufferedReader br) {
         if (tokens.length < 8) {
             logger.log(Level.WARNING, "Invalid TORTORS type:\n{0}", input);
             return;
@@ -1194,7 +1216,7 @@ public class ForceFieldFilter {
             logger.log(Level.SEVERE, message, e);
         }
     }
-    
+
     private void parseISolvRad(String input, String[] tokens) {
         if (tokens.length < 3) {
             logger.log(Level.WARNING, "Invalid ISolvRad type:\n{0}", input);

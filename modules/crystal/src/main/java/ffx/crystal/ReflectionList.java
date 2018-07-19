@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.floor;
@@ -94,7 +94,7 @@ public class ReflectionList {
      * @param crystal a {@link ffx.crystal.Crystal} object.
      * @param resolution a {@link ffx.crystal.Resolution} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public ReflectionList(Crystal crystal, Resolution resolution,
             CompositeConfiguration properties) {

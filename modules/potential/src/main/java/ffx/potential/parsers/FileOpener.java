@@ -37,7 +37,7 @@
  */
 package ffx.potential.parsers;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.potential.MolecularAssembly;
 

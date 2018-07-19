@@ -85,5 +85,4 @@ public class PotentialScript extends BaseScript {
         return true;
     }
 
-
 }

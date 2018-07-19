@@ -53,7 +53,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
-import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
@@ -86,7 +86,7 @@ public class XYZFilter extends SystemFilter {
      * @param system a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public XYZFilter(List<File> files, MolecularAssembly system,
             ForceField forceField, CompositeConfiguration properties) {
@@ -102,7 +102,7 @@ public class XYZFilter extends SystemFilter {
      * @param system a {@link ffx.potential.MolecularAssembly} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public XYZFilter(File file, MolecularAssembly system,
             ForceField forceField, CompositeConfiguration properties) {
@@ -142,7 +142,7 @@ public class XYZFilter extends SystemFilter {
             if (tokens.length == 2) {
                 getActiveMolecularSystem().setName(tokens[1]);
             }
-            logger.info(format("\n Opening %s with %d atoms\n", xyzFile.getName(), numberOfAtoms));
+            logger.info(format(" Opening %s with %d atoms\n", xyzFile.getName(), numberOfAtoms));
 
             // The header line is reasonable. Check for periodic box dimensions.
             br.mark(10000);

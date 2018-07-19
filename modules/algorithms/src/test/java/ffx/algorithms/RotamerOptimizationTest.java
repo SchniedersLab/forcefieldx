@@ -67,269 +67,226 @@ public class RotamerOptimizationTest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-               {"Chignolin Direct with Orig Rot - No Pruning (Goldstein)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
-                1,                      // Start Residue.
-                4,                      // End Residue.
-                0,                      // Pruning Level.
-                true,                   // Goldstein Elimination.
-                false,                  // Use 3-body Energies.
-                true,                   // Use Original Rotamers.
-                true,                   // Do Overall Opt.
-                -203.10632181492687,    // Expected Energy.
-                true,                   // Do Self-Energy Opt.
-                -203.10632181492687,    // Expected Self-Energy.
-                true,                   // Do Pair-Energy Opt.
-                1,                      // Pair residue
-                1018.8163922682276,     // Expected Pair-Energy.
-                false,                  // Do Trimer-Energy Opt.
-                1,                      // Trimer residue 1.
-                2,                      // Trimer residue 2.
-                0.0,                    // Expected trimer energy.
-                1.0e-3                  // Energy Tolerance.
-            },
-            {"Chignolin Direct with Orig Rot - Singles Pruning (Goldstein)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
-                1,                      // Start Residue.
-                4,                      // End Residue.
-                1,                      // Pruning Level.
-                true,                   // Goldstein Elimination.
-                false,                  // Use 3-body Energies.
-                true,                   // Use Original Rotamers.
-                true,                   // Do Overall Opt.
-                -203.10632181492684,    // Expected Energy.
-                true,                   // Do Self-Energy Opt.
-                -203.10632181492687,    // Expected Self-Energy.
-                true,                   // Do Pair-Energy Opt.
-                1,                      // Pair residue
-                -186.71062663844978,    // Expected Pair-Energy.
-                false,                  // Do Trimer-Energy Opt.
-                1,                      // Trimer residue 1.
-                2,                      // Trimer residue 2.
-                0.0,                    // Expected trimer energy.
-                1.0e-3                  // Energy Tolerance.
-            },
-            {"Chignolin Direct with Orig Rot - Pairs Pruning (Goldstein)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
-                1,                      // Start Residue.
-                4,                      // End Residue.
-                2,                      // Pruning Level.
-                true,                   // Goldstein Elimination.
-                false,                  // Use 3-body Energies.
-                true,                   // Use Original Rotamers.
-                true,                   // Do Overall Opt.
-                -203.10632181492684,    // Expected Energy.
-                true,                   // Do Self-Energy Opt.
-                -203.10632181492687,    // Expected Self-Energy.
-                true,                   // Do Pair-Energy Opt.
-                1,                      // Pair residue
-                -186.71062663844978,    // Expected Pair-Energy.
-                false,                  // Do Trimer-Energy Opt.
-                1,                      // Trimer residue 1.
-                2,                      // Trimer residue 2.
-                0.0,                    // Expected trimer energy.
-                1.0e-3                  // Energy Tolerance.
-            },
-            {"Chignolin Direct with Orig Rot - 3-body (Goldstein)",
-                "ffx/algorithms/structures/5awl.pdb",
-                "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
-                1,                      // Start Residue.
-                4,                      // End Residue.
-                1,                      // Pruning Level.
-                true,                   // Goldstein Elimination.
-                true,                   // Use 3-body Energies.
-                true,                   // Use Original Rotamers.
-                true,                   // Do Overall Opt.
-                -203.10632181492687,    // Expected Energy.
-                true,                   // Do Self-Energy Opt.
-                -203.10632181492687,    // Expected Self-Energy.
-                true,                   // Do Pair-Energy Opt.
-                1,                      // Pair residue
-                -186.71062663844978,    // Expected Pair-Energy.
-                true,                   // Do Trimer-Energy Opt.
-                1,                      // Trimer residue 1.
-                2,                      // Trimer residue 2.
-                -197.51830687083316,    // Expected trimer energy.
-                1.0e-3                  // Energy Tolerance.
-            },
-
-            {"Chignolin Direct with Orig Rot - No Pruning (DEE)",
-                    "ffx/algorithms/structures/5awl.pdb",
-                    "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
-                    1,                      // Start Residue.
-                    4,                      // End Residue.
-                    0,                      // Pruning Level.
-                    false,                  // Goldstein Elimination.
-                    false,                  // Use 3-body Energies.
-                    true,                   // Use Original Rotamers.
-                    true,                   // Do Overall Opt.
-                    -203.10632181492687,    // Expected Energy.
-                    true,                   // Do Self-Energy Opt.
-                    -203.10632181492687,    // Expected Self-Energy.
-                    true,                   // Do Pair-Energy Opt.
-                    1,                      // Pair residue
-                    1018.8163922682276,     // Expected Pair-Energy.
-                    false,                  // Do Trimer-Energy Opt.
-                    1,                      // Trimer residue 1.
-                    2,                      // Trimer residue 2.
-                    0.0,                    // Expected trimer energy.
-                    1.0e-3                  // Energy Tolerance.
-            },
-            {"Chignolin Direct with Orig Rot - Singles Pruning (DEE)",
-                    "ffx/algorithms/structures/5awl.pdb",
-                    "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
-                    1,                      // Start Residue.
-                    4,                      // End Residue.
-                    1,                      // Pruning Level.
-                    false,                  // Goldstein Elimination.
-                    false,                  // Use 3-body Energies.
-                    true,                   // Use Original Rotamers.
-                    true,                   // Do Overall Opt.
-                    -203.10632181492684,    // Expected Energy.
-                    true,                   // Do Self-Energy Opt.
-                    -203.10632181492687,    // Expected Self-Energy.
-                    true,                   // Do Pair-Energy Opt.
-                    1,                      // Pair residue
-                    -186.71062663844978,    // Expected Pair-Energy.
-                    false,                  // Do Trimer-Energy Opt.
-                    1,                      // Trimer residue 1.
-                    2,                      // Trimer residue 2.
-                    0.0,                    // Expected trimer energy.
-                    1.0e-3                  // Energy Tolerance.
-            },
-            {"Chignolin Direct with Orig Rot - Pairs Pruning (DEE)",
-                    "ffx/algorithms/structures/5awl.pdb",
-                    "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
-                    1,                      // Start Residue.
-                    4,                      // End Residue.
-                    2,                      // Pruning Level.
-                    false,                  // Goldstein Elimination.
-                    false,                  // Use 3-body Energies.
-                    true,                   // Use Original Rotamers.
-                    true,                   // Do Overall Opt.
-                    -203.10632181492684,    // Expected Energy.
-                    true,                   // Do Self-Energy Opt.
-                    -203.10632181492687,    // Expected Self-Energy.
-                    true,                   // Do Pair-Energy Opt.
-                    1,                      // Pair residue
-                    -186.71062663844978,    // Expected Pair-Energy.
-                    false,                  // Do Trimer-Energy Opt.
-                    1,                      // Trimer residue 1.
-                    2,                      // Trimer residue 2.
-                    0.0,                    // Expected trimer energy.
-                    1.0e-3                  // Energy Tolerance.
-            },
-            {"Chignolin Direct with Orig Rot - 3-body (DEE)",
-                    "ffx/algorithms/structures/5awl.pdb",
-                    "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
-                    1,                      // Start Residue.
-                    4,                      // End Residue.
-                    1,                      // Pruning Level.
-                    false,                  // Goldstein Elimination.
-                    true,                   // Use 3-body Energies.
-                    true,                   // Use Original Rotamers.
-                    true,                   // Do Overall Opt.
-                    -203.10632181492687,    // Expected Energy.
-                    true,                   // Do Self-Energy Opt.
-                    -203.10632181492687,    // Expected Self-Energy.
-                    true,                   // Do Pair-Energy Opt.
-                    1,                      // Pair residue
-                    -186.71062663844978,    // Expected Pair-Energy.
-                    true,                   // Do Trimer-Energy Opt.
-                    1,                      // Trimer residue 1.
-                    2,                      // Trimer residue 2.
-                    -197.51830687083316,    // Expected trimer energy.
-                    1.0e-3                  // Energy Tolerance.
-            }
-
-
-                /** {
-                "Trpcage Direct with Orig Rot (Goldstein)",
-                "ffx/algorithms/structures/trpcage.pdb",
-                "ffx/algorithms/structures/trpcage.direct.orig.restart",
-                0,              // Pruning Level.
-                true,           // Goldstein Elimination.
-                false,          // Use 3-body Energies.
-                true,           // Use Original Rotamers.
-                false,          // Do Overall Opt.
-                -628.143879,    // Expected Energy.
-                true,           // Do Self-Energy Opt.
-                22086.367273,   // Expected Self-Energy.
-                false,          // Do Pair-Energy Opt.
-                5,              // Pair residue
-                1280.865248,    // Expected Pair-Energy.
-                false,          // Do Trimer-Energy Opt.
-                5,              // Trimer residue 1.
-                6,              // Trimer residue 2.
-                0.0,            // Expected trimer energy.
-                1.0e-3          // Energy Tolerance.
+                {"Chignolin Direct with Orig Rot - No Pruning (Goldstein)",
+                        "ffx/algorithms/structures/5awl.pdb",
+                        "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
+                        1, // Start Residue.
+                        4, // End Residue.
+                        0, // Pruning Level.
+                        true, // Goldstein Elimination.
+                        false, // Use 3-body Energies.
+                        true, // Use Original Rotamers.
+                        true, // Do Overall Opt.
+                        -203.10632181492687, // Expected Energy.
+                        true, // Do Self-Energy Opt.
+                        -203.10632181492687, // Expected Self-Energy.
+                        true, // Do Pair-Energy Opt.
+                        1, // Pair residue
+                        1018.8163922682276, // Expected Pair-Energy.
+                        false, // Do Trimer-Energy Opt.
+                        1, // Trimer residue 1.
+                        2, // Trimer residue 2.
+                        0.0, // Expected trimer energy.
+                        1.0e-3 // Energy Tolerance.
                 },
-                {
-                "Trpcage Direct with Orig Rot (DEE, Prune=1)",
-                "ffx/algorithms/structures/trpcage.pdb",
-                "ffx/algorithms/structures/trpcage.direct.orig.restart",
-                1,              // Pruning Level.
-                false,          // Goldstein Elimination.
-                false,          // Use 3-body Energies.
-                true,           // Use Original Rotamers.
-                false,          // Do Overall Opt. (false because DEE leaves too many permutations)
-                -628.143879,    // Expected Energy.
-                true,           // Do Self-Energy Opt.
-                22086.367273,   // Expected Self-Energy.
-                true,           // Do Pair-Energy Opt.
-                5,              // Pair residue
-                1280.865248,    // Expected Pair-Energy.
-                false,          // Do Trimer-Energy Opt.
-                5,              // Trimer residue 1.
-                6,              // Trimer residue 2.
-                0.0,            // Expected trimer energy.
-                1.0e-3          // Energy Tolerance.
+                {"Chignolin Direct with Orig Rot - Singles Pruning (Goldstein)",
+                        "ffx/algorithms/structures/5awl.pdb",
+                        "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
+                        1, // Start Residue.
+                        4, // End Residue.
+                        1, // Pruning Level.
+                        true, // Goldstein Elimination.
+                        false, // Use 3-body Energies.
+                        true, // Use Original Rotamers.
+                        true, // Do Overall Opt.
+                        -203.10632181492684, // Expected Energy.
+                        true, // Do Self-Energy Opt.
+                        -203.10632181492687, // Expected Self-Energy.
+                        true, // Do Pair-Energy Opt.
+                        1, // Pair residue
+                        -186.71062663844978, // Expected Pair-Energy.
+                        false, // Do Trimer-Energy Opt.
+                        1, // Trimer residue 1.
+                        2, // Trimer residue 2.
+                        0.0, // Expected trimer energy.
+                        1.0e-3 // Energy Tolerance.
                 },
-                {
-                "Trpcage Direct with Orig Rot (DEE, Prune=2)",
-                "ffx/algorithms/structures/trpcage.pdb",
-                "ffx/algorithms/structures/trpcage.direct.orig.restart",
-                2,              // Pruning Level.
-                false,          // Goldstein Elimination.
-                false,          // Use 3-body Energies.
-                true,           // Use Original Rotamers.
-                true,           // Do Overall Opt. (false because DEE leaves too many permutations)
-                -628.143879,    // Expected Energy.
-                true,           // Do Self-Energy Opt.
-                -616.237522,    // Expected Self-Energy.
-                true,           // Do Pair-Energy Opt.
-                5,              // Pair residue
-                -563.929018,    // Expected Pair-Energy.
-                false,          // Do Trimer-Energy Opt.
-                5,              // Trimer residue 1.
-                6,              // Trimer residue 2.
-                0.0,            // Expected trimer energy.
-                1.0e-3          // Energy Tolerance.
+                {"Chignolin Direct with Orig Rot - Pairs Pruning (Goldstein)",
+                        "ffx/algorithms/structures/5awl.pdb",
+                        "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
+                        1, // Start Residue.
+                        4, // End Residue.
+                        2, // Pruning Level.
+                        true, // Goldstein Elimination.
+                        false, // Use 3-body Energies.
+                        true, // Use Original Rotamers.
+                        true, // Do Overall Opt.
+                        -203.10632181492684, // Expected Energy.
+                        true, // Do Self-Energy Opt.
+                        -203.10632181492687, // Expected Self-Energy.
+                        true, // Do Pair-Energy Opt.
+                        1, // Pair residue
+                        -186.71062663844978, // Expected Pair-Energy.
+                        false, // Do Trimer-Energy Opt.
+                        1, // Trimer residue 1.
+                        2, // Trimer residue 2.
+                        0.0, // Expected trimer energy.
+                        1.0e-3 // Energy Tolerance.
                 },
-                {
-                "Trpcage Direct (Goldstein)",
-                "ffx/algorithms/structures/trpcage.pdb",
-                "ffx/algorithms/structures/trpcage.direct.3body.restart",
-                1,              // Pruning Level.
-                true,           // Goldstein Elimination.
-                true,           // Use 3-body Energies.
-                true,           // Use Original Rotamers.
-                true,           // Do Overall Opt.
-                -628.143879,    // Expected Energy.
-                true,           // Do Self-Energy Opt.
-                22086.367273,   // Expected Self-Energy.
-                true,           // Do Pair-Energy Opt.
-                5,              // Pair residue.
-                1280.865247,    // Expected Pair-Energy.
-                true,           // Do Trimer-Energy Opt.
-                5,              // Trimer residue 1.
-                6,              // Trimer residue 2.
-                1276.608834,    // Expected trimer energy.
-                1.0e-3          // Energy Tolerance.
-                } */
+                {"Chignolin Direct with Orig Rot - 3-body (Goldstein)",
+                        "ffx/algorithms/structures/5awl.pdb",
+                        "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
+                        1, // Start Residue.
+                        4, // End Residue.
+                        1, // Pruning Level.
+                        true, // Goldstein Elimination.
+                        true, // Use 3-body Energies.
+                        true, // Use Original Rotamers.
+                        true, // Do Overall Opt.
+                        -203.10632181492687, // Expected Energy.
+                        true, // Do Self-Energy Opt.
+                        -203.10632181492687, // Expected Self-Energy.
+                        true, // Do Pair-Energy Opt.
+                        1, // Pair residue
+                        -186.71062663844978, // Expected Pair-Energy.
+                        true, // Do Trimer-Energy Opt.
+                        1, // Trimer residue 1.
+                        2, // Trimer residue 2.
+                        -197.51830687083316, // Expected trimer energy.
+                        1.0e-3 // Energy Tolerance.
+                },
+                {"Chignolin Direct with Orig Rot - No Pruning (DEE)",
+                        "ffx/algorithms/structures/5awl.pdb",
+                        "ffx/algorithms/structures/5awl.direct.orig.prun0.residues1-4.restart",
+                        1, // Start Residue.
+                        4, // End Residue.
+                        0, // Pruning Level.
+                        false, // Goldstein Elimination.
+                        false, // Use 3-body Energies.
+                        true, // Use Original Rotamers.
+                        true, // Do Overall Opt.
+                        -203.10632181492687, // Expected Energy.
+                        true, // Do Self-Energy Opt.
+                        -203.10632181492687, // Expected Self-Energy.
+                        true, // Do Pair-Energy Opt.
+                        1, // Pair residue
+                        1018.8163922682276, // Expected Pair-Energy.
+                        false, // Do Trimer-Energy Opt.
+                        1, // Trimer residue 1.
+                        2, // Trimer residue 2.
+                        0.0, // Expected trimer energy.
+                        1.0e-3 // Energy Tolerance.
+                },
+                {"Chignolin Direct with Orig Rot - Singles Pruning (DEE)",
+                        "ffx/algorithms/structures/5awl.pdb",
+                        "ffx/algorithms/structures/5awl.direct.orig.prun1.residues1-4.restart",
+                        1, // Start Residue.
+                        4, // End Residue.
+                        1, // Pruning Level.
+                        false, // Goldstein Elimination.
+                        false, // Use 3-body Energies.
+                        true, // Use Original Rotamers.
+                        true, // Do Overall Opt.
+                        -203.10632181492684, // Expected Energy.
+                        true, // Do Self-Energy Opt.
+                        -203.10632181492687, // Expected Self-Energy.
+                        true, // Do Pair-Energy Opt.
+                        1, // Pair residue
+                        -186.71062663844978, // Expected Pair-Energy.
+                        false, // Do Trimer-Energy Opt.
+                        1, // Trimer residue 1.
+                        2, // Trimer residue 2.
+                        0.0, // Expected trimer energy.
+                        1.0e-3 // Energy Tolerance.
+                },
+                {"Chignolin Direct with Orig Rot - Pairs Pruning (DEE)",
+                        "ffx/algorithms/structures/5awl.pdb",
+                        "ffx/algorithms/structures/5awl.direct.orig.prun2.residues1-4.restart",
+                        1, // Start Residue.
+                        4, // End Residue.
+                        2, // Pruning Level.
+                        false, // Goldstein Elimination.
+                        false, // Use 3-body Energies.
+                        true, // Use Original Rotamers.
+                        true, // Do Overall Opt.
+                        -203.10632181492684, // Expected Energy.
+                        true, // Do Self-Energy Opt.
+                        -203.10632181492687, // Expected Self-Energy.
+                        true, // Do Pair-Energy Opt.
+                        1, // Pair residue
+                        -186.71062663844978, // Expected Pair-Energy.
+                        false, // Do Trimer-Energy Opt.
+                        1, // Trimer residue 1.
+                        2, // Trimer residue 2.
+                        0.0, // Expected trimer energy.
+                        1.0e-3 // Energy Tolerance.
+                },
+                {"Chignolin Direct with Orig Rot - 3-body (DEE)",
+                        "ffx/algorithms/structures/5awl.pdb",
+                        "ffx/algorithms/structures/5awl.direct.orig.prun1.3body.residues1-4.restart",
+                        1, // Start Residue.
+                        4, // End Residue.
+                        1, // Pruning Level.
+                        false, // Goldstein Elimination.
+                        true, // Use 3-body Energies.
+                        true, // Use Original Rotamers.
+                        true, // Do Overall Opt.
+                        -203.10632181492687, // Expected Energy.
+                        true, // Do Self-Energy Opt.
+                        -203.10632181492687, // Expected Self-Energy.
+                        true, // Do Pair-Energy Opt.
+                        1, // Pair residue
+                        -186.71062663844978, // Expected Pair-Energy.
+                        true, // Do Trimer-Energy Opt.
+                        1, // Trimer residue 1.
+                        2, // Trimer residue 2.
+                        -197.51830687083316, // Expected trimer energy.
+                        1.0e-3 // Energy Tolerance.
+                }
+
+                /**
+                 * {
+                 * "Trpcage Direct with Orig Rot (Goldstein)",
+                 * "ffx/algorithms/structures/trpcage.pdb",
+                 * "ffx/algorithms/structures/trpcage.direct.orig.restart", 0, //
+                 * Pruning Level. true, // Goldstein Elimination. false, // Use 3-body
+                 * Energies. true, // Use Original Rotamers. false, // Do Overall Opt.
+                 * -628.143879, // Expected Energy. true, // Do Self-Energy Opt.
+                 * 22086.367273, // Expected Self-Energy. false, // Do Pair-Energy Opt.
+                 * 5, // Pair residue 1280.865248, // Expected Pair-Energy. false, // Do
+                 * Trimer-Energy Opt. 5, // Trimer residue 1. 6, // Trimer residue 2.
+                 * 0.0, // Expected trimer energy. 1.0e-3 // Energy Tolerance. }, {
+                 * "Trpcage Direct with Orig Rot (DEE, Prune=1)",
+                 * "ffx/algorithms/structures/trpcage.pdb",
+                 * "ffx/algorithms/structures/trpcage.direct.orig.restart", 1, //
+                 * Pruning Level. false, // Goldstein Elimination. false, // Use 3-body
+                 * Energies. true, // Use Original Rotamers. false, // Do Overall Opt.
+                 * (false because DEE leaves too many permutations) -628.143879, //
+                 * Expected Energy. true, // Do Self-Energy Opt. 22086.367273, //
+                 * Expected Self-Energy. true, // Do Pair-Energy Opt. 5, // Pair residue
+                 * 1280.865248, // Expected Pair-Energy. false, // Do Trimer-Energy Opt.
+                 * 5, // Trimer residue 1. 6, // Trimer residue 2. 0.0, // Expected
+                 * trimer energy. 1.0e-3 // Energy Tolerance. }, { "Trpcage Direct with
+                 * Orig Rot (DEE, Prune=2)", "ffx/algorithms/structures/trpcage.pdb",
+                 * "ffx/algorithms/structures/trpcage.direct.orig.restart", 2, //
+                 * Pruning Level. false, // Goldstein Elimination. false, // Use 3-body
+                 * Energies. true, // Use Original Rotamers. true, // Do Overall Opt.
+                 * (false because DEE leaves too many permutations) -628.143879, //
+                 * Expected Energy. true, // Do Self-Energy Opt. -616.237522, //
+                 * Expected Self-Energy. true, // Do Pair-Energy Opt. 5, // Pair residue
+                 * -563.929018, // Expected Pair-Energy. false, // Do Trimer-Energy Opt.
+                 * 5, // Trimer residue 1. 6, // Trimer residue 2. 0.0, // Expected
+                 * trimer energy. 1.0e-3 // Energy Tolerance. }, { "Trpcage Direct
+                 * (Goldstein)", "ffx/algorithms/structures/trpcage.pdb",
+                 * "ffx/algorithms/structures/trpcage.direct.3body.restart", 1, //
+                 * Pruning Level. true, // Goldstein Elimination. true, // Use 3-body
+                 * Energies. true, // Use Original Rotamers. true, // Do Overall Opt.
+                 * -628.143879, // Expected Energy. true, // Do Self-Energy Opt.
+                 * 22086.367273, // Expected Self-Energy. true, // Do Pair-Energy Opt.
+                 * 5, // Pair residue. 1280.865247, // Expected Pair-Energy. true, // Do
+                 * Trimer-Energy Opt. 5, // Trimer residue 1. 6, // Trimer residue 2.
+                 * 1276.608834, // Expected trimer energy. 1.0e-3 // Energy Tolerance. }
+                */
         });
     }
 
@@ -422,14 +379,18 @@ public class RotamerOptimizationTest {
 
         // Initialize Parallel Java
         try {
-            String args[] = new String[0];
-            Comm.init(args);
-        } catch (Exception e) {
-            String message = String.format(" Exception starting up the Parallel Java communication layer.");
-            logger.log(Level.WARNING, message, e.toString());
-            message = String.format(" Skipping rotamer optimization test.");
-            logger.log(Level.WARNING, message, e.toString());
-            return;
+            Comm.world();
+        } catch (IllegalStateException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping rotamer optimization test.");
+                logger.log(Level.WARNING, message, e.toString());
+                return;
+            }
         }
 
         // Run the optimization.
@@ -459,6 +420,7 @@ public class RotamerOptimizationTest {
                 counter++;
             }
         }
+        Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
         rotamerOptimization.setThreeBodyEnergy(useThreeBody);
@@ -466,20 +428,20 @@ public class RotamerOptimizationTest {
         rotamerOptimization.setPruning(pruningLevel);
         rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
-        
+
         double energy;
         int nRes = residueList.size();
         if (doOverallOpt) {
             rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestOverallOpt(true);
-            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);          
+            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected overall energy is: " + energy);
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
-     
+
         if (doSelfOpt) {
             rotamerOptimization.turnRotamerPairEliminationOff();
-            rotamerOptimization.setTestSelfEnergyEliminations(true); 
+            rotamerOptimization.setTestSelfEnergyEliminations(true);
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected self is: " + energy);
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
@@ -501,7 +463,7 @@ public class RotamerOptimizationTest {
                 double lowEnergy = rotamerOptimization.getSelf(i, rotCounter);
                 int bestRot = rotCounter;
                 for (int ri = 1; ri < nRot; ri++) {
-                    if (rotamerOptimization.checkPrunedSingles(i,ri)) {
+                    if (rotamerOptimization.checkPrunedSingles(i, ri)) {
                         continue;
                     } else {
                         double selfEnergy = rotamerOptimization.getSelf(i, ri);
@@ -534,7 +496,7 @@ public class RotamerOptimizationTest {
             // Loop over the pairResidue rotamers to find its lowest energy rotamer.
             for (int ri = 0; ri < ni; ri++) {
                 double energyForRi = 0.0;
-                if (rotamerOptimization.checkPrunedSingles(pairResidue,ri)) {
+                if (rotamerOptimization.checkPrunedSingles(pairResidue, ri)) {
                     continue;
                 }
                 // Loop over residue J
@@ -547,7 +509,7 @@ public class RotamerOptimizationTest {
                     int nRot = rotJ.length;
 
                     int rj = 0;
-                    while (rotamerOptimization.checkPrunedSingles(j,rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
+                    while (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
                         if (++rj >= nRot) {
                             logger.warning("RJ is too large.");
                         }
@@ -556,7 +518,7 @@ public class RotamerOptimizationTest {
                     double lowEnergy = rotamerOptimization.get2Body(pairResidue, ri, j, rj);
 
                     for (rj = 1; rj < nRot; rj++) {
-                        if (rotamerOptimization.checkPrunedSingles(j,rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
+                        if (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
                             continue;
                         } else {
                             double pairEnergy = rotamerOptimization.get2Body(pairResidue, ri, j, rj);
@@ -593,7 +555,7 @@ public class RotamerOptimizationTest {
                 double lowEnergy = rotamerOptimization.get2Body(pairResidue, bestRotI, j, rotCounter);
                 int bestRotJ = rotCounter;
                 for (int rj = 1; rj < nRotJ; rj++) {
-                    if (rotamerOptimization.checkPrunedSingles(j,rj) || rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
+                    if (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
                         continue;
                     } else {
                         double pairEnergy = rotamerOptimization.get2Body(pairResidue, bestRotI, j, rj);
@@ -642,7 +604,7 @@ public class RotamerOptimizationTest {
                     continue;
                 }
                 for (int rj = 0; rj < nj; rj++) { //loop through rot J
-                    if(rotamerOptimization.checkPrunedSingles(tripleResidue2,rj) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)){
+                    if (rotamerOptimization.checkPrunedSingles(tripleResidue2, rj) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)) {
                         continue;
                     }
                     double currentEnergy = 0.0;
@@ -655,21 +617,21 @@ public class RotamerOptimizationTest {
                         int nk = rotK.length;
 
                         int rkStart = 0;
-                        while(rotamerOptimization.checkPrunedSingles(k,rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
+                        while (rotamerOptimization.checkPrunedSingles(k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
                             if (++rkStart >= nk) {
                                 logger.warning("RJ is too large.");
                             }
                         }
 
-                        double lowEnergy = rotamerOptimization.get3Body(tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
+                        double lowEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
-                            if (rotamerOptimization.checkPrunedSingles(k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
+                            if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
                                 continue;
                             } else {
-                                double tripleEnergy = rotamerOptimization.get3Body(tripleResidue1, ri, tripleResidue2, rj, k, rk);
+                                double tripleEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rk);
                                 if (tripleEnergy < lowEnergy) {
                                     lowEnergy = tripleEnergy;
-                                }   
+                                }
                             }
                         }
                         currentEnergy += lowEnergy; //adds lowest energy conformation of residue k to that of the rotamer I
@@ -700,16 +662,16 @@ public class RotamerOptimizationTest {
                 int nk = rotK.length;
 
                 int rotCounter = 0;
-                while( rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) &&  rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {   
+                while (rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
                     rotCounter++;
                 }
-                double lowEnergy = rotamerOptimization.get3Body(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
+                double lowEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {
-                    if (rotamerOptimization.checkPrunedSingles(k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1,bestRotI,k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2,bestRotJ,k,rk)) {    
+                    if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rk)) {
                         continue;
                     } else {
-                        double tripleEnergy = rotamerOptimization.get3Body(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
+                        double tripleEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
                         if (tripleEnergy < lowEnergy) {
                             lowEnergy = tripleEnergy;
                             bestRotK = rk;
@@ -721,9 +683,8 @@ public class RotamerOptimizationTest {
             }
         }
 
-    } 
- 
-    
+    }
+
     @Test
     public void testPairEnergyElimination() {
         // Load the test system.
@@ -731,14 +692,18 @@ public class RotamerOptimizationTest {
 
         // Initialize Parallel Java
         try {
-            String args[] = new String[0];
-            Comm.init(args);
-        } catch (Exception e) {
-            String message = String.format(" Exception starting up the Parallel Java communication layer.");
-            logger.log(Level.WARNING, message, e.toString());
-            message = String.format(" Skipping rotamer optimization test.");
-            logger.log(Level.WARNING, message, e.toString());
-            return;
+            Comm.world();
+        } catch (IllegalArgumentException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping rotamer optimization test.");
+                logger.log(Level.WARNING, message, e.toString());
+                return;
+            }
         }
 
         // Run the optimization.
@@ -768,6 +733,7 @@ public class RotamerOptimizationTest {
                 counter++;
             }
         }
+        Residue[] residues = residueList.toArray(new Residue[residueList.size()]);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, null);
         rotamerOptimization.setThreeBodyEnergy(useThreeBody);
@@ -775,7 +741,7 @@ public class RotamerOptimizationTest {
         rotamerOptimization.setPruning(pruningLevel);
         rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
-        
+
         double energy;
         int nRes = residueList.size();
         if (doOverallOpt) {
@@ -785,7 +751,6 @@ public class RotamerOptimizationTest {
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
 
-        
         // ToDo: Test self-energy use for rotamer 2-body eliminations.
         if (doSelfOpt) {
             rotamerOptimization.turnRotamerSingleEliminationOff();
@@ -793,8 +758,7 @@ public class RotamerOptimizationTest {
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected self energy is: " + energy);
             assertEquals(info + " Self-Energy", expectedSelfEnergy, energy, tolerance);
-            
-            
+
             // Check that optimized rotamers are equivalent to the lowest self-energy of each residue.
             int optimum[] = rotamerOptimization.getOptimumRotamers();
 
@@ -812,7 +776,7 @@ public class RotamerOptimizationTest {
                 double lowEnergy = rotamerOptimization.getSelf(i, rotCounter);
                 int bestRot = rotCounter;
                 for (int ri = 1; ri < nRot; ri++) {
-                    if (rotamerOptimization.checkPrunedSingles(i,ri)) {
+                    if (rotamerOptimization.checkPrunedSingles(i, ri)) {
                         continue;
                     } else {
                         double selfEnergy = rotamerOptimization.getSelf(i, ri);
@@ -824,8 +788,8 @@ public class RotamerOptimizationTest {
                 }
                 assertEquals(String.format(" %s Self-Energy of residue %d", info, i), optimum[i], bestRot);
             }
-        } 
-        
+        }
+
         // ToDo: Test 2-body energy use for rotamer pair eliminations.
         if (doPairOpt) {
             rotamerOptimization.turnRotamerSingleEliminationOff();
@@ -833,7 +797,7 @@ public class RotamerOptimizationTest {
             energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
             //System.out.println("The expected 2-body energy is: " + energy);
             assertEquals(info + " Pair-Energy", expectedPairEnergy, energy, tolerance);
-            
+
             // Check that optimized rotamers are equivalent to the lowest 2-body energy sum for the "pairResidue".
             int optimum[] = rotamerOptimization.getOptimumRotamers();
 
@@ -847,7 +811,7 @@ public class RotamerOptimizationTest {
             // Loop over the pairResidue rotamers to find its lowest energy rotamer.
             for (int ri = 0; ri < ni; ri++) {
                 double energyForRi = 0.0;
-                if (rotamerOptimization.checkPrunedSingles(pairResidue,ri)) {
+                if (rotamerOptimization.checkPrunedSingles(pairResidue, ri)) {
                     continue;
                 }
                 // Loop over residue J
@@ -860,7 +824,7 @@ public class RotamerOptimizationTest {
                     int nRot = rotJ.length;
 
                     int rj = 0;
-                    while (rotamerOptimization.checkPrunedSingles(j,rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
+                    while (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
                         if (++rj >= nRot) {
                             logger.warning("RJ is too large.");
                         }
@@ -869,7 +833,7 @@ public class RotamerOptimizationTest {
                     double lowEnergy = rotamerOptimization.get2Body(pairResidue, ri, j, rj);
 
                     for (rj = 1; rj < nRot; rj++) {
-                        if (rotamerOptimization.checkPrunedSingles(j,rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
+                        if (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, ri, j, rj)) {
                             continue;
                         } else {
                             double pairEnergy = rotamerOptimization.get2Body(pairResidue, ri, j, rj);
@@ -906,7 +870,7 @@ public class RotamerOptimizationTest {
                 double lowEnergy = rotamerOptimization.get2Body(pairResidue, bestRotI, j, rotCounter);
                 int bestRotJ = rotCounter;
                 for (int rj = 1; rj < nRotJ; rj++) {
-                    if (rotamerOptimization.checkPrunedSingles(j,rj) || rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
+                    if (rotamerOptimization.checkPrunedSingles(j, rj) || rotamerOptimization.checkPrunedPairs(pairResidue, bestRotI, j, rj)) {
                         continue;
                     } else {
                         double pairEnergy = rotamerOptimization.get2Body(pairResidue, bestRotI, j, rj);
@@ -924,11 +888,11 @@ public class RotamerOptimizationTest {
                         assertEquals(String.format(" %s Pair-Energy of residue (%d,%d) with residue %d", info, pairResidue, bestRotI, j), optimum[j], bestRotJ);
                     }
                 }
-            } 
+            }
         }
-        
+
         // ToDo: Test 3-Body use for rotamer pair eliminations.
-       if (doTripleOpt) {
+        if (doTripleOpt) {
             rotamerOptimization.turnRotamerSingleEliminationOff();
             rotamerOptimization.setTestTripleEnergyEliminations(tripleResidue1, tripleResidue2);
             try {
@@ -962,7 +926,7 @@ public class RotamerOptimizationTest {
                     continue;
                 }
                 for (int rj = 0; rj < nj; rj++) { //loop through rot J
-                    if(rotamerOptimization.checkPrunedSingles(tripleResidue2,rj) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)){
+                    if (rotamerOptimization.checkPrunedSingles(tripleResidue2, rj) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, tripleResidue2, rj)) {
                         continue;
                     }
                     double currentEnergy = 0.0;
@@ -975,21 +939,21 @@ public class RotamerOptimizationTest {
                         int nk = rotK.length;
 
                         int rkStart = 0;
-                        while(rotamerOptimization.checkPrunedSingles(k,rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
+                        while (rotamerOptimization.checkPrunedSingles(k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rkStart) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rkStart)) {
                             if (++rkStart >= nk) {
                                 logger.warning("RJ is too large.");
                             }
                         }
 
-                        double lowEnergy = rotamerOptimization.get3Body(tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
+                        double lowEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rkStart);
                         for (int rk = rkStart; rk < nk; rk++) {
-                            if (rotamerOptimization.checkPrunedSingles(k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
+                            if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, ri, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, rj, k, rk)) {
                                 continue;
                             } else {
-                                double tripleEnergy = rotamerOptimization.get3Body(tripleResidue1, ri, tripleResidue2, rj, k, rk);
+                                double tripleEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, ri, tripleResidue2, rj, k, rk);
                                 if (tripleEnergy < lowEnergy) {
                                     lowEnergy = tripleEnergy;
-                                }   
+                                }
                             }
                         }
                         currentEnergy += lowEnergy; //adds lowest energy conformation of residue k to that of the rotamer I
@@ -1020,16 +984,16 @@ public class RotamerOptimizationTest {
                 int nk = rotK.length;
 
                 int rotCounter = 0;
-                while( rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) &&  rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {   
+                while (rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rotCounter) && rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rotCounter) && rotCounter < nk) {
                     rotCounter++;
                 }
-                double lowEnergy = rotamerOptimization.get3Body(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
+                double lowEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rotCounter);
                 int bestRotK = rotCounter;
                 for (int rk = 1; rk < nk; rk++) {
-                    if (rotamerOptimization.checkPrunedSingles(k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1,bestRotI,k,rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2,bestRotJ,k,rk)) {    
+                    if (rotamerOptimization.checkPrunedSingles(k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue1, bestRotI, k, rk) || rotamerOptimization.checkPrunedPairs(tripleResidue2, bestRotJ, k, rk)) {
                         continue;
                     } else {
-                        double tripleEnergy = rotamerOptimization.get3Body(tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
+                        double tripleEnergy = rotamerOptimization.get3Body(residues, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k, rk);
                         if (tripleEnergy < lowEnergy) {
                             lowEnergy = tripleEnergy;
                             bestRotK = rk;
@@ -1038,8 +1002,8 @@ public class RotamerOptimizationTest {
                 }
                 assertEquals(String.format(" %s Triple-Energy of residue (%d,%d) and residue (%d,%d) with residue %d",
                         info, tripleResidue1, bestRotI, tripleResidue2, bestRotJ, k), optimum[k], bestRotK);
-            } 
+            }
         }
-    } 
+    }
 
 }

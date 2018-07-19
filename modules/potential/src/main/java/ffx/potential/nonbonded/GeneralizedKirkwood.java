@@ -292,16 +292,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     private final double hydrogenOverlapScale;
     private final ForceField forceField;
 
-    private static final Level GK_WARN_LEVEL;
-
-    static {
-        String suppressGKwarnings = System.getProperty("gk-suppressWarnings");
-        if (suppressGKwarnings != null && Boolean.parseBoolean(suppressGKwarnings)) {
-            GK_WARN_LEVEL = Level.FINE;
-        } else {
-            GK_WARN_LEVEL = Level.WARNING;
-        }
-    }
+    private final Level GK_WARN_LEVEL;
 
     public double[] getOverlapScale() {
         return overlapScale;
@@ -338,6 +329,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
         nAtoms = atoms.length;
         maxNumAtoms = nAtoms;
         polarization = particleMeshEwald.polarization;
+
+        String suppressGKwarnings = System.getProperty("gk-suppressWarnings");
+        if (suppressGKwarnings != null && Boolean.parseBoolean(suppressGKwarnings)) {
+            GK_WARN_LEVEL = Level.FINE;
+        } else {
+            GK_WARN_LEVEL = Level.WARNING;
+        }
 
         try {
             epsilon = forceField.getDouble(ForceField.ForceFieldDouble.GK_EPSILON);

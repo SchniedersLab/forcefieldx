@@ -20,12 +20,11 @@
     <build>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/groovy/ffx/algorithms</directory>
+                <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
                 <targetPath>ffx/scripts</targetPath>
             </resource>
             <resource>
-                <directory>${basedir}/src/main/java/ffx/algorithms/structures
-                </directory>
+                <directory>${basedir}/src/main/java/ffx/algorithms/structures</directory>
                 <targetPath>ffx/algorithms/structures</targetPath>
                 <includes>
                     <include>*</include>
@@ -78,9 +77,9 @@
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
+            <artifactId>commons-configuration2</artifactId>
             <type>jar</type>
-            <version>${commons-configuration.version}</version>
+            <version>${commons-configuration2.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-math</groupId>
