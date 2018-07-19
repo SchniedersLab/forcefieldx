@@ -19,19 +19,40 @@
             <p>
                 <a href="https://github.com/mjschnie/openmm-java-wrappers">Java Wrappers for the OpenMM C API</a>
             </p>
-            <subsection name="Environment Variables needed to use OpenMM within Force Field X">
+            <subsection name="Environment Variables needed to use OpenMM within Force Field X on Linux / MacOS">
                 <p>
                     To use the OpenMM Java wrappers, two environment variables need to be set (e.g. in .bash_profile)
                     in order to invoke the OpenMM libraries from within a Java program.
                     First, the JNA_LIBRARY_PATH variable needs to point to the location of the lib
                     subdirectory of the OpenMM installation package.
                 </p>
-                <source>export JNA_LIBRARY_PATH="/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/lib"</source>
+                <source>export JNA_LIBRARY_PATH="/Applications/anaconda3/pkgs/openmm-7.2.2-py36_1/lib"</source>
                 <p>
                     Second, the OPENMM_PLUGIN_DIR variable needs to point to the location of the plugins subdirectory of
-                    the plugins subdirectory of the OpenMM installation package. 
+                    the OpenMM installation package.
                 </p>
-                <source>export OPENMM_PLUGIN_DIR="/Applications/anaconda3/pkgs/openmm-7.1.1-py36_0/lib/plugins"</source>
+                <source>export OPENMM_PLUGIN_DIR="/Applications/anaconda3/pkgs/openmm-7.2.2-py36_1/lib/plugins"</source>
+            </subsection>
+            <subsection name="Environment Variables needed to use OpenMM within Force Field X on Windows">
+                <p>
+                    To use the OpenMM Java wrappers on Windows, three environment variables need to be set or updated
+                    in order to invoke the OpenMM libraries from within a Java program (e.g. Force Field X).
+                    First, set the OPENMM_LIBRARY variable to point to the location of the lib subdirectory of the
+                    OpenMM installation package. For example, from within a Windows Git BASH shell type:
+                </p>
+                <source>export OPENMM_LIBRARY="/c/path/to/anaconda3/pkgs/openmm-7.2.2-py36_1/lib"</source>
+                <p>
+                    Second, the OPENMM_PLUGIN_DIR variable needs to point to the location of the plugins subdirectory of
+                    the OpenMM installation package.
+                </p>
+                <source>export OPENMM_PLUGIN_DIR="$OPENMM_LIBRARY/plugins"</source>
+                <p>
+                    Finally, append the Windows PATH environment variable to include 1) the OpenMM library location
+                    (i.e. using the OPENMM_LIBRARY environment variable defined above), 2) the location of the CUDA compiler
+                    (nvcc), and 3) the Microsoft Visual Studio compiler (cl). Note that items 2 and 3 may already be configured
+                    as a result of installing the nVidia GPU Computing Toolkit and Microsoft Visual Studio.
+                </p>
+                <source>export PATH="$PATH:$OPENMM_LIBRARY:/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v9.0/bin:/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin"</source>
             </subsection>
             <subsection name="An Example Force Field X Energy Command Calling OpenMM">
                 <p>

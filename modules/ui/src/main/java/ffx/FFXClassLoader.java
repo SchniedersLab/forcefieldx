@@ -146,6 +146,7 @@ public class FFXClassLoader extends URLClassLoader {
                 "commons-beanutils/commons-beanutils.jar",
                 "commons-collections/commons-collections4.jar",
                 "commons-configuration/commons-configuration2.jar",
+                "commons-digester/commons-digester.jar",
                 "commons-io/commons-io.jar",
                 "commons-lang/commons-lang3.jar",
                 "commons-logging/commons-logging.jar",
@@ -312,7 +313,6 @@ public class FFXClassLoader extends URLClassLoader {
             System.exit(-1);
         }
 
-
         tmpFile.deleteOnExit();
 
         OutputStream output = null;
@@ -460,7 +460,8 @@ public class FFXClassLoader extends URLClassLoader {
             for (JarFile extensionJar : extensionJars) {
                 JarEntry jarEntry = extensionJar.getJarEntry(name);
                 if (jarEntry != null) {
-                    String path = "jar:file:" + extensionJar.getName() + "!/" + jarEntry.getName();
+		    File file = new File(extensionJar.getName() + "!/" + jarEntry.getName());
+		    String path = "jar:" + file.toURI().toString();
                     try {
                         return new URL(path);
                     } catch (MalformedURLException ex) {
@@ -496,10 +497,8 @@ public class FFXClassLoader extends URLClassLoader {
             try {
                 for (String applicationPackage : applicationPackages) {
                     int applicationPackageLength = applicationPackage.length();
-                    if ((applicationPackageLength == 0
-                            && name.indexOf('.') == 0)
-                            || (applicationPackageLength > 0
-                            && name.startsWith(applicationPackage))) {
+                    if ((applicationPackageLength == 0 && name.indexOf('.') == 0)
+                            || (applicationPackageLength > 0 && name.startsWith(applicationPackage))) {
                         loadedClass = findClass(name);
                         break;
                     }
@@ -625,5 +624,5 @@ public class FFXClassLoader extends URLClassLoader {
             }
         }
     }
-
 }
+

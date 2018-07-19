@@ -49,29 +49,32 @@ class Alchemical extends AlgorithmsScript {
 
     private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
     /**
-     * -I or --doions sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
+     * -I or --onlyions sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
      */
-    @Option(names = ["-I", "--doions"], paramLabel = 'false',
-            description = 'Set whether or not to optimize ion positions (of a single type of ion).')
-    boolean opt_ions = false
+    @Option(names = ["-I", "--onlyions"], paramLabel = 'false',
+            description = 'Set to only optimize ions (of a single type).')
+    boolean onlyIons = false
+
     /**
      * --itype or --iontype Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.
      */
-    @Option(names = ["--itype", "--iontype"], paramLabel = '',
+    @Option(names = ["--itype", "--iontype"], paramLabel = 'null',
             description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
-    String[] iontype = ''
+    String [] iontype = null
+
     /**
-     * --neut or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
+     * -N or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
      */
-    @Option(names = ["--neut", "--neutralize"], paramLabel = 'false',
-            description = 'Add more of the selected ion to neutralize the crystal\'s charge')
+    @Option(names = ["-N", "--neutralize"], paramLabel = 'false',
+            description = 'Neutralize the crystal\'s charge by adding more of the selected ion')
     boolean neutralize = false
+
     /**
-     * -W or --dowaters sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
+     * -W or --onlywaters sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
      */
-    @Option(names = ["-W", "--dowaters"], paramLabel = 'false',
-            description = 'Set whether or not to optimize water positions.')
-    boolean opt_waters = false
+    @Option(names = ["-W", "--onlywaters"], paramLabel = 'false',
+            description = 'Set to only optimize waters.')
+    boolean onlyWaters = false
     /**
      * The refinement mode to use.
      */
@@ -107,12 +110,6 @@ class Alchemical extends AlgorithmsScript {
         if (!init()) {
             return this
         }
-
-        if (!opt_waters && !opt_ions) {
-            logger.info("\n Please choose to optimize either water (-W), ions (-I), or both.")
-            return this
-        }
-
         dynamicsOptions.init()
         xrayOptions.init()
         System.setProperty("lambdaterm", "true")
@@ -159,7 +156,6 @@ class Alchemical extends AlgorithmsScript {
             dyn = new File(rankDirectory.getPath() + File.separator + baseFilename + ".dyn")
             structureFile = new File(rankDirectory.getPath() + File.separator + structureFile.getName())
         }
-
         if (!dyn.exists()) {
             dyn = null
         }
@@ -187,25 +183,63 @@ class Alchemical extends AlgorithmsScript {
         ArrayList<MSNode> ions = assemblies[0].getIons()
         ArrayList<MSNode> waters = assemblies[0].getWaters()
 
-        if (opt_ions) {
+//      Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
+        if (!onlyWaters) {
+            logger.info("Doing ions.")
             if (ions == null || ions.size() == 0) {
                 logger.info("\n Please add an ion to the PDB file to scan with.")
                 return
             }
-
             for (MSNode msNode : ions) {
-                for (Atom atom : msNode.getAtomList()) {
-                    // Scan with the last ion in the file.
-                    atom.setUse(true)
-                    atom.setActive(true)
-                    atom.setApplyLambda(true)
-                    logger.info(" Alchemical atom: " + atom.toString())
+                try {
+                    logger.info("Selecting ion.")
+                    if (msNode.getAtomList().name == ionType) {
+                        logger.info("Ion has been selected.")
+                        for (Atom atom : msNode.getAtomList()) {
+                            System.out.println("Activating ions")
+                            atom.setUse(true)
+                            atom.setActive(true)
+                            atom.setApplyLambda(true)
+                            logger.info(" Alchemical atom: " + atom.toString())
+                        }
+                    }
+                } catch (MissingPropertyException e) {
+                    logger.info("Ion has not been selected.")
+                    if (neutralize) {
+                        logger.info("Neutralizing crystal.")
+                        double ionCharge = 0
+                        for (Atom atom : msNode.getAtomList()) {
+                            ionCharge += atom.multipoleType.getCharge()
+                        }
+                        logger.info("Ion charge is: " + ionCharge.toString())
+                        int numIons = (int) -1*(Math.ceil(crystalCharge/ionCharge))
+                        if (numIons > 0) {
+                            logger.info(numIons + " " + msNode.getAtomList().name
+                                    + " ions needed to neutralize the crystal.")
+                            ionType = msNode.getAtomList().name
+                            for (Atom atom : msNode.getAtomList()) {
+                                atom.setUse(true)
+                                atom.setActive(true)
+                                atom.setApplyLambda(true)
+                                logger.info(" Alchemical atom: " + atom.toString())
+                            }
+                        }
+                    }
+                    else {
+                        ionType = msNode.getAtomList().name
+                        for (Atom atom : msNode.getAtomList()) {
+                            atom.setUse(true)
+                            atom.setActive(true)
+                            atom.setApplyLambda(true)
+                            logger.info(" Alchemical atom: " + atom.toString())
+                        }
+                    }
                 }
             }
         }
 
         // Lambdize waters for position optimization, if this option was set to true
-        if (opt_waters) {
+        if (onlyWaters) {
             for (MSNode msNode : waters) {
                 for (Atom atom : msNode.getAtomList()) {
                     // Scan with the last ion in the file.

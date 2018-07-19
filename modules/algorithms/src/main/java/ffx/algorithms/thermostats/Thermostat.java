@@ -156,7 +156,7 @@ public abstract class Thermostat {
      */
     protected boolean removeCenterOfMassMotion;
     /**
-     * The random number generator that the Thermostat will use.
+     * The random number generator that the Thermostat will use to initialize velocities.
      */
     protected Random random;
     /**
@@ -320,7 +320,7 @@ public abstract class Thermostat {
      * @param t Target temperature must be greater than absolute zero.
      * @since 1.0
      */
-    public final void setTargetTemperature(double t) {
+    public void setTargetTemperature(double t) {
         /**
          * Obey the Third Law of Thermodynamics.
          */
