@@ -62,4 +62,3 @@ The ffx/bin directory should be appended to your $PATH environment variable. The
 
 ---
 
-[![codecov](https://codecov.io/gh/mjschnie/ffx/branch/master/graph/badge.svg)](https://codecov.io/gh/mjschnie/ffx)
