@@ -51,6 +51,7 @@ import static org.junit.Assert.*;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.commons.io.FilenameUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -453,13 +454,6 @@ public class ThermodynamicsTest {
 
     @Before
     public void before() {
-        binding = new Binding();
-        thermo = new NewThermodynamics();
-        thermo.setBinding(binding);
-    }
-
-    @Test
-    public void testThermodynamics() {
         // Initialize Parallel Java if needed.
         try {
             Comm.world();
@@ -472,9 +466,28 @@ public class ThermodynamicsTest {
                 logger.log(Level.WARNING, message, e.toString());
                 message = " Skipping thermodynamics test.";
                 logger.log(Level.WARNING, message, e.toString());
-                return;
+                fail();
             }
         }
+        binding = new Binding();
+        thermo = new NewThermodynamics();
+        thermo.setBinding(binding);
+    }
+
+    @After
+    public void after() {
+        if (filenames.length > 0) {
+            cleanUpFiles();
+        }
+        if (thermo.getOSRW() == null) {
+            assert mode == ThermoTestMode.HELP;
+        } else {
+            thermo.getOSRW().destroy();
+        }
+    }
+
+    @Test
+    public void testThermodynamics() {
 
         switch (mode) {
             case HELP:
@@ -488,9 +501,6 @@ public class ThermodynamicsTest {
                 break;
             default:
                 throw new IllegalStateException(String.format(" Thermodynamics test mode %s not recognized!", mode));
-        }
-        if (filenames.length > 0) {
-            cleanUpFiles();
         }
     }
 

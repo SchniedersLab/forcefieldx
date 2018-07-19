@@ -264,7 +264,7 @@ class NewThermodynamics extends AlgorithmsScript {
         return this;
     }
 
-    public AbstractOSRW getOSRW() {
+    AbstractOSRW getOSRW() {
         return osrw;
     }
 

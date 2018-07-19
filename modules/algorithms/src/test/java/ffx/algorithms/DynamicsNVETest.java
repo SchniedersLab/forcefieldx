@@ -48,6 +48,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import edu.rit.pj.Comm;
 
@@ -68,6 +69,8 @@ public class DynamicsNVETest {
     private double endPotentialEnergy;
     private double endTotalEnergy;
     private double tolerance = 0.1;
+
+    private boolean alwaysFail = false;
 
     private Binding binding;
     private Dynamics dynamics;
@@ -106,11 +109,18 @@ public class DynamicsNVETest {
 
         // Initialize Parallel Java
         try {
-            String args[] = new String[0];
-            Comm.init(args);
-        } catch (Exception e) {
-            String message = String.format(" Exception starting up the Parallel Java communication layer.");
-            logger.log(Level.WARNING, message, e.toString());
+            Comm.world();
+        } catch (IllegalStateException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping NVE dynamics test.");
+                logger.log(Level.WARNING, message, e.toString());
+                fail();
+            }
         }
 
     }

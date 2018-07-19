@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -102,12 +103,20 @@ public class DynamicsStochasticTest {
         dynamics = new Dynamics();
         dynamics.setBinding(binding);
 
+        // Initialize Parallel Java
         try {
-            String args[] = new String[0];
-            Comm.init(args);
-        } catch (Exception e) {
-            String message = String.format(" Exception starting up the Parallel Java communication layer.");
-            logger.log(Level.WARNING, message, e.toString());
+            Comm.world();
+        } catch (IllegalStateException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping stochastic (Langevin) dynamics test.");
+                logger.log(Level.WARNING, message, e.toString());
+                Assert.fail();
+            }
         }
     }
 

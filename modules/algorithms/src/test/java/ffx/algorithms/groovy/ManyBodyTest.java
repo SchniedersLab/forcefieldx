@@ -70,6 +70,22 @@ public class ManyBodyTest {
         binding = new Binding();
         manyBody = new ManyBody();
         manyBody.setBinding(binding);
+
+        // Initialize Parallel Java
+        try {
+            Comm.world();
+        } catch (IllegalStateException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping rotamer optimization test.");
+                logger.log(Level.WARNING, message, e.toString());
+                Assert.fail();
+            }
+        }
     }
 
     @Test
@@ -84,23 +100,6 @@ public class ManyBodyTest {
 
     @Test
     public void testManyBodyGlobal() {
-
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping rotamer optimization test.");
-                logger.log(Level.WARNING, message, e.toString());
-                return;
-            }
-        }
-
         // Set-up the input arguments for the script.
         String[] args = {"-a", "2", "-L", "2", "--tC", "2",
             "src/main/java/ffx/algorithms/structures/5awl.pdb"};
@@ -135,23 +134,6 @@ public class ManyBodyTest {
 
     @Test
     public void testManyBodyBoxOptimization() {
-
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping rotamer optimization test.");
-                logger.log(Level.WARNING, message, e.toString());
-                return;
-            }
-        }
-
         // Set-up the input arguments for the script.
         String[] args = {"-a", "5", "-L", "2", "--bL", "10", "--bB", "2", "--tC", "2", "--pr", "2",
             "src/main/java/ffx/algorithms/structures/5awl.pdb"};

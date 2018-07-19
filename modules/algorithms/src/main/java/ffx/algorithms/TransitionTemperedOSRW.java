@@ -1180,7 +1180,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                  * If the weight is less than 1.0, then a walker has activated
                  * tempering.
                  */
-                if (tempering == false && weight < 1.0) {
+                if (!tempering && weight < 1.0) {
                     tempering = true;
                     logger.info(String.format(" Tempering activated due to recieved weight of (%8.6f)", weight));
                 }
