@@ -92,6 +92,16 @@ public class Bussi extends Thermostat {
     }
 
     /**
+     * Initialize the Random number generator used to apply random forces to the
+     * particles.
+     *
+     * @param seed Random number generator seed.
+     */
+    public void setRandomSeed(long seed) {
+        bussiRandom.setSeed(seed);
+    }
+
+    /**
      * <p>
      * Constructor for Bussi.</p>
      *
