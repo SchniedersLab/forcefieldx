@@ -58,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import static java.io.File.separatorChar;
 
 /**
  * Class loader able to load classes and DLLs with a higher priority from a
@@ -94,118 +93,119 @@ public class FFXClassLoader extends URLClassLoader {
 
     static {
         FFX_FILES = new ArrayList<>(Arrays.asList(new String[]{
-                "edu.uiowa.eng.ffx" + separatorChar + "algorithms.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "autoparm.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "binding.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "crystal.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "numerics.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "potential.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "ui.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "utilities.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "xray.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "pj.jar",
+                "edu.uiowa.eng.ffx/algorithms.jar",
+                "edu.uiowa.eng.ffx/autoparm.jar",
+                "edu.uiowa.eng.ffx/binding.jar",
+                "edu.uiowa.eng.ffx/crystal.jar",
+                "edu.uiowa.eng.ffx/numerics.jar",
+                "edu.uiowa.eng.ffx/potential.jar",
+                "edu.uiowa.eng.ffx/ui.jar",
+                "edu.uiowa.eng.ffx/utilities.jar",
+                "edu.uiowa.eng.ffx/xray.jar",
+                "edu.uiowa.eng.ffx/pj.jar",
                 // Force Field X Extensions
-                "edu.uiowa.eng.ffx" + separatorChar + "algorithms-ext.jar",
-                "edu.uiowa.eng.ffx" + separatorChar + "xray-ext.jar",
+                "edu.uiowa.eng.ffx/algorithms-ext.jar",
+                "edu.uiowa.eng.ffx/xray-ext.jar",
                 // Groovy
-                "org.codehaus.groovy" + separatorChar + "groovy-console.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-test.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-cli-picocli.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-xml.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-datetime.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-jsr223.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-macro.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-test-junit5.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-ant.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-groovydoc.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-templates.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-bsf.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-swing.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-jmx.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-json.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-nio.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-servlet.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-sql.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-testng.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-docgenerator.jar",
-                "org.codehaus.groovy" + separatorChar + "groovy-groovysh.jar",
+                "org.codehaus.groovy/groovy-console.jar",
+                "org.codehaus.groovy/groovy-test.jar",
+                "org.codehaus.groovy/groovy.jar",
+                "org.codehaus.groovy/groovy-cli-picocli.jar",
+                "org.codehaus.groovy/groovy-xml.jar",
+                "org.codehaus.groovy/groovy-datetime.jar",
+                "org.codehaus.groovy/groovy-jsr223.jar",
+                "org.codehaus.groovy/groovy-macro.jar",
+                "org.codehaus.groovy/groovy-test-junit5.jar",
+                "org.codehaus.groovy/groovy-ant.jar",
+                "org.codehaus.groovy/groovy-groovydoc.jar",
+                "org.codehaus.groovy/groovy-templates.jar",
+                "org.codehaus.groovy/groovy-bsf.jar",
+                "org.codehaus.groovy/groovy-swing.jar",
+                "org.codehaus.groovy/groovy-jmx.jar",
+                "org.codehaus.groovy/groovy-json.jar",
+                "org.codehaus.groovy/groovy-nio.jar",
+                "org.codehaus.groovy/groovy-servlet.jar",
+                "org.codehaus.groovy/groovy-sql.jar",
+                "org.codehaus.groovy/groovy-testng.jar",
+                "org.codehaus.groovy/groovy-docgenerator.jar",
+                "org.codehaus.groovy/groovy-groovysh.jar",
                 // Pico CLI
-                "info.picocli" + separatorChar + "picocli.jar",
+                "info.picocli/picocli.jar",
                 // MRJ Toolkit for OS X"
-                "mrj" + separatorChar + "MRJToolkitStubs.jar",
+                "mrj/MRJToolkitStubs.jar",
                 // CUDA
-                "jcuda" + separatorChar + "jcuda-all.jar",
+                "jcuda/jcuda-all.jar",
                 // Java3D 1.6.0 (depends on JOGL v. 2.3.0)
-                "java3d" + separatorChar + "j3dcore.jar",
-                "java3d" + separatorChar + "j3dutils.jar",
-                "java3d" + separatorChar + "j3dvrml.jar",
-                "java3d" + separatorChar + "vecmath.jar",
+                "java3d/j3dcore.jar",
+                "java3d/j3dutils.jar",
+                "java3d/j3dvrml.jar",
+                "java3d/vecmath.jar",
                 // JOGAMP Fat Jar (includes GLUEGEN, JOGL and JOCL)
-                "org.jogamp" + separatorChar + "jogamp-fat.jar",
+                "org.jogamp/jogamp-fat.jar",
                 // Apache Commons
-                "commons-beanutils" + separatorChar + "commons-beanutils.jar",
-                "commons-collections" + separatorChar + "commons-collections4.jar",
-                "commons-configuration" + separatorChar + "commons-configuration2.jar",
-                "commons-io" + separatorChar + "commons-io.jar",
-                "commons-lang" + separatorChar + "commons-lang3.jar",
-                "commons-logging" + separatorChar + "commons-logging.jar",
-                "commons-math" + separatorChar + "commons-math3.jar",
+                "commons-beanutils/commons-beanutils.jar",
+                "commons-collections/commons-collections4.jar",
+                "commons-configuration/commons-configuration2.jar",
+                "commons-digester/commons-digester.jar",
+                "commons-io/commons-io.jar",
+                "commons-lang/commons-lang3.jar",
+                "commons-logging/commons-logging.jar",
+                "commons-math/commons-math3.jar",
                 // CDK Libraries
-                "org.openscience.cdk" + separatorChar + "cdk-interfaces.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-ioformats.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-standard.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-qsarmolecular.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-charges.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-smarts.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-reaction.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-fragment.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-dict.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-qsar.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-formula.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-hash.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-atomtype.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-isomorphism.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-valencycheck.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-smiles.jar",
-                "org.openscience.cdk" + separatorChar + "",
-                "org.openscience.cdk" + separatorChar + "cdk-io.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-core.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-silent.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-inchi.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-builder3d.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-forcefield.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-sdg.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-data.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-extra.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-smsd.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-core.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-dict.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-formula.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-interfaces.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-ioformats.jar",
-                "org.openscience.cdk" + separatorChar + "cdk-standard.jar",
+                "org.openscience.cdk/cdk-interfaces.jar",
+                "org.openscience.cdk/cdk-ioformats.jar",
+                "org.openscience.cdk/cdk-standard.jar",
+                "org.openscience.cdk/cdk-qsarmolecular.jar",
+                "org.openscience.cdk/cdk-charges.jar",
+                "org.openscience.cdk/cdk-smarts.jar",
+                "org.openscience.cdk/cdk-reaction.jar",
+                "org.openscience.cdk/cdk-fragment.jar",
+                "org.openscience.cdk/cdk-dict.jar",
+                "org.openscience.cdk/cdk-qsar.jar",
+                "org.openscience.cdk/cdk-formula.jar",
+                "org.openscience.cdk/cdk-hash.jar",
+                "org.openscience.cdk/cdk-atomtype.jar",
+                "org.openscience.cdk/cdk-isomorphism.jar",
+                "org.openscience.cdk/cdk-valencycheck.jar",
+                "org.openscience.cdk/cdk-smiles.jar",
+                "org.openscience.cdk/",
+                "org.openscience.cdk/cdk-io.jar",
+                "org.openscience.cdk/cdk-core.jar",
+                "org.openscience.cdk/cdk-silent.jar",
+                "org.openscience.cdk/cdk-inchi.jar",
+                "org.openscience.cdk/cdk-builder3d.jar",
+                "org.openscience.cdk/cdk-forcefield.jar",
+                "org.openscience.cdk/cdk-sdg.jar",
+                "org.openscience.cdk/cdk-data.jar",
+                "org.openscience.cdk/cdk-extra.jar",
+                "org.openscience.cdk/cdk-smsd.jar",
+                "org.openscience.cdk/cdk-core.jar",
+                "org.openscience.cdk/cdk-dict.jar",
+                "org.openscience.cdk/cdk-formula.jar",
+                "org.openscience.cdk/cdk-interfaces.jar",
+                "org.openscience.cdk/cdk-ioformats.jar",
+                "org.openscience.cdk/cdk-standard.jar",
                 //Google Libraraies
-                "com.google.guava" + separatorChar + "guava.jar",
+                "com.google.guava/guava.jar",
                 //ebi.beam Libraries
-                "uk.ac.ebi.beam" + separatorChar + "beam-core.jar",
-                "uk.ac.ebi.beam" + separatorChar + "beam-func.jar",
+                "uk.ac.ebi.beam/beam-core.jar",
+                "uk.ac.ebi.beam/beam-func.jar",
                 // FastUtil Libraries
-                "it.unimi.dsi" + separatorChar + "fastutil.jar",
+                "it.unimi.dsi/fastutil.jar",
                 // Java Help
-                "javax.help" + separatorChar + "javahelp.jar",
+                "javax.help/javahelp.jar",
                 // BioJava
-                "org.biojava" + separatorChar + "biojava3-core.jar",
-                "org.biojava" + separatorChar + "core.jar",
-                "org.biojava" + separatorChar + "bytecode.jar",
-                "org.biojava" + separatorChar + "biojava3-structure.jar",
-                "org.biojava" + separatorChar + "biojava3-alignment.jar",
-                "org.biojava" + separatorChar + "biojava3-phylo.jar",
+                "org.biojava/biojava3-core.jar",
+                "org.biojava/core.jar",
+                "org.biojava/bytecode.jar",
+                "org.biojava/biojava3-structure.jar",
+                "org.biojava/biojava3-alignment.jar",
+                "org.biojava/biojava3-phylo.jar",
                 // Lars Behnke's hierarchical-clustering-java
-                "com.apporiented" + separatorChar + "hierarchical-clustering.jar",
+                "com.apporiented/hierarchical-clustering.jar",
                 // OpenMM
-                "simtk" + separatorChar + "openmm.jar",
-                "net.java.dev.jna" + separatorChar + "jna.jar"
+                "simtk/openmm.jar",
+                "net.java.dev.jna/jna.jar"
         }));
 
         String osName = System.getProperty("os.name").toUpperCase();
@@ -215,16 +215,16 @@ public class FFXClassLoader extends URLClassLoader {
         // JCUDA
         if (x8664) {
             if ("MAC OS X".equals(osName)) {
-                FFX_FILES.add("64-bit" + separatorChar + "libJCudaDriver-apple-x86_64.jnilib");
-                FFX_FILES.add("64-bit" + separatorChar + "libJCudaRuntime-apple-x86_64.jnilib");
-                FFX_FILES.add("64-bit" + separatorChar + "libJCufft-apple-x86_64.jnilib");
+                FFX_FILES.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
+                FFX_FILES.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
+                FFX_FILES.add("64-bit/libJCufft-apple-x86_64.jnilib");
             } else if ("LINUX".equals(osName)) {
-                FFX_FILES.add("64-bit" + separatorChar + "libJCudaDriver-linux-x86_64.so");
-                FFX_FILES.add("64-bit" + separatorChar + "libJCudaRuntime-linux-x86_64.so");
+                FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
+                FFX_FILES.add("64-bit/libJCudaRuntime-linux-x86_64.so");
             } else if (osName.startsWith("WINDOWS")) {
-                FFX_FILES.add("64-bit" + separatorChar + "JCudaDriver-linux-x86_64.dll");
-                FFX_FILES.add("64-bit" + separatorChar + "JCudaRuntime-linux-x86_64.dll");
-                FFX_FILES.add("64-bit" + separatorChar + "JCufft-linux-x86_64.dll");
+                FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
+                FFX_FILES.add("64-bit/JCudaRuntime-linux-x86_64.dll");
+                FFX_FILES.add("64-bit/JCufft-linux-x86_64.dll");
             }
         }
     }
@@ -254,15 +254,12 @@ public class FFXClassLoader extends URLClassLoader {
         String tempDir = System.getProperty("java.io.tmpdir");
         File toDir = new File(tempDir + "deployed");
         toDir.mkdir();
-        toDir = new File(tempDir + "deployed" + separatorChar + "jdk16");
+        toDir = new File(tempDir + "deployed/jdk16");
         toDir.mkdir();
-        toDir = new File(tempDir + "deployed" + separatorChar + "jdk16" + separatorChar + "mac");
+        toDir = new File(tempDir + "deployed/jdk16/mac");
         toDir.mkdir();
 
-        String prof = tempDir + "deployed"
-                + separatorChar + "jdk16"
-                + separatorChar + "mac"
-                + separatorChar + "libprofilerinterface.jnilib";
+        String prof = tempDir + "deployed/jdk16/mac/libprofilerinterface.jnilib";
         File toFile = new File(prof);
         prof = "/Applications/NetBeans/NetBeans 8.0.app/Contents/Resources/NetBeans/profiler/lib/deployed/jdk16/mac/libprofilerinterface.jnilib";
         File fromFile = new File(prof);
@@ -316,7 +313,6 @@ public class FFXClassLoader extends URLClassLoader {
             System.exit(-1);
         }
 
-
         tmpFile.deleteOnExit();
 
         OutputStream output = null;
@@ -357,9 +353,7 @@ public class FFXClassLoader extends URLClassLoader {
         }
 
         // Build class file from its name
-        // String classFile = name.replace('.', '/') + ".class";
-        String classFile = name.replace('.', separatorChar) + ".class";
-
+        String classFile = name.replace('.', '/') + ".class";
         InputStream classInputStream = null;
         if (extensionJars != null) {
             for (JarFile extensionJar : extensionJars) {
@@ -433,7 +427,7 @@ public class FFXClassLoader extends URLClassLoader {
             loadExtensions();
         }
 
-        String path = extensionDlls.get(libname);
+        String path = (String) this.extensionDlls.get(libname);
 
         if (path == null) {
             path = super.findLibrary(libname);
@@ -466,7 +460,8 @@ public class FFXClassLoader extends URLClassLoader {
             for (JarFile extensionJar : extensionJars) {
                 JarEntry jarEntry = extensionJar.getJarEntry(name);
                 if (jarEntry != null) {
-                    String path = "jar:file:" + extensionJar.getName() + "!" + separatorChar + jarEntry.getName();
+		    File file = new File(extensionJar.getName() + "!/" + jarEntry.getName());
+		    String path = "jar:" + file.toURI().toString();
                     try {
                         return new URL(path);
                     } catch (MalformedURLException ex) {
@@ -502,10 +497,8 @@ public class FFXClassLoader extends URLClassLoader {
             try {
                 for (String applicationPackage : applicationPackages) {
                     int applicationPackageLength = applicationPackage.length();
-                    if ((applicationPackageLength == 0
-                            && name.indexOf('.') == 0)
-                            || (applicationPackageLength > 0
-                            && name.startsWith(applicationPackage))) {
+                    if ((applicationPackageLength == 0 && name.indexOf('.') == 0)
+                            || (applicationPackageLength > 0 && name.startsWith(applicationPackage))) {
                         loadedClass = findClass(name);
                         break;
                     }
@@ -556,7 +549,7 @@ public class FFXClassLoader extends URLClassLoader {
             try {
                 URL extensionJarOrDllUrl = getResource(extensionJarOrDll);
                 if (extensionJarOrDllUrl != null) {
-                    int lastSlashIndex = extensionJarOrDll.lastIndexOf(separatorChar);
+                    int lastSlashIndex = extensionJarOrDll.lastIndexOf('/');
                     if (extensionJarOrDll.endsWith(".jar")) {
                         int start = lastSlashIndex + 1;
                         int end = extensionJarOrDll.indexOf(".jar");
@@ -608,7 +601,7 @@ public class FFXClassLoader extends URLClassLoader {
                     String name = entry.getName();
                     // System.out.println(name);
                     if (name.startsWith("ffx") && name.endsWith(".groovy")) {
-                        name = name.replace(separatorChar, '.');
+                        name = name.replace('/', '.');
                         name = name.replace("ffx.scripts.", "");
                         name = name.replace(".groovy", "");
                         if (name.toUpperCase().contains("TEST")) {
@@ -631,5 +624,5 @@ public class FFXClassLoader extends URLClassLoader {
             }
         }
     }
-
 }
+
