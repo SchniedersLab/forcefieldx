@@ -677,7 +677,7 @@ public class Crystal {
      * checkProperties</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return a {@link ffx.crystal.Crystal} object.
      */
     public static Crystal checkProperties(CompositeConfiguration properties) {
