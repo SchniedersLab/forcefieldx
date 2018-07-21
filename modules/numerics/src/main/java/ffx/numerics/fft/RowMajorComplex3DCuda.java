@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -61,7 +61,6 @@ import jcuda.jcufft.JCufft;
 import jcuda.jcufft.cufftHandle;
 import jcuda.jcufft.cufftType;
 import jcuda.runtime.dim3;
-import jcuda.utils.KernelLauncher;
 import static jcuda.driver.JCudaDriver.cuCtxCreate;
 import static jcuda.driver.JCudaDriver.cuDeviceGet;
 import static jcuda.driver.JCudaDriver.cuDeviceGetProperties;
@@ -172,7 +171,7 @@ public class RowMajorComplex3DCuda implements Runnable {
         cuDeviceGet(dev, 0);
         cuCtxCreate(pctx, 0, dev);
 
-        KernelLauncher kernelLauncher = null;
+        // KernelLauncher kernelLauncher = null;
         // Load the CUBIN file and obtain the "recipSummation" function.
         try {
             String bit = System.getProperty("sun.arch.data.model").trim();
@@ -180,7 +179,7 @@ public class RowMajorComplex3DCuda implements Runnable {
             File cubinFile = File.createTempFile("recipSummation", "cubin");
             FileUtils.copyURLToFile(source, cubinFile);
             String kernelPath = cubinFile.getCanonicalPath();
-            kernelLauncher = KernelLauncher.load(kernelPath, "recipSummation");
+            // kernelLauncher = KernelLauncher.load(kernelPath, "recipSummation");
         } catch (Exception e) {
             String message = "Error loading the reciprocal summation kernel";
             logger.log(Level.SEVERE, message, e);
@@ -208,7 +207,7 @@ public class RowMajorComplex3DCuda implements Runnable {
 
         dim3 gridDim = new dim3(gridSize, gridSize, 1);
         dim3 blockDim = new dim3(threads, 1, 1);
-        kernelLauncher.setup(gridDim, blockDim);
+        // kernelLauncher.setup(gridDim, blockDim);
 
         logger.info(format(" CUDA thread initialized with %d threads per block", threads));
         logger.info(format(" Grid Size: (%d x %d x 1).", gridSize, gridSize));
@@ -220,7 +219,7 @@ public class RowMajorComplex3DCuda implements Runnable {
                 if (doConvolution) {
                     cuMemcpyHtoD(dataDevice, dataPtr, len * 2 * Sizeof.DOUBLE);
                     cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_FORWARD);
-                    kernelLauncher.call(dataDevice, recipDevice, len);
+                    // kernelLauncher.call(dataDevice, recipDevice, len);
                     cufftExecC2C(plan, dataDevice, dataDevice, CUFFT_INVERSE);
                     cuMemcpyDtoH(dataPtr, dataDevice, len * 2 * Sizeof.DOUBLE);
                     doConvolution = false;
@@ -300,7 +299,7 @@ public class RowMajorComplex3DCuda implements Runnable {
 
         System.out.println(String.format(
                 " Initializing a %d cubed grid.\n"
-                + " The best timing out of %d repititions will be used.",
+                        + " The best timing out of %d repititions will be used.",
                 dim, reps));
 
         final int dimCubed = dim * dim * dim;
