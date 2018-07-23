@@ -379,7 +379,7 @@ public class RotamerOptimizationTest {
         // Initialize Parallel Java
         try {
             Comm.world();
-        } catch (IllegalArgumentException ise) {
+        } catch (IllegalStateException ise) {
             try {
                 String args[] = new String[0];
                 Comm.init(args);
