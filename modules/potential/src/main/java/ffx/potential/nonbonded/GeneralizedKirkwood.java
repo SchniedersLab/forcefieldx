@@ -9183,9 +9183,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             public void gendot(int ndots[], double dots[][], double radius,
                                double xcenter, double ycenter, double zcenter) {
                 int nequat = (int) sqrt(PI * ((double) ndots[0]));
-                logger.info(String.format("nequat:\t%s", nequat));
+                //logger.info(String.format("nequat:\t%s", nequat));
                 int nvert = nequat / 2;
-                logger.info(String.format("nvert:\t%s", nvert));
+                //logger.info(String.format("nvert:\t%s", nvert));
                 if (nvert < 0) {
                     nvert = 0;
                 }
@@ -9195,11 +9195,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     double fi = (PI * ((double) i)) / ((double) nvert);
                     double z = cos(fi);
                     double xy = sin(fi);
-                    logger.info(String.format("fi:\t%s", fi));
-                    logger.info(String.format("z:\t%s", z));
-                    logger.info(String.format("xy:\t%s", xy));
+                    //logger.info(String.format("fi:\t%s", fi));
+                    //logger.info(String.format("z:\t%s", z));
+                    //logger.info(String.format("xy:\t%s", xy));
                     int nhoriz = (int) (nequat * xy);
-                    logger.info(String.format("nhoriz:\t%s", nhoriz));
+                    //logger.info(String.format("nhoriz:\t%s", nhoriz));
                     if (nhoriz < 0) {
                         nhoriz = 0;
                     }
@@ -9233,7 +9233,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double uvect2[] = new double[3];
                 for (int k = 0; k < 3; k++) {
                     cpvect[k] = plncen[k] - circen[k];
-                    logger.info(String.format("cpvect:\t%s", cpvect[k]));
+                    //logger.info(String.format("cpvect:\t%s", cpvect[k]));
                 }
                 double dcp = VectorMath.dot(cpvect, plnvec);
                 cinsp = (dcp > 0.0);
@@ -9244,14 +9244,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (VectorMath.r(vect2) > 0.0) {
                         VectorMath.norm(vect2, uvect2);
                         double dir = VectorMath.dot(uvect2, plnvec);
-                        logger.info(String.format("dir:\t%s", dir));
+                        //logger.info(String.format("dir:\t%s", dir));
                         if (dir != 0.0) {
                             double ratio = dcp / dir;
-                            logger.info(String.format("ratio:\t%s", ratio));
+                            //logger.info(String.format("ratio:\t%s", ratio));
                             if (abs(ratio) <= cirrad) {
                                 for (int k = 0; k < 3; k++) {
                                     pnt1[k] = circen[k] + ratio * uvect2[k];
-                                    logger.info(String.format("pnt1:\t%s", pnt1[k]));
+                                    //logger.info(String.format("pnt1:\t%s", pnt1[k]));
                                 }
                                 double rlen = cirrad * cirrad - ratio * ratio;
                                 if (rlen < 0.0) {
@@ -9261,8 +9261,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 for (int k = 0; k < 3; k++) {
                                     xpnt1[k] = pnt1[k] - rlen * uvect1[k];
                                     xpnt2[k] = pnt1[k] + rlen * uvect1[k];
-                                    logger.info(String.format("xpnt1:\t%s", xpnt1[k]));
-                                    logger.info(String.format("xpnt2:\t%s", xpnt2[k]));
+                                    //logger.info(String.format("xpnt1:\t%s", xpnt1[k]));
+                                    //logger.info(String.format("xpnt2:\t%s", xpnt2[k]));
                                 }
                                 return true;
                             }
@@ -9314,9 +9314,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 double dot = VectorMath.dot(vect4, vect3);
                 for (int k = 0; k < 3; k++) {
                     alt[k] = vect4[k];
-                    logger.info(String.format("alt:\t%s", alt[k]));
+                    //logger.info(String.format("alt:\t%s", alt[k]));
                 }
-                logger.info(String.format("dot:\t%s", dot));
+                //logger.info(String.format("dot:\t%s", dot));
                 return dot;
             }
 
@@ -9354,8 +9354,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 for (int i = 0; i <= nx; i++) {
                     for (int j = 0; j <= ny; j++) {
                         for (int k = 0; k <= nz; k++) {
-                            cube[0][i][j][k] = 0;
-                            cube[1][i][j][k] = 0;
+                            cube[0][i][j][k] = -1;
+                            cube[1][i][j][k] = -1;
                         }
                     }
                 }
@@ -9383,9 +9383,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     for (int j = 0; j <= ny; j++) {
                         for (int k = 0; k <= nz; k++) {
                             tcube = cube[0][i][j][k];
-                            if (tcube != 0) {
+                            if (tcube != -1) {
                                 isum += tcube;
-                                cube[1][i][j][k] = isum - 1;
+                                cube[1][i][j][k] = isum;
                             }
                         }
                     }
@@ -9417,9 +9417,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         for (int k = 0; k <= nz; k++) {
                             tcube = cube[0][i][j][k];
                             //logger.info(String.format(" TCUBE %d %d %d %d", i, j, k, tcube));
-                            if (tcube != 0) {
+                            if (tcube != -1) {
                                 isum += tcube;
-                                cube[0][i][j][k] = isum - 1;
+                                cube[0][i][j][k] = isum;
                                 cube[1][i][j][k]++;
                             }
                         }
@@ -9504,7 +9504,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                         /**
                          * Half of the part not covered by the planes.
                          */
-                        zgrid += 0.5 * (rrx2 - ((int) (rrx2 / zstep) * zstep));
+                        zgrid += 0.5 * (rrx2 - (((int) (rrx2 / zstep)) * zstep));
                         zstart = zgrid;
                         /**
                          * Section atom spheres perpendicular to the z-axis.
@@ -9623,7 +9623,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                 //ir, phi1, cos_phi1, phi2, cos_phi2));
                                 seg_dz = pix2 * ((cos_phi1 * cos_phi1) - (cos_phi2 * cos_phi2));
                                 pre_dz += seg_dz;
-                                //logger.info(String.format(" seg_dx %16.8f pre_dz %16.8f ", seg_dz, pre_dz));
                             } else {
                                 /**
                                  * Sort the arc endpoint arrays, each with
@@ -9693,13 +9692,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                  */
                                 for (int k = 0; k <= narc; k++) {
                                     theta1 = arci[k];
-                                    theta2 = arcf[k];
+                                    theta2 = arcf[k];                                  
                                     //logger.info(String.format("%d theta1=%16.8f theta2=%16.8f", ir, theta1, theta2));
-                                    if (theta2 > theta1) {
+                                    if (theta2 >= theta1) {
                                         dtheta = theta2 - theta1;
                                     } else {
                                         dtheta = (theta2 + pix2) - theta1;
-                                    }
+                                    }                                   
                                     phi_term = phi2 - phi1 - 0.5 * (sin(2.0 * phi2) - sin(2.0 * phi1));
                                     seg_dx = (sin(theta2) - sin(theta1)) * phi_term;
                                     seg_dy = (cos(theta1) - cos(theta2)) * phi_term;
@@ -9708,21 +9707,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                     pre_dy += seg_dy;
                                     pre_dz += seg_dz;
                                     // SOME OF THE FOLLOWING PRINTS ARE WRONG
-                                    logger.info(String.format(" seg_dz:\t%s\t%s", seg_dz, k));
                                 }
                                 //logger.info(String.format(" LAST %d %16.8f %16.8f %16.8f", ir, pre_dx, pre_dy, pre_dz));
                             }
                             zgrid += zstep;
                         }
                     }
-                    logger.info(String.format(" rrsq:\t%s", rrsq));
-                    logger.info(String.format(" pre_dx:\t%s", pre_dx));
-                    logger.info(String.format(" pre_dy:\t%s", pre_dy));
-                    logger.info(String.format(" pre_dz:\t%s", pre_dz));
                     dex[0][ir] = 0.5 * rrsq * pre_dx;
                     dex[1][ir] = 0.5 * rrsq * pre_dy;
                     dex[2][ir] = 0.5 * rrsq * pre_dz;
-                    logger.info(String.format(" de/dx:\t%s\t%s\t%s\t%s", ir, dex[0][ir], dex[1][ir], dex[2][ir]));
+                    //logger.info(String.format(" de/dx:\t%s\t%s\t%s\t%s", ir, dex[0][ir], dex[1][ir], dex[2][ir]));
                 }
             }
 
