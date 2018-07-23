@@ -52,7 +52,7 @@
                     <configurationDirectory>conf</configurationDirectory>
                     <!-- Extra JVM arguments that will be included in the bin scripts -->
                     <extraJvmArguments>-Xms1G -Xmx8G</extraJvmArguments>
-                    <!-- Generate bin scripts for windows and unix pr default -->
+                    <!-- Generate bin scripts for windows and unix -->
                     <platforms>
                         <platform>windows</platform>
                         <platform>unix</platform>

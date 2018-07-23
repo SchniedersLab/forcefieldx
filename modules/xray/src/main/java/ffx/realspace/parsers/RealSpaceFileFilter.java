@@ -56,7 +56,7 @@ public interface RealSpaceFileFilter {
      *
      * @param filename A {@link java.lang.String} object.
      * @param properties A
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return A {@link ffx.crystal.Crystal} object.
      */
     Crystal getCrystal(String filename, CompositeConfiguration properties);

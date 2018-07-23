@@ -410,7 +410,7 @@ public abstract class ConversionFilter {
      * Setter for the field <code>properties</code>.</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public void setProperties(CompositeConfiguration properties) {
         this.properties = properties;
