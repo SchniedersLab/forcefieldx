@@ -54,7 +54,7 @@ class CoordShakeEnergy extends PotentialScript {
     /**
      * The final argument(s) should be one or more filenames.
      */
-    @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+    @Parameters(arity = "1..*", paramLabel = "file", description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
     Double energy = 0.0
@@ -69,10 +69,9 @@ class CoordShakeEnergy extends PotentialScript {
             return
         }
 
-        if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = potentialFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
-        } else if (activeAssembly == null) {
+        if (filenames != null && filenames.size() == 1) {
+            activeAssembly = potentialFunctions.open(filenames.get(0))
+        } else if (activeAssembly == null || filenames.size() != 1) {
             logger.info(helpString())
             return
         }

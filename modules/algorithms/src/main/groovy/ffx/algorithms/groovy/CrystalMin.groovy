@@ -1,5 +1,8 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.CrystalMinimize
+import ffx.algorithms.Minimize
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 import static org.apache.commons.math3.util.FastMath.abs
 
@@ -54,6 +57,8 @@ class CrystalMin extends AlgorithmsScript {
     @Parameters(arity = "1", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
     List<String> filenames = null
 
+    private XtalEnergy xtalEnergy;
+
     @Override
     CrystalMin run() {
 
@@ -77,7 +82,7 @@ class CrystalMin extends AlgorithmsScript {
         logger.info("\n RMS gradient convergence criteria: " + minimizeOptions.eps)
 
         ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-        XtalEnergy xtalEnergy = new XtalEnergy(forceFieldEnergy, activeAssembly)
+        xtalEnergy = new XtalEnergy(forceFieldEnergy, activeAssembly)
         xtalEnergy.setFractionalCoordinateMode(FractionalMode.MOLECULE)
 
         // Apply fractional coordinate mode.
@@ -91,7 +96,7 @@ class CrystalMin extends AlgorithmsScript {
             }
         }
 
-        ffx.algorithms.CrystalMinimize crystalMinimize = new ffx.algorithms.CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
+        CrystalMinimize crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
         crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
         double energy = crystalMinimize.getEnergy()
 
@@ -99,7 +104,7 @@ class CrystalMin extends AlgorithmsScript {
 
         // Complete rounds of coordinate and lattice optimization.
         if (coords) {
-            ffx.algorithms.Minimize minimize = new ffx.algorithms.Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+            Minimize minimize = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
             while (true) {
                 // Complete a round of coordinate optimization.
                 minimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
@@ -141,6 +146,11 @@ class CrystalMin extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return xtalEnergy == null ? new ArrayList<>() : Collections.singletonList(xtalEnergy);
     }
 }
 

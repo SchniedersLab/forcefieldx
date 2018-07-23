@@ -1,6 +1,7 @@
 package ffx.xray.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.numerics.Potential
 import ffx.xray.parsers.MTZFilter
 
 import picocli.CommandLine.Command
@@ -45,6 +46,11 @@ class MTZInfo extends AlgorithmsScript {
         mtzFilter.printHeader()
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return Collections.emptyList();
     }
 }
 

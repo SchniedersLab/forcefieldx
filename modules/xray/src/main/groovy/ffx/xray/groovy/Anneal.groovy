@@ -1,5 +1,8 @@
 package ffx.xray.groovy
 
+import ffx.numerics.Potential
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
@@ -39,6 +42,7 @@ class Anneal extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
+    private RefinementEnergy refinementEnergy;
 
     @Override
     Anneal run() {
@@ -76,9 +80,9 @@ class Anneal extends AlgorithmsScript {
         String suffix = "_anneal"
 
         // Set up diffraction data (can be multiple files)
-        List<ffx.xray.DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
+        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
 
-        ffx.xray.DiffractionData diffractionData = new ffx.xray.DiffractionData(assemblies, properties,
+        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
                 xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
 
         diffractionData.scaleBulkFit()
@@ -86,7 +90,7 @@ class Anneal extends AlgorithmsScript {
 
         algorithmFunctions.energy(assemblies[0])
 
-        ffx.xray.RefinementEnergy refinementEnergy = new ffx.xray.RefinementEnergy(diffractionData, xrayOptions.refinementMode)
+        refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
 
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy, properties,
                 algorithmListener, dynamicsOptions.thermostat, dynamicsOptions.integrator)
@@ -103,6 +107,11 @@ class Anneal extends AlgorithmsScript {
         diffractionData.writeData(FilenameUtils.removeExtension(modelfilename) + suffix + ".mtz")
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return refinementEnergy == null ? new ArrayList<>() : Collections.singletonList(refinementEnergy);
     }
 }
 

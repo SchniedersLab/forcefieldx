@@ -603,4 +603,9 @@ public class RealSpaceEnergy implements LambdaInterface, CrystalPotential {
     public void setCrystal(Crystal crystal) {
         logger.severe(" RealSpaceEnergy does implement setCrystal yet.");
     }
+
+    @Override
+    public boolean destroy() {
+        return realSpaceData.destroy();
+    }
 }

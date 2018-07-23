@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -146,6 +147,12 @@ public class LoopClosureTest {
 //        PotentialsUtils potentialUtils = new PotentialsUtils();
 //        molecularAssembly = potentialUtils.open(structure.getAbsolutePath())[0];
 //        Loop loop = new Loop(molecularAssembly, stt_res, end_res);
+    }
+
+    @After
+    public void after() {
+        molecularAssembly.getPotentialEnergy().destroy();
+        System.gc();
     }
 
     @Test

@@ -1,5 +1,8 @@
 package ffx.xray.groovy
 
+import ffx.numerics.Potential
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementMinimize
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
@@ -14,6 +17,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The X-ray Minimize script.
@@ -56,6 +61,8 @@ class Minimize extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
+    private MolecularAssembly[] assemblies;
+    private DiffractionData diffractionData;
 
     @Override
     Minimize run() {
@@ -91,9 +98,9 @@ class Minimize extends AlgorithmsScript {
         xrayOptions.setProperties(parseResult, properties)
 
         // Set up diffraction data (can be multiple files)
-        List<ffx.xray.DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
+        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
 
-        ffx.xray.DiffractionData diffractionData = new ffx.xray.DiffractionData(assemblies, properties,
+        diffractionData = new DiffractionData(assemblies, properties,
                 xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
 
         diffractionData.scaleBulkFit()
@@ -110,7 +117,7 @@ class Minimize extends AlgorithmsScript {
         int maxiter = minimizeOptions.iterations
 
         if (threeStage) {
-            ffx.xray.RefinementMinimize refinementMinimize = new ffx.xray.RefinementMinimize(diffractionData, RefinementMode.COORDINATES)
+            RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.COORDINATES)
             if (coordeps < 0.0) {
                 coordeps = refinementMinimize.getEps()
             }
@@ -126,7 +133,7 @@ class Minimize extends AlgorithmsScript {
             diffractionData.printStats()
             algorithmFunctions.energy(activeAssembly)
 
-            refinementMinimize = new ffx.xray.RefinementMinimize(diffractionData, RefinementMode.BFACTORS)
+            refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.BFACTORS)
             if (beps < 0.0) {
                 beps = refinementMinimize.getEps()
             }
@@ -143,7 +150,7 @@ class Minimize extends AlgorithmsScript {
 
             if (diffractionData.getAltResidues().size() > 0
                     || diffractionData.getAltMolecules().size() > 0) {
-                refinementMinimize = new ffx.xray.RefinementMinimize(diffractionData, RefinementMode.OCCUPANCIES)
+                refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.OCCUPANCIES)
                 if (occeps < 0.0) {
                     occeps = refinementMinimize.getEps()
                 }
@@ -163,7 +170,7 @@ class Minimize extends AlgorithmsScript {
         } else {
             // Type of refinement.
             RefinementMode refinementMode = xrayOptions.refinementMode
-            ffx.xray.RefinementMinimize refinementMinimize = new ffx.xray.RefinementMinimize(diffractionData, refinementMode)
+            RefinementMinimize refinementMinimize = new RefinementMinimize(diffractionData, refinementMode)
             double eps = minimizeOptions.eps
             if (eps < 0.0) {
                 eps = refinementMinimize.getEps()
@@ -186,6 +193,24 @@ class Minimize extends AlgorithmsScript {
         diffractionData.writeData(FilenameUtils.removeExtension(modelfilename) + suffix + ".mtz")
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        if (assemblies == null) {
+            return new ArrayList<Potential>();
+        } else {
+            return Arrays.stream(assemblies).
+                    filter { a -> a != null }.
+                    map { a -> a.getPotentialEnergy() }.
+                    filter { e -> e != null }.
+                    collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    public boolean destroyPotentials() {
+        return diffractionData == null ? true : diffractionData.destroy();
     }
 }
 

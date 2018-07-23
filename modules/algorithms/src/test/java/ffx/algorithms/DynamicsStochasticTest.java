@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -118,6 +119,12 @@ public class DynamicsStochasticTest {
                 Assert.fail();
             }
         }
+    }
+
+    @After
+    public void after() {
+        dynamics.destroyPotentials();
+        System.gc();
     }
 
     @Test

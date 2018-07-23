@@ -1111,7 +1111,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         if (receiveThread != null) {
             receiveThread.interrupt();
         }
-        return true;
+        return potential.destroy();
     }
 
     @Override

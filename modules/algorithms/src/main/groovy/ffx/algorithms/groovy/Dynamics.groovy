@@ -1,5 +1,6 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.ReplicaExchange
 import ffx.algorithms.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
 
@@ -150,7 +151,7 @@ class Dynamics extends AlgorithmsScript {
             }
 
             molDyn = dynamics.getDynamics(writeout, potential, activeAssembly, algorithmListener)
-            ffx.algorithms.ReplicaExchange replicaExchange = new ffx.algorithms.ReplicaExchange(molDyn, algorithmListener, dynamics.temp)
+            ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener, dynamics.temp)
 
             int totalSteps = dynamics.steps
             int nSteps = 100
@@ -163,6 +164,11 @@ class Dynamics extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return potential == null ? new ArrayList<>() : Collections.singletonList(potential);
     }
 }
 

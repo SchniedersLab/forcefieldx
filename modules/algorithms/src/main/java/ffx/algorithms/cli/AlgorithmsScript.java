@@ -37,11 +37,15 @@
  */
 package ffx.algorithms.cli;
 
+import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmUtils;
 import ffx.algorithms.AlgorithmListener;
 import ffx.utilities.BaseScript;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Base class for scripts in the Algorithms package, providing some key functions.
@@ -95,6 +99,32 @@ public class AlgorithmsScript extends BaseScript {
         }
 
         return true;
+    }
+
+    /**
+     * Returns a List of all Potential objects associated with this script.
+     *
+     * @return All Potentials. Sometimes empty, never null.
+     */
+    public List<Potential> getPotentials() {
+        List<Potential> plist = new ArrayList<>();
+        if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
+            plist.add(activeAssembly.getPotentialEnergy());
+        }
+        return plist;
+    }
+
+    /**
+     * Reclaims resources associated with all Potential objects associated with this script.
+     *
+     * @return If all Potentials had resources reclaimed.
+     */
+    public boolean destroyPotentials() {
+        boolean allSucceeded = true;
+        for (Potential potent : getPotentials()) {
+            allSucceeded = allSucceeded && potent.destroy();
+        }
+        return allSucceeded;
     }
 
 }

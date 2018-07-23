@@ -43,6 +43,7 @@ class MultiTopTimer extends PotentialScript {
     private int threadsAvail = ParallelTeam.getDefaultThreadCount();
     private int threadsPer = threadsAvail;
     MolecularAssembly[] topologies;
+    private Potential potential;
 
     @Override
     MultiTopTimer run() {
@@ -109,7 +110,7 @@ class MultiTopTimer extends PotentialScript {
             sb.append("and gradients ");
         }
         sb.append("for ");
-        Potential potential = topology.assemblePotential(topologies, threadsAvail, sb);
+        potential = topology.assemblePotential(topologies, threadsAvail, sb);
 
         logger.info(sb.toString());
 
@@ -156,6 +157,11 @@ class MultiTopTimer extends PotentialScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return potential == null ? new ArrayList<>() : Collections.singletonList(potential);
     }
 }
 

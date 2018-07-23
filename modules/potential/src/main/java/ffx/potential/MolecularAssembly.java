@@ -920,13 +920,24 @@ public class MolecularAssembly extends MSGroup {
     @Override
     public boolean destroy() {
         try {
-            potentialEnergy.destroy();
+            if (potentialEnergy == null) {
+                finishDestruction();
+                return true;
+            } else {
+                // potentialEnergy.destroy() will loop around to call finishDestruction().
+                // This is a poor construction, but is necessary due to prior decisions.
+                return potentialEnergy.destroy();
+            }
         } catch (Exception ex) {
-            logger.warning(String.format(" Exception in shutting down force field "
-                    + "energy parallel teams: %s", ex.toString()));
+            logger.warning(String.format(" Exception in destroying a MolecularAssembly: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
         }
+    }
+
+    void finishDestruction() {
         detach();
-        return super.destroy();
+        super.destroy();
     }
 
     /**

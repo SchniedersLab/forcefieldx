@@ -1,5 +1,10 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.AbstractOSRW
+import ffx.algorithms.OSRW
+import ffx.algorithms.TransitionTemperedOSRW
+import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergyOpenMM
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -38,6 +43,7 @@ class Histogram extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
     private List<String> filenames
+    private AbstractOSRW osrw;
 
     @Override
     Histogram run() {
@@ -80,15 +86,15 @@ class Histogram extends AlgorithmsScript {
         double temperature = 298.15
 
         if (!untempered) {
-            ffx.algorithms.TransitionTemperedOSRW ttosrw = new ffx.algorithms.TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
+            osrw = new TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
             if (pmf) {
-                ttosrw.evaluatePMF()
+                osrw.evaluatePMF()
             }
         } else {
             // Wrap the potential energy inside an OSRW instance.
-            ffx.algorithms.OSRW osrw = new ffx.algorithms.OSRW(energy, energy, lambdaRestart, histogramRestart,
+            osrw = new OSRW(energy, energy, lambdaRestart, histogramRestart,
                     activeAssembly.getProperties(), temperature, timeStep, printInterval,
                     saveInterval, asynchronous, algorithmListener)
             if (pmf) {
@@ -97,6 +103,11 @@ class Histogram extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return osrw == null ? new ArrayList<>() : Collections.singletonList(osrw);
     }
 }
 

@@ -1,6 +1,7 @@
 package ffx.xray.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.numerics.Potential
 import ffx.xray.parsers.MTZFilter
 
 import picocli.CommandLine.Command
@@ -65,6 +66,12 @@ class AverageMTZ extends AlgorithmsScript {
         mtzfilter.averageFcs(file1, file2, mtzfilter.getReflectionList(file1), iteration, null)
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        // No Potential is associated with AverageMTZ.
+        return new ArrayList<>();
     }
 }
 

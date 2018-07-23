@@ -12,6 +12,7 @@ import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
+import ffx.numerics.Potential
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import org.apache.commons.configuration2.Configuration
@@ -270,6 +271,11 @@ class NewThermodynamics extends AlgorithmsScript {
 
     public CrystalPotential getPotential() {
         return potential;
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
     }
 }
 

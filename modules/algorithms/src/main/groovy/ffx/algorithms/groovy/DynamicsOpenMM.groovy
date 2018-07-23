@@ -1,6 +1,9 @@
 
 package ffx.algorithms.groovy
 
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.MolecularDynamicsOpenMM
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -51,6 +54,8 @@ class DynamicsOpenMM extends AlgorithmsScript{
     @Parameters(arity = "1..*", paramLabel = "files",
         description = "XYZ or PDB input files.")
     private List<String> filenames
+
+    private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
 
     @Override
     DynamicsOpenMM run(){
@@ -107,17 +112,17 @@ class DynamicsOpenMM extends AlgorithmsScript{
             dyn = null
         }
 
-        ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) forceFieldEnergy
+        forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) forceFieldEnergy
         forceFieldEnergyOpenMM.setCoeffOfFriction(coeffOfFriction)
         forceFieldEnergyOpenMM.setCollisionFreq(collisionFreq)
 
-        ffx.algorithms.MolecularDynamics moldyn = ffx.algorithms.MolecularDynamics.dynamicsFactory(activeAssembly, forceFieldEnergyOpenMM, activeAssembly.getProperties(),
+        MolecularDynamics moldyn = MolecularDynamics.dynamicsFactory(activeAssembly, forceFieldEnergyOpenMM, activeAssembly.getProperties(),
                 algorithmListener, dynamics.thermostat, dynamics.integrator)
 
         //MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
 
-        if (moldyn instanceof ffx.algorithms.MolecularDynamicsOpenMM){
-            ffx.algorithms.MolecularDynamicsOpenMM moldynOpenMM = (ffx.algorithms.MolecularDynamicsOpenMM) moldyn;
+        if (moldyn instanceof MolecularDynamicsOpenMM){
+            MolecularDynamicsOpenMM moldynOpenMM = (MolecularDynamicsOpenMM) moldyn;
             moldynOpenMM.setRestartFrequency(dynamics.write)
             moldynOpenMM.setFileType(writeout.getFileType())
             moldynOpenMM.setIntervalSteps(trajSteps)
@@ -128,6 +133,11 @@ class DynamicsOpenMM extends AlgorithmsScript{
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return forceFieldEnergyOpenMM == null ? new ArrayList<>() : Collections.singletonList(forceFieldEnergyOpenMM);
     }
 }
 

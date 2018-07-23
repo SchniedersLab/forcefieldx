@@ -1,5 +1,6 @@
 package ffx.algorithms.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
@@ -138,6 +139,11 @@ class ManyBody extends AlgorithmsScript {
     
     public ForceFieldEnergy getPotential(){
         return potentialEnergy;
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return potentialEnergy == null ? new ArrayList<>() : Collections.singletonList(potentialEnergy);
     }
 }
 

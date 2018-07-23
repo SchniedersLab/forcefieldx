@@ -447,6 +447,8 @@ public class EnergyTest {
         // GK Energy
         assertEquals(info + " Solvation", gkEnergy, forceFieldEnergy.getSolvationEnergy(), tolerance);
         assertEquals(info + " Solvation Count", nGK, forceFieldEnergy.getSolvationInteractions());
+        energy.destroyPotentials();
+        System.gc();
     }
 
     @Test
@@ -470,6 +472,8 @@ public class EnergyTest {
         System.clearProperty("platform");
 
         assertEquals(info + " OpenMM Energy", totalEnergy, energy.energy, openMMTolerance);
+        energy.destroyPotentials();
+        System.gc();
     }
 
     @Test
@@ -495,6 +499,8 @@ public class EnergyTest {
         gradient.run();
 
         assertEquals(info + " gradient failures: ", 0, gradient.nFailures);
+        gradient.destroyPotentials();
+        System.gc();
     }
 
     @Test
@@ -528,5 +534,7 @@ public class EnergyTest {
         assertEquals(info + " d2EdL2 failures: ", 0, lambdaGradient.nd2EdL2Failures);
         assertEquals(info + " dEdXdL failures: ", 0, lambdaGradient.ndEdXdLFailures);
         assertEquals(info + " dEdX failures: ", 0, lambdaGradient.ndEdXFailures);
+        lambdaGradient.destroyPotentials();
+        System.gc();
     }
 }

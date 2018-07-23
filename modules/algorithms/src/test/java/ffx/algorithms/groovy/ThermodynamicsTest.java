@@ -482,8 +482,10 @@ public class ThermodynamicsTest {
         if (thermo.getOSRW() == null) {
             assert mode == ThermoTestMode.HELP;
         } else {
-            thermo.getOSRW().destroy();
+            //thermo.getOSRW().destroy();
+            thermo.destroyPotentials();
         }
+        System.gc();
     }
 
     @Test

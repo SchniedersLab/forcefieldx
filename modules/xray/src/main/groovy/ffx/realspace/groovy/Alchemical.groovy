@@ -1,5 +1,6 @@
 package ffx.realspace.groovy
 
+import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.realspace.parsers.RealSpaceFile
 import org.apache.commons.io.FilenameUtils
@@ -97,6 +98,8 @@ class Alchemical extends AlgorithmsScript {
 
     // Reset velocities (ignored if a restart file is given)
     boolean initVelocities = true
+
+    private AbstractOSRW osrw;
 
     @Override
     Alchemical run() {
@@ -223,7 +226,6 @@ class Alchemical extends AlgorithmsScript {
         refinementEnergy.setLambda(lambda)
 
         boolean asynchronous = true
-        Potential osrw
 
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
                 assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
@@ -252,6 +254,11 @@ class Alchemical extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return osrw == null ? new ArrayList<>() : Collections.singletonList(osrw);
     }
 }
 

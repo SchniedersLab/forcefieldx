@@ -37,6 +37,7 @@
  */
 package ffx.algorithms.groovy;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -86,6 +87,12 @@ public class ManyBodyTest {
                 Assert.fail();
             }
         }
+    }
+
+    @After
+    public void after() {
+        manyBody.destroyPotentials();
+        System.gc();
     }
 
     @Test

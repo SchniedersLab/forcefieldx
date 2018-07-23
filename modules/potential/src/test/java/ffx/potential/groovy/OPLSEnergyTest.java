@@ -40,6 +40,7 @@ package ffx.potential.groovy;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -206,6 +207,8 @@ public class OPLSEnergyTest {
         // Permanent Multipoles
         assertEquals(info + " Permanent Multipole Energy", permanentEnergy, forceFieldEnergy.getPermanentMultipoleEnergy(), tolerance);
         assertEquals(info + " Permanent Multipole Count", nPermanent, forceFieldEnergy.getPermanentInteractions());
+        energy.destroyPotentials();
+        System.gc();
     }
 
     @Test
@@ -223,6 +226,8 @@ public class OPLSEnergyTest {
         gradient.run();
 
         assertEquals(info + " gradient failures: ", 0, gradient.nFailures);
+        gradient.destroyPotentials();
+        System.gc();
     }
 
     @Test
@@ -249,5 +254,7 @@ public class OPLSEnergyTest {
         assertEquals(info + " d2EdL2 failures: ", 0, lambdaGradient.nd2EdL2Failures);
         assertEquals(info + " dEdXdL failures: ", 0, lambdaGradient.ndEdXdLFailures);
         assertEquals(info + " dEdX failures: ", 0, lambdaGradient.ndEdXFailures);
+        lambdaGradient.destroyPotentials();
+        System.gc();
     }
 }

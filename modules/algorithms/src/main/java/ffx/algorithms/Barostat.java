@@ -1022,6 +1022,12 @@ public class Barostat implements CrystalPotential {
         potential.setCrystal(crystal);
     }
 
+    @Override
+    public boolean destroy() {
+        // Nothing at this level to destroy.
+        return potential.destroy();
+    }
+
     private enum MoveType {
 
         SIDE, ANGLE

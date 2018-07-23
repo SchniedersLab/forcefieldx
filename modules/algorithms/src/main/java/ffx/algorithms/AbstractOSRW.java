@@ -646,6 +646,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      *
      * @return Success
      */
+    @Override
     public abstract boolean destroy();
 
     protected abstract double evaluateKernel(int cLambda, int cF_Lambda);

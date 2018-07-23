@@ -1,5 +1,6 @@
 package ffx.realspace.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
@@ -41,6 +42,7 @@ class ManyBody extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
+    private RefinementEnergy refinementEnergy;
 
     @Override
     ManyBody run() {
@@ -74,7 +76,7 @@ class ManyBody extends AlgorithmsScript {
                 activeAssembly.getProperties(), activeAssembly.getParallelTeam(),
                 mapFiles.toArray(new RealSpaceFile[mapFiles.size()]))
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMinimize.RefinementMode.COORDINATES, null);
+        refinementEnergy = new RefinementEnergy(realSpaceData, RefinementMinimize.RefinementMode.COORDINATES, null);
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(
                 activeAssembly, refinementEnergy, algorithmListener)
@@ -125,6 +127,11 @@ class ManyBody extends AlgorithmsScript {
         manyBody.saveEliminatedRotamers()
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return refinementEnergy == null ? new ArrayList<>() : Collections.singletonList(refinementEnergy);
     }
 }
 

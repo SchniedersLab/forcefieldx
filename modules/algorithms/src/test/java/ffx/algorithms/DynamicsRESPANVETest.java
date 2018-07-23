@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -113,6 +114,12 @@ public class DynamicsRESPANVETest {
                 fail();
             }
         }
+    }
+
+    @After
+    public void after() {
+        dynamics.destroyPotentials();
+        System.gc();
     }
 
     @Test

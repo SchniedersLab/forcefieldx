@@ -1,5 +1,6 @@
 package ffx.potential.groovy
 
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
@@ -105,6 +106,11 @@ class Energy extends PotentialScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return forceFieldEnergy == null ? new ArrayList<>() : Collections.singletonList(forceFieldEnergy);
     }
 }
 

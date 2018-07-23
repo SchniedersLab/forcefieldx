@@ -1,5 +1,7 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.RotamerOptimization
+import ffx.numerics.Potential
 import org.apache.commons.configuration2.CompositeConfiguration
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -17,6 +19,8 @@ import ffx.utilities.Keyword
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The MutatePDB script mutates a residue of a PDB file.
@@ -76,6 +80,8 @@ class MutatePDB extends AlgorithmsScript {
      */
     @Parameters(arity = "1", paramLabel = "files", description = "A PDB input files.")
     private List<String> filenames
+    private ForceFieldEnergy forceFieldEnergy;
+    private boolean repack = false;
 
     /**
      * Execute the script.
@@ -87,7 +93,6 @@ class MutatePDB extends AlgorithmsScript {
             return this
         }
 
-        boolean repack = false;
         if (repackDistance > -1) {
             repack = true
         }
@@ -132,7 +137,7 @@ class MutatePDB extends AlgorithmsScript {
 
         if (repack) {
             logger.info("\n Repacking... \n")
-            ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly)
+            forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly)
             molecularAssembly.setPotential(forceFieldEnergy)
             forceFieldEnergy.setPrintOnFailure(false, false)
 
@@ -141,7 +146,7 @@ class MutatePDB extends AlgorithmsScript {
             rLib.setUseOrigCoordsRotamer(true)
 
             // This does break encapsulation of our modules.
-            ffx.algorithms.RotamerOptimization rotamerOptimization = new ffx.algorithms.RotamerOptimization(molecularAssembly, forceFieldEnergy, algorithmListener)
+            RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, algorithmListener)
             rotamerOptimization.setThreeBodyEnergy(threeBody)
             rotamerOptimization.setForcedResidues(resID, resID)
             rotamerOptimization.setWindowSize(1)
@@ -156,7 +161,7 @@ class MutatePDB extends AlgorithmsScript {
             algorithmFunctions.energy(molecularAssembly)
 
             RotamerLibrary.measureRotamers(residueList, false)
-            rotamerOptimization.optimize(ffx.algorithms.RotamerOptimization.Algorithm.WINDOW)
+            rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW)
             logger.info("\n Repacking successful.\n")
         }
 
@@ -174,6 +179,11 @@ class MutatePDB extends AlgorithmsScript {
         pdbFilter.writeFile(structure, false)
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return forceFieldEnergy != null ? Collections.singletonList(forceFieldEnergy) : new ArrayList<>();
     }
 }
 
