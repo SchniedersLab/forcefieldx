@@ -122,6 +122,7 @@ public class AlgorithmsScript extends BaseScript {
     public boolean destroyPotentials() {
         boolean allSucceeded = true;
         for (Potential potent : getPotentials()) {
+            logger.fine(String.format(" Potential %s is being destroyed. ", potent));
             allSucceeded = allSucceeded && potent.destroy();
         }
         return allSucceeded;

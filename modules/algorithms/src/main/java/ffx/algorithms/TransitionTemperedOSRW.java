@@ -1108,8 +1108,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
     @Override
     public boolean destroy() {
-        if (receiveThread != null) {
-            receiveThread.interrupt();
+        double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN};
+        DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
+        try {
+            logger.fine(" Sending the termination message.");
+            world.send(rank, killBuf);
+            logger.fine(" Termination message was sent successfully.");
+            logger.fine(String.format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
+        } catch (Exception ex) {
+            String message = String.format(" Asynchronous Multiwalker OSRW termination signal " +
+                    "failed to be sent for process %d.", rank);
+            logger.log(Level.SEVERE, message, ex);
         }
         return potential.destroy();
     }
@@ -1156,12 +1165,21 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 try {
                     world.receive(null, recursionCountBuf);
                 } catch (InterruptedIOException ioe) {
-                    logger.log(Level.FINE, " ReceiveThread was interrupted at world.receive", ioe);
+                    logger.log(Level.WARNING, " ReceiveThread was interrupted at world.receive; " +
+                            "future message passing may be in an error state!", ioe);
                     break;
                 } catch (IOException e) {
                     String message = e.getMessage();
                     logger.log(Level.WARNING, message, e);
                 }
+
+                // 3x NaN is a message (usually sent by the same process) indicating that it is time to shut down.
+                boolean terminateSignal = Arrays.stream(recursionCount).allMatch(Double::isNaN);
+                if (terminateSignal) {
+                    logger.fine(" Termination signal (3x NaN) received; ReceiveThread shutting down");
+                    break;
+                }
+
                 /**
                  * Check that the FLambda range of the Recursion kernel includes
                  * both the minimum and maximum FLambda value.
@@ -1198,6 +1216,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 recursionKernel[walkerLambda][walkerFLambda] += weight;
                 if (this.isInterrupted()) {
                     logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution");
+                    // No pending message receipt, so no warning.
                     break;
                 }
             }
