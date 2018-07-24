@@ -34,7 +34,7 @@ class ManyBody extends AlgorithmsScript {
      * One or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
-    private List<String> filenames
+    private List<String> filenames;
 
     private File baseDir = null;
     boolean testing = null;
@@ -49,23 +49,23 @@ class ManyBody extends AlgorithmsScript {
     ManyBody run() {
 
         if (!init()) {
-            return this
+            return this;
         }
 
         String priorGKwarn = System.getProperty("gk-suppressWarnings");
         if (priorGKwarn == null || priorGKwarn.isEmpty()) {
             System.setProperty("gk-suppressWarnings", "true");
         }
-        String filename
+        String modelFileName;
         if (filenames != null && filenames.size() > 0) {
-            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
-            filename = filenames.get(0)
+            MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0));
+            activeAssembly = assemblies[0];
+            modelFileName = activeAssembly.getFile().getAbsolutePath();
         } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
+            logger.info(helpString());
+            return this;
         } else {
-            filename = activeAssembly.getFile().getAbsolutePath();
+            logger.warning("Could not load file or active assembly.");
         }
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
         potentialEnergy = activeAssembly.getPotentialEnergy();
@@ -119,16 +119,17 @@ class ManyBody extends AlgorithmsScript {
         if (master) {
             logger.info(" Final Minimum Energy");
 
-            algorithmFunctions.energy(activeAssembly)
+            algorithmFunctions.energy(activeAssembly);
 
-            File saveDir = baseDir
+            File saveDir = baseDir;
             if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-                saveDir = new File(FilenameUtils.getFullPath(filename))
+                saveDir = new File(FilenameUtils.getFullPath(modelFileName));
             }
-            String dirName = saveDir.toString() + File.separator
-            String fileName = FilenameUtils.getName(filename)
-            fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-            File modelFile = new File(dirName + fileName)
+            String dirName = saveDir.toString() + File.separator;
+            String fileName = FilenameUtils.getName(modelFileName);
+            fileName = FilenameUtils.removeExtension(fileName) + ".pdb";
+            File modelFile = new File(dirName + fileName);
+
             algorithmFunctions.saveAsPDB(activeAssembly, modelFile);
         }
 
@@ -138,7 +139,7 @@ class ManyBody extends AlgorithmsScript {
             System.clearProperty("gk-suppressWarnings");
         }
 
-        return this
+        return this;
     }
 
     /**
