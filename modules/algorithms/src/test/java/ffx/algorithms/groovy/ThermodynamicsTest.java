@@ -53,6 +53,7 @@ import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -454,6 +455,13 @@ public class ThermodynamicsTest {
 
     @Before
     public void before() {
+        binding = new Binding();
+        thermo = new NewThermodynamics();
+        thermo.setBinding(binding);
+    }
+
+    @BeforeClass
+    public static void beforeClass() {
         // Initialize Parallel Java if needed.
         try {
             Comm.world();
@@ -466,12 +474,8 @@ public class ThermodynamicsTest {
                 logger.log(Level.WARNING, message, e.toString());
                 message = " Skipping thermodynamics test.";
                 logger.log(Level.WARNING, message, e.toString());
-                fail();
             }
         }
-        binding = new Binding();
-        thermo = new NewThermodynamics();
-        thermo.setBinding(binding);
     }
 
     @After

@@ -39,6 +39,7 @@ package ffx.algorithms.groovy;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import groovy.lang.Binding;
@@ -71,7 +72,10 @@ public class ManyBodyTest {
         binding = new Binding();
         manyBody = new ManyBody();
         manyBody.setBinding(binding);
+    }
 
+    @BeforeClass
+    public static void beforeClass() {
         // Initialize Parallel Java
         try {
             Comm.world();
@@ -80,11 +84,10 @@ public class ManyBodyTest {
                 String args[] = new String[0];
                 Comm.init(args);
             } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                String message = " Exception starting up the Parallel Java communication layer.";
                 logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping rotamer optimization test.");
+                message = " Skipping rotamer optimization test.";
                 logger.log(Level.WARNING, message, e.toString());
-                Assert.fail();
             }
         }
     }
