@@ -128,7 +128,7 @@ public class OSXAdapter implements com.apple.mrj.MRJAboutHandler, com.apple.mrj.
 
         // Apple OS X Flags
         System.setProperty("com.apple.macos.smallTabs","true");
-        System.setProperty("com.apple.macos.useScreenMenuBar", "true");
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
 
         // -Xdock:name="Force Field X"
 

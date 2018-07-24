@@ -62,6 +62,12 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.utils.PotentialsUtils;
 
+/**
+ * Test the Goldstein elimination criteria for both self and pair eliminations.
+ *
+ * @author Mallory R. Tollefson
+ * @author Claire E. OConnell
+ */
 @RunWith(Parameterized.class)
 public class RotamerOptimizationTest {
 

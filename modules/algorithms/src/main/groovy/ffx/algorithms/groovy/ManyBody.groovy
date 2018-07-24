@@ -36,12 +36,13 @@ class ManyBody extends AlgorithmsScript {
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
     private List<String> filenames
 
-    private File baseDir = null
+    private File baseDir = null;
+    boolean testing = null;
     
     ForceFieldEnergy potentialEnergy;
 
     void setBaseDir(File baseDir) {
-        this.baseDir = baseDir
+        this.baseDir = baseDir;
     }
     
     @Override
@@ -55,7 +56,6 @@ class ManyBody extends AlgorithmsScript {
         if (priorGKwarn == null || priorGKwarn.isEmpty()) {
             System.setProperty("gk-suppressWarnings", "true");
         }
-
         String filename
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
@@ -67,13 +67,17 @@ class ManyBody extends AlgorithmsScript {
         } else {
             filename = activeAssembly.getFile().getAbsolutePath();
         }
-
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
         potentialEnergy = activeAssembly.getPotentialEnergy();
 
         RotamerOptimization rotamerOptimization = new RotamerOptimization(
             activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
+        testing  = getTesting();
 
+        if(testing == true){
+            rotamerOptimization.turnRotamerSingleEliminationOff();
+            rotamerOptimization.turnRotamerPairEliminationOff();
+        }
         manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly);
 
         ArrayList<Residue> residueList = rotamerOptimization.getResidues();
@@ -136,14 +140,34 @@ class ManyBody extends AlgorithmsScript {
 
         return this
     }
-    
-    public ForceFieldEnergy getPotential(){
+
+    /**
+     * Returns the potential energy of the active assembly. Used during testing assertions.
+     * @return potentialEnergy Potential energy of the active assembly.
+     */
+    ForceFieldEnergy getPotential(){
         return potentialEnergy;
     }
 
     @Override
     public List<Potential> getPotentials() {
         return potentialEnergy == null ? new ArrayList<>() : Collections.singletonList(potentialEnergy);
+    }
+
+    /**
+     * Set method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
+     * @param testing A boolean flag that turns off elimination criteria for testing purposes.
+     */
+    void setTesting(boolean testing){
+        this.testing = testing;
+    }
+
+    /**
+     * Get method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
+     * @return testing A boolean flag that turns off elimination criteria for testing purposes.
+     */
+    boolean getTesting(){
+        return testing;
     }
 }
 

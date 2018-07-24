@@ -243,7 +243,7 @@ public final class PDBFilter extends SystemFilter {
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
             ForceField forceField, CompositeConfiguration properties) {
@@ -260,7 +260,7 @@ public final class PDBFilter extends SystemFilter {
      * object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(File file, MolecularAssembly molecularAssembly,
             ForceField forceField, CompositeConfiguration properties) {
@@ -276,7 +276,7 @@ public final class PDBFilter extends SystemFilter {
      * @param molecularAssemblies a {@link java.util.List} object.
      * @param forceField a {@link ffx.potential.parameters.ForceField} object.
      * @param properties a
-     * {@link org.apache.commons.configuration.CompositeConfiguration} object.
+     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
             ForceField forceField, CompositeConfiguration properties) {
