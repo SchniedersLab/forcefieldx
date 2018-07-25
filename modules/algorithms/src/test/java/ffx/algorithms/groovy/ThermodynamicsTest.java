@@ -44,12 +44,15 @@ import ffx.algorithms.groovy.NewThermodynamics;
 import static ffx.potential.utils.PotentialsFunctions.logger;
 
 import ffx.crystal.CrystalPotential;
+import ffx.potential.Utilities;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.utilities.DirectoryUtils;
 import groovy.lang.Binding;
 import static org.junit.Assert.*;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.MapConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -59,6 +62,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -66,6 +70,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -96,8 +102,7 @@ public class ThermodynamicsTest {
                 },
                 {
                     "Acetamide Implicit Solvation Free Energy: -10.8 kcal/mol", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.FREE, -10.8, 0.25, new double[]{}, new double[]{}, new double[]{},
-                        new double[][][]{{{}}}, new double[][][]{{{}}},
+                        ThermoTestMode.FREE, -10.8, 0.25, null, null, null, null, null, null,
                         new String[]{"-C", "10", "-d", "1.0", "-n", "50000", "-w", "5", "--bM", "0.25", "--tp", "4"},
                         new String[]{}, new String[]{}
                 },
@@ -323,14 +328,14 @@ public class ThermodynamicsTest {
                 "-d", "0.5",        // Most of the tests are in vacuum, thus short timestep.
                 "-F", "XYZ",
                 "-i", "STOCHASTIC", // Stochastic because most toy systems work best with Langevin dynamics.
-                "-k", "1.0",
+                "-k", "5.0",        // Infrequent because we should not need to restart.
                 "-l", "1.0",        // Set walker to start at the usually-physical topology. Likely commonly set by test.
                 "-n", "0",          // Do not run any steps by default, just evaluate energy.
                 "-p", "0",          // Use NVT, not NPT dynamics.
                 "-Q", "0",          // Do not run any steps by default, just evaluate energy.
-                "-r", "0.25",
+                "-r", "2.0",        // Very infrequent printouts, since it should work.
                 "-t", "298.15",
-                "-w", "10.0"};
+                "-w", "10.0"};      // Infrequent since we should not need the trajectory.
 
         int nOpts = opts.length;
         Map<String, String> optMap = new HashMap<>(nOpts);
@@ -364,6 +369,8 @@ public class ThermodynamicsTest {
     private final String info;
     private final ThermoTestMode mode;
     private final String[] filenames;
+    private final File tempDir;
+    private final File[] copiedFiles;
     private final Map<String, String> opts;
     private final List<String> flags;
     /**
@@ -418,11 +425,34 @@ public class ThermodynamicsTest {
                               int[] gradientAtoms,
                               double[] pe, double[] dudl, double[] d2udl2,
                               double[][][] dudx, double[][][] d2udxdl,
-                              String[] options, String[] properties, String[] flags) {
+                              String[] options, String[] properties, String[] flags) throws IOException {
         this.info = info;
         this.mode = mode;
         int nFiles = filenames.length;
+
+        String tempDirName = String.format("temp-%016x/", new Random().nextLong());
+        tempDir = new File(tempDirName);
+        tempDir.mkdir();
         this.filenames = Arrays.copyOf(filenames, nFiles);
+        copiedFiles = new File[nFiles];
+
+        String[] copiedExtensions = new String[]{"dyn", "key", "properties", "his", "lam"};
+        for (int i = 0; i < nFiles; i++) {
+            File srcFile = new File("src/main/java/" + filenames[i]);
+            File tempFile = new File(tempDirName + FilenameUtils.getName(filenames[i]));
+            logger.info(String.format(" Source and temp files: %s, %s", srcFile.getPath(), tempFile.getPath()));
+            FileUtils.copyFile(srcFile, tempFile);
+            copiedFiles[i] = tempFile;
+
+            for (String ext : copiedExtensions) {
+                srcFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
+                if (srcFile.exists()) {
+                    logger.info(" Copying extension " + ext);
+                    tempFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
+                    FileUtils.copyFile(srcFile, tempFile);
+                }
+            }
+        }
         ffxCI = Boolean.parseBoolean(System.getProperty("ffx.ci", "false"));
 
         switch (mode) {
@@ -574,7 +604,7 @@ public class ThermodynamicsTest {
     }
 
     @After
-    public void after() {
+    public void after() throws IOException {
         if (filenames.length > 0) {
             cleanUpFiles();
         }
@@ -616,7 +646,7 @@ public class ThermodynamicsTest {
             argList.add(k);
             argList.add(v);
         });
-        argList.addAll(Arrays.stream(filenames).map(s -> "src/main/java/" + s).collect(Collectors.toList()));
+        argList.addAll(Arrays.stream(copiedFiles).map(File::getPath).collect(Collectors.toList()));
         return argList.toArray(new String[argList.size()]);
     }
 
@@ -628,17 +658,9 @@ public class ThermodynamicsTest {
         thermo.setProperties(algorithmConfig);
     }
 
-    private void cleanUpFiles() {
-        String baseFileName = String.format("modules/algorithms/%s", FilenameUtils.getBaseName(filenames[0]));
-        baseFileName = FilenameUtils.removeExtension(baseFileName);
-        String[] extensions = new String[]{".his", ".lam", ".dyn", ".arc"};
-        for (String ext : extensions) {
-            File toRemove = new File(baseFileName + ext);
-            if (toRemove.exists()) {
-                toRemove.delete();
-            } else {
-                logger.fine(String.format(" File %s did not exist to be deleted.", toRemove.getName()));
-            }
+    private void cleanUpFiles() throws IOException {
+        if (tempDir.exists()) {
+            DirectoryUtils.deleteDirectoryTree(tempDir.toPath());
         }
     }
 
@@ -651,8 +673,7 @@ public class ThermodynamicsTest {
         thermo.run();
         AbstractOSRW osrw = thermo.getOSRW();
         double delG = osrw.lastFreeEnergy();
-        assertEquals(String.format(" Test %s: resulting free energy %12.5g != expected energy " +
-                "%12.5g within tolerance %12.5g", delG, freeEnergy, feTol), freeEnergy, delG, feTol);
+        assertEquals(String.format(" Test %s: not within tolerance %12.5g", info, feTol), freeEnergy, delG, feTol);
     }
 
     /**
@@ -889,7 +910,7 @@ public class ThermodynamicsTest {
                 for (int i = 0; i < nVars; i++) {
                     if (approxEquals(lamGradient[i], other.lamGradient[i], d2udxdlTol)) {
                         equalFound = true;
-                        sb.append(String.format("\n Gradient %d %12.6g == other lamGradient %d %12.6g", i, lamGradient[i], other.lamGradient[i]));
+                        sb.append(String.format("\n Lambda gradient %d %12.6g == other lambda gradient %12.6g", i, lamGradient[i], other.lamGradient[i]));
                     } else {
                         ++diffsFound;
                     }

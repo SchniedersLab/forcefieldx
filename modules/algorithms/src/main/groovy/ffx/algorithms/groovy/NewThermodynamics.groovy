@@ -140,7 +140,7 @@ class NewThermodynamics extends AlgorithmsScript {
                 collect(Collectors.toList())
 
         File firstStructure = structureFiles.get(0);
-        String baseFilename = FilenameUtils.removeExtension(firstStructure.getName());
+        String baseFilename = FilenameUtils.removeExtension(firstStructure.getPath());
         File histogramRestart = new File(baseFilename + ".his");
 
         // For a multi-process job, try to get the restart files from rank sub-directories.
