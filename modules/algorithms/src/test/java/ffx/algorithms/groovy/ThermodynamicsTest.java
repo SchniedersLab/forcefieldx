@@ -95,6 +95,13 @@ public class ThermodynamicsTest {
                         null, null, null, null, new String[]{}, new String[]{}, new String[]{"-h", "true"}
                 },
                 {
+                    "Acetamide Implicit Solvation Free Energy: -10.8 kcal/mol", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
+                        ThermoTestMode.FREE, -10.8, 0.25, new double[]{}, new double[]{}, new double[]{},
+                        new double[][][]{{{}}}, new double[][][]{{{}}},
+                        new String[]{"-C", "10", "-d", "1.0", "-n", "50000", "-w", "5", "--bM", "0.25", "--tp", "4"},
+                        new String[]{}, new String[]{}
+                },
+                {
                         "Acetamide Implicit Solvation Gradients: L = 0.9", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
                         ThermoTestMode.GRAD, 0, 0, intRange(1, 9),
                         new double[]{-14.3232441, -14.1547628}, new double[]{-47.0065247, 2.88020118},
@@ -640,7 +647,12 @@ public class ThermodynamicsTest {
      * Currently not implemented.
      */
     private void testFreeEnergy() {
-
+        assembleThermo();
+        thermo.run();
+        AbstractOSRW osrw = thermo.getOSRW();
+        double delG = osrw.lastFreeEnergy();
+        assertEquals(String.format(" Test %s: resulting free energy %12.5g != expected energy " +
+                "%12.5g within tolerance %12.5g", delG, freeEnergy, feTol), freeEnergy, delG, feTol);
     }
 
     /**

@@ -152,7 +152,7 @@ class ManyBody extends AlgorithmsScript {
 
     @Override
     public List<Potential> getPotentials() {
-        return potentialEnergy == null ? new ArrayList<>() : Collections.singletonList(potentialEnergy);
+        return potentialEnergy == null ? Collections.emptyList() : Collections.singletonList(potentialEnergy);
     }
 
     /**

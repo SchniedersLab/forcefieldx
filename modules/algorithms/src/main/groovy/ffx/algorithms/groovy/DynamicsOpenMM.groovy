@@ -137,7 +137,7 @@ class DynamicsOpenMM extends AlgorithmsScript{
 
     @Override
     public List<Potential> getPotentials() {
-        return forceFieldEnergyOpenMM == null ? new ArrayList<>() : Collections.singletonList(forceFieldEnergyOpenMM);
+        return forceFieldEnergyOpenMM == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergyOpenMM);
     }
 }
 

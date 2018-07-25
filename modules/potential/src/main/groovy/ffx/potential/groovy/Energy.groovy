@@ -110,7 +110,7 @@ class Energy extends PotentialScript {
 
     @Override
     public List<Potential> getPotentials() {
-        return forceFieldEnergy == null ? new ArrayList<>() : Collections.singletonList(forceFieldEnergy);
+        return forceFieldEnergy == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergy);
     }
 }
 

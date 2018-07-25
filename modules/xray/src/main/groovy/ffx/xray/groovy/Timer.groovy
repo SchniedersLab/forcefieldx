@@ -105,7 +105,7 @@ class Timer extends AlgorithmsScript {
 
     @Override
     public List<Potential> getPotentials() {
-        return refinementEnergy == null ? new ArrayList<>() : Collections.singletonList(refinementEnergy);
+        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
     }
 }
 

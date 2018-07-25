@@ -150,7 +150,7 @@ class CrystalMin extends AlgorithmsScript {
 
     @Override
     public List<Potential> getPotentials() {
-        return xtalEnergy == null ? new ArrayList<>() : Collections.singletonList(xtalEnergy);
+        return xtalEnergy == null ? Collections.emptyList() : Collections.singletonList(xtalEnergy);
     }
 }
 

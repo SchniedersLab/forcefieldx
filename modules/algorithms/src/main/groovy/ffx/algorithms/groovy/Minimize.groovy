@@ -142,7 +142,7 @@ class Minimizer extends AlgorithmsScript {
 
     @Override
     public List<Potential> getPotentials() {
-        return potential == null ? new ArrayList<>() : Collections.singletonList(potential);
+        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
     }
 }
 

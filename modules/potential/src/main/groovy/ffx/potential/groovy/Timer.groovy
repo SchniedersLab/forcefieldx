@@ -95,7 +95,7 @@ class Timer extends PotentialScript {
 
     @Override
     public List<Potential> getPotentials() {
-        return energy == null ? new ArrayList<>() : Collections.singletonList(energy);
+        return energy == null ? Collections.emptyList() : Collections.singletonList(energy);
     }
 
 }

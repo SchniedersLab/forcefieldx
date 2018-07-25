@@ -107,7 +107,7 @@ class Histogram extends AlgorithmsScript {
 
     @Override
     public List<Potential> getPotentials() {
-        return osrw == null ? new ArrayList<>() : Collections.singletonList(osrw);
+        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
     }
 }
 
