@@ -50,15 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiFunction;
 import java.util.function.ToDoubleFunction;
@@ -382,6 +374,10 @@ public class RotamerOptimization implements Terminatable {
      * False unless JUnit testing.
      */
     private boolean testing = false;
+    /**
+     * False unless ManyBodyTest is occurring.
+     */
+    private boolean monteCarloTesting = false;
     /**
      * An array of atomic coordinates (length 3 * the number of atoms).
      */
@@ -1296,12 +1292,16 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
 
+            Random rand = new Random();
             int nRots = allowedRots.size();
+            if(monteCarloTesting){
+                rand.setSeed(nRots);
+            }
             if (nRots > 1) {
                 boolean validMove = !useAllElims;
                 int indexRI;
                 do {
-                    int ri = ThreadLocalRandom.current().nextInt(nRots);
+                    int ri = rand.nextInt(nRots);
                     indexRI = allowedRots.get(ri);
                     if (useAllElims) {
                         validMove = checkValidMove(i, indexRI, rotamers);
@@ -7990,14 +7990,26 @@ public class RotamerOptimization implements Terminatable {
         }
     }
 
+    /**
+     * Sets the twoBodyCutoffDist. All two-body energies where the rotamers have a separation distance larger than the cutoff are set to 0.
+     * @param twoBodyCutoffDist Separation distance at which the interaction of two side-chains is assumed to have an energy of 0.
+     */
     public void setTwoBodyCutoff(double twoBodyCutoffDist) {
         this.twoBodyCutoffDist = twoBodyCutoffDist;
     }
 
+    /**
+     * Sets the threeBodyCutoffDist. All three-body energies where the rotamers have a separation distance larger than the cutoff are set to 0.
+     * @param threeBodyCutoffDist Separation distance at which the interaction of three side-chains is assumed to have an energy of 0.
+     */
     public void setThreeBodyCutoff(double threeBodyCutoffDist) {
         this.threeBodyCutoffDist = threeBodyCutoffDist;
     }
 
+    /**
+     * Method allows for testing of the elimination criteria by setting parameters appropriately.
+     * @param testing True only during RotamerOptimizationTest.
+     */
     public void setTestOverallOpt(boolean testing) {
         this.testing = testing;
         distanceMethod = DistanceMethod.ROTAMER;
@@ -8005,6 +8017,10 @@ public class RotamerOptimization implements Terminatable {
         setThreeBodyCutoff(9.0);
     }
 
+    /**
+     *  Method allows for testing of the elimination criteria by setting parameters appropriately for a specific test case.
+     * @param testSelfEnergyEliminations True when only self energies are calculated; pairs, triples, etc., are assumed to be 0.
+     */
     public void setTestSelfEnergyEliminations(boolean testSelfEnergyEliminations) {
         this.testing = true;
         this.testSelfEnergyEliminations = testSelfEnergyEliminations;
@@ -8016,6 +8032,10 @@ public class RotamerOptimization implements Terminatable {
         setThreeBodyCutoff(9.0);
     }
 
+    /**
+     * Method allows for testing of the elimination criteria by setting parameters appropriately for a specific test case.
+     * @param testPairEnergyEliminations True when only pair energies are calculated; selves, triples, etc., are assumed to be 0.
+     */
     public void setTestPairEnergyEliminations(int testPairEnergyEliminations) {
         this.testing = true;
         this.testPairEnergyEliminations = testPairEnergyEliminations;
@@ -8027,6 +8047,11 @@ public class RotamerOptimization implements Terminatable {
         setThreeBodyCutoff(9.0);
     }
 
+    /**
+     * Method allows for testing of the elimination criteria by setting parameters appropriately for a specific test case.
+     * @param testTripleEnergyEliminations1 True when only triple energies are calculated; selves, pairs, etc., are assumed to be 0.
+     * @param testTripleEnergyEliminations2 True when only triple energies are calculated; selves, pairs, etc., are assumed to be 0.
+     */
     public void setTestTripleEnergyEliminations(int testTripleEnergyEliminations1, int testTripleEnergyEliminations2) {
         this.testing = true;
         this.testTripleEnergyEliminations1 = testTripleEnergyEliminations1;
@@ -8036,6 +8061,16 @@ public class RotamerOptimization implements Terminatable {
         distanceMethod = DistanceMethod.ROTAMER;
         setTwoBodyCutoff(Double.MAX_VALUE);
         setThreeBodyCutoff(9.0);
+    }
+
+    /**
+     * Sets the monteCarloTesting boolean in RotamerOptimization.java to true or false.
+     * This should only be set to true when monte carlo is being tested through the ManyBodyTest.java script.
+     * When true, the method sets a seed for the pseudo-random number generator and allows the monte carlo rotamer optimization to be deterministic.
+     * @param bool True or false.
+     */
+    public void setMonteCarloTesting(boolean bool){
+        this.monteCarloTesting = bool;
     }
 
     public enum Algorithm {
@@ -9690,12 +9725,16 @@ public class RotamerOptimization implements Terminatable {
                  * allowedRots. indexI and indexRI correspond to their numbers
                  * in the rotamer matrix.
                  */
-                int resi = ThreadLocalRandom.current().nextInt(nAllowed);
+                Random rand = new Random();
+                if (monteCarloTesting){
+                    rand.setSeed(nAllowed);
+                }
+                int resi = rand.nextInt(nAllowed);
                 indexI = allowedRes.get(resi);
                 List<Integer> rotsi = allowedRots.get(resi);
                 int lenri = rotsi.size();
 
-                int roti = ThreadLocalRandom.current().nextInt(lenri);
+                int roti = rand.nextInt(lenri);
                 indexRI = rotsi.get(roti);
                 if (useAllElims) {
                     validMove = checkValidMove(indexI, indexRI, currentRots);
