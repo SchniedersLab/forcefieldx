@@ -53,9 +53,9 @@ public class DynamicsOpenMMStochasticTest {
                 "System OpenMM Stochastic", // info
                 "ffx/algorithms/structues/waterbox_eq.xyz", // filename
                 "ffx/algorithms/structues/waterbox_eq.dyn", // restartFile
-                11796.8314, // endKineticEnergy
-                -36782.5605, // endPotentialEnergy
-                -24985.7291 // endTotalEnergy
+                11796.9508, // endKineticEnergy
+                -36782.1559, // endPotentialEnergy
+                -24985.2051 // endTotalEnergy
             }
         });
     }
@@ -96,7 +96,7 @@ public class DynamicsOpenMMStochasticTest {
         }
         
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "LANGEVIN", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
         
         // Evaluate script
