@@ -24,7 +24,7 @@ import ffx.algorithms.groovy.Dynamics;
 import groovy.lang.Binding;
 
 /**
- * @author hbernabe
+ * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
 public class DynamicsNVETest {

@@ -25,7 +25,7 @@ import groovy.lang.Binding;
 
 /**
  *
- * @author hbernabe
+ * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
 public class DynamicsRESPANVETest {

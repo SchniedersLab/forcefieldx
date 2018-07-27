@@ -3,6 +3,7 @@ package ffx.algorithms.groovy
 
 import org.apache.commons.io.FilenameUtils
 
+import ffx.algorithms.MolecularDynamicsOpenMM
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
@@ -51,6 +52,12 @@ class DynamicsOpenMM extends AlgorithmsScript{
     @Parameters(arity = "1..*", paramLabel = "files",
         description = "XYZ or PDB input files.")
     private List<String> filenames
+    
+    private MolecularDynamicsOpenMM molDynOpenMM;
+    
+    public MolecularDynamicsOpenMM getMolecularDynamics(){
+        return molDynOpenMM;
+    }
 
     @Override
     DynamicsOpenMM run(){
@@ -117,12 +124,12 @@ class DynamicsOpenMM extends AlgorithmsScript{
         //MolecularDynamics molDyn = dynamics.getDynamics(potential, activeAssembly, sh)
 
         if (moldyn instanceof ffx.algorithms.MolecularDynamicsOpenMM){
-            ffx.algorithms.MolecularDynamicsOpenMM moldynOpenMM = (ffx.algorithms.MolecularDynamicsOpenMM) moldyn;
-            moldynOpenMM.setRestartFrequency(dynamics.write)
-            moldynOpenMM.setFileType(writeout.getFileType())
-            moldynOpenMM.setIntervalSteps(trajSteps)
+            molDynOpenMM = (ffx.algorithms.MolecularDynamicsOpenMM) moldyn;
+            molDynOpenMM.setRestartFrequency(dynamics.write)
+            molDynOpenMM.setFileType(writeout.getFileType())
+            molDynOpenMM.setIntervalSteps(trajSteps)
             boolean initVelocities = true
-            moldynOpenMM.dynamic(dynamics.steps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp, initVelocities, dyn)
+            molDynOpenMM.dynamic(dynamics.steps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp, initVelocities, dyn)
         } else{
             logger.severe(" Could not start OpenMM molecular dynamics.")
         }

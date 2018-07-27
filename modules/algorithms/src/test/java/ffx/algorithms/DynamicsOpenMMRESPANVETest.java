@@ -19,56 +19,60 @@ import static org.junit.Assert.assertEquals;
 
 import edu.rit.pj.Comm;
 
-import ffx.algorithms.groovy.Dynamics;
+import ffx.algorithms.groovy.DynamicsOpenMM;
 
 import groovy.lang.Binding;
 
 /**
+ *
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsNVTTest {
+public class DynamicsOpenMMRESPANVETest {
 
     private String info;
     private String filename;
     private String restartFile;
-    private double startingTemp;
-    private double tempTolerance = 6.0;
-    private double endTotalEnergy;
-    private double energyTolerance = 50.0;
+    private double startingTotalEnergy;
+    private double totalEnergyTolerance = 5.0;
+    private boolean ffxOpenMM;
 
     private Binding binding;
-    private Dynamics dynamics;
+    private DynamicsOpenMM dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsNVTTest.class.getName());
+    private static final Logger logger = Logger.getLogger(DynamicsOpenMMRESPANVETest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
             {
-                "Water Box NVT", // info
+                "System OpenMM RESPA NVE", // info
                 "ffx/algorithms/structures/waterbox_eq.xyz", // filename
                 "ffx/algorithms/structures/waterbox_eq.dyn", // restartFile
-                298.15, // startingTemp
-                -25240.00
+                -25240.5415 // startingTotalEnergy
             }
-        });
-    }
 
-    public DynamicsNVTTest(String info, String filename, String restartFile, double startingTemp, double endTotalEnergy) {
+        });
+
+    }
+    
+    public DynamicsOpenMMRESPANVETest(String info, String filename, String restartFile, double startingTotalEnergy){
+        
         this.info = info;
         this.filename = filename;
         this.restartFile = restartFile;
-        this.startingTemp = startingTemp;
-        this.endTotalEnergy = endTotalEnergy;
+        this.startingTotalEnergy = startingTotalEnergy;
+        
+        ffxOpenMM = System.getProperty("ffx.openMM","false").equalsIgnoreCase("true");
     }
-
+    
     @Before
-    public void before() {
+    public void before(){
+        
         binding = new Binding();
-        dynamics = new Dynamics();
+        dynamics = new DynamicsOpenMM();
         dynamics.setBinding(binding);
-
+        
         try {
             String args[] = new String[0];
             Comm.init(args);
@@ -77,23 +81,25 @@ public class DynamicsNVTTest {
             logger.log(Level.WARNING, message, e.toString());
         }
     }
-
+    
     @Test
-    public void testDynamicsNVT() {
-
+    public void testDynamicsOpenMMRESPANVE(){
+        
+        if(!ffxOpenMM){
+            return;
+        }
+        
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "VelocityVerlet", "-b", "Bussi", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
-
-        // Evaluate the script.
+        
+        // Evaluate script.
         dynamics.run();
-
-        MolecularDynamics molDyn = dynamics.getMolecularDynamics();
-
-        // Assert that temperature is within tolerance at the end of the dynamics trajectory.
-        assertEquals(info + " End temperature for NVT test", startingTemp, molDyn.getTemperature(), tempTolerance);
-
-        // Assert that the end total energy is withing the tolerance at the end of the dynamics trajectory.
-        assertEquals(info + " End total energy for NVT test and set random seed", endTotalEnergy, molDyn.getTotalEnergy(), energyTolerance);
+        
+        MolecularDynamicsOpenMM molDyn = dynamics.getMolecularDynamics();
+        
+        // Assert that the end total energy is within the threshold for the dynamics trajectory.
+        assertEquals(info + "End total energy for OpenMM RESPA integrator under the NVE ensemble", startingTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
     }
+
 }

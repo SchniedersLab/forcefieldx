@@ -28,57 +28,51 @@ import groovy.lang.Binding;
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsBeemanBerendsenTest {
-
+public class DynamicsInitVelocitiesTest {
+    
     private String info;
     private String filename;
-    private String restartFile;
     private double endKineticEnergy;
-    private double kineticEnergyTolerance = 0.5;
+    private double kineticEnergyTolerance = 5.0;
     private double endPotentialEnergy;
-    private double potentialEnergyTolerance = 0.5;
+    private double potentialEnergyTolerance = 5.0;
     private double endTotalEnergy;
-    private double totalEnergyTolerance = 0.5;
-
+    private double totalEnergyTolerance = 5.0;
+    
     private Binding binding;
     private Dynamics dynamics;
-
-    private static final Logger logger = Logger.getLogger(DynamicsBeemanBerendsenTest.class.getName());
-
+    
+    private static final Logger logger = Logger.getLogger(DynamicsInitVelocitiesTest.class.getName());
+    
     @Parameters
-    public static Collection<Object[]> data() {
+    public static Collection<Object[]> data(){
         return Arrays.asList(new Object[][]{
             {
-                "Acetamide Beeman Berendsen", // info
-                "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-                "ffx/algorithms/structures/acetamide_NVE.dyn", // restartFile
-                4.8087, // endKineticEnergy
-                -29.7186, // endPotentialEnergy
-                -24.9099 // endTotalEnergy
+                "Water Tiny Initialize Velocities",  //info
+                "ffx/algorithms/structures/watertiny.xyz",  // filename
+                64.8511,  // endKineticEnergy
+                -218.0760,  // endPotentialEnergy
+                -153.2249  // endTotalEnergy
             }
-
+            
         });
     }
-
-    public DynamicsBeemanBerendsenTest(String info, String filename, String restartFile, double endKineticEnergy, double endPotentialEnergy,
-            double endTotalEnergy) {
-
+    
+    public DynamicsInitVelocitiesTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy, double endTotalEnergy){
+        
         this.info = info;
         this.filename = filename;
-        this.restartFile = restartFile;
         this.endKineticEnergy = endKineticEnergy;
         this.endPotentialEnergy = endPotentialEnergy;
         this.endTotalEnergy = endTotalEnergy;
-
     }
-
+    
     @Before
-    public void before() {
-
+    public void before(){
         binding = new Binding();
         dynamics = new Dynamics();
         dynamics.setBinding(binding);
-
+        
         try {
             String args[] = new String[0];
             Comm.init(args);
@@ -87,25 +81,25 @@ public class DynamicsBeemanBerendsenTest {
             logger.log(Level.WARNING, message, e.toString());
         }
     }
-
+    
     @Test
-    public void testDynamicsBeemanBerendsen() {
-
+    public void testDynamicsInitVelocities(){
+        
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "Beeman", "-b", "Berendsen", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-t", "298.15", "-i", "VelocityVerlet", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
-
-        // Evaluate the script.
+        
+        // Evaluate script.
         dynamics.run();
-
+        
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
-
-        // Assert that end energies are within the tolerance for the dynamics trajectory
-        assertEquals(info + "End kinetic energy for Beeman integrator and Berendsen thermostat", endKineticEnergy, molDyn.getKineticEnergy(), kineticEnergyTolerance);
-
-        assertEquals(info + "End potential energy for Beeman integrator and Berendsen thermostat", endPotentialEnergy, molDyn.getPotentialEnergy(), potentialEnergyTolerance);
-
-        assertEquals(info + "End total energy for Beeman integrator and Berendsen thermostat", endTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
+        
+        // Assert that final energies are within the tolerance for the dynamics trajectory.
+        assertEquals(info + "End kinetic energy for initializing velocities test", endKineticEnergy, molDyn.getKineticEnergy(), kineticEnergyTolerance);
+        
+        assertEquals(info + "End potential energy for initializing velocities test", endPotentialEnergy, molDyn.getPotentialEnergy(), potentialEnergyTolerance);
+        
+        assertEquals(info + "End total energy for initializing velocities test", endTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
     }
-
+    
 }
