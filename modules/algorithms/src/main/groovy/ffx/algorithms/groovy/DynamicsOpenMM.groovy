@@ -6,6 +6,7 @@ import ffx.algorithms.MolecularDynamicsOpenMM
 import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
+import ffx.algorithms.MolecularDynamicsOpenMM
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
@@ -54,6 +55,12 @@ class DynamicsOpenMM extends AlgorithmsScript{
     @Parameters(arity = "1..*", paramLabel = "files",
         description = "XYZ or PDB input files.")
     private List<String> filenames
+    
+    private MolecularDynamicsOpenMM molDynOpenMM;
+    
+    public MolecularDynamicsOpenMM getMolecularDynamics(){
+        return molDynOpenMM;
+    }
 
     private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
 
@@ -127,7 +134,7 @@ class DynamicsOpenMM extends AlgorithmsScript{
             moldynOpenMM.setFileType(writeout.getFileType())
             moldynOpenMM.setIntervalSteps(trajSteps)
             boolean initVelocities = true
-            moldynOpenMM.dynamic(dynamics.steps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp, initVelocities, dyn)
+            molDynOpenMM.dynamic(dynamics.steps, dynamics.dt, dynamics.report, dynamics.write, dynamics.temp, initVelocities, dyn)
         } else{
             logger.severe(" Could not start OpenMM molecular dynamics.")
         }

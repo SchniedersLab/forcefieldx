@@ -58,7 +58,8 @@ import ffx.algorithms.groovy.Dynamics;
 import groovy.lang.Binding;
 
 /**
- * @author Hernan Bernabe
+ *
+ * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
 public class DynamicsRESPANVETest {

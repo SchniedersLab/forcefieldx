@@ -7518,17 +7518,7 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(" Loaded self energies from restart file.");
 
                 //Pre-Prune if self-energy is Double.NaN.
-                for (int i = 0; i < residues.length; i++) {
-                    Residue residue = residues[i];
-                    Rotamer rotamers[] = residue.getRotamers(library);
-                    int nrot = rotamers.length;
-                    for (int ri = 0; ri < nrot; ri++) {
-                        if (!check(i, ri) && Double.isNaN(getSelf(i, ri))) {
-                            logIfMaster(format(" Rotamer (%7s,%2d) self-energy %12.4f pre-pruned since energy is NaN.", residue, ri, getSelf(i, ri)));
-                            eliminateRotamer(residues, i, ri, false);
-                        }
-                    }
-                }
+                prePruneSelves(residues);
 
                 // prune singles
                 if (pruneClashes) {
@@ -7619,34 +7609,8 @@ public class RotamerOptimization implements Terminatable {
                 logIfMaster(" Loaded 2-body energies from restart file.");
 
                 // Pre-Prune if pair-energy is Double.NaN.
-                // Loop over first residue.
-                for (int i = 0; i < nResidues - 1; i++) {
-                    Residue resi = residues[i];
-                    Rotamer[] roti = resi.getRotamers(library);
-                    int ni = roti.length;
-                    // Loop over second residue.
-                    for (int j = i + 1; j < nResidues; j++) {
-                        Residue resj = residues[j];
-                        Rotamer[] rotj = resj.getRotamers(library);
-                        int nj = rotj.length;
-                        // Loop over the rotamers for residue i.
-                        for (int ri = 0; ri < ni; ri++) {
-                            if (!validRotamer(residues, i, ri)) {
-                                continue;
-                            }
-                            // Loop over rotamers for residue j.
-                            for (int rj = 0; rj < nj; rj++) {
-                                if (!validRotamer(residues, j, rj) || check(i, ri, j, rj)) {
-                                    continue;
-                                }
-                                if (!check(i, ri, j, rj) && Double.isNaN(get2Body(i, ri, j, rj))) {
-                                    logIfMaster(format(" Rotamer Pair (%7s,%2d) (%7s,%2d) 2-body energy %12.4f pre-pruned since energy is NaN.", i, ri, j, rj, get2Body(i, ri, j, rj)));
-                                    eliminateRotamerPair(residues, i, ri, j, rj, print);
-                                }
-                            }
-                        }
-                    }
-                }
+                prePrunePairs(residues);
+
                 // prune pairs
                 if (prunePairClashes) {
                     prunePairClashes(residues);
@@ -7856,6 +7820,62 @@ public class RotamerOptimization implements Terminatable {
             // Estimate maybe 500 kB initial size.
             threeBodyEnergies = new Object2DoubleOpenHashMap<>(10000);
             return false;
+        }
+    }
+
+    /**
+     * Pre-prunes any selves that have a self-energy of Double.NaN before pruning and elminations happen.
+     * @param residues Array of all residues.
+     */
+    private void prePruneSelves(Residue residues[]){
+        //Pre-Prune if self-energy is Double.NaN.
+        for (int i = 0; i < residues.length; i++) {
+            Residue residue = residues[i];
+            Rotamer rotamers[] = residue.getRotamers(library);
+            int nrot = rotamers.length;
+            for (int ri = 0; ri < nrot; ri++) {
+                if (!check(i, ri) && Double.isNaN(getSelf(i, ri))) {
+                    logIfMaster(format(" Rotamer (%7s,%2d) self-energy %12.4f pre-pruned since energy is NaN.", residue, ri, getSelf(i, ri)));
+                    eliminateRotamer(residues, i, ri, false);
+                }
+            }
+        }
+    }
+
+    /**
+     * Pre-prunes any pairs that have a pair-energy of Double.NaN before pruning and eliminations happen.
+     * @param residues Array of all residues.
+     */
+    private void prePrunePairs(Residue residues[]) {
+        // Pre-Prune if pair-energy is Double.NaN.
+        // Loop over first residue.
+        int nResidues = residues.length;
+        for (int i = 0; i < nResidues - 1; i++) {
+            Residue resi = residues[i];
+            Rotamer[] roti = resi.getRotamers(library);
+            int ni = roti.length;
+            // Loop over second residue.
+            for (int j = i + 1; j < nResidues; j++) {
+                Residue resj = residues[j];
+                Rotamer[] rotj = resj.getRotamers(library);
+                int nj = rotj.length;
+                // Loop over the rotamers for residue i.
+                for (int ri = 0; ri < ni; ri++) {
+                    if (!validRotamer(residues, i, ri)) {
+                        continue;
+                    }
+                    // Loop over rotamers for residue j.
+                    for (int rj = 0; rj < nj; rj++) {
+                        if (!validRotamer(residues, j, rj) || check(i, ri, j, rj)) {
+                            continue;
+                        }
+                        if (!check(i, ri, j, rj) && Double.isNaN(get2Body(i, ri, j, rj))) {
+                            logIfMaster(format(" Rotamer Pair (%7s,%2d) (%7s,%2d) 2-body energy %12.4f pre-pruned since energy is NaN.", i, ri, j, rj, get2Body(i, ri, j, rj)));
+                            eliminateRotamerPair(residues, i, ri, j, rj, print);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -8875,6 +8895,9 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
 
+            //Pre-Prune if self-energy is Double.NaN.
+            prePruneSelves(residues);
+
             // Prune clashes for all singles (not just the ones this node did).
             if (pruneClashes) {
                 pruneSingleClashes(residues);
@@ -8978,6 +9001,9 @@ public class RotamerOptimization implements Terminatable {
                 } catch (InterruptedException ex) {
                 }
             }
+
+            // Pre-Prune if pair-energy is Double.NaN.
+            prePrunePairs(residues);
 
             // Prune each rotamer that clashes with all rotamers from a 2nd residue.
             if (prunePairClashes) {
