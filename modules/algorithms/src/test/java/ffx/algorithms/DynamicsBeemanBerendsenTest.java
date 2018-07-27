@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -104,11 +105,13 @@ public class DynamicsBeemanBerendsenTest {
 
     @Before
     public void before() {
-
         binding = new Binding();
         dynamics = new Dynamics();
         dynamics.setBinding(binding);
+    }
 
+    @BeforeClass
+    public static void beforeClass() {
         // Initialize Parallel Java
         try {
             Comm.world();

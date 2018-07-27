@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -99,7 +100,10 @@ public class DynamicsRESPANVETest {
         binding = new Binding();
         dynamics = new Dynamics();
         dynamics.setBinding(binding);
+    }
 
+    @BeforeClass
+    public static void beforeClass() {
         // Initialize Parallel Java
         try {
             Comm.world();
@@ -110,7 +114,7 @@ public class DynamicsRESPANVETest {
             } catch (Exception e) {
                 String message = String.format(" Exception starting up the Parallel Java communication layer.");
                 logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping RESPA NVE test.");
+                message = String.format(" Skipping Beeman/Berendsen NVT dynamics test.");
                 logger.log(Level.WARNING, message, e.toString());
                 fail();
             }
