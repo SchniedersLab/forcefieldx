@@ -1,5 +1,5 @@
 
-On Mac OS X and Linux add the ffx/bin directory to your path. For example, assume ffx is unpacked into /Users/shared/ffx 
+On Mac OS X and Linux add the ffx/bin directory to your path. For example, assuming ffx is unpacked into /Users/shared/ffx 
 1.) BASH:
 export PATH="/Users/shared/ffx/bin:$PATH"
 2.) CSH:

@@ -9,6 +9,9 @@ Force Field X is an atomic resolution molecular modeling application that target
 
 Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more details.
 
+[![Build Status](https://travis-ci.org/mjschnie/ffx.svg?branch=master)](https://travis-ci.org/mjschnie/ffx/)
+[![codecov](https://codecov.io/gh/mjschnie/ffx/branch/master/graph/badge.svg)](https://codecov.io/gh/mjschnie/ffx)
+
 ---
 
 ## Clone Force Field X
@@ -59,4 +62,3 @@ The ffx/bin directory should be appended to your $PATH environment variable. The
 
 ---
 
-[![Build Status](https://travis-ci.org/mjschnie/ffx.svg?branch=master)](https://travis-ci.org/mjschnie/ffx/)

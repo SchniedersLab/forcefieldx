@@ -85,7 +85,7 @@
                                 portability, and security that today’s applications require.
                             </td>
                             <td>
-                                1.8.0 or later.
+                                1.8 to 10.
                             </td>
                         </tr>
                         <tr>
@@ -98,7 +98,7 @@
                                 reporting and documentation from a central piece of information.
                             </td>
                             <td>
-                                3.2.5 or later.
+                                3.5 or later.
                             </td>
                         </tr>
                         <tr>
@@ -113,7 +113,7 @@
                                 Java and .NET applications.
                             </td>
                             <td>
-                                2014
+                                2018
                             </td>
                         </tr>
                         <tr>
@@ -126,7 +126,7 @@
                                 Clover provides the metrics you need to better balance the effort between writing code that does stuff, and code that tests stuff.
                             </td>
                             <td>
-                                4.0 or later.
+                                4.2 or later.
                             </td>
                         </tr>
                         <tr>
@@ -150,7 +150,19 @@
                                 everything from small to very large projects with speed and efficiency.
                             </td>
                             <td>
-                                1.8.5 or later.
+                                2.15 or later.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a target="_blank" href="http://www.ej-technologies.com/products/install4j/overview.html">Install4j</a>
+                            </td>
+                            <td>
+                                Install4j is a powerful multi-platform Java installer builder that generates
+                                native installers and application launchers for Java applications.
+                            </td>
+                            <td>
+                                7.0 or later.
                             </td>
                         </tr>
                         <!-- tr>

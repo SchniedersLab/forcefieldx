@@ -337,6 +337,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
             case BUSSI:
                 tau = properties.getDouble("tau-temperature", 0.2);
                 thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(), targetTemperature, tau);
+                if (properties.containsKey("randomseed")) {
+                    thermostat.setRandomSeed(properties.getInt("randomseed", 0));
+                }
                 break;
             case ADIABATIC:
             default:

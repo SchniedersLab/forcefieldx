@@ -37,6 +37,7 @@
  */
 package ffx.algorithms.groovy;
 
+import ffx.algorithms.RotamerOptimization;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,8 +58,8 @@ import java.nio.file.Path;
 import org.testng.Assert;
 
 /**
- *
- * @author mrtollefson
+ * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
+ * @author Mallory R. Tollefson
  */
 public class ManyBodyTest {
 
@@ -72,7 +73,7 @@ public class ManyBodyTest {
         manyBody.setBinding(binding);
     }
 
-    @Test
+   @Test
     public void testManyBodyHelp() {
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-h"};
@@ -82,6 +83,9 @@ public class ManyBodyTest {
         manyBody.run();
     }
 
+    /**
+     * Tests ManyBody.groovy and RotamerOptimization.java by running a global optimization simulation on a small pdb file.
+     */
     @Test
     public void testManyBodyGlobal() {
 
@@ -122,7 +126,7 @@ public class ManyBodyTest {
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
 
-        // Delate all created space grouop directories.
+        // Delete all created directories and files.
         try {
             DirectoryUtils.deleteDirectoryTree(path);
         } catch (IOException e) {
@@ -133,6 +137,9 @@ public class ManyBodyTest {
         manyBody.getManyBody().getRestartFile().delete();
     }
 
+    /**
+     * Tests ManyBody.groovy and RotamerOptimization.java by running a box optimization simulation on a small pdb file.
+     */
     @Test
     public void testManyBodyBoxOptimization() {
 
@@ -171,9 +178,8 @@ public class ManyBodyTest {
         double expectedTotalPotential = -208.72994232;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
-        manyBody.getManyBody();
 
-        // Delete all created space group directories.
+        // Delete all created directories and files.
         try {
             DirectoryUtils.deleteDirectoryTree(path);
         } catch (IOException e) {
@@ -182,6 +188,65 @@ public class ManyBodyTest {
         }
 
         manyBody.getManyBody().getPartial().delete();
+    }
+
+    /**
+     * Tests ManyBody.groovy and RotamerOptimization.java by running a monte carlo optimization simulation on a small pdb file. Elimination criteria are not used during this test. A monte carlo search is done on the permuatations the protein experience.
+     */
+    @Test
+    public void testManyBodyMonteCarlo(){
+        System.out.println("\n\n\n\n\n\nBEGINNING MONTE CARLO TEST! ");
+        // Initialize Parallel Java
+        try {
+            Comm.world();
+        } catch (IllegalStateException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping rotamer optimization test.");
+                logger.log(Level.WARNING, message, e.toString());
+                return;
+            }
+        }
+
+        System.setProperty("polarization", "direct");
+
+        // Set-up the input arguments for the script.
+        String[] args = {"-a", "2", "-L", "2", "--tC", "2", "--pr", "2", "--mC", "10000",
+                "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+        binding.setVariable("args", args);
+
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("ManyBodyTest");
+            manyBody.setBaseDir(path.toFile());
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory.");
+        }
+
+        manyBody.setTesting(true);
+
+        // Evaluate the script.
+        manyBody.run();
+
+        double expectedTotalPotential = -208.72994232;
+        double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 50);
+
+        // Delete all created directories and files.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by ManyBodyTest.");
+        }
+
+        manyBody.getManyBody().getRestartFile().delete();
+
+        System.clearProperty("polarization");
     }
 
 }
