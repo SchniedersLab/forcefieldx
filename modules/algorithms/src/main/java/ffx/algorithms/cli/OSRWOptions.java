@@ -113,6 +113,7 @@ public class OSRWOptions {
         boolean resetNSteps = thermo.getResetNumSteps();
         TransitionTemperedOSRW ttOSRW = new TransitionTemperedOSRW(linter, potential, lambdaRestart,
                 histogramRestart, allProperties, temp, dT, report, ckpt, async, resetNSteps, aListener);
+        ttOSRW.checkRecursionKernelSize();
 
         // Do NOT run applyOSRWOptions here, because that can mutate the TT-OSRW to a Barostat.
         return ttOSRW;

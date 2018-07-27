@@ -652,7 +652,8 @@ public class OSRW extends AbstractOSRW {
     /**
      * If necessary, allocate more space.
      */
-    private void checkRecursionKernelSize(double dEdLambda) {
+    @Override
+    protected void checkRecursionKernelSize(double dEdLambda) {
         if (dEdLambda > maxFLambda) {
             logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));

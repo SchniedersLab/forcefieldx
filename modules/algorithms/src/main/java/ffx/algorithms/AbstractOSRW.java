@@ -532,6 +532,17 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
 
+    public void checkRecursionKernelSize() {
+        double[] x = new double[nVariables];
+        x = potential.getCoordinates(x);
+        double[] g = new double[nVariables];
+        potential.energyAndGradient(x, g, false);
+        double dudl = lambdaInterface.getdEdL();
+        checkRecursionKernelSize(dudl);
+    }
+
+    protected abstract void checkRecursionKernelSize(double dudl);
+
     protected int binForLambda(double lambda) {
         int lambdaBin = (int) floor((lambda - minLambda) / dL);
         if (lambdaBin < 0) {
