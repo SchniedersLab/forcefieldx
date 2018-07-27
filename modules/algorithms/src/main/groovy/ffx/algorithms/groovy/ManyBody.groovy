@@ -43,6 +43,8 @@ class ManyBody extends AlgorithmsScript {
     void setBaseDir(File baseDir) {
         this.baseDir = baseDir;
     }
+
+    boolean monteCarloTesting = false;
     
     @Override
     ManyBody run() {
@@ -76,6 +78,10 @@ class ManyBody extends AlgorithmsScript {
         if(testing == true){
             rotamerOptimization.turnRotamerSingleEliminationOff();
             rotamerOptimization.turnRotamerPairEliminationOff();
+        }
+
+        if(monteCarloTesting){
+            rotamerOptimization.setMonteCarloTesting(true);
         }
         manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly);
 
@@ -164,6 +170,15 @@ class ManyBody extends AlgorithmsScript {
      */
     boolean getTesting(){
         return testing;
+    }
+
+    /**
+     * Set to true when testing the monte carlo rotamer optimization algorithm. True will trigger the "set seed"
+     * functionality of the pseudo-random number generator in the RotamerOptimization.java class to create a deterministic monte carlo algorithm.
+     * @param bool True ONLY when a deterministic monte carlo approach is desired. False in all other cases.
+     */
+    void setMonteCarloTesting(boolean bool) {
+        this.monteCarloTesting = bool;
     }
 }
 
