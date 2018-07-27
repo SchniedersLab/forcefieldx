@@ -588,6 +588,9 @@ public class ManyBodyOptions {
         }
     }
 
+    /**
+     * Sets the standard values for properties in rotamer optimization.
+     */
     public void setRotOptProperties() {
         // General
         rotamerOptimization.setTwoBodyCutoff(twoBodyCutoff);
@@ -630,20 +633,36 @@ public class ManyBodyOptions {
         }
     }
 
+    /**
+     * Saves all eliminated rotamers to an ouput file called "eliminated.csv" when the many body command is run with the following syntax and flags: ffxc ManyBody --out ... file.pdb >> file.log.
+     * @throws IOException Throws an exception when output is non piped to a log file. The --out flag relies on the presence of a log file where output is piped.
+     */
     public void saveEliminatedRotamers() throws IOException {
         if (saveOutput) {
             rotamerOptimization.outputEliminated();
         }
     }
-    
+
+    /**
+     * Gets the restart file created during rotamer optimization.
+     * @return The restart file.
+     */
     public File getRestartFile() {
         return rotamerOptimization.getRestartFile();
     }
-    
+
+    /**
+     * Gets the partial file that is created during box optimization.
+     * @return Partial file.
+     */
     public File getPartial() {
         return rotamerOptimization.getPartial();
     }
-    
+
+    /**
+     * Gets the algorithm number.
+     * @return Integer representing the algorithm being run (i.e. global, box optimization, window, etc.)
+     */
     public int getAlgorithmNumber() {
         return algorithm;
     }
