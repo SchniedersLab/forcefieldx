@@ -102,7 +102,7 @@ public class ThermodynamicsTest {
                 },
                 {
                     "Acetamide Implicit Solvation Free Energy: -10.8 kcal/mol", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                        ThermoTestMode.FREE, -10.8, 0.25, null, null, null, null, null, null,
+                        ThermoTestMode.FREE, -10.8, 1.0, null, null, null, null, null, null,
                         new String[]{"-C", "10", "-d", "1.0", "-n", "50000", "-w", "5", "--bM", "0.25", "--tp", "4"},
                         new String[]{}, new String[]{}
                 },
