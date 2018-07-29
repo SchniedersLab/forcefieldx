@@ -178,25 +178,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
             IntegratorEnum requestedIntegrator) {
 
         return dynamicsFactory(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator, defaultEngine(potentialEnergy));
-        /*
-        if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
-            MolecularDynamicsOpenMM ommDynamics = new MolecularDynamicsOpenMM(assembly,
-                    (ForceFieldEnergyOpenMM) potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
-            return ommDynamics;
-        } else {
-            MolecularDynamics mDynamics = new MolecularDynamics(assembly,
-                    potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
-            return mDynamics;
-        }
-         */
     }
 
     public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
-            Potential potentialEnergy,
-            CompositeConfiguration properties,
-            AlgorithmListener listener,
-            ThermostatEnum requestedThermostat,
-            IntegratorEnum requestedIntegrator,
+            Potential potentialEnergy, CompositeConfiguration properties,
+            AlgorithmListener listener, ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
             DynamicsEngine engine) {
         switch (engine) {
             case OPENMM:
