@@ -2,30 +2,30 @@
 
 ################################################################################
 # Title: Force Field X.
-# 
+#
 # Description: Force Field X - Software for Molecular Biophysics.
-# 
+#
 # Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
-# 
+#
 # This file is part of Force Field X.
-# 
+#
 # Force Field X is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 3 as published by
 # the Free Software Foundation.
-# 
+#
 # Force Field X is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 # FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 # details.
-# 
+#
 # You should have received a copy of the GNU General Public License along with
 # Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
 # Place, Suite 330, Boston, MA 02111-1307 USA
-# 
+#
 # Linking this library statically or dynamically with other modules is making a
 # combined work based on this library. Thus, the terms and conditions of the
 # GNU General Public License cover the whole combination.
-# 
+#
 # As a special exception, the copyright holders of this library give you
 # permission to link this library with independent modules to produce an
 # executable, regardless of the license terms of these independent modules, and
@@ -106,50 +106,9 @@ then
   REPO="$BASEDIR"
 fi
 
-if [ "$CLASSPATH_PREFIX" != "" ]; then
-    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
-else
-    CLASSPATH="$BASEDIR/bin/ffx-all.jar"
-fi
-JLP=modules/numerics/src/main/java/ffx/numerics/fft
+CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR"/bin/ffx-all.jar
 
-EXTRA_JVM_ARGUMENTS="-Xms4G -Xmx4G -Xss1M"
-
-awkCmd=`which awk`
-sedCmd=`which sed`
-hasAwkSed=''
-
-if [ -x "$awkCmd" ]; then
-    if [ -x "$sedCmd" ]; then
-        hasAwkSed='1'
-    fi
-fi
-
-# Detect JVM version; disallow 1.7 or below, warn for JDK 9+ that experimental flags are in use.
-if [ $hasAwkSed ]; then
-    JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
-    JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }'`"
-    JVSEC="`echo "$JVERS" | awk 'BEGIN { FS = "."; } { print $2 }'`"
-
-    USE_EXPTL_FLAGS=''
-    if [ $JVFIRST -gt 10 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JRE 1.8, JDK 9 or JDK 10." 1>&2
-#       exit 1
-    elif [ $JVFIRST -eq 9 ]; then
-        USE_EXPTL_FLAGS='1'
-    elif [ $JVFIRST -eq 10 ]; then
-        USE_EXPTL_FLAGS='1'
-    elif [ $JVSEC -lt 8 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JRE 1.8, JDK 9 or JDK 10." 1>&2
-        exit 1
-    fi
-
-    if [ $USE_EXPTL_FLAGS ]; then
-        EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --illegal-access=permit --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
-    fi
-else
-    echo " The JRE version could not be autodetected. Please use JRE 1.8, JDK 9 or JDK 10."
-fi
+EXTRA_JVM_ARGUMENTS="-Xms1G -Xmx1G -Xss1M"
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
@@ -158,23 +117,17 @@ if $cygwin; then
   [ -n "$HOME" ] && HOME=`cygpath --path --windows "$HOME"`
   [ -n "$BASEDIR" ] && BASEDIR=`cygpath --path --windows "$BASEDIR"`
   [ -n "$REPO" ] && REPO=`cygpath --path --windows "$REPO"`
-  echo " Java exec: $JAVACMD"
-  echo " Classpath: $CLASSPATH"
-  EXTRA_JVM_ARGUMENTS="-Xms2G -Xmx2G -Xss1M"
 fi
-
-EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -Djna.library.path=${JNA_LIBRARY_PATH}"
 
 exec "$JAVACMD" $JAVA_OPTS \
   $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
   -Djava.system.class.loader="ffx.FFXClassLoader" \
-  -Djava.library.path="$JLP" \
-  -Djava.awt.headless="true" \
-  -Dj3d.rend="jogl" \
-  -Dapp.name="Force Field X" \
+  -Dapp.name="FFX Job Scheduler" \
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \
   -Dbasedir="$BASEDIR" \
-  ffx.Main \
+  edu.rit.pj.cluster.JobScheduler \
   "$@"
+
+
