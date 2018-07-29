@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,6 +70,8 @@ public class DynamicsOpenMMRESPANVETest {
         dynamics = new DynamicsOpenMM();
         dynamics.setBinding(binding);
 
+        System.setProperty("platform", "omm");
+
         try {
             String args[] = new String[0];
             Comm.init(args);
@@ -76,6 +79,11 @@ public class DynamicsOpenMMRESPANVETest {
             String message = String.format(" Exception starting up the Parallel Java communication layer.");
             logger.log(Level.WARNING, message, e.toString());
         }
+    }
+
+    @After
+    public void after() {
+        System.clearProperty("platform");
     }
 
     @Test
