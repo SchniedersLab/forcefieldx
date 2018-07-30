@@ -45,6 +45,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -325,6 +326,28 @@ public class RotamerOptimizationTest {
     MolecularAssembly molecularAssembly;
     ForceFieldEnergy forceFieldEnergy;
 
+    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
+    private static final Level testLevel;
+    private static final Level ffxLevel;
+    static {
+        Level lev;
+        try {
+            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
+            lev = origLevel;
+        }
+        testLevel = lev;
+
+        try {
+            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
+            lev = origLevel;
+        }
+        ffxLevel = lev;
+    }
+
     public RotamerOptimizationTest(String info,
                                    String filename,
                                    String restartName,
@@ -383,6 +406,10 @@ public class RotamerOptimizationTest {
 
     @BeforeClass
     public static void beforeClass() {
+        // Set appropriate logging levels for interior/exterior Loggers.
+        Logger.getLogger("ffx").setLevel(ffxLevel);
+        logger.setLevel(testLevel);
+
         // Initialize Parallel Java
         try {
             Comm.world();
@@ -403,6 +430,12 @@ public class RotamerOptimizationTest {
     public void after() {
         forceFieldEnergy.destroy();
         System.gc();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Logger.getLogger("ffx").setLevel(origLevel);
+        logger.setLevel(origLevel);
     }
 
     @Test

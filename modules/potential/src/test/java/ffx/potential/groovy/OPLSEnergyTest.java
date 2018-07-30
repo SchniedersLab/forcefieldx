@@ -39,9 +39,13 @@ package ffx.potential.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -139,6 +143,29 @@ public class OPLSEnergyTest {
     private Gradient gradient;
     private LambdaGradient lambdaGradient;
 
+    private static final Logger logger = Logger.getLogger(OPLSEnergyTest.class.getName());
+    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
+    private static final Level testLevel;
+    private static final Level ffxLevel;
+    static {
+        Level lev;
+        try {
+            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
+            lev = origLevel;
+        }
+        testLevel = lev;
+
+        try {
+            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
+            lev = origLevel;
+        }
+        ffxLevel = lev;
+    }
+
     public OPLSEnergyTest(String info, String filename, int nAtoms,
                           double bondEnergy, int nBonds,
                           double angleEnergy, int nAngles,
@@ -178,8 +205,22 @@ public class OPLSEnergyTest {
         lambdaGradient.setBinding(binding);
     }
 
+    @BeforeClass
+    public static void beforeClass() {
+        // Set appropriate logging levels for interior/exterior Loggers.
+        Logger.getLogger("ffx").setLevel(ffxLevel);
+        logger.setLevel(testLevel);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Logger.getLogger("ffx").setLevel(origLevel);
+        logger.setLevel(origLevel);
+    }
+
     @org.junit.Test
     public void testEnergy() {
+        logger.info(" Testing energy for " + info);
         // Set-up the input arguments for the Biotype script.
         String[] args = {"src/main/java/" + filename};
         binding.setVariable("args", args);
@@ -213,6 +254,7 @@ public class OPLSEnergyTest {
 
     @Test
     public void testGradient() {
+        logger.info(" Testing Cartesian gradient(s) for " + info);
         // Choose a random atom to test.
         int atomID = (int) Math.floor(Math.random() * nAtoms);
         double stepSize = 1.0e-5;
@@ -232,6 +274,7 @@ public class OPLSEnergyTest {
 
     @Test
     public void testLambdaGradient() {
+        logger.info(" Testing lambda gradient(s) for " + info);
         // Choose a random atom to test dEdX gradient.
         int atomID = (int) Math.floor(Math.random() * nAtoms);
         double stepSize = 1.0e-5;

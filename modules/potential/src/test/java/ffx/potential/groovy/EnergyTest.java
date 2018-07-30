@@ -39,8 +39,12 @@ package ffx.potential.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -329,6 +333,29 @@ public class EnergyTest {
     private boolean ffxCI;
     private boolean ffxOpenMM;
 
+    private static final Logger logger = Logger.getLogger(EnergyTest.class.getName());
+    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
+    private static final Level testLevel;
+    private static final Level ffxLevel;
+    static {
+        Level lev;
+        try {
+            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
+            lev = origLevel;
+        }
+        testLevel = lev;
+
+        try {
+            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
+            lev = origLevel;
+        }
+        ffxLevel = lev;
+    }
+
     public EnergyTest(String info, String filename, int nAtoms,
                       double bondEnergy, int nBonds,
                       double angleEnergy, int nAngles,
@@ -390,11 +417,25 @@ public class EnergyTest {
         System.clearProperty("platform");
     }
 
+    @BeforeClass
+    public static void beforeClass() {
+        // Set appropriate logging levels for interior/exterior Loggers.
+        Logger.getLogger("ffx").setLevel(ffxLevel);
+        logger.setLevel(testLevel);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Logger.getLogger("ffx").setLevel(origLevel);
+        logger.setLevel(origLevel);
+    }
+
     @Test
     public void testEnergy() {
         if (nAtoms > 10000 && !ffxCI) {
             return;
         }
+        logger.info(" Testing energy for " + info);
 
         energy = new Energy();
         energy.setBinding(binding);
@@ -456,6 +497,7 @@ public class EnergyTest {
         if (!testOpenMM || !ffxOpenMM) {
             return;
         }
+        logger.info(" Testing OpenMM energy for " + info);
 
         energy = new Energy();
         energy.setBinding(binding);
@@ -481,6 +523,7 @@ public class EnergyTest {
         if (nAtoms > 5000 && !ffxCI) {
             return;
         }
+        logger.info(" Testing Cartesian gradient(s) for " + info);
 
         gradient = new Gradient();
         gradient.setBinding(binding);
@@ -508,6 +551,7 @@ public class EnergyTest {
         if (nAtoms > 5000 && !ffxCI) {
             return;
         }
+        logger.info(" Testing lambda gradient(s) for " + info);
 
         lambdaGradient = new LambdaGradient();
         lambdaGradient.setBinding(binding);

@@ -53,6 +53,7 @@ import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -71,6 +72,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Collectors;
@@ -401,6 +403,28 @@ public class ThermodynamicsTest {
      */
     private static final int DEFAULT_GRADIENT_EVALS = 3;
 
+    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
+    private static final Level testLevel;
+    private static final Level ffxLevel;
+    static {
+        Level lev;
+        try {
+            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
+            lev = origLevel;
+        }
+        testLevel = lev;
+
+        try {
+            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
+            lev = origLevel;
+        }
+        ffxLevel = lev;
+    }
+
     static {
         String[] opts = {"--bM", "0.05",
                 "--dw", "OFF",
@@ -537,7 +561,7 @@ public class ThermodynamicsTest {
             for (String ext : copiedExtensions) {
                 srcFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
                 if (srcFile.exists()) {
-                    logger.info(" Copying extension " + ext);
+                    logger.fine(" Copying extension " + ext);
                     tempFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
                     FileUtils.copyFile(srcFile, tempFile);
                 }
@@ -677,6 +701,10 @@ public class ThermodynamicsTest {
 
     @BeforeClass
     public static void beforeClass() {
+        // Set appropriate logging levels for interior/exterior Loggers.
+        Logger.getLogger("ffx").setLevel(ffxLevel);
+        logger.setLevel(testLevel);
+
         // Initialize Parallel Java if needed.
         try {
             Comm.world();
@@ -719,6 +747,12 @@ public class ThermodynamicsTest {
             thermo.destroyPotentials();
         }
         System.gc();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Logger.getLogger("ffx").setLevel(origLevel);
+        logger.setLevel(origLevel);
     }
 
     @Test
