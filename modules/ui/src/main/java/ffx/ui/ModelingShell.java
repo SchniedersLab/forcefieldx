@@ -67,6 +67,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
+import ffx.algorithms.cli.AlgorithmsScript;
+import ffx.potential.cli.PotentialScript;
 import org.codehaus.groovy.runtime.MethodClosure;
 
 import ffx.algorithms.AlgorithmFunctions;
@@ -322,11 +324,11 @@ public final class ModelingShell extends Console implements AlgorithmListener {
             before();
             try {
                 Object o = getShell().run(file, args);
-                /*if (o instanceof PotentialScript) {
+                if (o instanceof PotentialScript) {
                     ((PotentialScript) o).destroyPotentials();
                 } else if (o instanceof AlgorithmsScript) {
                     ((AlgorithmsScript) o).destroyPotentials();
-                }*/
+                }
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, " Uncaught error: FFX is shutting down.\n", ex);
             }
