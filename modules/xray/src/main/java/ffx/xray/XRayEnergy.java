@@ -738,11 +738,6 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 continue;
             }
             if (a.getAnisou(null) == null) {
-
-                if (a.getXyzIndex() < 10) {
-                    logger.info(" Setting null anisou for " + a.toString());
-                }
-
                 double biso = x[index];
                 if (diffractionData.isResidueBFactor()) {
                     if (resnum != a.getResidueNumber()) {
@@ -773,18 +768,6 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
                 }
             } else {
                 double anisou[] = a.getAnisou(null);
-
-//                if (a.getXyzIndex() < 5) {
-//                    if (optimizationScaling != null) {
-//                        logger.info(String.format(" Setting anisou at %d for %s with scaling %6.3f",
-//                                index, a.toString(), optimizationScaling[index]));
-//                        ffx.numerics.VectorMath.printVector(anisou);
-//                    } else {
-//                        logger.info(String.format(" Setting anisou at %d for %s", index, a.toString()));
-//                        ffx.numerics.VectorMath.printVector(anisou);
-//                    }
-//                }
-
                 tmpanisou[0] = x[index++];
                 tmpanisou[1] = x[index++];
                 tmpanisou[2] = x[index++];
