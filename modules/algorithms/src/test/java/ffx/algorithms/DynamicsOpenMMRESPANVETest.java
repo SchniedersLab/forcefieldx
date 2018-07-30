@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -26,7 +27,6 @@ import ffx.algorithms.groovy.DynamicsOpenMM;
 import groovy.lang.Binding;
 
 /**
- *
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
@@ -34,7 +34,6 @@ public class DynamicsOpenMMRESPANVETest {
 
     private String info;
     private String filename;
-    private String restartFile;
     private double startingTotalEnergy;
     private double totalEnergyTolerance = 5.0;
     private boolean ffxOpenMM;
@@ -47,27 +46,25 @@ public class DynamicsOpenMMRESPANVETest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {
-                "System OpenMM RESPA NVE", // info
-                "ffx/algorithms/structures/waterbox_eq.xyz", // filename
-                "ffx/algorithms/structures/waterbox_eq.dyn", // restartFile
-                -25240.5415 // startingTotalEnergy
-            }
+                {
+                        "System OpenMM RESPA NVE", // info
+                        "ffx/algorithms/structures/waterbox_eq.xyz", // filename
+                        -25240.5415 // startingTotalEnergy
+                }
 
         });
 
     }
-    
-    public DynamicsOpenMMRESPANVETest(String info, String filename, String restartFile, double startingTotalEnergy){
-        
+
+    public DynamicsOpenMMRESPANVETest(String info, String filename, double startingTotalEnergy) {
+
         this.info = info;
         this.filename = filename;
-        this.restartFile = restartFile;
         this.startingTotalEnergy = startingTotalEnergy;
-        
-        ffxOpenMM = System.getProperty("ffx.openMM","false").equalsIgnoreCase("true");
+
+        ffxOpenMM = System.getProperty("ffx.openMM", "false").equalsIgnoreCase("true");
     }
-    
+
     @Before
     public void before(){
         binding = new Binding();
@@ -77,6 +74,7 @@ public class DynamicsOpenMMRESPANVETest {
 
     @BeforeClass
     public static void beforeClass() {
+        System.setProperty("platform", "omm");
         // Initialize Parallel Java
         try {
             Comm.world();
@@ -93,23 +91,28 @@ public class DynamicsOpenMMRESPANVETest {
             }
         }
     }
-    
+
+    @AfterClass
+    public static void afterClass() {
+        System.clearProperty("platform");
+    }
+
     @Test
-    public void testDynamicsOpenMMRESPANVE(){
-        
-        if(!ffxOpenMM){
+    public void testDynamicsOpenMMRESPANVE() {
+
+        if (!ffxOpenMM) {
             return;
         }
-        
+
         // Set-up the input arguments for the script.
         String[] args = {"-n", "10", "-z", "1", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
-        
+
         // Evaluate script.
         dynamics.run();
-        
+
         MolecularDynamicsOpenMM molDyn = dynamics.getMolecularDynamics();
-        
+
         // Assert that the end total energy is within the threshold for the dynamics trajectory.
         assertEquals(info + "End total energy for OpenMM RESPA integrator under the NVE ensemble", startingTotalEnergy, molDyn.getTotalEnergy(), totalEnergyTolerance);
     }

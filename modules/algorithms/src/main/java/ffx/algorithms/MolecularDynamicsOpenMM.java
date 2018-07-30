@@ -189,6 +189,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
+     * Get the ForceFieldEnergyOpenMM instance used to run MD.
+     * @return
+     */
+    public ForceFieldEnergyOpenMM getForceFieldEnergyOpenMM() {
+        return forceFieldEnergyOpenMM;
+    }
+
+    /**
      * takeOpenMMSteps moves the simulation forward in time a user defined
      * number of steps and integrates the equations of motion for each step.
      * This method ensures that the algorithm reports back only when the time

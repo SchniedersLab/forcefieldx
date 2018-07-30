@@ -220,7 +220,6 @@ public class ManyBodyTest {
      */
     @Test
     public void testManyBodyMonteCarlo(){
-        System.out.println("\n\n\n\n\n\nBEGINNING MONTE CARLO TEST! ");
         // Initialize Parallel Java
         try {
             Comm.world();
@@ -253,13 +252,14 @@ public class ManyBodyTest {
         }
 
         manyBody.setTesting(true);
+        manyBody.setMonteCarloTesting(true);
 
         // Evaluate the script.
         manyBody.run();
 
-        double expectedTotalPotential = -208.72994232;
+        double expectedTotalPotential = -213.00732933;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
-        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 50);
+        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
         // Delete all created directories and files.
         try {
@@ -269,8 +269,9 @@ public class ManyBodyTest {
             Assert.fail(" Exception deleting files created by ManyBodyTest.");
         }
 
+        // Clear properties and delete unneccesary files.
+        manyBody.setMonteCarloTesting(false);
         manyBody.getManyBody().getRestartFile().delete();
-
         System.clearProperty("polarization");
     }
 

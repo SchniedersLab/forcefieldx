@@ -246,10 +246,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     private boolean printOverride = prop("ffe.printOverride", false);
     private final boolean noHeader = prop("ffe.noHeader", false);
 
-    /**
-     * *************************************
-     */
-    /*      Extended System Variables       */
     private ExtendedSystem esvSystem = null;
     private final boolean pmeQI = prop("pme.qi", false);
     /**

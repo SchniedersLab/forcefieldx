@@ -429,9 +429,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * @param molecularAssembly Assembly to construct energy for.
      * @param requestedPlatform requested OpenMM platform to be used.
-     * @param restraints        Harmonic coordinate restraints.
-     * @param nThreads          Number of threads to use in the super class
-     *                          ForceFieldEnergy instance.
+     * @param restraints Harmonic coordinate restraints.
+     * @param nThreads Number of threads to use in the super class
+     * ForceFieldEnergy instance.
      */
     protected ForceFieldEnergyOpenMM(MolecularAssembly molecularAssembly, Platform requestedPlatform, List<CoordRestraint> restraints, int nThreads) {
         super(molecularAssembly, restraints, nThreads);
@@ -712,8 +712,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         this.timeStep = timeStep;
         this.temperature = temperature;
 
-        //logger.info(String.format(" quietInt is %d", quietInt));
+        CompositeConfiguration properties = molecularAssembly.getProperties();
 
+        //logger.info(String.format(" quietInt is %d", quietInt));
         if (quietInt == 2) {
             quiet = false;
         }
@@ -727,6 +728,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     logger.log(Level.INFO, String.format(" Created Langevin integrator with time step %6.3e (psec).", dt));
                 }
                 integrator = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
+
+                if (properties.containsKey("randomseed")) {
+                    int randomSeed = properties.getInt("randomseed", 0);
+                    logger.info(String.format(" Setting random seed %d for Langevin dynamics", randomSeed));
+                    OpenMM_LangevinIntegrator_setRandomNumberSeed(integrator, randomSeed);
+                }
                 break;
             case "RESPA":
                 // Read in the inner time step in fsec, then convert to psec.
@@ -928,7 +935,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Add an Andersen thermostat to the system.
      *
-     * @param targetTemp    Target temperature in Kelvins.
+     * @param targetTemp Target temperature in Kelvins.
      * @param collisionFreq Collision frequency in 1/psec
      */
     public void addAndersenThermostat(double targetTemp, double collisionFreq) {
@@ -1209,7 +1216,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     a1, a2, a3, a4, improperTorsionType.periodicity,
                     improperTorsionType.phase * OpenMM_RadiansPerDegree,
                     OpenMM_KJPerKcal * improperTorsion.units
-                            * improperTorsion.scaleFactor * improperTorsionType.k);
+                    * improperTorsion.scaleFactor * improperTorsionType.k);
         }
 
         ForceField.ForceFieldInteger imptorsFgroup = ForceField.ForceFieldInteger.IMPROPER_TORSION_FORCE_GROUP;
@@ -1782,7 +1789,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             addCustomGBForce(forceField);
         }
 
-
         // Alchemical with Alchemical could be either softcore or normal interactions (softcore here).
         alchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
 
@@ -1790,7 +1796,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         nonAlchemicalAlchemicalStericsForce = OpenMM_CustomBondForce_create(stericsEnergyExpression);
 
         // Currently both are treated the same (so we could condense the code below).
-
         OpenMM_CustomBondForce_addPerBondParameter(alchemicalAlchemicalStericsForce, "rmin");
         OpenMM_CustomBondForce_addPerBondParameter(alchemicalAlchemicalStericsForce, "epsilon");
         OpenMM_CustomBondForce_addGlobalParameter(alchemicalAlchemicalStericsForce, "vdw_lambda", 1.0);
@@ -1857,27 +1862,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // The logic below should be handled by the "updateFixedChargeNonBondedForce" method.
         /**
-         for (int i = 0; i < nAtoms; i++) {
-         // logger.info(format(" i is %d", i));
-         Atom atom1 = atoms[i];
-         for (int j = i + 1; j < nAtoms; j++) {
-         Atom atom2 = atoms[j];
-         int maskI[] = torsionMask[i];
-         int jID = j;
-         boolean epsException = false;
-         for (int k = 0; k < maskI.length; k++) {
-         if (maskI[k] == jID) {
-         epsException = true;
-         break;
-         }
-         }
-         if ((!atom1.applyLambda() && !atom2.applyLambda()) && !atom1.is_12_or_13(atom2) && !epsException) {
-         OpenMM_CustomNonbondedForce_addExclusion(fixedChargeSoftcore, i, j);
-         logger.info(format(" Excluding %s and %s interaction", atom1, atom2));
-         }
-         }
-         } */
-
+         * for (int i = 0; i < nAtoms; i++) { // logger.info(format(" i is %d",
+         * i)); Atom atom1 = atoms[i]; for (int j = i + 1; j < nAtoms; j++) {
+         * Atom atom2 = atoms[j]; int maskI[] = torsionMask[i]; int jID = j;
+         * boolean epsException = false; for (int k = 0; k < maskI.length; k++)
+         * { if (maskI[k] == jID) { epsException = true; break; } } if
+         * ((!atom1.applyLambda() && !atom2.applyLambda()) &&
+         * !atom1.is_12_or_13(atom2) && !epsException) {
+         * OpenMM_CustomNonbondedForce_addExclusion(fixedChargeSoftcore, i, j);
+         * logger.info(format(" Excluding %s and %s interaction", atom1,
+         * atom2)); } } }
+         */
 //        for (int i = 0; i < range; i++){
 //            OpenMM_NonbondedForce_getExceptionParameters(fixedChargeNonBondedForce, i, atomi, atomj, charge, sigma, eps);
 //
@@ -1888,7 +1883,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 //                OpenMM_NonbondedForce_setExceptionParameters(fixedChargeNonBondedForce, i, atomi.getValue(), atomj.getValue(), abs(0.0*charge.getValue()), sigma.getValue(), abs(0.0*eps.getValue()));
 //            }
 //        }
-
         OpenMM_CustomBondForce_addEnergyParameterDerivative(alchemicalAlchemicalStericsForce, "vdw_lambda");
         OpenMM_System_addForce(system, alchemicalAlchemicalStericsForce);
         OpenMM_CustomBondForce_addEnergyParameterDerivative(nonAlchemicalAlchemicalStericsForce, "vdw_lambda");
@@ -1915,29 +1909,29 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 // "step(r+sr2-or1)*0.5*(1/L-1/U+0.25*(1/U^2-1/L^2)*(r-sr2*sr2/r)+0.5*log(L/U)/r+C);"
                 // "step(r+sr2-or1)*0.5*((1/L^3-1/U^3)/3+(1/U^4-1/L^4)/8*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
                 "0.5*((1/L^3-1/U^3)/3.0+(1/U^4-1/L^4)/8.0*(r-sr2*sr2/r)+0.25*(1/U^2-1/L^2)/r+C);"
-                        + "U=r+sr2;"
-                        // + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
-                        + "C=2/3*(1/or1^3-1/L^3)*step(sr2-r-or1);"
-                        // + "L=step(or1-D)*or1 + (1-step(or1-D))*D;"
-                        // + "D=step(r-sr2)*(r-sr2) + (1-step(r-sr2))*(sr2-r);"
-                        + "L = step(sr2 - r1r)*sr2mr + (1 - step(sr2 - r1r))*L;"
-                        + "sr2mr = sr2 - r;"
-                        + "r1r = radius1 + r;"
-                        + "L = step(r1sr2 - r)*radius1 + (1 - step(r1sr2 - r))*L;"
-                        + "r1sr2 = radius1 + sr2;"
-                        + "L = r - sr2;"
-                        + "sr2 = scale2 * radius2;"
-                        + "or1 = radius1; or2 = radius2",
+                + "U=r+sr2;"
+                // + "C=2*(1/or1-1/L)*step(sr2-r-or1);"
+                + "C=2/3*(1/or1^3-1/L^3)*step(sr2-r-or1);"
+                // + "L=step(or1-D)*or1 + (1-step(or1-D))*D;"
+                // + "D=step(r-sr2)*(r-sr2) + (1-step(r-sr2))*(sr2-r);"
+                + "L = step(sr2 - r1r)*sr2mr + (1 - step(sr2 - r1r))*L;"
+                + "sr2mr = sr2 - r;"
+                + "r1r = radius1 + r;"
+                + "L = step(r1sr2 - r)*radius1 + (1 - step(r1sr2 - r))*L;"
+                + "r1sr2 = radius1 + sr2;"
+                + "L = r - sr2;"
+                + "sr2 = scale2 * radius2;"
+                + "or1 = radius1; or2 = radius2",
                 OpenMM_CustomGBForce_ParticlePairNoExclusions);
 
         OpenMM_CustomGBForce_addComputedValue(customGBForce, "B",
                 // "1/(1/or-tanh(1*psi-0.8*psi^2+4.85*psi^3)/radius);"
                 // "psi=I*or; or=radius-0.009"
                 "step(BB-radius)*BB + (1 - step(BB-radius))*radius;"
-                        + "BB = 1 / ( (3.0*III)^(1.0/3.0) );"
-                        + "III = step(II)*II + (1 - step(II))*1.0e-9/3.0;"
-                        + "II = maxI - I;"
-                        + "maxI = 1/(3.0*radius^3)",
+                + "BB = 1 / ( (3.0*III)^(1.0/3.0) );"
+                + "III = step(II)*II + (1 - step(II))*1.0e-9/3.0;"
+                + "II = maxI - I;"
+                + "maxI = 1/(3.0*radius^3)",
                 OpenMM_CustomGBForce_SingleParticle);
 
         double sTens = 0.0;
@@ -1951,14 +1945,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         String surfaceTension = Double.toString(sTens);
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
                 surfaceTension + "*(radius+probeRadius+dOffset)^2*((radius+dOffset)/B)^6/6-0.5*138.935456*(1/soluteDielectric-1/solventDielectric)*q^2/B",
-                    OpenMM_CustomGBForce_SingleParticle);
+                OpenMM_CustomGBForce_SingleParticle);
 
         /**
          * Particle pair term is the generalized Born cross term.
          */
         OpenMM_CustomGBForce_addEnergyTerm(customGBForce,
                 "-138.935456*(1/soluteDielectric-1/solventDielectric)*q1*q2/f;"
-                        + "f=sqrt(r^2+B1*B2*exp(-r^2/(2.455*B1*B2)))",
+                + "f=sqrt(r^2+B1*B2*exp(-r^2/(2.455*B1*B2)))",
                 OpenMM_CustomGBForce_ParticlePair);
 
         double baseRadii[] = gk.getBaseRadii();
@@ -2428,7 +2422,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             case BORN_SOLV:
             case NONE:
             default:
-                // WCA force is not being used.
+            // WCA force is not being used.
         }
 
         logger.log(Level.INFO, "  Generalized Kirkwood force");
@@ -2688,9 +2682,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Updates the fixed-charge non-bonded force for change in Use flags.
      *
-     * @param atoms         Array of all Atoms in the system
+     * @param atoms Array of all Atoms in the system
      * @param vdwLambdaTerm If true, set charges and eps values to zero for
-     *                      Lambda atoms
+     * Lambda atoms
      */
     private void updateFixedChargeNonBondedForce(Atom[] atoms, boolean vdwLambdaTerm) {
         VanDerWaals vdW = super.getVdwNode();
@@ -3071,7 +3065,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Evaluates energy both with OpenMM and reference potential, and returns
      * the difference FFX-OpenMM.
      *
-     * @param x       Coordinate array
+     * @param x Coordinate array
      * @param verbose
      * @return Energy discrepancy
      */
@@ -3085,9 +3079,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * Evaluates energy and gradients both with OpenMM and reference potential,
      * and returns the difference FFX-OpenMM.
      *
-     * @param x       Coordinate array
-     * @param gFFX    Array for FFX gradients to be stored in
-     * @param gOMM    Array for OpenMM gradients to be stored in
+     * @param x Coordinate array
+     * @param gFFX Array for FFX gradients to be stored in
+     * @param gOMM Array for OpenMM gradients to be stored in
      * @param verbose
      * @return Energy discrepancy
      */
