@@ -864,14 +864,21 @@ public class OSRW extends AbstractOSRW {
         return sum;
     }
 
+    @Override
+    public int getCountsReceived() {
+        return receiveThread.getCountsReceived();
+    }
+
     private class ReceiveThread extends Thread {
 
         final double recursionCount[];
         final DoubleBuf recursionCountBuf;
+        private int countsReceived;
 
         public ReceiveThread() {
             recursionCount = new double[2];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
+            countsReceived = 0;
         }
 
         @Override
@@ -879,6 +886,7 @@ public class OSRW extends AbstractOSRW {
             while (true) {
                 try {
                     world.receive(null, recursionCountBuf);
+                    ++countsReceived;
                 } catch (InterruptedIOException ioe) {
                     logger.log(Level.FINE, " ReceiveThread was interrupted at world.receive", ioe);
                     break;
@@ -915,6 +923,10 @@ public class OSRW extends AbstractOSRW {
                     break;
                 }
             }
+        }
+
+        int getCountsReceived() {
+            return countsReceived;
         }
     }
 

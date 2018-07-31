@@ -931,4 +931,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
     public Crystal getCrystal() {
         return potential.getCrystal();
     }
+
+    /**
+     * Returns the counts received by the bias-recieve thread.
+     * @return Counts received.
+     */
+    public abstract int getCountsReceived();
 }

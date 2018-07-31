@@ -793,6 +793,22 @@ public class ThermodynamicsTest extends PJDependentTest {
         logger.info(String.format(" Adding an OSRW bias at lambda %8.4g, dU/dL %14.8g", osrw.getLambda(), currentdUdL));
         osrw.addBias(currentdUdL, x, gOSRWPre);
 
+        // Wait for the bias to be received by the OSRW object.
+        boolean biasReceived = false;
+        for (int i = 0; i < 200; i++) {
+            if (osrw.getCountsReceived() > 0) {
+                logger.fine(String.format(" Required %d 100-msec waits for bias to be added!", i));
+                biasReceived = true;
+                break;
+            }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                logger.warning(String.format(" Interrupted at %d 100-msec wait for bias to be added!", i));
+            }
+        }
+        assertTrue(" No bias was received by the OSRW over 20 seconds!", biasReceived);
+
         logger.info(" Testing the OSRW potential after bias added.");
         EnergyResult osrwPost = testGradientSet("Biased OSRW", osrw, x, gOSRWPost, 1);
         logger.info(" Testing the underlying CrystalPotential after bias added.");

@@ -1150,14 +1150,21 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return false;
     }
 
+    @Override
+    public int getCountsReceived() {
+        return receiveThread.getCountsReceived();
+    }
+
     private class ReceiveThread extends Thread {
 
         final double recursionCount[];
         final DoubleBuf recursionCountBuf;
+        private int countsReceived;
 
         public ReceiveThread() {
             recursionCount = new double[3];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
+            countsReceived = 0;
         }
 
         @Override
@@ -1165,6 +1172,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             while (true) {
                 try {
                     world.receive(null, recursionCountBuf);
+                    ++countsReceived;
                 } catch (InterruptedIOException ioe) {
                     logger.log(Level.WARNING, " ReceiveThread was interrupted at world.receive; " +
                             "future message passing may be in an error state!", ioe);
@@ -1221,6 +1229,14 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                     break;
                 }
             }
+        }
+
+        /**
+         * Return the counts received by this thread.
+         * @return
+         */
+        int getCountsReceived() {
+            return countsReceived;
         }
     }
 
