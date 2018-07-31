@@ -95,6 +95,8 @@ class PrepareSpaceGroups extends PotentialScript {
             return this
         }
 
+        System.setProperty("ewald-alpha", "0.0")
+
         MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = potentialFunctions.open(filenames.get(0))
@@ -242,6 +244,8 @@ class PrepareSpaceGroups extends PotentialScript {
                 }
             }
         }
+
+        System.clearProperty("ewald-alpha")
 
         return this
     }
