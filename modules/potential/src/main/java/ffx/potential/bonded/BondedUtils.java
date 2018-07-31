@@ -123,6 +123,7 @@ public class BondedUtils {
             x[2] = xb[2] + ztmp * cosb;
             atom.moveTo(x);
         } else if (chiral == 0) {
+            // Case where the second angle is a dihedral angle.
             double xa[] = new double[3];
             double xb[] = new double[3];
             double xc[] = new double[3];
@@ -131,7 +132,6 @@ public class BondedUtils {
             double xt[] = new double[3];
             double xu[] = new double[3];
             double x[] = new double[3];
-            // General case - with a dihedral
             ia.getXYZ(xa);
             ib.getXYZ(xb);
             ic.getXYZ(xc);
@@ -156,6 +156,7 @@ public class BondedUtils {
             x[2] = xa[2] + bond * (xu[2] * zsin0 * zcos1 + xt[2] * zsin0 * zsin1 - xab[2] * zcos0);
             atom.moveTo(x);
         } else if (abs(chiral) == 1) {
+            // General case where the second angle is a bond angle.
             double xa[] = new double[3];
             double xb[] = new double[3];
             double xc[] = new double[3];
@@ -184,7 +185,9 @@ public class BondedUtils {
             if (c > eps) {
                 c = chiral * sqrt(c);
             } else if (c < -eps) {
-                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0]) + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1]) + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
+                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0])
+                          + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1])
+                          + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
                 a /= c;
                 b /= c;
                 c = 0.0d;
