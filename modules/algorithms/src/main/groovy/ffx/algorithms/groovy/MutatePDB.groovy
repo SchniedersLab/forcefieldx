@@ -51,25 +51,6 @@ class MutatePDB extends AlgorithmsScript {
             description = 'Single character chain name (default is \' \').')
     Character chain = ' '
     /**
-     * -p or --repack After mutation, repack all residues within the specified cutoff radius (Angstroms).
-     */
-    @Option(names = ['--repack', '-p'], paramLabel = '-1.0',
-            description = 'After mutation, repack all residues within a cutoff radius (Angstroms).')
-    double repackDistance = -1.0
-    /**
-     * -pt or --twoBodyRepack Do not include three-body energies in repacking.
-     */
-    @Option(names = ['--threeBody', '--tB'], paramLabel = 'false',
-            description = 'Include three-body energies in repacking.')
-    boolean threeBody = false
-
-    /**
-     * -eR or --energyRestart Load energy restart file from a previous run (ensure that all parameters are the same).
-     */
-    @Option(names = ['--energyRestart', '--eR'], paramLabel = 'filename',
-            description = 'Load energy restart file from a previous run (ensure that all parameters are the same).')
-    String energyRestart = null
-    /**
      * -R or --rotamer Rotamer number to apply.
      */
     @Option(names = ['--rotamer', '-R'], paramLabel = '-1', description = 'Rotamer number to apply.')
@@ -93,23 +74,8 @@ class MutatePDB extends AlgorithmsScript {
             return this
         }
 
-        if (repackDistance > -1) {
-            repack = true
-        }
-
-        boolean threeBodyRepack = !twoBodyRepack
-        boolean useEnergyRestart = false
-        File energyRestartFile = null
-        if (energyRestart != null) {
-            useEnergyRestart = true
-            energyRestartFile = new File(energyRestart)
-        }
-
         int destRotamer = 0
         if (rotamer > -1) {
-            if (repack) {
-                logger.severe(" Can't combine repack with explicit rotamer specification.")
-            }
             destRotamer = rotamer
         }
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary()
@@ -134,36 +100,6 @@ class MutatePDB extends AlgorithmsScript {
         pdbFilter.readFile()
         pdbFilter.applyAtomProperties()
         molecularAssembly.finalize(true, forceField)
-
-        if (repack) {
-            logger.info("\n Repacking... \n")
-            forceFieldEnergy = ForceFieldEnergy.energyFactory(molecularAssembly)
-            molecularAssembly.setPotential(forceFieldEnergy)
-            forceFieldEnergy.setPrintOnFailure(false, false)
-
-            // Do a sliding-window rotamer optimization on a single one-residue window with a radius-inclusion criterion.
-            rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson)
-            rLib.setUseOrigCoordsRotamer(true)
-
-            // This does break encapsulation of our modules.
-            RotamerOptimization rotamerOptimization = new RotamerOptimization(molecularAssembly, forceFieldEnergy, algorithmListener)
-            rotamerOptimization.setThreeBodyEnergy(threeBody)
-            rotamerOptimization.setForcedResidues(resID, resID)
-            rotamerOptimization.setWindowSize(1)
-            rotamerOptimization.setDistanceCutoff(repackDistance)
-            if (useEnergyRestart) {
-                rotamerOptimization.setEnergyRestartFile(energyRestartFile)
-            }
-
-            rotamerOptimization.setResidues(chain, resID, resID)
-            ArrayList<Residue> residueList = rotamerOptimization.getResidues()
-
-            algorithmFunctions.energy(molecularAssembly)
-
-            RotamerLibrary.measureRotamers(residueList, false)
-            rotamerOptimization.optimize(RotamerOptimization.Algorithm.WINDOW)
-            logger.info("\n Repacking successful.\n")
-        }
 
         if (destRotamer > -1) {
             rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson)

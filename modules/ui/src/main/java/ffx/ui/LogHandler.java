@@ -50,8 +50,9 @@ import static ffx.potential.extended.ExtUtils.prop;
 /**
  * The default ConsoleHanlder publishes logging to System.err. This class
  * publishes to System.out, which is normally intercepted by the Force Field X
- * Shell. The formatter used reduces verbosity relative to the default
- * SimpleFormatter.
+ * Shell.
+ *
+ * The formatter used reduces verbosity relative to the default SimpleFormatter.
  *
  * @author Michael J. Schnieders
  * @since 1.0
