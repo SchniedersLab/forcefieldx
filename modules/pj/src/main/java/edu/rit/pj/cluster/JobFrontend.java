@@ -443,6 +443,7 @@ public class JobFrontend
             if (myNextRank != Np) {
                 System.err.println();
             }
+            System.err.println(" Exception executing SSH command:\n" + exc.toString());
             terminateCancelJob(backendFailed(processinfo));
         }
     }

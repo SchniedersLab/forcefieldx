@@ -127,7 +127,7 @@ class Scheduler extends AlgorithmsScript {
         args = "-Xmx" + memory + " -Djava.system.class.loader='ffx.FFXClassLoader'"
 
         if (v) {
-            args = args + " -Dpj.verbose='true'"
+            args = args + " -Dpj.log='true'"
         }
 
         // Create an entry for each process

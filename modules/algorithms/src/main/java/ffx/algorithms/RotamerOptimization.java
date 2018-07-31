@@ -7590,6 +7590,33 @@ public class RotamerOptimization implements Terminatable {
                         double energy = Double.parseDouble(tok[5]);
                         try {
                             twoBodyEnergy[i][ri][j][rj] = energy;
+
+                            // When a restart file is generated using a large cutoff, but a new simulation is being done with a smaller cutoff,
+                            // the two-body distance needs to be checked. If the two-body distance is larger than the cutoff, the two-body energy should be set to 0.
+                            if(checkPairDistThreshold(i, ri, j, rj)){
+                                twoBodyEnergy[i][ri][j][rj] = 0.0;
+
+                                Residue residueI = residues[i];
+                                Residue residueJ = residues[j];
+                                int indexI = allResiduesList.indexOf(residueI);
+                                int indexJ = allResiduesList.indexOf(residueJ);
+
+                                double resDist = getResidueDistance(indexI, ri, indexJ, rj);
+                                String resDistString = format("large");
+                                if (resDist < Double.MAX_VALUE) {
+                                    resDistString = format("%5.3f", resDist);
+                                }
+
+                                double dist = checkDistMatrix(indexI, ri, indexJ, rj);
+                                String distString = format("     large");
+                                if (dist < Double.MAX_VALUE) {
+                                    distString = format("%10.3f", dist);
+                                }
+
+                                logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                                        residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(twoBodyEnergy[i][ri][j][rj]), distString, resDistString));
+                            }
+
                             if (verbose) {
                                 logIfMaster(format(" From restart file: Pair energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
                                         residues[i].toFormattedString(false, true), ri, residues[j].toFormattedString(false, true), rj, energy));
@@ -7698,7 +7725,38 @@ public class RotamerOptimization implements Terminatable {
                         double energy = Double.parseDouble(tok[7]);
                         try {
                             //threeBodyEnergy[i][ri][j][rj][k][rk] = energy;
-                            threeBodyEnergies.put(new IntegerKeyset(i, ri, j, rj, k, rk), energy);
+                            IntegerKeyset ijk = new IntegerKeyset(i, ri, j, rj, k, rk);
+                            threeBodyEnergies.put(ijk, energy);
+
+                            // When a restart file is generated using a large cutoff, but a new simulation is being done with a smaller cutoff,
+                            // the three-body cutoff distance needs to be checked. If the three-body distance is larger than the cutoff, the three-body energy should be set to 0.
+                            if(checkTriDistThreshold(i, ri, j, rj, k, rk)){
+                                threeBodyEnergies.put(ijk, 0.0);
+
+                                Residue residueI = residues[i];
+                                Residue residueJ = residues[j];
+                                Residue residueK = residues[k];
+                                int indexI = allResiduesList.indexOf(residueI);
+                                int indexJ = allResiduesList.indexOf(residueJ);
+                                int indexK = allResiduesList.indexOf(residueK);
+                                double rawDist = getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
+                                double resDist = get3BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk);
+
+                                String resDistString = format("     large");
+                                if (resDist < Double.MAX_VALUE){
+                                    resDistString = format("%5.3f", resDist);
+                                }
+
+                                String distString = format("     large");
+                                if (rawDist < Double.MAX_VALUE) {
+                                    distString = format("%10.3f", rawDist);
+                                }
+
+                                logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                                        residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk,
+                                        formatEnergy(threeBodyEnergies.getOrDefault(ijk, 0.0)), distString, resDistString));
+
+                            }
                         } catch (ArrayIndexOutOfBoundsException ex) {
                             if (verbose) {
                                 logIfMaster(format(" Restart file out-of-bounds index: %s", line));

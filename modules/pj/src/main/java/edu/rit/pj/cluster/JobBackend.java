@@ -24,6 +24,7 @@
 //******************************************************************************
 package edu.rit.pj.cluster;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
@@ -185,15 +186,6 @@ public class JobBackend
                        int frontendPort,
                        String backendHost)
             throws IOException {
-//System.err.println ("JobBackend()");
-//System.err.println ("\tusername = \""+username+"\"");
-//System.err.println ("\tjobnum = "+jobnum);
-//System.err.println ("\tK = "+K);
-//System.err.println ("\trank = "+rank);
-//System.err.println ("\thasFrontendComm = "+hasFrontendComm);
-//System.err.println ("\tfrontendHost = \""+frontendHost+"\"");
-//System.err.println ("\tfrontendPort = "+frontendPort);
-//System.err.println ("\tbackendHost = \""+backendHost+"\"");
 
         // Record command line arguments.
         this.username = username;
@@ -206,7 +198,7 @@ public class JobBackend
         this.backendHost = backendHost;
 
         // Turn on logging?
-        if (System.getProperty("pj.verbose", "").equalsIgnoreCase("true")) {
+        if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
             try {
                 // Remove all log handlers from the default logger.
                 Logger defaultLogger = LogManager.getLogManager().getLogger("");
@@ -216,7 +208,9 @@ public class JobBackend
                 }
 
                 // Create a FileHandler logger with a SimpleFormatter.
-                FileHandler fileHandler = new FileHandler("node." + Integer.toString(this.rank) + ".log");
+                File file = new File(Integer.toString(this.rank));
+                file.mkdir();
+                FileHandler fileHandler = new FileHandler(file.getAbsolutePath() + "/backend.log");
                 fileHandler.setFormatter(new SimpleFormatter());
                 logger.addHandler(fileHandler);
                 logger.setLevel(Level.INFO);
