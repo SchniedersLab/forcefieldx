@@ -1,5 +1,7 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.GenerateRotamers
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -108,7 +110,7 @@ class ApplyTorsions extends AlgorithmsScript {
             return
         }
 
-        ffx.algorithms.GenerateRotamers genr = new ffx.algorithms.GenerateRotamers(activeAssembly,
+        GenerateRotamers genr = new GenerateRotamers(activeAssembly,
                 activeAssembly.getPotentialEnergy(), residue, outFile, nChi, algorithmListener)
         genr.setVideo(videoFile)
         genr.applyAndSaveTorsions(torSets)

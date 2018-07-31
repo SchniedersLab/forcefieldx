@@ -686,4 +686,9 @@ public class XtalEnergy implements Potential {
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    @Override
+    public boolean destroy() {
+        return forceFieldEnergy.destroy();
+    }
 }

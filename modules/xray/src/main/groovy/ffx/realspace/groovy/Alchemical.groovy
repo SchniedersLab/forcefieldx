@@ -1,5 +1,6 @@
 package ffx.realspace.groovy
 
+import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.realspace.parsers.RealSpaceFile
 import groovy.ui.SystemOutputInterceptor
@@ -99,6 +100,8 @@ class Alchemical extends AlgorithmsScript {
 
     // Reset velocities (ignored if a restart file is given)
     boolean initVelocities = true
+
+    private AbstractOSRW osrw;
 
     @Override
     Alchemical run() {
@@ -260,7 +263,6 @@ class Alchemical extends AlgorithmsScript {
         refinementEnergy.setLambda(lambda)
 
         boolean asynchronous = true
-        Potential osrw
 
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
                 assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
@@ -286,6 +288,11 @@ class Alchemical extends AlgorithmsScript {
         } else {
             logger.info(" OSRW stage did not succeed in finding a minimum.")
         }
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
     }
 }
 

@@ -10,13 +10,15 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import edu.rit.pj.Comm;
 
@@ -28,7 +30,7 @@ import groovy.lang.Binding;
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsOpenMMStochasticTest {
+public class DynamicsOpenMMStochasticTest extends PJDependentTest {
 
     private String info;
     private String filename;
@@ -40,8 +42,6 @@ public class DynamicsOpenMMStochasticTest {
 
     private Binding binding;
     private DynamicsOpenMM dynamics;
-
-    private static final Logger logger = Logger.getLogger(DynamicsOpenMMStochasticTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -74,21 +74,18 @@ public class DynamicsOpenMMStochasticTest {
         binding = new Binding();
         dynamics = new DynamicsOpenMM();
         dynamics.setBinding(binding);
-
-        System.setProperty("platform", "omm");
-
-        try {
-            String args[] = new String[0];
-            Comm.init(args);
-        } catch (Exception e) {
-            String message = String.format(" Exception starting up the Parallel Java communication layer.");
-            logger.log(Level.WARNING, message, e.toString());
-        }
     }
 
-    @After
-    public void after() {
+    @BeforeClass
+    public static void beforeClass() {
+        System.setProperty("platform", "omm");
+        PJDependentTest.beforeClass();
+    }
+
+    @AfterClass
+    public static void afterClass() {
         System.clearProperty("platform");
+        PJDependentTest.afterClass();
     }
 
     @Test

@@ -368,8 +368,7 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Copies from an double array of length nVarTot to two double arrays of 
      * length nVarG and nVarD.
-     * 
-     * @param <T> Type of object
+     *
      * @param from Copy from
      * @param toG Copy shared and gamma-specific to
      * @param toD Copy shared and delta-specific to
@@ -736,6 +735,22 @@ public class OctTopologyEnergy implements CrystalPotential, LambdaInterface {
     public void setCrystal(Crystal crystal) {
         quadTopGamma.setCrystal(crystal);
         quadTopDelta.setCrystal(crystal);
+    }
+
+    @Override
+    public boolean destroy() {
+        boolean qtDeltaDestroy = quadTopDelta.destroy();
+        boolean qtGammaDestroy = quadTopGamma.destroy();
+        try {
+            if (team != null) {
+                team.shutdown();
+            }
+            return qtDeltaDestroy && qtGammaDestroy;
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception in shutting down QuadTopologyEnergy: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
+        }
     }
     
     private class EnergyRegion extends ParallelRegion {

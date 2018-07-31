@@ -1054,4 +1054,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     public void setCrystal(Crystal crystal) {
         logger.severe(" RefinementEnergy does implement setCrystal yet.");
     }
+
+    @Override
+    public boolean destroy() {
+        return dataEnergy.destroy();
+    }
 }

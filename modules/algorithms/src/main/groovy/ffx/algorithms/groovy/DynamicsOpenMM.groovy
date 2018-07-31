@@ -1,5 +1,6 @@
 package ffx.algorithms.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.MolecularDynamics
@@ -58,6 +59,8 @@ class DynamicsOpenMM extends AlgorithmsScript {
     MolecularDynamicsOpenMM getMolecularDynamics() {
         return molDynOpenMM;
     }
+
+    private ForceFieldEnergyOpenMM forceFieldEnergyOpenMM;
 
     @Override
     DynamicsOpenMM run() {
@@ -119,7 +122,7 @@ class DynamicsOpenMM extends AlgorithmsScript {
 
         if (moldyn instanceof MolecularDynamicsOpenMM) {
             molDynOpenMM = (MolecularDynamicsOpenMM) moldyn
-            ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = molDynOpenMM.getForceFieldEnergyOpenMM()
+            forceFieldEnergyOpenMM = molDynOpenMM.getForceFieldEnergyOpenMM();
             forceFieldEnergyOpenMM.setCoeffOfFriction(coeffOfFriction)
             forceFieldEnergyOpenMM.setCollisionFreq(collisionFreq)
             molDynOpenMM.setRestartFrequency(dynamics.write)
@@ -132,6 +135,11 @@ class DynamicsOpenMM extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return forceFieldEnergyOpenMM == null ? Collections.emptyList() : Collections.singletonList(forceFieldEnergyOpenMM);
     }
 }
 

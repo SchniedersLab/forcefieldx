@@ -44,6 +44,10 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -66,9 +70,7 @@ import ffx.potential.utils.PotentialsUtils;
  * @author Claire E. OConnell
  */
 @RunWith(Parameterized.class)
-public class RotamerOptimizationTest {
-
-    private static final Logger logger = Logger.getLogger(RotamerOptimizationTest.class.getName());
+public class RotamerOptimizationTest extends PJDependentTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -378,26 +380,16 @@ public class RotamerOptimizationTest {
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
     }
 
+    @After
+    public void after() {
+        forceFieldEnergy.destroy();
+        System.gc();
+    }
+
     @Test
     public void testSelfEnergyElimination() {
         // Load the test system.
         load();
-
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping rotamer optimization test.");
-                logger.log(Level.WARNING, message, e.toString());
-                return;
-            }
-        }
 
         // Run the optimization.
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
@@ -695,22 +687,6 @@ public class RotamerOptimizationTest {
     public void testPairEnergyElimination() {
         // Load the test system.
         load();
-
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalArgumentException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping rotamer optimization test.");
-                logger.log(Level.WARNING, message, e.toString());
-                return;
-            }
-        }
 
         // Run the optimization.
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();

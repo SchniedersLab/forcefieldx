@@ -41,6 +41,7 @@ class LambdaGradient extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
+    private Potential potential;
 
     @Override
     LambdaGradient run() {
@@ -77,7 +78,7 @@ class LambdaGradient extends AlgorithmsScript {
                 activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
         RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, realSpaceOptions.refinementMode)
-        Potential potential = refinementEnergy
+        potential = refinementEnergy
         LambdaInterface lambdaInterface = refinementEnergy
 
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
@@ -302,6 +303,11 @@ class LambdaGradient extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
     }
 }
 

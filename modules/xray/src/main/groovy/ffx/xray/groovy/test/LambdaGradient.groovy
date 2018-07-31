@@ -43,6 +43,7 @@ class LambdaGradient extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
+    private RefinementEnergy refinementEnergy;
 
     @Override
     LambdaGradient run() {
@@ -87,7 +88,7 @@ class LambdaGradient extends AlgorithmsScript {
         diffractionData.scaleBulkFit()
         diffractionData.printStats()
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
+        refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
         Potential potential = refinementEnergy
         LambdaInterface lambdaInterface = refinementEnergy
 
@@ -376,6 +377,11 @@ class LambdaGradient extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
     }
 }
 

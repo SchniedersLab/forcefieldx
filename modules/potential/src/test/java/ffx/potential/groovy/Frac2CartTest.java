@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +64,12 @@ public class Frac2CartTest {
         binding = new Binding();
         frac2Cart = new Frac2Cart();
         frac2Cart.setBinding(binding);
+    }
+
+    @After
+    public void after() {
+        frac2Cart.destroyPotentials();
+        System.gc();
     }
 
     @Test

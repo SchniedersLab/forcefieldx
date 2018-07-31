@@ -1,5 +1,6 @@
 package ffx.potential.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal
@@ -9,6 +10,8 @@ import ffx.potential.cli.PotentialScript
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The Cart2Frac script converts Cartesian coordinates to Fractional.
@@ -26,6 +29,7 @@ class Cart2Frac extends PotentialScript {
     @Parameters(arity = "1..*", paramLabel = "files",
             description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
+    private MolecularAssembly[] assemblies;
 
     public double[][] cartCoordinates = null
     public double[][] fracCoordinates = null
@@ -46,7 +50,6 @@ class Cart2Frac extends PotentialScript {
             return
         }
 
-        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = potentialFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
@@ -106,6 +109,19 @@ class Cart2Frac extends PotentialScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        if (assemblies == null) {
+            return new ArrayList<Potential>();
+        } else {
+            return Arrays.stream(assemblies).
+                    filter{a -> a != null}.
+                    map { a -> a.getPotentialEnergy() }.
+                    filter{e -> e != null}.
+                    collect(Collectors.toList());
+        }
     }
 }
 

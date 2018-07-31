@@ -532,6 +532,17 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
 
+    public void checkRecursionKernelSize() {
+        double[] x = new double[nVariables];
+        x = potential.getCoordinates(x);
+        double[] g = new double[nVariables];
+        potential.energyAndGradient(x, g, false);
+        double dudl = lambdaInterface.getdEdL();
+        checkRecursionKernelSize(dudl);
+    }
+
+    protected abstract void checkRecursionKernelSize(double dudl);
+
     protected int binForLambda(double lambda) {
         int lambdaBin = (int) floor((lambda - minLambda) / dL);
         if (lambdaBin < 0) {
@@ -646,6 +657,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      *
      * @return Success
      */
+    @Override
     public abstract boolean destroy();
 
     protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
@@ -919,4 +931,10 @@ public abstract class AbstractOSRW implements CrystalPotential {
     public Crystal getCrystal() {
         return potential.getCrystal();
     }
+
+    /**
+     * Returns the counts received by the bias-recieve thread.
+     * @return Counts received.
+     */
+    public abstract int getCountsReceived();
 }

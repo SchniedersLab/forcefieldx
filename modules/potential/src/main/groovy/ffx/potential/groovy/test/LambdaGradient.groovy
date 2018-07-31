@@ -53,6 +53,7 @@ class LambdaGradient extends PotentialScript {
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
+    private Potential potential;
 
     public int ndEdLFailures = 0
     public int ndEdXFailures = 0
@@ -127,7 +128,7 @@ class LambdaGradient extends PotentialScript {
          * Configure the potential to test.
          */
         StringBuilder sb = new StringBuilder("\n Testing lambda derivatives for ")
-        Potential potential = topology.assemblePotential(topologies, threadsAvail, sb)
+        potential = topology.assemblePotential(topologies, threadsAvail, sb)
 
         logger.info(sb.toString())
 
@@ -385,6 +386,11 @@ class LambdaGradient extends PotentialScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
     }
 }
 

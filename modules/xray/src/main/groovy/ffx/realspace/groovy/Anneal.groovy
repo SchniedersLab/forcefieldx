@@ -1,5 +1,7 @@
 package ffx.realspace.groovy
 
+import ffx.numerics.Potential
+import ffx.realspace.RealSpaceData
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.SimulatedAnnealing
@@ -40,6 +42,7 @@ class Anneal extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
+    private RefinementEnergy refinementEnergy;
 
     @Override
     Anneal run() {
@@ -68,12 +71,12 @@ class Anneal extends AlgorithmsScript {
 
         List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
 
-        ffx.realspace.RealSpaceData realspacedata = new ffx.realspace.RealSpaceData(activeAssembly, activeAssembly.getProperties(),
+        RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
                 activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
         algorithmFunctions.energy(assemblies[0])
 
-        RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES)
+        refinementEnergy = new RefinementEnergy(realspacedata, RefinementMode.COORDINATES)
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly, refinementEnergy,
                 activeAssembly.getProperties(), algorithmListener,
                 dynamicsOptions.thermostat, dynamicsOptions.integrator)
@@ -88,6 +91,11 @@ class Anneal extends AlgorithmsScript {
         algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
     }
 }
 

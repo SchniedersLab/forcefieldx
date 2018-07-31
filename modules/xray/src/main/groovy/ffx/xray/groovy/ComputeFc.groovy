@@ -1,5 +1,7 @@
 package ffx.xray.groovy
 
+import ffx.numerics.Potential
+import ffx.xray.DiffractionData
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
@@ -13,6 +15,8 @@ import ffx.xray.parsers.MTZWriter.MTZType
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The X-ray ComputeFc script.
@@ -32,6 +36,8 @@ class ComputeFc extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
+    private MolecularAssembly[] assemblies;
+    private DiffractionData diffractiondata;
 
     @Override
     ComputeFc run() {
@@ -43,7 +49,6 @@ class ComputeFc extends AlgorithmsScript {
         xrayOptions.init()
 
         String modelfilename
-        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = algorithmFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
@@ -60,9 +65,9 @@ class ComputeFc extends AlgorithmsScript {
         xrayOptions.setProperties(parseResult, properties)
 
         // Set up diffraction data (can be multiple files)
-        List<ffx.xray.DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
+        List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
 
-        ffx.xray.DiffractionData diffractiondata = new ffx.xray.DiffractionData(assemblies, assemblies[0].getProperties(),
+        diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
                 xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
 
         logger.info("\n Running xray.ComputeFc on " + modelfilename)
@@ -77,6 +82,24 @@ class ComputeFc extends AlgorithmsScript {
         mtzwriter.write()
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        if (assemblies == null) {
+            return new ArrayList<Potential>();
+        } else {
+            return Arrays.stream(assemblies).
+                    filter { a -> a != null }.
+                    map { a -> a.getPotentialEnergy() }.
+                    filter { e -> e != null }.
+                    collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    public boolean destroyPotentials() {
+        return diffractiondata == null ? true : diffractiondata.destroy();
     }
 }
 

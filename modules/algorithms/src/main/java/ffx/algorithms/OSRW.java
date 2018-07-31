@@ -652,7 +652,8 @@ public class OSRW extends AbstractOSRW {
     /**
      * If necessary, allocate more space.
      */
-    private void checkRecursionKernelSize(double dEdLambda) {
+    @Override
+    protected void checkRecursionKernelSize(double dEdLambda) {
         if (dEdLambda > maxFLambda) {
             logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));
@@ -863,14 +864,21 @@ public class OSRW extends AbstractOSRW {
         return sum;
     }
 
+    @Override
+    public int getCountsReceived() {
+        return receiveThread.getCountsReceived();
+    }
+
     private class ReceiveThread extends Thread {
 
         final double recursionCount[];
         final DoubleBuf recursionCountBuf;
+        private int countsReceived;
 
         public ReceiveThread() {
             recursionCount = new double[2];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
+            countsReceived = 0;
         }
 
         @Override
@@ -878,6 +886,7 @@ public class OSRW extends AbstractOSRW {
             while (true) {
                 try {
                     world.receive(null, recursionCountBuf);
+                    ++countsReceived;
                 } catch (InterruptedIOException ioe) {
                     logger.log(Level.FINE, " ReceiveThread was interrupted at world.receive", ioe);
                     break;
@@ -914,6 +923,10 @@ public class OSRW extends AbstractOSRW {
                     break;
                 }
             }
+        }
+
+        int getCountsReceived() {
+            return countsReceived;
         }
     }
 

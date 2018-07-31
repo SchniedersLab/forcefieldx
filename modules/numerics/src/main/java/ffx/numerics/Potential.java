@@ -194,4 +194,14 @@ public interface Potential {
      */
     public abstract STATE getEnergyTermState();
 
+    /**
+     * Destroys this Potential and frees up any associated resources, particularly worker Threads.
+     * Default implementation is to return true (assume destruction successful).
+     *
+     * @return If resource reclamation successful, or resources already reclaimed.
+     */
+    public default boolean destroy() {
+        return true;
+    }
+
 }

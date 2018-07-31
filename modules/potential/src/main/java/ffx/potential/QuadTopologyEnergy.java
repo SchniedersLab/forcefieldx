@@ -662,6 +662,22 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         dualTopA.setPrintOnFailure(onFail, override);
         dualTopB.setPrintOnFailure(onFail, override);
     }
+
+    @Override
+    public boolean destroy() {
+        boolean dtADestroy = dualTopA.destroy();
+        boolean dtBDestroy = dualTopB.destroy();
+        try {
+            if (team != null) {
+                team.shutdown();
+            }
+            return dtADestroy && dtBDestroy;
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception in shutting down QuadTopologyEnergy: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
+        }
+    }
     
     private class EnergyRegion extends ParallelRegion {
         

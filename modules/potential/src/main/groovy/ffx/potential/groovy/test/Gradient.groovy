@@ -1,5 +1,6 @@
 package ffx.potential.groovy.test
 
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
@@ -29,6 +30,7 @@ class Gradient extends PotentialScript {
     @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
     List<String> filenames = null
 
+    private ForceFieldEnergy energy;
     public int nFailures = 0
 
     /**
@@ -55,7 +57,7 @@ class Gradient extends PotentialScript {
 
         logger.info("\n Testing the atomic coordinate gradient of " + modelFilename + "\n");
 
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
+        energy = activeAssembly.getPotentialEnergy()
         Atom[] atoms = activeAssembly.getAtomArray()
         int n = atoms.length
 
@@ -185,6 +187,11 @@ class Gradient extends PotentialScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return energy == null ? Collections.emptyList() : Collections.singletonList(energy);
     }
 }
 /**

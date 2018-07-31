@@ -1,5 +1,7 @@
 package ffx.xray.groovy
 
+import ffx.numerics.Potential
+import ffx.xray.DiffractionData
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
@@ -7,11 +9,12 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.MolecularAssembly
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
-
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The X-ray ModelvsData script.
@@ -48,6 +51,8 @@ class ModelvsData extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
+    private DiffractionData diffractiondata;
+    private MolecularAssembly[] assemblies;
 
     @Override
     ModelvsData run() {
@@ -59,7 +64,6 @@ class ModelvsData extends AlgorithmsScript {
         xrayOptions.init()
 
         String modelfilename
-        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
             assemblies = algorithmFunctions.openAll(filenames.get(0))
             activeAssembly = assemblies[0]
@@ -78,9 +82,9 @@ class ModelvsData extends AlgorithmsScript {
         xrayOptions.setProperties(parseResult, properties)
 
         // Set up diffraction data (can be multiple files)
-        List<ffx.xray.DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
+        List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies);
 
-        ffx.xray.DiffractionData diffractiondata = new ffx.xray.DiffractionData(assemblies, properties,
+        diffractiondata = new DiffractionData(assemblies, properties,
                 xrayOptions.solventModel, diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
 
         diffractiondata.scaleBulkFit()
@@ -101,6 +105,24 @@ class ModelvsData extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        if (assemblies == null) {
+            return new ArrayList<Potential>();
+        } else {
+            return Arrays.stream(assemblies).
+                    filter { a -> a != null }.
+                    map { a -> a.getPotentialEnergy() }.
+                    filter { e -> e != null }.
+                    collect(Collectors.toList());
+        }
+    }
+
+    @Override
+    public boolean destroyPotentials() {
+        return diffractiondata == null ? true : diffractiondata.destroy();
     }
 }
 

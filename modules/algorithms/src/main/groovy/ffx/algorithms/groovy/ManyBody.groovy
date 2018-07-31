@@ -1,5 +1,6 @@
 package ffx.algorithms.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
@@ -155,6 +156,10 @@ class ManyBody extends AlgorithmsScript {
         return potentialEnergy;
     }
 
+    @Override
+    public List<Potential> getPotentials() {
+        return potentialEnergy == null ? Collections.emptyList() : Collections.singletonList(potentialEnergy);
+    }
 
     /**
      * Set method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
