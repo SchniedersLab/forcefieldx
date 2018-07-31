@@ -30,7 +30,7 @@ import groovy.lang.Binding;
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsOpenMMStochasticTest {
+public class DynamicsOpenMMStochasticTest extends PJDependentTest {
 
     private String info;
     private String filename;
@@ -42,8 +42,6 @@ public class DynamicsOpenMMStochasticTest {
 
     private Binding binding;
     private DynamicsOpenMM dynamics;
-
-    private static final Logger logger = Logger.getLogger(DynamicsOpenMMStochasticTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -80,28 +78,14 @@ public class DynamicsOpenMMStochasticTest {
 
     @BeforeClass
     public static void beforeClass() {
-        // Initialize Parallel Java
-
         System.setProperty("platform", "omm");
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping Beeman/Berendsen NVT dynamics test.");
-                logger.log(Level.WARNING, message, e.toString());
-                fail();
-            }
-        }
+        PJDependentTest.beforeClass();
     }
 
     @AfterClass
     public static void afterClass() {
         System.clearProperty("platform");
+        PJDependentTest.afterClass();
     }
 
     @Test

@@ -70,9 +70,7 @@ import ffx.potential.utils.PotentialsUtils;
  * @author Claire E. OConnell
  */
 @RunWith(Parameterized.class)
-public class RotamerOptimizationTest {
-
-    private static final Logger logger = Logger.getLogger(RotamerOptimizationTest.class.getName());
+public class RotamerOptimizationTest extends PJDependentTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -326,28 +324,6 @@ public class RotamerOptimizationTest {
     MolecularAssembly molecularAssembly;
     ForceFieldEnergy forceFieldEnergy;
 
-    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
-    private static final Level testLevel;
-    private static final Level ffxLevel;
-    static {
-        Level lev;
-        try {
-            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
-            lev = origLevel;
-        }
-        testLevel = lev;
-
-        try {
-            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
-            lev = origLevel;
-        }
-        ffxLevel = lev;
-    }
-
     public RotamerOptimizationTest(String info,
                                    String filename,
                                    String restartName,
@@ -404,38 +380,10 @@ public class RotamerOptimizationTest {
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
     }
 
-    @BeforeClass
-    public static void beforeClass() {
-        // Set appropriate logging levels for interior/exterior Loggers.
-        Logger.getLogger("ffx").setLevel(ffxLevel);
-        logger.setLevel(testLevel);
-
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = " Exception starting up the Parallel Java communication layer.";
-                logger.log(Level.WARNING, message, e.toString());
-                message = " Skipping rotamer optimization test.";
-                logger.log(Level.WARNING, message, e.toString());
-            }
-        }
-    }
-
     @After
     public void after() {
         forceFieldEnergy.destroy();
         System.gc();
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        Logger.getLogger("ffx").setLevel(origLevel);
-        logger.setLevel(origLevel);
     }
 
     @Test

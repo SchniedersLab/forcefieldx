@@ -38,10 +38,7 @@
 package ffx.algorithms.groovy;
 
 import org.junit.After;
-import ffx.algorithms.RotamerOptimization;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import groovy.lang.Binding;
@@ -49,15 +46,14 @@ import groovy.lang.Binding;
 import edu.rit.pj.Comm;
 
 import ffx.utilities.DirectoryUtils;
+import ffx.algorithms.PJDependentTest;
 import ffx.algorithms.groovy.ManyBody;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.PotentialComponent;
 
 import java.util.logging.Level;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.logging.Logger;
 
 import org.testng.Assert;
 
@@ -65,34 +61,10 @@ import org.testng.Assert;
  * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
  * @author Mallory R. Tollefson
  */
-public class ManyBodyTest {
+public class ManyBodyTest extends PJDependentTest {
 
     Binding binding;
     ManyBody manyBody;
-
-    private static final Logger logger = Logger.getLogger(ManyBodyTest.class.getName());
-    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
-    private static final Level testLevel;
-    private static final Level ffxLevel;
-
-    static {
-        Level lev;
-        try {
-            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
-            lev = origLevel;
-        }
-        testLevel = lev;
-
-        try {
-            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
-            lev = origLevel;
-        }
-        ffxLevel = lev;
-    }
 
     @Before
     public void before() {
@@ -101,38 +73,10 @@ public class ManyBodyTest {
         manyBody.setBinding(binding);
     }
 
-    @BeforeClass
-    public static void beforeClass() {
-        // Set appropriate logging levels for interior/exterior Loggers.
-        Logger.getLogger("ffx").setLevel(ffxLevel);
-        logger.setLevel(testLevel);
-
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = " Exception starting up the Parallel Java communication layer.";
-                logger.log(Level.WARNING, message, e.toString());
-                message = " Skipping rotamer optimization test.";
-                logger.log(Level.WARNING, message, e.toString());
-            }
-        }
-    }
-
     @After
     public void after() {
         manyBody.destroyPotentials();
         System.gc();
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        Logger.getLogger("ffx").setLevel(origLevel);
-        logger.setLevel(origLevel);
     }
 
     @Test

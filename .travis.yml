@@ -35,6 +35,6 @@ notifications:
     on_success: change
     on_failure: always
 
-script: mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING
+script: mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=FINE
 
 

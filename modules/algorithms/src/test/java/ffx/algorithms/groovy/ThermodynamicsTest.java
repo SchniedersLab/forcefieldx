@@ -39,6 +39,7 @@ package ffx.algorithms.groovy;
 
 import edu.rit.pj.Comm;
 import ffx.algorithms.AbstractOSRW;
+import ffx.algorithms.PJDependentTest;
 import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.groovy.NewThermodynamics;
 import static ffx.potential.utils.PotentialsFunctions.logger;
@@ -87,7 +88,7 @@ import java.util.stream.Collectors;
  * @since 1.0
  */
 @RunWith(Parameterized.class)
-public class ThermodynamicsTest {
+public class ThermodynamicsTest extends PJDependentTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -403,28 +404,6 @@ public class ThermodynamicsTest {
      */
     private static final int DEFAULT_GRADIENT_EVALS = 3;
 
-    private static final Level origLevel = Logger.getLogger("ffx").getLevel();
-    private static final Level testLevel;
-    private static final Level ffxLevel;
-    static {
-        Level lev;
-        try {
-            lev = Level.parse(System.getProperty("ffx.test.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.test.log", ex));
-            lev = origLevel;
-        }
-        testLevel = lev;
-
-        try {
-            lev = Level.parse(System.getProperty("ffx.log", "INFO").toUpperCase());
-        } catch (Exception ex) {
-            logger.warning(String.format(" Exception %s in parsing value of ffx.log", ex));
-            lev = origLevel;
-        }
-        ffxLevel = lev;
-    }
-
     static {
         String[] opts = {"--bM", "0.05",
                 "--dw", "OFF",
@@ -548,6 +527,7 @@ public class ThermodynamicsTest {
         String tempDirName = String.format("temp-%016x/", new Random().nextLong());
         tempDir = new File(tempDirName);
         tempDir.mkdir();
+        logger.fine(String.format(" Running test %s in directory %s", info, tempDir));
         this.filenames = Arrays.copyOf(filenames, nFiles);
         copiedFiles = new File[nFiles];
 
@@ -556,6 +536,7 @@ public class ThermodynamicsTest {
             File srcFile = new File("src/main/java/" + filenames[i]);
             File tempFile = new File(tempDirName + FilenameUtils.getName(filenames[i]));
             FileUtils.copyFile(srcFile, tempFile);
+            logger.info(String.format(" Copied file %s to %s", srcFile, tempFile));
             copiedFiles[i] = tempFile;
 
             for (String ext : copiedExtensions) {
@@ -563,6 +544,7 @@ public class ThermodynamicsTest {
                 if (srcFile.exists()) {
                     logger.fine(" Copying extension " + ext);
                     tempFile = new File(String.format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
+                    logger.info(String.format(" Copied file %s to %s", srcFile, tempFile));
                     FileUtils.copyFile(srcFile, tempFile);
                 }
             }
@@ -699,28 +681,6 @@ public class ThermodynamicsTest {
         thermo.setBinding(binding);
     }
 
-    @BeforeClass
-    public static void beforeClass() {
-        // Set appropriate logging levels for interior/exterior Loggers.
-        Logger.getLogger("ffx").setLevel(ffxLevel);
-        logger.setLevel(testLevel);
-
-        // Initialize Parallel Java if needed.
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = " Exception starting up the Parallel Java communication layer.";
-                logger.log(Level.WARNING, message, e.toString());
-                message = " Skipping thermodynamics test.";
-                logger.log(Level.WARNING, message, e.toString());
-            }
-        }
-    }
-
     @After
     public void after() throws IOException {
         // Clean up the temporary directory if it exists.
@@ -747,12 +707,6 @@ public class ThermodynamicsTest {
             thermo.destroyPotentials();
         }
         System.gc();
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        Logger.getLogger("ffx").setLevel(origLevel);
-        logger.setLevel(origLevel);
     }
 
     @Test
