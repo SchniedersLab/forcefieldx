@@ -789,16 +789,21 @@ public class ThermodynamicsTest extends PJDependentTest {
         // Wait for the bias to be received by the OSRW object.
         boolean biasReceived = false;
         for (int i = 0; i < 200; i++) {
-            if (osrw.getCountsReceived() > 0) {
-                logger.info(String.format(" Required %d 100-msec waits for bias to be added.s", i));
-                biasReceived = true;
-                break;
-            }
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ex) {
                 logger.warning(String.format(" Interrupted at %d 100-msec wait for bias to be added!", i));
             }
+            if (osrw.getCountsReceived() > 0) {
+                logger.fine(String.format(" Required %d 100-msec waits for bias to be added.", i));
+                biasReceived = true;
+                break;
+            }
+        }
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            logger.warning(" Interrupted at final 500-msec wait for bias to be added!");
         }
         assertTrue(" No bias was received by the OSRW over 20 seconds!", biasReceived);
 
