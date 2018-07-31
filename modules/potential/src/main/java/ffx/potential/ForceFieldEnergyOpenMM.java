@@ -836,10 +836,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     @Override
-    public void destroy() throws Exception {
-        super.destroy();
+    public boolean destroy() {
+        boolean ffxFFEDestroy = super.destroy();
         freeOpenMM();
         logger.info(" Destroyed the Context, Integrator, and OpenMMSystem.");
+        return ffxFFEDestroy;
     }
 
     @Override

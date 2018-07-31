@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +64,12 @@ public class SaveAsXYZTest {
         binding = new Binding();
         saveAsXYZ = new SaveAsXYZ();
         saveAsXYZ.setBinding(binding);
+    }
+
+    @After
+    public void after() {
+        saveAsXYZ.destroyPotentials();
+        System.gc();
     }
 
     @Test

@@ -40,6 +40,7 @@ package ffx.potential.groovy;
 import java.util.Arrays;
 import java.util.Collection;
 
+import ffx.utilities.BaseFFXTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,7 +59,7 @@ import groovy.lang.Binding;
  * Test OPLS-AA energy and gradient.
  */
 @RunWith(Parameterized.class)
-public class OPLSEnergyTest {
+public class OPLSEnergyTest extends BaseFFXTest {
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -179,6 +180,7 @@ public class OPLSEnergyTest {
 
     @org.junit.Test
     public void testEnergy() {
+        logger.info(" Testing energy for " + info);
         // Set-up the input arguments for the Biotype script.
         String[] args = {"src/main/java/" + filename};
         binding.setVariable("args", args);
@@ -206,10 +208,13 @@ public class OPLSEnergyTest {
         // Permanent Multipoles
         assertEquals(info + " Permanent Multipole Energy", permanentEnergy, forceFieldEnergy.getPermanentMultipoleEnergy(), tolerance);
         assertEquals(info + " Permanent Multipole Count", nPermanent, forceFieldEnergy.getPermanentInteractions());
+        energy.destroyPotentials();
+        System.gc();
     }
 
     @Test
     public void testGradient() {
+        logger.info(" Testing Cartesian gradient(s) for " + info);
         // Choose a random atom to test.
         int atomID = (int) Math.floor(Math.random() * nAtoms);
         double stepSize = 1.0e-5;
@@ -223,10 +228,13 @@ public class OPLSEnergyTest {
         gradient.run();
 
         assertEquals(info + " gradient failures: ", 0, gradient.nFailures);
+        gradient.destroyPotentials();
+        System.gc();
     }
 
     @Test
     public void testLambdaGradient() {
+        logger.info(" Testing lambda gradient(s) for " + info);
         // Choose a random atom to test dEdX gradient.
         int atomID = (int) Math.floor(Math.random() * nAtoms);
         double stepSize = 1.0e-5;
@@ -249,5 +257,7 @@ public class OPLSEnergyTest {
         assertEquals(info + " d2EdL2 failures: ", 0, lambdaGradient.nd2EdL2Failures);
         assertEquals(info + " dEdXdL failures: ", 0, lambdaGradient.ndEdXdLFailures);
         assertEquals(info + " dEdX failures: ", 0, lambdaGradient.ndEdXFailures);
+        lambdaGradient.destroyPotentials();
+        System.gc();
     }
 }

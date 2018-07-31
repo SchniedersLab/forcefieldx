@@ -1,5 +1,6 @@
 package ffx.potential.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.crystal.Crystal

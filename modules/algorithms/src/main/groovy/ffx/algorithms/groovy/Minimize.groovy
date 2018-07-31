@@ -1,5 +1,6 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.Minimize
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.ParallelTeam
@@ -44,6 +45,7 @@ class Minimizer extends AlgorithmsScript {
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
+    private Potential potential;
 
     @Override
     Minimizer run() {
@@ -106,7 +108,7 @@ class Minimizer extends AlgorithmsScript {
          * Configure the potential to test.
          */
         StringBuilder sb = new StringBuilder("\n Minimizing energy of ");
-        Potential potential = topology.assemblePotential(topologies, threadsAvail, sb);
+        potential = topology.assemblePotential(topologies, threadsAvail, sb);
 
         logger.info(sb.toString());
 
@@ -117,7 +119,7 @@ class Minimizer extends AlgorithmsScript {
         potential.getCoordinates(x)
         potential.energy(x, true)
 
-        ffx.algorithms.Minimize minimize = new ffx.algorithms.Minimize(topologies[0], potential, algorithmListener)
+        Minimize minimize = new Minimize(topologies[0], potential, algorithmListener)
         minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations());
 
         potential.getCoordinates(x)
@@ -136,6 +138,11 @@ class Minimizer extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return potential == null ? Collections.emptyList() : Collections.singletonList(potential);
     }
 }
 

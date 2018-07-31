@@ -1,5 +1,7 @@
 package ffx.realspace.groovy
 
+import ffx.numerics.Potential
+import ffx.realspace.RealSpaceData
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -33,6 +35,8 @@ class Minimize extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
+    private MolecularAssembly[] assemblies;
+    private RealSpaceData realspaceData;
 
     @Override
     Minimize run() {
@@ -41,27 +45,25 @@ class Minimize extends AlgorithmsScript {
             return this
         }
 
-        realSpaceOptions.init()
+        realSpaceOptions.init();
 
         String modelfilename
-        MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
-            assemblies = algorithmFunctions.open(filenames.get(0))
-            activeAssembly = assemblies[0]
+            activeAssembly = algorithmFunctions.open(filenames.get(0))
             modelfilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return this
         } else {
             modelfilename = activeAssembly.getFile().getAbsolutePath()
-            assemblies = { activeAssembly }
         }
+        assemblies = [activeAssembly] as MolecularAssembly[];
 
         logger.info("\n Running Real Space Minimization on " + modelfilename)
 
-        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
+        List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies);
 
-        ffx.realspace.RealSpaceData realspaceData = new ffx.realspace.RealSpaceData(activeAssembly, activeAssembly.getProperties(),
+        realspaceData = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
                 activeAssembly.getParallelTeam(),
                 mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
 
@@ -90,6 +92,15 @@ class Minimize extends AlgorithmsScript {
         algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + suffix + ".pdb"))
 
         return this
+    }
+
+    @Override
+    public boolean destroyPotentials() {
+        boolean destroyedSuccess = realspaceData.destroy();
+        for (int i = 1; i < assemblies.length; i++) {
+            destroyedSuccess = destroyedSuccess && assemblies[i].getPotentialEnergy().destroy();
+        }
+        return destroyedSuccess;
     }
 }
 

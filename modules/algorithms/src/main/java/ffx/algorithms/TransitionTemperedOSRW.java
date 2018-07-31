@@ -771,7 +771,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * If necessary, allocate more space.
      */
-    private void checkRecursionKernelSize(double dEdLambda) {
+    @Override
+    protected void checkRecursionKernelSize(double dEdLambda) {
         if (dEdLambda > maxFLambda) {
             logger.info(String.format(" Current F_lambda %8.2f > maximum histogram size %8.2f.",
                     dEdLambda, maxFLambda));
@@ -1108,10 +1109,19 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
     @Override
     public boolean destroy() {
-        if (receiveThread != null) {
-            receiveThread.interrupt();
+        double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN};
+        DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
+        try {
+            logger.fine(" Sending the termination message.");
+            world.send(rank, killBuf);
+            logger.fine(" Termination message was sent successfully.");
+            logger.fine(String.format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
+        } catch (Exception ex) {
+            String message = String.format(" Asynchronous Multiwalker OSRW termination signal " +
+                    "failed to be sent for process %d.", rank);
+            logger.log(Level.SEVERE, message, ex);
         }
-        return true;
+        return potential.destroy();
     }
 
     @Override
@@ -1140,14 +1150,21 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return false;
     }
 
+    @Override
+    public int getCountsReceived() {
+        return receiveThread.getCountsReceived();
+    }
+
     private class ReceiveThread extends Thread {
 
         final double recursionCount[];
         final DoubleBuf recursionCountBuf;
+        private int countsReceived;
 
         public ReceiveThread() {
             recursionCount = new double[3];
             recursionCountBuf = DoubleBuf.buffer(recursionCount);
+            countsReceived = 0;
         }
 
         @Override
@@ -1155,13 +1172,23 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             while (true) {
                 try {
                     world.receive(null, recursionCountBuf);
+                    ++countsReceived;
                 } catch (InterruptedIOException ioe) {
-                    logger.log(Level.FINE, " ReceiveThread was interrupted at world.receive", ioe);
+                    logger.log(Level.WARNING, " ReceiveThread was interrupted at world.receive; " +
+                            "future message passing may be in an error state!", ioe);
                     break;
                 } catch (IOException e) {
                     String message = e.getMessage();
                     logger.log(Level.WARNING, message, e);
                 }
+
+                // 3x NaN is a message (usually sent by the same process) indicating that it is time to shut down.
+                boolean terminateSignal = Arrays.stream(recursionCount).allMatch(Double::isNaN);
+                if (terminateSignal) {
+                    logger.fine(" Termination signal (3x NaN) received; ReceiveThread shutting down");
+                    break;
+                }
+
                 /**
                  * Check that the FLambda range of the Recursion kernel includes
                  * both the minimum and maximum FLambda value.
@@ -1180,7 +1207,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                  * If the weight is less than 1.0, then a walker has activated
                  * tempering.
                  */
-                if (tempering == false && weight < 1.0) {
+                if (!tempering && weight < 1.0) {
                     tempering = true;
                     logger.info(String.format(" Tempering activated due to recieved weight of (%8.6f)", weight));
                 }
@@ -1198,9 +1225,18 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
                 recursionKernel[walkerLambda][walkerFLambda] += weight;
                 if (this.isInterrupted()) {
                     logger.log(Level.FINE, " ReceiveThread was interrupted; ceasing execution");
+                    // No pending message receipt, so no warning.
                     break;
                 }
             }
+        }
+
+        /**
+         * Return the counts received by this thread.
+         * @return
+         */
+        int getCountsReceived() {
+            return countsReceived;
         }
     }
 

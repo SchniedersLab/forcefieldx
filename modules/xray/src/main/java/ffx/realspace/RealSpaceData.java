@@ -43,6 +43,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import ffx.potential.Utilities;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import static org.apache.commons.math3.util.FastMath.floor;
 
@@ -917,4 +918,25 @@ public class RealSpaceData implements DataContainer {
         return lambda;
     }
 
+    /**
+     * Similar to Potential.destroy(), frees up resources associated with this RealSpaceData.
+     *
+     * @return If assets successfully freed.
+     */
+    public boolean destroy() {
+        try {
+            boolean underlyingShutdown = true;
+            for (MolecularAssembly assembly : molecularAssemblies) {
+                // Continue trying to shut assemblies down even if one fails to shut down.
+                boolean thisShutdown = assembly.destroy();
+                underlyingShutdown = underlyingShutdown && thisShutdown;
+            }
+            parallelTeam.shutdown();
+            return underlyingShutdown;
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception in shutting down a RealSpaceData: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
+        }
+    }
 }

@@ -62,6 +62,11 @@ public class BiotypeTest {
         biotype.setBinding(binding);
     }
 
+    public void after() {
+        biotype.destroyPotentials();
+        System.gc();
+    }
+
     @Test
     public void testBiotypeHelp() {
         // Set-up the input arguments for the Biotype script.

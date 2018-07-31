@@ -1483,6 +1483,15 @@ public class Looptimizer implements Potential {
         this.useXRayMinimizer = true;
     }
 
+    @Override
+    public boolean destroy() {
+        boolean potDestroy = potential.destroy();
+        if (receiveThread != null && receiveThread.isAlive()) {
+            receiveThread.interrupt();
+        }
+        return potDestroy;
+    }
+
     private class OSRWHistogramWriter extends PrintWriter {
 
         public OSRWHistogramWriter(Writer writer) {

@@ -1,5 +1,8 @@
 package ffx.xray.groovy
 
+import ffx.numerics.Potential
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
@@ -35,6 +38,7 @@ class Dynamics extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
+    private RefinementEnergy refinementEnergy;
 
     @Override
     Dynamics run() {
@@ -66,15 +70,15 @@ class Dynamics extends AlgorithmsScript {
         xrayOptions.setProperties(parseResult, properties)
 
         // Set up diffraction data (can be multiple files)
-        List<ffx.xray.DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
-        ffx.xray.DiffractionData diffractionData = new ffx.xray.DiffractionData(assemblies, properties,
+        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
+        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
                 xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
 
         diffractionData.scaleBulkFit()
         diffractionData.printStats()
         algorithmFunctions.energy(assemblies[0])
 
-        ffx.xray.RefinementEnergy refinementEnergy = new ffx.xray.RefinementEnergy(diffractionData, xrayOptions.refinementMode)
+        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
 
         // Restart File
         File dyn = new File(FilenameUtils.removeExtension(modelfilename) + ".dyn")
@@ -89,6 +93,11 @@ class Dynamics extends AlgorithmsScript {
                 dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temp, initVelocities, dyn)
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
     }
 }
 

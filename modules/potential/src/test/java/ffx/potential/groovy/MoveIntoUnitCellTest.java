@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +64,12 @@ public class MoveIntoUnitCellTest {
         binding = new Binding();
         moveIntoUnitCell = new MoveIntoUnitCell();
         moveIntoUnitCell.setBinding(binding);
+    }
+
+    @After
+    public void after() {
+        moveIntoUnitCell.destroyPotentials();
+        System.gc();
     }
 
     @Test

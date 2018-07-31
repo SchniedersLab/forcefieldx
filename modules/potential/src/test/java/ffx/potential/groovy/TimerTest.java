@@ -37,6 +37,8 @@
  */
 package ffx.potential.groovy;
 
+import ffx.numerics.Potential;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,6 +59,12 @@ public class TimerTest {
         binding = new Binding();
         timer = new Timer();
         timer.setBinding(binding);
+    }
+
+    @After
+    public void after() {
+        timer.destroyPotentials();
+        System.gc();
     }
 
     @Test

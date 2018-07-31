@@ -1,5 +1,7 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.RotamerOptimization
+import ffx.numerics.Potential
 import org.apache.commons.configuration2.CompositeConfiguration
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -17,6 +19,8 @@ import ffx.utilities.Keyword
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The MutatePDB script mutates a residue of a PDB file.
@@ -57,6 +61,8 @@ class MutatePDB extends AlgorithmsScript {
      */
     @Parameters(arity = "1", paramLabel = "files", description = "A PDB input files.")
     private List<String> filenames
+    private ForceFieldEnergy forceFieldEnergy;
+    private boolean repack = false;
 
     /**
      * Execute the script.
@@ -109,6 +115,11 @@ class MutatePDB extends AlgorithmsScript {
         pdbFilter.writeFile(structure, false)
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return forceFieldEnergy != null ? Collections.singletonList(forceFieldEnergy) : new ArrayList<>();
     }
 }
 

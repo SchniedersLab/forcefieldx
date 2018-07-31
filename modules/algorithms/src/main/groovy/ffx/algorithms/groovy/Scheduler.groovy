@@ -1,7 +1,7 @@
 package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
-
+import ffx.numerics.Potential
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 
@@ -157,4 +157,8 @@ class Scheduler extends AlgorithmsScript {
         return this
     }
 
+    @Override
+    public List<Potential> getPotentials() {
+        return new ArrayList<>();
+    }
 }

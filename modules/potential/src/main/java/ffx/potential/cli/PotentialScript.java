@@ -37,10 +37,14 @@
  */
 package ffx.potential.cli;
 
+import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.BaseScript;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Base class for scripts in the Potentials package, providing some key functions.
@@ -85,4 +89,32 @@ public class PotentialScript extends BaseScript {
         return true;
     }
 
+    /**
+     * Returns a List of all Potential objects associated with this script. Should be written
+     * to tolerate nulls, as many tests run help() and exit without instantiating their Potentials.
+     *
+     * @return All Potentials. Sometimes empty, never null.
+     */
+    public List<Potential> getPotentials() {
+        List<Potential> plist = new ArrayList<>();
+        if (activeAssembly != null && activeAssembly.getPotentialEnergy() != null) {
+            plist.add(activeAssembly.getPotentialEnergy());
+        }
+        return plist;
+    }
+
+    /**
+     * Reclaims resources associated with all Potential objects associated with this script.
+     *
+     * @return If all Potentials had resources reclaimed.
+     */
+    public boolean destroyPotentials() {
+        boolean allSucceeded = true;
+        for (Potential potent : getPotentials()) {
+            if (potent != null) {
+                allSucceeded = allSucceeded && potent.destroy();
+            }
+        }
+        return allSucceeded;
+    }
 }

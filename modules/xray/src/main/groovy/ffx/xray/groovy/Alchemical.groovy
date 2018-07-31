@@ -1,5 +1,7 @@
 package ffx.xray.groovy
 
+import ffx.algorithms.AbstractOSRW
+
 import java.util.logging.Logger
 
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -103,6 +105,8 @@ class Alchemical extends AlgorithmsScript {
 
     // Reset velocities (ignored if a restart file is given)
     boolean initVelocities = true
+
+    private AbstractOSRW osrw;
 
     @Override
     Alchemical run() {
@@ -271,7 +275,6 @@ class Alchemical extends AlgorithmsScript {
         refinementEnergy.setLambda(lambda)
 
         boolean asynchronous = true
-        Potential osrw
         osrw = new TransitionTemperedOSRW(refinementEnergy, refinementEnergy, lambdaRestart, histogramRestart,
                 assemblies[0].getProperties(), dynamicsOptions.temp, dynamicsOptions.dt, dynamicsOptions.report,
                 dynamicsOptions.write, asynchronous, false, algorithmFunctions.getDefaultListener())
@@ -298,6 +301,11 @@ class Alchemical extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
     }
 }
 

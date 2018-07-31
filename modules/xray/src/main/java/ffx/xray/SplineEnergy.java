@@ -396,6 +396,12 @@ public class SplineEnergy implements Potential {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
+    public boolean destroy() {
+        // Should be handled upstream.
+        return true;
+    }
+
     public static interface Type {
 
         public static final int FOFC = 1;

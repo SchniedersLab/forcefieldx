@@ -1,5 +1,6 @@
 package ffx.potential.groovy.test
 
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.potential.MolecularAssembly
