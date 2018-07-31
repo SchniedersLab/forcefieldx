@@ -37,12 +37,10 @@
  */
 package ffx.algorithms.groovy;
 
-import edu.rit.pj.Comm;
 import ffx.algorithms.AbstractOSRW;
 import ffx.algorithms.PJDependentTest;
 import ffx.algorithms.TransitionTemperedOSRW;
 import ffx.algorithms.groovy.NewThermodynamics;
-import static ffx.potential.utils.PotentialsFunctions.logger;
 
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.LambdaInterface;
@@ -54,9 +52,7 @@ import org.apache.commons.configuration2.MapConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -71,9 +67,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Collectors;
@@ -797,7 +790,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         boolean biasReceived = false;
         for (int i = 0; i < 200; i++) {
             if (osrw.getCountsReceived() > 0) {
-                logger.fine(String.format(" Required %d 100-msec waits for bias to be added!", i));
+                logger.info(String.format(" Required %d 100-msec waits for bias to be added.s", i));
                 biasReceived = true;
                 break;
             }
