@@ -18,6 +18,14 @@ import picocli.CommandLine.Option
 @Command(description = " The Scheduler runs Parallel jobs over nodes.", name = "ffxc Scheduler")
 class Scheduler extends AlgorithmsScript {
 
+
+    /**
+     * -v or --verbose to turn on verbose backend Parallel Java logging.
+     */
+    @Option(names = ['-v', '--verbose'],
+            description = 'Turn on verbose backend Parallel Java logging.')
+    boolean v = false
+
     /**
      * -p or --CPUs to define the processor cores (threads) per process (default is all available cores).
      */
@@ -117,6 +125,10 @@ class Scheduler extends AlgorithmsScript {
         String java = javaHome + "/bin/java"
         String ffx = ffxHome + "/bin/ffx-all.jar"
         args = "-Xmx" + memory + " -Djava.system.class.loader='ffx.FFXClassLoader'"
+
+        if (v) {
+            args = args + " -Dpj.verbose='true'"
+        }
 
         // Create an entry for each process
         int i = 0

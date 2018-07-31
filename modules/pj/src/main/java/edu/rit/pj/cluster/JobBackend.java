@@ -31,6 +31,12 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import edu.rit.mp.ChannelGroup;
 import edu.rit.mp.ChannelGroupClosedException;
@@ -46,9 +52,9 @@ import edu.rit.util.TimerThread;
  * Class JobBackend is the main program for a job backend process in the PJ
  * cluster middleware. The job backend process is launched by an SSH remote
  * login from the job frontend process (class {@linkplain JobFrontend}).
- * <P>
+ * <p>
  * The command line for the job backend main program is:
- * <P>
+ * <p>
  * java edu.rit.pj.cluster.JobBackend <I>username</I> <I>jobnum</I> <I>K</I>
  * <I>rank</I> <I>hasFrontendComm</I> <I>frontendHost</I> <I>frontendPort</I>
  * <I>backendHost</I>
@@ -68,10 +74,13 @@ import edu.rit.util.TimerThread;
 public class JobBackend
         implements Runnable, JobBackendRef {
 
-// Hidden class-wide data members.
+    // Logger
+    private static final Logger logger = Logger.getLogger(JobBackend.class.getName());
+
+    // Hidden class-wide data members.
     private static JobBackend theJobBackend;
 
-// Hidden data members.
+    // Hidden data members.
     // Command line arguments.
     private String username;
     private int jobnum;
@@ -137,7 +146,9 @@ public class JobBackend
         TERMINATE_CANCEL_JOB,
         TERMINATE_NO_REPORT,
         TERMINATING
-    };
+    }
+
+    ;
 
     // Error message if job canceled, or null if job finished normally.
     private String myCancelMessage;
@@ -150,29 +161,29 @@ public class JobBackend
     private BackendFileReader myFileReader;
 
 // Hidden constructors.
+
     /**
      * Construct a new Job Backend.
      *
-     * @param username User name.
-     * @param jobnum Job number.
-     * @param K Number of backend processes.
-     * @param rank Rank of this backend process.
+     * @param username        User name.
+     * @param jobnum          Job number.
+     * @param K               Number of backend processes.
+     * @param rank            Rank of this backend process.
      * @param hasFrontendComm Whether the frontend communicator exists.
-     * @param frontendHost Host name of job frontend's middleware channel group.
-     * @param frontendPort Port number of job frontend's middleware channel
-     * group.
-     * @param backendHost Host name of job backend's middleware channel group.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @param frontendHost    Host name of job frontend's middleware channel group.
+     * @param frontendPort    Port number of job frontend's middleware channel
+     *                        group.
+     * @param backendHost     Host name of job backend's middleware channel group.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private JobBackend(String username,
-            int jobnum,
-            int K,
-            int rank,
-            boolean hasFrontendComm,
-            String frontendHost,
-            int frontendPort,
-            String backendHost)
+                       int jobnum,
+                       int K,
+                       int rank,
+                       boolean hasFrontendComm,
+                       String frontendHost,
+                       int frontendPort,
+                       String backendHost)
             throws IOException {
 //System.err.println ("JobBackend()");
 //System.err.println ("\tusername = \""+username+"\"");
@@ -194,6 +205,39 @@ public class JobBackend
         this.frontendPort = frontendPort;
         this.backendHost = backendHost;
 
+        // Turn on logging?
+        if (System.getProperty("pj.verbose", "").equalsIgnoreCase("true")) {
+            try {
+                // Remove all log handlers from the default logger.
+                Logger defaultLogger = LogManager.getLogManager().getLogger("");
+                Handler defaultHandlers[] = defaultLogger.getHandlers();
+                for (Handler h : defaultHandlers) {
+                    defaultLogger.removeHandler(h);
+                }
+
+                // Create a FileHandler logger with a SimpleFormatter.
+                FileHandler fileHandler = new FileHandler("node." + Integer.toString(this.rank) + ".log");
+                fileHandler.setFormatter(new SimpleFormatter());
+                logger.addHandler(fileHandler);
+                logger.setLevel(Level.INFO);
+            } catch (Exception e) {
+                logger.setLevel(Level.OFF);
+            }
+        } else {
+            logger.setLevel(Level.OFF);
+        }
+
+        // Note that logging is OFF if the "pj.verbose" property was not true.
+        logger.log(Level.INFO, " Username: " + this.username);
+        logger.log(Level.INFO, " Job number: " + this.jobnum);
+        logger.log(Level.INFO, " Nodes: " + this.K);
+        logger.log(Level.INFO, " Rank: " + this.rank);
+        logger.log(Level.INFO, " Has Frontend Comm: " + this.hasFrontendComm);
+        logger.log(Level.INFO, " Frontend Host: " + this.frontendHost);
+        logger.log(Level.INFO, " Frontend Port: " + this.frontendPort);
+        logger.log(Level.INFO, " Backend Host: " + this.backendHost);
+
+
         // Set up shutdown hook.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
@@ -202,46 +246,54 @@ public class JobBackend
         });
 
         // Set up lease timer thread.
+        logger.log(Level.INFO, " Set up lease timer thread.");
         myLeaseTimerThread = new TimerThread();
         myLeaseTimerThread.setDaemon(true);
         myLeaseTimerThread.start();
 
         // Set up job frontend lease timers.
+        logger.log(Level.INFO, " Set up job frontend lease timers.");
         myFrontendRenewTimer
                 = myLeaseTimerThread.createTimer(new TimerTask() {
-                    public void action(Timer timer) {
-                        try {
-                            frontendRenewTimeout();
-                        } catch (Throwable exc) {
-                        }
-                    }
-                });
+            public void action(Timer timer) {
+                try {
+                    frontendRenewTimeout();
+                } catch (Throwable exc) {
+                }
+            }
+        });
         myFrontendExpireTimer
                 = myLeaseTimerThread.createTimer(new TimerTask() {
-                    public void action(Timer timer) {
-                        try {
-                            frontendExpireTimeout();
-                        } catch (Throwable exc) {
-                        }
-                    }
-                });
+            public void action(Timer timer) {
+                try {
+                    frontendExpireTimeout();
+                } catch (Throwable exc) {
+                }
+            }
+        });
 
         // Start job frontend lease expiration timer regardless of whether the
         // job frontend proxy gets set up.
         myFrontendExpireTimer.start(Constants.LEASE_EXPIRE_INTERVAL);
 
         // Set up middleware channel group.
+
+        logger.log(Level.INFO, " Set up middleware channel group.");
         myMiddlewareChannelGroup
                 = new ChannelGroup(new InetSocketAddress(backendHost, 0));
         myMiddlewareChannelGroup.startListening();
 
         // Set up job frontend proxy.
+        logger.log(Level.INFO, " Set up job frontend proxy.");
         myJobFrontend
                 = new JobFrontendProxy(myMiddlewareChannelGroup,
-                        myMiddlewareChannelGroup.connect(new InetSocketAddress(frontendHost, frontendPort)));
+                myMiddlewareChannelGroup.connect(new InetSocketAddress(frontendHost, frontendPort)));
 
         // If we get here, the job frontend proxy has been set up.
+        logger.log(Level.INFO, " The job frontend proxy has been set up.");
+
         // Start job frontend lease renewal timer.
+        logger.log(Level.INFO, " Start job frontend lease renewal timer.");
         myFrontendRenewTimer.start(Constants.LEASE_RENEW_INTERVAL,
                 Constants.LEASE_RENEW_INTERVAL);
 
@@ -249,28 +301,31 @@ public class JobBackend
         myResourceCache = new ResourceCache();
         myClassLoader
                 = new BackendClassLoader(/*parent        */getClass().getClassLoader(),
-                        /*theJobBackend */ this,
-                        /*theJobFrontend*/ myJobFrontend,
-                        /*theCache      */ myResourceCache);
+                /*theJobBackend */ this,
+                /*theJobFrontend*/ myJobFrontend,
+                /*theCache      */ myResourceCache);
 
         // Set up world communicator channel group.
+        logger.log(Level.INFO, " Set up world communicator channel group.");
         myWorldChannelGroup
                 = new ChannelGroup(new InetSocketAddress(backendHost, 0));
         myWorldChannelGroup.setAlternateClassLoader(myClassLoader);
 
         // Set up frontend communicator channel group.
         if (hasFrontendComm) {
+            logger.log(Level.INFO, " Set up frontend communicator channel group.");
             myFrontendChannelGroup
                     = new ChannelGroup(new InetSocketAddress(backendHost, 0));
             myFrontendChannelGroup.setAlternateClassLoader(myClassLoader);
         }
 
         // Set up backend file writer and reader.
+        logger.log(Level.INFO, " Set up backend file writer and reader.");
         myFileWriter = new BackendFileWriter(myJobFrontend, this);
         myFileReader = new BackendFileReader(myJobFrontend, this);
 
-        // Redirect standard input, standard output, and standard error to job
-        // frontend.
+        // Redirect standard input, standard output, and standard error to job frontend.
+        logger.log(Level.INFO, " Redirect standard input, standard output, and standard error to job frontend.");
         System.in.close();
         System.out.close();
         myJobLauncherLog = System.err;
@@ -279,6 +334,7 @@ public class JobBackend
         System.setErr(myFileWriter.err);
 
         // Tell job frontend we're ready!
+        logger.log(Level.INFO, " Tell job frontend we're ready.");
         myJobFrontend.backendReady(/*theJobBackend    */this,
                 /*rank             */ rank,
                 /*middlewareAddress*/
@@ -287,11 +343,12 @@ public class JobBackend
                 myWorldChannelGroup.listenAddress(),
                 /*frontendAddress  */
                 hasFrontendComm
-                ? myFrontendChannelGroup.listenAddress()
-                : null);
+                        ? myFrontendChannelGroup.listenAddress()
+                        : null);
     }
 
 // Exported operations.
+
     /**
      * Run this Job Backend.
      */
@@ -341,12 +398,13 @@ public class JobBackend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Cancel the job.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void cancelJob(JobFrontendRef theJobFrontend,
-            String errmsg)
+                                       String errmsg)
             throws IOException {
         terminateNoReport();
     }
@@ -354,33 +412,33 @@ public class JobBackend
     /**
      * Commence the job.
      *
-     * @param theJobFrontend Job Frontend that is calling this method.
+     * @param theJobFrontend    Job Frontend that is calling this method.
      * @param middlewareAddress Array of hosts/ports for middleware messages.
-     * The first <I>K</I>
-     * elements are for the job backend processes in rank order, the
-     * <I>K</I>+1st element is for the job frontend process. If the
-     * @param worldAddress Array of hosts/ports for the world communicator. The
-     * <I>K</I>
-     * elements are for the job backend processes in rank order.
-     * @param frontendAddress Array of hosts/ports for the frontend
-     * communicator. The first
-     * <I>K</I> elements are for the job backend processes in rank order, the
-     * <I>K</I>+1st element is for the job frontend process. If the frontend
-     * communicator does not exist, <TT>frontendAddress</TT> is null.
-     * @param properties Java system properties.
-     * @param mainClassName Fully qualified class name of the Java main program
-     * class to execute.
-     * @param args Array of 0 or more Java command line arguments.
-     * @exception IOException Thrown if an I/O error occurred.
+     *                          The first <I>K</I>
+     *                          elements are for the job backend processes in rank order, the
+     *                          <I>K</I>+1st element is for the job frontend process. If the
+     * @param worldAddress      Array of hosts/ports for the world communicator. The
+     *                          <I>K</I>
+     *                          elements are for the job backend processes in rank order.
+     * @param frontendAddress   Array of hosts/ports for the frontend
+     *                          communicator. The first
+     *                          <I>K</I> elements are for the job backend processes in rank order, the
+     *                          <I>K</I>+1st element is for the job frontend process. If the frontend
+     *                          communicator does not exist, <TT>frontendAddress</TT> is null.
+     * @param properties        Java system properties.
+     * @param mainClassName     Fully qualified class name of the Java main program
+     *                          class to execute.
+     * @param args              Array of 0 or more Java command line arguments.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public synchronized void commenceJob(JobFrontendRef theJobFrontend,
-            InetSocketAddress[] middlewareAddress,
-            InetSocketAddress[] worldAddress,
-            InetSocketAddress[] frontendAddress,
-            Properties properties,
-            String mainClassName,
-            String[] args)
+                                         InetSocketAddress[] middlewareAddress,
+                                         InetSocketAddress[] worldAddress,
+                                         InetSocketAddress[] frontendAddress,
+                                         Properties properties,
+                                         String mainClassName,
+                                         String[] args)
             throws IOException {
         // Record information.
         myMiddlewareAddress = middlewareAddress;
@@ -397,9 +455,10 @@ public class JobBackend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report that the job finished.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void jobFinished(JobFrontendRef theJobFrontend)
             throws IOException {
@@ -408,9 +467,10 @@ public class JobBackend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Renew the lease on the job.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void renewLease(JobFrontendRef theJobFrontend)
             throws IOException {
@@ -421,27 +481,28 @@ public class JobBackend
      * Report the content for a previously-requested resource.
      *
      * @param theJobFrontend Job Frontend that is calling this method.
-     * @param resourceName Resource name.
-     * @param content Resource content, or null if resource not found.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @param resourceName   Resource name.
+     * @param content        Resource content, or null if resource not found.
+     * @throws IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public synchronized void reportResource(JobFrontendRef theJobFrontend,
-            String resourceName,
-            byte[] content)
+                                            String resourceName,
+                                            byte[] content)
             throws IOException {
         myResourceCache.put(resourceName, content);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the content for a previously-requested resource.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void reportResource(JobFrontendRef theJobFrontend,
-            String resourceName,
-            ByteSequence content)
+                                            String resourceName,
+                                            ByteSequence content)
             throws IOException {
         myResourceCache.put(resourceName,
                 content == null ? null : content.toByteArray());
@@ -449,109 +510,117 @@ public class JobBackend
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the result of opening the given output file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileOpenResult(JobFrontendRef theJobFrontend,
-            int bfd,
-            int ffd,
-            IOException exc)
+                                                  int bfd,
+                                                  int ffd,
+                                                  IOException exc)
             throws IOException {
         myFileWriter.outputFileOpenResult(theJobFrontend, bfd, ffd, exc);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the result of writing the given output file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileWriteResult(JobFrontendRef theJobFrontend,
-            int ffd,
-            IOException exc)
+                                                   int ffd,
+                                                   IOException exc)
             throws IOException {
         myFileWriter.outputFileWriteResult(theJobFrontend, ffd, exc);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the result of flushing the given output file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileFlushResult(JobFrontendRef theJobFrontend,
-            int ffd,
-            IOException exc)
+                                                   int ffd,
+                                                   IOException exc)
             throws IOException {
         myFileWriter.outputFileFlushResult(theJobFrontend, ffd, exc);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the result of closing the given output file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileCloseResult(JobFrontendRef theJobFrontend,
-            int ffd,
-            IOException exc)
+                                                   int ffd,
+                                                   IOException exc)
             throws IOException {
         myFileWriter.outputFileCloseResult(theJobFrontend, ffd, exc);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the result of opening the given input file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileOpenResult(JobFrontendRef theJobFrontend,
-            int bfd,
-            int ffd,
-            IOException exc)
+                                                 int bfd,
+                                                 int ffd,
+                                                 IOException exc)
             throws IOException {
         myFileReader.inputFileOpenResult(theJobFrontend, bfd, ffd, exc);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the result of reading the given input file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileReadResult(JobFrontendRef theJobFrontend,
-            int ffd,
-            byte[] buf,
-            int len,
-            IOException exc)
+                                                 int ffd,
+                                                 byte[] buf,
+                                                 int len,
+                                                 IOException exc)
             throws IOException {
         myFileReader.inputFileReadResult(theJobFrontend, ffd, len, exc);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the result of skipping the given input file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileSkipResult(JobFrontendRef theJobFrontend,
-            int ffd,
-            long len,
-            IOException exc)
+                                                 int ffd,
+                                                 long len,
+                                                 IOException exc)
             throws IOException {
         myFileReader.inputFileSkipResult(theJobFrontend, ffd, len, exc);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Report the result of closing the given input file.
-     * @exception IOException Thrown if an I/O error occurred.
+     *
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileCloseResult(JobFrontendRef theJobFrontend,
-            int ffd,
-            IOException exc)
+                                                  int ffd,
+                                                  IOException exc)
             throws IOException {
         myFileReader.inputFileCloseResult(theJobFrontend, ffd, exc);
     }
@@ -739,7 +808,7 @@ public class JobBackend
      * comment string is typically used to display this job backend process's
      * progress. The comment string is rendered by a web browser and can contain
      * HTML tags.
-     * <P>
+     * <p>
      * Calling <TT>setComment()</TT> causes a message to be sent to the job
      * frontend process, which in turn causes a message to be sent to the Job
      * Scheduler. (Any I/O errors during message sending are ignored.)
@@ -767,10 +836,11 @@ public class JobBackend
     }
 
 // More hidden operations.
+
     /**
      * Take action when the job frontend's lease renewal timer times out.
      *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private synchronized void frontendRenewTimeout()
             throws IOException {
@@ -782,7 +852,7 @@ public class JobBackend
     /**
      * Take action when the job frontend's lease expiration timer times out.
      *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private void frontendExpireTimeout()
             throws IOException {
@@ -884,7 +954,7 @@ public class JobBackend
      * Wait for the run() method to finish.
      */
     private void waitForRunFinished() {
-        for (;;) {
+        for (; ; ) {
             try {
                 runFinished.await();
                 break;
@@ -929,6 +999,7 @@ public class JobBackend
     }
 
 // Main program.
+
     /**
      * Job Backend main program.
      *
@@ -954,7 +1025,7 @@ public class JobBackend
             // Set up job backend object.
             theJobBackend
                     = new JobBackend(username, jobnum, K, rank, hasFrontendComm,
-                            frontendHost, frontendPort, backendHost);
+                    frontendHost, frontendPort, backendHost);
         } catch (Throwable exc) {
             exc.printStackTrace(System.err);
             System.exit(1);
@@ -965,12 +1036,15 @@ public class JobBackend
         Thread.currentThread().setContextClassLoader(theJobBackend.getClassLoader());
 
         // Run job backend object in a separate thread.
+        logger.log(Level.INFO, " Starting backend Daemon thread.");
         Thread thr = new Thread(theJobBackend);
         thr.setDaemon(true);
         thr.start();
 
         // Wait until job commences.
+        logger.log(Level.INFO, " Waiting for commence.");
         theJobBackend.waitForCommence();
+        logger.log(Level.INFO, " Commencing.");
 
         // Add any Java system properties from the job frontend process that do
         // not exist in this job backend process.
@@ -992,13 +1066,20 @@ public class JobBackend
         // arguments.
         Class<?> mainclass
                 = Class.forName(theJobBackend.getMainClassName(),
-                        true,
-                        // Force Field X modification to use our SystemClassLoader.
-                        ClassLoader.getSystemClassLoader());
+                true,
+                // Force Field X modification to use our SystemClassLoader.
+                ClassLoader.getSystemClassLoader());
         // Original:
         // theJobBackend.getClassLoader());
         Method mainmethod = mainclass.getMethod("main", String[].class);
+
+        logger.log(Level.INFO, " Invoking main method: " + mainmethod.toString());
+        for (String arg : theJobBackend.getArgs()) {
+            logger.log(Level.INFO, " Arg: " + arg);
+        }
+
         mainmethod.invoke(null, (Object) theJobBackend.getArgs());
+        logger.log(Level.INFO, " Main method returned.");
 
         // After the main() method returns and all non-daemon threads have
         // terminated, the process will exit, and the shutdown hook will call
