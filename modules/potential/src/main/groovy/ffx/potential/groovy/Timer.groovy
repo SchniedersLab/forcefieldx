@@ -1,5 +1,6 @@
 package ffx.potential.groovy
 
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
@@ -31,6 +32,7 @@ class Timer extends PotentialScript {
     @Parameters(arity = "1", paramLabel = "files",
             description = "XYZ or PDB input files.")
     private List<String> filenames
+    private ForceFieldEnergy energy = null;
 
     /**
      * Execute the script.
@@ -64,7 +66,7 @@ class Timer extends PotentialScript {
         // The number of iterations.
         int nEvals = timer.iterations
 
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
+        energy = activeAssembly.getPotentialEnergy()
 
         long minTime = Long.MAX_VALUE
         double sumTime2 = 0.0
@@ -89,6 +91,11 @@ class Timer extends PotentialScript {
         logger.info(String.format(" RMS time (latter half): %6.3f (sec)", rmsTime))
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return energy == null ? Collections.emptyList() : Collections.singletonList(energy);
     }
 
 }

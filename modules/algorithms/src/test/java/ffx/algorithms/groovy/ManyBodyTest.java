@@ -37,7 +37,7 @@
  */
 package ffx.algorithms.groovy;
 
-import ffx.algorithms.RotamerOptimization;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,23 +45,23 @@ import groovy.lang.Binding;
 
 import edu.rit.pj.Comm;
 
-import static ffx.potential.utils.PotentialsFunctions.logger;
 import ffx.utilities.DirectoryUtils;
+import ffx.algorithms.PJDependentTest;
 import ffx.algorithms.groovy.ManyBody;
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.PotentialComponent;
 
 import java.util.logging.Level;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 import org.testng.Assert;
 
 /**
  * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
  * @author Mallory R. Tollefson
  */
-public class ManyBodyTest {
+public class ManyBodyTest extends PJDependentTest {
 
     Binding binding;
     ManyBody manyBody;
@@ -73,7 +73,13 @@ public class ManyBodyTest {
         manyBody.setBinding(binding);
     }
 
-   @Test
+    @After
+    public void after() {
+        manyBody.destroyPotentials();
+        System.gc();
+    }
+
+    @Test
     public void testManyBodyHelp() {
         // Set-up the input arguments for the Biotype script.
         String[] args = {"-h"};
@@ -83,28 +89,8 @@ public class ManyBodyTest {
         manyBody.run();
     }
 
-    /**
-     * Tests ManyBody.groovy and RotamerOptimization.java by running a global optimization simulation on a small pdb file.
-     */
     @Test
     public void testManyBodyGlobal() {
-
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping rotamer optimization test.");
-                logger.log(Level.WARNING, message, e.toString());
-                return;
-            }
-        }
-
         // Set-up the input arguments for the script.
         String[] args = {"-a", "2", "-L", "2", "--tC", "2",
             "src/main/java/ffx/algorithms/structures/5awl.pdb"};
@@ -142,23 +128,6 @@ public class ManyBodyTest {
      */
     @Test
     public void testManyBodyBoxOptimization() {
-
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping rotamer optimization test.");
-                logger.log(Level.WARNING, message, e.toString());
-                return;
-            }
-        }
-
         // Set-up the input arguments for the script.
         String[] args = {"-a", "5", "-L", "2", "--bL", "10", "--bB", "2", "--tC", "2", "--pr", "2",
             "src/main/java/ffx/algorithms/structures/5awl.pdb"};

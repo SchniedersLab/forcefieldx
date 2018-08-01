@@ -1,5 +1,7 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.SimulatedAnnealing
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -57,7 +59,7 @@ class Anneal extends AlgorithmsScript {
 
         logger.info("\n Running simulated annealing on " + modelfilename + "\n")
 
-        ffx.algorithms.SimulatedAnnealing simulatedAnnealing = new ffx.algorithms.SimulatedAnnealing(activeAssembly,
+        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly,
                 activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
                 algorithmListener, dynamics.thermostat, dynamics.integrator)
 

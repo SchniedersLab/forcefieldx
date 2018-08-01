@@ -648,4 +648,10 @@ public class ScaleBulkEnergy implements Potential {
     public void setEnergyTermState(Potential.STATE state) {
         this.state = state;
     }
+
+    @Override
+    public boolean destroy() {
+        // The parallelTeam should have been passed in by DiffractionData, which handles destroying it.
+        return true;
+    }
 }

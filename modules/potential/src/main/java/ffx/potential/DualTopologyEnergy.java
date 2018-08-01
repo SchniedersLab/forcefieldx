@@ -1332,6 +1332,22 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         forceFieldEnergy2.setPrintOnFailure(onFail, override);
     }
 
+    @Override
+    public boolean destroy() {
+        boolean ffe1Destroy = forceFieldEnergy1.destroy();
+        boolean ffe2Destroy = forceFieldEnergy2.destroy();
+        try {
+            if (team != null) {
+                team.shutdown();
+            }
+            return ffe1Destroy && ffe2Destroy;
+        } catch (Exception ex) {
+            logger.warning(String.format(" Exception in shutting down DualTopologyEnergy: %s", ex));
+            logger.info(Utilities.stackTraceToString(ex));
+            return false;
+        }
+    }
+
     private class EnergyRegion extends ParallelRegion {
 
         private double[] x;

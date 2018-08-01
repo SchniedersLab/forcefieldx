@@ -1,5 +1,6 @@
 package ffx.xray.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
@@ -42,6 +43,7 @@ class ManyBody extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
     private List<String> filenames
+    private RefinementEnergy refinementEnergy;
 
     @Override
     ManyBody run() {
@@ -89,7 +91,7 @@ class ManyBody extends AlgorithmsScript {
             logger.info(" Refinement mode set to COORDINATES.")
             xrayOptions.refinementMode = RefinementMode.COORDINATES
         }
-        RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
+        refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
         refinementEnergy.setScaling(null);
         int n = refinementEnergy.getNumberOfVariables()
         double[] x = new double[n]
@@ -140,6 +142,11 @@ class ManyBody extends AlgorithmsScript {
         manyBody.saveEliminatedRotamers()
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
     }
 }
 

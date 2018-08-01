@@ -2719,26 +2719,34 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     }
 
-
-    public void destroy() throws Exception {
+    /**
+     * Frees up assets associated with this ForceFieldEnergy, such as worker Threads.
+     *
+     * @return If successful in freeing up assets.
+     */
+    public boolean destroy() {
         if (destroyed) {
-            logger.warning(String.format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
+            logger.info(String.format(" This ForceFieldEnergy is already destroyed: %s", this.toString()));
+            return true;
         } else {
-            if (parallelTeam != null) {
-                try {
+            try {
+                if (parallelTeam != null) {
                     parallelTeam.shutdown();
-                } catch (Exception ex) {
-                    String message = " Error in shutting down the ParallelTeam.";
-                    logger.log(Level.WARNING, message, ex);
                 }
+                if (vanderWaals != null) {
+                    vanderWaals.destroy();
+                }
+                if (particleMeshEwald != null) {
+                    particleMeshEwald.destroy();
+                }
+                molecularAssembly.finishDestruction();
+                destroyed = true;
+                return true;
+            } catch (Exception ex) {
+                logger.warning(String.format(" Exception in shutting down a ForceFieldEnergy: %s", ex));
+                logger.info(Utilities.stackTraceToString(ex));
+                return false;
             }
-            if (vanderWaals != null) {
-                vanderWaals.destroy();
-            }
-            if (particleMeshEwald != null) {
-                particleMeshEwald.destroy();
-            }
-            destroyed = true;
         }
     }
 

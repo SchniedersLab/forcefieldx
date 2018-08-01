@@ -294,6 +294,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     private final Level GK_WARN_LEVEL;
 
+    private double evol, earea, esurf, ecav;
+    
+    private boolean doVolume;
+    private final boolean outputVolume;
+
     public double[] getOverlapScale() {
         return overlapScale;
     }
@@ -318,8 +323,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * @param parallelTeam      a {@link edu.rit.pj.ParallelTeam} object.
      */
     public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
-                               ParticleMeshEwald particleMeshEwald, Crystal crystal,
-                               ParallelTeam parallelTeam) {
+            ParticleMeshEwald particleMeshEwald, Crystal crystal,
+            ParallelTeam parallelTeam) {
 
         this.forceField = forceField;
         this.atoms = atoms;
@@ -499,11 +504,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
         switch (nonPolar) {
             case CAV:
                 cavitationRegion = new CavitationRegion(threadCount);
+                volumeRegion = new VolumeRegion(threadCount);
                 tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 dispersionRegion = null;
                 break;
             case CAV_DISP:
                 cavitationRegion = new CavitationRegion(threadCount);
+                volumeRegion = new VolumeRegion(threadCount);
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 dispersionRegion = new DispersionRegion(threadCount);
                 break;
@@ -511,6 +518,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 // TODO: Check this. I'm unsure about this apolar model.
                 tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
                 cavitationRegion = null;
+                volumeRegion = null;
                 dispersionRegion = new DispersionRegion(threadCount);
                 break;
             case HYDROPHOBIC_PMF:
@@ -519,6 +527,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             default:
                 tensionDefault = DEFAULT_CAV_SURFACE_TENSION;
                 cavitationRegion = null;
+                volumeRegion = null;
                 dispersionRegion = null;
                 break;
         }
@@ -536,12 +545,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(format("   Cavitation Surface Tension:         %8.3f (Kcal/mol/A^2)", surfaceTension));
         }
 
-        boolean doVolume = forceField.getBoolean(ForceField.ForceFieldBoolean.VOLUME, false);
-        if (doVolume) {
-            volumeRegion = new VolumeRegion(threadCount);
-        } else {
-            volumeRegion = null;
-        }
+        outputVolume = forceField.getBoolean(ForceField.ForceFieldBoolean.VOLUME, false);
+//        if (doVolume) {
+//            volumeRegion = new VolumeRegion(threadCount);
+//        } else {
+//            volumeRegion = null;
+//        }
 
     }
 
@@ -994,6 +1003,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 case CAV:
                     cavitationTime = -System.nanoTime();
                     parallelTeam.execute(cavitationRegion);
+                    if (doVolume) {
+                        parallelTeam.execute(volumeRegion);
+                    }
                     cavitationTime += System.nanoTime();
                     break;
                 case CAV_DISP:
@@ -1003,6 +1015,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     dispersionTime += System.nanoTime();
                     cavitationTime = -System.nanoTime();
                     parallelTeam.execute(cavitationRegion);
+                    if (doVolume) {
+                        parallelTeam.execute(volumeRegion);
+                    }
                     cavitationTime += System.nanoTime();
                     break;
                 case BORN_CAV_DISP:
@@ -1041,12 +1056,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     gkEnergyRegion.getEnergy(), gkTime * 1e-9));
             switch (nonPolar) {
                 case CAV:
-                    cavitationEnergy = cavitationRegion.getEnergy();
+                    if (doVolume) {
+                        cavitationEnergy = volumeRegion.getEnergy();
+                    } else {
+                        cavitationEnergy = cavitationRegion.getEnergy();
+                    }
                     logger.info(format(" Cavitation          %16.8f %10.3f",
                             cavitationEnergy, cavitationTime * 1e-9));
                     break;
                 case CAV_DISP:
-                    cavitationEnergy = cavitationRegion.getEnergy();
+                    if (doVolume) {
+                        cavitationEnergy = volumeRegion.getEnergy();
+                    } else {
+                        cavitationEnergy = cavitationRegion.getEnergy();
+                    }
                     dispersionEnergy = dispersionRegion.getEnergy();
                     logger.info(format(" Cavitation          %16.8f %10.3f",
                             cavitationEnergy, cavitationTime * 1e-9));
@@ -1068,11 +1091,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         switch (nonPolar) {
             case CAV:
-                solvationEnergy = gkEnergyRegion.getEnergy() + cavitationRegion.getEnergy();
+                if (doVolume) {
+                    solvationEnergy = gkEnergyRegion.getEnergy() + volumeRegion.getEnergy();
+                } else {
+                    solvationEnergy = gkEnergyRegion.getEnergy() + cavitationRegion.getEnergy();
+                }
                 break;
             case CAV_DISP:
-                solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
-                        + cavitationRegion.getEnergy();
+                if (doVolume) {
+                    solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
+                        + volumeRegion.getEnergy();
+                } else {
+                   solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy()
+                        + cavitationRegion.getEnergy(); 
+                }
                 break;
             case BORN_CAV_DISP:
                 solvationEnergy = gkEnergyRegion.getEnergy() + dispersionRegion.getEnergy();
@@ -1086,10 +1118,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         }
 
-        if (volumeRegion != null) {
+        if (outputVolume) {
             try {
                 parallelTeam.execute(volumeRegion);
                 logger.info(format(" Total Volume        %16.8f", volumeRegion.getVolume()));
+                logger.info(format(" Total Area          %16.8f", volumeRegion.getArea()));
             } catch (Exception e) {
                 String message = "Fatal exception computing volume.";
                 logger.log(Level.SEVERE, message, e);
@@ -4890,7 +4923,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
             @Override
             public void finish() {
-                sharedCavitation.addAndGet(ecav);
+                sharedCavitation.addAndGet(esurf);
                 time += System.nanoTime();
             }
 
@@ -4926,12 +4959,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
                          */
                     }
                     area[ir] *= rrisq * wght;
-                    ecav += area[ir];
+                    esurf += area[ir];
                 }
+                
+                double solvprs = 0.0327;
+                double cross = 3.0 * surfaceTension / solvprs;
+                double stcut = cross + 3.9;
+                double reff = 0.5 * Math.sqrt(esurf / (PI * surfaceTension));
+                doVolume = reff <= stcut;
+                
             }
 
             public void surface(double xi, double yi, double zi, double rri, double rri2,
-                                double rrisq, double wght, boolean moved, int ir) {
+                    double rrisq, double wght, boolean moved, int ir) {
 
                 ib = 0;
                 int jb = 0;
@@ -5382,7 +5422,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * @param arclen
              */
             public boolean independentBoundaries(int k, double exang,
-                                                 int jb, int ir, double arclen) {
+                    int jb, int ir, double arclen) {
                 int m = kout[i];
                 kout[i] = -1;
                 j = j + 1;
@@ -5416,6 +5456,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         private final VolumeLoop volumeLoop[];
         private final SharedDouble sharedVolume;
         private final SharedDouble sharedArea;
+        private final SharedDouble sharedVolumeCavitation;
         private final int itab[];
         private final static int MAXCUBE = 40;
         private final static int MAXARC = 1000;
@@ -5731,6 +5772,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
             sharedVolume = new SharedDouble();
             sharedArea = new SharedDouble();
+            sharedVolumeCavitation = new SharedDouble();
             itab = new int[nAtoms];
 
             /**
@@ -5755,11 +5797,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
         public double getVolume() {
             return sharedVolume.get();
         }
+        
+        public double getEnergy() {
+            return sharedVolumeCavitation.get();
+        }
 
         @Override
         public void start() {
             sharedVolume.set(0.0);
             sharedArea.set(0.0);
+            sharedVolumeCavitation.set(0.0);
             for (int i = 0; i < nAtoms; i++) {
                 Atom atom = atoms[i];
                 a[0][i] = atom.getX();
@@ -5836,7 +5883,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private final int mxcube = 15;
             private final int inov[] = new int[MAXARC];
             private final int cube[][][][] = new int[2][mxcube][mxcube][mxcube];
-            private double evol, earea;
+            //private double evol, earea;
             private double xmin, ymin, zmin;
             private double xmax, ymax, zmax;
             private double aa, bb, temp, phi_term;
@@ -5867,6 +5914,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
             private boolean ttok, cinsp, cintp;
             private final double vdwrad[] = new double[nAtoms];
             private final double dex[][] = new double[3][nAtoms];
+            
+            // module limits
+            double vdwcut, chgcut;
+            double dplcut, mpolecut;
+            double vdwtaper, chgtaper;
+            double dpltaper, mpoletaper;
+            double ewaldcut, usolvcut;
+            boolean use_ewald, use_lights;
+            boolean use_list, use_vlist;
+            boolean use_clist, use_mlist;
+            boolean use_ulist;
+
+            // module nonpol
+            double solvprs, surften;
+            double spcut, spoff;
+            double stcut, stoff;
+
+            // module shunt
+            double off, off2;
+            double cut, cut2;
+            double c0, c1, c2;
+            double c3, c4, c5;
+            double f0, f1, f2, f3;
+            double f4, f5, f6, f7;
 
             /**
              * Extra padding to avert cache interface.
@@ -5887,6 +5958,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             public void finish() {
                 sharedVolume.addAndGet(evol);
                 sharedArea.addAndGet(earea);
+                sharedVolumeCavitation.addAndGet(ecav);
             }
 
             public void setRadius() {
@@ -5913,8 +5985,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     if (vdwrad[i] == 0.0) {
                         skip[i] = true;
                     } else {
+                        vdwrad[i] += exclude;
+                        radius[i] += exclude;
                         skip[i] = false;
-                        vdwrad[i] += probe;
+                        //vdwrad[i] += probe;                       
                         if (vdwrad[i] > rmax) {
                             rmax = vdwrad[i];
                         }
@@ -5946,9 +6020,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             public void calcVolume() {
                 double volume = 0;
                 double area = 0;
-                
-                probe = 0.0;                
-                
+
+                probe = 0.0;
+
                 nearby();
                 torus();
                 place();
@@ -9168,7 +9242,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 // logger.info(String.format("totvp=%16.8f,totvs=%16.8f,totvn=%16.8f,hedron=%16.8f,totvsp=%16.8f,vlenst=%16.8f", totvp, totvs, totvn, polyhedronVolume, totvsp, vlenst));
                 volume = totvp + totvs + totvn + polyhedronVolume - totvsp + vlenst;
                 //logger.info(String.format(" Volume = %16.8f, Area = %16.8f", volume, area));
-                logger.info(String.format(" Total Area          %16.8f", area));
+                //logger.info(String.format(" Total Volume        %16.8f", volume));
+                //logger.info(String.format(" Total Area          %16.8f", area));
 
                 evol += volume;
                 earea += area;
@@ -9181,7 +9256,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * center.
              */
             public void gendot(int ndots[], double dots[][], double radius,
-                               double xcenter, double ycenter, double zcenter) {
+                    double xcenter, double ycenter, double zcenter) {
                 int nequat = (int) sqrt(PI * ((double) ndots[0]));
                 //logger.info(String.format("nequat:\t%s", nequat));
                 int nvert = nequat / 2;
@@ -9224,7 +9299,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
              * specified circle and plane.
              */
             public boolean cirpln(double circen[], double cirrad, double cirvec[], double plncen[],
-                                  double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
+                    double plnvec[], boolean cinsp, boolean cintp, double xpnt1[], double xpnt2[]) {
                 double cpvect[] = new double[3];
                 double pnt1[] = new double[3];
                 double vect1[] = new double[3];
@@ -9692,13 +9767,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                                  */
                                 for (int k = 0; k <= narc; k++) {
                                     theta1 = arci[k];
-                                    theta2 = arcf[k];                                  
+                                    theta2 = arcf[k];
                                     //logger.info(String.format("%d theta1=%16.8f theta2=%16.8f", ir, theta1, theta2));
                                     if (theta2 >= theta1) {
                                         dtheta = theta2 - theta1;
                                     } else {
                                         dtheta = (theta2 + pix2) - theta1;
-                                    }                                   
+                                    }
                                     phi_term = phi2 - phi1 - 0.5 * (sin(2.0 * phi2) - sin(2.0 * phi1));
                                     seg_dx = (sin(theta2) - sin(theta1)) * phi_term;
                                     seg_dy = (cos(theta1) - cos(theta2)) * phi_term;
@@ -9720,11 +9795,207 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
             }
 
+            public void Switch(String mode) {
+                // use limits
+                // use nonpol
+                // use shunt
+                double denom, term;
+                double off3, off4, off5;
+                double off6, off7;
+                double cut3, cut4, cut5;
+                double cut6, cut7;
+
+                /**
+                 * Get the switching window for the current potential type.
+                 */
+                switch (mode) {
+                    case "VDW":
+                        off = vdwcut;
+                        cut = vdwtaper;
+                        break;
+                    case "GKV":
+                        off = spoff;
+                        cut = spcut;
+                        break;
+                    case "GKSA":
+                        off = stcut;
+                        cut = stoff;
+                        break;
+                    case "MPOLE":
+                        off = mpolecut;
+                        cut = mpoletaper;
+                        break;
+                    case "EWALD":
+                        off = ewaldcut;
+                        cut = ewaldcut;
+                        break;
+                    case "CHARGE":
+                        off = chgcut;
+                        cut = chgtaper;
+                        break;
+                    case "CHGDPL":
+                        off = sqrt(chgcut * dplcut);
+                        cut = sqrt(chgtaper * dpltaper);
+                        break;
+                    case "DIPOLE":
+                        off = dplcut;
+                        cut = dpltaper;
+                        break;
+                    case "USOLVE":
+                        off = usolvcut;
+                        cut = usolvcut;
+                        break;
+                    default:
+                        off = Math.min(vdwcut, Math.min(chgcut, Math.min(dplcut, mpolecut)));
+                        cut = Math.min(vdwtaper, Math.min(chgtaper, Math.min(dpltaper, mpoletaper)));
+                        break;
+                }
+                
+                /**
+                 * Set switching coefficients to zero for truncation cutoffs.
+                 */
+                c0 = 0.0;
+                c1 = 0.0;
+                c2 = 0.0;
+                c3 = 0.0;
+                c4 = 0.0;
+                c5 = 0.0;
+                f0 = 0.0;
+                f1 = 0.0;
+                f2 = 0.0;
+                f3 = 0.0;
+                f4 = 0.0;
+                f5 = 0.0;
+                f6 = 0.0;
+                f7 = 0.0;
+                /**
+                 * Store the powers of the switching window cutoffs.
+                 */
+                off2 = off * off;
+                off3 = off2 * off;
+                off4 = off2 * off2;
+                off5 = off2 * off3;
+                off6 = off3 * off3;
+                off7 = off3 * off4;
+                cut2 = cut * cut;
+                cut3 = cut2 * cut;
+                cut4 = cut2 * cut2;
+                cut5 = cut2 * cut3;
+                cut6 = cut3 * cut3;
+                cut7 = cut3 * cut4;
+                /**
+                 * Get 5th degree multiplicative switching function coefficients.
+                 */
+                if (cut < off) {
+                    denom = (off - cut) * (off - cut) * (off - cut) * (off - cut) * (off - cut);
+                    c0 = off * off2 * (off2 - 5.0 * off * cut + 10.0 * cut2) / denom;
+                    c1 = -30.0 * off2 * cut2 / denom;
+                    c2 = 30.0 * (off2 * cut + off * cut2) / denom;
+                    c3 = -10.0 * (off2 + 4.0 * off * cut + cut2) / denom;
+                    c4 = 15.0 * (off + cut) / denom;
+                    c5 = -6.0 / denom;
+                }
+                /**
+                 * Get 7th degree additive switching function coefficients.
+                 */
+                if (cut < off && (mode.equals("CHARGE"))) {
+                    term = 9.3 * cut * off / (off - cut);
+                    denom = cut7 - 7.0 * cut6 * off + 21.0 * cut5 * off2 - 35.0 * cut4 * off3 + 35.0 * cut3 * off4 - 21.0 * cut2 * off5 + 7.0 * cut * off6 - off7;
+                    denom = term * denom;
+                    f0 = cut3 * off3 * (-39.0 * cut + 64.0 * off) / denom;
+                    f1 = cut2 * off2 * (117.0 * cut2 - 100.0 * cut * off - 192.0 * off2) / denom;
+                    f2 = cut * off * (-117.0 * cut3 - 84.0 * cut2 * off + 534.0 * cut * off2 + 192.0 * off3) / denom;
+                    f3 = (39.0 * cut4 + 212.0 * cut3 * off - 450.0 * cut2 * off2 - 612.0 * cut * off3 - 64.0 * off4) / denom;
+                    f4 = (-92.0 * cut3 + 66.0 * cut2 * off + 684.0 * cut * off2 + 217.0 * off3) / denom;
+                    f5 = (42.0 * cut2 - 300.0 * cut * off - 267.0 * off2) / denom;
+                    f6 = (36.0 * cut + 139.0 * off) / denom;
+                    f7 = -25.0 / denom;
+                }
+            }
+
+            public void enp() {
+                double evolume;
+                double cross;
+                double taper;
+                double reff, reff2, reff3;
+                double reff4, reff5;
+                String mode;
+                solvprs = 0.0327;
+
+                cross = 3.0 * surfaceTension / solvprs;
+                spcut = cross - 3.5;
+                spoff = cross + 3.5;
+                stcut = cross + 3.9;
+                stoff = cross - 3.5;
+
+                /**
+                 * Zero out the nonpolar implicit solvation energy terms.
+                 */
+                ecav = 0.0;
+                /**
+                 * Compute SASA and effective radius needed for cavity term.
+                 */
+                reff = 0.5 * Math.sqrt(esurf / (PI * surfaceTension));             
+                reff2 = reff * reff;
+                reff3 = reff2 * reff;
+                reff4 = reff3 * reff;
+                reff5 = reff4 * reff;
+                /**
+                 * Compute solvent excluded volume needed for small solutes.
+                 */
+                evolume = evol;
+                if (reff < spoff) {
+                    evolume = evolume * solvprs;
+                }
+                /**
+                 * Find cavity energy from only the solvent excluded volume.
+                 */
+                if (reff <= spcut) {
+                    ecav = evolume;                 
+                } else if (reff > spcut && reff <= stoff) {
+                    /**
+                     * Find cavity energy from only a tapered volume term.
+                     */
+                    mode = "GKV";
+                    Switch(mode);
+                    taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
+                    ecav = taper * evolume;
+                } else if (reff > stoff && reff <= spoff) {
+                    /**
+                     * Find cavity energy using both volume and SASA terms.
+                     */
+                    mode = "GKV";
+                    Switch(mode);
+                    taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
+                    ecav = taper * evolume;
+                    mode = "GKSA";
+                    Switch(mode);
+                    taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
+                    taper = 1.0 - taper;
+                    ecav = ecav + taper * esurf;
+                } else if (reff > spoff && reff <= stcut) {
+                    /**
+                     * Find cavity energy from only a tapered SASA term.
+                     */
+                    mode = "GKSA";
+                    Switch(mode);
+                    taper = c5 * reff5 + c4 * reff4 + c3 * reff3 + c2 * reff2 + c1 * reff + c0;
+                    taper = 1.0 - taper;
+                    ecav = taper * esurf;
+                    /**
+                     * Find cavity energy from only a SASA-based term.
+                     */
+                } else {
+                    ecav = esurf;
+                }
+            }
+            
             @Override
             public void run(int lb, int ub) {
                 setRadius();
                 calcVolume();
                 calcDerivative(lb, ub);
+                enp();
             }
         }
     }

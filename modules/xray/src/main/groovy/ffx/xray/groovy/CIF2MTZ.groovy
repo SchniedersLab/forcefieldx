@@ -1,5 +1,7 @@
 package ffx.xray.groovy
 
+import ffx.numerics.Potential
+import ffx.xray.DiffractionRefinementData
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -13,6 +15,8 @@ import ffx.xray.parsers.MTZWriter.MTZType
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
+
+import java.util.stream.Collectors
 
 /**
  * The CIF2MTZ script saves a CIF file to MTZ format.
@@ -30,6 +34,9 @@ class CIF2MTZ extends AlgorithmsScript {
     @Parameters(arity = "2", paramLabel = "file", description = "A PDB file and a CIF diffraction file.")
     private ArrayList<String> filenames = null
 
+    private MolecularAssembly[] systems;
+    private DiffractionRefinementData refinementdata;
+
     /**
      * Execute the script.
      */
@@ -46,7 +53,7 @@ class CIF2MTZ extends AlgorithmsScript {
         logger.info("\n Running CIF2MTZ on " + cif)
 
         // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-        MolecularAssembly[] systems = algorithmFunctions.open(pdb)
+        systems = algorithmFunctions.open(pdb)
 
         CIFFilter ciffilter = new CIFFilter()
         ReflectionList reflectionlist = ciffilter.getReflectionList(new File(cif), systems[0].getProperties())
@@ -65,13 +72,25 @@ class CIF2MTZ extends AlgorithmsScript {
             reflectionlist = new ReflectionList(crystal, resolution, systems[0].getProperties())
         }
 
-        ffx.xray.DiffractionRefinementData refinementdata = new ffx.xray.DiffractionRefinementData(systems[0].getProperties(), reflectionlist)
+        refinementdata = new DiffractionRefinementData(systems[0].getProperties(), reflectionlist)
         ciffilter.readFile(new File(cif), reflectionlist, refinementdata, systems[0].getProperties())
 
         MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata, FilenameUtils.removeExtension(cif) + ".mtz", MTZType.DATAONLY)
         mtzwriter.write()
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        if (systems == null) {
+            return new ArrayList<Potential>();
+        } else {
+            return Arrays.stream(systems).filter { a -> a != null }.
+                    map { a -> a.getPotentialEnergy() }.
+                    filter { e -> e != null }.
+                    collect(Collectors.toList());
+        }
     }
 }
 

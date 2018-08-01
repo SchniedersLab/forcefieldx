@@ -40,6 +40,7 @@ package ffx.potential.groovy;
 import java.util.Arrays;
 import java.util.Collection;
 
+import ffx.utilities.BaseFFXTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,7 +59,7 @@ import groovy.lang.Binding;
  * Test the Energy script.
  */
 @RunWith(Parameterized.class)
-public class EnergyTest {
+public class EnergyTest extends BaseFFXTest {
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -395,6 +396,7 @@ public class EnergyTest {
         if (nAtoms > 10000 && !ffxCI) {
             return;
         }
+        logger.info(" Testing energy for " + info);
 
         energy = new Energy();
         energy.setBinding(binding);
@@ -447,6 +449,8 @@ public class EnergyTest {
         // GK Energy
         assertEquals(info + " Solvation", gkEnergy, forceFieldEnergy.getSolvationEnergy(), tolerance);
         assertEquals(info + " Solvation Count", nGK, forceFieldEnergy.getSolvationInteractions());
+        energy.destroyPotentials();
+        System.gc();
     }
 
     @Test
@@ -454,6 +458,7 @@ public class EnergyTest {
         if (!testOpenMM || !ffxOpenMM) {
             return;
         }
+        logger.info(" Testing OpenMM energy for " + info);
 
         energy = new Energy();
         energy.setBinding(binding);
@@ -470,6 +475,8 @@ public class EnergyTest {
         System.clearProperty("platform");
 
         assertEquals(info + " OpenMM Energy", totalEnergy, energy.energy, openMMTolerance);
+        energy.destroyPotentials();
+        System.gc();
     }
 
     @Test
@@ -477,6 +484,7 @@ public class EnergyTest {
         if (nAtoms > 5000 && !ffxCI) {
             return;
         }
+        logger.info(" Testing Cartesian gradient(s) for " + info);
 
         gradient = new Gradient();
         gradient.setBinding(binding);
@@ -495,6 +503,8 @@ public class EnergyTest {
         gradient.run();
 
         assertEquals(info + " gradient failures: ", 0, gradient.nFailures);
+        gradient.destroyPotentials();
+        System.gc();
     }
 
     @Test
@@ -502,6 +512,7 @@ public class EnergyTest {
         if (nAtoms > 5000 && !ffxCI) {
             return;
         }
+        logger.info(" Testing lambda gradient(s) for " + info);
 
         lambdaGradient = new LambdaGradient();
         lambdaGradient.setBinding(binding);
@@ -528,5 +539,7 @@ public class EnergyTest {
         assertEquals(info + " d2EdL2 failures: ", 0, lambdaGradient.nd2EdL2Failures);
         assertEquals(info + " dEdXdL failures: ", 0, lambdaGradient.ndEdXdLFailures);
         assertEquals(info + " dEdX failures: ", 0, lambdaGradient.ndEdXFailures);
+        lambdaGradient.destroyPotentials();
+        System.gc();
     }
 }

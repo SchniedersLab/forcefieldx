@@ -1,5 +1,7 @@
 package ffx.xray.groovy
 
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
 import org.apache.commons.configuration2.CompositeConfiguration
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -34,6 +36,7 @@ class Timer extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
     private List<String> filenames
+    private RefinementEnergy refinementEnergy;
 
     @Override
     Timer run() {
@@ -69,9 +72,9 @@ class Timer extends AlgorithmsScript {
         xrayOptions.setProperties(parseResult, properties)
 
         // Set up diffraction data (can be multiple files)
-        List<ffx.xray.DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
+        List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
 
-        ffx.xray.DiffractionData diffractionData = new ffx.xray.DiffractionData(assemblies, properties,
+        DiffractionData diffractionData = new DiffractionData(assemblies, properties,
                 xrayOptions.solventModel, diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
 
         diffractionData.scaleBulkFit()
@@ -79,7 +82,7 @@ class Timer extends AlgorithmsScript {
 
         algorithmFunctions.energy(assemblies[0])
 
-        ffx.xray.RefinementEnergy refinementEnergy = new ffx.xray.RefinementEnergy(diffractionData, xrayOptions.refinementMode)
+        refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
         int n = refinementEnergy.getNumberOfVariables()
         double[] x = new double[n]
         double[] g = new double[n]
@@ -98,6 +101,11 @@ class Timer extends AlgorithmsScript {
         }
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy);
     }
 }
 

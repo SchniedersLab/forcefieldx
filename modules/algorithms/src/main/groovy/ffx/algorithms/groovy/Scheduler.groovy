@@ -1,7 +1,7 @@
 package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
-
+import ffx.numerics.Potential
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 
@@ -17,6 +17,14 @@ import picocli.CommandLine.Option
  */
 @Command(description = " The Scheduler runs Parallel jobs over nodes.", name = "ffxc Scheduler")
 class Scheduler extends AlgorithmsScript {
+
+
+    /**
+     * -v or --verbose to turn on verbose backend Parallel Java logging.
+     */
+    @Option(names = ['-v', '--verbose'],
+            description = 'Turn on verbose backend Parallel Java logging.')
+    boolean v = false
 
     /**
      * -p or --CPUs to define the processor cores (threads) per process (default is all available cores).
@@ -118,6 +126,10 @@ class Scheduler extends AlgorithmsScript {
         String ffx = ffxHome + "/bin/ffx-all.jar"
         args = "-Xmx" + memory + " -Djava.system.class.loader='ffx.FFXClassLoader'"
 
+        if (v) {
+            args = args + " -Dpj.log='true'"
+        }
+
         // Create an entry for each process
         int i = 0
         for (p = 0; p < processes; p++) {
@@ -145,4 +157,8 @@ class Scheduler extends AlgorithmsScript {
         return this
     }
 
+    @Override
+    public List<Potential> getPotentials() {
+        return new ArrayList<>();
+    }
 }

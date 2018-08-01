@@ -12,6 +12,7 @@ import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
+import ffx.numerics.Potential
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import org.apache.commons.configuration2.Configuration
@@ -139,7 +140,7 @@ class NewThermodynamics extends AlgorithmsScript {
                 collect(Collectors.toList())
 
         File firstStructure = structureFiles.get(0);
-        String baseFilename = FilenameUtils.removeExtension(firstStructure.getName());
+        String baseFilename = FilenameUtils.removeExtension(firstStructure.getPath());
         File histogramRestart = new File(baseFilename + ".his");
 
         // For a multi-process job, try to get the restart files from rank sub-directories.
@@ -224,7 +225,9 @@ class NewThermodynamics extends AlgorithmsScript {
 
         osrw = osrwOptions.constructOSRW(potential, lambdaRestart, histogramRestart, topologies[0], additionalProperties, dynamics, multidynamics, thermodynamics, algorithmListener);
 
-        potential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0], dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists);
+        // Can be either the TT-OSRW or a Barostat on top of it.
+        // Cannot be the Potential underneath the TT-OSRW.
+        CrystalPotential osrwPotential = osrwOptions.applyAllOSRWOptions(osrw, topologies[0], dynamics, lambdaParticle, alchemical, barostat, lamExists, hisExists);
 
         // Old code for obsolete options.
 
@@ -256,18 +259,23 @@ class NewThermodynamics extends AlgorithmsScript {
             mcOSRW.setMDMoveParameters(options.steps, options.mcMD, options.dt)
             mcOSRW.sample()*/
         } else {
-            osrwOptions.beginMDOSRW(osrw, topologies, potential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
+            osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
         }
 
         return this;
     }
 
-    public AbstractOSRW getOSRW() {
+    AbstractOSRW getOSRW() {
         return osrw;
     }
 
     public CrystalPotential getPotential() {
         return potential;
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
     }
 }
 

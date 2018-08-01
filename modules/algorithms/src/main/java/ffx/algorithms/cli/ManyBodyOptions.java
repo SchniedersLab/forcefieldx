@@ -72,9 +72,9 @@ public class ManyBodyOptions {
     /**
      * -L or --library Choose either Ponder and Richards (1) or Richardson (2) rotamer library.
      */
-    @Option(names = {"-L", "--library"}, paramLabel = "1",
+    @Option(names = {"-L", "--library"}, paramLabel = "2",
             description = "Ponder and Richards (1) or Richardson (2) rotamer library.")
-    int library = 1;
+    int library = 2;
 
     /**
      * -Ln or --libraryNucleic Choose a nucleic acid library: currently only Richardson available.
@@ -123,9 +123,9 @@ public class ManyBodyOptions {
     /**
      * --tC or --twoBodyCutoff Cutoff distance for two-body interactions.
      */
-    @Option(names = {"--tC", "--twoBodyCutoff"}, paramLabel = "-1.0",
+    @Option(names = {"--tC", "--twoBodyCutoff"}, paramLabel = "2.0",
             description = "Cutoff distance for two body interactions.")
-    double twoBodyCutoff = -1.0;
+    double twoBodyCutoff = 2.0;
 
     /**
      * -T or --threeBody Include 3-Body interactions in the elimination criteria.
@@ -137,9 +137,9 @@ public class ManyBodyOptions {
     /**
      * --thC or --threeBodyCutoff Cutoff distance for three-body interactions.
      */
-    @Option(names = {"--thC", "--threeBodyCutoff"}, paramLabel = "9.0",
+    @Option(names = {"--thC", "--threeBodyCutoff"}, paramLabel = "2.0",
             description = "Cutoff distance for three-body interactions.")
-    double threeBodyCutoff = 9.0;
+    double threeBodyCutoff = 2.0;
 
     /**
      * --pr or --prune Prune no clashes (0), only single clashes (1), or all clashes (2).
@@ -155,6 +155,13 @@ public class ManyBodyOptions {
     @Option(names = {"-x", "--all"}, paramLabel = "-1",
             description = "Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.")
     int all = -1;
+
+    /**
+     * -z or --revert Revert unfavorable changes.
+     */
+    @Option(names = {"-z", "--revert"}, paramLabel = "-1",
+            description = "Revert unfavorable changes.")
+    boolean revert = true;
 
     /**
      * --eR or --energyRestart Load energy restart file from a previous run (requires that all parameters are the same).
@@ -668,7 +675,7 @@ public class ManyBodyOptions {
         rotamerOptimization.setThreeBodyCutoff(threeBodyCutoff);
         rotamerOptimization.setThreeBodyEnergy(threeBody);
         rotamerOptimization.setUseGoldstein(!dee);
-        //rotamerOptimization.setRevert(!noRevert);
+        rotamerOptimization.setRevert(revert);
         rotamerOptimization.setPruning(prune);
         rotamerOptimization.setDistanceCutoff(cutoff);
         rotamerOptimization.setVerboseEnergies(verbose);

@@ -1,5 +1,6 @@
 package ffx.xray.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
@@ -76,6 +77,11 @@ class Deuterate extends AlgorithmsScript {
         algorithmFunctions.saveAsPDB(assemblies, new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"))
 
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return Collections.emptyList();
     }
 }
 

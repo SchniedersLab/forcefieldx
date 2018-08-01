@@ -764,4 +764,10 @@ public class SigmaAEnergy implements Potential {
     public void setEnergyTermState(STATE state) {
         this.state = state;
     }
+
+    @Override
+    public boolean destroy() {
+        // Should be destroyed upstream in DiffractionData.
+        return true;
+    }
 }

@@ -1,5 +1,6 @@
 package ffx.potential.groovy
 
+import ffx.numerics.Potential
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 
@@ -84,6 +85,7 @@ class PrepareSpaceGroups extends PotentialScript {
 
     public int numberCreated = 0
     public File baseDir = null
+    private ForceFieldEnergy energy;
 
     /**
      * Execute the script.
@@ -94,6 +96,8 @@ class PrepareSpaceGroups extends PotentialScript {
         if (!init()) {
             return this
         }
+
+        System.setProperty("ewald-alpha", "0.0")
 
         MolecularAssembly[] assemblies
         if (filenames != null && filenames.size() > 0) {
@@ -108,7 +112,7 @@ class PrepareSpaceGroups extends PotentialScript {
 
         logger.info("\n Preparing space group directories for " + modelFilename)
 
-        ForceFieldEnergy energy = activeAssembly.getPotentialEnergy()
+        energy = activeAssembly.getPotentialEnergy()
         CompositeConfiguration config = activeAssembly.getProperties()
 
         File coordFile = activeAssembly.getFile()
@@ -243,7 +247,14 @@ class PrepareSpaceGroups extends PotentialScript {
             }
         }
 
+        System.clearProperty("ewald-alpha")
+
         return this
+    }
+
+    @Override
+    public List<Potential> getPotentials() {
+        return energy == null ? Collections.emptyList() : Collections.singletonList(energy);
     }
 }
 

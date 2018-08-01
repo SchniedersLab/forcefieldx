@@ -42,12 +42,16 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import edu.rit.pj.Comm;
 
@@ -101,14 +105,31 @@ public class DynamicsStochasticTest {
         binding = new Binding();
         dynamics = new Dynamics();
         dynamics.setBinding(binding);
+    }
 
+    @BeforeClass
+    public static void beforeClass() {
+        // Initialize Parallel Java
         try {
-            String args[] = new String[0];
-            Comm.init(args);
-        } catch (Exception e) {
-            String message = String.format(" Exception starting up the Parallel Java communication layer.");
-            logger.log(Level.WARNING, message, e.toString());
+            Comm.world();
+        } catch (IllegalStateException ise) {
+            try {
+                String args[] = new String[0];
+                Comm.init(args);
+            } catch (Exception e) {
+                String message = String.format(" Exception starting up the Parallel Java communication layer.");
+                logger.log(Level.WARNING, message, e.toString());
+                message = String.format(" Skipping Beeman/Berendsen NVT dynamics test.");
+                logger.log(Level.WARNING, message, e.toString());
+                fail();
+            }
         }
+    }
+
+    @After
+    public void after() {
+        dynamics.destroyPotentials();
+        System.gc();
     }
 
     @Test
