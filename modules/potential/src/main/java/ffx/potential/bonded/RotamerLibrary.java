@@ -2053,74 +2053,6 @@ public class RotamerLibrary {
     }
 
     /**
-     * Determines coordinates for placing an atom a1 in a trigonal-planar arrangement w.r.t atoms a2-a4.
-     *
-     * Guaranteed ideal geometry: a1-a2 bond, a1 in the a2-a4 plane.
-     * Not guaranteed: ideal a1-a2-a3 or a1-a2-a4 angles. However, any strain will be equally distributed.
-     *
-     * @param resName Residue to which a1-a4 belong.
-     * @param a1 An atom which should be in the a2-a4 plane.
-     * @param a2 An atom bonded to a1.
-     * @param a3 An atom bonded to a2.
-     * @param a4 An atom bonded to a2.
-     * @return Coordinates for placing a1.
-     */
-    private static double[] drawPlanarTrigonalAtom(AminoAcid3 resName, Atom a1, Atom a2, Atom a3, Atom a4) {
-        Bond a1_a2 = a1.getBond(a2);
-        double bondLen = a1_a2.bondType.distance;
-        double ang1 = idealGeometryAngle(resName, a1, a2, a3);
-        double ang2 = idealGeometryAngle(resName, a1, a2, a4);
-        
-        double[] xyz2 = new double[3];
-        xyz2 = a2.getXYZ(xyz2);
-        double[] xyz3 = new double[3];
-        xyz3 = a3.getXYZ(xyz3);
-        double[] xyz4 = new double[3];
-        xyz4 = a4.getXYZ(xyz4);
-
-        double[] posChiral = determineIntxyz(xyz2, bondLen, xyz3, ang1, xyz4, ang2, 1);
-        double[] negChiral = determineIntxyz(xyz2, bondLen, xyz3, ang1, xyz4, ang2, -1);
-        double[] displacement = new double[3];
-        double dispMag = 0;
-
-        for (int i = 0; i < 3; i++) {
-            // First, draw the midpoint between the positive- and negative- chiral solutions.
-            displacement[i] = 0.5 * (posChiral[i] + negChiral[i]);
-            // Second, take the displacement from a2 to this midpoint.
-            displacement[i] -= xyz2[i];
-            // Third, accumulate into the vector magnitude.
-            dispMag += (displacement[i] * displacement[i]);
-        }
-
-        dispMag = FastMath.sqrt(dispMag);
-        double extend = bondLen / dispMag;
-        assert extend > 0.999; // Should be >= 1.0, with slight machine-precision tolerance.
-
-        double[] outXYZ = new double[3];
-        for (int i = 0; i < 3; i++) {
-            displacement[i] *= extend;
-            outXYZ[i] = displacement[i] + xyz2[i];
-        }
-        return outXYZ;
-    }
-
-    /**
-     * Places an atom a1 in a trigonal-planar arrangement w.r.t atoms a2-a4.
-     *
-     * Guaranteed ideal geometry: a1-a2 bond, a1 in the a2-a4 plane.
-     * Not guaranteed: ideal a1-a2-a3 or a1-a2-a4 angles. However, any strain will be equally distributed.
-     *
-     * @param resName Residue to which a1-a4 belong.
-     * @param a1 An atom which should be in the a2-a4 plane.
-     * @param a2 An atom bonded to a1.
-     * @param a3 An atom bonded to a2.
-     * @param a4 An atom bonded to a2.
-     */
-    private static void applyPlanarTrigonalAtom(AminoAcid3 resName, Atom a1, Atom a2, Atom a3, Atom a4) {
-        a1.moveTo(drawPlanarTrigonalAtom(resName, a1, a2, a3, a4));
-    }
-
-    /**
      * Draws CZ of Phe/Tyr/Tyd twice (from each branch of the ring), the cuts it down the middle.
      * @param resName Residue containing CZ.
      * @param CZ CZ to be placed.
@@ -2484,10 +2416,20 @@ public class RotamerLibrary {
                 double dCE_CD = CE_CD.bondType.distance;
                 double dHB_CB = HB_CB.bondType.distance;
 
+                double dHD_CD = HD1.getBond(CD1).bondType.distance;
+                double dHE_CE = HE1.getBond(CE1).bondType.distance;
+                double dHZ_CZ = HZ.getBond(CZ).bondType.distance;
+
                 double dCG_CB_CA = getAngle(name, CG, CB, CA);
                 double dCD_CG_CB = getAngle(name, CD1, CG, CB);
                 double dCE_CD_CG = getAngle(name, CE1, CD1, CG);
                 double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+
+                double dHD_CD_CG = getAngle(name, HD1, CD1, CG);
+                double dHD_CD_CE = getAngle(name, HD1, CD1, CE1);
+                double dHE_CE_CD = getAngle(name, HE1, CE1, CD1);
+                double dHE_CE_CZ = getAngle(name, HE1, CE1, CZ);
+                double dHZ_CZ_CE = getAngle(name, HZ, CZ, CE1);
 
                 intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
                 intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
@@ -2497,11 +2439,12 @@ public class RotamerLibrary {
                 applyCZ(name, CZ, CG, CE1, CD1, CE2, CD2);
                 intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
                 intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-                applyPlanarTrigonalAtom(name, HD1, CD1, CG, CE1);
-                applyPlanarTrigonalAtom(name, HD2, CD2, CG, CE2);
-                applyPlanarTrigonalAtom(name, HE1, CE1, CD1, CZ);
-                applyPlanarTrigonalAtom(name, HE2, CE2, CD2, CZ);
-                applyPlanarTrigonalAtom(name, HZ, CZ, CE1, CE2);
+
+                intxyz(HD1, CD1, dHD_CD, CG, dHD_CD_CG, CE1, dHD_CD_CE, 3);
+                intxyz(HD2, CD2, dHD_CD, CG, dHD_CD_CG, CE2, dHD_CD_CE, 3);
+                intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
+                intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, dHE_CE_CZ, 3);
+                intxyz(HZ, CZ, dHZ_CZ, CE1, dHZ_CZ_CE, CE2, dHZ_CZ_CE, 3);
                 break;
             }
             case PRO: {
