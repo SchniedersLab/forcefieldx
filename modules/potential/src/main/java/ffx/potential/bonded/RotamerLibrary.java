@@ -43,15 +43,20 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.parameters.AngleType;
+import org.apache.commons.math3.util.FastMath;
+
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 
@@ -98,6 +103,81 @@ public class RotamerLibrary {
     private static final Map<String, NonstandardRotLibrary> nonstdRotCache = new HashMap<>();
     
     private static final RotamerLibrary defaultRotamerLibrary = new RotamerLibrary(ProteinLibrary.PonderAndRichards, false);
+
+    private static final boolean useIdealRingGeometries;
+    static {
+        useIdealRingGeometries = Boolean.parseBoolean(System.getProperty("useIdealRingGeo", "true"));
+    }
+
+    private static final Map<AminoAcid3, Map<String, Double>> idealAngleGeometries;
+    static {
+        Map<AminoAcid3, Map<String, Double>> angleGeos = new HashMap<>();
+
+        Map<String, Double> pheMap = new HashMap<>();
+        pheMap.put("CD1-CG-CB", 120.3);
+        pheMap.put("CD2-CG-CB", 120.3);
+        pheMap.put("CE1-CD1-CG", 120.3);
+        pheMap.put("CE2-CD2-CG", 120.3);
+        pheMap.put("CZ-CE1-CD1", 120.0);
+        pheMap.put("CZ-CE2-CD2", 120.0);
+        angleGeos.put(AminoAcid3.PHE, Collections.unmodifiableMap(pheMap));
+
+        Map<String, Double> tyrMap = new HashMap<>();
+        tyrMap.put("CD1-CG-CB", 120.3);
+        tyrMap.put("CD2-CG-CB", 120.3);
+        tyrMap.put("CE1-CD1-CG", 120.3);
+        tyrMap.put("CE2-CD2-CG", 120.3);
+        tyrMap.put("CZ-CE1-CD1", 120.0);
+        tyrMap.put("CZ-CE2-CD2", 120.0);
+        angleGeos.put(AminoAcid3.TYR, Collections.unmodifiableMap(tyrMap));
+
+        Map<String, Double> tydMap = new HashMap<>();
+        tydMap.put("CD1-CG-CB", 120.5);
+        tydMap.put("CD2-CG-CB", 120.5);
+        tydMap.put("CE1-CD1-CG", 120.4);
+        tydMap.put("CE2-CD2-CG", 120.4);
+        tydMap.put("CZ-CE1-CD1", 120.8);
+        tydMap.put("CZ-CE2-CD2", 120.8);
+        angleGeos.put(AminoAcid3.TYD, Collections.unmodifiableMap(tydMap));
+        
+        Map<String, Double> hisMap = new HashMap<>();
+        hisMap.put("ND1-CG-CB", 122.1);
+        hisMap.put("CD2-CG-CB", 131.0);
+        hisMap.put("CD2-CG-ND1", 106.8);
+        hisMap.put("CE1-ND1-CG", 109.5);
+        hisMap.put("NE2-CD2-CG", 107.1);
+        angleGeos.put(AminoAcid3.HIS, Collections.unmodifiableMap(hisMap));
+
+        Map<String, Double> hidMap = new HashMap<>();
+        hidMap.put("ND1-CG-CB", 123.5);
+        hidMap.put("CD2-CG-CB", 132.3);
+        hidMap.put("CD2-CG-ND1", 104.2);
+        hidMap.put("CE1-ND1-CG", 108.8);
+        hidMap.put("NE2-CD2-CG", 111.2);
+        angleGeos.put(AminoAcid3.HID, Collections.unmodifiableMap(hidMap));
+
+        Map<String, Double> hieMap = new HashMap<>();
+        hieMap.put("ND1-CG-CB", 120.2);
+        hieMap.put("CD2-CG-CB", 129.1);
+        hieMap.put("CD2-CG-ND1", 110.7);
+        hieMap.put("CE1-ND1-CG", 105.1);
+        hieMap.put("NE2-CD2-CG", 104.6);
+        angleGeos.put(AminoAcid3.HIE, Collections.unmodifiableMap(hieMap));
+
+        Map<String, Double> trpMap = new HashMap<>();
+        trpMap.put("CD1-CG-CB", 126.4);
+        trpMap.put("CD2-CG-CB", 126.5);
+        trpMap.put("CD2-CG-CD1", 107.1);
+        trpMap.put("NE1-CD1-CG", 106.9);
+        trpMap.put("CE2-NE1-CD1", 109.4);
+        trpMap.put("CE3-CD2-CE2", 121.6);
+        trpMap.put("CZ2-CE2-CD2", 123.5);
+        trpMap.put("CZ3-CE3-CD2", 116.7);
+        trpMap.put("CH2-CZ2-CE2", 116.2);
+        angleGeos.put(AminoAcid3.TRP, Collections.unmodifiableMap(trpMap));
+
+        idealAngleGeometries = Collections.unmodifiableMap(angleGeos);
+    }
     
     public RotamerLibrary(ProteinLibrary name, boolean origCoords) {
         proteinLibrary = name;
@@ -1901,6 +1981,194 @@ public class RotamerLibrary {
     }
 
     /**
+     * Obtains an idealized angle using the force field. Note: can be misleading!
+     * Often, idealized angles are not equilibrium angles; for example, AMOEBA 2018
+     * has phenylalanine ring interior angles that sum to > 720 degrees. This does not
+     * mean that an idealized phenylalanine ring violates geometry, it means that the
+     * ring is always under at least a little strain.
+     *
+     * @param a1 An Atom.
+     * @param a2 Another Atom.
+     * @param a3 Another Atom.
+     * @return Force field-defined a1-a2-a3 angle in degrees.
+     */
+    private static double angleFromForceField(Atom a1, Atom a2, Atom a3) {
+        Angle a = a1.getAngle(a2, a3);
+        AngleType at = a.getAngleType();
+        return at.angle[a.nh];
+    }
+
+    /**
+     * Obtains an idealized angle using a lookup map of stored, idealized geometries,
+     * with a fallback to using the force field. This is intended for use with ring
+     * systems, where ring constraints mean that optimum-energy rings may not have
+     * the values defined by the force field.
+     *
+     * Current lookup map is only for PHE, TYR, TYD, HIS, HID, HIE, and TRP, using
+     * values obtained from a tight bonded-terms-only optimization under AMOEBA BIO 2018.
+     *
+     * @param resName Name of the Residue containing a1-a3.
+     * @param a1 An atom.
+     * @param a2 Another Atom.
+     * @param a3 Another Atom.
+     * @return Stored idealized a1-a2-a3 angle in degrees.
+     */
+    private static double idealGeometryAngle(AminoAcid3 resName, Atom a1, Atom a2, Atom a3) {
+        StringBuilder sb = new StringBuilder(a1.getName());
+        sb.append("-").append(a2.getName()).append("-").append(a3.getName());
+        Map<String, Double> resMap = idealAngleGeometries.get(resName);
+        String atomString = sb.toString();
+
+        if (resMap.containsKey(atomString)) {
+            return resMap.get(atomString);
+        } else {
+            sb = new StringBuilder(a3.getName());
+            sb.append("-").append(a2.getName()).append("-").append(a1.getName());
+            atomString = sb.toString();
+            if (resMap.containsKey(atomString)) {
+                return resMap.get(atomString);
+            } else {
+                logger.fine(String.format(" Could not find an ideal-geometry angle for %s %s-%s-%s", resName, a1, a2, a3));
+                return angleFromForceField(a1, a2, a3);
+            }
+        }
+    }
+
+    /**
+     * Gets an Angle, using the default as set by property for whether to use idealized ring
+     * geometry (default), or based on force field.
+     *
+     * @param resName AminoAcid3 for a1-a3.
+     * @param a1 An Atom.
+     * @param a2 Another Atom.
+     * @param a3 A third Atom.
+     * @return a1-a2-a3 angle for internal geometry.
+     */
+    private static double getAngle(AminoAcid3 resName, Atom a1, Atom a2, Atom a3) {
+        if (useIdealRingGeometries) {
+            return idealGeometryAngle(resName, a1, a2, a3);
+        } else {
+            return angleFromForceField(a1, a2, a3);
+        }
+    }
+
+    /**
+     * Determines coordinates for placing an atom a1 in a trigonal-planar arrangement w.r.t atoms a2-a4.
+     *
+     * Guaranteed ideal geometry: a1-a2 bond, a1 in the a2-a4 plane.
+     * Not guaranteed: ideal a1-a2-a3 or a1-a2-a4 angles. However, any strain will be equally distributed.
+     *
+     * @param resName Residue to which a1-a4 belong.
+     * @param a1 An atom which should be in the a2-a4 plane.
+     * @param a2 An atom bonded to a1.
+     * @param a3 An atom bonded to a2.
+     * @param a4 An atom bonded to a2.
+     * @return Coordinates for placing a1.
+     */
+    private static double[] drawPlanarTrigonalAtom(AminoAcid3 resName, Atom a1, Atom a2, Atom a3, Atom a4) {
+        Bond a1_a2 = a1.getBond(a2);
+        double bondLen = a1_a2.bondType.distance;
+        double ang1 = idealGeometryAngle(resName, a1, a2, a3);
+        double ang2 = idealGeometryAngle(resName, a1, a2, a4);
+        
+        double[] xyz2 = new double[3];
+        xyz2 = a2.getXYZ(xyz2);
+        double[] xyz3 = new double[3];
+        xyz3 = a3.getXYZ(xyz3);
+        double[] xyz4 = new double[3];
+        xyz4 = a4.getXYZ(xyz4);
+
+        double[] posChiral = determineIntxyz(xyz2, bondLen, xyz3, ang1, xyz4, ang2, 1);
+        double[] negChiral = determineIntxyz(xyz2, bondLen, xyz3, ang1, xyz4, ang2, -1);
+        double[] displacement = new double[3];
+        double dispMag = 0;
+
+        for (int i = 0; i < 3; i++) {
+            // First, draw the midpoint between the positive- and negative- chiral solutions.
+            displacement[i] = 0.5 * (posChiral[i] + negChiral[i]);
+            // Second, take the displacement from a2 to this midpoint.
+            displacement[i] -= xyz2[i];
+            // Third, accumulate into the vector magnitude.
+            dispMag += (displacement[i] * displacement[i]);
+        }
+
+        dispMag = FastMath.sqrt(dispMag);
+        double extend = bondLen / dispMag;
+        assert extend > 0.999; // Should be >= 1.0, with slight machine-precision tolerance.
+
+        double[] outXYZ = new double[3];
+        for (int i = 0; i < 3; i++) {
+            displacement[i] *= extend;
+            outXYZ[i] = displacement[i] + xyz2[i];
+        }
+        return outXYZ;
+    }
+
+    /**
+     * Places an atom a1 in a trigonal-planar arrangement w.r.t atoms a2-a4.
+     *
+     * Guaranteed ideal geometry: a1-a2 bond, a1 in the a2-a4 plane.
+     * Not guaranteed: ideal a1-a2-a3 or a1-a2-a4 angles. However, any strain will be equally distributed.
+     *
+     * @param resName Residue to which a1-a4 belong.
+     * @param a1 An atom which should be in the a2-a4 plane.
+     * @param a2 An atom bonded to a1.
+     * @param a3 An atom bonded to a2.
+     * @param a4 An atom bonded to a2.
+     */
+    private static void applyPlanarTrigonalAtom(AminoAcid3 resName, Atom a1, Atom a2, Atom a3, Atom a4) {
+        a1.moveTo(drawPlanarTrigonalAtom(resName, a1, a2, a3, a4));
+    }
+
+    /**
+     * Draws CZ of Phe/Tyr/Tyd twice (from each branch of the ring), the cuts it down the middle.
+     * @param resName Residue containing CZ.
+     * @param CZ CZ to be placed.
+     * @param CG
+     * @param CE1
+     * @param CD1
+     * @param CE2
+     * @param CD2
+     * @return Mean coordinates for CZ based on internal geometry.
+     */
+    private static double[] drawCZ(AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2, Atom CD2) {
+        double bondLen = CZ.getBond(CE1).bondType.distance;
+        double ang = getAngle(resName, CZ, CE1, CD1);
+        double[] xCG = new double[3];
+        xCG = CG.getXYZ(xCG);
+
+        double[] xCE = new double[3];
+        xCE = CE1.getXYZ(xCE);
+        double[] xCD = new double[3];
+        xCD = CD1.getXYZ(xCD);
+        double[] xyz1 = determineIntxyz(xCE, bondLen, xCD, ang, xCG, 0.0, 0);
+
+        xCE = CE2.getXYZ(xCE);
+        xCD = CD2.getXYZ(xCD);
+        double[] xyz2 = determineIntxyz(xCE, bondLen, xCD, ang, xCG, 0, 0);
+
+        for (int i = 0; i < 3; i++) {
+            xyz1[i] += xyz2[i];
+            xyz1[i] *= 0.5;
+        }
+        return xyz1;
+    }
+
+    /**
+     * Moves CZ of Phe/Tyr/Tyd to a mean position determined by both branches of the ring.
+     * @param resName Residue containing CZ.
+     * @param CZ CZ to be placed.
+     * @param CG
+     * @param CE1
+     * @param CD1
+     * @param CE2
+     * @param CD2
+     */
+    private static void applyCZ(AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2, Atom CD2) {
+        CZ.moveTo(drawCZ(resName, CZ, CG, CE1, CD1, CE2, CD2));
+    }
+
+    /**
      * Applies an amino acid Rotamer.
      *
      * @param residue Residue
@@ -2210,48 +2478,30 @@ public class RotamerLibrary {
                 Bond CG_CB = CG.getBond(CB);
                 Bond CD_CG = CD1.getBond(CG);
                 Bond CE_CD = CE1.getBond(CD1);
-                Bond CZ_CE1 = CZ.getBond(CE1);
                 Bond HB_CB = HB2.getBond(CB);
-                Bond HD_CD = HD1.getBond(CD1);
-                Bond HE_CE = HE1.getBond(CE1);
-                Bond HZ_CZ = HZ.getBond(CZ);
                 double dCG_CB = CG_CB.bondType.distance;
                 double dCD_CG = CD_CG.bondType.distance;
                 double dCE_CD = CE_CD.bondType.distance;
-                double dCZ_CE1 = CZ_CE1.bondType.distance;
                 double dHB_CB = HB_CB.bondType.distance;
-                double dHD_CD = HD_CD.bondType.distance;
-                double dHE_CE = HE_CE.bondType.distance;
-                double dHZ_CZ = HZ_CZ.bondType.distance;
-                Angle CG_CB_CA = CG.getAngle(CB, CA);
-                Angle CD_CG_CB = CD1.getAngle(CG, CB);
-                Angle CE_CD_CG = CE1.getAngle(CD1, CG);
-                Angle CZ_CE1_CD1 = CZ.getAngle(CE1, CD1);
-                Angle HB_CB_CA = HB2.getAngle(CB, CA);
-                Angle HD_CD1_CG = HD1.getAngle(CD1, CG);
-                Angle HE_CE_CD = HE1.getAngle(CE1, CD1);
-                Angle HZ_CZ_CE1 = HZ.getAngle(CZ, CE1);
-                double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
-                double dCD_CG_CB = CD_CG_CB.angleType.angle[CD_CG_CB.nh];
-                double dCE_CD_CG = CE_CD_CG.angleType.angle[CE_CD_CG.nh];
-                double dCZ_CE1_CD1 = CZ_CE1_CD1.angleType.angle[CZ_CE1_CD1.nh];
-                double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
-                double dHD_CD1_CG = HD_CD1_CG.angleType.angle[HD_CD1_CG.nh];
-                double dHE_CE_CD = HE_CE_CD.angleType.angle[HE_CE_CD.nh];
-                double dHZ_CZ_CE1 = HZ_CZ_CE1.angleType.angle[HZ_CZ_CE1.nh];
+
+                double dCG_CB_CA = getAngle(name, CG, CB, CA);
+                double dCD_CG_CB = getAngle(name, CD1, CG, CB);
+                double dCE_CD_CG = getAngle(name, CE1, CD1, CG);
+                double dHB_CB_CA = getAngle(name, HB2, CB, CA);
+
                 intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
                 intxyz(CD1, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2, 0);
-                intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CD1, 120.0, 1);
+                intxyz(CD2, CG, dCD_CG, CB, dCD_CG_CB, CA, rotamer.chi2 + 180, 0);
                 intxyz(CE1, CD1, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
                 intxyz(CE2, CD2, dCE_CD, CG, dCE_CD_CG, CB, 180, 0);
-                intxyz(CZ, CE1, dCZ_CE1, CD1, dCZ_CE1_CD1, CG, 0.0, 0);
+                applyCZ(name, CZ, CG, CE1, CD1, CE2, CD2);
                 intxyz(HB2, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, 1);
                 intxyz(HB3, CB, dHB_CB, CA, dHB_CB_CA, CG, 109.4, -1);
-                intxyz(HD1, CD1, dHD_CD, CG, dHD_CD1_CG, CE1, 120.0, 1);
-                intxyz(HD2, CD2, dHD_CD, CG, dHD_CD1_CG, CE2, 120.0, 1);
-                intxyz(HE1, CE1, dHE_CE, CD1, dHE_CE_CD, CZ, 120.0, 1);
-                intxyz(HE2, CE2, dHE_CE, CD2, dHE_CE_CD, CZ, 120.0, 1);
-                intxyz(HZ, CZ, dHZ_CZ, CE1, dHZ_CZ_CE1, CE2, 120.0, 1);
+                applyPlanarTrigonalAtom(name, HD1, CD1, CG, CE1);
+                applyPlanarTrigonalAtom(name, HD2, CD2, CG, CE2);
+                applyPlanarTrigonalAtom(name, HE1, CE1, CD1, CZ);
+                applyPlanarTrigonalAtom(name, HE2, CE2, CD2, CZ);
+                applyPlanarTrigonalAtom(name, HZ, CZ, CE1, CE2);
                 break;
             }
             case PRO: {
