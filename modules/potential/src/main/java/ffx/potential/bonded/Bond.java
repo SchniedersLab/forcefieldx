@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import ffx.numerics.AtomicDoubleArray;
+import ffx.numerics.VectorMath;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.BondType;
 import static ffx.numerics.VectorMath.angle;
@@ -619,6 +620,19 @@ public class Bond extends BondedTerm {
             cy1tg.setTransform(cy1t3d);
             cy2tg.setTransform(cy2t3d);
         }
+    }
+
+    /**
+     * Gets the current distance between the two Atoms in this Bond.
+     *
+     * @return Current distance.
+     */
+    public double getCurrentDistance() {
+        double[] x1 = new double[3];
+        x1 = atoms[0].getXYZ(x1);
+        double[] x2 = new double[3];
+        x2 = atoms[1].getXYZ(x2);
+        return VectorMath.dist(x1, x2);
     }
 
     /**
