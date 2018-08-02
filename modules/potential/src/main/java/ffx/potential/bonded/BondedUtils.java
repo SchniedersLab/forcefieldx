@@ -52,6 +52,8 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import org.apache.commons.math3.util.FastMath;
+
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.norm;
 import static ffx.numerics.VectorMath.r;
@@ -80,122 +82,13 @@ public class BondedUtils {
      * @param chiral a int.
      */
     public static void intxyz(Atom atom, Atom ia, double bond, Atom ib, double angle1, Atom ic, double angle2, int chiral) {
-        angle1 = toRadians(angle1);
-        angle2 = toRadians(angle2);
-        double zcos0 = cos(angle1);
-        double zcos1 = cos(angle2);
-        double zsin0 = sin(angle1);
-        double zsin1 = sin(angle2);
-        // No partners
-        if (ia == null) {
-            atom.moveTo(0.0d, 0.0d, 0.0d);
-        } else if (ib == null) {
-            double xa[] = new double[3];
-            // One partner - place on the z-axis
-            ia.getXYZ(xa);
-            xa[2] += bond;
-            atom.moveTo(xa);
-        } else if (ic == null) {
-            // Two partners - place in the xz-plane
-            double xa[] = new double[3];
-            double xb[] = new double[3];
-            double xab[] = new double[3];
-            double x[] = new double[3];
-            ia.getXYZ(xa);
-            ib.getXYZ(xb);
-            diff(xa, xb, xab);
-            double rab = r(xab);
-            norm(xab, xab);
-            double cosb = xab[2];
-            double sinb = sqrt(xab[0] * xab[0] + xab[1] * xab[1]);
-            double cosg, sing;
-            if (sinb == 0.0d) {
-                cosg = 1.0d;
-                sing = 0.0d;
-            } else {
-                cosg = xab[1] / sinb;
-                sing = xab[0] / sinb;
-            }
-            double xtmp = bond * zsin0;
-            double ztmp = rab - bond * zcos0;
-            x[0] = xb[0] + xtmp * cosg + ztmp * sing * sinb;
-            x[1] = xb[1] - xtmp * sing + ztmp * cosg * sinb;
-            x[2] = xb[2] + ztmp * cosb;
-            atom.moveTo(x);
-        } else if (chiral == 0) {
-            double xa[] = new double[3];
-            double xb[] = new double[3];
-            double xc[] = new double[3];
-            double xab[] = new double[3];
-            double xbc[] = new double[3];
-            double xt[] = new double[3];
-            double xu[] = new double[3];
-            double x[] = new double[3];
-            // General case - with a dihedral
-            ia.getXYZ(xa);
-            ib.getXYZ(xb);
-            ic.getXYZ(xc);
-            diff(xa, xb, xab);
-            norm(xab, xab);
-            diff(xb, xc, xbc);
-            norm(xbc, xbc);
-            xt[0] = xab[2] * xbc[1] - xab[1] * xbc[2];
-            xt[1] = xab[0] * xbc[2] - xab[2] * xbc[0];
-            xt[2] = xab[1] * xbc[0] - xab[0] * xbc[1];
-            double cosine = xab[0] * xbc[0] + xab[1] * xbc[1] + xab[2] * xbc[2];
-            double sine = sqrt(max(1.0d - cosine * cosine, eps));
-            if (abs(cosine) >= 1.0d) {
-                logger.warning("Undefined Dihedral");
-            }
-            scalar(xt, 1.0d / sine, xt);
-            xu[0] = xt[1] * xab[2] - xt[2] * xab[1];
-            xu[1] = xt[2] * xab[0] - xt[0] * xab[2];
-            xu[2] = xt[0] * xab[1] - xt[1] * xab[0];
-            x[0] = xa[0] + bond * (xu[0] * zsin0 * zcos1 + xt[0] * zsin0 * zsin1 - xab[0] * zcos0);
-            x[1] = xa[1] + bond * (xu[1] * zsin0 * zcos1 + xt[1] * zsin0 * zsin1 - xab[1] * zcos0);
-            x[2] = xa[2] + bond * (xu[2] * zsin0 * zcos1 + xt[2] * zsin0 * zsin1 - xab[2] * zcos0);
-            atom.moveTo(x);
-        } else if (abs(chiral) == 1) {
-            double xa[] = new double[3];
-            double xb[] = new double[3];
-            double xc[] = new double[3];
-            double xba[] = new double[3];
-            double xac[] = new double[3];
-            double xt[] = new double[3];
-            double x[] = new double[3];
-            ia.getXYZ(xa);
-            ib.getXYZ(xb);
-            ic.getXYZ(xc);
-            diff(xb, xa, xba);
-            norm(xba, xba);
-            diff(xa, xc, xac);
-            norm(xac, xac);
-            xt[0] = xba[2] * xac[1] - xba[1] * xac[2];
-            xt[1] = xba[0] * xac[2] - xba[2] * xac[0];
-            xt[2] = xba[1] * xac[0] - xba[0] * xac[1];
-            double cosine = xba[0] * xac[0] + xba[1] * xac[1] + xba[2] * xac[2];
-            double sine2 = max(1.0d - cosine * cosine, eps);
-            if (abs(cosine) >= 1.0d) {
-                logger.warning("Defining Atom Colinear");
-            }
-            double a = (-zcos1 - cosine * zcos0) / sine2;
-            double b = (zcos0 + cosine * zcos1) / sine2;
-            double c = (1.0d + a * zcos1 - b * zcos0) / sine2;
-            if (c > eps) {
-                c = chiral * sqrt(c);
-            } else if (c < -eps) {
-                c = sqrt((a * xac[0] + b * xba[0]) * (a * xac[0] + b * xba[0]) + (a * xac[1] + b * xba[1]) * (a * xac[1] + b * xba[1]) + (a * xac[2] + b * xba[2]) * (a * xac[2] + b * xba[2]));
-                a /= c;
-                b /= c;
-                c = 0.0d;
-            } else {
-                c = 0.0d;
-            }
-            x[0] = xa[0] + bond * (a * xac[0] + b * xba[0] + c * xt[0]);
-            x[1] = xa[1] + bond * (a * xac[1] + b * xba[1] + c * xt[1]);
-            x[2] = xa[2] + bond * (a * xac[2] + b * xba[2] + c * xt[2]);
-            atom.moveTo(x);
-        }
+        double[] xa = new double[3];
+        xa = (ia == null) ? null : ia.getXYZ(xa);
+        double[] xb = new double[3];
+        xb = (ib == null) ? null : ib.getXYZ(xb);
+        double[] xc = new double[3];
+        xc = (ic == null) ? null : ic.getXYZ(xc);
+        atom.moveTo(determineIntxyz(xa, bond, xb, angle1, xc, angle2, chiral));
     }
 
     /**
@@ -204,16 +97,52 @@ public class BondedUtils {
      * atoms, relying solely upon coordinates. Passed arrays are copied into
      * local arrays to avoid any over-writing of the passed arrays.
      *
+     * The chiral argument is 0 if angle2 is a dihedral.
+     * Else, if angle2 is the atom-ia-ic angle:
+     * -1 indicates left-hand-rule placement.
+     * +1 indicates right-hand-rule placement.
+     * +3 indicates trigonal planar placement.
+     *
+     * Chiral +3 replaces the angle1 and angle2 constraints with a planarity
+     * constraint, and minimized, equipartitioned deviation from angle1 and angle2.
+     *
      * @param ia a double[] of atomic coordinates.
      * @param bond a double.
      * @param ib a double[] of atomic coordinates.
      * @param angle1 a double.
      * @param ic a double[] of atomic coordinates.
      * @param angle2 a double.
-     * @param chiral a int.
+     * @param chiral 0, 1, -1, or 3.
      * @return A double[] with XYZ coordinates at which an atom would be placed.
      */
     public static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1, double[] ic, double angle2, int chiral) {
+        if (chiral == 3) {
+            double[] negChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, -1);
+            double[] posChiral = determineIntxyz(ia, bond, ib, angle1, ic, angle2, 1);
+            double[] displacement = new double[3];
+            double dispMag = 0;
+
+            for (int i = 0; i < 3; i++) {
+                // First, draw the midpoint between the positive- and negative- chiral solutions.
+                displacement[i] = 0.5 * (posChiral[i] + negChiral[i]);
+                // Second, take the displacement from a2 to this midpoint.
+                displacement[i] -= ia[i];
+                // Third, accumulate into the vector magnitude.
+                dispMag += (displacement[i] * displacement[i]);
+            }
+
+            dispMag = FastMath.sqrt(dispMag);
+            double extend = bond / dispMag;
+            assert extend > 0.999; // Should be >= 1.0, with slight machine-precision tolerance.
+
+            double[] outXYZ = new double[3];
+            for (int i = 0; i < 3; i++) {
+                displacement[i] *= extend;
+                outXYZ[i] = displacement[i] + ia[i];
+            }
+            return outXYZ;
+        }
+
         angle1 = toRadians(angle1);
         angle2 = toRadians(angle2);
         double zcos0 = cos(angle1);

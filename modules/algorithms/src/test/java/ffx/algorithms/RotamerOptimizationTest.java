@@ -85,12 +85,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         false, // Use 3-body Energies.
                         true, // Use Original Rotamers.
                         true, // Do Overall Opt.
-                        -203.10632181492687, // Expected Energy.
+                        -211.88384480357658, // Expected Energy.
                         true, // Do Self-Energy Opt.
-                        -203.10632181492687, // Expected Self-Energy.
+                        -211.88384480357658, // Expected Self-Energy.
                         true, // Do Pair-Energy Opt.
                         1, // Pair residue
-                        1018.8163922682276, // Expected Pair-Energy.
+                        1000.5100013039976, // Expected Pair-Energy.
                         false, // Do Trimer-Energy Opt.
                         1, // Trimer residue 1.
                         2, // Trimer residue 2.
@@ -107,12 +107,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         false, // Use 3-body Energies.
                         true, // Use Original Rotamers.
                         true, // Do Overall Opt.
-                        -203.10632181492684, // Expected Energy.
+                        -211.88384480357658, // Expected Energy.
                         true, // Do Self-Energy Opt.
-                        -203.10632181492687, // Expected Self-Energy.
+                        -211.88384480357658, // Expected Self-Energy.
                         true, // Do Pair-Energy Opt.
                         1, // Pair residue
-                        -186.71062663844978, // Expected Pair-Energy.
+                        -197.85885923519842, // Expected Pair-Energy.
                         false, // Do Trimer-Energy Opt.
                         1, // Trimer residue 1.
                         2, // Trimer residue 2.
@@ -129,12 +129,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         false, // Use 3-body Energies.
                         true, // Use Original Rotamers.
                         true, // Do Overall Opt.
-                        -203.10632181492684, // Expected Energy.
+                        -211.88384480357658, // Expected Energy.
                         true, // Do Self-Energy Opt.
-                        -203.10632181492687, // Expected Self-Energy.
+                        -211.88384480357658, // Expected Self-Energy.
                         true, // Do Pair-Energy Opt.
                         1, // Pair residue
-                        -186.71062663844978, // Expected Pair-Energy.
+                        -197.85885923519842, // Expected Pair-Energy.
                         false, // Do Trimer-Energy Opt.
                         1, // Trimer residue 1.
                         2, // Trimer residue 2.
@@ -151,16 +151,16 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         true, // Use 3-body Energies.
                         true, // Use Original Rotamers.
                         true, // Do Overall Opt.
-                        -203.10632181492687, // Expected Energy.
+                        -211.88384480357658, // Expected Energy.
                         true, // Do Self-Energy Opt.
-                        -203.10632181492687, // Expected Self-Energy.
+                        -211.88384480357658, // Expected Self-Energy.
                         true, // Do Pair-Energy Opt.
                         1, // Pair residue
-                        -186.71062663844978, // Expected Pair-Energy.
+                        -197.85885923519842, // Expected Pair-Energy.
                         true, // Do Trimer-Energy Opt.
                         1, // Trimer residue 1.
                         2, // Trimer residue 2.
-                        -197.51830687083316, // Expected trimer energy.
+                        -189.17343465853008, // Expected trimer energy.
                         1.0e-3 // Energy Tolerance.
                 },
                 {"Chignolin Direct with Orig Rot - No Pruning (DEE)",
@@ -173,12 +173,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         false, // Use 3-body Energies.
                         true, // Use Original Rotamers.
                         true, // Do Overall Opt.
-                        -203.10632181492687, // Expected Energy.
+                        -211.88384480357658, // Expected Energy.
                         true, // Do Self-Energy Opt.
-                        -203.10632181492687, // Expected Self-Energy.
+                        -211.88384480357658, // Expected Self-Energy.
                         true, // Do Pair-Energy Opt.
                         1, // Pair residue
-                        1018.8163922682276, // Expected Pair-Energy.
+                        1000.5100013039976, // Expected Pair-Energy.
                         false, // Do Trimer-Energy Opt.
                         1, // Trimer residue 1.
                         2, // Trimer residue 2.
@@ -195,12 +195,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         false, // Use 3-body Energies.
                         true, // Use Original Rotamers.
                         true, // Do Overall Opt.
-                        -203.10632181492684, // Expected Energy.
+                        -211.88384480357658, // Expected Energy.
                         true, // Do Self-Energy Opt.
-                        -203.10632181492687, // Expected Self-Energy.
+                        -211.88384480357658, // Expected Self-Energy.
                         true, // Do Pair-Energy Opt.
                         1, // Pair residue
-                        -186.71062663844978, // Expected Pair-Energy.
+                        -197.85885923519842, // Expected Pair-Energy.
                         false, // Do Trimer-Energy Opt.
                         1, // Trimer residue 1.
                         2, // Trimer residue 2.
@@ -217,12 +217,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         false, // Use 3-body Energies.
                         true, // Use Original Rotamers.
                         true, // Do Overall Opt.
-                        -203.10632181492684, // Expected Energy.
+                        -211.88384480357658, // Expected Energy.
                         true, // Do Self-Energy Opt.
-                        -203.10632181492687, // Expected Self-Energy.
+                        -211.88384480357658, // Expected Self-Energy.
                         true, // Do Pair-Energy Opt.
                         1, // Pair residue
-                        -186.71062663844978, // Expected Pair-Energy.
+                        -197.85885923519842, // Expected Pair-Energy.
                         false, // Do Trimer-Energy Opt.
                         1, // Trimer residue 1.
                         2, // Trimer residue 2.
@@ -239,16 +239,16 @@ public class RotamerOptimizationTest extends PJDependentTest {
                         true, // Use 3-body Energies.
                         true, // Use Original Rotamers.
                         true, // Do Overall Opt.
-                        -203.10632181492687, // Expected Energy.
+                        -211.88384480357658, // Expected Energy.
                         true, // Do Self-Energy Opt.
-                        -203.10632181492687, // Expected Self-Energy.
+                        -211.88384480357658, // Expected Self-Energy.
                         true, // Do Pair-Energy Opt.
                         1, // Pair residue
-                        -186.71062663844978, // Expected Pair-Energy.
+                        -197.85885923519842, // Expected Pair-Energy.
                         true, // Do Trimer-Energy Opt.
                         1, // Trimer residue 1.
                         2, // Trimer residue 2.
-                        -197.51830687083316, // Expected trimer energy.
+                        -189.17343465853008, // Expected trimer energy.
                         1.0e-3 // Energy Tolerance.
                 }
 

@@ -106,7 +106,7 @@ public class ManyBodyTest extends PJDependentTest {
 
         // Evaluate the script.
         manyBody.run();
-        double expectedTotalPotential = -208.15485392;
+        double expectedTotalPotential = -219.8836543404126;
         
         
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
@@ -144,7 +144,7 @@ public class ManyBodyTest extends PJDependentTest {
         // Evaluate the script.
         manyBody.run();
         
-        double expectedTotalPotential = -208.72994232;
+        double expectedTotalPotential = -219.8836543404126;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
@@ -201,7 +201,7 @@ public class ManyBodyTest extends PJDependentTest {
         // Evaluate the script.
         manyBody.run();
 
-        double expectedTotalPotential = -213.00732933;
+        double expectedTotalPotential = -203.72294133789995;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
