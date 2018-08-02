@@ -269,7 +269,6 @@ public class MultiDynamicsOptions {
         RotamerOptimization ropt = new RotamerOptimization(mola, pot, alist);
 
         ropt.setThreeBodyEnergy(false);
-        ropt.setVerboseEnergies(true);
         if (System.getProperty("ro-ensembleNumber") == null && System.getProperty("ro-ensembleEnergy") == null) {
             logger.info(String.format(" Setting ensemble to default of number of walkers %d", worldSize));
             ropt.setEnsemble(worldSize);
