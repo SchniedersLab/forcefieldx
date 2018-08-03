@@ -199,11 +199,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Flag to control use of 3-body terms.
      */
-    protected boolean threeBodyTerm = true;
-    /**
-     * Flag to set three-body energies to zero outside of a cutoff.
-     */
-    private boolean threeBodyCutoff = true;
+    protected boolean threeBodyTerm = false;
     /**
      * Three-body cutoff distance.
      */
@@ -214,10 +210,6 @@ public class RotamerOptimization implements Terminatable {
      */
     //protected double threeBodyEnergy[][][][][][];
     protected Object2DoubleMap<IntegerKeyset> threeBodyEnergies;
-    /**
-     * Quad cutoff flag.
-     */
-    private boolean quadCutoff = true;
     /**
      * Quad cutoff distance.
      */
@@ -279,7 +271,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * In sliding window, whether to revert an unfavorable change.
      */
-    private boolean revert = false;
+    private boolean revert = true;
     /**
      * The distance that the distance matrix checks for.
      */
@@ -606,7 +598,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Use original side-chain coordinates as a rotamer for each residue.
      */
-    private boolean addOrigRot = false;
+    private boolean addOrigRot = true;
     /**
      * Flag to indicate use of MC optimization.
      */
@@ -656,7 +648,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Default value for maxRotCheckDepth.
      */
-    private int defaultMaxRotCheckDepth = 2;
+    private int defaultMaxRotCheckDepth = 1;
     /**
      * Maximum depth to check if a rotamer can be eliminated.
      */
@@ -798,7 +790,7 @@ public class RotamerOptimization implements Terminatable {
             double value = Double.parseDouble(quadCutoffDist);
             this.quadCutoffDist = value;
             if (this.quadCutoffDist < 0) {
-                quadCutoff = false;
+                logger.info(format("Warning: quadCuoffDist should not be less than 0."));
             }
             logger.info(format(" (KEY) quadCutoffDist: %.2f", this.quadCutoffDist));
         }
@@ -854,7 +846,7 @@ public class RotamerOptimization implements Terminatable {
             double value = Double.parseDouble(threeBodyCutoffDist);
             this.threeBodyCutoffDist = value;
             if (this.threeBodyCutoffDist < 0) {
-                threeBodyCutoff = false;
+                logger.info(format("Warning: threeBodyCuoffDist should not be less than 0."));
             }
             logger.info(format(" (KEY) threeBodyCutoffDist: %.2f", this.threeBodyCutoffDist));
         }
@@ -2733,15 +2725,6 @@ public class RotamerOptimization implements Terminatable {
     public void setNucleicPruningFactor(double nucleicPruningFactor) {
         this.nucleicPruningFactor = nucleicPruningFactor;
         this.nucleicPairsPruningFactor = ((1.0 + nucleicPruningFactor) / 2);
-    }
-
-    /**
-     * Set the verbose energy flag.
-     *
-     * @param verboseEnergies
-     */
-    public void setVerboseEnergies(Boolean verboseEnergies) {
-        this.verboseEnergies = verboseEnergies;
     }
 
     /**
@@ -7066,7 +7049,7 @@ public class RotamerOptimization implements Terminatable {
     public void setThreeBodyCutoffDist(double dist) {
         this.threeBodyCutoffDist = dist;
         if (threeBodyCutoffDist < 0) {
-            threeBodyCutoff = false;
+            logger.info(format("Warning: threeBodyCutoffDist should not be less than 0."));
         }
     }
 
@@ -9463,7 +9446,7 @@ public class RotamerOptimization implements Terminatable {
                         fourBodyEnergy = Double.NaN;
                         logger.info(format(" Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d:   set to NaN at %13.6f Ang (%s Ang by residue)  < %5.3f Ang.",
                                 residues[i], ri, residues[j].toFormattedString(false, true), rj, residues[k].toFormattedString(false, true), rk, residues[l].toFormattedString(false, true), rl, minDist, resDistString, superpositionThreshold));
-                    } //else if (quadCutoff && (dist < quadCutoffDist)) {
+                    } //else if (dist < quadCutoffDist) {
                     else if (checkQuadDistThreshold(indexI, ri, indexJ, rj, indexK, rk, indexL, rl)) {
                         // Set the 4-body energy to 0.0 for separation distances larger than the 4-body cutoff.
                         fourBodyEnergy = 0.0;

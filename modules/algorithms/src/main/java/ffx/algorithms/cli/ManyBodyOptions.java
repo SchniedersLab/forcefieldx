@@ -171,13 +171,6 @@ public class ManyBodyOptions {
     String energyRestart = "none";
 
     /**
-     * -v or --verbose Prints beginning and default-conformation energies.
-     */
-    @Option(names = {"-v", "--verbose"},
-            description = "Prints beginning and default-conformation energies.")
-    boolean verbose = false;
-
-    /**
      * -o or --noOriginal Do not include starting coordinates as their own rotamer.
      */
     @Option(names = {"-O", "--noOriginal"},
@@ -341,9 +334,15 @@ public class ManyBodyOptions {
          */
         // Internal machinery indexed 0 to (n-1)
         if (start < 0 && finish < 0 && all < 0){
-            allStartResID = 1;
-            boxStart = start - 1;
-            boxEnd = finish - 1;
+            if (!listResidues.equalsIgnoreCase("none")) {
+                allStartResID = -1;
+                boxStart = 0;
+                boxEnd = -1;
+            } else {
+                allStartResID = 1;
+                boxStart = start - 1;
+                boxEnd = finish - 1;
+            }
         }
         else {
             allStartResID = all;
@@ -375,7 +374,6 @@ public class ManyBodyOptions {
                 }
             }
         }
-
 
         /**
          * Box optimization options.
@@ -428,7 +426,7 @@ public class ManyBodyOptions {
 
         List<String> resList = new ArrayList<>();
         if (!listResidues.equalsIgnoreCase("none")) {
-            String tok[] = listResidues.split("\\.");
+            String tok[] = listResidues.split(",");
             for (String t : tok) {
                 logger.info(" Adding " + t);
                 resList.add(t);
@@ -476,7 +474,13 @@ public class ManyBodyOptions {
                 logger.info("\n Evaluating rotamers for all residues beginning at " + allStartResID);
             }
         } else {
-            if (allStartResID == -1) {
+            if (!listResidues.equalsIgnoreCase("none")) {
+                String info = "\n Evaluating rotamers for boxes with residues ";
+                for (String i : resList) {
+                    info += String.format("%s, ", i);
+                }
+                logger.info(info);
+            } else if (allStartResID == -1) {
                 logger.info("\n Evaluating rotamers for boxes " + (boxStart + 1) + " to " + (boxEnd + 1));
             } else {
                 logger.info("\n Evaluating rotamers for all boxes beginning at " + (boxStart + 1));
@@ -488,7 +492,7 @@ public class ManyBodyOptions {
 
         List<String> resList = new ArrayList<>();
         if (!listResidues.equalsIgnoreCase("none")) {
-            String tok[] = listResidues.split("\\.");
+            String tok[] = listResidues.split(",");
             for (String t : tok) {
                 logger.info(" Adding " + t);
                 resList.add(t);
@@ -558,34 +562,94 @@ public class ManyBodyOptions {
                 rotamerOptimization.setResidues(start, finish);
             }
         } else {
+            ArrayList<Residue> residueList = new ArrayList<>();
+            Polymer[] polymers = activeAssembly.getChains();
             boolean ignoreNA = false;
             String ignoreNAProp = System.getProperty("ignoreNA");
             if (ignoreNAProp != null && ignoreNAProp.equalsIgnoreCase("true")) {
                 ignoreNA = true;
             }
-            ArrayList<Residue> residueList = new ArrayList<>();
-            Polymer[] polymers = activeAssembly.getChains();
-            int nPolymers = polymers.length;
-            for (int p = 0; p < nPolymers; p++) {
-                Polymer polymer = polymers[p];
-                ArrayList<Residue> residues = polymer.getResidues();
-                int nResidues = residues.size();
-                for (int i = 0; i < nResidues; i++) {
-                    Residue residue = residues.get(i);
-                    if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
-                        continue;
-                    }
-                    Rotamer[] rotamers = residue.getRotamers(rLib);
-                    if (rotamers != null) {
-                        int nrot = rotamers.length;
-                        if (nrot == 1) {
-                            RotamerLibrary.applyRotamer(residue, rotamers[0]);
-                        } else if (nrot > 1) {
-                            residueList.add(residue);
+            if (!listResidues.equalsIgnoreCase("none")) {
+                int n = 0;
+                for (String s : resList) {
+                    Character chainID = s.charAt(0);
+                    int i = Integer.parseInt(s.substring(1));
+                    for (Polymer p : polymers) {
+                        if (p.getChainID() == chainID) {
+                            List<Residue> rs = p.getResidues();
+                            for (Residue r : rs) {
+                                if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+                                    continue;
+                                }
+                                if (r.getResidueNumber() == i) {
+                                    residueList.add(r);
+                                    Rotamer[] rotamers = r.getRotamers(rLib);
+                                    if (rotamers != null) {
+                                        n++;
+                                    }
+                                }
+                            }
                         }
                     }
-                    counter++;
                 }
+                rotamerOptimization.setResiduesIgnoreNull(residueList);
+                if (n < 1) {
+                    return;
+                }
+            } else {
+                for (Polymer p : polymers) {
+                    ArrayList<Residue> rs = p.getResidues();
+                    for (Residue r : rs) {
+                        if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+                            continue;
+                        }
+                        Rotamer[] rotamers = r.getRotamers(rLib);
+                        if (rotamers != null) {
+                            int nrot = rotamers.length;
+                            if (nrot == 1) {
+                                RotamerLibrary.applyRotamer(r, rotamers[0]);
+                            } else if (nrot > 1) {
+                                residueList.add(r);
+                            }
+                        }
+                        counter++;
+                    }
+                }
+
+//            boolean ignoreNA = false;
+//            String ignoreNAProp = System.getProperty("ignoreNA");
+//            if (ignoreNAProp != null && ignoreNAProp.equalsIgnoreCase("true")) {
+//                ignoreNA = true;
+//            }
+//            ArrayList<Residue> residueList = new ArrayList<>();
+//            Polymer[] polymers = activeAssembly.getChains();
+//            int nPolymers = polymers.length;
+//            for (int p = 0; p < nPolymers; p++) {
+//                Polymer polymer = polymers[p];
+//                ArrayList<Residue> residues = polymer.getResidues();
+//
+//                System.out.print("\nresidues:\n");
+//
+//                int nResidues = residues.size();
+//                for (int i = 0; i < nResidues; i++) {
+//                    Residue residue = residues.get(i);
+//
+//                    System.out.print(residue+"\n");
+//
+//                    if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
+//                        continue;
+//                    }
+//                    Rotamer[] rotamers = residue.getRotamers(rLib);
+//                    if (rotamers != null) {
+//                        int nrot = rotamers.length;
+//                        if (nrot == 1) {
+//                            RotamerLibrary.applyRotamer(residue, rotamers[0]);
+//                        } else if (nrot > 1) {
+//                            residueList.add(residue);
+//                        }
+//                    }
+//                    counter++;
+//                }
             }
             rotamerOptimization.setResidues(residueList);
             rotamerOptimization.setBoxStart(boxStart);
@@ -607,7 +671,6 @@ public class ManyBodyOptions {
         rotamerOptimization.setRevert(revert);
         rotamerOptimization.setPruning(prune);
         rotamerOptimization.setDistanceCutoff(cutoff);
-        rotamerOptimization.setVerboseEnergies(verbose);
         boolean monteCarloBool = false;
         if (monteCarlo > 1) {
             monteCarloBool = true;
