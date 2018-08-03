@@ -148,7 +148,7 @@
         </dependency>
         <dependency>
             <groupId>simtk</groupId>
-            <artifactId>openmm</artifactId>
+            <artifactId>openmm-fat</artifactId>
             <version>${openmm.version}</version>
         </dependency>
     </dependencies>
