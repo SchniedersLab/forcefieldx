@@ -1109,17 +1109,21 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
     @Override
     public boolean destroy() {
-        double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN};
-        DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
-        try {
-            logger.fine(" Sending the termination message.");
-            world.send(rank, killBuf);
-            logger.fine(" Termination message was sent successfully.");
-            logger.fine(String.format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
-        } catch (Exception ex) {
-            String message = String.format(" Asynchronous Multiwalker OSRW termination signal " +
-                    "failed to be sent for process %d.", rank);
-            logger.log(Level.SEVERE, message, ex);
+        if (receiveThread != null && receiveThread.isAlive()) {
+            double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN};
+            DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
+            try {
+                logger.fine(" Sending the termination message.");
+                world.send(rank, killBuf);
+                logger.fine(" Termination message was sent successfully.");
+                logger.fine(String.format(" Receive thread alive %b status %s", receiveThread.isAlive(), receiveThread.getState()));
+            } catch (Exception ex) {
+                String message = String.format(" Asynchronous Multiwalker OSRW termination signal " +
+                        "failed to be sent for process %d.", rank);
+                logger.log(Level.SEVERE, message, ex);
+            }
+        } else {
+            logger.fine(" ReceiveThread was either not initialized, or is not alive. This is the case for the Histogram script.");
         }
         return potential.destroy();
     }
