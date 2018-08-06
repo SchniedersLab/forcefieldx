@@ -92,6 +92,9 @@ public class JobBackend
     private int frontendPort;
     private String backendHost;
 
+    // Logging
+    FileHandler fileHandler = null;
+
     // Timer thread for lease renewals and expirations.
     private TimerThread myLeaseTimerThread;
 
@@ -149,8 +152,6 @@ public class JobBackend
         TERMINATING
     }
 
-    ;
-
     // Error message if job canceled, or null if job finished normally.
     private String myCancelMessage;
 
@@ -207,10 +208,10 @@ public class JobBackend
                     defaultLogger.removeHandler(h);
                 }
 
-                // Create a FileHandler logger with a SimpleFormatter.
+                // Create a FileHandler that logs messages with a SimpleFormatter.
                 File file = new File(Integer.toString(this.rank));
                 file.mkdir();
-                FileHandler fileHandler = new FileHandler(file.getAbsolutePath() + "/backend.log");
+                fileHandler = new FileHandler(file.getAbsolutePath() + "/backend.log");
                 fileHandler.setFormatter(new SimpleFormatter());
                 logger.addHandler(fileHandler);
                 logger.setLevel(Level.INFO);
@@ -1067,13 +1068,19 @@ public class JobBackend
         // theJobBackend.getClassLoader());
         Method mainmethod = mainclass.getMethod("main", String[].class);
 
-        logger.log(Level.INFO, " Invoking main method: " + mainmethod.toString());
+        logger.log(Level.INFO, " Preparing to invoke main method: " + mainmethod.toString());
         for (String arg : theJobBackend.getArgs()) {
             logger.log(Level.INFO, " Arg: " + arg);
         }
+        logger.log(Level.INFO, " Backend logging finished.");
+        
+        // Close down the FileHandler if it exists.
+        if (theJobBackend.fileHandler != null) {
+            logger.setLevel(Level.OFF);
+            theJobBackend.fileHandler.close();
+        }
 
         mainmethod.invoke(null, (Object) theJobBackend.getArgs());
-        logger.log(Level.INFO, " Main method returned.");
 
         // After the main() method returns and all non-daemon threads have
         // terminated, the process will exit, and the shutdown hook will call

@@ -50,6 +50,8 @@ import ffx.crystal.CrystalPotential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.cli.AlchemicalOptions;
+import ffx.algorithms.MonteCarloOSRW;
+import ffx.algorithms.thermostats.ThermostatEnum;
 
 import picocli.CommandLine;
 
@@ -79,26 +81,45 @@ public class OSRWOptions {
     private double biasMag = 0.05;
 
     /**
-     * --tp or --temperingParam sets the Dama et al tempering rate parameter,
-     * in multiples of kBT.
+     * --tp or --temperingParam sets the Dama et al tempering rate parameter, in
+     * multiples of kBT.
      */
     @CommandLine.Option(names = {"--tp", "--temperingParam"}, paramLabel = "8.0", description = "Dama et al tempering rate parameter in multiples of kBT")
     private double temperParam = 8.0;
+
+    /**
+     * --mc or --monteCarlo sets the Monte Carlo scheme for OSRW.
+     */
+    @CommandLine.Option(names = {"--mc", "monteCarlo"}, description = "Monte Carlo OSRW")
+    private boolean mc = false;
+
+    /**
+     * --mcmD or --mcTraj sets the number of steps to take for each MD
+     * trajectory for MCOSRW.
+     */
+    @CommandLine.Option(names = {"--mcMD", "--mcTraj"}, paramLabel = "100", description = "Number of dynamics steps to take for each MD trajectory for Monte Carlo OSRW")
+    private int mcMD = 100;
+
+    /**
+     * --mcL or --mcLambdaStd sets the standard deviation for lambda.
+     */
+    @CommandLine.Option(names = {"--mcL", "--mcLambdaStd"}, paramLabel = "0.1", description = "Standard deviation for lambda move")
+    private double mcL = 0.1;
 
     public double getTemperParam() {
         return temperParam;
     }
 
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
-                                                MolecularAssembly firstAssembly, DynamicsOptions dynamics,
-                                                MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
+            MolecularAssembly firstAssembly, DynamicsOptions dynamics,
+            MultiDynamicsOptions mdo, ThermodynamicsOptions thermo, AlgorithmListener aListener) {
         return constructOSRW(potential, lambdaRestart, histogramRestart, firstAssembly, null, dynamics, mdo, thermo, aListener);
     }
 
     public TransitionTemperedOSRW constructOSRW(CrystalPotential potential, File lambdaRestart, File histogramRestart,
-                                                MolecularAssembly firstAssembly, Configuration addedProperties,
-                                                DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
-                                                AlgorithmListener aListener) {
+            MolecularAssembly firstAssembly, Configuration addedProperties,
+            DynamicsOptions dynamics, MultiDynamicsOptions mdo, ThermodynamicsOptions thermo,
+            AlgorithmListener aListener) {
 
         LambdaInterface linter = (LambdaInterface) potential;
         CompositeConfiguration allProperties = new CompositeConfiguration(firstAssembly.getProperties());
@@ -120,8 +141,9 @@ public class OSRWOptions {
     }
 
     /**
-     * Applies relevant options to a TransitionTemperedOSRW, and returns either the TTOSRW
-     * object or something that wraps the TTOSRW (such as a Barostat).
+     * Applies relevant options to a TransitionTemperedOSRW, and returns either
+     * the TTOSRW object or something that wraps the TTOSRW (such as a
+     * Barostat).
      *
      * @param ttOSRW Transition-Tempered Orthogonal Space Random Walk.
      * @param firstAssembly Primary assembly in ttOSRW.
@@ -134,8 +156,8 @@ public class OSRWOptions {
      * @return TTOSRW, possibly wrapped.
      */
     public CrystalPotential applyAllOSRWOptions(TransitionTemperedOSRW ttOSRW, MolecularAssembly firstAssembly,
-                                                DynamicsOptions dynamics, LambdaParticleOptions lpo, AlchemicalOptions alch,
-                                                BarostatOptions barostat, boolean lamExists, boolean histogramExists) {
+            DynamicsOptions dynamics, LambdaParticleOptions lpo, AlchemicalOptions alch,
+            BarostatOptions barostat, boolean lamExists, boolean histogramExists) {
 
         CrystalPotential cpot = ttOSRW;
         applyOSRWOptions(ttOSRW, histogramExists);
@@ -169,6 +191,7 @@ public class OSRWOptions {
 
     /**
      * Begins MD-OSRW sampling from an assembled TT-OSRW.
+     *
      * @param ttOSRW The TT-OSRW object.
      * @param topologies All MolecularAssemblys.
      * @param potential The top-layer CrystalPotential.
@@ -178,8 +201,8 @@ public class OSRWOptions {
      * @param aListener AlgorithmListener
      */
     public void beginMDOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
-                            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermo,
-                            File dyn, AlgorithmListener aListener) {
+            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermo,
+            File dyn, AlgorithmListener aListener) {
         // Create the MolecularDynamics instance.
         MolecularAssembly firstTop = topologies[0];
         CompositeConfiguration props = firstTop.getProperties();
@@ -216,6 +239,29 @@ public class OSRWOptions {
         } else {
             logger.info(" No steps remaining for this process!");
         }
+    }
+
+    public void beginMCOSRW(TransitionTemperedOSRW ttOSRW, MolecularAssembly[] topologies, CrystalPotential potential,
+            DynamicsOptions dynamics, WriteoutOptions writeout, ThermodynamicsOptions thermodynamics,
+            File dyn, AlgorithmListener aListener) {
+
+        MonteCarloOSRW mcOSRW = new MonteCarloOSRW(ttOSRW.getPotentialEnergy(), ttOSRW, topologies[0],
+                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator);
+
+        int nEquil = thermodynamics.getEquilSteps();
+        if (nEquil > 0) {
+            logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
+            mcOSRW.setEquilibration(true);
+            mcOSRW.setMDMoveParameters(nEquil, mcMD, dynamics.dt);
+            mcOSRW.sample();
+            mcOSRW.setEquilibration(false);
+            logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
+        }
+
+        logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
+        mcOSRW.setLambdaStdDev(mcL);
+        mcOSRW.setMDMoveParameters(dynamics.steps, mcMD, dynamics.dt);
+        mcOSRW.sample();
     }
 
     private void runDynamics(MolecularDynamics molDyn, int numSteps, DynamicsOptions dynamics, WriteoutOptions writeout, boolean initVelocities, File dyn) {

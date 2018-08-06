@@ -171,13 +171,6 @@ public class ManyBodyOptions {
     String energyRestart = "none";
 
     /**
-     * -v or --verbose Prints beginning and default-conformation energies.
-     */
-    @Option(names = {"-v", "--verbose"},
-            description = "Prints beginning and default-conformation energies.")
-    boolean verbose = false;
-
-    /**
      * -o or --noOriginal Do not include starting coordinates as their own rotamer.
      */
     @Option(names = {"-O", "--noOriginal"},
@@ -678,7 +671,6 @@ public class ManyBodyOptions {
         rotamerOptimization.setRevert(revert);
         rotamerOptimization.setPruning(prune);
         rotamerOptimization.setDistanceCutoff(cutoff);
-        rotamerOptimization.setVerboseEnergies(verbose);
         boolean monteCarloBool = false;
         if (monteCarlo > 1) {
             monteCarloBool = true;

@@ -69,9 +69,12 @@ import java.util.jar.JarFile;
 public class FFXClassLoader extends URLClassLoader {
 
     private final ProtectionDomain protectionDomain;
-    private final Map<String, String> extensionDlls = new HashMap<>();
+
+    // private final Map<String, String> extensionDlls = new HashMap<>();
+
     private JarFile[] extensionJars = null;
-    private final String[] applicationPackages = {"ffx",
+    private final String[] applicationPackages = {
+            "ffx",
             "javax.media.j3d",
             "javax.vecmath",
             "javax.media.opengl",
@@ -87,7 +90,9 @@ public class FFXClassLoader extends URLClassLoader {
             "edu.rit.pj",
             "org.bridj",
             "it.unimi.dsi",
-            "jcuda"};
+            "jcuda",
+            "simtk"
+    };
     static final List<String> FFX_FILES;
     private boolean extensionsLoaded = false;
 
@@ -205,28 +210,10 @@ public class FFXClassLoader extends URLClassLoader {
                 "com.apporiented/hierarchical-clustering.jar",
                 // OpenMM
                 "simtk/openmm.jar",
+                "simtk/openmm-fat.jar",
                 "net.java.dev.jna/jna.jar"
         }));
 
-        String osName = System.getProperty("os.name").toUpperCase();
-        String osArch = System.getProperty("sun.arch.data.model");
-        final boolean x8664 = "64".equals(osArch);
-
-        // JCUDA
-        if (x8664) {
-            if ("MAC OS X".equals(osName)) {
-                FFX_FILES.add("64-bit/libJCudaDriver-apple-x86_64.jnilib");
-                FFX_FILES.add("64-bit/libJCudaRuntime-apple-x86_64.jnilib");
-                FFX_FILES.add("64-bit/libJCufft-apple-x86_64.jnilib");
-            } else if ("LINUX".equals(osName)) {
-                FFX_FILES.add("64-bit/libJCudaDriver-linux-x86_64.so");
-                FFX_FILES.add("64-bit/libJCudaRuntime-linux-x86_64.so");
-            } else if (osName.startsWith("WINDOWS")) {
-                FFX_FILES.add("64-bit/JCudaDriver-linux-x86_64.dll");
-                FFX_FILES.add("64-bit/JCudaRuntime-linux-x86_64.dll");
-                FFX_FILES.add("64-bit/JCufft-linux-x86_64.dll");
-            }
-        }
     }
 
     /**
@@ -240,8 +227,7 @@ public class FFXClassLoader extends URLClassLoader {
      */
     public FFXClassLoader(final ClassLoader parent) {
         super(new URL[0], parent);
-        protectionDomain
-                = FFXClassLoader.class.getProtectionDomain();
+        protectionDomain = FFXClassLoader.class.getProtectionDomain();
     }
 
     /**
@@ -289,50 +275,6 @@ public class FFXClassLoader extends URLClassLoader {
             }
         }
         toFile.deleteOnExit();
-    }
-
-    /**
-     * Returns the file name of a temporary copy of <code>input</code> content.
-     *
-     * @param input  a {@link java.io.InputStream} object.
-     * @param name   a {@link java.lang.String} object.
-     * @param suffix a {@link java.lang.String} object.
-     * @return a {@link java.lang.String} object.
-     * @throws java.io.IOException if any.
-     */
-    public static String copyInputStreamToTmpFile(final InputStream input,
-                                                  String name, final String suffix) throws IOException {
-        File tmpFile = null;
-
-        try {
-            name = "ffx." + name + ".";
-            tmpFile = File.createTempFile(name, suffix);
-        } catch (IOException e) {
-            System.out.println(" Could not extract a Force Field X library.");
-            System.err.println(e.toString());
-            System.exit(-1);
-        }
-
-        tmpFile.deleteOnExit();
-
-        OutputStream output = null;
-        try {
-            output = new BufferedOutputStream(new FileOutputStream(tmpFile));
-            byte[] buffer = new byte[8192];
-            int size;
-            while ((size = input.read(buffer)) != -1) {
-                output.write(buffer, 0, size);
-            }
-        } finally {
-            if (input != null) {
-                input.close();
-            }
-            if (output != null) {
-                output.close();
-            }
-        }
-
-        return tmpFile.toString();
     }
 
     /**
@@ -419,26 +361,6 @@ public class FFXClassLoader extends URLClassLoader {
     /**
      * {@inheritDoc}
      * <p>
-     * Returns the library path of an extension DLL.
-     */
-    @Override
-    protected String findLibrary(String libname) {
-        if (!extensionsLoaded) {
-            loadExtensions();
-        }
-
-        String path = (String) this.extensionDlls.get(libname);
-
-        if (path == null) {
-            path = super.findLibrary(libname);
-        }
-
-        return path;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * Returns the URL of the given resource searching first if it exists among
      * the extension JARs given in constructor.
      */
@@ -460,8 +382,8 @@ public class FFXClassLoader extends URLClassLoader {
             for (JarFile extensionJar : extensionJars) {
                 JarEntry jarEntry = extensionJar.getJarEntry(name);
                 if (jarEntry != null) {
-		    File file = new File(extensionJar.getName() + "!/" + jarEntry.getName());
-		    String path = "jar:" + file.toURI().toString();
+                    File file = new File(extensionJar.getName() + "!/" + jarEntry.getName());
+                    String path = "jar:" + file.toURI().toString();
                     try {
                         return new URL(path);
                     } catch (MalformedURLException ex) {
@@ -525,24 +447,6 @@ public class FFXClassLoader extends URLClassLoader {
 
         String extensionJarsAndDlls[] = FFX_FILES.toArray(new String[FFX_FILES.size()]);
 
-        // Compute DLLs prefix and suffix
-        String dllSuffix;
-        String dllSuffix2 = null;
-        String dllPrefix;
-
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("Windows")) {
-            dllSuffix = ".dll";
-            dllPrefix = "";
-        } else if (osName.startsWith("Mac OS X")) {
-            dllSuffix = ".jnilib";
-            dllSuffix2 = ".dylib";
-            dllPrefix = "lib";
-        } else {
-            dllSuffix = ".so";
-            dllPrefix = "lib";
-        }
-
         // Find extension Jars and DLLs
         ArrayList<JarFile> extensionJarList = new ArrayList<>();
         for (String extensionJarOrDll : extensionJarsAndDlls) {
@@ -551,6 +455,7 @@ public class FFXClassLoader extends URLClassLoader {
                 if (extensionJarOrDllUrl != null) {
                     int lastSlashIndex = extensionJarOrDll.lastIndexOf('/');
                     if (extensionJarOrDll.endsWith(".jar")) {
+
                         int start = lastSlashIndex + 1;
                         int end = extensionJarOrDll.indexOf(".jar");
                         String name = extensionJarOrDll.substring(start, end);
@@ -559,24 +464,6 @@ public class FFXClassLoader extends URLClassLoader {
                                 name, ".jar");
                         // Add extracted file to the extension jars list
                         extensionJarList.add(new JarFile(extensionJar, false));
-                    } else if (extensionJarOrDll.endsWith(dllSuffix)) {
-                        int start = lastSlashIndex + 1 + dllPrefix.length();
-                        int end = extensionJarOrDll.indexOf(dllSuffix);
-                        String name = extensionJarOrDll.substring(start, end);
-                        // Copy DLL to a tmp file
-                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
-                                name, dllSuffix);
-                        // Add extracted file to extension DLLs map
-                        extensionDlls.put(name, extensionDll);
-                    } else if (dllSuffix2 != null && extensionJarOrDll.endsWith(dllSuffix2)) {
-                        int start = lastSlashIndex + 1 + dllPrefix.length();
-                        int end = extensionJarOrDll.indexOf(dllSuffix2);
-                        String name = extensionJarOrDll.substring(start, end);
-                        // Copy DLL to a tmp file
-                        String extensionDll = copyInputStreamToTmpFile(extensionJarOrDllUrl.openStream(),
-                                name, dllSuffix2);
-                        // Add extracted file to extension DLLs map
-                        extensionDlls.put(name, extensionDll);
                     }
                 }
             } catch (IOException ex) {
@@ -587,7 +474,7 @@ public class FFXClassLoader extends URLClassLoader {
 
         // Create extensionJars array
         if (extensionJarList.size() > 0) {
-            extensionJars = (JarFile[]) extensionJarList.toArray(new JarFile[extensionJarList.size()]);
+            extensionJars = extensionJarList.toArray(new JarFile[extensionJarList.size()]);
         }
     }
 
@@ -623,6 +510,50 @@ public class FFXClassLoader extends URLClassLoader {
                 System.out.println(" " + script);
             }
         }
+    }
+
+    /**
+     * Returns the file name of a temporary copy of <code>input</code> content.
+     *
+     * @param input  a {@link java.io.InputStream} object.
+     * @param name   a {@link java.lang.String} object.
+     * @param suffix a {@link java.lang.String} object.
+     * @return a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
+     */
+    public static String copyInputStreamToTmpFile(final InputStream input,
+                                                  String name, final String suffix) throws IOException {
+        File tmpFile = null;
+
+        try {
+            name = "ffx." + name + ".";
+            tmpFile = File.createTempFile(name, suffix);
+        } catch (IOException e) {
+            System.out.println(" Could not extract a Force Field X library.");
+            System.err.println(e.toString());
+            System.exit(-1);
+        }
+
+        tmpFile.deleteOnExit();
+
+        OutputStream output = null;
+        try {
+            output = new BufferedOutputStream(new FileOutputStream(tmpFile));
+            byte[] buffer = new byte[8192];
+            int size;
+            while ((size = input.read(buffer)) != -1) {
+                output.write(buffer, 0, size);
+            }
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+            if (output != null) {
+                output.close();
+            }
+        }
+
+        return tmpFile.toString();
     }
 }
 

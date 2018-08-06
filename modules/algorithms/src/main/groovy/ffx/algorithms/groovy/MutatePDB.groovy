@@ -47,7 +47,7 @@ class MutatePDB extends AlgorithmsScript {
     /**
      * -c or --chain Single character chain name (default is ' ').
      */
-    @Option(names = ['--chain', '-c'], paramLabel = ' ',
+    @Option(names = ['--chain', '--ch'], paramLabel = ' ',
             description = 'Single character chain name (default is \' \').')
     Character chain = ' '
     /**
