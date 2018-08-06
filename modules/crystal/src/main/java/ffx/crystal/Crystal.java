@@ -1615,14 +1615,30 @@ public class Crystal {
     }
 
     /**
+     * Atypical mod function used to move a value into the range lb <= value < ub,
+     * assuming the domain is periodic with a period of (ub - lb).
+     * @param value Value to move between bounds.
+     * @param lowerBound lb
+     * @param upperBound ub
+     * @return Periodic copy of value, in range lb <= value < ub.
+     */
+    public static double modToRange(double value, double lowerBound, double upperBound) {
+        value -= lowerBound;
+        double range = upperBound - lowerBound;
+        value = mod(value, range);
+        value += lowerBound;
+        return value;
+    }
+
+    /**
      * This is an atypical mod function used by crystallography methods.
      *
      * <p>
      * mod</p>
      *
-     * @param a a double.
-     * @param b a double.
-     * @return a double.
+     * @param a Value to mod.
+     * @param b Value to mod by.
+     * @return Positive a % b.
      */
     public static double mod(double a, double b) {
         double res = a % b;
