@@ -90,7 +90,6 @@ import static ffx.potential.parameters.ForceField.toEnumForm;
  * are supported.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class VanDerWaals implements MaskingInterface,
@@ -147,15 +146,14 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * There are 2 softCore arrays of length nAtoms.
-     *
+     * <p>
      * The first is used for atoms in the outer loop that are hard. This mask
      * equals: false for inner loop hard atoms true for inner loop soft atoms
-     *
+     * <p>
      * The second is used for atoms in the outer loop that are soft. This mask
      * equals: true for inner loop hard atoms false for inner loop soft atoms
      */
     private boolean softCore[][];
-    private boolean softCoreInit;
     private static final byte HARD = 0;
     private static final byte SOFT = 1;
 
@@ -317,7 +315,7 @@ public class VanDerWaals implements MaskingInterface,
     private final VanDerWaalsForm vdwForm;
     private final NonbondedCutoff nonbondedCutoff;
     private final MultiplicativeSwitch multiplicativeSwitch;
-    
+
     /**
      * VanDerWaals cutoff.
      */
@@ -327,12 +325,11 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * The VanDerWaals class constructor.
      *
-     * @param atoms the Atom array to do Van Der Waals calculations on.
-     * @param molecule the molecule number for each atom.
-     * @param crystal The boundary conditions.
-     * @param forceField the ForceField parameters to apply.
+     * @param atoms        the Atom array to do Van Der Waals calculations on.
+     * @param molecule     the molecule number for each atom.
+     * @param crystal      The boundary conditions.
+     * @param forceField   the ForceField parameters to apply.
      * @param parallelTeam The parallel environment.
-     *
      * @since 1.0
      */
     public VanDerWaals(Atom atoms[], int molecule[], Crystal crystal, ForceField forceField,
@@ -450,15 +447,15 @@ public class VanDerWaals implements MaskingInterface,
     public double getBeta() {
         return vdwLambdaExponent;
     }
-    
+
     public int[][] getBondMask() {
         return bondMask;
     }
-    
+
     public int[][] getAngleMask() {
         return angleMask;
     }
-    
+
     public int[][] getTorsionMask() {
         return torsionMask;
     }
@@ -471,8 +468,7 @@ public class VanDerWaals implements MaskingInterface,
             atoms = esvSystem.getExtendedAtoms();
             nAtoms = atoms.length;
         }
-        if (atomClass == null || nAtoms > atomClass.length
-                || lambdaTerm || esvTerm) {
+        if (atomClass == null || nAtoms > atomClass.length || lambdaTerm || esvTerm) {
             atomClass = new int[nAtoms];
             coordinates = new double[nAtoms * 3];
             reduced = new double[nSymm][nAtoms * 3];
@@ -535,7 +531,6 @@ public class VanDerWaals implements MaskingInterface,
         fill(isSoft, false);
         fill(softCore[HARD], false);
         fill(softCore[SOFT], false);
-        softCoreInit = false;
 
         esvAtoms = new boolean[nAtoms]; // Needs initialized regardless of esvTerm.
         esvLambda = new double[nAtoms];
@@ -855,9 +850,9 @@ public class VanDerWaals implements MaskingInterface,
     public double getBuffer() {
         return nonbondedCutoff.buff;
     }
-    
-    
-    public double getVDWcutoff(){
+
+
+    public double getVDWcutoff() {
         return vdwCutoff;
     }
 
@@ -865,8 +860,8 @@ public class VanDerWaals implements MaskingInterface,
      * The energy routine may be called repeatedly.
      *
      * @param gradient If true, gradients with respect to atomic coordinates are
-     * computed.
-     * @param print If true, there is verbose printing.
+     *                 computed.
+     * @param print    If true, there is verbose printing.
      * @return The energy.
      * @since 1.0
      */
@@ -885,7 +880,7 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Apply masking rules for 1-2 and 1-3 interactions.
      */
     @Override
@@ -911,7 +906,7 @@ public class VanDerWaals implements MaskingInterface,
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Remove the masking rules for 1-2 and 1-3 interactions.
      */
     @Override
@@ -957,9 +952,9 @@ public class VanDerWaals implements MaskingInterface,
     /**
      * Log the Van der Waals interaction.
      *
-     * @param i Atom i.
-     * @param k Atom j.
-     * @param r The distance rij.
+     * @param i   Atom i.
+     * @param k   Atom j.
+     * @param r   The distance rij.
      * @param eij The interaction energy.
      * @since 1.0
      */
@@ -983,6 +978,7 @@ public class VanDerWaals implements MaskingInterface,
         if (!lambdaTerm) {
             return;
         }
+
         this.lambda = lambda;
         sc1 = vdwLambdaAlpha * (1.0 - lambda) * (1.0 - lambda);
         dsc1dL = -2.0 * vdwLambdaAlpha * (1.0 - lambda);
@@ -1004,7 +1000,7 @@ public class VanDerWaals implements MaskingInterface,
             }
         }
 
-        initSoftCore(false);
+        initSoftCore();
 
         // Redo the long range correction.
         if (doLongRangeCorrection) {
@@ -1049,7 +1045,7 @@ public class VanDerWaals implements MaskingInterface,
                 esvDeriv[i] = new SharedDouble(0.0);
             }
         }
-        initSoftCore(true);
+        initSoftCore();
     }
 
     /**
@@ -1109,30 +1105,42 @@ public class VanDerWaals implements MaskingInterface,
         }
     }
 
-    private void initSoftCore(boolean rebuild) {
+    private void initSoftCore() {
+
+        boolean rebuild = false;
+
+        for (int i = 0; i < nAtoms; i++) {
+            boolean soft = atoms[i].applyLambda();
+            if (soft != isSoft[i]) {
+                isSoft[i] = soft;
+                rebuild = true;
+            }
+        }
+
+        if (!rebuild) {
+            return;
+        }
+
         /**
          * Initialize the softcore atom masks.
          */
-        if (!softCoreInit || rebuild) {
-            for (int i = 0; i < nAtoms; i++) {
-                isSoft[i] = atoms[i].applyLambda();
-                if (esvTerm && esvSystem.isUnshared(i)) {
-                    isSoft[i] = true;
-                }
-                if (isSoft[i]) {
-                    // Outer loop atom hard, inner loop atom soft.
-                    softCore[HARD][i] = true;
-                    // Both soft: full intramolecular ligand interactions.
-                    softCore[SOFT][i] = false;
-                } else {
-                    // Both hard: full interaction between atoms.
-                    softCore[HARD][i] = false;
-                    // Outer loop atom soft, inner loop atom hard.
-                    softCore[SOFT][i] = true;
-                }
+        for (int i = 0; i < nAtoms; i++) {
+            if (esvTerm && esvSystem.isUnshared(i)) {
+                isSoft[i] = true;
             }
-            softCoreInit = true;
+            if (isSoft[i]) {
+                // Outer loop atom hard, inner loop atom soft.
+                softCore[HARD][i] = true;
+                // Both soft: full intramolecular ligand interactions.
+                softCore[SOFT][i] = false;
+            } else {
+                // Both hard: full interaction between atoms.
+                softCore[HARD][i] = false;
+                // Outer loop atom soft, inner loop atom hard.
+                softCore[SOFT][i] = true;
+            }
         }
+
     }
 
     public void attachExtendedSystem(ExtendedSystem system) {
@@ -1178,7 +1186,7 @@ public class VanDerWaals implements MaskingInterface,
         esvSystem = null;
         esvDeriv = null;
         numESVs = 0;
-        initSoftCore(true); // To remove entries from isSoft[] that were due only to ESVs.
+        initSoftCore(); // To remove entries from isSoft[] that were due only to ESVs.
     }
 
     public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
@@ -1275,7 +1283,7 @@ public class VanDerWaals implements MaskingInterface,
      * Finally, rebuild the neighbor-lists.
      *
      * @param crystal The new crystal instance defining the symmetry and
-     * boundary conditions.
+     *                boundary conditions.
      */
     public void setCrystal(Crystal crystal) {
         this.crystal = crystal;
@@ -1332,7 +1340,7 @@ public class VanDerWaals implements MaskingInterface,
 
         /**
          * {@inheritDoc}
-         *
+         * <p>
          * This is method should not be called; it is invoked by Parallel Java.
          *
          * @since 1.0
@@ -1798,12 +1806,14 @@ public class VanDerWaals implements MaskingInterface,
                             final double r = sqrt(r2);
                             boolean sameMolecule = (moleculei == molecule[k]);
                             boolean soft = softCorei[k] || esvi || esvk;
-                            if (intermolecularSoftcore & isSoft[i] && isSoft[k] && !sameMolecule) {
-                                soft = true;
+                            if (isSoft[i] && isSoft[k]) {
+                                if (intermolecularSoftcore && !sameMolecule) {
+                                    soft = true;
+                                } else if (intramolecularSoftcore && sameMolecule) {
+                                    soft = true;
+                                }
                             }
-                            if (intramolecularSoftcore & isSoft[i] && isSoft[k] && sameMolecule) {
-                                soft = true;
-                            }
+
                             /**
                              * The setFactors(i,k) method is empty unless ESVs
                              * are present. If OSRW lambda present,
@@ -2068,8 +2078,7 @@ public class VanDerWaals implements MaskingInterface,
                             if (r2 <= nonbondedCutoff.off2 && irv > 0) {
                                 final double selfScale = (i == k) ? 0.5 : 1.0;
                                 final double r = sqrt(r2);
-                                boolean soft = isSoft[i] || softCorei[k]
-                                        || esvi || esvk;
+                                boolean soft = isSoft[i] || softCorei[k] || esvi || esvk;
                                 if (soft) {
                                     lambdaFactorsLocal.setFactors(i, k);
                                     sc1 = lambdaFactorsLocal.sc1;
@@ -2124,6 +2133,12 @@ public class VanDerWaals implements MaskingInterface,
                                     eik *= esvLambdaSwitch[i] * esvLambdaSwitch[k];
                                 }
                                 e += selfScale * eik * taper;
+
+                                // if (i==0 && k==0) {
+                                //     log(i, k, r, selfScale * eik * taper);
+                                //     logger.info(format(" Selfscale: %10.6f Soft: %b", selfScale, soft));
+                                // }
+
                                 count++;
                                 if (!gradient && !soft) {
                                     continue;

@@ -123,26 +123,21 @@ import static ffx.potential.parameters.MultipoleType.t300;
  *
  * @author Michael J. Schnieders<br> derived from:<br> TINKER code by Jay
  * Ponder, Pengyu Ren and Tom Darden.<br>
- *
  * @see <a href="http://dx.doi.org/10.1021/ct300035u" target="_blank"> M. J.
  * Schnieders, J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P.
  * Ren, The Structure, Thermodynamics, and Solubility of Organic Crystals from
  * Simulation with a Polarizable Force Field, Journal of Chemical Theory and
  * Computation 8 (5), 1721-36 (2012)</a>
- *
  * @see <br><a href="http://dx.doi.org/10.1021/ct100506d" target="_blank"> M. J.
  * Schnieders, T. D. Fenn and V. S. Pande, Polarizable atomic multipole X-ray
  * refinement: Particle-mesh Ewald electrostatics for macromolecular crystals.
  * Journal of Chemical Theory and Computation 7 (4), 1141-56 (2011)</a>
- *
  * @see <br><a href="http://dx.doi.org/10.1063/1.1630791" target="_blank"> C.
  * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
  * 73 (2004)</a>
- *
  * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
  * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
  * Physics 98 (12), 10089 (1993)</a>
- *
  * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
  * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
  * (1998)</a>
@@ -347,16 +342,16 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     /**
      * When computing the polarization energy at L there are 3 pieces.
-     *
+     * <p>
      * 1.) Upol(1) = The polarization energy computed normally (ie. system with
      * ligand).
-     *
+     * <p>
      * 2.) Uenv = The polarization energy of the system without the ligand.
-     *
+     * <p>
      * 3.) Uligand = The polarization energy of the ligand by itself.
-     *
+     * <p>
      * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
-     *
+     * <p>
      * Set polarizationScale to L for part 1. Set polarizationScale to (1-L) for
      * parts 2 & 3.
      */
@@ -365,26 +360,23 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Flag for ligand atoms.
      */
     private boolean isSoft[];
-    /**
-     * Flag indicating if softcore variables have been initialized.
-     */
-    private boolean initSoftCore = false;
+
     /**
      * When computing the polarization energy at Lambda there are 3 pieces.
-     *
+     * <p>
      * 1.) Upol(1) = The polarization energy computed normally (ie. system with
      * ligand).
-     *
+     * <p>
      * 2.) Uenv = The polarization energy of the system without the ligand.
-     *
+     * <p>
      * 3.) Uligand = The polarization energy of the ligand by itself.
-     *
+     * <p>
      * Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
-     *
+     * <p>
      * Set the "use" array to true for all atoms for part 1. Set the "use" array
      * to true for all atoms except the ligand for part 2. Set the "use" array
      * to true only for the ligand atoms for part 3.
-     *
+     * <p>
      * The "use" array can also be employed to turn off atoms for computing the
      * electrostatic energy of sub-structures.
      */
@@ -580,10 +572,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     private final ParallelTeam parallelTeam;
     /**
      * The sectionTeam encapsulates 1 or 2 threads.
-     *
+     * <p>
      * If it contains 1 thread, the real and reciprocal space calculations are
      * done sequentially.
-     *
+     * <p>
      * If it contains 2 threads, the real and reciprocal space calculations will
      * be done concurrently.
      */
@@ -591,7 +583,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * If the real and reciprocal space parts of PME are done sequentially, then
      * the realSpaceTeam is equal parallalTeam.
-     *
+     * <p>
      * If the real and reciprocal space parts of PME are done concurrently, then
      * the realSpaceTeam will have fewer threads than the default parallelTeam.
      */
@@ -599,7 +591,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * If the real and reciprocal space parts of PME are done sequentially, then
      * the reciprocalSpaceTeam is equal parallalTeam.
-     *
+     * <p>
      * If the real and reciprocal space parts of PME are done concurrently, then
      * the reciprocalSpaceTeam will have fewer threads than the default
      * parallelTeam.
@@ -645,12 +637,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * ParticleMeshEwald constructor.
      *
-     * @param atoms the Atom array to do electrostatics on.
-     * @param molecule the molecule number for each atom.
-     * @param forceField the ForceField the defines the electrostatics
-     * parameters.
-     * @param crystal The boundary conditions.
-     * @param elecForm The electrostatics functional form.
+     * @param atoms        the Atom array to do electrostatics on.
+     * @param molecule     the molecule number for each atom.
+     * @param forceField   the ForceField the defines the electrostatics
+     *                     parameters.
+     * @param crystal      The boundary conditions.
+     * @param elecForm     The electrostatics functional form.
      * @param neighborList The NeighborList for both van der Waals and PME.
      * @param parallelTeam A ParallelTeam that delegates parallelization.
      */
@@ -1191,10 +1183,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Initialize a boolean array of soft atoms and, if requested, ligand vapor
      * electrostatics.
      */
-    private void initSoftCoreInit(boolean print) {
-        if (initSoftCore) {
-            return;
-        }
+    private void initSoftCoreInit() {
+
+        boolean rebuild = false;
 
         /**
          * Initialize a boolean array that marks soft atoms.
@@ -1203,15 +1194,28 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         int count = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
-            if (ai.applyLambda()) {
-                isSoft[i] = true;
-                if (print) {
-                    sb.append(ai.toString()).append("\n");
-                }
-                count++;
+            boolean soft = ai.applyLambda();
+            if (soft != isSoft[i]) {
+                rebuild = true;
             }
+            isSoft[i] = soft;
+            if (soft) {
+                count++;
+                sb.append(ai.toString()).append("\n");
+            }
+
         }
-        if (count > 0 && print) {
+
+        // Force rebuild ligand vapor electrostatics are being computed and vaporCrystal is null.
+        if (doLigandVaporElec && vaporCrystal == null) {
+            rebuild = true;
+        }
+
+        if (!rebuild) {
+            return;
+        }
+
+        if (count > 0) {
             logger.info(sb.toString());
         }
 
@@ -1266,10 +1270,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             vacuumRanges = null;
         }
 
-        /**
-         * Set this flag to true to avoid re-initialization.
-         */
-        initSoftCore = true;
     }
 
     @Override
@@ -1326,7 +1326,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Calculate the PME electrostatic energy.
      *
      * @param gradient If <code>true</code>, the gradient will be calculated.
-     * @param print If <code>true</code>, extra logging is enabled.
+     * @param print    If <code>true</code>, extra logging is enabled.
      * @return return the total electrostatic energy (permanent + polarization).
      */
     @Override
@@ -1546,9 +1546,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * 2.) Condensed phase system without the ligand. A.) No permanent real
      * space electrostatics needs to be calculated because this was handled
      * analytically in step 1.
-     *
+     * <p>
      * B.) Permanent reciprocal space scaled by (1 - lambda).
-     *
+     * <p>
      * C.) Polarization scaled by (1 - lambda).
      */
     private double condensedNoLigandSCF() {
@@ -1612,9 +1612,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     /**
      * 3.) Aperiodic ligand electrostatics.
-     *
+     * <p>
      * A.) Real space with an Ewald coefficient of 0.0 (no reciprocal space).
-     *
+     * <p>
      * B.) Polarization scaled as in Step 2 by (1 - lambda).
      */
     private double ligandElec() {
@@ -6019,9 +6019,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Determine the real space Ewald parameters and permanent multipole self
      * energy.
      *
-     * @param off Real space cutoff.
+     * @param off    Real space cutoff.
      * @param aewald Ewald convergence parameter (0.0 turns off reciprocal
-     * space).
+     *               space).
      */
     private void setEwaldParameters(double off, double aewald) {
         off2 = off * off;
@@ -6096,9 +6096,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * <p>
      * ewaldCutoff</p>
      *
-     * @param coeff a double.
+     * @param coeff     a double.
      * @param maxCutoff a double.
-     * @param eps a double.
+     * @param eps       a double.
      * @return a double.
      */
     public static double ewaldCutoff(double coeff, double maxCutoff, double eps) {
@@ -6639,7 +6639,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Set the electrostatic lambda scaling factor.
      */
     @Override
@@ -6650,9 +6650,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         }
         this.lambda = lambda;
 
-        if (!initSoftCore) {
-            initSoftCoreInit(true);
-        }
+        initSoftCoreInit();
 
         /**
          * f = sqrt(r^2 + lAlpha)
@@ -6751,7 +6749,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Get the current lambda scale value.
      */
     @Override
@@ -8284,7 +8282,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
         @Override
         public org.apache.commons.math3.analysis.MultivariateMatrixFunction
-            jacobian() {
+        jacobian() {
             return multivariateMatrixFunction;
         }
 
@@ -8431,9 +8429,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     /**
      * Log the real space electrostatics interaction.
      *
-     * @param i Atom i.
-     * @param k Atom j.
-     * @param r The distance rij.
+     * @param i   Atom i.
+     * @param k   Atom j.
+     * @param r   The distance rij.
      * @param eij The interaction energy.
      * @since 1.0
      */
