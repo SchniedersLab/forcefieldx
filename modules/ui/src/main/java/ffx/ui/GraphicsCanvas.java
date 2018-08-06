@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -127,6 +127,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
 
         ROTATE, TRANSLATE, ZOOM;
     }
+
     /**
      * Constant <code>imageFormatHash</code>
      */
@@ -138,6 +139,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
             imageFormatHash.put(value.toString(), value);
         }
     }
+
     // Controller Classes
     private ffx.potential.Renderer renderer;
     private GraphicsEvents graphicsEvents;
@@ -478,6 +480,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
     // super.processMouseEvent(event);
     // logger.info("MouseEvent: " + event.toString());
     // }
+
     /**
      * <p>
      * isCacheFull</p>
@@ -863,6 +866,7 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * **********************************************************************
      */
     // Color Commands
+
     /**
      * Operates on the Active nodes.
      *
@@ -943,8 +947,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
             }
             getStatusBar().setText(
                     "  Label Font Color Changed to (" + newColor.getRed() + ","
-                    + newColor.getGreen() + "," + newColor.getBlue()
-                    + ")");
+                            + newColor.getGreen() + "," + newColor.getBlue()
+                            + ")");
         }
     }
 
@@ -1141,8 +1145,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void updateScene(ArrayList<MSNode> n, boolean t, boolean v,
-            RendererCache.ViewModel newViewModel, boolean c,
-            RendererCache.ColorModel newColorModel) {
+                            RendererCache.ViewModel newViewModel, boolean c,
+                            RendererCache.ColorModel newColorModel) {
         if (n != null) {
             renderer.arm(n, t, v, newViewModel, c, newColorModel);
         }
@@ -1162,8 +1166,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void updateScene(MSNode n, boolean t, boolean v,
-            RendererCache.ViewModel newViewModel, boolean c,
-            RendererCache.ColorModel newColorModel) {
+                            RendererCache.ViewModel newViewModel, boolean c,
+                            RendererCache.ColorModel newColorModel) {
         if (n != null) {
             renderer.arm(n, t, v, newViewModel, c, newColorModel);
         }
@@ -1183,8 +1187,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void updateSceneWait(ArrayList<MSNode> n, boolean t, boolean v,
-            RendererCache.ViewModel newViewModel, boolean c,
-            RendererCache.ColorModel newColorModel) {
+                                RendererCache.ViewModel newViewModel, boolean c,
+                                RendererCache.ColorModel newColorModel) {
         if (n != null) {
             renderer.arm(n, t, v, newViewModel, c, newColorModel);
         }
@@ -1292,8 +1296,8 @@ public class GraphicsCanvas extends Canvas3D implements ActionListener {
      * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void updateSceneWait(MSNode n, boolean t, boolean v,
-            RendererCache.ViewModel newViewModel, boolean c,
-            RendererCache.ColorModel newColorModel) {
+                                RendererCache.ViewModel newViewModel, boolean c,
+                                RendererCache.ColorModel newColorModel) {
         if (n != null) {
             renderer.arm(n, t, v, newViewModel, c, newColorModel);
         }

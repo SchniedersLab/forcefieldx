@@ -1,4 +1,4 @@
-Build-Jdk: 1.7.0_07
+Build-Jdk: 1.8.0_181
 Implementation-Title: Force Field X
-Implementation-Version: 1.0
+Implementation-Version: 1.0.0-beta
 Main-Class: ffx.Main

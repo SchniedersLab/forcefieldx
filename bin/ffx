@@ -156,17 +156,30 @@ if $cygwin; then
   [ -n "$REPO" ] && REPO=`cygpath --path --windows "$REPO"`
 fi
 
-exec "$JAVACMD" $JAVA_OPTS \
+if $darwin; then
+ exec "$JAVACMD" $JAVA_OPTS \
   $EXTRA_JVM_ARGUMENTS \
   -classpath "$CLASSPATH" \
+  -splash:"$BASEDIR/bin/splash.png" \
   -Djava.system.class.loader="ffx.FFXClassLoader" \
-  -Dj3d.rend="jogl" \
-  -Dapple.laf.useScreenMenuBar="true" \
   -Xdock:name="Force Field X" \
-  -Dcom.apple.mrj.application.apple.menu.about.name="Force Field X" \
+  -Xdock:icon="$BASEDIR/bin/icon.icns" \
   -Dapp.name="Force Field X" \
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \
   -Dbasedir="$BASEDIR" \
   ffx.Main \
   "$@"
+else
+ exec "$JAVACMD" $JAVA_OPTS \
+  $EXTRA_JVM_ARGUMENTS \
+  -classpath "$CLASSPATH" \
+  -splash:"$BASEDIR/bin/splash.png" \
+  -Djava.system.class.loader="ffx.FFXClassLoader" \
+  -Dapp.name="Force Field X" \
+  -Dapp.pid="$$" \
+  -Dapp.repo="$REPO" \
+  -Dbasedir="$BASEDIR" \
+  ffx.Main \
+  "$@"
+fi

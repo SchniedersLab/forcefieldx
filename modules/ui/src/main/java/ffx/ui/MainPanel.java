@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -51,7 +51,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -59,7 +58,6 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.swing.event.ChangeEvent;
@@ -263,6 +261,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         fileChooser.setSelectedFile(null);
         return fileChooser;
     }
+
     // Force Field X Panels and Components
     private JFrame frame;
     private MSRoot dataRoot;
@@ -933,6 +932,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
         }
     }
+
     /**
      * Constant <code>version="1.0.0-BETA"</code>
      */
@@ -1025,6 +1025,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         commitDate = cDate;
         commitSCM = cSCM;
     }
+
     /**
      * Constant
      */
@@ -1072,34 +1073,11 @@ public final class MainPanel extends JPanel implements ActionListener,
             return;
         }
         init = true;
+
         String dir = System.getProperty("user.dir", FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath());
         setCWD(new File(dir));
         locale = new FFXLocale("en", "US");
-        JDialog splashScreen = null;
-        ClassLoader loader = getClass().getClassLoader();
-        if (!GraphicsEnvironment.isHeadless()) {
-            // Splash Screen
-            JFrame.setDefaultLookAndFeelDecorated(true);
-            splashScreen = new JDialog(frame, false);
-            ImageIcon logo = new ImageIcon(loader.getResource("ffx/ui/icons/splash.png"));
-            JLabel ffxLabel = new JLabel(logo);
-            ffxLabel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
-            Container contentpane = splashScreen.getContentPane();
-            contentpane.setLayout(new BorderLayout());
-            contentpane.add(ffxLabel, BorderLayout.CENTER);
-            splashScreen.setUndecorated(true);
-            splashScreen.pack();
-            Dimension screenDimension = getToolkit().getScreenSize();
-            Dimension splashDimension = splashScreen.getSize();
-            splashScreen.setLocation(
-                    (screenDimension.width - splashDimension.width) / 2,
-                    (screenDimension.height - splashDimension.height) / 2);
-            splashScreen.setResizable(false);
-            splashScreen.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-            splashScreen.setVisible(true);
-            // Make all pop-up Menus Heavyweight so they play nicely with Java3D
-            JPopupMenu.setDefaultLightWeightPopupEnabled(false);
-        }
+
         // Create the Root Node
         dataRoot = new MSRoot();
         Border bb = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
@@ -1113,6 +1091,20 @@ public final class MainPanel extends JPanel implements ActionListener,
         statusPanel.add(statusLabel);
         statusPanel.add(stepLabel);
         statusPanel.add(energyLabel);
+
+        // Initialize various Panels
+        setLayout(new BorderLayout());
+        hierarchy = new Hierarchy(this);
+        hierarchy.setStatus(statusLabel, stepLabel, energyLabel);
+        keywordPanel = new KeywordPanel(this);
+        modelingPanel = new ModelingPanel(this);
+
+        JPanel treePane = new JPanel(new BorderLayout());
+        JScrollPane scrollPane = new JScrollPane(hierarchy,
+                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        treePane.add(scrollPane, BorderLayout.CENTER);
+
         if (!GraphicsEnvironment.isHeadless()) {
             GraphicsConfigTemplate3D template3D = new GraphicsConfigTemplate3D();
             // template3D.setDoubleBuffer(GraphicsConfigTemplate.PREFERRED);
@@ -1120,16 +1112,15 @@ public final class MainPanel extends JPanel implements ActionListener,
             try {
                 gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getBestConfiguration(template3D);
                 // gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.fillInStackTrace();
                 e.printStackTrace();
                 logger.log(Level.SEVERE,
                         " Exception encountered when trying to get the best GraphicsConfiguration", e);
             }
-
             try {
                 graphicsCanvas = new GraphicsCanvas(gc, this);
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.fillInStackTrace();
                 e.printStackTrace();
                 logger.log(Level.SEVERE,
@@ -1137,40 +1128,28 @@ public final class MainPanel extends JPanel implements ActionListener,
             }
             graphicsPanel = new GraphicsPanel(graphicsCanvas, statusPanel);
         }
-        // Initialize various Panels
-        hierarchy = new Hierarchy(this);
-        hierarchy.setStatus(statusLabel, stepLabel, energyLabel);
-        keywordPanel = new KeywordPanel(this);
-        modelingPanel = new ModelingPanel(this);
-        JPanel treePane = new JPanel(new BorderLayout());
-        JScrollPane scrollPane = new JScrollPane(hierarchy,
-                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        treePane.add(scrollPane, BorderLayout.CENTER);
+
         tabbedPane = new JTabbedPane();
+        // ClassLoader loader = getClass().getClassLoader();
+        // ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
+        // ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
+        // ImageIcon modelingIcon = new ImageIcon(loader.getResource("ffx/ui/icons/cog.png"));
+        // tabbedPane.addTab(locale.getValue("Graphics"), graphicsIcon, graphicsPanel);
+        // tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon, keywordPanel);
+        // tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon, modelingPanel);
+        // tabbedPane.addChangeListener(this);
+        // splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, tabbedPane);
 
-        ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
-        ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
-        ImageIcon modelingIcon = new ImageIcon(loader.getResource("ffx/ui/icons/cog.png"));
-        tabbedPane.addTab(locale.getValue("Graphics"), graphicsIcon, graphicsPanel);
-        tabbedPane.addTab(locale.getValue("KeywordEditor"), keywordIcon, keywordPanel);
-        tabbedPane.addTab(locale.getValue("ModelingCommands"), modelingIcon, modelingPanel);
-        tabbedPane.addChangeListener(this);
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, tabbedPane);
-
-        /* splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false,
-         treePane, graphicsPanel); */
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false, treePane, graphicsPanel);
         splitPane.setResizeWeight(0.25);
         splitPane.setOneTouchExpandable(true);
-        setLayout(new BorderLayout());
         add(splitPane, BorderLayout.CENTER);
+
         if (!GraphicsEnvironment.isHeadless()) {
             mainMenu = new MainMenu(this);
             add(mainMenu.getToolBar(), BorderLayout.NORTH);
             getModelingShell();
             loadPrefs();
-            SwingUtilities.updateComponentTreeUI(SwingUtilities.getRoot(this));
-            splashScreen.dispose();
         }
     }
 
@@ -2149,8 +2128,14 @@ public final class MainPanel extends JPanel implements ActionListener,
         if (!GraphicsEnvironment.isHeadless()) {
             modelingShell = getModelingShell();
             modelingShell.savePrefs();
-            modelingShell.exit();
-            modelingShell = new ModelingShell(this);
+            try {
+                modelingShell.exit();
+            } catch (NullPointerException e) {
+                //
+            } finally {
+                modelingShell = null;
+            }
+            modelingShell = getModelingShell();
         }
     }
 
@@ -2393,6 +2378,7 @@ public final class MainPanel extends JPanel implements ActionListener,
             activeFilter = pdbFilter;
         }
     }
+
     static final Preferences preferences = Preferences.userNodeForPackage(MainPanel.class);
 
     /**

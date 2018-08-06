@@ -43,6 +43,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -78,14 +79,162 @@ import sun.misc.Unsafe;
  * Force Field X.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public final class Main extends JFrame {
 
     private static final Logger logger = Logger.getLogger(Main.class.getName());
+    /**
+     * Constant <code>stopWatch</code>
+     */
+    public static StopWatch stopWatch = new StopWatch();
+    /**
+     * This is the main application wrapper.
+     */
+    public static MainPanel mainPanel;
+    /**
+     * An Adapter class to integrate with OSX.
+     */
+    public static OSXAdapter osxAdapter;
     private static Level level;
     private static LogHandler logHandler;
+    /**
+     * Rank of this process for a multi-process Parallel Java FFX job.
+     */
+    private static int rank = 0;
+    /**
+     * Number of processes for a multi-process Parallel Java FFX job.
+     */
+    private static int processes = 1;
+    /**
+     * Name of the machine FFX is running on.
+     */
+    private static String hostName = null;
+    /**
+     * Force Field X base directory.
+     */
+    private static File ffxDirectory = null;
+    /**
+     * Force Field X process ID.
+     */
+    private static int procID = -1;
+
+    /**
+     * Main does some window initializations.
+     *
+     * @param commandLineFile a {@link java.io.File} object.
+     * @param argList         a {@link java.util.List} object.
+     */
+    public Main(File commandLineFile, List<String> argList) {
+        super("Force Field X");
+        // Start the clock.
+        stopWatch.start();
+
+        // Init the GUI.
+        try {
+            SwingUtilities.invokeAndWait(initGUI);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Finally, open the supplied file if necessary.
+        if (commandLineFile != null && !commandLineFile.exists()) {
+            /**
+             * See if the commandLineFile is an embedded script.
+             */
+            String name = commandLineFile.getName();
+            name = name.replace('.', '/');
+            String pathName = "ffx/scripts/" + name;
+            ClassLoader loader = getClass().getClassLoader();
+            URL embeddedScript = loader.getResource(pathName + ".ffx");
+            if (embeddedScript == null) {
+                embeddedScript = loader.getResource(pathName + ".groovy");
+            }
+            if (embeddedScript != null) {
+                try {
+                    commandLineFile = new File(
+                            FFXClassLoader.copyInputStreamToTmpFile(
+                                    embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
+                } catch (Exception e) {
+                    logger.info(String.format(" The embedded script %s could not be extracted.", embeddedScript));
+                }
+            }
+        }
+
+        if (commandLineFile != null) {
+            if (commandLineFile.exists()) {
+                mainPanel.getModelingShell().setArgList(argList);
+                mainPanel.open(commandLineFile, null);
+            } else {
+                logger.warning(format("%s was not found.", commandLineFile.toString()));
+            }
+        }
+
+        if (logger.isLoggable(Level.FINE)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
+            Runtime runtime = Runtime.getRuntime();
+            runtime.runFinalization();
+            runtime.gc();
+            long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
+            long KB = 1024;
+            sb.append(format("\n In-Use Memory   (Kb): %d", occupiedMemory / KB));
+            sb.append(format("\n Free Memory     (Kb): %d", runtime.freeMemory() / KB));
+            sb.append(format("\n Total Memory    (Kb): %d", runtime.totalMemory() / KB));
+            logger.fine(sb.toString());
+        }
+    }
+
+    /**
+     * This Runnable is used to init the GUI using SwingUtilities.
+     */
+    final private Runnable initGUI = new Runnable() {
+        /**
+         * Create the MainPanel and MainMenu, then add them to the JFrame.
+         */
+        public void run() {
+
+            Toolkit.getDefaultToolkit().setDynamicLayout(true);
+
+            // Set the Title and Icon
+            Main.this.setTitle("Force Field X");
+            URL iconURL = getClass().getClassLoader().getResource(
+                    "ffx/ui/icons/icon64.png");
+            ImageIcon icon = new ImageIcon(iconURL);
+            Main.this.setIconImage(icon.getImage());
+            Main.this.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    if (mainPanel != null) {
+                        mainPanel.exit();
+                    }
+                    System.exit(0);
+                }
+            });
+
+            mainPanel = new MainPanel(Main.this);
+            mainPanel.setVisible(false);
+            logHandler.setMainPanel(mainPanel);
+            Main.this.add(mainPanel);
+            mainPanel.initialize();
+            Main.this.setVisible(true);
+            mainPanel.setVisible(true);
+            Main.this.setJMenuBar(mainPanel.getMainMenu());
+
+            // This is a hack to get GraphicsCanvis to initialize on some platform/Java3D combinations.
+            // mainPanel.setPanel(MainPanel.KEYWORDS);
+            // mainPanel.setVisible(true);
+            // mainPanel.setPanel(MainPanel.GRAPHICS);
+
+            // Mac OS X specific features that help Force Field X look native
+            // on Macs. This needs to be done after the MainPanel is created.
+            if (SystemUtils.IS_OS_MAC_OSX) {
+                osxAdapter = new OSXAdapter(mainPanel);
+            }
+
+            SwingUtilities.updateComponentTreeUI(SwingUtilities.getRoot(Main.this));
+        }
+    };
 
     /**
      * Process any "-D" command line flags.
@@ -279,19 +428,23 @@ public final class Main extends JFrame {
         logger.info(String.format(" Starting up the graphical user interface."));
 
         /**
+         * Set some Swing Constants.
+         */
+        UIManager.put("swing.boldMetal", Boolean.FALSE);
+        setDefaultLookAndFeelDecorated(false);
+
+        /**
          * Some Mac OS X specific features that help FFX look native. These need
          * to be set before the MainPanel is created.
          */
         if (SystemUtils.IS_OS_MAC_OSX) {
             OSXAdapter.setOSXProperties();
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                //
+            }
         }
-
-        /**
-         * Set some Swing Constants.
-         */
-
-        UIManager.put("swing.boldMetal", Boolean.FALSE);
-        setDefaultLookAndFeelDecorated(false);
 
         /**
          * Initialize the Main frame and Force Field X MainPanel.
@@ -374,113 +527,6 @@ public final class Main extends JFrame {
     }
 
     /**
-     * Main does some window initializations.
-     *
-     * @param commandLineFile a {@link java.io.File} object.
-     * @param argList         a {@link java.util.List} object.
-     */
-    public Main(File commandLineFile, List<String> argList) {
-        super("Force Field X");
-        // Start the clock.
-        stopWatch.start();
-
-        // Init the GUI.
-        try {
-            SwingUtilities.invokeAndWait(initGUI);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        // Finally, open the supplied file if necessary.
-        if (commandLineFile != null && !commandLineFile.exists()) {
-            /**
-             * See if the commandLineFile is an embedded script.
-             */
-            String name = commandLineFile.getName();
-            name = name.replace('.', '/');
-            String pathName = "ffx/scripts/" + name;
-            ClassLoader loader = getClass().getClassLoader();
-            URL embeddedScript = loader.getResource(pathName + ".ffx");
-            if (embeddedScript == null) {
-                embeddedScript = loader.getResource(pathName + ".groovy");
-            }
-            if (embeddedScript != null) {
-                try {
-                    commandLineFile = new File(
-                            FFXClassLoader.copyInputStreamToTmpFile(
-                                    embeddedScript.openStream(), commandLineFile.getName(), ".ffx"));
-                } catch (Exception e) {
-                    logger.info(String.format(" The embedded script %s could not be extracted.", embeddedScript));
-                }
-            }
-        }
-
-        if (commandLineFile != null) {
-            if (commandLineFile.exists()) {
-                mainPanel.getModelingShell().setArgList(argList);
-                mainPanel.open(commandLineFile, null);
-            } else {
-                logger.warning(format("%s was not found.", commandLineFile.toString()));
-            }
-        }
-
-        if (logger.isLoggable(Level.FINE)) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
-            Runtime runtime = Runtime.getRuntime();
-            runtime.runFinalization();
-            runtime.gc();
-            long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
-            long KB = 1024;
-            sb.append(format("\n In-Use Memory   (Kb): %d", occupiedMemory / KB));
-            sb.append(format("\n Free Memory     (Kb): %d", runtime.freeMemory() / KB));
-            sb.append(format("\n Total Memory    (Kb): %d", runtime.totalMemory() / KB));
-            logger.fine(sb.toString());
-        }
-    }
-
-    /**
-     * This Runnable is used to init the GUI using SwingUtilities.
-     */
-    final private Runnable initGUI = new Runnable() {
-        public void run() {
-            setVisible(false);
-            // Create the MainPanel and MainMenu, then add them to the JFrame
-            java.awt.Toolkit.getDefaultToolkit().setDynamicLayout(true);
-            mainPanel = new MainPanel(Main.this);
-            logHandler.setMainPanel(mainPanel);
-            add(mainPanel);
-            mainPanel.initialize();
-            setJMenuBar(mainPanel.getMainMenu());
-            // Set the Title and Icon
-            setTitle("Force Field X");
-            URL iconURL = getClass().getClassLoader().getResource(
-                    "ffx/ui/icons/icon64.png");
-            ImageIcon icon = new ImageIcon(iconURL);
-            setIconImage(icon.getImage());
-            addWindowListener(new WindowAdapter() {
-                @Override
-                public void windowClosing(WindowEvent e) {
-                    if (mainPanel != null) {
-                        mainPanel.exit();
-                    }
-                    System.exit(0);
-                }
-            });
-            // This is a hack to get GraphicsCanvis to initialize on some
-            // platform/Java3D combinations.
-            mainPanel.setPanel(MainPanel.KEYWORDS);
-            setVisible(true);
-            mainPanel.setPanel(MainPanel.GRAPHICS);
-            // Mac OS X specific features that help Force Field X look native
-            // on Macs. This needs to be done after the MainPanel is created.
-            if (SystemUtils.IS_OS_MAC_OSX) {
-                osxAdapter = new OSXAdapter(mainPanel);
-            }
-        }
-    };
-
-    /**
      * {@inheritDoc}
      * <p>
      * Commons.Lang Style toString.
@@ -491,37 +537,4 @@ public final class Main extends JFrame {
                 "Up Time: " + stopWatch).append("Logger: " + logger.getName());
         return toStringBuilder.toString();
     }
-
-    /**
-     * Constant <code>stopWatch</code>
-     */
-    public static StopWatch stopWatch = new StopWatch();
-    /**
-     * This is the main application wrapper.
-     */
-    public static MainPanel mainPanel;
-    /**
-     * An Adapter class to integrate with OSX.
-     */
-    public static OSXAdapter osxAdapter;
-    /**
-     * Rank of this process for a multi-process Parallel Java FFX job.
-     */
-    private static int rank = 0;
-    /**
-     * Number of processes for a multi-process Parallel Java FFX job.
-     */
-    private static int processes = 1;
-    /**
-     * Name of the machine FFX is running on.
-     */
-    private static String hostName = null;
-    /**
-     * Force Field X base directory.
-     */
-    private static File ffxDirectory = null;
-    /**
-     * Force Field X process ID.
-     */
-    private static int procID = -1;
 }

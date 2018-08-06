@@ -395,10 +395,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * Flag for ligand atoms; treats both OSRW and ESV lambdas.
      */
     private boolean isSoft[];
-    /**
-     * Flag indicating if softcore variables have been initialized.
-     */
-    private boolean initSoftCore = false;
+
     /**
      * 1.) Upol(1) = The polarization energy computed normally (ie. system with
      * ligand). 2.) Uenv = The polarization energy of the system without the
@@ -1201,10 +1198,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
      * Initialize a boolean array of soft atoms and, if requested, ligand vapor
      * electrostatics.
      */
-    private void initSoftCore(boolean print) {
-        if (initSoftCore) {
-            return;
-        }
+    private void initSoftCore() {
+
+        boolean rebuild = false;
+
         /**
          * Initialize a boolean array that marks soft atoms.
          */
@@ -1212,15 +1209,28 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         int count = 0;
         for (int i = 0; i < nAtoms; i++) {
             Atom ai = atoms[i];
-            if (ai.applyLambda()) {
-                isSoft[i] = true;
-                if (print) {
-                    sb.append(ai.toString()).append("\n");
-                }
-                count++;
+            boolean soft = ai.applyLambda();
+            if (soft != isSoft[i]) {
+                rebuild = true;
             }
+            isSoft[i] = soft;
+            if (soft) {
+                count++;
+                sb.append(ai.toString()).append("\n");
+            }
+
         }
-        if (count > 0 && print) {
+
+        // Force rebuild ligand vapor electrostatics are being computed and vaporCrystal is null.
+        if (doLigandVaporElec && vaporCrystal == null) {
+            rebuild = true;
+        }
+
+        if (!rebuild) {
+            return;
+        }
+
+        if (count > 0) {
             logger.info(sb.toString());
         }
 
@@ -1276,10 +1286,6 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
             vacuumRanges = null;
         }
 
-        /**
-         * Set this flag to true to avoid re-initialization.
-         */
-        initSoftCore = true;
     }
 
     @Override
@@ -6104,9 +6110,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         }
         this.lambda = lambda;
 
-        if (!initSoftCore) {
-            initSoftCore(true);
-        }
+        initSoftCore();
 
         lAlpha = 0.0;
         dlAlpha = 0.0;
