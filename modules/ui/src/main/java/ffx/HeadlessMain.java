@@ -54,7 +54,6 @@ import ffx.ui.MainPanel;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class HeadlessMain {
 
@@ -64,8 +63,8 @@ public class HeadlessMain {
      * Complete initializations.
      *
      * @param commandLineFile a {@link java.io.File} object.
-     * @param argList a {@link java.util.List} object.
-     * @param logHandler a {@link ffx.ui.LogHandler} object.
+     * @param argList         a {@link java.util.List} object.
+     * @param logHandler      a {@link ffx.ui.LogHandler} object.
      */
     public HeadlessMain(File commandLineFile, List<String> argList, LogHandler logHandler) {
 
@@ -127,7 +126,7 @@ public class HeadlessMain {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Commons.Lang Style toString.
      */
     @Override

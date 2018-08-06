@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -38,9 +38,12 @@
 package ffx.ui;
 
 import java.io.File;
-import java.util.logging.Logger;
 
+import com.apple.mrj.MRJAboutHandler;
 import com.apple.mrj.MRJApplicationUtils;
+import com.apple.mrj.MRJOpenDocumentHandler;
+import com.apple.mrj.MRJPrefsHandler;
+import com.apple.mrj.MRJQuitHandler;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -52,25 +55,17 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * @author Michael J. Schnieders
  */
 @SuppressWarnings("deprecation")
-public class OSXAdapter implements com.apple.mrj.MRJAboutHandler, com.apple.mrj.MRJOpenDocumentHandler,
-        com.apple.mrj.MRJQuitHandler,  com.apple.mrj.MRJPrefsHandler {
+public class OSXAdapter implements MRJAboutHandler, MRJOpenDocumentHandler,
+        MRJQuitHandler, MRJPrefsHandler {
 
     private final MainPanel mainPanel;
-    private static final Logger logger = Logger.getLogger(OSXAdapter.class.getName());
 
     public OSXAdapter(MainPanel m) {
         mainPanel = m;
-
         MRJApplicationUtils.registerAboutHandler(this);
         MRJApplicationUtils.registerOpenDocumentHandler(this);
         MRJApplicationUtils.registerPrefsHandler(this);
         MRJApplicationUtils.registerQuitHandler(this);
-
-        /**
-        ImageIcon icon = new ImageIcon(m.getClass().getClassLoader().getResource("ffx/ui/icons/icon64.png"));
-        application.setDockIconImage(icon.getImage());
-        application.setDockIconBadge("FFX");
-         */
     }
 
     /**
@@ -127,10 +122,8 @@ public class OSXAdapter implements com.apple.mrj.MRJAboutHandler, com.apple.mrj.
         System.setProperty("com.apple.mrj.application.live-resize", "true");
 
         // Apple OS X Flags
-        System.setProperty("com.apple.macos.smallTabs","true");
+        System.setProperty("com.apple.macos.smallTabs", "true");
         System.setProperty("apple.laf.useScreenMenuBar", "true");
-
-        // -Xdock:name="Force Field X"
 
         // Apple AWT flags.
         System.setProperty("apple.awt.brushMetalLook", "true");
