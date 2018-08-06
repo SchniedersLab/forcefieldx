@@ -2470,12 +2470,13 @@ public class RotamerOptimization implements Terminatable {
             if (isInList) {
                 continue;
             }
+            boolean deoxy = prevResidue.getAtomNode("O2\'") == null;
             double prevDelta = RotamerLibrary.measureDelta(prevResidue);
             // If between 50 and 110, assume a North pucker.
-            if (RotamerLibrary.checkPucker(prevDelta) == 1) {
+            if (RotamerLibrary.NucleicSugarPucker.checkPucker(prevDelta, deoxy) == RotamerLibrary.NucleicSugarPucker.C3_ENDO) {
                 for (int ri = 0; ri < rotamers.length; ri++) {
                     Rotamer roti = rotamers[ri];
-                    if (!roti.isState && RotamerLibrary.checkPucker(roti.chi1) != 1) {
+                    if (!roti.isState && RotamerLibrary.NucleicSugarPucker.checkPucker(roti.chi1, deoxy) != RotamerLibrary.NucleicSugarPucker.C3_ENDO) {
                         if (print) {
                             logIfMaster(format(" Rotamer %d of residue %s eliminated "
                                     + "for incompatibility with the sugar pucker of previous "
@@ -2488,7 +2489,7 @@ public class RotamerOptimization implements Terminatable {
             } else {
                 for (int ri = 0; ri < rotamers.length; ri++) {
                     Rotamer roti = rotamers[ri];
-                    if (!roti.isState && RotamerLibrary.checkPucker(roti.chi1) != 2) {
+                    if (!roti.isState && RotamerLibrary.NucleicSugarPucker.checkPucker(roti.chi1, deoxy) != RotamerLibrary.NucleicSugarPucker.C2_ENDO) {
                         if (print) {
                             logIfMaster(format(" Rotamer %d of residue %s eliminated "
                                     + "for incompatibility with the sugar pucker of previous "
@@ -2499,74 +2500,6 @@ public class RotamerOptimization implements Terminatable {
                     }
                 }
             } // TODO: Implement support for the DNA C3'-exo pucker.
-        }
-    }
-
-    /**
-     * For NA residues inside some optimization window, prune any rotamers which
-     * would be incompatible with the established rotamers of downstream NA
-     * residues. Could in theory be done by self energies, but every rotamer
-     * which can be eliminated without calculating a self energy makes the
-     * optimization much faster. Technically, this works by pinning it to its
-     * current pucker, but if the input structure is any good, it would be the
-     * current pucker anyways.
-     *
-     * @param residues Residues to check for incompatible rotamers.
-     * @return Number of rotamers eliminated for each Residue.
-     */
-    private void reconcileNARotamersWithSubsequentResidues(Residue[] residues, int[] eliminatedRotamers) {
-        for (int i = 0; i < residues.length; i++) {
-            Residue residuei = residues[i];
-            switch (residuei.getResidueType()) {
-                case NA:
-                    Rotamer[] rotamers = residues[i].getRotamers(library);
-                    Residue nextResidue = residuei.getNextResidue();
-                    if (rotamers == null || nextResidue == null) {
-                        break;
-                    }
-                    boolean isInList = false;
-                    for (Residue residue : residues) {
-                        if (residue.equals(nextResidue)) {
-                            isInList = true;
-                            break;
-                        }
-                    }
-                    if (isInList) {
-                        break;
-                    }
-                    double delta = RotamerLibrary.measureDelta(residuei);
-                    if (RotamerLibrary.checkPucker(delta) == 1) {
-                        for (int j = 0; j < rotamers.length; j++) {
-                            if (RotamerLibrary.checkPucker(rotamers[j].chi7) != 1) {
-                                if (print) {
-                                    logIfMaster(format(" Rotamer %d of residue %s eliminated "
-                                            + "for incompatibility with the sugar pucker of previous "
-                                            + "residue %s outside the window.", j, residuei.toFormattedString(false, true),
-                                            nextResidue.toString()));
-                                }
-                                eliminateRotamer(residues, i, j, print);
-                                eliminatedRotamers[i]++;
-                            }
-                        }
-                    } else {
-                        for (int j = 0; j < rotamers.length; j++) {
-                            if (RotamerLibrary.checkPucker(rotamers[j].chi7) != 2) {
-                                if (print) {
-                                    logIfMaster(format(" Rotamer %d of residue %s eliminated "
-                                            + "for incompatibility with the sugar pucker of previous "
-                                            + "residue %s outside the window.", j, residuei.toFormattedString(false, true),
-                                            nextResidue.toString()));
-                                }
-                                eliminateRotamer(residues, i, j, print);
-                                eliminatedRotamers[i]++;
-                            }
-                        }
-                    }
-                    break;
-                case AA:
-                default:
-                    break;
-            }
         }
     }
 
