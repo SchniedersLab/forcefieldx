@@ -912,8 +912,8 @@ public class Residue extends MSGroup {
              * hypothetical O3' coordinates based on default atom positions and
              * the supplied sugar pucker.
              */
-            O3sNorthCoords = RotamerLibrary.applySugarPucker(this, 1, isDeoxy, false);
-            O3sSouthCoords = RotamerLibrary.applySugarPucker(this, 2, isDeoxy, false);
+            O3sNorthCoords = RotamerLibrary.applySugarPucker(this, RotamerLibrary.NucleicSugarPucker.C3_ENDO, isDeoxy, false);
+            O3sSouthCoords = RotamerLibrary.applySugarPucker(this, RotamerLibrary.NucleicSugarPucker.C2_ENDO, isDeoxy, false);
         } catch (Exception e) {
             logger.log(Level.WARNING, toString(), e);
         }
