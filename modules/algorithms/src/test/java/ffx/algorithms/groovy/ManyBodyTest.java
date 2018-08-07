@@ -99,7 +99,7 @@ public class ManyBodyTest extends PJDependentTest {
         Path path = null;
         try {
             path = Files.createTempDirectory("ManyBodyTest");
-            manyBody.setBaseDir(path.toFile());
+            manyBody.setSaveDir(path.toFile());
         } catch (IOException e) {
             Assert.fail(" Could not create a temporary directory.");
         }
@@ -136,7 +136,7 @@ public class ManyBodyTest extends PJDependentTest {
         Path path = null;
         try {
             path = Files.createTempDirectory("ManyBodyTest");
-            manyBody.setBaseDir(path.toFile());
+            manyBody.setSaveDir(path.toFile());
         } catch (IOException e) {
             Assert.fail(" Could not create a temporary directory.");
         }
@@ -190,7 +190,7 @@ public class ManyBodyTest extends PJDependentTest {
         Path path = null;
         try {
             path = Files.createTempDirectory("ManyBodyTest");
-            manyBody.setBaseDir(path.toFile());
+            manyBody.setSaveDir(path.toFile());
         } catch (IOException e) {
             Assert.fail(" Could not create a temporary directory.");
         }
