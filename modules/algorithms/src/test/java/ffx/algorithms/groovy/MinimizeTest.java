@@ -43,14 +43,10 @@ import org.junit.Test;
 
 import groovy.lang.Binding;
 
-import edu.rit.pj.Comm;
-
 import ffx.utilities.DirectoryUtils;
 import ffx.algorithms.PJDependentTest;
 import ffx.algorithms.groovy.Minimizer;
-import ffx.potential.PotentialComponent;
 
-import java.util.logging.Level;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -101,7 +97,7 @@ public class MinimizeTest extends PJDependentTest {
         Path path = null;
         try {
             path = Files.createTempDirectory("MinimizeTest");
-            minimize.setBaseDir(path.toFile());
+            minimize.setSaveDir(path.toFile());
         } catch (IOException e) {
             Assert.fail(" Could not create a temporary directory.");
         }
@@ -135,7 +131,7 @@ public class MinimizeTest extends PJDependentTest {
         Path path = null;
         try {
             path = Files.createTempDirectory("MinimizeTest");
-            minimize.setBaseDir(path.toFile());
+            minimize.setSaveDir(path.toFile());
         } catch (IOException e) {
             Assert.fail(" Could not create a temporary directory.");
         }

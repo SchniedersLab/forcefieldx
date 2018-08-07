@@ -767,6 +767,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     baseRadius[i] = 2.00;
             }
 
+            // baseRadius[i] = atoms[i].getVDWType().radius / 2.0;
+
             double bondiFactor = bondiScale;
 
             int atomNumber = atoms[i].getIndex() + 1;
@@ -1333,7 +1335,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     }
                     born[i] = 1.0 / pow(sum / PI4_3, oneThird);
                     if (verboseRadii) {
-                        logger.info(String.format(" Atom %s Born radius %14.8g", atoms[i], born[i]));
+                        logger.info(String.format(" Atom %s: Base radius %10.6f, Born radius %10.6f", atoms[i], baseRi, born[i]));
                     }
                     if (born[i] < baseRi) {
                         // logger.info(format(" Less than base radii; resetting to %d %12.6f", i, baseRi));
@@ -2533,11 +2535,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
                  * Compute the GK tensors required to compute the energy.
                  */
                 energyTensors();
+
                 /**
                  * Compute the GK interaction energy.
                  */
-                gkEnergy += energy(i, k);
+                double eik = energy(i,k);
+                gkEnergy += eik;
                 count++;
+
                 if (gradient || lambdaTerm) {
                     /**
                      * Compute the additional GK tensors required to compute the

@@ -48,10 +48,6 @@ class Minimizer extends AlgorithmsScript {
     MolecularAssembly[] topologies
     private Potential potential;
 
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir;
-    }
-
     @Override
     Minimizer run() {
 
@@ -131,6 +127,7 @@ class Minimizer extends AlgorithmsScript {
         potential.energy(x, true)
 
         for (mola in topologies) {
+            File file = mola.getFile();
             String filename = mola.getFile().getName()
             String ext = FilenameUtils.getExtension(filename)
             filename = FilenameUtils.removeExtension(filename)
@@ -138,16 +135,8 @@ class Minimizer extends AlgorithmsScript {
             if (ext.toUpperCase().contains("XYZ")) {
                 algorithmFunctions.saveAsXYZ(mola, new File(filename + ".xyz"))
             } else {
-
-                File saveDir = baseDir;
-                if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-                    saveDir = new File(FilenameUtils.getFullPath(filename));
-                }
-                String dirName = saveDir.toString() + File.separator;
-                String modelfileName = FilenameUtils.getName(filename);
-                modelfileName = FilenameUtils.removeExtension(modelfileName) + ".pdb";
-                File modelFile = new File(dirName + modelfileName);
-                algorithmFunctions.saveAsPDB(mola, modelFile);
+                file = saveDirFile(file);
+                algorithmFunctions.saveAsPDB(mola, file);
             }
         }
 

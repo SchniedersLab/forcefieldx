@@ -44,6 +44,7 @@ import ffx.algorithms.AlgorithmUtils;
 import ffx.algorithms.AlgorithmListener;
 import ffx.utilities.BaseScript;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +71,11 @@ public class AlgorithmsScript extends BaseScript {
      * An instance of the AlgorithmListener interface.
      */
     public AlgorithmListener algorithmListener;
+
+    /**
+     * The directory in which to place output files. Mostly for tests.
+     */
+    protected File saveDir;
 
     /**
      * Execute the BaseScript init method, then load algorithm functions.
@@ -128,4 +134,28 @@ public class AlgorithmsScript extends BaseScript {
         return allSucceeded;
     }
 
+    /**
+     * Sets the directory this script should save files to. Mostly used for tests.
+     * @param saveDir Directory to save output to.
+     */
+    public void setSaveDir(File saveDir) {
+        this.saveDir = saveDir;
+    }
+
+    /**
+     * Gets a File in the save directory with the same name as the input file. Can just be the original
+     * file if saveDir was never set, which is the case for production runs.'
+     *
+     * @param file File to find a save location for.
+     * @return File to save to
+     */
+    protected File saveDirFile(File file) {
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            return file;
+        } else {
+            String baseName = file.getName();
+            String newName = saveDir.getAbsolutePath() + File.separator + baseName;
+            return new File(newName);
+        }
+    }
 }
