@@ -1,0 +1,5 @@
+api-reference-license.txt: MIT: Covers the OpenMM API and reference platform.
+gpu-platform-license.txt: GNU LGPL: Covers the OpenMM CUDA and OpenCL platforms
+sfmt-license.txt: Covers the SIMD-oriented Fast Mersenne Twister library on which OpenMM depends.
+hilbert-curve-license.txt: Covers the Rice University implementation of Hilbert curves.
+

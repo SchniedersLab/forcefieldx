@@ -1,0 +1,40 @@
+Force Field X is distributed with the following components:
+Force Field X itself (covered under ffx-license.txt)
+A modified version of Parallel Java (covered under pj-license.txt)
+Binaries from OpenMM (covered under four licenses in openmm-licenses)
+
+ffx-license.txt: GNU GPL with classpath exception: Covers Force Field X itself.
+
+pj-license.txt: GNU GPL with classpath exception: Covers our modified version of Parallel Java 1.
+
+openmm-licenses: Directory with the OpenMM licenses (MIT, GNU LGPL), and its dependency licenses.
+
+
+Force Field X also depends on a number of Java/Groovy packages to function, which are typically downloaded using Maven.
+
+groovy-licenses: Directory with the Groovy license (Apache 2.0) and all its dependency license. Itself copied from the groovy/licenses directory.
+
+apache-license.txt: Apache 2.0 license: covers numerous Apache packages.
+
+hierarchical-clustering-java-license.txt: Apache 2.0: Covers Lars Behnke's hierarchical clustering library.
+
+biojava-license.txt: GNU LGPL v2.1: Covers Biojava.
+
+junit-license.txt: Eclipse Public License v1.0: Covers JUnit.
+
+fastutil-license.txt: Apache 2.0 license: covers the fastutil package by Sebastiano Vigna.
+
+picocli-license.txt: Apache 2.0 license: covers the PicoCLI package.
+
+jogamp-joal-license.txt: Mostly BSD license: covers JOAL
+jogamp-jogl-license.txt: Mostly BSD 2.0 license: covers JOGL and its dependencies.
+jogamp-gluegen-license.txt: Mostly BSD 2.0 license: covers Gluegen and its dependencies.
+
+jcuda-license.txt: MIT/X11: covers JCuda
+
+java-3d-license.txt: Covers Java3D
+
+javahelp-license.txt: GNU GPL 2.0 with classpath exception: Listed license for Javahelp. Could not be confirmed, as links to the organization (javax.help) are dead. 
+
+MRJ Toolkit Stubs: License could not be found.
+
