@@ -1,0 +1,3 @@
+ASM License
+
+ASM uses a 3-clause BSD license. For details, see licenses/asm-license.txt.
