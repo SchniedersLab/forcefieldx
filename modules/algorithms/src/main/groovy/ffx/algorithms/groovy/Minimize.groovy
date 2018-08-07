@@ -41,11 +41,16 @@ class Minimizer extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
     List<String> filenames = null
+    private File baseDir = null;
 
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
     MolecularAssembly[] topologies
     private Potential potential;
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir;
+    }
 
     @Override
     Minimizer run() {
@@ -133,7 +138,16 @@ class Minimizer extends AlgorithmsScript {
             if (ext.toUpperCase().contains("XYZ")) {
                 algorithmFunctions.saveAsXYZ(mola, new File(filename + ".xyz"))
             } else {
-                algorithmFunctions.saveAsPDB(mola, new File(filename + ".pdb"))
+
+                File saveDir = baseDir;
+                if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+                    saveDir = new File(FilenameUtils.getFullPath(filename));
+                }
+                String dirName = saveDir.toString() + File.separator;
+                String modelfileName = FilenameUtils.getName(filename);
+                modelfileName = FilenameUtils.removeExtension(modelfileName) + ".pdb";
+                File modelFile = new File(dirName + modelfileName);
+                algorithmFunctions.saveAsPDB(mola, modelFile);
             }
         }
 
