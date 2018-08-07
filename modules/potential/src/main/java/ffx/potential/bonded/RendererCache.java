@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -310,7 +310,7 @@ public class RendererCache {
      * @return a {@link javax.media.j3d.Appearance} object.
      */
     public static Appearance appearanceFactory(Color3f col,
-            ViewModel polygonType) {
+                                               ViewModel polygonType) {
         if (col == null) {
             return null;
         }
@@ -352,7 +352,7 @@ public class RendererCache {
     }
 
     static private Appearance createAppearance(Color3f col,
-            ViewModel polygonType) {
+                                               ViewModel polygonType) {
         Appearance ap = null;
         if (shaderProgram != null) {
             ShaderAppearance sap = new ShaderAppearance();
@@ -449,7 +449,7 @@ public class RendererCache {
      * @return a {@link javax.media.j3d.BranchGroup} object.
      */
     public static final BranchGroup doubleCylinderFactory(Atom a1, Atom a2,
-            int div) {
+                                                          int div) {
         BranchGroup branchGroup;
         if (doubleCylinderPool.size() > 0) {
             branchGroup = doubleCylinderPool.remove(0);
@@ -595,7 +595,7 @@ public class RendererCache {
      * @param point a {@link javax.vecmath.Point2d} object.
      */
     public static void getScreenCoordinate(Canvas3D canvas, Node node,
-            Point3d point3d, final Point2d point) {
+                                           Point3d point3d, final Point2d point) {
         if (point == null) {
             return;
         }
@@ -707,6 +707,7 @@ public class RendererCache {
     }
 
     // A pool of TransformGroups with one child, a sphere.
+
     /**
      * <p>
      * poolDoubleCylinder</p>
@@ -720,6 +721,7 @@ public class RendererCache {
     }
 
     // A pool of TransformGroups with one child, a sphere.
+
     /**
      * <p>
      * poolSphere</p>
@@ -754,7 +756,7 @@ public class RendererCache {
      * @return a {@link javax.media.j3d.BranchGroup} object.
      */
     public static final BranchGroup sphereFactory(Appearance ap, int div,
-            Transform3D transform3D) {
+                                                  Transform3D transform3D) {
         BranchGroup branchGroup;
         if (spherePool.size() > 0) {
             branchGroup = spherePool.remove(0);
@@ -835,7 +837,7 @@ public class RendererCache {
      * @return a {@link javax.media.j3d.Transform3D} object.
      */
     public static final Transform3D transform3DFactory(Vector3d position,
-            double scale) {
+                                                       double scale) {
         Transform3D transform3D;
         if (transform3DPool.size() > 0) {
             transform3D = transform3DPool.get(0);

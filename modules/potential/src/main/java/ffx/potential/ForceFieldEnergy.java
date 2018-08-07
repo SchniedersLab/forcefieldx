@@ -852,8 +852,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (noHeader) {
             logger.setLevel(logger.getParent().getLevel());
         }
+
         if (lambdaTerm) {
-            this.setLambda(1.0);
+             this.setLambda(1.0);
         }
     }
 
@@ -1956,7 +1957,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                 logger.warning(message);
             }
         } else {
-            logger.fine(" Attempting to set a lambda value on a ForceFieldEnergy with lambdaterm false.");
+            logger.info(" Attempting to set a lambda value on a ForceFieldEnergy with lambdaterm false.");
         }
     }
 

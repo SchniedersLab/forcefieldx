@@ -41,6 +41,7 @@ class Minimizer extends AlgorithmsScript {
      */
     @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
     List<String> filenames = null
+    private File baseDir = null;
 
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
@@ -126,6 +127,7 @@ class Minimizer extends AlgorithmsScript {
         potential.energy(x, true)
 
         for (mola in topologies) {
+            File file = mola.getFile();
             String filename = mola.getFile().getName()
             String ext = FilenameUtils.getExtension(filename)
             filename = FilenameUtils.removeExtension(filename)
@@ -133,7 +135,8 @@ class Minimizer extends AlgorithmsScript {
             if (ext.toUpperCase().contains("XYZ")) {
                 algorithmFunctions.saveAsXYZ(mola, new File(filename + ".xyz"))
             } else {
-                algorithmFunctions.saveAsPDB(mola, new File(filename + ".pdb"))
+                file = saveDirFile(file);
+                algorithmFunctions.saveAsPDB(mola, file);
             }
         }
 

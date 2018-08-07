@@ -49,13 +49,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
+import ffx.crystal.Crystal;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
 import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
 import ffx.potential.parameters.AngleType;
-import org.apache.commons.math3.util.FastMath;
 
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static ffx.potential.bonded.BondedUtils.intxyz;
@@ -3460,8 +3459,6 @@ public class RotamerLibrary {
         NucleicAcid3 na = NucleicAcid3.valueOf(residue.getName());
         Residue prevResidue = residue.getPreviousResidue();
         boolean is3sTerminal = false;  // 3' terminal
-        int sugarPucker;
-        int prevSugarPucker;
         if (residue.getNextResidue() == null) {
             is3sTerminal = true;
         }
@@ -3470,30 +3467,12 @@ public class RotamerLibrary {
         /* if (residue.getAtomList().size() == 1) {
          return;
          } */
-        boolean isDeoxy; // Could be specified by appplySugarPucker, but that
-        // would be confusing.
-        switch (na) {
-            case DTY:
-            case DGU:
-            case DAD:
-            case DCY:
-                isDeoxy = true;
-                break;
-            case GUA:
-            case CYT:
-            case URI:
-            case ADE:
-            case THY:
-            default:
-                isDeoxy = false;
-                break;
-        }
+        boolean isDeoxy = residue.getAtomNode("O2\'") == null;
 
         // Note: chi values will generally be applied from chi7 to chi1.
         // Will have to add an else-if to handle DNA C3'-exo configurations.
-        // Sugar pucker = 1: North pucker.  2: South pucker.  3: C3'-exo pucker.
-        sugarPucker = checkPucker(rotamer.chi7);
-        prevSugarPucker = checkPucker(rotamer.chi1);
+        NucleicSugarPucker sugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi7, isDeoxy);
+        NucleicSugarPucker prevSugarPucker = NucleicSugarPucker.checkPucker(rotamer.chi1, isDeoxy);
 
         // Revert C1', O4', and C4' coordinates to PDB defaults.
         Atom C1s = (Atom) residue.getAtomNode("C1\'");
@@ -3534,7 +3513,7 @@ public class RotamerLibrary {
      * @return A double[] with O3' coordinates (place=false), or null
      * (place=true).
      */
-    public static double[] applySugarPucker(Residue residue, int pucker, boolean isDeoxy, boolean place) {
+    public static double[] applySugarPucker(Residue residue, NucleicSugarPucker pucker, boolean isDeoxy, boolean place) {
         // Torsions from http://ndb-mirror-2.rutgers.edu/ndbmodule/archives/proj/valence/table6.html
         // SP is short for Sugar Pucker (torsion).
         final double C2_SP_SOUTH_RNA = 24.2;
@@ -3594,7 +3573,7 @@ public class RotamerLibrary {
             double dC4s_C3s_C2s = C4s_C3s_C2s.angleType.angle[C4s_C3s_C2s.nh];
 
             if (isDeoxy) {
-                if (pucker == 1) {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
                     intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_DNA, 0);
                     intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_DNA, 0);
                     intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_DNA, 0);
@@ -3605,7 +3584,7 @@ public class RotamerLibrary {
                     intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_SOUTH_DNA, 0);
                 }
             } else {
-                if (pucker == 1) {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
                     intxyz(C3s, C4s, dC3s_C4s, O4s, dC3s_C4s_O4s, C1s, C3_SP_NORTH_RNA, 0);
                     intxyz(C2s, C3s, dC3s_C2s, C4s, dC4s_C3s_C2s, O4s, C2_SP_NORTH_RNA, 0);
                     intxyz(O3s, C3s, dC3s_O3s, C4s, dC4s_C3s_O3s, O4s, O3_SP_NORTH_RNA, 0);
@@ -3626,7 +3605,7 @@ public class RotamerLibrary {
 
             // O3s coordinates will be filled into ret.
             if (isDeoxy) {
-                if (pucker == 1) {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
                     C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_DNA, 0);
                     ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_DNA, 0);
                 } // TODO: else-if for 3'-exo configuration (DNA only)
@@ -3635,7 +3614,7 @@ public class RotamerLibrary {
                     ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_SOUTH_DNA, 0);
                 }
             } else {
-                if (pucker == 1) {
+                if (pucker == NucleicSugarPucker.C3_ENDO) {
                     C3sXYZ = determineIntxyz(C4sXYZ, dC3s_C4s, O4sXYZ, dC3s_C4s_O4s, C1sXYZ, C3_SP_NORTH_RNA, 0);
                     ret = determineIntxyz(C3sXYZ, dC3s_O3s, C4sXYZ, dC4s_C3s_O3s, O4sXYZ, O3_SP_NORTH_RNA, 0);
                 } else {
@@ -3659,7 +3638,7 @@ public class RotamerLibrary {
      * @param is3sTerminal If Residue is at a 3' end.
      * @param prevSugarPucker Sugar pucker for prevResidue specified by Rotamer.
      */
-    private static void applyNASideAtoms(Residue residue, Rotamer rotamer, Residue prevResidue, boolean isDeoxy, boolean is3sTerminal, int prevSugarPucker) {
+    private static void applyNASideAtoms(Residue residue, Rotamer rotamer, Residue prevResidue, boolean isDeoxy, boolean is3sTerminal, NucleicSugarPucker prevSugarPucker) {
         Atom C1s = (Atom) residue.getAtomNode("C1\'");
         Atom C2s = (Atom) residue.getAtomNode("C2\'");
         Atom C3s = (Atom) residue.getAtomNode("C3\'");
@@ -3796,7 +3775,7 @@ public class RotamerLibrary {
              */
             if (prevResidue != null) {
                 double[] O3sPriorCoords;
-                if (prevSugarPucker == 1) {
+                if (prevSugarPucker == NucleicSugarPucker.C3_ENDO) {
                     O3sPriorCoords = prevResidue.getO3sNorth();
                 } else {
                     O3sPriorCoords = prevResidue.getO3sSouth();
@@ -3899,7 +3878,7 @@ public class RotamerLibrary {
      * @return The magnitude of any applied correction.
      */
     private static double applyNACorrections(Residue residue, Residue prevResidue, Rotamer rotamer,
-            int prevSugarPucker, boolean isDeoxy, boolean is3sTerminal) {
+            NucleicSugarPucker prevSugarPucker, boolean isDeoxy, boolean is3sTerminal) {
         // Backbone atoms of this residue to be adjusted
         Atom C3s = (Atom) residue.getAtomNode("C3\'");
         Atom O4s = (Atom) residue.getAtomNode("O4\'");
@@ -3916,7 +3895,7 @@ public class RotamerLibrary {
 
         // Original position of O3' (i-1). Will be used to draw the correction
         // vector.
-        if (prevSugarPucker == 1) {
+        if (prevSugarPucker == NucleicSugarPucker.C3_ENDO) {
             O3sPriorCoords = prevResidue.getO3sNorth();
         } else {
             O3sPriorCoords = prevResidue.getO3sSouth();
@@ -3960,35 +3939,6 @@ public class RotamerLibrary {
         return ((corrections[5][0] * corrections[5][0])
                 + (corrections[5][1] * corrections[5][1])
                 + (corrections[5][2] * corrections[5][2]));
-    }
-
-    /**
-     * Returns 1 if a North pucker, 2 if a South pucker, and eventually 3 if a
-     * C3'-exo pucker (DNA only).
-     *
-     * @param delta Delta torsion to check
-     * @return Pucker
-     */
-    public static int checkPucker(double delta) {
-        /*
-         * Midpoint between North, South is 115 degrees.
-         *
-         * 0-360: North is 0-115 or 295-360.
-         * -180 to 180: North is -65 to 115.
-         */
-        if (delta > 115.0) {
-            if (delta < 295.0) { // 115-295
-                return 2;
-            } else { // 295-360
-                return 1;
-            }
-        } else {
-            if (delta > -65.0) { // -65 to 115
-                return 1;
-            } else {
-                return 2; // -180 to -65
-            }
-        } // TODO: Add else-if to handle C3'-exo pucker.
     }
     
     public static boolean addRotPatch(String rotFileName) {
@@ -4244,6 +4194,43 @@ public class RotamerLibrary {
                 int chirality = Integer.parseInt(toks[6]);
                 intxyz(at1, at2, dbond, at3, dang, at4, dtors, chirality);
             }
+        }
+    }
+
+    public enum NucleicSugarPucker {
+        // Used to be 2, 1, and 3 respectively.
+        C2_ENDO("south"), C3_ENDO("north"), C3_EXO();
+        private final List<String> alternateNames;
+
+        NucleicSugarPucker() {
+            alternateNames = Collections.emptyList();
+        }
+
+        NucleicSugarPucker(String aName) {
+            alternateNames = Collections.singletonList(aName);
+        }
+
+        /**
+         * Returns the sugar pucker associated with a delta torsion. Currently does
+         * not support the C3'-exo DNA-only pucker.
+         *
+         * @param delta Delta torsion to check
+         * @param isDeoxy If DNA (vs. RNA). Presently ignored.
+         * @return Pucker
+         */
+        public static NucleicSugarPucker checkPucker(double delta, boolean isDeoxy) {
+        /*
+         * Midpoint between North, South is 115 degrees.
+         *
+         * 0-360: North is 0-115 or 295-360.
+         * -180 to 180: North is -65 to 115.
+         */
+            delta = Crystal.mod(delta, 360.0);
+            if (delta <= 115 || delta > 295) {
+                return C3_ENDO;
+            } else {
+                return C2_ENDO;
+            } // TODO: Add else-if to handle C3'-exo pucker.
         }
     }
 }

@@ -129,13 +129,16 @@ class MultiTopTimer extends PotentialScript {
         double[] x = new double[nVars];
         potential.getCoordinates(x);
         double[] g = gradient ? new double[nVars] : null;
-        def eCall = gradient ? { potential.energyAndGradient(x, g, print) } : { potential.energy(x, print) };
 
         String baseString = gradient ? " Energy and gradient " : " Energy ";
 
         for (int i = 0; i < nEvals; i++) {
             long time = -System.nanoTime();
-            eCall();
+            if (gradient) {
+                potential.energyAndGradient(x, g, print);
+            } else {
+                potential.energy(x, print);
+            }
             time += System.nanoTime();
             minTime = time < minTime ? time : minTime;
             int rmsIndex = i + (numRMSevals - nEvals);

@@ -41,10 +41,6 @@ class ManyBody extends AlgorithmsScript {
     
     ForceFieldEnergy potentialEnergy;
 
-    void setBaseDir(File baseDir) {
-        this.baseDir = baseDir;
-    }
-
     boolean monteCarloTesting = false;
     
     @Override
@@ -67,6 +63,7 @@ class ManyBody extends AlgorithmsScript {
             logger.info(helpString());
             return this;
         } else {
+            // TODO: Get the active assembly from the User Interface/GUI. Or die.
             logger.warning("Could not load file or active assembly.");
         }
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
@@ -76,7 +73,7 @@ class ManyBody extends AlgorithmsScript {
             activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
         testing  = getTesting();
 
-        if(testing == true){
+        if (testing) {
             rotamerOptimization.turnRotamerSingleEliminationOff();
             rotamerOptimization.turnRotamerPairEliminationOff();
         }
@@ -126,16 +123,7 @@ class ManyBody extends AlgorithmsScript {
             logger.info(" Final Minimum Energy");
 
             algorithmFunctions.energy(activeAssembly);
-
-            File saveDir = baseDir;
-            if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-                saveDir = new File(FilenameUtils.getFullPath(modelFileName));
-            }
-            String dirName = saveDir.toString() + File.separator;
-            String fileName = FilenameUtils.getName(modelFileName);
-            fileName = FilenameUtils.removeExtension(fileName) + ".pdb";
-            File modelFile = new File(dirName + fileName);
-
+            File modelFile = saveDirFile(activeAssembly.getFile());
             algorithmFunctions.saveAsPDB(activeAssembly, modelFile);
         }
 

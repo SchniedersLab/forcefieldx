@@ -1077,7 +1077,6 @@ public final class MainPanel extends JPanel implements ActionListener,
         String dir = System.getProperty("user.dir", FileSystemView.getFileSystemView().getDefaultDirectory().getAbsolutePath());
         setCWD(new File(dir));
         locale = new FFXLocale("en", "US");
-        ClassLoader loader = getClass().getClassLoader();
 
         // Create the Root Node
         dataRoot = new MSRoot();
@@ -1131,6 +1130,7 @@ public final class MainPanel extends JPanel implements ActionListener,
         }
 
         tabbedPane = new JTabbedPane();
+        // ClassLoader loader = getClass().getClassLoader();
         // ImageIcon graphicsIcon = new ImageIcon(loader.getResource("ffx/ui/icons/monitor.png"));
         // ImageIcon keywordIcon = new ImageIcon(loader.getResource("ffx/ui/icons/key.png"));
         // ImageIcon modelingIcon = new ImageIcon(loader.getResource("ffx/ui/icons/cog.png"));

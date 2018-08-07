@@ -147,9 +147,9 @@
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>simtk</groupId>
-            <artifactId>openmm-fat</artifactId>
-            <version>${openmm.version}</version>
+            <groupId>edu.uiowa.jopenmm</groupId>
+            <artifactId>jopenmm-fat</artifactId>
+            <version>${jopenmm.version}</version>
         </dependency>
     </dependencies>
 </project>
