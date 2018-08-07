@@ -1,5 +1,6 @@
 package ffx.algorithms.groovy
 
+import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.SimulatedAnnealing
 import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
@@ -33,8 +34,16 @@ class Anneal extends AlgorithmsScript {
      * One or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
-            description = "XYZ or PDB input files.")
+        description = "XYZ or PDB input files.")
     private List<String> filenames
+    
+    private SimulatedAnnealing simulatedAnnealing = null;
+    
+    private File baseDir = null
+
+    void setBaseDir(File baseDir) {
+        this.baseDir = baseDir
+    }
 
     @Override
     Anneal run() {
@@ -45,35 +54,46 @@ class Anneal extends AlgorithmsScript {
 
         dynamics.init()
 
-        String modelfilename
+        String modelFilename
         if (filenames != null && filenames.size() > 0) {
             MolecularAssembly[] assemblies = algorithmFunctions.open(filenames.get(0))
             activeAssembly = assemblies[0]
-            modelfilename = filenames.get(0)
+            modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
             return
         } else {
-            modelfilename = activeAssembly.getFile().getAbsolutePath();
+            modelFilename = activeAssembly.getFile().getAbsolutePath();
         }
 
-        logger.info("\n Running simulated annealing on " + modelfilename + "\n")
+        logger.info("\n Running simulated annealing on " + modelFilename + "\n")
 
-        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(activeAssembly,
-                activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
-                algorithmListener, dynamics.thermostat, dynamics.integrator)
+        simulatedAnnealing = new SimulatedAnnealing(activeAssembly,
+            activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
+            algorithmListener, dynamics.thermostat, dynamics.integrator)
 
         simulatedAnnealing.anneal(anneal.upper, anneal.low, anneal.windows, dynamics.steps, dynamics.dt)
 
-        String ext = FilenameUtils.getExtension(modelfilename)
-        modelfilename = FilenameUtils.removeExtension(modelfilename)
-
-        if (ext.toUpperCase().contains("XYZ")) {
-            algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelfilename + ".xyz"));
-        } else {
-            algorithmFunctions.saveAsPDB(activeAssembly, new File(modelfilename + ".pdb"));
+        File saveDir = baseDir
+        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+            saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
 
+        String fileName = FilenameUtils.getName(modelFilename)
+        String ext = FilenameUtils.getExtension(fileName)
+        fileName = FilenameUtils.removeExtension(fileName)
+
+        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+
+        if (ext.toUpperCase().contains("XYZ")) {
+            algorithmFunctions.saveAsXYZ(activeAssembly, new File(dirName + fileName + ".xyz"))
+        } else {
+            algorithmFunctions.saveAsPDB(activeAssembly, new File(dirName + fileName + ".pdb"))
+        }
         return this
+    }
+    
+    public SimulatedAnnealing getAnnealing(){
+        return simulatedAnnealing;
     }
 }

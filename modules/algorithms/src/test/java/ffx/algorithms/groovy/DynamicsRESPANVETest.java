@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,6 +53,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import edu.rit.pj.Comm;
+import ffx.algorithms.MolecularDynamics;
 
 import ffx.algorithms.groovy.Dynamics;
 
@@ -63,44 +64,36 @@ import groovy.lang.Binding;
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsBeemanBerendsenTest {
+public class DynamicsRESPANVETest {
 
     private String info;
     private String filename;
-    private double endKineticEnergy;
-    private double endPotentialEnergy;
-    private double endTotalEnergy;
-    private double endTemperature;
-    private double tolerance = 0.1;
+    private double startingTotalEnergy;
+    private double tolerance = 0.2;
 
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsBeemanBerendsenTest.class.getName());
+    private static final Logger logger = Logger.getLogger(DynamicsRESPANVETest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {
-                        "Acetamide with BetterBeeman Integrator and Berendsen Thermostat", // info
+                        "Acetamide RESPA NVE", // info
                         "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-                        4.8087, // endKineticEnergy
-                        -29.7186, // endPotentialEnergy
-                        -24.9099, // endTotalEnergy
-                        201.65 // End temperature
+                        -25.1958 // startingTotalEnergy
                 }
 
         });
+
     }
 
-    public DynamicsBeemanBerendsenTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy,
-                                       double endTotalEnergy, double endTemperature) {
+    public DynamicsRESPANVETest(String info, String filename, double startingTotalEnergy) {
+
         this.info = info;
         this.filename = filename;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
-        this.endTotalEnergy = endTotalEnergy;
-        this.endTemperature = endTemperature;
+        this.startingTotalEnergy = startingTotalEnergy;
     }
 
     @Before
@@ -136,10 +129,10 @@ public class DynamicsBeemanBerendsenTest {
     }
 
     @Test
-    public void testDynamicsBeemanBerendsen() {
+    public void testRESPANVE() {
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "Beeman", "-b", "Berendsen", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
 
         // Evaluate the script.
@@ -147,11 +140,8 @@ public class DynamicsBeemanBerendsenTest {
 
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-        // Assert that end energies are within the tolerance for the dynamics trajectory
-        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
-        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
-        assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
-        assertEquals(info + " Final temperature", endTemperature, molDyn.getTemperature(), tolerance);
+        // Assert that the final total energy is within the tolerance for the molecular dynamics trajectory
+        assertEquals(info + "End total energy for RESPA integrator NVE", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
     }
 
 }

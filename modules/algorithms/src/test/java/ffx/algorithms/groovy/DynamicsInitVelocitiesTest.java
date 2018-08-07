@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package ffx.algorithms;
+package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import edu.rit.pj.Comm;
+import ffx.algorithms.MolecularDynamics;
 
 import ffx.algorithms.groovy.Dynamics;
 

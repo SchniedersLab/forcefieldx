@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,6 +53,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import edu.rit.pj.Comm;
+import ffx.algorithms.MolecularDynamics;
+import ffx.algorithms.MolecularDynamics;
 
 import ffx.algorithms.groovy.Dynamics;
 
@@ -62,44 +64,36 @@ import groovy.lang.Binding;
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsNVETest {
+public class DynamicsNVTTest {
 
     private String info;
     private String filename;
-    private double startingTotalEnergy;
-    private double endKineticEnergy;
-    private double endPotentialEnergy;
+    private double startingTemp;
+    private double tempTolerance = 3.0;
     private double endTotalEnergy;
-    private double tolerance = 0.1;
-
-    private boolean alwaysFail = false;
+    private double energyTolerance = 0.5;
 
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsNVETest.class.getName());
+    private static final Logger logger = Logger.getLogger(DynamicsNVTTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {
-                        "Acetamide Peptide NVE", // info
-                        "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-                        -25.1958, // startingTotalEnergy
-                        4.5625, // endKineticEnergy
-                        -29.8043, // endPotentialEnergy
-                        -25.2418 // endTotalEnergy
+                        "Water Box NVT", // info
+                        "ffx/algorithms/structures/waterbox_eq.xyz", // filename
+                        299.77,             // Starting temperature.
+                        -25260.0499         // Final total energy.
                 }
         });
     }
 
-    public DynamicsNVETest(String info, String filename, double startingTotalEnergy, double endKineticEnergy,
-                           double endPotentialEnergy, double endTotalEnergy) {
+    public DynamicsNVTTest(String info, String filename, double startingTemp, double endTotalEnergy) {
         this.info = info;
         this.filename = filename;
-        this.startingTotalEnergy = startingTotalEnergy;
-        this.endKineticEnergy = endKineticEnergy;
-        this.endPotentialEnergy = endPotentialEnergy;
+        this.startingTemp = startingTemp;
         this.endTotalEnergy = endTotalEnergy;
     }
 
@@ -108,7 +102,6 @@ public class DynamicsNVETest {
         binding = new Binding();
         dynamics = new Dynamics();
         dynamics.setBinding(binding);
-
     }
 
     @BeforeClass
@@ -137,20 +130,10 @@ public class DynamicsNVETest {
     }
 
     @Test
-    public void testDynamicsHelp() {
-        // Set-up the input arguments for the script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
-
-        // Evaluate the script.
-        dynamics.run();
-    }
-
-    @Test
-    public void testDynamicsNVE() {
+    public void testDynamicsNVT() {
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "VelocityVerlet", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-t", "298.15", "-i", "VelocityVerlet", "-b", "Bussi", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
 
         // Evaluate the script.
@@ -158,10 +141,10 @@ public class DynamicsNVETest {
 
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-        // Assert that energy is conserved at the end of the dynamics trajectory.
-        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
-        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
-        assertEquals(info + " Final total energy", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
-    }
+        // Assert that temperature is within tolerance at the end of the dynamics trajectory.
+        assertEquals(info + " End temperature for NVT test", startingTemp, molDyn.getTemperature(), tempTolerance);
 
+        // Assert that the end total energy is withing the tolerance at the end of the dynamics trajectory.
+        assertEquals(info + " End total energy for NVT test and set random seed", endTotalEnergy, molDyn.getTotalEnergy(), energyTolerance);
+    }
 }
