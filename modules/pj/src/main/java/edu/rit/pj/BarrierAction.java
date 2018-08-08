@@ -32,14 +32,15 @@ package edu.rit.pj;
  * <LI>
  * When the {@linkplain ParallelTeam} threads finish executing all the
  * iterations of a parallel for loop.
- * <P>
+ * </LI>
  * <LI>
  * When the {@linkplain ParallelTeam} threads finish executing all the
  * {@linkplain ParallelSection}s in a group of parallel sections.
- * <P>
+ * </LI>
  * <LI>
  * When the {@linkplain ParallelTeam} threads call the {@linkplain
  * ParallelRegion}'s <TT>barrier()</TT> method explicitly.
+ * </LI>
  * </UL>
  * As each thread finishes executing one of the above constructs, each thread
  * encounters a barrier. What happens next depends on the barrier action
@@ -50,12 +51,12 @@ package edu.rit.pj;
  * BarrierAction.WAIT}, each thread stops and waits at the barrier. When all
  * threads have arrived at the barrier, each thread resumes and proceeds to
  * execute whatever comes after the construct.
- * <P>
+ * </LI>
  * <LI>
  * If the barrier action is {@link #NO_WAIT BarrierAction.NO_WAIT}, nothing
  * happens. The threads do not wait for each other. Each thread immediately
  * proceeds to execute whatever comes after the construct.
- * <P>
+ * </LI>
  * <LI>
  * If the barrier action is an instance of class BarrierAction with the
  * <TT>run()</TT> method overridden, each thread stops and waits at the barrier.
@@ -64,8 +65,9 @@ package edu.rit.pj;
  * calls the <TT>run()</TT> method is not specified. During this time the other
  * threads remain stopped. When the <TT>run()</TT> method returns, each thread
  * resumes and proceeds to execute whatever comes after the construct.
+ * </LI>
  * </UL>
- * <P>
+ * <p>
  * Thus, the barrier serves to synchronize all the threads at the end of a
  * parallel construct and possibly to execute a section of code in a single
  * thread.
@@ -77,6 +79,7 @@ public abstract class BarrierAction
         extends ParallelConstruct {
 
 // Exported constructors.
+
     /**
      * Construct a new barrier action.
      */
@@ -84,25 +87,26 @@ public abstract class BarrierAction
     }
 
 // Exported operations.
+
     /**
      * Execute this barrier action. The <TT>run()</TT> method is called by a
      * single thread after all threads have arrived at the barrier.
-     * <P>
+     * <p>
      * The <TT>run()</TT> method must be implemented in a subclass.
      *
-     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws Exception           The <TT>run()</TT> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public abstract void run()
             throws Exception;
 
 // Hidden operations.
+
     /**
      * Execute a barrier.
      *
      * @param currentThread Parallel team thread calling <TT>doBarrier()</TT>.
-     *
-     * @exception Exception The <TT>run()</TT> method may throw any exception.
+     * @throws Exception The <TT>run()</TT> method may throw any exception.
      */
     void doBarrier(ParallelTeamThread currentThread)
             throws Exception {

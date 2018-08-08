@@ -52,11 +52,10 @@ import edu.rit.util.Range;
  * run the parallel program on multiple processors of a cluster parallel
  * computer. Class Comm also provides methods for passing messages between the
  * processes of the parallel program.
- * <P>
  * <HR>
- * <P>
+ * <p>
  * <B>BASIC CONCEPTS</B>
- * <P>
+ * <p>
  * A <B>cluster parallel computer</B> typically consists of a <B>frontend
  * processor</B> and a number of <B>backend processors</B> connected via a
  * dedicated high-speed network. A user logs into the frontend processor and
@@ -69,48 +68,49 @@ import edu.rit.util.Range;
  * PJ program, but merely displays all the backend processes' standard output
  * and standard error streams on the frontend process's own standard output and
  * standard error.
- * <P>
+ * <p>
  * For the PJ message passing middleware to work, certain server processes must
  * be running. See package {@linkplain edu.rit.pj.cluster} for further
- * information.
- * <P>
+ * informati
+ * on.
+ * <p>
  * To initialize the PJ message passing middleware, the program must first call
  * the static <TT>Comm.init()</TT> method, passing in the command line
  * arguments.
- * <P>
+ * <p>
  * A <B>communicator</B> is associated with a group of backend processes. The
  * communicator's <B>size</B> is the number of processes in the group. Each
  * process in the communicator has a different <B>rank</B> in the range 0 ..
  * <I>size</I>-1. A process may obtain the size and rank by calling the
  * communicator's <TT>size()</TT> and <TT>rank()</TT> methods.
- * <P>
+ * <p>
  * There is one predefined communicator, the <B>world communicator,</B>
  * consisting of all the backend processes in the parallel program. A process
  * may obtain a reference to the world communicator by calling the static
  * <TT>Comm.world()</TT> method. Typically, the first few lines in a PJ cluster
  * parallel program look like this:
  * <PRE>
- *     public class AParallelProgram
- *         {
- *         public static void main
- *             (String[] args)
- *             throws Exception
- *             {
- *             Comm.init (args);
- *             Comm world = Comm.world();
- *             int size = world.size();
- *             int rank = world.rank();
- *             . . .</PRE>
- * <P>
+ * public class AParallelProgram
+ * {
+ * public static void main
+ * (String[] args)
+ * throws Exception
+ * {
+ * Comm.init (args);
+ * Comm world = Comm.world();
+ * int size = world.size();
+ * int rank = world.rank();
+ * . . .</PRE>
+ * <p>
  * The number of processes in the parallel program -- that is, the size of the
  * world communicator -- is specified by the <TT>"pj.np"</TT> property, which
  * must be an integer greater than or equal to 1. You can specify the number of
  * processes on the Java command line like this:
  * <PRE>
- *     java -Dpj.np=4 . . .</PRE>
- * <P>
+ * java -Dpj.np=4 . . .</PRE>
+ * <p>
  * If the <TT>"pj.np"</TT> property is not specified, the default is 1.
- * <P>
+ * <p>
  * The PJ program will run on the specified number of backend processors as
  * described above. To determine which backend processors to use, the PJ program
  * interacts with a <B>Job Scheduler</B> server process running on the frontend
@@ -124,33 +124,32 @@ import edu.rit.util.Range;
  * program interacts with the Job Scheduler, the Job Scheduler can ensure that
  * each backend processor is running a backend process for only one job at a
  * time.
- * <P>
+ * <p>
  * Depending on the system load, your PJ program may have to wait in the Job
  * Scheduler's queue for a while until enough backend processors become ready.
  * If you get tired of waiting, you can kill your PJ program (e.g., by typing
  * CTRL-C), which will remove your PJ program from the Job Scheduler's queue.
- * <P>
+ * <p>
  * The Job Scheduler has a web interface that lets you examine the cluster
  * status. Just point your web browser at this URL:
- * <P>
+ * <p>
  * <TT>&nbsp;&nbsp;&nbsp;&nbsp;http://&lt;hostname&gt;:8080/</TT>
- * <P>
+ * <p>
  * where <TT>&lt;hostname&gt;</TT> is replaced by the host name of the frontend
  * processor. The default port for the cluster status web interface is port
  * 8080. The Job Scheduler can be configured to use a different port. For
  * further information, see package {@linkplain edu.rit.pj.cluster}.
- * <P>
+ * <p>
  * If the PJ program is executed on a host where no Job Scheduler is running,
  * the PJ program will run in <I>one</I> process on that host (i.e., the machine
  * you're logged into), rather than on the backend processors. The message
  * passing methods in class Comm will still work, though. This option can be
  * useful for debugging a PJ program's logic on a non-parallel machine before
  * running the PJ program on a cluster.
- * <P>
  * <HR>
- * <P>
+ * <p>
  * <B>MESSAGE PASSING</B>
- * <P>
+ * <p>
  * PJ provides two categories of communication, <B>point-to-point
  * communication</B> and <B>collective communication.</B> The following methods
  * of class Comm are used for point-to-point communication:
@@ -175,7 +174,7 @@ import edu.rit.util.Range;
  * <LI><TT>barrier()</TT>
  * </UL>
  * These methods are described further in the sections below.
- * <P>
+ * <p>
  * In addition, you can create a new communicator consisting of all, or a subset
  * of, the processes in an existing communicator. Message passing in the new
  * communicator is completely independent of message passing in the original
@@ -183,11 +182,10 @@ import edu.rit.util.Range;
  * <UL>
  * <LI><TT>createComm()</TT>
  * </UL>
- * <P>
  * <HR>
- * <P>
+ * <p>
  * <B>POINT-TO-POINT COMMUNICATION</B>
- * <P>
+ * <p>
  * One process in a PJ cluster parallel program, the <B>source process</B>, may
  * use a communicator to send a message to another process in the program, the
  * <B>destination process</B>. This is called a <B>point-to-point
@@ -195,9 +193,9 @@ import edu.rit.util.Range;
  * a collective communication, which involves all the processes). Five
  * point-to-point communication methods are available in this release: send,
  * receive, send-receive, flood-send, and flood-receive.
- * <P>
+ * <p>
  * <B>Send and Receive</B>
- * <P>
+ * <p>
  * To do a point-to-point communication, the source process calls the
  * <TT>send()</TT> method on a certain communicator, such as the world
  * communicator. The source process specifies the destination process's rank,
@@ -207,7 +205,7 @@ import edu.rit.util.Range;
  * source process. The destination process specifies the source process's rank,
  * the message tag which must be the same as in the source process, and the
  * buffer for the data items to be received.
- * <P>
+ * <p>
  * A <TT>send()</TT> method call and a <TT>receive()</TT> method call are said
  * to <B>match</B> if (a) the rank passed to the <TT>send()</TT> method equals
  * the rank of the process calling <TT>receive()</TT>, (b) the rank passed to
@@ -221,19 +219,19 @@ import edu.rit.util.Range;
  * A <TT>send()</TT> method call <I>may</I> block until a matching
  * <TT>receive()</TT> method call occurs due to flow control in the underlying
  * network communication.
- * <P>
+ * <p>
  * The message tag can be used to distinguish different kinds of messages. A
  * <TT>receive()</TT> method call will only match a <TT>send()</TT> method call
  * with the same tag. If there is no need to distinguish different kinds of
  * messages, omit the tag (it will default to 0).
- * <P>
+ * <p>
  * Once a <TT>send()</TT> method call and a <TT>receive()</TT> method call have
  * been matched together, the actual message data transfer takes place. Each
  * item in the source buffer, starting at index 0 and continuing for the entire
  * length of the source buffer, is written to the message. At the other end,
  * each item in the destination buffer, starting at index 0, is read from the
  * message.
- * <P>
+ * <p>
  * The <TT>receive()</TT> method returns a {@linkplain CommStatus} object. The
  * status object gives the actual rank of the process that sent the message, the
  * actual message tag that was received, and the actual number of data items in
@@ -242,7 +240,7 @@ import edu.rit.util.Range;
  * items at the end of the destination buffer. If the actual number of data
  * items in the message is greater than the length of the destination buffer,
  * the extra data items at the end of the message are discarded.
- * <P>
+ * <p>
  * The <TT>send()</TT> method does not return until all the message elements
  * have been written from the source buffer. Likewise, the <TT>receive()</TT>
  * method does not return until all the message elements have been read into the
@@ -251,14 +249,14 @@ import edu.rit.util.Range;
  * has also returned. Because of buffering in the underlying network
  * communication, not all the destination items might have been received even
  * though all the source items have been sent.
- * <P>
+ * <p>
  * The destination process, instead of specifying a particular source process,
  * can declare that it will receive a message from any source process by
  * specifying null for the source process rank in the <TT>receive()</TT> method
  * call. This is called a <B>wildcard source</B>. In this case the
  * <TT>receive()</TT> method call's returned status object will indicate the
  * actual source process that sent the message.
- * <P>
+ * <p>
  * The destination process, instead of specifying a particular message tag, can
  * declare that it will receive a message with any tag by specifying null for
  * the tag in the <TT>receive()</TT> method call. This is called a <B>wildcard
@@ -266,14 +264,14 @@ import edu.rit.util.Range;
  * message tags, and it will receive a message with any tag in the given range.
  * In these cases the <TT>receive()</TT> method call's returned status object
  * will indicate the actual message tag that was sent.
- * <P>
+ * <p>
  * A process can send a message to itself. In this case one thread must call
  * <TT>send()</TT> (specifying the process's own rank as the destination) and a
  * different thread must call <TT>receive()</TT> (specifying the process's own
  * rank as the source), otherwise a deadlock will ensue.
- * <P>
+ * <p>
  * <B>Send-Receive</B>
- * <P>
+ * <p>
  * By calling the <TT>sendReceive()</TT> method, a process can send a buffer of
  * outgoing message items to a destination process while simultaneously
  * receiving a buffer of incoming message items from a source process. The
@@ -284,7 +282,7 @@ import edu.rit.util.Range;
  * can be sent. When the <TT>sendReceive()</TT> method returns, the outgoing
  * message items have been fully sent, but they may not yet have been fully
  * received; and the incoming message items have been fully received.
- * <P>
+ * <p>
  * With the <TT>sendReceive()</TT> method, a process cannot receive a message
  * from a wildcard source, and a process cannot receive a message with a
  * wildcard tag or a range of tags. The process calling <TT>sendReceive()</TT>
@@ -292,15 +290,15 @@ import edu.rit.util.Range;
  * <TT>sendReceive()</TT> method does return a status object giving the outcome
  * of the receive half of the send-receive operation, just as the
  * <TT>receive()</TT> method does.
- * <P>
+ * <p>
  * A process can send-receive messages with itself. In this case one thread must
  * call <TT>sendReceive()</TT> (specifying the process's own rank as the source
  * and destination) and a different thread must also call <TT>sendReceive()</TT>
  * (specifying the process's own rank as the source and destination), otherwise
  * a deadlock will ensue.
- * <P>
+ * <p>
  * <B>Non-Blocking Communication</B>
- * <P>
+ * <p>
  * The <TT>send()</TT>, <TT>receive()</TT>, and <TT>sendReceive()</TT> methods
  * each have a non-blocking version. A non-blocking communication method
  * initiates the communication operation and immediately returns, storing the
@@ -310,9 +308,9 @@ import edu.rit.util.Range;
  * communication operation is in progress. To wait for the send and receive
  * operations to finish, call the CommRequest object's <TT>waitForFinish()</TT>
  * method.
- * <P>
+ * <p>
  * <B>Flood-Send and Flood-Receive</B>
- * <P>
+ * <p>
  * Any process can send a message to all processes in the communicator. This is
  * called "flooding" the message. First, all processes must start a
  * flood-receive operation, either by calling the non-blocking
@@ -321,18 +319,17 @@ import edu.rit.util.Range;
  * call the <TT>floodSend()</TT> method. The data items in the flood-send
  * operation's outgoing buffer are copied into the flood-receive operation's
  * incoming buffer in all processes.
- * <P>
+ * <p>
  * Message flooding is similar to the "broadcast" collective communication
  * operation (see below). The differences are these: Broadcasting combines
  * sending and receiving in a single operation; flooding uses separate send and
  * receive operations. For broadcasting, every process must know which process
  * is sending the outgoing data items; for flooding, the receiving processes do
  * not need to know which process is sending (any process can send).
- * <P>
  * <HR>
- * <P>
+ * <p>
  * <B>COLLECTIVE COMMUNICATION</B>
- * <P>
+ * <p>
  * A PJ cluster parallel program may use a communicator to send a message among
  * all the processes in the program at the same time. This is called a
  * <B>collective communication</B> because all the processes in the communicator
@@ -341,22 +338,20 @@ import edu.rit.util.Range;
  * gather, all-gather, reduce, all-reduce, all-to-all, scan, exclusive-scan, and
  * barrier. Further collective communication methods will be added to class Comm
  * in a later release.
- * <P>
+ * <p>
  * <B>Broadcast</B>
- * <P>
+ * <p>
  * One process in the communicator, the <B>root</B> process, has a source buffer
  * (type {@linkplain edu.rit.mp.Buf Buf}) filled with data. The other processes
  * in the communicator each have a destination buffer with the same length and
  * the same item data type as the source buffer. Each process calls the
  * communicator's <TT>broadcast()</TT> method. Afterwards, all the destination
  * buffers contain the same data as the source buffer.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 summary="Before and After Broadcast.">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+    +----+    +----+    +----+
@@ -368,14 +363,15 @@ import edu.rit.util.Range;
  * |  6 |    |    |    |    |    |    |
  * |  7 |    |    |    |    |    |    |
  * |  8 |    |    |    |    |    |    |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+    +----+    +----+    +----+
@@ -387,16 +383,15 @@ import edu.rit.util.Range;
  * |  6 |    |  6 |    |  6 |    |  6 |
  * |  7 |    |  7 |    |  7 |    |  7 |
  * |  8 |    |  8 |    |  8 |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * <I>Note:</I> Any process can be the root of the broadcast. The above is only
  * one example with process 0 as the root.
- * <P>
+ * <p>
  * <B>Scatter</B>
- * <P>
+ * <p>
  * One process in the communicator, the root process, has <I>K</I> source
  * buffers (type {@linkplain edu.rit.mp.Buf Buf}) filled with data, where
  * <I>K</I> is the size of the communicator. For example, the source buffers
@@ -406,13 +401,11 @@ import edu.rit.util.Range;
  * calls the communicator's <TT>scatter()</TT> method. Afterwards, each
  * process's destination buffer contains the same data as the corresponding
  * source buffer in the root process.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="Scatter">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+
@@ -432,14 +425,15 @@ import edu.rit.util.Range;
  * +----+    +----+    +----+    +----+
  * |    |    |    |    |    |    |    |
  * |    |    |    |    |    |    |    |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+
@@ -459,20 +453,17 @@ import edu.rit.util.Range;
  * +----+    +----+    +----+    +----+
  * |  1 |    |  3 |    |  5 |    |  7 |
  * |  2 |    |  4 |    |  6 |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * In the root process, the destination buffer can be the same as the source
  * buffer:
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="Scatter">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+
@@ -487,14 +478,15 @@ import edu.rit.util.Range;
  * +----+              +----+    +----+
  * |  7 |                        |    |
  * |  8 |                        |    |
- * +----+                        +----+</PRE>
- * </FONT>
+ * +----+                        +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+
@@ -509,16 +501,15 @@ import edu.rit.util.Range;
  * +----+              +----+    +----+
  * |  7 |                        |  7 |
  * |  8 |                        |  8 |
- * +----+                        +----+</PRE>
- * </FONT>
+ * +----+                        +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * <I>Note:</I> Any process can be the root of the scatter. The above is only
  * one example with process 0 as the root.
- * <P>
+ * <p>
  * <B>Gather</B>
- * <P>
+ * <p>
  * Gather is the opposite of scatter. One process in the communicator, the root
  * process, has <I>K</I> destination buffers (type {@linkplain edu.rit.mp.Buf
  * Buf}), where <I>K</I> is the size of the communicator. For example, the
@@ -528,13 +519,11 @@ import edu.rit.util.Range;
  * buffer, filled with data. Each process calls the communicator's
  * <TT>gather()</TT> method. Afterwards, each destination buffer in the root
  * process contains the same data as the corresponding source buffer.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="Gather">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+    +----+    +----+    +----+
@@ -554,14 +543,15 @@ import edu.rit.util.Range;
  * +----+
  * |    |
  * |    |
- * +----+</PRE>
- * </FONT>
+ * +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+    +----+    +----+    +----+
@@ -581,20 +571,17 @@ import edu.rit.util.Range;
  * +----+
  * |  7 |
  * |  8 |
- * +----+</PRE>
- * </FONT>
+ * +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * In the root process, the destination buffer can be the same as the source
  * buffer:
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="Gather">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+
@@ -609,14 +596,15 @@ import edu.rit.util.Range;
  * +----+              +----+    +----+
  * |    |                        |  7 |
  * |    |                        |  8 |
- * +----+                        +----+</PRE>
- * </FONT>
+ * +----+                        +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+
@@ -631,16 +619,15 @@ import edu.rit.util.Range;
  * +----+              +----+    +----+
  * |  7 |                        |  7 |
  * |  8 |                        |  8 |
- * +----+                        +----+</PRE>
- * </FONT>
+ * +----+                        +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * <I>Note:</I> Any process can be the root of the gather. The above is only one
  * example with process 0 as the root.
- * <P>
+ * <p>
  * <B>All-Gather</B>
- * <P>
+ * <p>
  * All-gather is the same as gather, except that every process has an array of
  * destination buffers, and every process receives the results of the gather.
  * Each process in the communicator has a source buffer (type {@linkplain
@@ -651,15 +638,13 @@ import edu.rit.util.Range;
  * the corresponding source buffer. Each process calls the communicator's
  * <TT>allGather()</TT> method. Afterwards, each destination buffer in every
  * process contains the same data as the corresponding source buffer.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="All-Gather">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  3 |    |  5 |    |  7 |
  * |  2 |    |  4 |    |  6 |    |  8 |
@@ -677,16 +662,17 @@ import edu.rit.util.Range;
  * +----+    +----+    +----+    +----+
  * |    |    |    |    |    |    |    |
  * |    |    |    |    |    |    |    |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  3 |    |  5 |    |  7 |
  * |  2 |    |  4 |    |  6 |    |  8 |
@@ -704,21 +690,18 @@ import edu.rit.util.Range;
  * +----+    +----+    +----+    +----+
  * |  7 |    |  7 |    |  7 |    |  7 |
  * |  8 |    |  8 |    |  8 |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * The destination buffer can be the same as the source buffer in each process:
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="All-Gather">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |    |    |    |    |    |
  * |  2 |    |    |    |    |    |    |
@@ -731,16 +714,17 @@ import edu.rit.util.Range;
  * +----+    +----+    +----+    +----+
  * |    |    |    |    |    |    |  7 |
  * |    |    |    |    |    |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  1 |    |  1 |    |  1 |
  * |  2 |    |  2 |    |  2 |    |  2 |
@@ -753,14 +737,13 @@ import edu.rit.util.Range;
  * +----+    +----+    +----+    +----+
  * |  7 |    |  7 |    |  7 |    |  7 |
  * |  8 |    |  8 |    |  8 |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
- * <P>
+ * <p>
  * <B>Reduce</B>
- * <P>
+ * <p>
  * Reduce is like gather, except the buffers' contents are combined together
  * instead of just copied. Each process in the communicator has a buffer (type
  * {@linkplain edu.rit.mp.Buf Buf}) filled with data. Each process calls the
@@ -772,41 +755,39 @@ import edu.rit.util.Range;
  * each buffer element in the root process ends up being the sum of the
  * corresponding buffer elements in all the processes. In the non-root
  * processes, the buffers' contents may be changed from their original contents.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="Reduce">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  3 |    |  5 |    |  7 |
  * |  2 |    |  4 |    |  6 |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
  * 0 (root)     1         2         3
  * +----+    +----+    +----+    +----+
  * | 16 |    | ?? |    | ?? |    | ?? |
  * | 20 |    | ?? |    | ?? |    | ?? |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * <I>Note:</I> Any process can be the root of the reduction. The above is only
  * one example with process 0 as the root.
- * <P>
+ * <p>
  * <B>All-Reduce</B>
- * <P>
+ * <p>
  * All-reduce is the same as reduce, except that every process receives the
  * results of the reduction. Each process in the communicator has a buffer (type
  * {@linkplain edu.rit.mp.Buf Buf}) filled with data. Each process calls the
@@ -816,39 +797,37 @@ import edu.rit.util.Range;
  * combining all the corresponding elements in all the buffers using the
  * specified binary operation. For example, if the operation is addition, each
  * buffer element ends up being the sum of the corresponding buffer elements.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="All-Reduce">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  3 |    |  5 |    |  7 |
  * |  2 |    |  4 |    |  6 |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * | 16 |    | 16 |    | 16 |    | 16 |
  * | 20 |    | 20 |    | 20 |    | 20 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
- * <P>
+ * <p>
  * <B>All-to-All</B>
- * <P>
+ * <p>
  * Every process in the communicator has <I>K</I> source buffers (type
  * {@linkplain edu.rit.mp.Buf Buf}) filled with data, where <I>K</I> is the size
  * of the communicator. Every process in the communicator also has <I>K</I>
@@ -861,15 +840,13 @@ import edu.rit.util.Range;
  * index <I>i</I>, 0 &lt;= <I>i</I> &lt;= <I>K</I>-1, destination buffer
  * <I>i</I> in process <I>k</I> contains the same data as source buffer <I>k</I>
  * in process <I>i</I>.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="All-to-All">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  9 |    | 17 |    | 25 |
  * |  2 |    | 10 |    | 18 |    | 26 |
@@ -896,16 +873,17 @@ import edu.rit.util.Range;
  * +----+    +----+    +----+    +----+
  * |    |    |    |    |    |    |    |
  * |    |    |    |    |    |    |    |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  9 |    | 17 |    | 25 |
  * |  2 |    | 10 |    | 18 |    | 26 |
@@ -932,14 +910,13 @@ import edu.rit.util.Range;
  * +----+    +----+    +----+    +----+
  * | 25 |    | 27 |    | 29 |    | 31 |
  * | 26 |    | 28 |    | 30 |    | 32 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
- * <P>
+ * <p>
  * <B>Scan</B>
- * <P>
+ * <p>
  * Each process in the communicator has a buffer (type {@linkplain
  * edu.rit.mp.Buf Buf}) filled with data. Each process calls the communicator's
  * <TT>scan()</TT> method, specifying some binary operation (type {@linkplain
@@ -949,41 +926,39 @@ import edu.rit.util.Range;
  * using the specified binary operation. For example, if the operation is
  * addition, each buffer element ends up being the sum of its own and all
  * lower-ranked processes' buffer elements.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="Scan">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  3 |    |  5 |    |  7 |
  * |  2 |    |  4 |    |  6 |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  4 |    |  9 |    | 16 |
  * |  2 |    |  6 |    | 12 |    | 20 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * The scan operation is also known as "prefix scan" or "inclusive prefix scan"
  * -- "inclusive" because the process's own element is included in the result.
- * <P>
+ * <p>
  * <B>Exclusive-Scan</B>
- * <P>
+ * <p>
  * The exclusive-scan operation is a variation of the scan operation. Each
  * process in the communicator has a buffer (type {@linkplain edu.rit.mp.Buf
  * Buf}) filled with data. Each process calls the communicator's
@@ -996,41 +971,39 @@ import edu.rit.util.Range;
  * initial data value. For example, if the operation is addition and the initial
  * data value is 0, each buffer element ends up being the sum of all
  * lower-ranked processes' buffer elements.
- * <P>
- * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0>
+ * <TABLE BORDER=0 CELLPADDING=0 CELLSPACING=0 Summary="Exclusive-Scan">
  * <TR>
  * <TD ALIGN="left" VALIGN="top">
  * Before:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  1 |    |  3 |    |  5 |    |  7 |
  * |  2 |    |  4 |    |  6 |    |  8 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
- * <TD WIDTH=50> </TD>
+ * <TD>
+ * <pre>
+ *  ... </pre>
+ * </TD>
  * <TD ALIGN="left" VALIGN="top">
  * After:
- * <FONT SIZE="-1">
- * <PRE>
+ * <pre>
  * Process   Process   Process   Process
- *    0         1         2         3
+ * 0         1         2         3
  * +----+    +----+    +----+    +----+
  * |  0 |    |  1 |    |  4 |    |  9 |
  * |  0 |    |  2 |    |  6 |    | 12 |
- * +----+    +----+    +----+    +----+</PRE>
- * </FONT>
+ * +----+    +----+    +----+    +----+</pre>
  * </TD>
  * </TR>
  * </TABLE>
  * This version of the scan operation is also known as "exclusive prefix scan"
  * -- "exclusive" because the process's own element is excluded from the result.
- * <P>
+ * <p>
  * <B>Barrier</B>
- * <P>
+ * <p>
  * The barrier operation causes all the processes to synchronize with each
  * other. Each process calls the communicator's <TT>barrier()</TT> method. The
  * calling thread blocks until all processes in the communicator have called the
@@ -1042,7 +1015,7 @@ import edu.rit.util.Range;
  */
 public class Comm {
 
-// Hidden data members.
+    // Hidden data members.
     // Predefined communicators.
     private static Comm theWorldCommunicator;
     private static Comm theFrontendCommunicator;
@@ -1070,22 +1043,23 @@ public class Comm {
     private int[][] myBroadcastTree;
 
 // Hidden constructors.
+
     /**
      * Construct a new communicator.
      *
-     * @param size Communicator's size.
-     * @param rank Current process's rank in the communicator.
-     * @param host Host name.
+     * @param size         Communicator's size.
+     * @param rank         Current process's rank in the communicator.
+     * @param host         Host name.
      * @param channelgroup Channel group for message passing in this
-     * communicator.
-     * @param address Map from rank (array index) to channel group address
-     * (array element).
+     *                     communicator.
+     * @param address      Map from rank (array index) to channel group address
+     *                     (array element).
      */
     private Comm(int size,
-            int rank,
-            String host,
-            ChannelGroup channelgroup,
-            InetSocketAddress[] address) {
+                 int rank,
+                 String host,
+                 ChannelGroup channelgroup,
+                 InetSocketAddress[] address) {
         // Record size, rank, channel group.
         mySize = size;
         myRank = rank;
@@ -1106,12 +1080,12 @@ public class Comm {
         // Set up connect listener.
         myChannelGroup.setConnectListener(new ConnectListener() {
             public void nearEndConnected(ChannelGroup theChannelGroup,
-                    Channel theChannel)
+                                         Channel theChannel)
                     throws IOException {
             }
 
             public void farEndConnected(ChannelGroup theChannelGroup,
-                    Channel theChannel)
+                                        Channel theChannel)
                     throws IOException {
                 doFarEndConnected(theChannel);
             }
@@ -1134,6 +1108,7 @@ public class Comm {
     }
 
 // Exported operations.
+
     /**
      * Initialize the PJ message passing middleware. Certain Java system
      * properties specify the middleware's behavior; these properties are
@@ -1141,12 +1116,11 @@ public class Comm {
      * further information, see class {@linkplain PJProperties}.
      *
      * @param args Command line arguments.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>args</TT> is null.
-     * @exception IllegalArgumentException (unchecked exception) Thrown if the
-     * value of one of the Java system properties is illegal.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException     (unchecked exception) Thrown if
+     *                                  <TT>args</TT> is null.
+     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     *                                  value of one of the Java system properties is illegal.
+     * @throws IOException              Thrown if an I/O error occurred.
      */
     public static void init(String[] args)
             throws IOException {
@@ -1159,7 +1133,7 @@ public class Comm {
         JobBackend backend = JobBackend.getJobBackend();
 
         if (backend == null) {
-			// We're running on the frontend processor.
+            // We're running on the frontend processor.
 
             // Prepare constructor arguments for the Job Frontend object.
             String username = System.getProperty("user.name");
@@ -1182,7 +1156,7 @@ public class Comm {
             try {
                 frontend
                         = new JobFrontend(username, Nn, Np, Nt, hasFrontendComm, mainClassName,
-                                args);
+                        args);
 
                 // We were able to contact the Job Scheduler.
                 // Run the job frontend in this process, then exit.
@@ -1195,22 +1169,22 @@ public class Comm {
                 // Set up world communicator.
                 theWorldCommunicator
                         = new Comm(/*size        */1,
-                                /*rank        */ 0,
-                                /*host        */ "<unknown>",
-                                /*channelgroup*/ new ChannelGroup(),
-                                /*address     */
-                                new InetSocketAddress[]{new InetSocketAddress(0)});
+                        /*rank        */ 0,
+                        /*host        */ "<unknown>",
+                        /*channelgroup*/ new ChannelGroup(),
+                        /*address     */
+                        new InetSocketAddress[]{new InetSocketAddress(0)});
             }
         } else {
-			// We're running on a backend processor.
+            // We're running on a backend processor.
 
             // Set up world communicator.
             theWorldCommunicator
                     = new Comm(/*size        */backend.getK(),
-                            /*rank        */ backend.getRank(),
-                            /*host        */ backend.getBackendHost(),
-                            /*channelgroup*/ backend.getWorldChannelGroup(),
-                            /*address     */ backend.getWorldAddress());
+                    /*rank        */ backend.getRank(),
+                    /*host        */ backend.getBackendHost(),
+                    /*channelgroup*/ backend.getWorldChannelGroup(),
+                    /*address     */ backend.getWorldAddress());
         }
     }
 
@@ -1218,11 +1192,10 @@ public class Comm {
      * Obtain a reference to the world communicator.
      *
      * @return World communicator.
-     *
-     * @exception IllegalStateException (unchecked exception) Thrown if
-     * <TT>Comm.init()</TT> has not been called. Thrown if <TT>world()</TT> is
-     * called in the job frontend process; the world communicator does not exist
-     * in the job frontend process.
+     * @throws IllegalStateException (unchecked exception) Thrown if
+     *                               <TT>Comm.init()</TT> has not been called. Thrown if <TT>world()</TT> is
+     *                               called in the job frontend process; the world communicator does not exist
+     *                               in the job frontend process.
      */
     public static Comm world() {
         if (theWorldCommunicator != null) {
@@ -1271,22 +1244,20 @@ public class Comm {
      * participate in the new communicator. Messages to set up the new
      * communicator are sent to all processes in this communicator, using a
      * message tag of 0.
-     * <P>
+     * <p>
      * In processes participating in the new communicator, the new communicator
      * is returned. The participating processes appear in the same order by rank
      * in the new communicator as in this communicator. The process can call the
      * new communicator's <TT>rank()</TT> method to determine the process's rank
      * in the new communicator.
-     * <P>
+     * <p>
      * In processes not participating in the new communicator, null is returned.
      *
      * @param participate True if this process will participate in the new
-     * communicator; false otherwise.
-     *
+     *                    communicator; false otherwise.
      * @return New communicator if this process will participate in the new
      * communicator; null otherwise.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public Comm createComm(boolean participate)
             throws IOException {
@@ -1301,32 +1272,30 @@ public class Comm {
      * participate in the new communicator. Messages to set up the new
      * communicator are sent to all processes in this communicator, using the
      * given message tag.
-     * <P>
+     * <p>
      * In processes participating in the new communicator, the new communicator
      * is returned. The participating processes appear in the same order by rank
      * in the new communicator as in this communicator. The process can call the
      * new communicator's <TT>rank()</TT> method to determine the process's rank
      * in the new communicator.
-     * <P>
+     * <p>
      * In processes not participating in the new communicator, null is returned.
      *
      * @param participate True if this process will participate in the new
-     * communicator; false otherwise.
-     * @param tag Message tag.
-     *
+     *                    communicator; false otherwise.
+     * @param tag         Message tag.
      * @return New communicator if this process will participate in the new
      * communicator; null otherwise.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public Comm createComm(boolean participate,
-            int tag)
+                           int tag)
             throws IOException {
         // Set up array of socket addresses for all processes.
         InetSocketAddress[] address = new InetSocketAddress[mySize];
         ObjectBuf<InetSocketAddress>[] addressbuf
                 = ObjectBuf.sliceBuffers(address,
-                        new Range(0, mySize - 1).subranges(mySize));
+                new Range(0, mySize - 1).subranges(mySize));
 
         // Create channel group for new communicator, if participating.
         ChannelGroup channelgroup = null;
@@ -1377,21 +1346,20 @@ public class Comm {
      * receive the message, the destination process must call the
      * <TT>receive()</TT> method. When the <TT>send()</TT> method returns, the
      * message has been fully sent, but it may not yet have been fully received.
-     * <P>
+     * <p>
      * A process can send a message to itself; in this case a different thread
      * must call the <TT>receive()</TT> method on this communicator.
      *
      * @param toRank Destination process's rank in this communicator.
      * @param buffer Buffer of data items to be sent.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>toRank</TT> is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>toRank</TT> is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void send(int toRank,
-            Buf buffer)
+                     Buf buffer)
             throws IOException {
         send(toRank, 0, buffer);
     }
@@ -1402,23 +1370,22 @@ public class Comm {
      * receive the message, the destination process must call the
      * <TT>receive()</TT> method. When the <TT>send()</TT> method returns, the
      * message has been fully sent, but it may not yet have been fully received.
-     * <P>
+     * <p>
      * A process can send a message to itself; in this case a different thread
      * must call the <TT>receive()</TT> method on this communicator.
      *
      * @param toRank Destination process's rank in this communicator.
-     * @param tag Message tag.
+     * @param tag    Message tag.
      * @param buffer Buffer of data items to be sent.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>toRank</TT> is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>toRank</TT> is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void send(int toRank,
-            int tag,
-            Buf buffer)
+                     int tag,
+                     Buf buffer)
             throws IOException {
         myChannelGroup.send(getChannel(toRank), tag, buffer);
     }
@@ -1428,35 +1395,33 @@ public class Comm {
      * (non-blocking). A message tag of 0 is used. The message items come from
      * the given buffer. To receive the message, the destination process must
      * call the <TT>receive()</TT> method.
-     * <P>
+     * <p>
      * The <TT>send()</TT> method initiates the send operation and immediately
      * returns a {@linkplain CommRequest} object. The send operation is
      * performed by a separate thread. To wait for the send operation to finish,
      * call the returned {@linkplain CommRequest} object's
      * <TT>waitForFinish()</TT> method. When that method returns, the message
      * has been fully sent, but it may not yet have been fully received.
-     * <P>
+     * <p>
      * A process can send a message to itself; in this case a different thread
      * must call the <TT>receive()</TT> method on this communicator.
      *
-     * @param toRank Destination process's rank in this communicator.
-     * @param buffer Buffer of data items to be sent.
+     * @param toRank  Destination process's rank in this communicator.
+     * @param buffer  Buffer of data items to be sent.
      * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     *                finish; in this case <TT>request</TT> is returned. If
+     *                <TT>request</TT> is null, a new CommRequest object is created and
+     *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>toRank</TT> is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>toRank</TT> is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommRequest send(int toRank,
-            Buf buffer,
-            CommRequest request)
+                            Buf buffer,
+                            CommRequest request)
             throws IOException {
         return send(toRank, 0, buffer, request);
     }
@@ -1466,37 +1431,35 @@ public class Comm {
      * the given message tag (non-blocking). The message items come from the
      * given buffer. To receive the message, the destination process must call
      * the <TT>receive()</TT> method.
-     * <P>
+     * <p>
      * The <TT>send()</TT> method initiates the send operation and immediately
      * returns a {@linkplain CommRequest} object. The send operation is
      * performed by a separate thread. To wait for the send operation to finish,
      * call the returned {@linkplain CommRequest} object's
      * <TT>waitForFinish()</TT> method. When that method returns, the message
      * has been fully sent, but it may not yet have been fully received.
-     * <P>
+     * <p>
      * A process can send a message to itself; in this case a different thread
      * must call the <TT>receive()</TT> method on this communicator.
      *
-     * @param toRank Destination process's rank in this communicator.
-     * @param tag Message tag.
-     * @param buffer Buffer of data items to be sent.
+     * @param toRank  Destination process's rank in this communicator.
+     * @param tag     Message tag.
+     * @param buffer  Buffer of data items to be sent.
      * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     *                finish; in this case <TT>request</TT> is returned. If
+     *                <TT>request</TT> is null, a new CommRequest object is created and
+     *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>toRank</TT> is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>toRank</TT> is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommRequest send(int toRank,
-            int tag,
-            Buf buffer,
-            CommRequest request)
+                            int tag,
+                            Buf buffer,
+                            CommRequest request)
             throws IOException {
         // Set up CommRequest object.
         CommRequest req = request == null ? new CommRequest() : request;
@@ -1518,7 +1481,7 @@ public class Comm {
      * message, the source process must call the <TT>send()</TT> method. When
      * the <TT>receive()</TT> method returns, the message has been fully
      * received.
-     * <P>
+     * <p>
      * A {@linkplain CommStatus} object is returned. The status object gives the
      * actual rank of the process that sent the message, the actual message tag
      * that was received, and the actual number of data items in the message. If
@@ -1527,25 +1490,23 @@ public class Comm {
      * buffer. If the actual number of data items in the message is greater than
      * the length of the buffer, the extra data items at the end of the message
      * are discarded.
-     * <P>
+     * <p>
      * A process can receive a message from itself; in this case a different
      * thread must call the <TT>send()</TT> method on this communicator.
      *
      * @param fromRank Source process's rank in this communicator, or null to
-     * receive from any process.
-     * @param buffer Buffer of data items to be received.
-     *
+     *                 receive from any process.
+     * @param buffer   Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>fromRank</TT> is not null and is not in the range 0 ..
-     * <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>fromRank</TT> is not null and is not in the range 0 ..
+     *                                   <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommStatus receive(Integer fromRank,
-            Buf buffer)
+                              Buf buffer)
             throws IOException {
         return receive(fromRank, 0, buffer);
     }
@@ -1557,7 +1518,7 @@ public class Comm {
      * items are stored in the given buffer. To send the message, the source
      * process must call the <TT>send()</TT> method. When the <TT>receive()</TT>
      * method returns, the message has been fully received.
-     * <P>
+     * <p>
      * A {@linkplain CommStatus} object is returned. The status object gives the
      * actual rank of the process that sent the message, the actual message tag
      * that was received, and the actual number of data items in the message. If
@@ -1566,27 +1527,25 @@ public class Comm {
      * buffer. If the actual number of data items in the message is greater than
      * the length of the buffer, the extra data items at the end of the message
      * are discarded.
-     * <P>
+     * <p>
      * A process can receive a message from itself; in this case a different
      * thread must call the <TT>send()</TT> method on this communicator.
      *
      * @param fromRank Source process's rank in this communicator, or null to
-     * receive from any process.
-     * @param tag Message tag.
-     * @param buffer Buffer of data items to be received.
-     *
+     *                 receive from any process.
+     * @param tag      Message tag.
+     * @param buffer   Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>fromRank</TT> is not null and is not in the range 0 ..
-     * <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>fromRank</TT> is not null and is not in the range 0 ..
+     *                                   <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommStatus receive(Integer fromRank,
-            int tag,
-            Buf buffer)
+                              int tag,
+                              Buf buffer)
             throws IOException {
         Status status;
 
@@ -1619,7 +1578,7 @@ public class Comm {
      * buffer. To send the message, the source process must call the
      * <TT>send()</TT> method. When the <TT>receive()</TT> method returns, the
      * message has been fully received.
-     * <P>
+     * <p>
      * A {@linkplain CommStatus} object is returned. The status object gives the
      * actual rank of the process that sent the message, the actual message tag
      * that was received, and the actual number of data items in the message. If
@@ -1628,27 +1587,25 @@ public class Comm {
      * buffer. If the actual number of data items in the message is greater than
      * the length of the buffer, the extra data items at the end of the message
      * are discarded.
-     * <P>
+     * <p>
      * A process can receive a message from itself; in this case a different
      * thread must call the <TT>send()</TT> method on this communicator.
      *
      * @param fromRank Source process's rank in this communicator, or null to
-     * receive from any process.
+     *                 receive from any process.
      * @param tagRange Message tag range, or null to receive any tag.
-     * @param buffer Buffer of data items to be received.
-     *
+     * @param buffer   Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>fromRank</TT> is not null and is not in the range 0 ..
-     * <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>fromRank</TT> is not null and is not in the range 0 ..
+     *                                   <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommStatus receive(Integer fromRank,
-            Range tagRange,
-            Buf buffer)
+                              Range tagRange,
+                              Buf buffer)
             throws IOException {
         Status status;
 
@@ -1676,37 +1633,35 @@ public class Comm {
      * any process in this communicator. The message must have a tag of 0. The
      * received message items are stored in the given buffer. To send the
      * message, the source process must call the <TT>send()</TT> method.
-     * <P>
+     * <p>
      * The <TT>receive()</TT> method initiates the receive operation and
      * immediately returns a {@linkplain CommRequest} object. The receive
      * operation is performed by a separate thread. To wait for the receive
      * operation to finish, call the returned {@linkplain CommRequest} object's
      * <TT>waitForFinish()</TT> method. When that method returns, the incoming
      * message items have been fully received.
-     * <P>
+     * <p>
      * A process can receive a message from itself; in this case a different
      * thread must call the <TT>send()</TT> method on this communicator.
      *
      * @param fromRank Source process's rank in this communicator, or null to
-     * receive from any process.
-     * @param buffer Buffer of data items to be received.
-     * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     *                 receive from any process.
+     * @param buffer   Buffer of data items to be received.
+     * @param request  CommRequest object to use to wait for the operation to
+     *                 finish; in this case <TT>request</TT> is returned. If
+     *                 <TT>request</TT> is null, a new CommRequest object is created and
+     *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>fromRank</TT> is not null and is not in the range 0 ..
-     * <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>fromRank</TT> is not null and is not in the range 0 ..
+     *                                   <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommRequest receive(Integer fromRank,
-            Buf buffer,
-            CommRequest request)
+                               Buf buffer,
+                               CommRequest request)
             throws IOException {
         return receive(fromRank, 0, buffer, request);
     }
@@ -1718,39 +1673,37 @@ public class Comm {
      * <TT>tag</TT> is null, a message will be received with any tag. The
      * received message items are stored in the given buffer. To send the
      * message, the source process must call the <TT>send()</TT> method.
-     * <P>
+     * <p>
      * The <TT>receive()</TT> method initiates the receive operation and
      * immediately returns a {@linkplain CommRequest} object. The receive
      * operation is performed by a separate thread. To wait for the receive
      * operation to finish, call the returned {@linkplain CommRequest} object's
      * <TT>waitForFinish()</TT> method. When that method returns, the incoming
      * message items have been fully received.
-     * <P>
+     * <p>
      * A process can receive a message from itself; in this case a different
      * thread must call the <TT>send()</TT> method on this communicator.
      *
      * @param fromRank Source process's rank in this communicator, or null to
-     * receive from any process.
-     * @param tag Message tag.
-     * @param buffer Buffer of data items to be received.
-     * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     *                 receive from any process.
+     * @param tag      Message tag.
+     * @param buffer   Buffer of data items to be received.
+     * @param request  CommRequest object to use to wait for the operation to
+     *                 finish; in this case <TT>request</TT> is returned. If
+     *                 <TT>request</TT> is null, a new CommRequest object is created and
+     *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>fromRank</TT> is not null and is not in the range 0 ..
-     * <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>fromRank</TT> is not null and is not in the range 0 ..
+     *                                   <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommRequest receive(Integer fromRank,
-            int tag,
-            Buf buffer,
-            CommRequest request)
+                               int tag,
+                               Buf buffer,
+                               CommRequest request)
             throws IOException {
         // Set up CommRequest object.
         CommRequest req = request == null ? new CommRequest() : request;
@@ -1783,39 +1736,37 @@ public class Comm {
      * the given range. The received message items are stored in the given
      * buffer. To send the message, the source process must call the
      * <TT>send()</TT> method.
-     * <P>
+     * <p>
      * The <TT>receive()</TT> method initiates the receive operation and
      * immediately returns a {@linkplain CommRequest} object. The receive
      * operation is performed by a separate thread. To wait for the receive
      * operation to finish, call the returned {@linkplain CommRequest} object's
      * <TT>waitForFinish()</TT> method. When that method returns, the incoming
      * message items have been fully received.
-     * <P>
+     * <p>
      * A process can receive a message from itself; in this case a different
      * thread must call the <TT>send()</TT> method on this communicator.
      *
      * @param fromRank Source process's rank in this communicator, or null to
-     * receive from any process.
+     *                 receive from any process.
      * @param tagRange Message tag range, or null to receive any tag.
-     * @param buffer Buffer of data items to be received.
-     * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     * @param buffer   Buffer of data items to be received.
+     * @param request  CommRequest object to use to wait for the operation to
+     *                 finish; in this case <TT>request</TT> is returned. If
+     *                 <TT>request</TT> is null, a new CommRequest object is created and
+     *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>fromRank</TT> is not null and is not in the range 0 ..
-     * <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>fromRank</TT> is not null and is not in the range 0 ..
+     *                                   <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommRequest receive(Integer fromRank,
-            Range tagRange,
-            Buf buffer,
-            CommRequest request)
+                               Range tagRange,
+                               Buf buffer,
+                               CommRequest request)
             throws IOException {
         // Set up CommRequest object.
         CommRequest req = request == null ? new CommRequest() : request;
@@ -1853,7 +1804,7 @@ public class Comm {
      * the outgoing message items have been fully sent, but they may not yet
      * have been fully received; and the incoming message items have been fully
      * received.
-     * <P>
+     * <p>
      * A {@linkplain CommStatus} object is returned giving the results of the
      * receive half of the operation. The status object gives the rank of the
      * process that sent the incoming message, the message tag that was
@@ -1863,29 +1814,27 @@ public class Comm {
      * the receive buffer. If the actual number of data items in the message is
      * greater than the length of the receive buffer, the extra data items at
      * the end of the message are discarded.
-     * <P>
+     * <p>
      * A process can send-receive messages with itself; in this case a different
      * thread must call the <TT>sendReceive()</TT> method on this communicator.
      *
-     * @param toRank Destination process's rank in this communicator.
-     * @param sendBuf Buffer of data items to be sent.
+     * @param toRank   Destination process's rank in this communicator.
+     * @param sendBuf  Buffer of data items to be sent.
      * @param fromRank Source process's rank in this communicator.
-     * @param recvBuf Buffer of data items to be received.
-     *
+     * @param recvBuf  Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>toRank</TT> or <TT>fromRank</TT>
-     * is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>sendBuf</TT> or <TT>recvBuf</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>toRank</TT> or <TT>fromRank</TT>
+     *                                   is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>sendBuf</TT> or <TT>recvBuf</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommStatus sendReceive(int toRank,
-            Buf sendBuf,
-            int fromRank,
-            Buf recvBuf)
+                                  Buf sendBuf,
+                                  int fromRank,
+                                  Buf recvBuf)
             throws IOException {
         return sendReceive(toRank, 0, sendBuf, fromRank, 0, recvBuf);
     }
@@ -1904,7 +1853,7 @@ public class Comm {
      * method returns, the outgoing message items have been fully sent, but they
      * may not yet have been fully received; and the incoming message items have
      * been fully received.
-     * <P>
+     * <p>
      * A {@linkplain CommStatus} object is returned giving the results of the
      * receive half of the operation. The status object gives the rank of the
      * process that sent the incoming message, the message tag that was
@@ -1914,33 +1863,31 @@ public class Comm {
      * the receive buffer. If the actual number of data items in the message is
      * greater than the length of the receive buffer, the extra data items at
      * the end of the message are discarded.
-     * <P>
+     * <p>
      * A process can send-receive messages with itself; in this case a different
      * thread must call the <TT>sendReceive()</TT> method on this communicator.
      *
-     * @param toRank Destination process's rank in this communicator.
-     * @param sendTag Message tag for outgoing message.
-     * @param sendBuf Buffer of data items to be sent.
+     * @param toRank   Destination process's rank in this communicator.
+     * @param sendTag  Message tag for outgoing message.
+     * @param sendBuf  Buffer of data items to be sent.
      * @param fromRank Source process's rank in this communicator.
-     * @param recvTag Message tag for incoming message.
-     * @param recvBuf Buffer of data items to be received.
-     *
+     * @param recvTag  Message tag for incoming message.
+     * @param recvBuf  Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>toRank</TT> or <TT>fromRank</TT>
-     * is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>sendBuf</TT> or <TT>recvBuf</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>toRank</TT> or <TT>fromRank</TT>
+     *                                   is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>sendBuf</TT> or <TT>recvBuf</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommStatus sendReceive(int toRank,
-            int sendTag,
-            Buf sendBuf,
-            int fromRank,
-            int recvTag,
-            Buf recvBuf)
+                                  int sendTag,
+                                  Buf sendBuf,
+                                  int fromRank,
+                                  int recvTag,
+                                  Buf recvBuf)
             throws IOException {
         // Send the outgoing message (non-blocking).
         IORequest sendRequest = new IORequest();
@@ -1970,7 +1917,7 @@ public class Comm {
      * receive this process's outgoing message items. The source process
      * (process <TT>fromRank</TT>) must call a method to send this process's
      * incoming message items.
-     * <P>
+     * <p>
      * The <TT>sendReceive()</TT> method initiates the send and receive
      * operations and immediately returns a {@linkplain CommRequest} object. The
      * send and receive operations are performed by a separate thread. To wait
@@ -1979,34 +1926,32 @@ public class Comm {
      * that method returns, the outgoing message items have been fully sent, but
      * they may not yet have been fully received; and the incoming message items
      * have been fully received.
-     * <P>
+     * <p>
      * A process can send-receive messages with itself; in this case a different
      * thread must call the <TT>sendReceive()</TT> method on this communicator.
      *
-     * @param toRank Destination process's rank in this communicator.
-     * @param sendBuf Buffer of data items to be sent.
+     * @param toRank   Destination process's rank in this communicator.
+     * @param sendBuf  Buffer of data items to be sent.
      * @param fromRank Source process's rank in this communicator.
-     * @param recvBuf Buffer of data items to be received.
-     * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     * @param recvBuf  Buffer of data items to be received.
+     * @param request  CommRequest object to use to wait for the operation to
+     *                 finish; in this case <TT>request</TT> is returned. If
+     *                 <TT>request</TT> is null, a new CommRequest object is created and
+     *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>toRank</TT> or <TT>fromRank</TT>
-     * is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>sendBuf</TT> or <TT>recvBuf</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>toRank</TT> or <TT>fromRank</TT>
+     *                                   is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>sendBuf</TT> or <TT>recvBuf</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommRequest sendReceive(int toRank,
-            Buf sendBuf,
-            int fromRank,
-            Buf recvBuf,
-            CommRequest request)
+                                   Buf sendBuf,
+                                   int fromRank,
+                                   Buf recvBuf,
+                                   CommRequest request)
             throws IOException {
         return sendReceive(toRank, 0, sendBuf, fromRank, 0, recvBuf, request);
     }
@@ -2023,7 +1968,7 @@ public class Comm {
      * receive this process's outgoing message items. The source process
      * (process <TT>fromRank</TT>) must call a method to send this process's
      * incoming message items.
-     * <P>
+     * <p>
      * The <TT>sendReceive()</TT> method initiates the send and receive
      * operations and immediately returns a {@linkplain CommRequest} object. The
      * send and receive operations are performed by a separate thread. To wait
@@ -2032,38 +1977,36 @@ public class Comm {
      * that method returns, the outgoing message items have been fully sent, but
      * they may not yet have been fully received; and the incoming message items
      * have been fully received.
-     * <P>
+     * <p>
      * A process can send-receive messages with itself; in this case a different
      * thread must call the <TT>sendReceive()</TT> method on this communicator.
      *
-     * @param toRank Destination process's rank in this communicator.
-     * @param sendTag Message tag for outgoing message.
-     * @param sendBuf Buffer of data items to be sent.
+     * @param toRank   Destination process's rank in this communicator.
+     * @param sendTag  Message tag for outgoing message.
+     * @param sendBuf  Buffer of data items to be sent.
      * @param fromRank Source process's rank in this communicator.
-     * @param recvTag Message tag for incoming message.
-     * @param recvBuf Buffer of data items to be received.
-     * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     * @param recvTag  Message tag for incoming message.
+     * @param recvBuf  Buffer of data items to be received.
+     * @param request  CommRequest object to use to wait for the operation to
+     *                 finish; in this case <TT>request</TT> is returned. If
+     *                 <TT>request</TT> is null, a new CommRequest object is created and
+     *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>toRank</TT> or <TT>fromRank</TT>
-     * is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>sendBuf</TT> or <TT>recvBuf</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>toRank</TT> or <TT>fromRank</TT>
+     *                                   is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>sendBuf</TT> or <TT>recvBuf</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public CommRequest sendReceive(int toRank,
-            int sendTag,
-            Buf sendBuf,
-            int fromRank,
-            int recvTag,
-            Buf recvBuf,
-            CommRequest request)
+                                   int sendTag,
+                                   Buf sendBuf,
+                                   int fromRank,
+                                   int recvTag,
+                                   Buf recvBuf,
+                                   CommRequest request)
             throws IOException {
         // Set up CommRequest object.
         CommRequest req = request == null ? new CommRequest() : request;
@@ -2087,16 +2030,15 @@ public class Comm {
      * <TT>floodReceive()</TT> method. When the <TT>floodSend()</TT> method
      * returns, the message has been fully sent, but it may not yet have been
      * fully received in all processes.
-     * <P>
+     * <p>
      * <I>Note:</I> The length of the incoming buffer in the
      * <TT>floodReceive()</TT> method call must be the same as the length of the
      * outgoing buffer in the <TT>floodSend()</TT> method call.
      *
      * @param buffer Buffer of data items to be sent.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buffer</TT> is null.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public void floodSend(Buf buffer)
             throws IOException {
@@ -2110,20 +2052,19 @@ public class Comm {
      * <TT>floodReceive()</TT> method. When the <TT>floodSend()</TT> method
      * returns, the message has been fully sent, but it may not yet have been
      * fully received in all processes.
-     * <P>
+     * <p>
      * <I>Note:</I> The length of the incoming buffer in the
      * <TT>floodReceive()</TT> method call must be the same as the length of the
      * outgoing buffer in the <TT>floodSend()</TT> method call.
      *
-     * @param tag Message tag.
+     * @param tag    Message tag.
      * @param buffer Buffer of data items to be sent.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buffer</TT> is null.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public void floodSend(int tag,
-            Buf buffer)
+                          Buf buffer)
             throws IOException {
         floodSend(tag, buffer, null).waitForFinish();
     }
@@ -2133,7 +2074,7 @@ public class Comm {
      * (non-blocking). A message tag of 0 is used. The message items come from
      * the given buffer. To receive the message, every process (including the
      * sending process) must call the <TT>floodReceive()</TT> method.
-     * <P>
+     * <p>
      * The <TT>floodSend()</TT> method initiates the flood-send operation and
      * immediately returns a {@linkplain CommRequest} object. The flood-send
      * operation is performed by a separate thread. To wait for the flood-send
@@ -2141,25 +2082,23 @@ public class Comm {
      * <TT>waitForFinish()</TT> method. When that method returns, the message
      * has been fully sent, but it may not yet have been fully received in all
      * processes.
-     * <P>
+     * <p>
      * <I>Note:</I> The length of the incoming buffer in the
      * <TT>floodReceive()</TT> method call must be the same as the length of the
      * outgoing buffer in the <TT>floodSend()</TT> method call.
      *
-     * @param buffer Buffer of data items to be sent.
+     * @param buffer  Buffer of data items to be sent.
      * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     *                finish; in this case <TT>request</TT> is returned. If
+     *                <TT>request</TT> is null, a new CommRequest object is created and
+     *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buffer</TT> is null.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public CommRequest floodSend(Buf buffer,
-            CommRequest request)
+                                 CommRequest request)
             throws IOException {
         return floodSend(0, buffer, request);
     }
@@ -2169,7 +2108,7 @@ public class Comm {
      * message tag (non-blocking). The message items come from the given buffer.
      * To receive the message, every process (including the sending process)
      * must call the <TT>floodReceive()</TT> method.
-     * <P>
+     * <p>
      * The <TT>floodSend()</TT> method initiates the flood-send operation and
      * immediately returns a {@linkplain CommRequest} object. The flood-send
      * operation is performed by a separate thread. To wait for the flood-send
@@ -2177,27 +2116,25 @@ public class Comm {
      * <TT>waitForFinish()</TT> method. When that method returns, the message
      * has been fully sent, but it may not yet have been fully received in all
      * processes.
-     * <P>
+     * <p>
      * <I>Note:</I> The length of the incoming buffer in the
      * <TT>floodReceive()</TT> method call must be the same as the length of the
      * outgoing buffer in the <TT>floodSend()</TT> method call.
      *
-     * @param tag Message tag.
-     * @param buffer Buffer of data items to be sent.
+     * @param tag     Message tag.
+     * @param buffer  Buffer of data items to be sent.
      * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     *                finish; in this case <TT>request</TT> is returned. If
+     *                <TT>request</TT> is null, a new CommRequest object is created and
+     *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buffer</TT> is null.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public CommRequest floodSend(int tag,
-            Buf buffer,
-            CommRequest request)
+                                 Buf buffer,
+                                 CommRequest request)
             throws IOException {
         // Set up CommRequest object.
         CommRequest req = request == null ? new CommRequest() : request;
@@ -2218,22 +2155,20 @@ public class Comm {
      * the given buffer. To send the message, the source process must call the
      * <TT>floodSend()</TT> method. When the <TT>floodReceive()</TT> method
      * returns, the message has been fully received.
-     * <P>
+     * <p>
      * A {@linkplain CommStatus} object is returned. The status object gives the
      * actual rank of the process that sent the message, the actual message tag
      * that was received, and the actual number of data items in the message.
-     * <P>
+     * <p>
      * <I>Note:</I> The length of the incoming buffer in the
      * <TT>floodReceive()</TT> method call must be the same as the length of the
      * outgoing buffer in the <TT>floodSend()</TT> method call.
      *
      * @param buffer Buffer of data items to be received.
-     *
      * @return Status object giving the outcome of the message reception.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buffer</TT> is null.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public CommStatus floodReceive(Buf buffer)
             throws IOException {
@@ -2247,26 +2182,24 @@ public class Comm {
      * To send the message, the source process must call the
      * <TT>floodSend()</TT> method. When the <TT>floodReceive()</TT> method
      * returns, the message has been fully received.
-     * <P>
+     * <p>
      * A {@linkplain CommStatus} object is returned. The status object gives the
      * actual rank of the process that sent the message, the actual message tag
      * that was received, and the actual number of data items in the message.
-     * <P>
+     * <p>
      * <I>Note:</I> The length of the incoming buffer in the
      * <TT>floodReceive()</TT> method call must be the same as the length of the
      * outgoing buffer in the <TT>floodSend()</TT> method call.
      *
-     * @param tag Message tag, or null to receive any tag.
+     * @param tag    Message tag, or null to receive any tag.
      * @param buffer Buffer of data items to be received.
-     *
      * @return Status object giving the outcome of the message reception.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buffer</TT> is null.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public CommStatus floodReceive(Integer tag,
-            Buf buffer)
+                                   Buf buffer)
             throws IOException {
         return floodReceive(tag, buffer, null).waitForFinish();
     }
@@ -2277,32 +2210,30 @@ public class Comm {
      * message will be received with any tag. The received message items are
      * stored in the given buffer. To send the message, the source process must
      * call the <TT>floodSend()</TT> method.
-     * <P>
+     * <p>
      * The <TT>floodReceive()</TT> method initiates the flood-receive operation
      * and immediately returns a {@linkplain CommRequest} object. The
      * flood-receive operation is performed by a separate thread. To wait for
      * the flood-receive operation to finish, call the returned {@linkplain
      * CommRequest} object's <TT>waitForFinish()</TT> method. When that method
      * returns, the incoming message items have been fully received.
-     * <P>
+     * <p>
      * <I>Note:</I> The length of the incoming buffer in the
      * <TT>floodReceive()</TT> method call must be the same as the length of the
      * outgoing buffer in the <TT>floodSend()</TT> method call.
      *
-     * @param buffer Buffer of data items to be received.
+     * @param buffer  Buffer of data items to be received.
      * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     *                finish; in this case <TT>request</TT> is returned. If
+     *                <TT>request</TT> is null, a new CommRequest object is created and
+     *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buffer</TT> is null.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public CommRequest floodReceive(Buf buffer,
-            CommRequest request)
+                                    CommRequest request)
             throws IOException {
         return floodReceive(0, buffer, request);
     }
@@ -2313,34 +2244,32 @@ public class Comm {
      * be received with any tag. The received message items are stored in the
      * given buffer. To send the message, the source process must call the
      * <TT>floodSend()</TT> method.
-     * <P>
+     * <p>
      * The <TT>floodReceive()</TT> method initiates the flood-receive operation
      * and immediately returns a {@linkplain CommRequest} object. The
      * flood-receive operation is performed by a separate thread. To wait for
      * the flood-receive operation to finish, call the returned {@linkplain
      * CommRequest} object's <TT>waitForFinish()</TT> method. When that method
      * returns, the incoming message items have been fully received.
-     * <P>
+     * <p>
      * <I>Note:</I> The length of the incoming buffer in the
      * <TT>floodReceive()</TT> method call must be the same as the length of the
      * outgoing buffer in the <TT>floodSend()</TT> method call.
      *
-     * @param tag Message tag, or null to receive any tag.
-     * @param buffer Buffer of data items to be received.
+     * @param tag     Message tag, or null to receive any tag.
+     * @param buffer  Buffer of data items to be received.
      * @param request CommRequest object to use to wait for the operation to
-     * finish; in this case <TT>request</TT> is returned. If
-     * <TT>request</TT> is null, a new CommRequest object is created and
-     * returned.
-     *
+     *                finish; in this case <TT>request</TT> is returned. If
+     *                <TT>request</TT> is null, a new CommRequest object is created and
+     *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buffer</TT> is null.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public CommRequest floodReceive(Integer tag,
-            Buf buffer,
-            CommRequest request)
+                                    Buf buffer,
+                                    CommRequest request)
             throws IOException {
         // Get broadcast tree for root=0.
         int[] tree = getBroadcastTree(0);
@@ -2402,9 +2331,8 @@ public class Comm {
          *
          * @return False if this I/O request has not finished, true if this I/O
          * request has finished successfully.
-         *
-         * @exception IOException Thrown if this I/O request has finished and an
-         * I/O error occurred.
+         * @throws IOException Thrown if this I/O request has finished and an
+         *                     I/O error occurred.
          */
         public synchronized boolean isFinished()
                 throws IOException {
@@ -2427,8 +2355,7 @@ public class Comm {
          *
          * @return Receive status for a receive operation, or null for a send
          * operation.
-         *
-         * @exception IOException Thrown if an I/O error occurred.
+         * @throws IOException Thrown if an I/O error occurred.
          */
         public synchronized Status waitForFinish()
                 throws IOException {
@@ -2468,29 +2395,28 @@ public class Comm {
      * uses a message tag of 0. All processes must call <TT>broadcast()</TT>
      * with the same value for <TT>root</TT> and with a buffer of the same
      * length and the same item data type.
-     * <P>
+     * <p>
      * The root process (the process whose rank in this communicator is
      * <TT>root</TT>) sends the message items. The message items come from the
      * given buffer. When the <TT>broadcast()</TT> method returns, the message
      * has been fully sent, but it may not yet have been fully received by all
      * processes.
-     * <P>
+     * <p>
      * Each non-root process receives the message items. The message items are
      * stored in the given buffer. When the <TT>broadcast()</TT> method returns,
      * the message has been fully received.
      *
-     * @param root Root process's rank in this communicator.
+     * @param root   Root process's rank in this communicator.
      * @param buffer Buffer of data items to be sent (root process) or received
-     * (non-root processes).
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     *               (non-root processes).
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void broadcast(int root,
-            Buf buffer)
+                          Buf buffer)
             throws IOException {
         broadcast(root, 0, buffer);
     }
@@ -2500,31 +2426,30 @@ public class Comm {
      * message tag. All processes must call <TT>broadcast()</TT> with the same
      * values for <TT>root</TT> and <TT>tag</TT> and with a buffer of the same
      * length and the same item data type.
-     * <P>
+     * <p>
      * The root process (the process whose rank in this communicator is
      * <TT>root</TT>) sends the message items. The message items come from the
      * given buffer. When the <TT>broadcast()</TT> method returns, the message
      * has been fully sent, but it may not yet have been fully received by all
      * processes.
-     * <P>
+     * <p>
      * Each non-root process receives the message items. The message items are
      * stored in the given buffer. When the <TT>broadcast()</TT> method returns,
      * the message has been fully received.
      *
-     * @param root Root process's rank in this communicator.
-     * @param tag Message tag.
+     * @param root   Root process's rank in this communicator.
+     * @param tag    Message tag.
      * @param buffer Buffer of data items to be sent (root process) or received
-     * (non-root processes).
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buffer</TT> is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     *               (non-root processes).
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buffer</TT> is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void broadcast(int root,
-            int tag,
-            Buf buffer)
+                          int tag,
+                          Buf buffer)
             throws IOException {
         // Verify preconditions.
         if (0 > root || root >= mySize) {
@@ -2586,39 +2511,38 @@ public class Comm {
      * Scatter messages to all processes in this communicator. The scatter uses
      * a message tag of 0. All processes must call <TT>scatter()</TT>
      * with the same value for <TT>root</TT>.
-     * <P>
+     * <p>
      * The root process (the process whose rank in this communicator is
      * <TT>root</TT>) sends the message items. The message items sent to process
      * <I>i</I> come from the source buffer at index <I>i</I> in the given array
      * of source buffers. When the <TT>scatter()</TT> method returns, the
      * messages have been fully sent, but they may not yet have been fully
      * received by all processes.
-     * <P>
+     * <p>
      * Each process, including the root process, receives the message items. The
      * message items are stored in the given destination buffer. This must have
      * the same length and the same item data type as the corresponding source
      * buffer. When the <TT>scatter()</TT> method returns, the message has been
      * fully received.
-     * <P>
+     * <p>
      * In the non-root processes, the source buffer array is ignored and may be
      * null.
      *
-     * @param root Root process's rank in this communicator.
+     * @param root     Root process's rank in this communicator.
      * @param srcarray Array of source buffers to be sent by the root process.
-     * Ignored in the non-root processes.
-     * @param dst Destination buffer to be received.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1. Thrown if
-     * <TT>srcarray</TT>'s length does not equal the size of this communicator.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>srcarray</TT> or any element thereof is null. Thrown if <TT>dst</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     *                 Ignored in the non-root processes.
+     * @param dst      Destination buffer to be received.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1. Thrown if
+     *                                   <TT>srcarray</TT>'s length does not equal the size of this communicator.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>srcarray</TT> or any element thereof is null. Thrown if <TT>dst</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void scatter(int root,
-            Buf[] srcarray,
-            Buf dst)
+                        Buf[] srcarray,
+                        Buf dst)
             throws IOException {
         scatter(root, 0, srcarray, dst);
     }
@@ -2627,41 +2551,40 @@ public class Comm {
      * Scatter messages to all processes in this communicator using the given
      * message tag. All processes must call <TT>scatter()</TT> with the same
      * values for <TT>root</TT> and <TT>tag</TT>.
-     * <P>
+     * <p>
      * The root process (the process whose rank in this communicator is
      * <TT>root</TT>) sends the message items. The message items sent to process
      * <I>i</I> come from the source buffer at index <I>i</I> in the given array
      * of source buffers. When the <TT>scatter()</TT> method returns, the
      * messages have been fully sent, but they may not yet have been fully
      * received by all processes.
-     * <P>
+     * <p>
      * Each process, including the root process, receives the message items. The
      * message items are stored in the given destination buffer. This must have
      * the same length and the same item data type as the corresponding source
      * buffer. When the <TT>scatter()</TT> method returns, the message has been
      * fully received.
-     * <P>
+     * <p>
      * In the non-root processes, the source buffer array is ignored and may be
      * null.
      *
-     * @param root Root process's rank in this communicator.
-     * @param tag Message tag.
+     * @param root     Root process's rank in this communicator.
+     * @param tag      Message tag.
      * @param srcarray Array of source buffers to be sent by the root process.
-     * Ignored in the non-root processes.
-     * @param dst Destination buffer to be received.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1. Thrown if
-     * <TT>srcarray</TT>'s length does not equal the size of this communicator.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>srcarray</TT> or any element thereof is null. Thrown if <TT>dst</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     *                 Ignored in the non-root processes.
+     * @param dst      Destination buffer to be received.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1. Thrown if
+     *                                   <TT>srcarray</TT>'s length does not equal the size of this communicator.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>srcarray</TT> or any element thereof is null. Thrown if <TT>dst</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void scatter(int root,
-            int tag,
-            Buf[] srcarray,
-            Buf dst)
+                        int tag,
+                        Buf[] srcarray,
+                        Buf dst)
             throws IOException {
         // Verify preconditions.
         if (0 > root || root >= mySize) {
@@ -2729,40 +2652,39 @@ public class Comm {
      * Gather messages from all processes in this communicator. The gather uses
      * a message tag of 0. All processes must call <TT>gather()</TT> with the
      * same value for <TT>root</TT>.
-     * <P>
+     * <p>
      * The root process (the process whose rank in this communicator is
      * <TT>root</TT>) receives the message items. The message items received
      * from process <I>i</I> are stored in the destination buffer at index
      * <I>i</I> in the given array of destination buffers. When the
      * <TT>gather()</TT> method returns, all the messages have been fully
      * received.
-     * <P>
+     * <p>
      * Each process, including the root process, sends the message items. The
      * message items come from the given source buffer. This must have the same
      * length and the same item data type as the corresponding destination
      * buffer. When the <TT>gather()</TT> method returns, the message has been
      * fully sent, but it may not yet have been fully received by the root
      * process.
-     * <P>
+     * <p>
      * In the non-root processes, the destination buffer array is ignored and
      * may be null.
      *
-     * @param root Root process's rank in this communicator.
-     * @param src Source buffer to be sent.
+     * @param root     Root process's rank in this communicator.
+     * @param src      Source buffer to be sent.
      * @param dstarray Array of destination buffers to be received by the root
-     * process. Ignored in the non-root processes.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1. Thrown if
-     * <TT>dstarray</TT>'s length does not equal the size of this communicator.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>dstarray</TT> or any element thereof is null. Thrown if <TT>src</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     *                 process. Ignored in the non-root processes.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1. Thrown if
+     *                                   <TT>dstarray</TT>'s length does not equal the size of this communicator.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>dstarray</TT> or any element thereof is null. Thrown if <TT>src</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void gather(int root,
-            Buf src,
-            Buf[] dstarray)
+                       Buf src,
+                       Buf[] dstarray)
             throws IOException {
         gather(root, 0, src, dstarray);
     }
@@ -2771,42 +2693,41 @@ public class Comm {
      * Gather messages from all processes in this communicator using the given
      * message tag. All processes must call <TT>gather()</TT> with the same
      * values for <TT>root</TT> and <TT>tag</TT>.
-     * <P>
+     * <p>
      * The root process (the process whose rank in this communicator is
      * <TT>root</TT>) receives the message items. The message items received
      * from process <I>i</I> are stored in the destination buffer at index
      * <I>i</I> in the given array of destination buffers. When the
      * <TT>gather()</TT> method returns, all the messages have been fully
      * received.
-     * <P>
+     * <p>
      * Each process, including the root process, sends the message items. The
      * message items come from the given source buffer. This must have the same
      * length and the same item data type as the corresponding destination
      * buffer. When the <TT>gather()</TT> method returns, the message has been
      * fully sent, but it may not yet have been fully received by the root
      * process.
-     * <P>
+     * <p>
      * In the non-root processes, the destination buffer array is ignored and
      * may be null.
      *
-     * @param root Root process's rank in this communicator.
-     * @param tag Message tag.
-     * @param src Source buffer to be sent.
+     * @param root     Root process's rank in this communicator.
+     * @param tag      Message tag.
+     * @param src      Source buffer to be sent.
      * @param dstarray Array of destination buffers to be received by the root
-     * process. Ignored in the non-root processes.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1. Thrown if
-     * <TT>dstarray</TT>'s length does not equal the size of this communicator.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>dstarray</TT> or any element thereof is null. Thrown if <TT>src</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     *                 process. Ignored in the non-root processes.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1. Thrown if
+     *                                   <TT>dstarray</TT>'s length does not equal the size of this communicator.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>dstarray</TT> or any element thereof is null. Thrown if <TT>src</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void gather(int root,
-            int tag,
-            Buf src,
-            Buf[] dstarray)
+                       int tag,
+                       Buf src,
+                       Buf[] dstarray)
             throws IOException {
         // Verify preconditions.
         if (0 > root || root >= mySize) {
@@ -2874,34 +2795,33 @@ public class Comm {
      * All-gather messages from each process to all processes in this
      * communicator. A message tag of 0 is used. All processes must call
      * <TT>allGather()</TT>.
-     * <P>
+     * <p>
      * Each process sends the message items in the given source buffer. When the
      * <TT>allGather()</TT> method returns, the source buffer has been fully
      * sent.
-     * <P>
+     * <p>
      * Each process receives message items from the other processes. The message
      * items received from process <I>i</I> are stored in the destination buffer
      * at index <I>i</I> in the given array of destination buffers. This
      * destination buffer must have the same length and the same item data type
      * as the source buffer in process <I>i</I>. When the <TT>allGather()</TT>
      * method returns, all the destination buffers have been fully received.
-     * <P>
+     * <p>
      * All-gather is the same as gather, except that every process has an array
      * of destination buffers, and every process receives the results of the
      * gather.
      *
-     * @param src Source buffer to be sent.
+     * @param src      Source buffer to be sent.
      * @param dstarray Array of destination buffers to be received.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>dstarray</TT>'s length does not equal the size of this communicator.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>dstarray</TT> or any element thereof is null. Thrown if <TT>src</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>dstarray</TT>'s length does not equal the size of this communicator.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>dstarray</TT> or any element thereof is null. Thrown if <TT>src</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void allGather(Buf src,
-            Buf[] dstarray)
+                          Buf[] dstarray)
             throws IOException {
         allGather(0, src, dstarray);
     }
@@ -2910,36 +2830,35 @@ public class Comm {
      * All-gather messages from each process to all processes in this
      * communicator using the given message tag. All processes must call
      * <TT>allGather()</TT> with the same value for <TT>tag</TT>.
-     * <P>
+     * <p>
      * Each process sends the message items in the given source buffer. When the
      * <TT>allGather()</TT> method returns, the source buffer has been fully
      * sent.
-     * <P>
+     * <p>
      * Each process receives message items from the other processes. The message
      * items received from process <I>i</I> are stored in the destination buffer
      * at index <I>i</I> in the given array of destination buffers. This
      * destination buffer must have the same length and the same item data type
      * as the source buffer in process <I>i</I>. When the <TT>allGather()</TT>
      * method returns, all the destination buffers have been fully received.
-     * <P>
+     * <p>
      * All-gather is the same as gather, except that every process has an array
      * of destination buffers, and every process receives the results of the
      * gather.
      *
-     * @param tag Message tag.
-     * @param src Source buffer to be sent.
+     * @param tag      Message tag.
+     * @param src      Source buffer to be sent.
      * @param dstarray Array of destination buffers to be received.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>dstarray</TT>'s length does not equal the size of this communicator.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>dstarray</TT> or any element thereof is null. Thrown if <TT>src</TT>
-     * is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>dstarray</TT>'s length does not equal the size of this communicator.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>dstarray</TT> or any element thereof is null. Thrown if <TT>src</TT>
+     *                                   is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void allGather(int tag,
-            Buf src,
-            Buf[] dstarray)
+                          Buf src,
+                          Buf[] dstarray)
             throws IOException {
         // Get ranks of predecessor and successor processes.
         int pred = (myRank - 1 + mySize) % mySize;
@@ -2968,16 +2887,16 @@ public class Comm {
      * the same value for <TT>root</TT>, with a buffer of the same length and
      * the same item data type, and with the same binary operation (class
      * {@linkplain edu.rit.pj.reduction.Op Op}).
-     * <P>
+     * <p>
      * Before calling <TT>reduce()</TT>, each process has a buffer filled with
      * data items. After <TT>reduce()</TT> returns, each data item in the root
      * process's buffer has been set to the <B>reduction</B> of the
      * corresponding data items in all the processes' buffers. The reduction is
      * calculated by this formula:
-     * <P>
+     * <p>
      * &nbsp;&nbsp;&nbsp;&nbsp;<I>item</I><SUB>0</SUB> <I>op</I>
      * <I>item</I><SUB>1</SUB> <I>op</I> <I>item</I><SUB>2</SUB> <I>op</I> . . .
-     * <P>
+     * <p>
      * where <I>op</I> is the binary operation passed in as an argument and
      * <I>item</I><SUB>0</SUB>, <I>item</I><SUB>1</SUB>,
      * <I>item</I><SUB>2</SUB>, and so on are the data items in the buffers of
@@ -2986,34 +2905,33 @@ public class Comm {
      * operation must be such that the answer will be the same regardless of the
      * order in which the data items are combined; that is, the binary operation
      * must be commutative and associative.
-     * <P>
+     * <p>
      * In the root process, the reduce operation always changes the buffer's
      * contents as described above. In the non-root processes, the reduce
      * operation may or may not change the buffer's contents; the final contents
      * of the buffer in the non-root processes is not specified.
-     * <P>
+     * <p>
      * When the <TT>reduce()</TT> method returns in the root process, the
      * reduction has been fully performed as described above. When the
      * <TT>reduce()</TT> method returns in a non-root process, the non-root
      * process has sent all its data items into the reduction, but the reduction
      * may not be fully complete in the root process yet.
      *
-     * @param root Root process's rank in this communicator.
+     * @param root   Root process's rank in this communicator.
      * @param buffer Buffer of data items to be reduced.
-     * @param op Binary operation.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null or <TT>op</TT>
-     * is null.
-     * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @param op     Binary operation.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buf</TT> is null or <TT>op</TT>
+     *                                   is null.
+     * @throws ClassCastException        (unchecked exception) Thrown if
+     *                                   <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void reduce(int root,
-            Buf buffer,
-            Op op)
+                       Buf buffer,
+                       Op op)
             throws IOException {
         reduce(root, 0, buffer, op);
     }
@@ -3024,16 +2942,16 @@ public class Comm {
      * value for <TT>root</TT>, with a buffer of the same length and the same
      * item data type, and with the same binary operation (class {@linkplain
      * edu.rit.pj.reduction.Op Op}).
-     * <P>
+     * <p>
      * Before calling <TT>reduce()</TT>, each process has a buffer filled with
      * data items. After <TT>reduce()</TT> returns, each data item in the root
      * process's buffer has been set to the <B>reduction</B> of the
      * corresponding data items in all the processes' buffers. The reduction is
      * calculated by this formula:
-     * <P>
+     * <p>
      * &nbsp;&nbsp;&nbsp;&nbsp;<I>item</I><SUB>0</SUB> <I>op</I>
      * <I>item</I><SUB>1</SUB> <I>op</I> <I>item</I><SUB>2</SUB> <I>op</I> . . .
-     * <P>
+     * <p>
      * where <I>op</I> is the binary operation passed in as an argument and
      * <I>item</I><SUB>0</SUB>, <I>item</I><SUB>1</SUB>,
      * <I>item</I><SUB>2</SUB>, and so on are the data items in the buffers of
@@ -3042,36 +2960,35 @@ public class Comm {
      * operation must be such that the answer will be the same regardless of the
      * order in which the data items are combined; that is, the binary operation
      * must be commutative and associative.
-     * <P>
+     * <p>
      * In the root process, the reduce operation always changes the buffer's
      * contents as described above. In the non-root processes, the reduce
      * operation may or may not change the buffer's contents; the final contents
      * of the buffer in the non-root processes is not specified.
-     * <P>
+     * <p>
      * When the <TT>reduce()</TT> method returns in the root process, the
      * reduction has been fully performed as described above. When the
      * <TT>reduce()</TT> method returns in a non-root process, the non-root
      * process has sent all its data items into the reduction, but the reduction
      * may not be fully complete in the root process yet.
      *
-     * @param root Root process's rank in this communicator.
-     * @param tag Message tag.
+     * @param root   Root process's rank in this communicator.
+     * @param tag    Message tag.
      * @param buffer Buffer of data items to be reduced.
-     * @param op Binary operation.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null or <TT>op</TT>
-     * is null.
-     * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @param op     Binary operation.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>root</TT> is not in the range 0 .. <TT>size()</TT>-1.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>buf</TT> is null or <TT>op</TT>
+     *                                   is null.
+     * @throws ClassCastException        (unchecked exception) Thrown if
+     *                                   <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void reduce(int root,
-            int tag,
-            Buf buffer,
-            Op op)
+                       int tag,
+                       Buf buffer,
+                       Op op)
             throws IOException {
         // Verify preconditions.
         if (0 > root || root >= mySize) {
@@ -3134,16 +3051,16 @@ public class Comm {
      * <TT>allReduce()</TT> with a buffer of the same length and the same item
      * data type, and with the same binary operation (class {@linkplain
      * edu.rit.pj.reduction.Op Op}).
-     * <P>
+     * <p>
      * Before calling <TT>allReduce()</TT>, each process has a buffer filled
      * with data items. After <TT>allReduce()</TT> returns, each data item in
      * the calling process's buffer has been set to the <B>reduction</B> of the
      * corresponding data items in all the processes' buffers. The reduction is
      * calculated by this formula:
-     * <P>
+     * <p>
      * &nbsp;&nbsp;&nbsp;&nbsp;<I>item</I><SUB>0</SUB> <I>op</I>
      * <I>item</I><SUB>1</SUB> <I>op</I> <I>item</I><SUB>2</SUB> <I>op</I> . . .
-     * <P>
+     * <p>
      * where <I>op</I> is the binary operation passed in as an argument and
      * <I>item</I><SUB>0</SUB>, <I>item</I><SUB>1</SUB>,
      * <I>item</I><SUB>2</SUB>, and so on are the data items in the buffers of
@@ -3152,23 +3069,22 @@ public class Comm {
      * operation must be such that the answer will be the same regardless of the
      * order in which the data items are combined; that is, the binary operation
      * must be commutative and associative.
-     * <P>
+     * <p>
      * The <TT>allReduce()</TT> method is similar to the <TT>reduce()</TT>
      * method, except the results are stored in all the processes' buffers, not
      * just the one root process's buffer.
      *
      * @param buffer Buffer of data items to be reduced.
-     * @param op Binary operation.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null or <TT>op</TT>
-     * is null.
-     * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @param op     Binary operation.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buf</TT> is null or <TT>op</TT>
+     *                              is null.
+     * @throws ClassCastException   (unchecked exception) Thrown if
+     *                              <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public void allReduce(Buf buffer,
-            Op op)
+                          Op op)
             throws IOException {
         allReduce(0, buffer, op);
     }
@@ -3178,16 +3094,16 @@ public class Comm {
      * given message tag. All processes must call <TT>allReduce()</TT> with a
      * buffer of the same length and the same item data type, and with the same
      * binary operation (class {@linkplain edu.rit.pj.reduction.Op Op}).
-     * <P>
+     * <p>
      * Before calling <TT>allReduce()</TT>, each process has a buffer filled
      * with data items. After <TT>allReduce()</TT> returns, each data item in
      * the calling process's buffer has been set to the <B>reduction</B> of the
      * corresponding data items in all the processes' buffers. The reduction is
      * calculated by this formula:
-     * <P>
+     * <p>
      * &nbsp;&nbsp;&nbsp;&nbsp;<I>item</I><SUB>0</SUB> <I>op</I>
      * <I>item</I><SUB>1</SUB> <I>op</I> <I>item</I><SUB>2</SUB> <I>op</I> . . .
-     * <P>
+     * <p>
      * where <I>op</I> is the binary operation passed in as an argument and
      * <I>item</I><SUB>0</SUB>, <I>item</I><SUB>1</SUB>,
      * <I>item</I><SUB>2</SUB>, and so on are the data items in the buffers of
@@ -3196,27 +3112,26 @@ public class Comm {
      * operation must be such that the answer will be the same regardless of the
      * order in which the data items are combined; that is, the binary operation
      * must be commutative and associative.
-     * <P>
+     * <p>
      * The <TT>allReduce()</TT> method is similar to the <TT>reduce()</TT>
      * method, except the results are stored in all the processes' buffers, not
      * just the one root process's buffer.
      *
-     * @param tag Message tag.
+     * @param tag    Message tag.
      * @param buffer Buffer of data items to be reduced.
-     * @param op Binary operation.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null or <TT>op</TT>
-     * is null.
-     * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @param op     Binary operation.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buf</TT> is null or <TT>op</TT>
+     *                              is null.
+     * @throws ClassCastException   (unchecked exception) Thrown if
+     *                              <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public void allReduce(int tag,
-            Buf buffer,
-            Op op)
+                          Buf buffer,
+                          Op op)
             throws IOException {
-		// An all-reduce is done using a "butterfly" message passing pattern.
+        // An all-reduce is done using a "butterfly" message passing pattern.
         // Consider the case of K=8 processes. In the first round, processes one
         // rank apart exchange data, then each processes accumulates the data
         // from the other process using the reduction operator. In the second
@@ -3324,7 +3239,7 @@ public class Comm {
     /**
      * Do an all-to-all among all processes in this communicator. A message tag
      * of 0 is used.
-     * <P>
+     * <p>
      * <TT>srcarray</TT> must be an array of <I>K</I> buffers, where <I>K</I> is
      * the size of this communicator. <TT>dstarray</TT> must be an array of
      * <I>K</I> buffers referring to different storage from the source buffers.
@@ -3335,19 +3250,18 @@ public class Comm {
      *
      * @param srcarray Array of source buffers to be sent by this process.
      * @param dstarray Array of destination buffers to be received by this
-     * process.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>srcarray</TT>'s length does not equal the size of this communicator.
-     * Thrown if <TT>dstarray</TT>'s length does not equal the size of this
-     * communicator.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>srcarray</TT> or any element thereof is null. Thrown if
-     * <TT>dstarray</TT> or any element thereof is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     *                 process.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>srcarray</TT>'s length does not equal the size of this communicator.
+     *                                   Thrown if <TT>dstarray</TT>'s length does not equal the size of this
+     *                                   communicator.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>srcarray</TT> or any element thereof is null. Thrown if
+     *                                   <TT>dstarray</TT> or any element thereof is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void allToAll(Buf[] srcarray,
-            Buf[] dstarray)
+                         Buf[] dstarray)
             throws IOException {
         allToAll(0, srcarray, dstarray);
     }
@@ -3356,7 +3270,7 @@ public class Comm {
      * Do an all-to-all among all processes in this communicator using the given
      * message tag. All processes must call <TT>allToAll()</TT> with the same
      * value for <TT>tag</TT>.
-     * <P>
+     * <p>
      * <TT>srcarray</TT> must be an array of <I>K</I> buffers, where <I>K</I> is
      * the size of this communicator. <TT>dstarray</TT> must be an array of
      * <I>K</I> buffers referring to different storage from the source buffers.
@@ -3365,25 +3279,24 @@ public class Comm {
      * <TT>srcarray[k]</TT> in process <I>i</I> are sent to <TT>dstarray[i]</TT>
      * in process <I>k</I>.
      *
-     * @param tag Message tag.
+     * @param tag      Message tag.
      * @param srcarray Array of source buffers to be sent by this process.
      * @param dstarray Array of destination buffers to be received by this
-     * process.
-     *
-     * @exception IndexOutOfBoundsException (unchecked exception) Thrown if
-     * <TT>srcarray</TT>'s length does not equal the size of this communicator.
-     * Thrown if <TT>dstarray</TT>'s length does not equal the size of this
-     * communicator.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>srcarray</TT> or any element thereof is null. Thrown if
-     * <TT>dstarray</TT> or any element thereof is null.
-     * @exception IOException Thrown if an I/O error occurred.
+     *                 process.
+     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     *                                   <TT>srcarray</TT>'s length does not equal the size of this communicator.
+     *                                   Thrown if <TT>dstarray</TT>'s length does not equal the size of this
+     *                                   communicator.
+     * @throws NullPointerException      (unchecked exception) Thrown if
+     *                                   <TT>srcarray</TT> or any element thereof is null. Thrown if
+     *                                   <TT>dstarray</TT> or any element thereof is null.
+     * @throws IOException               Thrown if an I/O error occurred.
      */
     public void allToAll(int tag,
-            Buf[] srcarray,
-            Buf[] dstarray)
+                         Buf[] srcarray,
+                         Buf[] dstarray)
             throws IOException {
-		// An all-to-all is done as a series of send-receives. Each process
+        // An all-to-all is done as a series of send-receives. Each process
         // sends the appropriate buffer to the process one ahead and receives
         // the appropriate buffer from the process one behind. Then each process
         // sends the appropriate buffer to the process two ahead and receives
@@ -3422,8 +3335,8 @@ public class Comm {
             int fromRank = (myRank - i + mySize) % mySize;
             commrequest[i]
                     = sendReceive(toRank, tag, srcarray[toRank],
-                            fromRank, tag, dstarray[fromRank],
-                            (CommRequest) null);
+                    fromRank, tag, dstarray[fromRank],
+                    (CommRequest) null);
         }
 
         // Wait for completion of all send-receives.
@@ -3437,16 +3350,16 @@ public class Comm {
      * is used. All processes must call <TT>scan()</TT> with a buffer of the
      * same length and the same item data type, and with the same binary
      * operation (class {@linkplain edu.rit.pj.reduction.Op Op}).
-     * <P>
+     * <p>
      * Before calling <TT>scan()</TT>, each process has a buffer filled with
      * data items. After <TT>scan()</TT> returns, each data item in the buffer
      * of process rank <I>i</I> has been set to the <B>reduction</B> of the
      * corresponding data items in the buffers of process ranks 0 through
      * <I>i</I>. The reduction is calculated by this formula:
-     * <P>
+     * <p>
      * &nbsp;&nbsp;&nbsp;&nbsp;<I>item</I><SUB>0</SUB> <I>op</I>
      * <I>item</I><SUB>1</SUB> <I>op</I> <I>item</I><SUB>2</SUB> <I>op</I> . . .
-     * <P>
+     * <p>
      * where <I>op</I> is the binary operation passed in as an argument and
      * <I>item</I><SUB>0</SUB>, <I>item</I><SUB>1</SUB>,
      * <I>item</I><SUB>2</SUB>, and so on are the data items in the buffers of
@@ -3457,17 +3370,16 @@ public class Comm {
      * must be commutative and associative.
      *
      * @param buf Buffer of data items to be scanned.
-     * @param op Binary operation.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null or <TT>op</TT>
-     * is null.
-     * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @param op  Binary operation.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buf</TT> is null or <TT>op</TT>
+     *                              is null.
+     * @throws ClassCastException   (unchecked exception) Thrown if
+     *                              <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public void scan(Buf buf,
-            Op op)
+                     Op op)
             throws IOException {
         scan(0, buf, op);
     }
@@ -3478,16 +3390,16 @@ public class Comm {
      * for <TT>tag</TT>, with a buffer of the same length and the same item data
      * type, and with the same binary operation (class {@linkplain
      * edu.rit.pj.reduction.Op Op}).
-     * <P>
+     * <p>
      * Before calling <TT>scan()</TT>, each process has a buffer filled with
      * data items. After <TT>scan()</TT> returns, each data item in the buffer
      * of process rank <I>i</I> has been set to the <B>reduction</B> of the
      * corresponding data items in the buffers of process ranks 0 through
      * <I>i</I>. The reduction is calculated by this formula:
-     * <P>
+     * <p>
      * &nbsp;&nbsp;&nbsp;&nbsp;<I>item</I><SUB>0</SUB> <I>op</I>
      * <I>item</I><SUB>1</SUB> <I>op</I> <I>item</I><SUB>2</SUB> <I>op</I> . . .
-     * <P>
+     * <p>
      * where <I>op</I> is the binary operation passed in as an argument and
      * <I>item</I><SUB>0</SUB>, <I>item</I><SUB>1</SUB>,
      * <I>item</I><SUB>2</SUB>, and so on are the data items in the buffers of
@@ -3499,18 +3411,17 @@ public class Comm {
      *
      * @param tag Message tag.
      * @param buf Buffer of data items to be scanned.
-     * @param op Binary operation.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null or <TT>op</TT>
-     * is null.
-     * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @param op  Binary operation.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buf</TT> is null or <TT>op</TT>
+     *                              is null.
+     * @throws ClassCastException   (unchecked exception) Thrown if
+     *                              <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public void scan(int tag,
-            Buf buf,
-            Op op)
+                     Buf buf,
+                     Op op)
             throws IOException {
         // Early return if only one process.
         if (mySize == 1) {
@@ -3552,7 +3463,7 @@ public class Comm {
 
         // Do rounds of message passing and reduction.
         int skip = 1;
-        for (;;) {
+        for (; ; ) {
             int toRank = myRank + skip;
             int fromRank = myRank - skip;
             boolean toExists = 0 <= toRank && toRank < mySize;
@@ -3577,17 +3488,17 @@ public class Comm {
      * <TT>exclusiveScan()</TT> with a buffer of the same length and the same
      * item data type, with the same binary operation (class {@linkplain
      * edu.rit.pj.reduction.Op Op}), and with the same initial data value.
-     * <P>
+     * <p>
      * Before calling <TT>exclusiveScan()</TT>, each process has a buffer filled
      * with data items. After <TT>exclusiveScan()</TT> returns, each data item
      * in the buffer of process rank <I>i</I> &gt; 0 has been set to the
      * <B>reduction</B> of the corresponding data items in the buffers of
      * process ranks 0 through <I>i</I>-1. The reduction is calculated by this
      * formula:
-     * <P>
+     * <p>
      * &nbsp;&nbsp;&nbsp;&nbsp;<I>item</I><SUB>0</SUB> <I>op</I>
      * <I>item</I><SUB>1</SUB> <I>op</I> <I>item</I><SUB>2</SUB> <I>op</I> . . .
-     * <P>
+     * <p>
      * where <I>op</I> is the binary operation passed in as an argument and
      * <I>item</I><SUB>0</SUB>, <I>item</I><SUB>1</SUB>,
      * <I>item</I><SUB>2</SUB>, and so on are the data items in the buffers of
@@ -3596,36 +3507,35 @@ public class Comm {
      * operation must be such that the answer will be the same regardless of the
      * order in which the data items are combined; that is, the binary operation
      * must be commutative and associative.
-     * <P>
+     * <p>
      * In process 0, each data item in the buffer has been set to the initial
      * data value using the buffer's <TT>fill()</TT> method.
-     * <P>
+     * <p>
      * If the buffer's item data type is a primitive type, the <TT>item</TT>
      * must be an instance of the corresponding primitive wrapper class -- class
      * Integer for type <TT>int</TT>, class Double for type <TT>double</TT>, and
      * so on. If the <TT>item</TT> is null, the item data type's default initial
      * value is assigned to each element in the buffer.
-     * <P>
+     * <p>
      * If the buffer's item data type is a nonprimitive type, the <TT>item</TT>
      * must be an instance of the item class or a subclass thereof. The
      * <TT>item</TT> may be null. Note that since <TT>item</TT> is
      * <I>assigned</I> to every buffer element, every buffer element ends up
      * referring to the same <TT>item</TT>.
      *
-     * @param buf Buffer of data items to be scanned.
-     * @param op Binary operation.
+     * @param buf  Buffer of data items to be scanned.
+     * @param op   Binary operation.
      * @param item Initial data value.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null or <TT>op</TT>
-     * is null.
-     * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buf</TT> is null or <TT>op</TT>
+     *                              is null.
+     * @throws ClassCastException   (unchecked exception) Thrown if
+     *                              <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public void exclusiveScan(Buf buf,
-            Op op,
-            Object item)
+                              Op op,
+                              Object item)
             throws IOException {
         exclusiveScan(0, buf, op, item);
     }
@@ -3636,17 +3546,17 @@ public class Comm {
      * the same value for <TT>tag</TT>, with a buffer of the same length and the
      * same item data type, with the same binary operation (class {@linkplain
      * edu.rit.pj.reduction.Op Op}), and with the same initial data value.
-     * <P>
+     * <p>
      * Before calling <TT>exclusiveScan()</TT>, each process has a buffer filled
      * with data items. After <TT>exclusiveScan()</TT> returns, each data item
      * in the buffer of process rank <I>i</I> &gt; 0 has been set to the
      * <B>reduction</B> of the corresponding data items in the buffers of
      * process ranks 0 through <I>i</I>-1. The reduction is calculated by this
      * formula:
-     * <P>
+     * <p>
      * &nbsp;&nbsp;&nbsp;&nbsp;<I>item</I><SUB>0</SUB> <I>op</I>
      * <I>item</I><SUB>1</SUB> <I>op</I> <I>item</I><SUB>2</SUB> <I>op</I> . . .
-     * <P>
+     * <p>
      * where <I>op</I> is the binary operation passed in as an argument and
      * <I>item</I><SUB>0</SUB>, <I>item</I><SUB>1</SUB>,
      * <I>item</I><SUB>2</SUB>, and so on are the data items in the buffers of
@@ -3655,38 +3565,37 @@ public class Comm {
      * operation must be such that the answer will be the same regardless of the
      * order in which the data items are combined; that is, the binary operation
      * must be commutative and associative.
-     * <P>
+     * <p>
      * In process 0, each data item in the buffer has been set to the initial
      * data value using the buffer's <TT>fill()</TT> method.
-     * <P>
+     * <p>
      * If the buffer's item data type is a primitive type, the <TT>item</TT>
      * must be an instance of the corresponding primitive wrapper class -- class
      * Integer for type <TT>int</TT>, class Double for type <TT>double</TT>, and
      * so on. If the <TT>item</TT> is null, the item data type's default initial
      * value is assigned to each element in the buffer.
-     * <P>
+     * <p>
      * If the buffer's item data type is a nonprimitive type, the <TT>item</TT>
      * must be an instance of the item class or a subclass thereof. The
      * <TT>item</TT> may be null. Note that since <TT>item</TT> is
      * <I>assigned</I> to every buffer element, every buffer element ends up
      * referring to the same <TT>item</TT>.
      *
-     * @param tag Message tag.
-     * @param buf Buffer of data items to be scanned.
-     * @param op Binary operation.
+     * @param tag  Message tag.
+     * @param buf  Buffer of data items to be scanned.
+     * @param op   Binary operation.
      * @param item Initial data value.
-     *
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>buf</TT> is null or <TT>op</TT>
-     * is null.
-     * @exception ClassCastException (unchecked exception) Thrown if
-     * <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws NullPointerException (unchecked exception) Thrown if
+     *                              <TT>buf</TT> is null or <TT>op</TT>
+     *                              is null.
+     * @throws ClassCastException   (unchecked exception) Thrown if
+     *                              <TT>buf</TT> and <TT>op</TT> do not use the same item data type.
+     * @throws IOException          Thrown if an I/O error occurred.
      */
     public void exclusiveScan(int tag,
-            Buf buf,
-            Op op,
-            Object item)
+                              Buf buf,
+                              Op op,
+                              Object item)
             throws IOException {
         // An exclusive scan begins with each process sending its buffer to the
         // next higher process. Then process 0 fills its buffer with the initial
@@ -3729,7 +3638,7 @@ public class Comm {
 
             // Do rounds of message passing and reduction.
             int skip = 1;
-            for (;;) {
+            for (; ; ) {
                 toRank = myRank + skip;
                 fromRank = myRank - skip;
                 toExists = 1 <= toRank && toRank < mySize;
@@ -3756,7 +3665,7 @@ public class Comm {
      * called <TT>barrier()</TT>, then the calling thread unblocks and returns
      * from the <TT>barrier()</TT> call.
      *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public void barrier()
             throws IOException {
@@ -3771,8 +3680,7 @@ public class Comm {
      * <TT>barrier()</TT> call.
      *
      * @param tag Message tag.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     public void barrier(int tag)
             throws IOException {
@@ -3811,11 +3719,11 @@ public class Comm {
      * Dump the state of this communicator on the given print stream. For
      * debugging.
      *
-     * @param out Print stream.
+     * @param out    Print stream.
      * @param prefix String to print at the beginning of each line.
      */
     public void dump(PrintStream out,
-            String prefix) {
+                     String prefix) {
         out.println();
         out.println(prefix + getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(this)));
         out.println(prefix + "mySize = " + mySize);
@@ -3849,12 +3757,12 @@ public class Comm {
     }
 
 // Hidden operations.
+
     /**
      * Notify that another process connected a channel to this process.
      *
      * @param theChannel Channel.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private synchronized void doFarEndConnected(Channel theChannel)
             throws IOException {
@@ -3870,8 +3778,7 @@ public class Comm {
      * rank is or will be set up.
      *
      * @param farrank Rank of far end process.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private synchronized void ensureChannel(int farrank)
             throws IOException {
@@ -3895,10 +3802,8 @@ public class Comm {
      * Get the channel for communicating with the process at the given rank.
      *
      * @param farrank Rank of far end process.
-     *
      * @return Channel.
-     *
-     * @exception IOException Thrown if an I/O error occurred.
+     * @throws IOException Thrown if an I/O error occurred.
      */
     private synchronized Channel getChannel(int farrank)
             throws IOException {
@@ -3934,7 +3839,6 @@ public class Comm {
      * Get the rank of the process at the far end of the given channel.
      *
      * @param channel Channel.
-     *
      * @return Far end process rank.
      */
     static int getFarRank(Channel channel) {
@@ -3946,7 +3850,6 @@ public class Comm {
      * The broadcast tree is cached in the field myBroadcastTree for later use.
      *
      * @param root Root process's rank.
-     *
      * @return Broadcast tree.
      */
     private synchronized int[] getBroadcastTree(int root) {
