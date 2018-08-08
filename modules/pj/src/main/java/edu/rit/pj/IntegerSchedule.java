@@ -33,7 +33,7 @@ import edu.rit.util.Range;
  * Class IntegerSchedule provides an object that determines how to schedule the
  * iterations of a {@linkplain ParallelForLoop} among the threads in a
  * {@linkplain ParallelTeam}. The loop index is type <TT>int</TT>.
- * <P>
+ * <p>
  * To create a schedule object, call one of the following static methods:
  * <UL>
  * <LI><TT>IntegerSchedule.fixed()</TT>
@@ -42,7 +42,7 @@ import edu.rit.util.Range;
  * <LI><TT>IntegerSchedule.runtime()</TT>
  * <LI><TT>IntegerSchedule.parse()</TT>
  * </UL>
- * <P>
+ * <p>
  * The Parallel Java Library includes three built-in schedule implementations:
  * fixed, dynamic, and guided. You can create instances of these by calling the
  * <TT>fixed()</TT>, <TT>dynamic()</TT>, and <TT>guided()</TT> methods. You can
@@ -57,11 +57,12 @@ import edu.rit.util.Range;
 public abstract class IntegerSchedule
         extends Schedule {
 
-// Hidden data members.
+    // Hidden data members.
     // Loop index for ordered() construct.
     volatile int myOrderedIndex;
 
 // Hidden constructors.
+
     /**
      * Construct a new schedule object.
      */
@@ -70,6 +71,7 @@ public abstract class IntegerSchedule
     }
 
 // Exported operations.
+
     /**
      * Returns a fixed schedule object. The loop iterations are apportioned
      * among the parallel team threads once at the beginning of the parallel for
@@ -104,8 +106,8 @@ public abstract class IntegerSchedule
      *
      * @param theChunkSize Chunk size, &gt;= 1.
      * @return Dynamic schedule object.
-     * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theChunkSize</TT> &lt; 1.
+     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     *                                  <TT>theChunkSize</TT> &lt; 1.
      */
     public static IntegerSchedule dynamic(int theChunkSize) {
         return new DynamicIntegerSchedule(theChunkSize);
@@ -139,8 +141,8 @@ public abstract class IntegerSchedule
      *
      * @param theChunkSize Minimum chunk size, &gt;= 1.
      * @return Self-guided schedule object.
-     * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>theChunkSize</TT> &lt; 1.
+     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     *                                  <TT>theChunkSize</TT> &lt; 1.
      */
     public static IntegerSchedule guided(int theChunkSize) {
         return new GuidedIntegerSchedule(theChunkSize);
@@ -154,12 +156,12 @@ public abstract class IntegerSchedule
      * the default is a fixed schedule. You can specify the schedule on the Java
      * command line like this (note that quotation marks may be needed):
      * <PRE>
-     *     java -Dpj.schedule="dynamic(5)" . . .
+     * java -Dpj.schedule="dynamic(5)" . . .
      * </PRE>
      *
      * @return Schedule object.
-     * @exception IllegalArgumentException (unchecked exception) Thrown if the
-     * <TT>"pj.schedule"</TT> property value cannot be parsed.
+     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     *                                  <TT>"pj.schedule"</TT> property value cannot be parsed.
      */
     public static IntegerSchedule runtime() {
         return runtime(IntegerSchedule.fixed());
@@ -174,14 +176,14 @@ public abstract class IntegerSchedule
      * returned. You can specify the schedule on the Java command line like this
      * (note that quotation marks may be needed):
      * <PRE>
-     *     java -Dpj.schedule="dynamic(5)" . . .
+     * java -Dpj.schedule="dynamic(5)" . . .
      * </PRE>
      *
      * @param defaultSchedule Schedule to use if the <TT>"pj.schedule"</TT>
-     * Java property is not specified.
+     *                        Java property is not specified.
      * @return Schedule object.
-     * @exception IllegalArgumentException (unchecked exception) Thrown if the
-     * <TT>"pj.schedule"</TT> property value cannot be parsed.
+     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     *                                  <TT>"pj.schedule"</TT> property value cannot be parsed.
      */
     public static IntegerSchedule runtime(IntegerSchedule defaultSchedule) {
         String s = PJProperties.getPjSchedule();
@@ -192,25 +194,18 @@ public abstract class IntegerSchedule
      * Returns a schedule object of a type determined by parsing the given
      * string. The string must be one of the following:
      * <UL>
-     * <P>
      * <LI><TT>"fixed"</TT> -- Fixed schedule.
-     * <P>
      * <LI><TT>"dynamic"</TT> -- Dynamic schedule with a chunk size of 1.
-     * <P>
      * <LI><TT>"dynamic(<I>n</I>)"</TT> -- Dynamic schedule with a chunk size of
      * <TT><I>n</I></TT>, an integer &gt;= 1.
-     * <P>
      * <LI><TT>"guided"</TT> -- Self-guided schedule with a minimum chunk size
      * of 1.
-     * <P>
      * <LI><TT>"guided(<I>n</I>)"</TT> -- Self-guided schedule with a minimum
      * chunk size of <TT><I>n</I></TT>, an integer &gt;= 1.
-     * <P>
      * <LI><TT>"<I>classname</I>"</TT> -- Schedule that is an instance of the
      * given class. <I>classname</I> is the fully-qualified class name of the
      * schedule class, which must be a subclass of class IntegerSchedule. The
      * instance is constructed using the subclass's no-argument constructor.
-     * <P>
      * <LI><TT>"<I>classname</I>(<I>arg</I>,<I>arg</I>,...)"</TT> -- Schedule
      * that is an instance of the given class. <I>classname</I> is the
      * fully-qualified class name of the schedule class, which must be a
@@ -223,10 +218,10 @@ public abstract class IntegerSchedule
      *
      * @param s String to parse.
      * @return Schedule object.
-     * @exception NullPointerException (unchecked exception) Thrown if
-     * <TT>s</TT> is null.
-     * @exception IllegalArgumentException (unchecked exception) Thrown if
-     * <TT>s</TT> is not one of the above.
+     * @throws NullPointerException     (unchecked exception) Thrown if
+     *                                  <TT>s</TT> is null.
+     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     *                                  <TT>s</TT> is not one of the above.
      */
     public static IntegerSchedule parse(String s) {
         try {
@@ -236,8 +231,8 @@ public abstract class IntegerSchedule
                 // No arguments. s is the subclass name. Get subclass.
                 Class<?> subclass
                         = Class.forName(getSubclassName(s),
-                                true,
-                                Thread.currentThread().getContextClassLoader());
+                        true,
+                        Thread.currentThread().getContextClassLoader());
 
                 // Instantiate subclass using no-argument constructor.
                 return (IntegerSchedule) subclass.getConstructor().newInstance();
@@ -255,8 +250,8 @@ public abstract class IntegerSchedule
                 // s up to '(' is the subclass name. Get subclass.
                 Class<?> subclass
                         = Class.forName(getSubclassName(s.substring(0, p1)),
-                                true,
-                                Thread.currentThread().getContextClassLoader());
+                        true,
+                        Thread.currentThread().getContextClassLoader());
 
                 // Get constructor with one String[] argument.
                 Constructor<?> constructor
@@ -297,13 +292,13 @@ public abstract class IntegerSchedule
     public abstract boolean isFixedSchedule();
 
 // Hidden operations.
+
     /**
      * Get the name of the subclass to instantiate. The names <TT>"fixed"</TT>,
      * <TT>"dynamic"</TT>, and <TT>"guided"</TT> are recognized as special
      * cases.
      *
      * @param name Subclass name, or special case string.
-     *
      * @return Subclass name.
      */
     private static String getSubclassName(String name) {
@@ -323,12 +318,12 @@ public abstract class IntegerSchedule
      * common processing, then calls the subclass-specific <TT>start()</TT>
      * method.
      *
-     * @param K Number of threads in the parallel team.
+     * @param K            Number of threads in the parallel team.
      * @param theLoopRange Range of iterations for the entire parallel for loop.
-     * The stride may be 1 or greater.
+     *                     The stride may be 1 or greater.
      */
     void commonStart(int K,
-            Range theLoopRange) {
+                     Range theLoopRange) {
         myBreak = false;
         myOrderedIndex = theLoopRange.lb();
         start(K, theLoopRange);
@@ -337,16 +332,16 @@ public abstract class IntegerSchedule
     /**
      * Start generating chunks of iterations for a parallel for loop using this
      * schedule.
-     * <P>
+     * <p>
      * The <TT>start()</TT> method is only called by a single thread in the
      * Parallel Java middleware.
      *
-     * @param K Number of threads in the parallel team.
+     * @param K            Number of threads in the parallel team.
      * @param theLoopRange Range of iterations for the entire parallel for loop.
-     * The stride may be 1 or greater.
+     *                     The stride may be 1 or greater.
      */
     public abstract void start(int K,
-            Range theLoopRange);
+                               Range theLoopRange);
 
     /**
      * Obtain the next chunk of iterations for the given thread index. This
@@ -354,7 +349,6 @@ public abstract class IntegerSchedule
      * <TT>next()</TT> method.
      *
      * @param theThreadIndex Thread index in the range 0 .. <I>K</I>-1.
-     *
      * @return Chunk of iterations, or null if no more iterations.
      */
     Range commonNext(int theThreadIndex) {
@@ -373,7 +367,7 @@ public abstract class IntegerSchedule
      * <TT>start()</TT> method. The returned range object's lower bound and
      * upper bound are contained within the range given to the <TT>start()</TT>
      * method. If there are no more iterations, null is returned.
-     * <P>
+     * <p>
      * The <TT>next()</TT> method is called by multiple parallel team threads in
      * the Parallel Java middleware. The <TT>next()</TT> method must be multiple
      * thread safe.

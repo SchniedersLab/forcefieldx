@@ -142,7 +142,8 @@ class CrystalMin extends AlgorithmsScript {
         if (ext.toUpperCase().contains("XYZ")) {
             algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelfilename + ".xyz"))
         } else {
-            algorithmFunctions.saveAsPDB(activeAssembly, new File(modelfilename + ".pdb"))
+            File modelFile = saveDirFile(activeAssembly.getFile());
+            algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
         }
 
         return this

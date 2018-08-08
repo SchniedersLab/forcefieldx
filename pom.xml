@@ -1099,7 +1099,7 @@
         <picocli.version>3.2.0</picocli.version>
         <!-- Maven Core Plugin Versions -->
         <clean.version>3.1.0</clean.version>
-        <compiler.version>3.7.0</compiler.version>
+        <compiler.version>3.8.0</compiler.version>
         <deploy.version>2.8.2</deploy.version>
         <install.version>2.5.2</install.version>
         <resources.version>3.1.0</resources.version>
