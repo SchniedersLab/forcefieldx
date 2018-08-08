@@ -88,6 +88,7 @@ public class FFXClassLoader extends URLClassLoader {
             "org.jogamp",
             "org.openscience.cdk",
             "edu.rit.pj",
+            "edu.uiowa.jopenmm",
             "org.bridj",
             "it.unimi.dsi",
             "jcuda",
@@ -208,6 +209,8 @@ public class FFXClassLoader extends URLClassLoader {
                 "org.biojava/biojava3-phylo.jar",
                 // Lars Behnke's hierarchical-clustering-java
                 "com.apporiented/hierarchical-clustering.jar",
+                // JOpenMM
+                "edu.uiowa.jopenmm/jopenmm-fat.jar",
                 // OpenMM
                 "simtk/openmm.jar",
                 "simtk/openmm-fat.jar",
