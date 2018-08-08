@@ -296,4 +296,20 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
             }
         }
     }
+    
+    public double getKineticEnergy(){
+        return molecularDynamics.getKineticEnergy();
+    }
+    
+    public double getPotentialEnergy(){
+        return molecularDynamics.getPotentialEnergy();
+    }
+    
+    public double getTotalEnergy(){
+        return molecularDynamics.getTotalEnergy();
+    }
+    
+    public double getTemperature(){
+        return molecularDynamics.getTemperature();
+    }
 }

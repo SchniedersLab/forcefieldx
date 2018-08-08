@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -53,46 +53,55 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import edu.rit.pj.Comm;
+import ffx.algorithms.MolecularDynamics;
 
 import ffx.algorithms.groovy.Dynamics;
 
 import groovy.lang.Binding;
 
 /**
- *
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsRESPANVETest {
+public class DynamicsNVETest {
 
     private String info;
     private String filename;
     private double startingTotalEnergy;
-    private double tolerance = 0.2;
+    private double endKineticEnergy;
+    private double endPotentialEnergy;
+    private double endTotalEnergy;
+    private double tolerance = 0.1;
+
+    private boolean alwaysFail = false;
 
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsRESPANVETest.class.getName());
+    private static final Logger logger = Logger.getLogger(DynamicsNVETest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {
-                        "Acetamide RESPA NVE", // info
+                        "Acetamide Peptide NVE", // info
                         "ffx/algorithms/structures/acetamide_NVE.xyz", // filename
-                        -25.1958 // startingTotalEnergy
+                        -25.1958, // startingTotalEnergy
+                        4.5625, // endKineticEnergy
+                        -29.8043, // endPotentialEnergy
+                        -25.2418 // endTotalEnergy
                 }
-
         });
-
     }
 
-    public DynamicsRESPANVETest(String info, String filename, double startingTotalEnergy) {
-
+    public DynamicsNVETest(String info, String filename, double startingTotalEnergy, double endKineticEnergy,
+                           double endPotentialEnergy, double endTotalEnergy) {
         this.info = info;
         this.filename = filename;
         this.startingTotalEnergy = startingTotalEnergy;
+        this.endKineticEnergy = endKineticEnergy;
+        this.endPotentialEnergy = endPotentialEnergy;
+        this.endTotalEnergy = endTotalEnergy;
     }
 
     @Before
@@ -100,6 +109,7 @@ public class DynamicsRESPANVETest {
         binding = new Binding();
         dynamics = new Dynamics();
         dynamics.setBinding(binding);
+
     }
 
     @BeforeClass
@@ -128,10 +138,20 @@ public class DynamicsRESPANVETest {
     }
 
     @Test
-    public void testRESPANVE() {
+    public void testDynamicsHelp() {
+        // Set-up the input arguments for the script.
+        String[] args = {"-h"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        dynamics.run();
+    }
+
+    @Test
+    public void testDynamicsNVE() {
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "RESPA", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-t", "298.15", "-i", "VelocityVerlet", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
 
         // Evaluate the script.
@@ -139,8 +159,10 @@ public class DynamicsRESPANVETest {
 
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-        // Assert that the final total energy is within the tolerance for the molecular dynamics trajectory
-        assertEquals(info + "End total energy for RESPA integrator NVE", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
+        // Assert that energy is conserved at the end of the dynamics trajectory.
+        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
+        assertEquals(info + " Final total energy", startingTotalEnergy, molDyn.getTotalEnergy(), tolerance);
     }
 
 }

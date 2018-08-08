@@ -35,7 +35,7 @@
  * you are not obligated to do so. If you do not wish to do so, delete this
  * exception statement from your version.
  */
-package ffx.algorithms;
+package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +43,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,6 +54,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import edu.rit.pj.Comm;
+import ffx.algorithms.MolecularDynamics;
 
 import ffx.algorithms.groovy.Dynamics;
 
@@ -62,36 +64,40 @@ import groovy.lang.Binding;
  * @author Hernan V Bernabe
  */
 @RunWith(Parameterized.class)
-public class DynamicsNVTTest {
+public class DynamicsStochasticTest {
 
     private String info;
     private String filename;
-    private double startingTemp;
-    private double tempTolerance = 3.0;
+    private double endKineticEnergy;
+    private double endPotentialEnergy;
     private double endTotalEnergy;
-    private double energyTolerance = 0.5;
+    private double tolerance = 0.1;
 
     private Binding binding;
     private Dynamics dynamics;
 
-    private static final Logger logger = Logger.getLogger(DynamicsNVTTest.class.getName());
+    private static final Logger logger = Logger.getLogger(DynamicsStochasticTest.class.getName());
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {
-                        "Water Box NVT", // info
-                        "ffx/algorithms/structures/waterbox_eq.xyz", // filename
-                        299.77,             // Starting temperature.
-                        -25260.0499         // Final total energy.
+                        "Acetamide Peptide Restart and Stochastic Random Seed", // info
+                        "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+                        6.8546, // endKineticEnergy
+                        -26.9921, // endPotentialEnergy
+                        -20.1375 // endTotalEnergy
                 }
         });
     }
 
-    public DynamicsNVTTest(String info, String filename, double startingTemp, double endTotalEnergy) {
+    public DynamicsStochasticTest(String info, String filename, double endKineticEnergy,
+                                  double endPotentialEnergy, double endTotalEnergy) {
+
         this.info = info;
         this.filename = filename;
-        this.startingTemp = startingTemp;
+        this.endKineticEnergy = endKineticEnergy;
+        this.endPotentialEnergy = endPotentialEnergy;
         this.endTotalEnergy = endTotalEnergy;
     }
 
@@ -128,21 +134,21 @@ public class DynamicsNVTTest {
     }
 
     @Test
-    public void testDynamicsNVT() {
+    public void testDynamicsStochasticRandomSeed() {
 
         // Set-up the input arguments for the script.
-        String[] args = {"-n", "10", "-t", "298.15", "-i", "VelocityVerlet", "-b", "Bussi", "-r", "0.001", "src/main/java/" + filename};
+        String[] args = {"-n", "10", "-t", "298.15", "-i", "Stochastic", "-b", "Adiabatic", "-r", "0.001", "src/main/java/" + filename};
         binding.setVariable("args", args);
 
-        // Evaluate the script.
+        //Evaluate the script.
         dynamics.run();
 
         MolecularDynamics molDyn = dynamics.getMolecularDynamics();
 
-        // Assert that temperature is within tolerance at the end of the dynamics trajectory.
-        assertEquals(info + " End temperature for NVT test", startingTemp, molDyn.getTemperature(), tempTolerance);
-
-        // Assert that the end total energy is withing the tolerance at the end of the dynamics trajectory.
-        assertEquals(info + " End total energy for NVT test and set random seed", endTotalEnergy, molDyn.getTotalEnergy(), energyTolerance);
+        // Assert that the end energies are the same meaning that the Stochastic integrator works as intended.
+        assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
+        assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
+        assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
     }
+
 }
