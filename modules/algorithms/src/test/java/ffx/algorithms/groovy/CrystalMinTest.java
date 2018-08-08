@@ -108,7 +108,7 @@ public class CrystalMinTest extends PJDependentTest {
         double expectedPotentialEnergy = -32.72657211363139;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-8);
+        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-6);
 
         // Delete all created directories and files.
         try {
@@ -142,7 +142,7 @@ public class CrystalMinTest extends PJDependentTest {
         double expectedPotentialEnergy = -32.63130548449286;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-8);
+        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-6);
 
         // Delete all created directories and files.
         try {
@@ -176,7 +176,7 @@ public class CrystalMinTest extends PJDependentTest {
         double expectedPotentialEnergy = -32.54442896375514;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-8);
+        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-6);
 
         // Delete all created directories and files.
         try {
@@ -210,7 +210,7 @@ public class CrystalMinTest extends PJDependentTest {
         double expectedPotentialEnergy = -32.53569396873495;
 
         double actualPotentialEnergy = xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
-        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-8);
+        Assert.assertEquals(actualPotentialEnergy, expectedPotentialEnergy, 1E-6);
 
         // Delete all created directories and files.
         try {
