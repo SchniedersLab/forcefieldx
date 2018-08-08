@@ -135,7 +135,8 @@ class ManyBody extends AlgorithmsScript {
             if (ext.toUpperCase().contains("XYZ")) {
                 algorithmFunctions.saveAsXYZ(assemblies, new File(filename + ".xyz"))
             } else {
-                algorithmFunctions.saveAsPDB(assemblies, new File(filename + ".pdb"))
+                File modelFile = saveDirFile(activeAssembly.getFile());
+                algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
             }
         }
 

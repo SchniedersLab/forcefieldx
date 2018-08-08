@@ -5401,6 +5401,8 @@ public class RotamerOptimization implements Terminatable {
             NeighborList neighborList = new NeighborList(null, crystal,
                     atoms, nlistCutoff, 0.0, parallelTeam);
 
+            neighborList.setRotOpt(true);
+
             // Expand coordinates
             double xyz[][] = new double[nSymm][3 * numResidues];
             double in[] = new double[3];
