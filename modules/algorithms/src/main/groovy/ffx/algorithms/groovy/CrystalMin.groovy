@@ -136,14 +136,13 @@ class CrystalMin extends AlgorithmsScript {
             crystalMinimize.printTensor()
         }
 
-        String ext = FilenameUtils.getExtension(modelfilename)
-        modelfilename = FilenameUtils.removeExtension(modelfilename)
+        String ext = FilenameUtils.getExtension(modelfilename);
 
+        File modelFile = saveDirFile(activeAssembly.getFile());
         if (ext.toUpperCase().contains("XYZ")) {
-            algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelfilename + ".xyz"))
+            algorithmFunctions.saveAsXYZ(activeAssembly, modelFile);
         } else {
-            File modelFile = saveDirFile(activeAssembly.getFile());
-            algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
+            algorithmFunctions.saveAsPDB(activeAssembly, modelFile);
         }
 
         return this
