@@ -54,7 +54,6 @@ public class XRayManyBodyTest {
         }
     }
 
-    @Test
     public void testManyBodyGlobal() {
         // Set-up the input arguments for the script.
         String[] args = {"-a", "2", "-L", "2", "-s", "1", "--fi", "5",
