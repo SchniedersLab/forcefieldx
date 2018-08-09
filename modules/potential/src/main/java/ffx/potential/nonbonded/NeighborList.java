@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
@@ -307,6 +308,8 @@ public class NeighborList extends ParallelRegion {
      */
     private boolean disableUpdates = false;
 
+    public boolean rotOpt = false;
+
     /**
      * Constructor for the NeighborList class.
      *
@@ -319,8 +322,8 @@ public class NeighborList extends ParallelRegion {
      * @since 1.0
      */
     public NeighborList(MaskingInterface maskingRules, Crystal crystal,
-            Atom atoms[], double cutoff, double buffer,
-            ParallelTeam parallelTeam) {
+                        Atom atoms[], double cutoff, double buffer,
+                        ParallelTeam parallelTeam) {
         this.maskingRules = maskingRules;
         this.crystal = crystal;
         this.cutoff = cutoff;
@@ -357,6 +360,15 @@ public class NeighborList extends ParallelRegion {
     public void setIntermolecular(boolean intermolecular, int molecules[]) {
         this.intermolecular = intermolecular;
         this.molecules = molecules;
+    }
+
+    /**
+     * Used to set the rotOpt boolean to true when rotamer optimization is occurring and using a neighbor list. When true,
+     * it prevents assertions that are not valid during rotamer optimization.
+     * @param rotOpt True when rotamer optimization is occurring. Otherwise false.
+     */
+    public void setRotOpt(boolean rotOpt) {
+        this.rotOpt = rotOpt;
     }
 
     /**
@@ -422,10 +434,12 @@ public class NeighborList extends ParallelRegion {
 
         /**
          * Assert that the boundary conditions defined by the crystal allow use
-         * of the minimum image condition.
+         * of the minimum image condition. Assertion does not occur if rotamer optimization is happening.
          */
-        if (!crystal.aperiodic()) {
-            assert (sphere > cutoffPlusBuffer);
+        if (rotOpt) {
+            if (!crystal.aperiodic()) {
+                assert (sphere > cutoffPlusBuffer);
+            }
         }
 
         /**
@@ -539,7 +553,7 @@ public class NeighborList extends ParallelRegion {
      * @param print a boolean.
      */
     public void buildList(final double coordinates[][], final int lists[][][],
-            boolean use[], boolean forceRebuild, boolean print) {
+                          boolean use[], boolean forceRebuild, boolean print) {
         if (disableUpdates) {
             return;
         }
@@ -1213,6 +1227,7 @@ public class NeighborList extends ParallelRegion {
         }
         return value;
     }
+
     private final static int XX = 0;
     private final static int YY = 1;
     private final static int ZZ = 2;
