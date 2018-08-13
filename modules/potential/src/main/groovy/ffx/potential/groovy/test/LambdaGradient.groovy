@@ -59,6 +59,8 @@ class LambdaGradient extends PotentialScript {
     public int ndEdXFailures = 0
     public int nd2EdL2Failures = 0
     public int ndEdXdLFailures = 0
+    public double e0 = 0.0
+    public double e1 = 0.0
 
     /**
      * Script run method.
@@ -151,12 +153,12 @@ class LambdaGradient extends PotentialScript {
         double lambda = 0.0
         linter.setLambda(lambda)
         potential.getCoordinates(x)
-        double e0 = potential.energy(x, true)
+        e0 = potential.energy(x, true)
 
         // Compute the Lambda = 1.0 energy.
         lambda = 1.0
         linter.setLambda(lambda)
-        double e1 = potential.energy(x, true)
+        e1 = potential.energy(x, true)
 
         logger.info(String.format(" E(0):      %20.8f.", e0))
         logger.info(String.format(" E(1):      %20.8f.", e1))
