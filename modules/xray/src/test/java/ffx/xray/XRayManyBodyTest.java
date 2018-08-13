@@ -1,5 +1,7 @@
 package ffx.xray;
 
+import edu.rit.pj.Comm;
+import ffx.algorithms.PJDependentTest;
 import ffx.numerics.Potential;
 import org.junit.After;
 import org.junit.Before;
@@ -11,6 +13,7 @@ import groovy.lang.Binding;
 import ffx.utilities.DirectoryUtils;
 import ffx.xray.groovy.ManyBody;
 
+import java.util.Arrays;
 import java.util.List;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,9 +23,10 @@ import org.testng.Assert;
 
 /**
  * Tests X-Ray many body optimization and the X-Ray many body groovy script under varying parameters.
+ *
  * @author Mallory R. Tollefson
  */
-public class XRayManyBodyTest {
+public class XRayManyBodyTest extends PJDependentTest {
 
     Binding binding;
     ManyBody manyBody;
@@ -47,13 +51,14 @@ public class XRayManyBodyTest {
         binding.setVariable("args", args);
 
         // Evaluate the script.
-        try{
+        try {
             manyBody.run();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
+    @Test
     public void testManyBodyGlobal() {
         // Set-up the input arguments for the script.
         String[] args = {"-a", "2", "-L", "2", "-s", "1", "--fi", "5",
@@ -69,7 +74,7 @@ public class XRayManyBodyTest {
         }
 
         // Evaluate the script.
-        try{
+        try {
             manyBody.run();
         } catch (AssertionError ex) {
             ex.printStackTrace();
@@ -77,8 +82,15 @@ public class XRayManyBodyTest {
         }
 
         List<Potential> list = manyBody.getPotentials();
+        double expectedPotential = 2.8613333175581248E16;
+        double actualPotential = list.get(0).getTotalEnergy();
 
-        System.out.println("Potential Total Energy List: "+ list.get(0).getTotalEnergy());
+        /**
+         * The normalized difference between actual and expected potential should be very close to 0 no matter
+         * the magnitude of the potentials.
+         */
+        double differenceNorm = (expectedPotential - actualPotential) / actualPotential;
+        Assert.assertEquals(differenceNorm, 0, 1E-8);
 
         // Delete all created directories and files.
         try {
@@ -89,6 +101,5 @@ public class XRayManyBodyTest {
         }
 
         manyBody.getManyBody().getRestartFile().delete();
-        manyBody.getManyBody().getPartial().delete();
     }
 }

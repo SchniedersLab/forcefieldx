@@ -168,7 +168,7 @@ public class NeighborList extends ParallelRegion {
     /**
      * The number of subcells that must be searched along the a-axis to find all
      * neighbors within the cutoff + buffer distance.
-     *
+     * <p>
      * If each nEdgeX == 1 for (X=A,B,C} then all neighbors will be found in
      * 3x3x3 = 27 cells. If each nEdgeX == 2, then all neighbors will be found
      * in 5x5x5 = 125 cells (in this case the cells are smaller).
@@ -308,16 +308,14 @@ public class NeighborList extends ParallelRegion {
      */
     private boolean disableUpdates = false;
 
-    public boolean rotOpt = false;
-
     /**
      * Constructor for the NeighborList class.
      *
      * @param maskingRules This parameter may be null.
-     * @param crystal Definition of the unit cell and space group.
-     * @param atoms The atoms to generate Verlet lists for.
-     * @param cutoff The cutoff distance.
-     * @param buffer The buffer distance.
+     * @param crystal      Definition of the unit cell and space group.
+     * @param atoms        The atoms to generate Verlet lists for.
+     * @param cutoff       The cutoff distance.
+     * @param buffer       The buffer distance.
      * @param parallelTeam Specifies the parallel environment.
      * @since 1.0
      */
@@ -330,58 +328,6 @@ public class NeighborList extends ParallelRegion {
         this.buffer = buffer;
         this.parallelTeam = new ParallelTeam(parallelTeam.getThreadCount());
         this.atoms = atoms;
-        nAtoms = atoms.length;
-
-        /**
-         * Configure the neighbor cutoff and list rebuilding criteria.
-         */
-        cutoffPlusBuffer = cutoff + buffer;
-        cutoffPlusBuffer2 = cutoffPlusBuffer * cutoffPlusBuffer;
-        motion2 = (buffer / 2.0) * (buffer / 2.0);
-
-        /**
-         * Initialize parallel constructs.
-         */
-        threadCount = parallelTeam.getThreadCount();
-        sharedCount = new SharedInteger();
-        ranges = new Range[threadCount];
-
-        verletListLoop = new NeighborListLoop[threadCount];
-        for (int i = 0; i < threadCount; i++) {
-            verletListLoop[i] = new NeighborListLoop();
-        }
-
-        /**
-         * Initialize the neighbor list builder subcells.
-         */
-        initNeighborList(true);
-    }
-
-    /**
-     * Constructor for the NeighborList class that includes the rotOpt boolean. This constructor is used to set the
-     * rotOpt boolean to true when rotamer optimization is occurring. When true, it prevents assertions that are not
-     * valid during rotamer optimization. The rotOpt boolean should be false during non-rotamer optimization
-     * simulations.
-     *
-     * @param maskingRules This parameter may be null.
-     * @param crystal Definition of the unit cell and space group.
-     * @param atoms The atoms to generate Verlet lists for.
-     * @param cutoff The cutoff distance.
-     * @param buffer The buffer distance.
-     * @param parallelTeam Specifies the parallel environment.
-     * @param rotOpt True when rotamer optimization is occurring. Otherwise false.
-     * @since 1.0
-     */
-    public NeighborList(MaskingInterface maskingRules, Crystal crystal,
-                        Atom atoms[], double cutoff, double buffer,
-                        ParallelTeam parallelTeam, boolean rotOpt) {
-        this.maskingRules = maskingRules;
-        this.crystal = crystal;
-        this.cutoff = cutoff;
-        this.buffer = buffer;
-        this.parallelTeam = new ParallelTeam(parallelTeam.getThreadCount());
-        this.atoms = atoms;
-        this.rotOpt = rotOpt;
         nAtoms = atoms.length;
 
         /**
@@ -477,12 +423,10 @@ public class NeighborList extends ParallelRegion {
 
         /**
          * Assert that the boundary conditions defined by the crystal allow use
-         * of the minimum image condition. Assertion does not occur if rotamer optimization is happening.
+         * of the minimum image condition.
          */
-        if (!rotOpt) {
-            if (!crystal.aperiodic()) {
-                assert (sphere > cutoffPlusBuffer);
-            }
+        if (!crystal.aperiodic()) {
+            assert (sphere >= cutoffPlusBuffer);
         }
 
         /**
@@ -587,13 +531,13 @@ public class NeighborList extends ParallelRegion {
      * This method can be called as necessary to build/rebuild the neighbor
      * lists.
      *
-     * @param coordinates The coordinates of each atom [nSymm][nAtoms*3].
-     * @param lists The neighbor lists [nSymm][nAtoms][nPairs].
+     * @param coordinates  The coordinates of each atom [nSymm][nAtoms*3].
+     * @param lists        The neighbor lists [nSymm][nAtoms][nPairs].
      * @param forceRebuild If true, the list is rebuilt even if no atom has
-     * moved half the buffer size.
+     *                     moved half the buffer size.
+     * @param use          an array of boolean.
+     * @param print        a boolean.
      * @since 1.0
-     * @param use an array of boolean.
-     * @param print a boolean.
      */
     public void buildList(final double coordinates[][], final int lists[][][],
                           boolean use[], boolean forceRebuild, boolean print) {
@@ -666,7 +610,7 @@ public class NeighborList extends ParallelRegion {
      * Returned Set is exclusive of the passed-in indices.
      *
      * @param atomIndices Atom indices
-     * @param maxDist Maximum distance to consider
+     * @param maxDist     Maximum distance to consider
      * @return Set of neighboring atoms indices
      */
     public Set<Integer> getNeighborIndices(List<Integer> atomIndices, double maxDist) {
@@ -731,7 +675,7 @@ public class NeighborList extends ParallelRegion {
      * exclusive of passed atoms.
      *
      * @param atomList Atoms to find neighbors of
-     * @param maxDist Maximum distance to consider a neighbor
+     * @param maxDist  Maximum distance to consider a neighbor
      * @return Set of neighboring Atoms
      */
     public Set<Atom> getNeighborAtoms(List<Atom> atomList, double maxDist) {
@@ -769,7 +713,7 @@ public class NeighborList extends ParallelRegion {
 
     /**
      * Assign asymmetric and symmetry mate atoms to cells.
-     *
+     * <p>
      * This is very fast; there is little to be gained from parallelizing it at
      * this point.
      *
@@ -900,7 +844,7 @@ public class NeighborList extends ParallelRegion {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This is method should not be called; it is invoked by Parallel Java.
      *
      * @since 1.0
@@ -913,7 +857,7 @@ public class NeighborList extends ParallelRegion {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This is method should not be called; it is invoked by Parallel Java.
      *
      * @since 1.0
@@ -930,7 +874,7 @@ public class NeighborList extends ParallelRegion {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This is method should not be called; it is invoked by Parallel Java.
      *
      * @since 1.0
@@ -947,7 +891,6 @@ public class NeighborList extends ParallelRegion {
      * Detect if any atom has moved 1/2 the buffer size.
      *
      * @return True if an atom has moved 1/2 the buffer size.
-     *
      * @since 1.0
      */
     private boolean motion() {
@@ -974,7 +917,6 @@ public class NeighborList extends ParallelRegion {
      * cell.
      *
      * @author Michael J. Schnieders
-     *
      * @since 1.0
      */
     private class NeighborListLoop extends IntegerForLoop {
