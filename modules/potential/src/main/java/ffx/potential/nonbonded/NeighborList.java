@@ -357,18 +357,61 @@ public class NeighborList extends ParallelRegion {
         initNeighborList(true);
     }
 
+    /**
+     * Constructor for the NeighborList class that includes the rotOpt boolean. This constructor is used to set the
+     * rotOpt boolean to true when rotamer optimization is occurring. When true, it prevents assertions that are not
+     * valid during rotamer optimization. The rotOpt boolean should be false during non-rotamer optimization
+     * simulations.
+     *
+     * @param maskingRules This parameter may be null.
+     * @param crystal Definition of the unit cell and space group.
+     * @param atoms The atoms to generate Verlet lists for.
+     * @param cutoff The cutoff distance.
+     * @param buffer The buffer distance.
+     * @param parallelTeam Specifies the parallel environment.
+     * @param rotOpt True when rotamer optimization is occurring. Otherwise false.
+     * @since 1.0
+     */
+    public NeighborList(MaskingInterface maskingRules, Crystal crystal,
+                        Atom atoms[], double cutoff, double buffer,
+                        ParallelTeam parallelTeam, boolean rotOpt) {
+        this.maskingRules = maskingRules;
+        this.crystal = crystal;
+        this.cutoff = cutoff;
+        this.buffer = buffer;
+        this.parallelTeam = new ParallelTeam(parallelTeam.getThreadCount());
+        this.atoms = atoms;
+        this.rotOpt = rotOpt;
+        nAtoms = atoms.length;
+
+        /**
+         * Configure the neighbor cutoff and list rebuilding criteria.
+         */
+        cutoffPlusBuffer = cutoff + buffer;
+        cutoffPlusBuffer2 = cutoffPlusBuffer * cutoffPlusBuffer;
+        motion2 = (buffer / 2.0) * (buffer / 2.0);
+
+        /**
+         * Initialize parallel constructs.
+         */
+        threadCount = parallelTeam.getThreadCount();
+        sharedCount = new SharedInteger();
+        ranges = new Range[threadCount];
+
+        verletListLoop = new NeighborListLoop[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            verletListLoop[i] = new NeighborListLoop();
+        }
+
+        /**
+         * Initialize the neighbor list builder subcells.
+         */
+        initNeighborList(true);
+    }
+
     public void setIntermolecular(boolean intermolecular, int molecules[]) {
         this.intermolecular = intermolecular;
         this.molecules = molecules;
-    }
-
-    /**
-     * Used to set the rotOpt boolean to true when rotamer optimization is occurring and using a neighbor list. When true,
-     * it prevents assertions that are not valid during rotamer optimization.
-     * @param rotOpt True when rotamer optimization is occurring. Otherwise false.
-     */
-    public void setRotOpt(boolean rotOpt) {
-        this.rotOpt = rotOpt;
     }
 
     /**
@@ -436,7 +479,7 @@ public class NeighborList extends ParallelRegion {
          * Assert that the boundary conditions defined by the crystal allow use
          * of the minimum image condition. Assertion does not occur if rotamer optimization is happening.
          */
-        if (rotOpt) {
+        if (!rotOpt) {
             if (!crystal.aperiodic()) {
                 assert (sphere > cutoffPlusBuffer);
             }

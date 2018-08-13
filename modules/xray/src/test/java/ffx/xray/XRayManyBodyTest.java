@@ -75,12 +75,10 @@ public class XRayManyBodyTest {
             ex.printStackTrace();
             throw ex;
         }
-        //double expectedTotalPotential = -219.8836543404126;
 
         List<Potential> list = manyBody.getPotentials();
 
-        System.out.println("Potentials 1: "+ list.get(0));
-        //Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
+        System.out.println("Potential Total Energy List: "+ list.get(0).getTotalEnergy());
 
         // Delete all created directories and files.
         try {
@@ -91,5 +89,6 @@ public class XRayManyBodyTest {
         }
 
         manyBody.getManyBody().getRestartFile().delete();
+        manyBody.getManyBody().getPartial().delete();
     }
 }

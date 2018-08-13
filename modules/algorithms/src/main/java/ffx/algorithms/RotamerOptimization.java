@@ -5399,9 +5399,7 @@ public class RotamerOptimization implements Terminatable {
             nlistCutoff += magicNumberBufferOfUnknownOrigin;
 
             NeighborList neighborList = new NeighborList(null, crystal,
-                    atoms, nlistCutoff, 0.0, parallelTeam);
-
-            neighborList.setRotOpt(true);
+                    atoms, nlistCutoff, 0.0, parallelTeam, true);
 
             // Expand coordinates
             double xyz[][] = new double[nSymm][3 * numResidues];
