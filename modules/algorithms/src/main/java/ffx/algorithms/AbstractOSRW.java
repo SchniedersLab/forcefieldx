@@ -366,7 +366,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     protected boolean osrwOptimization = false;
     protected int osrwOptimizationFrequency = 10000;
-    protected double osrwOptimizationLambdaCutoff = 0.5;
+    protected double osrwOptimizationLambdaCutoff = 0.8;
     protected double osrwOptimizationEps = 0.1;
     protected double osrwOptimizationTolerance = 1.0e-8;
     protected double osrwOptimizationEnergyWindow = 2.0;
