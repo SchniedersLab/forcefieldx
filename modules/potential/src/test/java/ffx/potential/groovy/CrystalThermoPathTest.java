@@ -37,27 +37,26 @@
  */
 package ffx.potential.groovy;
 
-import ffx.potential.cli.PotentialScript;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
+import ffx.potential.cli.PotentialScript;
+import ffx.potential.groovy.test.LambdaGradient;
 
 import groovy.lang.Binding;
 
-import ffx.potential.groovy.test.LambdaGradient;
-
-import org.testng.Assert;
-
-import static org.junit.Assert.assertEquals;
-
 /**
  * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
+ *
  * @author Mallory R. Tollefson
  */
 public class CrystalThermoPathTest extends PotentialScript {
 
     Binding binding;
     LambdaGradient lambdaGradient;
+
     @Before
     public void before() {
         binding = new Binding();
@@ -95,20 +94,17 @@ public class CrystalThermoPathTest extends PotentialScript {
         // Evaluate the script.
         lambdaGradient.run();
 
-        double expectedPotentialEnergyVac = -7.7079369;
-        double expectedPotentialEnergyXtal = -36.05100108;
+        System.clearProperty("lambdaterm");
 
+        double expectedPotentialEnergyVac = -7.70794641;
+        double expectedPotentialEnergyXtal = -36.22162927;
         double actualPotentialEnergyVac = lambdaGradient.e0;
         double actualPotentialEnergyXtal = lambdaGradient.e1;
 
-        Assert.assertEquals(actualPotentialEnergyVac, expectedPotentialEnergyVac, 1E-6);
-        Assert.assertEquals(actualPotentialEnergyXtal, expectedPotentialEnergyXtal, 1E-6);
-
-        System.clearProperty("lambdaterm");
-
-
-        assertEquals( 0, lambdaGradient.ndEdLFailures);
-        assertEquals( 0, lambdaGradient.nd2EdL2Failures);
+        assertEquals(actualPotentialEnergyVac, expectedPotentialEnergyVac, 1E-6);
+        assertEquals(actualPotentialEnergyXtal, expectedPotentialEnergyXtal, 1E-6);
+        assertEquals(0, lambdaGradient.ndEdLFailures);
+        assertEquals(0, lambdaGradient.nd2EdL2Failures);
         assertEquals(0, lambdaGradient.ndEdXdLFailures);
         assertEquals(0, lambdaGradient.ndEdXFailures);
     }
