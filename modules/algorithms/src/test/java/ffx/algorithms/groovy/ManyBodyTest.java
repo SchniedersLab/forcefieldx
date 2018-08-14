@@ -164,21 +164,6 @@ public class ManyBodyTest extends PJDependentTest {
      */
     @Test
     public void testManyBodyMonteCarlo(){
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping rotamer optimization test.");
-                logger.log(Level.WARNING, message, e.toString());
-                return;
-            }
-        }
 
         System.setProperty("polarization", "direct");
 

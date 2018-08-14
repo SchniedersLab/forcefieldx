@@ -5,40 +5,33 @@
  */
 package ffx.algorithms.groovy;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import edu.rit.pj.Comm;
-import ffx.algorithms.MolecularDynamics;
-import ffx.algorithms.SimulatedAnnealing;
 
 import ffx.algorithms.groovy.Anneal;
+import ffx.algorithms.SimulatedAnnealing;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import org.junit.Assert;
 
 /**
- *
  * @author hbernabe
  */
 @RunWith(Parameterized.class)
-public class SimulatedAnnealingTest {
+public class SimulatedAnnealingTest extends ffx.algorithms.PJDependentTest {
 
     private String info;
     private String filename;
@@ -56,20 +49,20 @@ public class SimulatedAnnealingTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {
-                "Acetamide with Stochastic integrator for Simulated Annealing Test", //info
-                "ffx/algorithms/structures/acetamide_annealing.xyz", //filename
-                3.2227, // endKineticEnergy
-                -29.5661, // endPotentialEnergy
-                -26.3434, // endTotalEnergy
-                120.13 // endTemperature
-            }
+                {
+                        "Acetamide with Stochastic integrator for Simulated Annealing Test", //info
+                        "ffx/algorithms/structures/acetamide_annealing.xyz", //filename
+                        3.2227, // endKineticEnergy
+                        -29.5661, // endPotentialEnergy
+                        -26.3434, // endTotalEnergy
+                        120.13 // endTemperature
+                }
 
         });
     }
 
     public SimulatedAnnealingTest(String info, String filename, double endKineticEnergy, double endPotentialEnergy, double endTotalEnergy,
-            double endTemperature) {
+                                  double endTemperature) {
         this.info = info;
         this.filename = filename;
         this.endKineticEnergy = endKineticEnergy;
@@ -83,25 +76,6 @@ public class SimulatedAnnealingTest {
         binding = new Binding();
         anneal = new Anneal();
         anneal.setBinding(binding);
-    }
-
-    @BeforeClass
-    public static void beforeClass() {
-        // Initialize Parallel Java
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping simulated annealing test.");
-                logger.log(Level.WARNING, message, e.toString());
-                fail();
-            }
-        }
     }
 
     @After

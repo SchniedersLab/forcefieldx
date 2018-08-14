@@ -1,23 +1,21 @@
 package ffx.xray;
 
-import ffx.algorithms.PJDependentTest;
-import ffx.numerics.Potential;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import groovy.lang.Binding;
-
-
-import ffx.utilities.DirectoryUtils;
-import ffx.xray.groovy.ManyBody;
-
-import java.util.List;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.testng.Assert;
+
+import ffx.algorithms.PJDependentTest;
+import ffx.numerics.Potential;
+import ffx.utilities.DirectoryUtils;
+import ffx.xray.groovy.ManyBody;
+
+import groovy.lang.Binding;
 
 /**
  * Tests X-Ray many body optimization and the X-Ray many body groovy script under varying parameters.
