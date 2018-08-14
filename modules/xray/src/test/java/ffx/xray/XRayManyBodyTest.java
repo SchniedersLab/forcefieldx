@@ -1,6 +1,5 @@
 package ffx.xray;
 
-import edu.rit.pj.Comm;
 import ffx.algorithms.PJDependentTest;
 import ffx.numerics.Potential;
 import org.junit.After;
@@ -13,7 +12,6 @@ import groovy.lang.Binding;
 import ffx.utilities.DirectoryUtils;
 import ffx.xray.groovy.ManyBody;
 
-import java.util.Arrays;
 import java.util.List;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,7 +56,7 @@ public class XRayManyBodyTest extends PJDependentTest {
         }
     }
 
-    //@Test
+    @Test
     public void testManyBodyGlobal() {
         // Set-up the input arguments for the script.
         String[] args = {"-a", "2", "-L", "2", "-s", "1", "--fi", "5",
