@@ -5401,8 +5401,6 @@ public class RotamerOptimization implements Terminatable {
             logger.info("\n Computing Residue Distance Matrix");
 
             double nlistCutoff = Math.max(Math.max(distance, twoBodyCutoffDist), threeBodyCutoffDist);
-            System.out.println("nlistCutoff: " + nlistCutoff);
-            System.out.println("Crystal: " + crystal.toString());
             /**
              * Two residues whose c-alphas are separated by 25 angstroms may still interact if they have long
              * side-chains directed at each other.
