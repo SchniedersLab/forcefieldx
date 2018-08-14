@@ -37,13 +37,12 @@
  */
 package ffx.xray;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ffx.algorithms.PJDependentTest;
 import org.junit.Before;
 import org.junit.Test;
 
-import edu.rit.pj.Comm;
 
 import ffx.realspace.cli.RealSpaceOptions;
 import ffx.realspace.groovy.Alchemical;
@@ -53,7 +52,7 @@ import groovy.lang.Binding;
 /**
  * Test the Energy script.
  */
-public class AlchemicalTest {
+public class AlchemicalTest extends PJDependentTest {
 
     private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName());
 
@@ -80,23 +79,7 @@ public class AlchemicalTest {
     @Test
     public void testAlchemical() {
 
-        // Initialize Parallel Java if needed
-        try {
-            Comm.world();
-        } catch (IllegalStateException ise) {
-            try {
-                String args[] = new String[0];
-                Comm.init(args);
-            } catch (Exception e) {
-                String message = String.format(" Exception starting up the Parallel Java communication layer.");
-                logger.log(Level.WARNING, message, e.toString());
-                message = String.format(" Skipping alchemical test.");
-                logger.log(Level.WARNING, message, e.toString());
-                return;
-            }
-        }
         // Set-up the input arguments for the Alchemical script.
-
         String[] args = {"-N", "-n", "10", "-r", "0.01", "src/main/java/ffx/xray/structures/5zck.pdb",
                 "src/main/java/ffx/xray/structures/5zck_ffx_2fofc.map"};
         binding.setVariable("args", args);
