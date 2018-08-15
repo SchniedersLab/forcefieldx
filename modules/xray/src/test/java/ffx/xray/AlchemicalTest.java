@@ -40,6 +40,7 @@ package ffx.xray;
 import java.util.logging.Logger;
 
 import ffx.algorithms.PJDependentTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -64,6 +65,11 @@ public class AlchemicalTest extends PJDependentTest {
         binding = new Binding();
         alchemical = new Alchemical();
         alchemical.setBinding(binding);
+    }
+
+    @After
+    public void after() {
+        alchemical.destroyPotentials();
     }
 
     @Test

@@ -53,10 +53,8 @@ public abstract class BaseFFXTest {
         Properties currentProperties = System.getProperties();
 
         // All key-value pairs from currentProperties are stored in the properties object.
-        for (Enumeration<?> e = currentProperties.keys(); e.hasMoreElements(); ) {
-            String key = (String) e.nextElement();
-            String val = currentProperties.getProperty(key);
-            properties.put(key, val);
+        for (String key : currentProperties.stringPropertyNames()) {
+            properties.setProperty(key, currentProperties.getProperty(key));
         }
     }
 
