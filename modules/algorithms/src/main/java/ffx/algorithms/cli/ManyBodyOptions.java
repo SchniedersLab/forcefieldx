@@ -750,7 +750,7 @@ public class ManyBodyOptions {
             }
             rotamerOptimization.setResidues(residueList);
             rotamerOptimization.setBoxStart(boxStart);
-            if (allStartResID != -1) {
+            if(finish>0){
                 rotamerOptimization.setBoxEnd(boxEnd);
             }
         }
