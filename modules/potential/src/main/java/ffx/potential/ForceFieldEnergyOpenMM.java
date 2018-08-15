@@ -658,35 +658,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 break;
         }
 
-        int size = 1;
-        int defDeviceIndex = 0;
-        Comm world = null;
-
-        try {
-            world = Comm.world();
-            size = world.size();
-            defDeviceIndex = 0;
-        } catch (IllegalStateException e) {
-            // Assume a single process.
-        }
-
-        if (size > 1) {
-            int rank = world.rank();
-            CompositeConfiguration props = molecularAssembly.getProperties();
-            // 0/no-arg would indicate "just put everything on device specified by CUDA_DEVICE".
-            // TODO: Get the number of CUDA devices from the CUDA API as the alternate default.
-            int numCudaDevices = props.getInt("numCudaDevices", 0);
-            if (numCudaDevices > 0) {
-                defDeviceIndex = rank % numCudaDevices;
-                logger.info(String.format(" Placing energy from rank %d on device %d", rank, defDeviceIndex));
-            }
-        }
-
-        int deviceID = molecularAssembly.getForceField().getInteger(ForceField.ForceFieldInteger.CUDA_DEVICE, defDeviceIndex);
-        String deviceIDString = Integer.toString(deviceID);
-
         if (cuda && requestedPlatform != Platform.OMM_REF) {
+            int defaultDevice = getDefaultDevice(molecularAssembly.getProperties());
             platform = OpenMM_Platform_getPlatformByName("CUDA");
+            int deviceID = molecularAssembly.getForceField().getInteger(ForceField.ForceFieldInteger.CUDA_DEVICE, defaultDevice);
+            String deviceIDString = Integer.toString(deviceID);
+
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("CudaDeviceIndex"), pointerForString(deviceIDString));
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("Precision"), pointerForString(precision));
             logger.info(String.format(" Selected OpenMM AMOEBA CUDA Platform (Device ID: %d)", deviceID));
@@ -694,6 +671,36 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             platform = OpenMM_Platform_getPlatformByName("Reference");
             logger.info(" Selected OpenMM AMOEBA Reference Platform");
         }
+    }
+
+    /**
+     * Gets the default co-processor device, ignoring any CUDA_DEVICE over-ride. This is
+     * either determined by process rank and the availableDevices/CUDA_DEVICES property,
+     * or just 0 if neither property is sets.
+     *
+     * @param props Properties in use.
+     * @return Pre-override device index.
+     */
+    private static int getDefaultDevice(CompositeConfiguration props) {
+        String availDeviceProp = props.getString("availableDevices",
+                props.getString("CUDA_DEVICES", "0")).trim();
+        String[] availDevices = availDeviceProp.split("\\s+");
+        int nDevs = availDevices.length;
+        int[] devs = new int[nDevs];
+        for (int i = 0; i < nDevs; i++) {
+            devs[i] = Integer.parseInt(availDevices[i]);
+        }
+        int index = 0;
+        try {
+            Comm world = Comm.world();
+            if (world != null && world.size() > 0) {
+                int rank = world.rank();
+                index = rank % nDevs;
+            }
+        } catch (IllegalStateException ise) {
+            // Behavior is just to keep index = 0.
+        }
+        return devs[index];
     }
 
     /**
