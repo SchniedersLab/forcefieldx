@@ -48,8 +48,8 @@ import ffx.potential.groovy.test.LambdaGradient;
 import groovy.lang.Binding;
 
 /**
- * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
- *
+ * Tests test.LambdaGradient command to determine that the end state potentials and derivatives are correct.
+ * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */
 public class CrystalThermoPathTest extends PotentialScript {
@@ -98,6 +98,35 @@ public class CrystalThermoPathTest extends PotentialScript {
 
         double expectedPotentialEnergyVac = -7.70794641;
         double expectedPotentialEnergyXtal = -36.22162927;
+        double actualPotentialEnergyVac = lambdaGradient.e0;
+        double actualPotentialEnergyXtal = lambdaGradient.e1;
+
+        assertEquals(actualPotentialEnergyVac, expectedPotentialEnergyVac, 1E-6);
+        assertEquals(actualPotentialEnergyXtal, expectedPotentialEnergyXtal, 1E-6);
+        assertEquals(0, lambdaGradient.ndEdLFailures);
+        assertEquals(0, lambdaGradient.nd2EdL2Failures);
+        assertEquals(0, lambdaGradient.ndEdXdLFailures);
+        assertEquals(0, lambdaGradient.ndEdXFailures);
+    }
+
+    /**
+     * Tests the End States of the LambdaGradient class when softcore is active.
+     */
+    @Test
+    public void testLambdaGradientIntermolecularSoftcore() {
+
+        String[] args = {"--s1", "1",
+                "--f1", "44",
+                "src/main/java/ffx/potential/structures/ethylparaben.xyz"};
+        binding.setVariable("args", args);
+
+        // Evaluate the script.
+        lambdaGradient.run();
+
+        System.clearProperty("lambdaterm");
+
+        double expectedPotentialEnergyVac = -6.68785818; // Same w/ cutoff 12 / 15
+        double expectedPotentialEnergyXtal = -57.41989502;
         double actualPotentialEnergyVac = lambdaGradient.e0;
         double actualPotentialEnergyXtal = lambdaGradient.e1;
 

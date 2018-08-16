@@ -40,6 +40,7 @@ package ffx.algorithms.groovy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
 
 import groovy.lang.Binding;
 
@@ -51,10 +52,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.testng.Assert;
-
 /**
- * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
+ * Tests CrystalMin and CrystalMin.groovy scripts for -e -I -f and -c flags.
+ * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */
 public class CrystalMinTest extends PJDependentTest {

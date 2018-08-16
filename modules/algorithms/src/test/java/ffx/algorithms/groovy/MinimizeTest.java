@@ -40,6 +40,7 @@ package ffx.algorithms.groovy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Assert;
 
 import groovy.lang.Binding;
 
@@ -51,10 +52,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.testng.Assert;
-
 /**
- * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
+ * Tests Minimize command to determine if the resulting potential energies with the -e and -I flags works properly.
+ * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */
 public class MinimizeTest extends PJDependentTest {
