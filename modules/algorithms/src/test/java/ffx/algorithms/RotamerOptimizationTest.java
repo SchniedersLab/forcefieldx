@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import ffx.potential.Utilities;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -432,7 +433,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
         if (doOverallOpt) {
             rotamerOptimization.turnRotamerPairEliminationOff();
             rotamerOptimization.setTestOverallOpt(true);
-            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            try {
+                energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            } catch (Exception e) {
+                logger.warning(Utilities.stackTraceToString(e));
+                throw e;
+            }
             //System.out.println("The expected overall energy is: " + energy);
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
@@ -728,7 +734,12 @@ public class RotamerOptimizationTest extends PJDependentTest {
         int nRes = residueList.size();
         if (doOverallOpt) {
             rotamerOptimization.turnRotamerSingleEliminationOff();
-            energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            try {
+                energy = rotamerOptimization.optimize(RotamerOptimization.Algorithm.ALL);
+            } catch (Exception e) {
+                logger.warning(Utilities.stackTraceToString(e));
+                throw e;
+            }
             //System.out.println("The expected overall energy is: " + energy);
             assertEquals(info + " Total Energy", expectedEnergy, energy, tolerance);
         }
