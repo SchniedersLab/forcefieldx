@@ -6343,8 +6343,6 @@ public class RotamerOptimization implements Terminatable {
      * @return If riA was eliminated.
      */
     private boolean goldsteinElimination(Residue residues[], int i, int riA, int riB) {
-        long time = -System.nanoTime();
-        int nres = residues.length;
         Residue resi = residues[i];
 
         // Initialize Goldstein inequality.
@@ -6466,8 +6464,6 @@ public class RotamerOptimization implements Terminatable {
                 return true;
             }
         }
-        time += System.nanoTime();
-        logger.info(String.format(" Self elimination check: %14.9g sec", 1.0E-9 * time));
         return false;
     }
 
@@ -6610,14 +6606,12 @@ public class RotamerOptimization implements Terminatable {
 
     private double goldsteinPairSumOverK(Residue residues[], int lb, int ub, int i, int riA, int riB,
                                          int j, int rjC, int rjD,
-                                         ArrayList<Residue> blockedResidues) {
+                                         ArrayList<Residue> blockedResidues,
+                                         int[] possK) {
         double sumOverK = 0.0;
-        int nres = residues.length;
 
-        for (int k = lb; k <= ub; k++) {
-            if (k == j || k == i) {
-                continue;
-            }
+        for (int indK = lb; indK <= ub; indK++) {
+            int k = possK[indK];
             double minForResK = Double.MAX_VALUE;
             Residue resk = residues[k];
             Rotamer rotk[] = resk.getRotamers(library);
@@ -6645,7 +6639,14 @@ public class RotamerOptimization implements Terminatable {
                 if (threeBodyTerm) {
                     double sumOverL = (get3Body(residues, i, riA, j, rjC, k, rk) - get3Body(residues, i, riB, j, rjD, k, rk));
                     // Loop over a 4th residue l.
-                    for (int l = 0; l < nres; l++) {
+                    int[] nK = bidiResNeighbors[k];
+                    IntStream lStream = IntStream.concat(Arrays.stream(possK), Arrays.stream(nK));
+                    int[] possL = lStream.filter(l -> (l != i && l != j && l != k)).
+                            sorted().
+                            distinct().
+                            toArray();
+
+                    for (int l : possL) {
                         if (l == k || l == i || l == j) {
                             continue;
                         }
@@ -8475,6 +8476,8 @@ public class RotamerOptimization implements Terminatable {
         int i, riA, rjC;
         int j, riB, rjD;
         int nRes;
+        private int[] possK;
+        private int nK;
         GoldsteinRotamerPairLoop goldsteinRotamerPairLoop[];
         SharedDouble sharedSumOverK = new SharedDouble();
         ArrayList<Residue> blockedResidues;
@@ -8504,6 +8507,14 @@ public class RotamerOptimization implements Terminatable {
             this.rjC = rjC;
             this.rjD = rjD;
             nRes = residues.length;
+            int[] nI = bidiResNeighbors[i];
+            int[] nJ = bidiResNeighbors[j];
+            IntStream kStream = IntStream.concat(Arrays.stream(nI), Arrays.stream(nJ));
+            possK = kStream.distinct().
+                    filter(k -> (k != i && k != j)).
+                    sorted().
+                    toArray();
+            nK = possK.length;
         }
 
         public double getSumOverK() {
@@ -8533,7 +8544,7 @@ public class RotamerOptimization implements Terminatable {
                 goldsteinRotamerPairLoop[threadID] = new GoldsteinRotamerPairLoop();
             }
             try {
-                execute(0, nRes - 1, goldsteinRotamerPairLoop[threadID]);
+                execute(0, nK - 1, goldsteinRotamerPairLoop[threadID]);
             } catch (Exception e) {
                 logger.log(Level.WARNING, " Exception in GoldsteinPairRegion.", e);
             }
@@ -8558,8 +8569,7 @@ public class RotamerOptimization implements Terminatable {
             @Override
             public void run(int lb, int ub) throws Exception {
                 if (blockedResidues.isEmpty()) {
-                    //sumOverK += goldsteinPairSumOverK(residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues);
-                    double locSumOverK = goldsteinPairSumOverK(residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues);
+                    double locSumOverK = goldsteinPairSumOverK(residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues, possK);
 
                     // Should be redundant checks.
                     if (Double.isFinite(locSumOverK) && blockedResidues.isEmpty()) {
