@@ -214,6 +214,10 @@ public class RotamerOptimization implements Terminatable {
      */
     private int[][] resNeighbors;
     /**
+     * All interaction partners of a Residue, including prior residues.
+     */
+    private int[][] bidiResNeighbors;
+    /**
      * Quad cutoff distance.
      */
     private double quadCutoffDist = 5.0;
@@ -4754,6 +4758,7 @@ public class RotamerOptimization implements Terminatable {
     private void generateResidueNeighbors(Residue[] residues) {
         int nRes = residues.length;
         resNeighbors = new int[nRes][];
+        bidiResNeighbors = new int[nRes][];
         for (int i = 0; i < nRes; i++) {
             Set<Integer> nearby = new HashSet<>();
             Residue resi = residues[i];
@@ -4761,7 +4766,10 @@ public class RotamerOptimization implements Terminatable {
             int lenri = rotsi.length;
             int indexI = allResiduesList.indexOf(resi);
 
-            for (int j = i+1; j < nRes; j++) {
+            for (int j = 0; j < nRes; j++) {
+                if (i == j) {
+                    continue;
+                }
                 Residue resj = residues[j];
                 Rotamer[] rotsj = resj.getRotamers(library);
                 int lenrj = rotsj.length;
@@ -4784,7 +4792,16 @@ public class RotamerOptimization implements Terminatable {
                 }
             }
 
+            // Collect all neighbors.
             int[] nI = nearby.stream().mapToInt(Integer::intValue).toArray();
+            bidiResNeighbors[i] = nI;
+
+            // Collect only subsequent neighbors.
+            final int fi = i; // Final copy of i.
+            nI = nearby.stream().
+                    mapToInt(Integer::intValue).
+                    filter(j -> j > fi).
+                    toArray();
             resNeighbors[i] = nI;
         }
     }
@@ -6326,6 +6343,7 @@ public class RotamerOptimization implements Terminatable {
      * @return If riA was eliminated.
      */
     private boolean goldsteinElimination(Residue residues[], int i, int riA, int riB) {
+        long time = -System.nanoTime();
         int nres = residues.length;
         Residue resi = residues[i];
 
@@ -6337,10 +6355,7 @@ public class RotamerOptimization implements Terminatable {
         double sumTripleDiff = 0.0;
 
         // Loop over a 2nd residue j.
-        for (int j = 0; j < nres; j++) {
-            if (j == i) {
-                continue;
-            }
+        for (int j : bidiResNeighbors[i]) {
             Residue resj = residues[j];
             Rotamer rotj[] = resj.getRotamers(library);
             int nrj = rotj.length;
@@ -6377,7 +6392,9 @@ public class RotamerOptimization implements Terminatable {
                 // Include three-body interactions.
                 double tripleDiff = 0.0;
                 if (threeBodyTerm) {
-                    for (int k = 0; k < nres; k++) {
+                    IntStream kStream = IntStream.concat(Arrays.stream(bidiResNeighbors[i]), Arrays.stream(bidiResNeighbors[j]));
+                    int[] possKs = kStream.distinct().sorted().toArray();
+                    for (int k : possKs) {
                         if (k == i || k == j) {
                             continue;
                         }
@@ -6449,7 +6466,8 @@ public class RotamerOptimization implements Terminatable {
                 return true;
             }
         }
-
+        time += System.nanoTime();
+        logger.info(String.format(" Self elimination check: %14.9g sec", 1.0E-9 * time));
         return false;
     }
 
