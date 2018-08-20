@@ -692,6 +692,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                     mapToObj(Integer::toString).
                     collect(Collectors.joining(" "));
         }
+        availDeviceProp = availDeviceProp.trim();
         String[] availDevices = availDeviceProp.split("\\s+");
         int nDevs = availDevices.length;
         int[] devs = new int[nDevs];
