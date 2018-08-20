@@ -747,7 +747,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 if (!selfFound) {
                     logger.severe(String.format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
                 } else {
-                    index = ownIndex;
+                    index = ownIndex % nDevs;
                 }
             }
         } catch (IllegalStateException ise) {
