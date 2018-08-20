@@ -48,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import static java.lang.String.format;
 
 import com.sun.jna.Memory;
@@ -683,7 +685,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private static int getDefaultDevice(CompositeConfiguration props) {
         String availDeviceProp = props.getString("availableDevices",
-                props.getString("CUDA_DEVICES", "0")).trim();
+                props.getString("CUDA_DEVICES"));
+        if (availDeviceProp == null) {
+            int nDevs = props.getInt("numCudaDevices", 1);
+            availDeviceProp = IntStream.range(0, nDevs).
+                    mapToObj(Integer::toString).
+                    collect(Collectors.joining(" "));
+        }
+        availDeviceProp = availDeviceProp.trim();
         String[] availDevices = availDeviceProp.split("\\s+");
         int nDevs = availDevices.length;
         int[] devs = new int[nDevs];
