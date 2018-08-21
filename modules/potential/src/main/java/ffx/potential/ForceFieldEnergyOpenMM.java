@@ -671,6 +671,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("CudaDeviceIndex"), pointerForString(deviceIDString));
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("Precision"), pointerForString(precision));
             logger.info(String.format(" Selected OpenMM AMOEBA CUDA Platform (Device ID: %d)", deviceID));
+            try {
+                Comm world = Comm.world();
+                if (world != null) {
+                    logger.info(String.format(" Running on host %s, rank %d", world.host(), world.rank()));
+                }
+            } catch (IllegalStateException ise) {
+                logger.fine(" Could not find the world communicator!");
+            }
         } else {
             platform = OpenMM_Platform_getPlatformByName("Reference");
             logger.info(" Selected OpenMM AMOEBA Reference Platform");
