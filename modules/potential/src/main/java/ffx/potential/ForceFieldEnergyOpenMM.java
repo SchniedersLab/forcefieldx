@@ -737,14 +737,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
                 } catch (IOException ex) {
                     logger.severe(String.format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
                 }
-                String[] inStrings = new String[size];
                 int ownIndex = -1;
                 int rank = world.rank();
                 boolean selfFound = false;
 
                 for (int i = 0; i < size; i++) {
-                    inStrings[i] = new String(incoming[i]);
-                    if (inStrings[i].equalsIgnoreCase(host)) {
+                    String hostI = new String(incoming[i]);
+                    if (hostI.equalsIgnoreCase(host)) {
                         ++ownIndex;
                         if (i == rank) {
                             selfFound = true;
