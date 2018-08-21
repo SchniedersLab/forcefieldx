@@ -118,10 +118,10 @@ class SaveAsXYZ extends PotentialScript {
         if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
             saveDir = new File(FilenameUtils.getFullPath(modelFilename))
         }
-        String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+        String dirName = saveDir.getAbsolutePath();
         String fileName = FilenameUtils.getName(modelFilename)
         fileName = FilenameUtils.removeExtension(fileName) + ".xyz"
-        File modelFile = new File(dirName + fileName)
+        File modelFile = new File(dirName + File.separator + fileName)
 
         potentialFunctions.save(activeAssembly, modelFile)
 
