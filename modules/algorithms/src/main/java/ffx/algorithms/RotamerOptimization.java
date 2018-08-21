@@ -6334,6 +6334,51 @@ public class RotamerOptimization implements Terminatable {
     }
 
     /**
+     * Checks if residue i is considered to be interacting with residue j, and thus has
+     * non-null elements in the pair energies matrix.
+     *
+     * @param i A residue index.
+     * @param j A residue index j != i.
+     * @return If i and j interact.
+     */
+    private boolean checkNeighboringPair(int i, int j) {
+        assert i != j;
+        final int first;
+        final int second;
+        if (i > j) {
+            first = j;
+            second = i;
+        } else {
+            first = i;
+            second = j;
+        }
+        return Arrays.stream(resNeighbors[first]).anyMatch(l -> l == second);
+    }
+
+    /**
+     * Checks if residue i is considered to be interacting with residue j, that residue
+     * k is interacting with either i or j, and thus i-j-k has non-null elements in the
+     * triple energies matrix.
+     *
+     * @param i A residue index.
+     * @param j A residue index j != i.
+     * @param k A residue index k != i, k != j.
+     * @return If i, j, and k form an interacting triple.
+     */
+    private boolean checkNeighboringTriple(int i, int j, int k) {
+        assert i != j && i != k && j != k;
+        int[] vals = new int[]{i, j, k};
+        Arrays.sort(vals);
+        final int first = vals[0];
+        final int second = vals[1];
+        final int third = vals[2];
+        if (!checkNeighboringPair(first, second)) {
+            return false;
+        }
+        return (checkNeighboringPair(first, third) || checkNeighboringPair(second, third));
+    }
+
+    /**
      * Attemps to eliminate rotamer riA based on riB.
      *
      * @param residues
