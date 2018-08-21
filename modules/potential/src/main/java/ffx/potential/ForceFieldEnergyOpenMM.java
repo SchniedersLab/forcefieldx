@@ -38,6 +38,7 @@
 package ffx.potential;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -64,6 +65,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.Comm;
+import edu.rit.mp.CharacterBuf;
 import edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMLibrary.*;
 import edu.uiowa.jopenmm.OpenMMUtils;
@@ -669,6 +671,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("CudaDeviceIndex"), pointerForString(deviceIDString));
             OpenMM_Platform_setPropertyDefaultValue(platform, pointerForString("Precision"), pointerForString(precision));
             logger.info(String.format(" Selected OpenMM AMOEBA CUDA Platform (Device ID: %d)", deviceID));
+            try {
+                Comm world = Comm.world();
+                if (world != null) {
+                    logger.info(String.format(" Running on host %s, rank %d", world.host(), world.rank()));
+                }
+            } catch (IllegalStateException ise) {
+                logger.fine(" Could not find the world communicator!");
+            }
         } else {
             platform = OpenMM_Platform_getPlatformByName("Reference");
             logger.info(" Selected OpenMM AMOEBA Reference Platform");
@@ -702,9 +712,51 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int index = 0;
         try {
             Comm world = Comm.world();
-            if (world != null && world.size() > 0) {
+            if (world != null) {
+                int size = world.size();
+
+                // Format the host as a CharacterBuf of length 100.
+                int messageLen = 100;
+                String host = world.host();
+                // Truncate to max 100 characters.
+                host = host.substring(0, Math.min(messageLen, host.length()));
+                // Pad to 100 characters.
+                host = String.format("%-100s", host);
+                char[] messageOut = host.toCharArray();
+                CharacterBuf out = CharacterBuf.buffer(messageOut);
+
+                // Now create CharacterBuf array for all incoming messages.
+                char[][] incoming = new char[size][messageLen];
+                CharacterBuf[] in = new CharacterBuf[size];
+                for (int i = 0; i < size; i++) {
+                    in[i] = CharacterBuf.buffer(incoming[i]);
+                }
+
+                try {
+                    world.allGather(out, in);
+                } catch (IOException ex) {
+                    logger.severe(String.format(" Failure at the allGather step for determining rank: %s\n%s", ex, Utilities.stackTraceToString(ex)));
+                }
+                String[] inStrings = new String[size];
+                int ownIndex = -1;
                 int rank = world.rank();
-                index = rank % nDevs;
+                boolean selfFound = false;
+
+                for (int i = 0; i < size; i++) {
+                    inStrings[i] = new String(incoming[i]);
+                    if (inStrings[i].equalsIgnoreCase(host)) {
+                        ++ownIndex;
+                        if (i == rank) {
+                            selfFound = true;
+                            break;
+                        }
+                    }
+                }
+                if (!selfFound) {
+                    logger.severe(String.format(" Rank %d: Could not find any incoming host messages matching self %s!", rank, host.trim()));
+                } else {
+                    index = ownIndex % nDevs;
+                }
             }
         } catch (IllegalStateException ise) {
             // Behavior is just to keep index = 0.
