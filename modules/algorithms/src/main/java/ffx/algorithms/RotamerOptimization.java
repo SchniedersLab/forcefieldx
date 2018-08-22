@@ -7819,21 +7819,23 @@ public class RotamerOptimization implements Terminatable {
                         //for (int j = i + 1; j < nResidues; j++) {
                         for (int indJ = 0; indJ < lenNI; indJ++) {
                             int j = nI[indJ];
-                            Residue resj = residues[j];
-                            Rotamer rotj[] = resj.getRotamers(library);
-                            twoBodyEnergy[i][ri][indJ] = new double[rotj.length];
-                            for (int rj = 0; rj < rotj.length; rj++) {
-                                if (check(j, rj) || check(i, ri, j, rj)) {
-                                    continue;
+                            if(checkNeighboringPair(i,j)) {
+                                Residue resj = residues[j];
+                                Rotamer rotj[] = resj.getRotamers(library);
+                                twoBodyEnergy[i][ri][indJ] = new double[rotj.length];
+                                for (int rj = 0; rj < rotj.length; rj++) {
+                                    if (check(j, rj) || check(i, ri, j, rj)) {
+                                        continue;
+                                    }
+                                    Integer pairJob[] = {i, ri, j, rj};
+                                    if (decomposeOriginal && (ri != 0 || rj != 0)) {
+                                        continue;
+                                    }
+                                    twoBodyEnergyMap.put(pairJobIndex, pairJob);
+                                    String revKey = format("%d %d %d %d", i, ri, j, rj);
+                                    reverseJobMapPairs.put(revKey, pairJobIndex);
+                                    pairJobIndex++;
                                 }
-                                Integer pairJob[] = {i, ri, j, rj};
-                                if (decomposeOriginal && (ri != 0 || rj != 0)) {
-                                    continue;
-                                }
-                                twoBodyEnergyMap.put(pairJobIndex, pairJob);
-                                String revKey = format("%d %d %d %d", i, ri, j, rj);
-                                reverseJobMapPairs.put(revKey, pairJobIndex);
-                                pairJobIndex++;
                             }
                         }
                     }
@@ -7858,32 +7860,37 @@ public class RotamerOptimization implements Terminatable {
                         int rj = Integer.parseInt(tok[4]);
                         double energy = Double.parseDouble(tok[5]);
                         try {
-                            set2Body(i, ri, j, rj, energy);
+                            // When a restart file is generated using a large cutoff, but a new simulation is being done
+                            // with a smaller cutoff, the two-body distance needs to be checked. If the two-body
+                            // distance is larger than the cutoff, then the two residues are not considered 'neighbors'
+                            // so that pair should not be added to the pairs map.
+                            if(checkNeighboringPair(i,j)) {
+                                set2Body(i, ri, j, rj, energy);
+                                if (checkPairDistThreshold(i, ri, j, rj)) {
+                                    set2Body(i, ri, j, rj, 0);
 
-                            // When a restart file is generated using a large cutoff, but a new simulation is being done with a smaller cutoff,
-                            // the two-body distance needs to be checked. If the two-body distance is larger than the cutoff, the two-body energy should be set to 0.
-                            if (checkPairDistThreshold(i, ri, j, rj)) {
-                                set2Body(i, ri, j, rj, 0);
+                                    Residue residueI = residues[i];
+                                    Residue residueJ = residues[j];
+                                    int indexI = allResiduesList.indexOf(residueI);
+                                    int indexJ = allResiduesList.indexOf(residueJ);
 
-                                Residue residueI = residues[i];
-                                Residue residueJ = residues[j];
-                                int indexI = allResiduesList.indexOf(residueI);
-                                int indexJ = allResiduesList.indexOf(residueJ);
+                                    double resDist = getResidueDistance(indexI, ri, indexJ, rj);
+                                    String resDistString = format("large");
+                                    if (resDist < Double.MAX_VALUE) {
+                                        resDistString = format("%5.3f", resDist);
+                                    }
 
-                                double resDist = getResidueDistance(indexI, ri, indexJ, rj);
-                                String resDistString = format("large");
-                                if (resDist < Double.MAX_VALUE) {
-                                    resDistString = format("%5.3f", resDist);
+                                    double dist = checkDistMatrix(indexI, ri, indexJ, rj);
+                                    String distString = format("     large");
+                                    if (dist < Double.MAX_VALUE) {
+                                        distString = format("%10.3f", dist);
+                                    }
+
+                                    logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                                            residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(get2Body(i, ri, j, rj)), distString, resDistString));
                                 }
-
-                                double dist = checkDistMatrix(indexI, ri, indexJ, rj);
-                                String distString = format("     large");
-                                if (dist < Double.MAX_VALUE) {
-                                    distString = format("%10.3f", dist);
-                                }
-
-                                logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
-                                        residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(get2Body(i, ri, j, rj)), distString, resDistString));
+                            } else {
+                                logger.fine(format("Ignoring a pair-energy from outside the cutoff: 2-energy [(%8s,%2d),(%8s,%2d)]: %12.4f", residues[i].toFormattedString(false, true), ri, residues[j].toFormattedString(false, true), rj, energy));
                             }
 
                             if (verbose) {
@@ -7958,24 +7965,26 @@ public class RotamerOptimization implements Terminatable {
                                 //for (int k = j + 1; k < nResidues; k++) {
                                 for (int indK = 0; indK < lenNJ; indK++) {
                                     int k = nJ[indK];
-                                    Residue resk = residues[k];
-                                    Rotamer rotk[] = resk.getRotamers(library);
-                                    int lenrk = rotk.length;
-                                    threeBodyEnergy[i][ri][indJ][rj][indK] = new double[lenrk];
+                                    if(checkNeighboringTriple(i,j,k)) {
+                                        Residue resk = residues[k];
+                                        Rotamer rotk[] = resk.getRotamers(library);
+                                        int lenrk = rotk.length;
+                                        threeBodyEnergy[i][ri][indJ][rj][indK] = new double[lenrk];
 
-                                    for (int rk = 0; rk < lenrk; rk++) {
-                                        if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk)) {
-                                            // Not implemented: check(i, ri, j, rj, k, rk).
-                                            continue;
+                                        for (int rk = 0; rk < lenrk; rk++) {
+                                            if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk)) {
+                                                // Not implemented: check(i, ri, j, rj, k, rk).
+                                                continue;
+                                            }
+                                            Integer trimerJob[] = {i, ri, j, rj, k, rk};
+                                            if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
+                                                continue;
+                                            }
+                                            threeBodyEnergyMap.put(trimerJobIndex, trimerJob);
+                                            String revKey = format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
+                                            reverseJobMapTrimers.put(revKey, trimerJobIndex);
+                                            trimerJobIndex++;
                                         }
-                                        Integer trimerJob[] = {i, ri, j, rj, k, rk};
-                                        if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
-                                            continue;
-                                        }
-                                        threeBodyEnergyMap.put(trimerJobIndex, trimerJob);
-                                        String revKey = format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
-                                        reverseJobMapTrimers.put(revKey, trimerJobIndex);
-                                        trimerJobIndex++;
                                     }
                                 }
                             }
@@ -8013,37 +8022,44 @@ public class RotamerOptimization implements Terminatable {
                             //threeBodyEnergy[i][ri][j][rj][k][rk] = energy;
                             //IntegerKeyset ijk = new IntegerKeyset(i, ri, j, rj, k, rk);
                             //threeBodyEnergies.put(ijk, energy);
-                            set3Body(residues, i, ri, j, rj, k, rk, energy);
 
-                            // When a restart file is generated using a large cutoff, but a new simulation is being done with a smaller cutoff,
-                            // the three-body cutoff distance needs to be checked. If the three-body distance is larger than the cutoff, the three-body energy should be set to 0.
-                            if (checkTriDistThreshold(i, ri, j, rj, k, rk)) {
-                                //threeBodyEnergies.put(ijk, 0.0);
-                                set3Body(residues, i, ri, j, rj, k, rk, 0);
+                            // When a restart file is generated using a large cutoff, but a new simulation is being done
+                            // with a smaller cutoff, the three-body distance needs to be checked. If the three-body
+                            // distance is larger than the cutoff, then the three residues are not considered 'neighbors'
+                            // so that triple should not be added to the pairs map.
+                            if (checkNeighboringTriple(i,j,k)) {
+                                set3Body(residues, i, ri, j, rj, k, rk, energy);
+                                if (checkTriDistThreshold(i, ri, j, rj, k, rk)) {
+                                    //threeBodyEnergies.put(ijk, 0.0);
+                                    set3Body(residues, i, ri, j, rj, k, rk, 0);
 
-                                Residue residueI = residues[i];
-                                Residue residueJ = residues[j];
-                                Residue residueK = residues[k];
-                                int indexI = allResiduesList.indexOf(residueI);
-                                int indexJ = allResiduesList.indexOf(residueJ);
-                                int indexK = allResiduesList.indexOf(residueK);
-                                double rawDist = getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
-                                double resDist = get3BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk);
+                                    Residue residueI = residues[i];
+                                    Residue residueJ = residues[j];
+                                    Residue residueK = residues[k];
+                                    int indexI = allResiduesList.indexOf(residueI);
+                                    int indexJ = allResiduesList.indexOf(residueJ);
+                                    int indexK = allResiduesList.indexOf(residueK);
+                                    double rawDist = getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
+                                    double resDist = get3BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk);
 
-                                String resDistString = format("     large");
-                                if (resDist < Double.MAX_VALUE) {
-                                    resDistString = format("%5.3f", resDist);
+                                    String resDistString = format("     large");
+                                    if (resDist < Double.MAX_VALUE) {
+                                        resDistString = format("%5.3f", resDist);
+                                    }
+
+                                    String distString = format("     large");
+                                    if (rawDist < Double.MAX_VALUE) {
+                                        distString = format("%10.3f", rawDist);
+                                    }
+
+                                    logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                                            residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk,
+                                            formatEnergy(get3Body(residues, i, ri, j, rj, k, rk)), distString, resDistString));
                                 }
-
-                                String distString = format("     large");
-                                if (rawDist < Double.MAX_VALUE) {
-                                    distString = format("%10.3f", rawDist);
-                                }
-
-                                logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
-                                        residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk,
-                                        formatEnergy(get3Body(residues, i, ri, j, rj, k, rk)), distString, resDistString));
-
+                            } else {
+                                logger.fine(format("Ignoring a triple-energy from outside the cutoff: 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s",
+                                residues[i].toFormattedString(false, true), ri, residues[j].toFormattedString(false, true), rj, residues[k].toFormattedString(false, true), rk,
+                                        formatEnergy(get3Body(residues, i, ri, j, rj, k, rk))));
                             }
                         } catch (ArrayIndexOutOfBoundsException ex) {
                             if (verbose) {
