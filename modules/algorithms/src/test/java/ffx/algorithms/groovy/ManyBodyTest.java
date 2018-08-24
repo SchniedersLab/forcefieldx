@@ -204,4 +204,45 @@ public class ManyBodyTest extends PJDependentTest {
         System.clearProperty("polarization");
     }
 
+
+    /**
+     * Tests the restart file functionality. The test applies a 1 angstrom 2-body and 3-body cutoff but the restart
+     * file was generated using 2-body and 3-body cutoffs of 2 angstroms.
+     */
+    /*@Test
+    public void testManyBodyRestart(){
+        System.out.println("TEST MANY BODY RESTART!");
+
+        // Set-up the input arguments for the script.
+        String[] args = {"-a", "2", "-L", "2", "--tC", "1", "-T", "--thC", "1", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
+                "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+        binding.setVariable("args", args);
+
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("ManyBodyTest");
+            manyBody.setSaveDir(path.toFile());
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory.");
+        }
+
+        // Evaluate the script.
+        manyBody.run();
+
+        double expectedTotalPotential = -216.62517180;
+        double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+
+        // Delete all created directories and files.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by ManyBodyTest.");
+        }
+
+        // Clear properties and delete unneccesary files.
+        manyBody.getManyBody().getRestartFile().delete();
+    } */
+
 }
