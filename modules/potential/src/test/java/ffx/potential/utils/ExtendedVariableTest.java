@@ -219,7 +219,7 @@ public class ExtendedVariableTest {
         setProp("polarization", Polarization.MUTUAL);
         setProp("scf-algorithm", SCFAlgorithm.SOR);
         setProp("polar-eps", 1e-12);
-        setProp("vdw-cutoff", 10.0);
+        setProp("vdw-cutoff", 12.0);
         setProp("ewald-cutoff", 10.0);
         setProp("pme-order", 8);
         setProp("pme-mesh-density", 2.0);
