@@ -708,8 +708,11 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
         } else {
             off = forceField.getDouble(ForceFieldDouble.EWALD_CUTOFF, 1000.0);
         }
-        double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
-        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
+
+        // double ewaldPrecision = forceField.getDouble(ForceFieldDouble.EWALD_PRECISION, 1.0e-8);
+        // aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, ewaldCoefficient(off, ewaldPrecision));
+
+        aewald = forceField.getDouble(ForceFieldDouble.EWALD_ALPHA, 0.545);
         setEwaldParameters(off, aewald);
 
         reciprocalSpaceTerm = forceField.getBoolean(ForceFieldBoolean.RECIPTERM, true);
