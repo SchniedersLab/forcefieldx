@@ -62,8 +62,8 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.utilities.HashCodeUtil;
-import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.diff;
+import static ffx.numerics.VectorMath.dot;
 import static ffx.numerics.VectorMath.mat3Mat3;
 import static ffx.numerics.VectorMath.mat3SymVec6;
 import static ffx.numerics.VectorMath.r;
@@ -75,10 +75,8 @@ import static ffx.numerics.VectorMath.transpose3;
  * apply the minimum image convention and space group symmetry operators.
  *
  * @author Michael J. Schnieders
- *
- * @since 1.0
- *
  * @see ReplicatesCrystal
+ * @since 1.0
  */
 public class Crystal {
 
@@ -224,13 +222,13 @@ public class Crystal {
      * Methods are available to apply the minimum image convention and to apply
      * space group operators.
      *
-     * @param a The a-axis length.
-     * @param b The b-axis length.
-     * @param c The c-axis length.
+     * @param a     The a-axis length.
+     * @param b     The b-axis length.
+     * @param c     The c-axis length.
      * @param alpha The alpha angle.
-     * @param beta The beta angle.
+     * @param beta  The beta angle.
      * @param gamma The gamma angle.
-     * @param sg The space group symbol.
+     * @param sg    The space group symbol.
      */
     public Crystal(double a, double b, double c, double alpha, double beta,
                    double gamma, String sg) {
@@ -348,7 +346,7 @@ public class Crystal {
         this.checkRestrictions = checkRestrictions;
     }
 
-    public boolean getCheckRestrictions(){
+    public boolean getCheckRestrictions() {
         return checkRestrictions;
     }
 
@@ -356,7 +354,7 @@ public class Crystal {
         double newCoords[] = new double[3];
         double ret[] = new double[3];
         int n = spaceGroup.getNumberOfSymOps();
-        for (int i=1; i<n; i++) {
+        for (int i = 1; i < n; i++) {
             SymOp symOp = symOpsCartesian.get(i);
             applyCartesianSymOp(cartesianCoords, newCoords, symOp);
             diff(cartesianCoords, newCoords, ret);
@@ -552,11 +550,11 @@ public class Crystal {
      * restrictions are satisfied. If so, all Crystal variables that depend on
      * the unit cell parameters will be updated.
      *
-     * @param a length of the a-axis.
-     * @param b length of the b-axis.
-     * @param c length of the c-axis.
+     * @param a     length of the a-axis.
+     * @param b     length of the b-axis.
+     * @param c     length of the c-axis.
      * @param alpha Angle between b-axis and c-axis.
-     * @param beta Angle between a-axis and c-axis.
+     * @param beta  Angle between a-axis and c-axis.
      * @param gamma Angle between a-axis and b-axis.
      * @return The method return true if the parameters are accepted, false
      * otherwise.
@@ -591,7 +589,9 @@ public class Crystal {
     /**
      * Strain the unit cell vectors.
      *
-     * @param dStrain
+     * @param dStrain a 3x3 matrix of unitless Strain percentages.
+     *
+     * @return True if the perturbation of cell vectors succeeds.
      */
     public boolean perturbCellVectors(double dStrain[][]) {
 
@@ -677,7 +677,7 @@ public class Crystal {
      * checkProperties</p>
      *
      * @param properties a
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return a {@link ffx.crystal.Crystal} object.
      */
     public static Crystal checkProperties(CompositeConfiguration properties) {
@@ -712,7 +712,7 @@ public class Crystal {
 
     /**
      * Two crystals are equal if all unit cell parameters are within 0.01.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -922,10 +922,10 @@ public class Crystal {
      * immediately. If mateX, mateY or mateZ are null or not of length n, new
      * arrays are allocated.
      *
-     * @param n Number of atoms.
-     * @param x Input x coordinates.
-     * @param y Input y coordinates.
-     * @param z Input z coordinates.
+     * @param n     Number of atoms.
+     * @param x     Input x coordinates.
+     * @param y     Input y coordinates.
+     * @param z     Input z coordinates.
      * @param mateX Output x coordinates.
      * @param mateY Output y coordinates.
      * @param mateZ Output z coordinates.
@@ -981,10 +981,10 @@ public class Crystal {
      * method returns immediately. If mateX, mateY or mateZ are null or not of
      * length n, new arrays are allocated.
      *
-     * @param n Number of atoms.
-     * @param x Input x coordinates.
-     * @param y Input y coordinates.
-     * @param z Input z coordinates.
+     * @param n     Number of atoms.
+     * @param x     Input x coordinates.
+     * @param y     Input y coordinates.
+     * @param z     Input z coordinates.
      * @param mateX Output x coordinates.
      * @param mateY Output y coordinates.
      * @param mateZ Output z coordinates.
@@ -1045,14 +1045,14 @@ public class Crystal {
     /**
      * Apply a symmetry operator to one set of coordinates.
      *
-     * @param h Input coordinates.
-     * @param k Input coordinates.
-     * @param l Input coordinates.
-     * @param mate Symmetry mate coordinates.
+     * @param h     Input coordinates.
+     * @param k     Input coordinates.
+     * @param l     Input coordinates.
+     * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
-     * @param nx number of unit cell translations
-     * @param ny number of unit cell translations
-     * @param nz number of unit cell translations
+     * @param nx    number of unit cell translations
+     * @param ny    number of unit cell translations
+     * @param nz    number of unit cell translations
      */
     public void applySymOp(int h, int k, int l, int mate[], SymOp symOp, int nx, int ny, int nz) {
         double rot[][] = symOp.rot;
@@ -1069,8 +1069,8 @@ public class Crystal {
     /**
      * Apply a fractional symmetry operator to one set of coordinates.
      *
-     * @param xyz Input coordinates.
-     * @param mate Symmetry mate coordinates.
+     * @param xyz   Input coordinates.
+     * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
     public void applyCartesianSymOp(double xyz[], double mate[], SymOp symOp) {
@@ -1088,8 +1088,8 @@ public class Crystal {
     /**
      * Apply a fractional symmetry operator to one set of coordinates.
      *
-     * @param xyz Input coordinates.
-     * @param mate Symmetry mate coordinates.
+     * @param xyz   Input coordinates.
+     * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
     public void applySymOp(double xyz[], double mate[], SymOp symOp) {
@@ -1115,8 +1115,8 @@ public class Crystal {
     /**
      * Apply a symmetry operator to one set of coordinates.
      *
-     * @param xyz Input coordinates.
-     * @param mate Symmetry mate coordinates.
+     * @param xyz   Input coordinates.
+     * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
     public void applyFracSymOp(double xyz[], double mate[], SymOp symOp) {
@@ -1137,8 +1137,8 @@ public class Crystal {
     /**
      * Apply a symmetry operator to one set of coordinates.
      *
-     * @param xyz Input coordinates.
-     * @param mate Symmetry mate coordinates.
+     * @param xyz   Input coordinates.
+     * @param mate  Symmetry mate coordinates.
      * @param symOp The symmetry operator.
      */
     public void applySymRot(double xyz[], double mate[], SymOp symOp) {
@@ -1166,8 +1166,8 @@ public class Crystal {
     /**
      * Multiply coordinates by the transpose of a matrix.
      *
-     * @param in input coordinates.
-     * @param out output coordinates.
+     * @param in     input coordinates.
+     * @param out    output coordinates.
      * @param matrix multiply by the transpose of this matrix.
      */
     public static void applyMatrixTranspose(double in[], double out[], double matrix[][]) {
@@ -1182,7 +1182,7 @@ public class Crystal {
     /**
      * Compute the total transformation operator R = ToCart * Rot * ToFrac.
      *
-     * @param symOp Symmetry operator to apply.
+     * @param symOp  Symmetry operator to apply.
      * @param rotmat Resulting transformation operator R.
      */
     public void getTransformationOperator(SymOp symOp, double rotmat[][]) {
@@ -1202,9 +1202,9 @@ public class Crystal {
     /**
      * Apply a symmetry operator to one set of coordinates.
      *
-     * @param xyz Input coordinates.
-     * @param mate Symmetry mate coordinates.
-     * @param symOp The symmetry operator.
+     * @param xyz    Input coordinates.
+     * @param mate   Symmetry mate coordinates.
+     * @param symOp  The symmetry operator.
      * @param rotmat an array of double.
      */
     public void applyTransSymRot(double xyz[], double mate[], SymOp symOp, double rotmat[][]) {
@@ -1223,8 +1223,8 @@ public class Crystal {
     /**
      * Apply a symmetry operator to one HKL.
      *
-     * @param hkl Input HKL.
-     * @param mate Symmetry mate HKL.
+     * @param hkl   Input HKL.
+     * @param mate  Symmetry mate HKL.
      * @param symOp The symmetry operator.
      */
     public void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
@@ -1244,8 +1244,8 @@ public class Crystal {
     /**
      * Apply a transpose rotation symmetry operator to one HKL.
      *
-     * @param hkl Input HKL.
-     * @param mate Symmetry mate HKL.
+     * @param hkl   Input HKL.
+     * @param mate  Symmetry mate HKL.
      * @param symOp The symmetry operator.
      */
     public void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
@@ -1269,10 +1269,10 @@ public class Crystal {
      * immediately. If mateX, mateY or mateZ are null or not of length n, new
      * arrays are allocated.
      *
-     * @param n Number of atoms.
-     * @param x Input x coordinates.
-     * @param y Input y coordinates.
-     * @param z Input z coordinates.
+     * @param n     Number of atoms.
+     * @param x     Input x coordinates.
+     * @param y     Input y coordinates.
+     * @param z     Input z coordinates.
      * @param mateX Output x coordinates.
      * @param mateY Output y coordinates.
      * @param mateZ Output z coordinates.
@@ -1316,14 +1316,14 @@ public class Crystal {
      * method returns immediately. If mateX, mateY or mateZ are null or not of
      * length n, new arrays are allocated.
      *
-     * @param n Number of atoms.
-     * @param x Input x coordinates.
-     * @param y Input y coordinates.
-     * @param z Input z coordinates.
-     * @param mateX Output x coordinates.
-     * @param mateY Output y coordinates.
-     * @param mateZ Output z coordinates.
-     * @param symOp The symmetry operator.
+     * @param n      Number of atoms.
+     * @param x      Input x coordinates.
+     * @param y      Input y coordinates.
+     * @param z      Input z coordinates.
+     * @param mateX  Output x coordinates.
+     * @param mateY  Output y coordinates.
+     * @param mateZ  Output z coordinates.
+     * @param symOp  The symmetry operator.
      * @param rotmat an array of double.
      */
     public void applyTransSymRot(int n, double x[], double y[], double z[],
@@ -1366,10 +1366,10 @@ public class Crystal {
      * <p>
      * toFractionalCoordinates</p>
      *
-     * @param n a int.
-     * @param x an array of double.
-     * @param y an array of double.
-     * @param z an array of double.
+     * @param n  a int.
+     * @param x  an array of double.
+     * @param y  an array of double.
+     * @param z  an array of double.
      * @param xf an array of double.
      * @param yf an array of double.
      * @param zf an array of double.
@@ -1390,7 +1390,7 @@ public class Crystal {
      * <p>
      * toFractionalCoordinates</p>
      *
-     * @param n a int.
+     * @param n    a int.
      * @param cart an array of double.
      * @param frac an array of double.
      */
@@ -1415,7 +1415,7 @@ public class Crystal {
      * <p>
      * toPrimaryCell</p>
      *
-     * @param in an array of double.
+     * @param in  an array of double.
      * @param out an array of double.
      */
     public void toPrimaryCell(double in[], double out[]) {
@@ -1430,7 +1430,7 @@ public class Crystal {
      * <p>
      * toFractionalCoordinates</p>
      *
-     * @param x an array of double.
+     * @param x  an array of double.
      * @param xf an array of double.
      */
     public void toFractionalCoordinates(double x[], double xf[]) {
@@ -1446,13 +1446,13 @@ public class Crystal {
      * <p>
      * toCartesianCoordinates</p>
      *
-     * @param n a int.
+     * @param n  a int.
      * @param xf an array of double.
      * @param yf an array of double.
      * @param zf an array of double.
-     * @param x an array of double.
-     * @param y an array of double.
-     * @param z an array of double.
+     * @param x  an array of double.
+     * @param y  an array of double.
+     * @param z  an array of double.
      */
     public void toCartesianCoordinates(int n, double xf[], double yf[],
                                        double zf[], double x[], double y[], double z[]) {
@@ -1470,7 +1470,7 @@ public class Crystal {
      * <p>
      * toCartesianCoordinates</p>
      *
-     * @param n a int.
+     * @param n    a int.
      * @param frac an array of double.
      * @param cart an array of double.
      */
@@ -1496,7 +1496,7 @@ public class Crystal {
      * toCartesianCoordinates</p>
      *
      * @param xf an array of double.
-     * @param x an array of double.
+     * @param x  an array of double.
      */
     public void toCartesianCoordinates(double xf[], double x[]) {
         double fx = xf[0];
@@ -1536,7 +1536,7 @@ public class Crystal {
      * <p>
      * quad_form</p>
      *
-     * @param v an array of double.
+     * @param v   an array of double.
      * @param mat an array of double.
      * @return a double.
      */
@@ -1565,7 +1565,7 @@ public class Crystal {
      * invressq</p>
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param hkl     a {@link ffx.crystal.HKL} object.
      * @return a double.
      */
     public static double invressq(Crystal crystal, HKL hkl) {
@@ -1577,7 +1577,7 @@ public class Crystal {
      * res</p>
      *
      * @param crystal a {@link ffx.crystal.Crystal} object.
-     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param hkl     a {@link ffx.crystal.HKL} object.
      * @return a double.
      */
     public static double res(Crystal crystal, HKL hkl) {
@@ -1588,7 +1588,7 @@ public class Crystal {
      * <p>
      * sym_phase_shift</p>
      *
-     * @param hkl an array of double.
+     * @param hkl   an array of double.
      * @param symOp a {@link ffx.crystal.SymOp} object.
      * @return a double.
      */
@@ -1603,7 +1603,7 @@ public class Crystal {
      * <p>
      * sym_phase_shift</p>
      *
-     * @param hkl a {@link ffx.crystal.HKL} object.
+     * @param hkl   a {@link ffx.crystal.HKL} object.
      * @param symOp a {@link ffx.crystal.SymOp} object.
      * @return a double.
      */
@@ -1615,12 +1615,13 @@ public class Crystal {
     }
 
     /**
-     * Atypical mod function used to move a value into the range lb <= value < ub,
+     * Atypical mod function used to move a value into the range lb &lt;= value &lt; ub,
      * assuming the domain is periodic with a period of (ub - lb).
-     * @param value Value to move between bounds.
+     *
+     * @param value      Value to move between bounds.
      * @param lowerBound lb
      * @param upperBound ub
-     * @return Periodic copy of value, in range lb <= value < ub.
+     * @return Periodic copy of value, in range lb &lt;= value &lt; ub.
      */
     public static double modToRange(double value, double lowerBound, double upperBound) {
         value -= lowerBound;
