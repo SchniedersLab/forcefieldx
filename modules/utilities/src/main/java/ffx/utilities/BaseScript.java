@@ -50,6 +50,11 @@ import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParseResult;
 
+/**
+ * <p>BaseScript class.</p>
+ *
+ * @author Michael J. Schnieders
+ */
 public class BaseScript extends Script {
 
     /**
@@ -59,7 +64,7 @@ public class BaseScript extends Script {
 
     /**
      * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does not.
-     *
+     * <p>
      * In a headless environment, color will be ON for command line help, but OFF for the GUI.
      */
     public final Ansi color;
@@ -104,7 +109,7 @@ public class BaseScript extends Script {
     public boolean init() {
         context = getBinding();
         args = (String[]) context.getProperty("args");
-        
+
         CommandLine commandLine = new CommandLine(this);
         parseResult = commandLine.parseArgs(args);
 
@@ -133,6 +138,8 @@ public class BaseScript extends Script {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Execute the script.
      */
     @Override

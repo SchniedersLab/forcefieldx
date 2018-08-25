@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -57,6 +57,8 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.commons.math3.util.FastMath;
 
 /**
+ * <p>StringUtils class.</p>
+ *
  * @author Michael Schnieders
  */
 public class StringUtils {
@@ -66,7 +68,7 @@ public class StringUtils {
      *
      * @param file Gzip file to write to.
      * @return A Writer
-     * @throws IOException
+     * @throws java.io.IOException Thrown if creation of the GZip Writer fails.
      */
     public static Writer createGzipWriter(File file) throws IOException {
         return createGzipWriter(file, Charset.defaultCharset());
@@ -76,9 +78,9 @@ public class StringUtils {
      * Creates a writer for text to a Gzip file.
      *
      * @param file Gzip file to write to.
-     * @param cs Character set to use.
+     * @param cs   Character set to use.
      * @return A Writer
-     * @throws IOException
+     * @throws java.io.IOException Thrown if creation of the GZip Writer fails.
      */
     public static Writer createGzipWriter(File file, Charset cs) throws IOException {
         /*
@@ -95,7 +97,7 @@ public class StringUtils {
      *
      * @param file Gzip file to read from.
      * @return A Reader.
-     * @throws IOException
+     * @throws java.io.IOException Thrown if creation of the GZip Reader fails.
      */
     public static Reader createGzipReader(File file) throws IOException {
         return createGzipReader(file, Charset.defaultCharset());
@@ -105,9 +107,9 @@ public class StringUtils {
      * Creates a reader from a Gzip file to text.
      *
      * @param file Gzip file to read from.
-     * @param cs Character set to use.
+     * @param cs   Character set to use.
      * @return A Reader.
-     * @throws IOException
+     * @throws java.io.IOException Thrown if creation of the GZip Reader fails.
      */
     public static Reader createGzipReader(File file, Charset cs) throws IOException {
         /*
@@ -118,17 +120,18 @@ public class StringUtils {
          */
         return new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(file)), cs));
     }
-    
+
     /**
      * Prints a fixed-width decimal, similar to String.format(%width.precf, val),
      * but ensuring the resulting string is never longer than width. If the result
      * would end in a period (such as 14.), will leave off decimal. Will throw
      * an exception if the value cannot be formatted in the specified width.
-     * 
-     * @param val Value to print
+     *
+     * @param val   Value to print
      * @param width Width of field
-     * @param prec Number of decimal places
+     * @param prec  Number of decimal places
      * @return Formatted string
+     * @throws java.lang.IllegalArgumentException if any.
      */
     public static String fwDec(double val, int width, int prec) throws IllegalArgumentException {
         if (width < 1 || prec < 0) {
@@ -137,29 +140,30 @@ public class StringUtils {
         int w1 = width - 1;
         double maxVal = FastMath.pow(10.0, width);
         double minVal = maxVal / -10.0;
-        
+
         if (val >= maxVal) {
             throw new IllegalArgumentException(String.format(" Value %f exceeded the maximum of %f enforced by width %d", val, maxVal, width));
         } else if (val <= minVal) {
             throw new IllegalArgumentException(String.format(" Value %f is less than the minumum of %f enforced by width %d", val, minVal, width));
         }
-        
+
         String str = String.format("%" + width + "." + prec + "f", val);
         if (str.charAt(w1) == '.') {
             return " " + str.substring(0, w1);
         } else {
             return str.substring(0, width);
-        }        
+        }
     }
-    
+
     /**
      * Prints a fixed-width decimal using String.format conventions, throwing an
      * error if the value cannot be formatted within that space.
-     * @param val
-     * @param width
-     * @param prec
-     * @return
-     * @throws IllegalArgumentException 
+     *
+     * @param val   a double.
+     * @param width a int.
+     * @param prec  a int.
+     * @return a {@link java.lang.String} object.
+     * @throws java.lang.IllegalArgumentException If the length of String is greater than the width.
      */
     public static String fwFpDec(double val, int width, int prec) throws IllegalArgumentException {
         String str = String.format("%" + width + "." + prec + "f", val);
@@ -169,14 +173,15 @@ public class StringUtils {
             return str;
         }
     }
-    
+
     /**
      * Prints a fixed-width decimal using String.format conventions, reducing the
      * value if necessary to fit within the width.
-     * @param val
-     * @param width
-     * @param prec
-     * @return 
+     *
+     * @param val   a double.
+     * @param width a int.
+     * @param prec  a int.
+     * @return a {@link java.lang.String} object.
      */
     public static String fwFpTrunc(double val, int width, int prec) {
         String str = String.format("%" + width + "." + prec + "f", val);
@@ -198,7 +203,7 @@ public class StringUtils {
         }
         return str;
     }
-    
+
     /**
      * <p>
      * padRight</p>
@@ -254,14 +259,14 @@ public class StringUtils {
     /**
      * Returns the file name of a temporary copy of <code>input</code> content.
      *
-     * @param input a {@link java.io.InputStream} object.
-     * @param name a {@link java.lang.String} object.
+     * @param input  a {@link java.io.InputStream} object.
+     * @param name   a {@link java.lang.String} object.
      * @param suffix a {@link java.lang.String} object.
      * @return a {@link java.lang.String} object.
      * @throws java.io.IOException if any.
      */
     public static String copyInputStreamToTmpFile(final InputStream input,
-            String name, final String suffix) throws IOException {
+                                                  String name, final String suffix) throws IOException {
         File tmpFile = null;
         try {
             name = "ffx." + name + ".";
