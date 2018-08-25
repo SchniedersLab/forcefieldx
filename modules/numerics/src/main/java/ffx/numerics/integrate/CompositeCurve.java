@@ -43,6 +43,7 @@ import java.util.List;
 /**
  * A CompositeCurve represents points along a sum of functions which also extend
  * FunctionDataCurve.
+ *
  * @author Jacob M. Litman
  */
 public class CompositeCurve extends FunctionDataCurve {
@@ -53,6 +54,7 @@ public class CompositeCurve extends FunctionDataCurve {
     /**
      * Constructs a CompositeCurve that aggregates multiple FunctionDataCurves
      * with variable weights to each component FunctionDataCurve.
+     *
      * @param componentCurves Underlying FunctionDataCurves
      * @param coefficients Weight to each component curve
      */
@@ -103,6 +105,7 @@ public class CompositeCurve extends FunctionDataCurve {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double integralAt(double x) {
         double val = 0.0;
@@ -112,6 +115,7 @@ public class CompositeCurve extends FunctionDataCurve {
         return val;
     }
     
+    /** {@inheritDoc} */
     @Override
     public double fX(double x) {
         return valAt(x);
@@ -128,6 +132,7 @@ public class CompositeCurve extends FunctionDataCurve {
 
     /**
      * Gets the component FunctionDataCurves of this CompositeCurve.
+     *
      * @return List of component FunctionDataCurves.
      */
     public List<FunctionDataCurve> getSubCurves() {
@@ -136,12 +141,14 @@ public class CompositeCurve extends FunctionDataCurve {
 
     /**
      * Gets the weights to the corresponding component curves.
+     *
      * @return Constant weights
      */
     public double[] getWeights() {
         return Arrays.copyOf(coeffs, coeffs.length);
     }
     
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(String.format("Composite curve with %d points from lower bound %9.3g and upper bound %9.3g", points.length, lb, ub));

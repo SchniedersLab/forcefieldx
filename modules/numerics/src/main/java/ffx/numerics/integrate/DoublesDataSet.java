@@ -42,6 +42,7 @@ import static ffx.numerics.integrate.FunctionDataCurve.approxEquals;
 /**
  * Descibes a set of x, f(x) obtained by some mechanism; intended for numerical
  * integration.
+ *
  * @author Jacob M. Litman
  */
 public class DoublesDataSet implements DataSet {
@@ -115,31 +116,37 @@ public class DoublesDataSet implements DataSet {
         assertXIntegrity(x);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double lowerBound() {
         return lb;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double upperBound() {
         return ub;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int numPoints() {
         return x.length;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double binWidth() {
         return sep;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getFxPoint(int index) {
         return fX[index];
     }
 
+    /** {@inheritDoc} */
     @Override
     public double[] getAllFxPoints() {
         double[] pts = new double[nX];
@@ -147,6 +154,7 @@ public class DoublesDataSet implements DataSet {
         return pts;
     }
     
+    /** {@inheritDoc} */
     @Override
     public boolean halfWidthEnds() {
         return halfWidthEnd;
@@ -179,6 +187,7 @@ public class DoublesDataSet implements DataSet {
         }
     }
     
+    /** {@inheritDoc} */
     @Override
     public double[] getX() {
         double[] copyX = new double[x.length];
@@ -186,6 +195,7 @@ public class DoublesDataSet implements DataSet {
         return copyX;
     }
     
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(String.format("Data set with %d points from lower bound %9.3g and upper bound %9.3g", nX, lb, ub));

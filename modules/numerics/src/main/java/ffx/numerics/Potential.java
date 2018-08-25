@@ -42,7 +42,6 @@ package ffx.numerics;
  * dynamics.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public interface Potential {
@@ -124,7 +123,6 @@ public interface Potential {
      * returned.
      *
      * @param parameters Supplied array.
-     *
      * @return The array filled with parameter values.
      */
     public abstract double[] getCoordinates(double[] parameters);
@@ -158,16 +156,49 @@ public interface Potential {
      */
     public abstract VARIABLE_TYPE[] getVariableTypes();
 
+    /**
+     * <p>setVelocity.</p>
+     *
+     * @param velocity an array of {@link double} objects.
+     */
     public abstract void setVelocity(double velocity[]);
 
+    /**
+     * <p>setAcceleration.</p>
+     *
+     * @param acceleration an array of {@link double} objects.
+     */
     public abstract void setAcceleration(double acceleration[]);
 
+    /**
+     * <p>setPreviousAcceleration.</p>
+     *
+     * @param previousAcceleration an array of {@link double} objects.
+     */
     public abstract void setPreviousAcceleration(double previousAcceleration[]);
 
+    /**
+     * <p>getVelocity.</p>
+     *
+     * @param velocity an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public abstract double[] getVelocity(double velocity[]);
 
+    /**
+     * <p>getAcceleration.</p>
+     *
+     * @param acceleration an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public abstract double[] getAcceleration(double acceleration[]);
 
+    /**
+     * <p>getPreviousAcceleration.</p>
+     *
+     * @param previousAcceleration an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public abstract double[] getPreviousAcceleration(double previousAcceleration[]);
 
     /**

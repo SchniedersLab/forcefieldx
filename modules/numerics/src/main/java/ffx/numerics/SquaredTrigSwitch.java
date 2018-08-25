@@ -60,6 +60,7 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     /**
      * Default constructor, creating a switch sin^2(pi*x/2), or cos^2 if
      * flag set.
+     *
      * @param cosine Use a cos^2(pi*x/2) transform instead of sin^2(pi*x/2).
      */
     public SquaredTrigSwitch(boolean cosine) {
@@ -69,6 +70,7 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     /**
      * Constructor permitting a custom frequency a in the form sin^2(a*x) or
      * cos^2(a*x)
+     *
      * @param mult Value of a
      * @param cosine Use a cos^2(ax) transform instead of sin^2(ax).
      */
@@ -98,36 +100,43 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
         return PI_OVER_TWO + (x * multiplier);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getZeroBound() {
         return cosine ? halfPeriod : 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getOneBound() {
         return cosine ? 0 : halfPeriod;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean constantOutsideBounds() {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean validOutsideBounds() {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getHighestOrderZeroDerivative() {
         return 1;
     }
     
+    /** {@inheritDoc} */
     @Override
     public boolean symmetricToUnity() {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double valueAt(double x) throws IllegalArgumentException {
         x = xTransform.applyAsDouble(x);
@@ -136,12 +145,14 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
         return x;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double firstDerivative(double x) throws IllegalArgumentException {
         x = xTransform.applyAsDouble(x);
         return 2.0 * FastMath.sin(x) * FastMath.cos(x) * multiplier;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double secondDerivative(double x) throws IllegalArgumentException {
         double val = 2.0 * multiplier * multiplier;
@@ -152,6 +163,7 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
         return val * ((cosTerm * cosTerm) - (sinTerm * sinTerm));
     }
 
+    /** {@inheritDoc} */
     @Override
     public double nthDerivative(double x, int order) throws IllegalArgumentException {
         if (order < 1) {
@@ -178,6 +190,7 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     
     /**
      * Get the repeating period of this switch.
+     *
      * @return Period
      */
     public double getPeriod() {
@@ -186,12 +199,14 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     
     /**
      * Return true if a cos^2(ax) transform, false if a sin^2(ax) transform.
-     * @return 
+     *
+     * @return a boolean.
      */
     public boolean isCosine() {
         return cosine;
     }
     
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         String form = cosine ? "Cosine" : "Sine";

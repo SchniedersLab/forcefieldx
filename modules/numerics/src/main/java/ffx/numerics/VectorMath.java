@@ -51,6 +51,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * consumption.
  *
  * @author Michael J. Schnieders
+ *
  * @since 1.0
  */
 public final class VectorMath {
@@ -84,6 +85,12 @@ public final class VectorMath {
     private static final double dtu[] = new double[3];
     private static final double eightpi2 = 8.0 * Math.PI * Math.PI;
 
+    /**
+     * <p>log.</p>
+     *
+     * @param v an array of {@link double} objects.
+     * @param label a {@link java.lang.String} object.
+     */
     public static void log(double[] v, String label) {
         if (v == null) {
             return;

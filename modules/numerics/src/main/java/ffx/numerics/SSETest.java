@@ -47,6 +47,11 @@ import java.util.Random;
  */
 public class SSETest {
 
+    /**
+     * <p>main.</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String args[]) {
 
         int m = 500;
@@ -97,6 +102,12 @@ public class SSETest {
     public final double flatA[];
     public final double x[];
 
+    /**
+     * <p>Constructor for SSETest.</p>
+     *
+     * @param m a int.
+     * @param n a int.
+     */
     public SSETest(int m, int n) {
         A = new double[m][n];
         flatA = new double[m * n];
@@ -120,6 +131,15 @@ public class SSETest {
         }
     }
 
+    /**
+     * <p>matVec.</p>
+     *
+     * @param A an array of {@link double} objects.
+     * @param x an array of {@link double} objects.
+     * @param m a int.
+     * @param n a int.
+     * @return an array of {@link double} objects.
+     */
     public final double[] matVec(final double[][] A, final double[] x,
             final int m, final int n) {
         double[] y = new double[m];
@@ -131,6 +151,15 @@ public class SSETest {
         return y;
     }
 
+    /**
+     * <p>matVec.</p>
+     *
+     * @param A an array of {@link double} objects.
+     * @param x an array of {@link double} objects.
+     * @param m a int.
+     * @param n a int.
+     * @return an array of {@link double} objects.
+     */
     public final double[] matVec(final double A[], final double[] x,
             final int m, final int n) {
         double[] y = new double[m];

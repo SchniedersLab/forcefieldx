@@ -4,15 +4,38 @@ import static java.lang.String.format;
 
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+
 /**
- * TODO: Finish filling in the slow polymorph.
+ * The MultipoleTensorGlobal class computes derivatives of 1/|<b>r</b>| via recursion
+ * to arbitrary order for Cartesian multipoles in either a global frame.
+ *
+ * @author Michael J. Schnieders
+ *
+ * @see
+ * <a href="http://doi.org/10.1142/9789812830364_0002"
+ * target="_blank">
+ * Matt Challacombe, Eric Schwegler and Jan Almlof, Modern developments in
+ * Hartree-Fock theory: Fast methods for computing the Coulomb matrix.
+ * Computational Chemistry: Review of Current Trends. pp. 53-107, Ed. J.
+ * Leczszynski, World Scientifc, 1996.
+ * </a>
+ *
+ * @since 1.0
  */
 public class MultipoleTensorGlobal extends MultipoleTensor {
 
+    /**
+     * <p>Constructor for MultipoleTensorGlobal.</p>
+     *
+     * @param operator a OPERATOR object.
+     * @param order a int.
+     * @param aewald a double.
+     */
     public MultipoleTensorGlobal(OPERATOR operator, int order, double aewald) {
         super(operator, COORDINATES.GLOBAL, order, aewald);
     }
 
+    /** {@inheritDoc} */
     @Override
     public double multipoleEnergy(double Fi[], double Ti[], double Tk[]) {
         multipoleIField();
@@ -34,6 +57,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         return energy;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double polarizationEnergy(double scaleField, double scaleEnergy, double scaleMutual,
             double Fi[], double Ti[], double Tk[]) {
@@ -98,6 +122,8 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Meaningful only for QI.
      */
     @Override
@@ -106,6 +132,8 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Meaningful only for QI.
      */
     @Override
@@ -113,6 +141,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         return 0.0;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected boolean setR(double[] r, double lambdaFunction) {
         if (r[0] == rprev[0] && r[1] == rprev[1] && r[2] == rprev[2] && lambdaFunction == rprev[3]) {
@@ -126,6 +155,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected double Tlmnj(final int l, final int m, final int n,
             final int j, final double[] r, final double[] T000) {
@@ -151,15 +181,14 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This method is a driver to collect elements of the Cartesian multipole
      * tensor given the recursion relationships implemented by the method
      * "Tlmnj", which can be called directly to get a single tensor element. It
      * does not store intermediate values of the recursion, causing it to scale
      * O(order^8). For order = 5, this approach is a factor of 10 slower than
      * recursion.
-     *
-     * @param r double[] vector between two sites. r[0] and r[1] must equal 0.0.
-     * @param tensor double[] length must be at least binomial(order + 3, 3).
      */
     @Override
     protected void noStorageRecursion(double r[], double tensor[]) {
@@ -187,6 +216,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void recursion(double[] r, double[] tensor) {
         setR(r);
@@ -288,6 +318,8 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * This function is a driver to collect elements of the Cartesian multipole
      * tensor. Collecting all tensors scales slightly better than O(order^4).
      * <p>
@@ -300,11 +332,6 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
      * tensor[1] = -x/|r|^3 <br> tensor[2] = -y/|r|^3 <br> tensor[3] = -z/|r|^3
      * <br>
      * <p>
-     *
-     * @param r double[] vector between two sites.
-     * @param tensor double[] length must be at least binomial(order + 3, 3).
-     * @return Java code for the tensor recursion.
-     *
      * @since 1.0
      */
     @Override
@@ -462,12 +489,15 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         return sb.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void qiToGlobal(double[] Fi, double[] Ti, double[] Tk) {
         /* intentional no-op */
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Hard coded computation of all Cartesian multipole tensors up to 4th
      * order, in the global frame, which is sufficient for quadrupole-induced
      * dipole forces.
@@ -549,6 +579,8 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Hard coded computation of all Cartesian multipole tensors up to 5th
      * order, in the global frame, which is sufficient for quadrupole-quadrupole
      * forces.
@@ -686,6 +718,8 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Hard coded computation of all Cartesian multipole tensors up to 5th
      * order, in the global frame, which is sufficient for quadrupole-quadrupole
      * forces and orthogonal space sampling.
@@ -906,6 +940,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         R501 = z * term5001;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void multipoleIField() {
         double term000 = qi * R000;
@@ -1020,6 +1055,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term011;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void multipoleKField() {
         double term000 = 0.0;
@@ -1144,6 +1180,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term011;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void multipoleIdX() {
         double term100 = 0.0;
@@ -1268,6 +1305,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term111;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void multipoleIdY() {
         double term010 = 0.0;
@@ -1392,6 +1430,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term021;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void multipoleIdZ() {
         double term001 = 0.0;
@@ -1516,11 +1555,13 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term012;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void multipoleIdZ2() {
         /* intentional no-op */
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedIField() {
         double term000 = -uxi * R100;
@@ -1565,6 +1606,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term011;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedKField() {
         double term000 = uxk * R100;
@@ -1609,6 +1651,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term011;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedIFieldCR() {
         double term000 = -sxi * R100;
@@ -1653,6 +1696,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term011;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedKFieldCR() {
         double term000 = sxk * R100;
@@ -1697,12 +1741,19 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term011;
     }
 
+    /**
+     * <p>inducedIFieldForTorque.</p>
+     */
     protected void inducedIFieldForTorque() {
     }
 
+    /**
+     * <p>inducedKFieldForTorque.</p>
+     */
     protected void inducedKFieldForTorque() {
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedIdX() {
         double term100 = 0.0;
@@ -1757,6 +1808,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term111;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedIdY() {
         double term010 = 0.0;
@@ -1811,6 +1863,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term021;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedIdZ() {
         double term001 = 0.0;
@@ -1865,6 +1918,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term012;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedKdX() {
         double term100 = 0.0;
@@ -1919,6 +1973,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term111;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedKdY() {
         double term010 = 0.0;
@@ -1973,6 +2028,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term021;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void inducedKdZ() {
         double term001 = 0.0;
@@ -2027,6 +2083,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         E011 = term012;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void setMultipoleI(double[] Qi) {
         qi = Qi[0];
@@ -2041,6 +2098,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         qyzi = Qi[9] * twoThirds;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void setMultipoleK(double[] Qk) {
         qk = Qk[0];
@@ -2055,6 +2113,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         qyzk = Qk[9] * twoThirds;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void setDipoleI(double[] ui, double[] uiCR) {
         uxi = ui[0];
@@ -2065,6 +2124,7 @@ public class MultipoleTensorGlobal extends MultipoleTensor {
         pzi = uiCR[2];
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void setDipoleK(double[] uk, double[] ukCR) {
         uxk = uk[0];

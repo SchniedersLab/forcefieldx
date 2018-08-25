@@ -58,32 +58,6 @@ import ffx.numerics.LineSearch.LineSearchResult;
  * <br>
  * Robert Dodier's Java translation of original FORTRAN code by Jorge Nocedal.
  *
- * @see
- * <ul>
- * <li>
- * <a href="http://www.jstor.org/stable/2006193" target="_blank"> J. Nocedal,
- * "Updating Quasi-Newton Matrices with Limited Storage", Mathematics of
- * Computation, 35, 773-782 (1980)
- * </a>
- * </li>
- * <li>
- * <a href="http://dx.doi.org/10.1007/BF01589116" target="_blank"> D. C. Liu and
- * J. Nocedal, "On the Limited Memory BFGS Method for Large Scale Optimization",
- * Mathematical Programming 45 (3), 503 (1989).
- * </a>
- * </li>
- * <li>
- * <a href="http://www.springer.com/math/book/978-0-387-30303-1"
- * target="_blank"> J. Nocedal and S. J. Wright, "Numerical Optimization",
- * Springer-Verlag New York, 1999, Section 9.1
- * </a>
- * </li>
- * <li> <a href="http://www.netlib.org/opt/lbfgs_um.shar" target="_blank">
- * Nocedal's original FORTRAN code at Netlib
- * </a>
- * </li>
- * </ul>
- *
  * @since 1.0
  */
 public class LBFGS {
@@ -91,7 +65,7 @@ public class LBFGS {
     private static final Logger logger = Logger.getLogger(LBFGS.class.getName());
     /**
      * Controls the accuracy of the line search.
-     *
+     * <p>
      * If the function and gradient evaluations are inexpensive with respect to
      * the cost of the iteration (which is sometimes the case when solving very
      * large problems) it may be advantageous to set <code>CAPPA</code> to a
@@ -101,7 +75,7 @@ public class LBFGS {
     public static final double CAPPA = 0.9;
     /**
      * This specifies the lower bound for the step in the line search.
-     *
+     * <p>
      * The default value is 1.0e-16. This value need not be modified unless the
      * problem is extremely badly scaled (in which case the exponent should be
      * increased).
@@ -109,7 +83,7 @@ public class LBFGS {
     public static final double STEPMIN = 1.0e-16;
     /**
      * This specifies the upper bound for the step in the line search.
-     *
+     * <p>
      * The default value is 5.0. This value need not be modified unless the
      * problem is extremely badly scaled (in which case the exponent should be
      * increased).
@@ -144,38 +118,38 @@ public class LBFGS {
      * of the Hessian is obtained by applying <code>m</code> BFGS updates to a
      * diagonal matrix <code>Hk0</code>, using information from the previous
      * <code>m</code> steps.
-     *
+     * <p>
      * The user specifies the number <code>m</code>, which determines the amount
      * of storage required by the routine.
-     *
+     * <p>
      * The user is required to calculate the function value <code>f</code> and
      * its gradient <code>g</code>.
-     *
+     * <p>
      * The steplength is determined at each iteration by means of the line
      * search routine <code>lineSearch</code>, which is a slight modification of
      * the routine <code>CSRCH</code> written by More' and Thuente.
      *
-     * @param n The number of variables in the minimization problem.
-     * Restriction: <code>n &gt; 0</code>.
-     * @param mSave The number of corrections used in the BFGS update. Values of
-     * <code>mSave</code> less than 3 are not recommended; large values of
-     * <code>mSave</code> will result in excessive computing time.
-     * <code>3 &lt;= mSave &lt;= 7</code> is recommended. *	Restriction:
-     * <code>mSave &gt; 0</code>.
-     * @param x On initial entry this must be set by the user to the values of
-     * the initial estimate of the solution vector. On exit it contains the
-     * values of the variables at the best point found (usually a solution).
-     * @param f The value of the function <code>f</code> at the point
-     * <code>x</code>.
-     * @param g The components of the gradient <code>g</code> at the point
-     * <code>x</code>.
-     * @param eps Determines the accuracy with which the solution is to be
-     * found. The subroutine terminates when <code>G RMS &lt; EPS</code>
+     * @param n             The number of variables in the minimization problem.
+     *                      Restriction: <code>n &gt; 0</code>.
+     * @param mSave         The number of corrections used in the BFGS update. Values of
+     *                      <code>mSave</code> less than 3 are not recommended; large values of
+     *                      <code>mSave</code> will result in excessive computing time.
+     *                      <code>3 &lt;= mSave &lt;= 7</code> is recommended. *	Restriction:
+     *                      <code>mSave &gt; 0</code>.
+     * @param x             On initial entry this must be set by the user to the values of
+     *                      the initial estimate of the solution vector. On exit it contains the
+     *                      values of the variables at the best point found (usually a solution).
+     * @param f             The value of the function <code>f</code> at the point
+     *                      <code>x</code>.
+     * @param g             The components of the gradient <code>g</code> at the point
+     *                      <code>x</code>.
+     * @param eps           Determines the accuracy with which the solution is to be
+     *                      found. The subroutine terminates when <code>G RMS &lt; EPS</code>
      * @param maxIterations Maximum number of optimization steps.
-     * @param potential Implements the {@link Potential} interface to supply
-     * function values and gradients.
-     * @param listener Implements the {@link OptimizationListener} interface and
-     * will be notified after each successful step.
+     * @param potential     Implements the {@link ffx.numerics.Potential} interface to supply
+     *                      function values and gradients.
+     * @param listener      Implements the {@link ffx.numerics.OptimizationListener} interface and
+     *                      will be notified after each successful step.
      * @return status code (0 = success, 1 = max iterations reached, -1 =
      * failed)
      * @since 1.0
@@ -408,37 +382,37 @@ public class LBFGS {
      * of the Hessian is obtained by applying <code>m</code> BFGS updates to a
      * diagonal matrix <code>Hk0</code>, using information from the previous
      * <code>m</code> steps.
-     *
+     * <p>
      * The user specifies the number <code>m</code>, which determines the amount
      * of storage required by the routine.
-     *
+     * <p>
      * The user is required to calculate the function value <code>f</code> and
      * its gradient <code>g</code>.
-     *
+     * <p>
      * The steplength is determined at each iteration by means of the line
      * search routine <code>lineSearch</code>, which is a slight modification of
      * the routine <code>CSRCH</code> written by More' and Thuente.
      *
-     * @param n The number of variables in the minimization problem.
-     * Restriction: <code>n &gt; 0</code>.
-     * @param mSave The number of corrections used in the BFGS update. Values of
-     * <code>mSave</code> less than 3 are not recommended; large values of
-     * <code>mSave</code> will result in excessive computing time.
-     * <code>3 &lt;= mSave &lt;= 7</code> is recommended. *	Restriction:
-     * <code>mSave &gt; 0</code>.
-     * @param x On initial entry this must be set by the user to the values of
-     * the initial estimate of the solution vector. On exit it contains the
-     * values of the variables at the best point found (usually a solution).
-     * @param f The value of the function <code>f</code> at the point
-     * <code>x</code>.
-     * @param g The components of the gradient <code>g</code> at the point
-     * <code>x</code>.
-     * @param eps Determines the accuracy with which the solution is to be
-     * found. The subroutine terminates when <code>G RMS &lt; EPS</code>
-     * @param potential Implements the {@link Potential} interface to supply
-     * function values and gradients.
-     * @param listener Implements the {@link OptimizationListener} interface and
-     * will be notified after each successful step.
+     * @param n         The number of variables in the minimization problem.
+     *                  Restriction: <code>n &gt; 0</code>.
+     * @param mSave     The number of corrections used in the BFGS update. Values of
+     *                  <code>mSave</code> less than 3 are not recommended; large values of
+     *                  <code>mSave</code> will result in excessive computing time.
+     *                  <code>3 &lt;= mSave &lt;= 7</code> is recommended. *	Restriction:
+     *                  <code>mSave &gt; 0</code>.
+     * @param x         On initial entry this must be set by the user to the values of
+     *                  the initial estimate of the solution vector. On exit it contains the
+     *                  values of the variables at the best point found (usually a solution).
+     * @param f         The value of the function <code>f</code> at the point
+     *                  <code>x</code>.
+     * @param g         The components of the gradient <code>g</code> at the point
+     *                  <code>x</code>.
+     * @param eps       Determines the accuracy with which the solution is to be
+     *                  found. The subroutine terminates when <code>G RMS &lt; EPS</code>
+     * @param potential Implements the {@link ffx.numerics.Potential} interface to supply
+     *                  function values and gradients.
+     * @param listener  Implements the {@link ffx.numerics.OptimizationListener} interface and
+     *                  will be notified after each successful step.
      * @return status code (0 = success, -1 = failed)
      * @since 1.0
      */
@@ -451,14 +425,13 @@ public class LBFGS {
     /**
      * Print status messages for <code>LBFGS</code> if there is no listener.
      *
-     * @param iter Number of iterations so far.
-     * @param nfun Number of function evaluations so far.
-     * @param grms Gradient RMS at current solution.
-     * @param xrms Coordinate change RMS at current solution.
-     * @param f Function value at current solution.
-     * @param f Change in the function value compared to the previous solution.
+     * @param iter  Number of iterations so far.
+     * @param nfun  Number of function evaluations so far.
+     * @param grms  Gradient RMS at current solution.
+     * @param xrms  Coordinate change RMS at current solution.
+     * @param f     Function value at current solution.
+     * @param f     Change in the function value compared to the previous solution.
      * @param angle Current angle between gradient and search direction.
-     *
      * @since 1.0
      */
     private static void log(int iter, int nfun, double grms, double xrms,
@@ -479,15 +452,14 @@ public class LBFGS {
     /**
      * Compute the sum of a vector times a scalar plus another vector.
      *
-     * @param n The number of points.
-     * @param a The scalar.
-     * @param x The X array.
+     * @param n  The number of points.
+     * @param a  The scalar.
+     * @param x  The X array.
      * @param x0 The first point in the X array.
      * @param dx The X array increment.
-     * @param y The Y array.
+     * @param y  The Y array.
      * @param y0 The first point in the Y array.
      * @param dy The Y array increment.
-     *
      * @since 1.0
      */
     public static void aXplusY(final int n, final double a, final double[] x,
@@ -509,15 +481,14 @@ public class LBFGS {
     /**
      * Compute the dot product of two vectors.
      *
-     * @param n Number of entries to include.
-     * @param x The X array.
+     * @param n  Number of entries to include.
+     * @param x  The X array.
      * @param x0 The first point in the X array.
      * @param dx The X array increment.
-     * @param y The Y array.
+     * @param y  The Y array.
      * @param y0 The first point in the Y array.
      * @param dy The Y increment.
      * @return dot product
-     *
      * @since 1.0
      */
     public static double XdotY(final int n, final double[] x, final int x0,
