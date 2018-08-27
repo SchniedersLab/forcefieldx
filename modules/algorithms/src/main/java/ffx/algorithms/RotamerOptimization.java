@@ -4874,24 +4874,7 @@ public class RotamerOptimization implements Terminatable {
 
         try {
             if (loaded < 1) {
-                selfEnergyMap.clear();
-                // allocate selfEnergy
-                int singleJobIndex = 0;
-                selfEnergy = new double[nResidues][];
-                for (int i = 0; i < nResidues; i++) {
-                    Residue resi = residues[i];
-                    Rotamer roti[] = resi.getRotamers(library);
-                    selfEnergy[i] = new double[roti.length];
-                    for (int ri = 0; ri < roti.length; ri++) {
-                        if (!check(i, ri)) {
-                            Integer selfJob[] = {i, ri};
-                            if (decomposeOriginal && ri != 0) {
-                                continue;
-                            }
-                            selfEnergyMap.put(singleJobIndex++, selfJob);
-                        }
-                    }
-                }
+                allocateSelfJobMap(residues, nResidues, false);
             }
 
             // broadcast that this proc is done with startup and allocation; ready for singles
@@ -4910,49 +4893,7 @@ public class RotamerOptimization implements Terminatable {
             logIfMaster(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
 
             if (loaded < 2) {
-                twoBodyEnergyMap.clear();
-                // allocate twoBodyEnergy and create jobs
-                int pairJobIndex = 0;
-                twoBodyEnergy = new double[nResidues][][][];
-                for (int i = 0; i < nResidues; i++) {
-                    Residue resi = residues[i];
-                    int indexI = allResiduesList.indexOf(resi);
-                    Rotamer roti[] = resi.getRotamers(library);
-                    int[] nI = resNeighbors[i];
-                    int lenNI = nI.length;
-                    twoBodyEnergy[i] = new double[roti.length][lenNI][];
-
-                    for (int ri = 0; ri < roti.length; ri++) {
-                        if (check(i, ri)) {
-                            continue;
-                        }
-                        //twoBodyEnergy[i][ri] = new double[nResidues][];
-                        //for (int j = i + 1; j < nResidues; j++) {
-                        for (int indJ = 0; indJ < lenNI; indJ++) {
-                            int j = nI[indJ];
-                            Residue resj = residues[j];
-                            int indexJ = allResiduesList.indexOf(resj);
-                            Rotamer rotj[] = resj.getRotamers(library);
-                            twoBodyEnergy[i][ri][indJ] = new double[rotj.length];
-                            for (int rj = 0; rj < rotj.length; rj++) {
-                                if (checkToJ(i, ri, j, rj)) {
-                                    continue;
-                                }
-
-                                // Skip creating a job if the pair is outside pair cut-off.
-                                if (checkPairDistThreshold(indexI, ri, indexJ, rj)) {
-                                    continue;
-                                }
-
-                                Integer pairJob[] = {i, ri, j, rj};
-                                if (decomposeOriginal && (ri != 0 || rj != 0)) {
-                                    continue;
-                                }
-                                twoBodyEnergyMap.put(pairJobIndex++, pairJob);
-                            }
-                        }
-                    }
-                }
+                allocate2BodyJobMap(residues, nResidues, false);
             }
 
             // broadcast that this proc is done with pruning and allocation; ready for pairs
@@ -4972,69 +4913,7 @@ public class RotamerOptimization implements Terminatable {
 
             if (threeBodyTerm) {
                 if (loaded < 3) {
-                    //alloc3BodyMap(residues);
-                    threeBodyEnergyMap.clear();
-                    threeBodyEnergy = new double[nResidues][][][][][];
-                    // allocate threeBodyEnergy and create jobs
-                    int trimerJobIndex = 0;
-                    for (int i = 0; i < nResidues; i++) {
-                        Residue resi = residues[i];
-                        int indexI = allResiduesList.indexOf(resi);
-                        Rotamer roti[] = resi.getRotamers(library);
-                        int lenri = roti.length;
-                        int[] nI = resNeighbors[i];
-                        int lenNI = nI.length;
-                        threeBodyEnergy[i] = new double[lenri][lenNI][][][];
-
-                        for (int ri = 0; ri < lenri; ri++) {
-                            if (check(i, ri)) {
-                                continue;
-                            }
-                            //for (int j = i + 1; j < nResidues; j++) {
-                            for (int indJ = 0; indJ < lenNI; indJ++) {
-                                int j = nI[indJ];
-                                Residue resj = residues[j];
-                                int indexJ = allResiduesList.indexOf(resj);
-                                Rotamer rotj[] = resj.getRotamers(library);
-                                int lenrj = rotj.length;
-                                int[] nJ = resNeighbors[j];
-                                int lenNJ = nJ.length;
-                                threeBodyEnergy[i][ri][indJ] = new double[lenrj][lenNJ][];
-
-                                for (int rj = 0; rj < lenrj; rj++) {
-                                    if (checkToJ(i, ri, j, rj)) {
-                                        continue;
-                                    }
-                                    //for (int k = j + 1; k < nResidues; k++) {
-                                    for (int indK = 0; indK < lenNJ; indK++) {
-                                        int k = nJ[indK];
-                                        Residue resk = residues[k];
-                                        int indexK = allResiduesList.indexOf(resk);
-                                        Rotamer rotk[] = resk.getRotamers(library);
-                                        int lenrk = rotk.length;
-                                        threeBodyEnergy[i][ri][indJ][rj][indK] = new double[lenrk];
-
-                                        for (int rk = 0; rk < lenrk; rk++) {
-                                            if (checkToK(i, ri, j, rj, k, rk)) {
-                                                continue;
-                                            }
-
-                                            // Skip work items outside the 3-body cutoff.
-                                            if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
-                                                continue;
-                                            }
-
-                                            Integer trimerJob[] = {i, ri, j, rj, k, rk};
-                                            if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
-                                                continue;
-                                            }
-                                            threeBodyEnergyMap.put(trimerJobIndex++, trimerJob);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    allocate3BodyJobMap(residues, nResidues, false);
                 }
 
                 // broadcast that this proc is done with pruning and allocation; ready for trimers
@@ -7648,6 +7527,156 @@ public class RotamerOptimization implements Terminatable {
         return ret;
     }
 
+    private HashMap<String, Integer> allocateSelfJobMap(Residue[] residues, int nResidues, boolean reverseMap) {
+        selfEnergyMap.clear();
+        // allocate selfEnergy array and create self jobs
+        HashMap<String, Integer> reverseJobMapSingles = new HashMap<>();
+        int singleJobIndex = 0;
+        selfEnergy = new double[nResidues][];
+        for (int i = 0; i < nResidues; i++) {
+            Residue resi = residues[i];
+            Rotamer roti[] = resi.getRotamers(library);
+            selfEnergy[i] = new double[roti.length];
+            for (int ri = 0; ri < roti.length; ri++) {
+                if (!check(i, ri)) {
+                    Integer selfJob[] = {i, ri};
+                    if (decomposeOriginal && ri != 0) {
+                        continue;
+                    }
+                    selfEnergyMap.put(singleJobIndex, selfJob);
+                    if(reverseMap) {
+                        String revKey = format("%d %d", i, ri);
+                        reverseJobMapSingles.put(revKey, singleJobIndex);
+                    }
+                    singleJobIndex++;
+                }
+            }
+        }
+        return reverseJobMapSingles;
+    }
+    private HashMap<String, Integer> allocate2BodyJobMap(Residue[] residues, int nResidues, boolean reverseMap){
+        twoBodyEnergyMap.clear();
+        // allocated twoBodyEnergy array and create pair jobs
+        HashMap<String, Integer> reverseJobMapPairs = new HashMap<>();
+        int pairJobIndex = 0;
+        twoBodyEnergy = new double[nResidues][][][];
+        for (int i = 0; i < nResidues; i++) {
+            Residue resi = residues[i];
+            int indexI = allResiduesList.indexOf(resi);
+            Rotamer roti[] = resi.getRotamers(library);
+            int[] nI = resNeighbors[i];
+            int lenNI = nI.length;
+            twoBodyEnergy[i] = new double[roti.length][lenNI][];
+
+            for (int ri = 0; ri < roti.length; ri++) {
+                if (check(i, ri)) {
+                    continue;
+                }
+                //for (int j = i + 1; j < nResidues; j++) {
+                for (int indJ = 0; indJ < lenNI; indJ++) {
+                    int j = nI[indJ];
+                    if(checkNeighboringPair(i,j)) {
+                        Residue resj = residues[j];
+                        int indexJ = allResiduesList.indexOf(resj);
+                        Rotamer rotj[] = resj.getRotamers(library);
+                        twoBodyEnergy[i][ri][indJ] = new double[rotj.length];
+                        for (int rj = 0; rj < rotj.length; rj++) {
+                            if (checkToJ(i, ri, j, rj)) {
+                                continue;
+                            }
+
+                            // Skip creating a job if the pair is outside pair cut-off.
+                            if (checkPairDistThreshold(indexI, ri, indexJ, rj)) {
+                                continue;
+                            }
+
+                            Integer pairJob[] = {i, ri, j, rj};
+                            if (decomposeOriginal && (ri != 0 || rj != 0)) {
+                                continue;
+                            }
+                            twoBodyEnergyMap.put(pairJobIndex, pairJob);
+                            if(reverseMap) {
+                                String revKey = format("%d %d %d %d", i, ri, j, rj);
+                                reverseJobMapPairs.put(revKey, pairJobIndex);
+                            }
+                            pairJobIndex++;
+                        }
+                    }
+                }
+            }
+        }
+        return reverseJobMapPairs;
+    }
+
+    private HashMap<String, Integer> allocate3BodyJobMap(Residue[] residues, int nResidues, boolean reverseMap){
+        HashMap<String, Integer> reverseJobMapTrimers = new HashMap<>();
+        threeBodyEnergyMap.clear();
+        // fill in 3-Body energies from the restart file.
+        threeBodyEnergy = new double[nResidues][][][][][];
+        int trimerJobIndex = 0;
+        for (int i = 0; i < nResidues; i++) {
+            Residue resi = residues[i];
+            int indexI = allResiduesList.indexOf(resi);
+            Rotamer roti[] = resi.getRotamers(library);
+            int lenri = roti.length;
+            int[] nI = resNeighbors[i];
+            int lenNI = nI.length;
+            threeBodyEnergy[i] = new double[lenri][lenNI][][][];
+
+            for (int ri = 0; ri < lenri; ri++) {
+                if (check(i, ri)) {
+                    continue;
+                }
+                for (int indJ = 0; indJ < lenNI; indJ++) {
+                    //for (int j = i + 1; j < nResidues; j++) {
+                    int j = nI[indJ];
+                    Residue resj = residues[j];
+                    int indexJ = allResiduesList.indexOf(resj);
+                    Rotamer rotj[] = resj.getRotamers(library);
+                    int lenrj = rotj.length;
+                    int[] nJ = resNeighbors[j];
+                    int lenNJ = nJ.length;
+                    threeBodyEnergy[i][ri][indJ] = new double[lenrj][lenNJ][];
+
+                    for (int rj = 0; rj < lenrj; rj++) {
+                        if (checkToJ(i, ri, j, rj)) {
+                            continue;
+                        }
+                        //for (int k = j + 1; k < nResidues; k++) {
+                        for (int indK = 0; indK < lenNJ; indK++) {
+                            int k = nJ[indK];
+                            Residue resk = residues[k];
+                            int indexK = allResiduesList.indexOf(resk);
+                            Rotamer rotk[] = resk.getRotamers(library);
+                            int lenrk = rotk.length;
+                            threeBodyEnergy[i][ri][indJ][rj][indK] = new double[lenrk];
+
+                            for (int rk = 0; rk < lenrk; rk++) {
+                                if (checkToK(i, ri, j, rj, k, rk)) {
+                                    continue;
+                                }
+                                if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
+                                    continue;
+                                }
+                                Integer trimerJob[] = {i, ri, j, rj, k, rk};
+                                if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
+                                    continue;
+                                }
+                                threeBodyEnergyMap.put(trimerJobIndex, trimerJob);
+                                if (reverseMap) {
+                                    String revKey = format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
+                                    reverseJobMapTrimers.put(revKey, trimerJobIndex);
+                                }
+                                trimerJobIndex++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return reverseJobMapTrimers;
+    }
+
     private int loadEnergyRestart(File restartFile, Residue residues[]) {
         return loadEnergyRestart(restartFile, residues, -1, null);
     }
@@ -7727,26 +7756,8 @@ public class RotamerOptimization implements Terminatable {
                 logger.warning(format(" Empty or unreadable energy restart file: %s.", restartFile.getCanonicalPath()));
             }
             if (loaded >= 1) {
-                selfEnergyMap.clear();
-                // allocate selfEnergy array and create self jobs
-                HashMap<String, Integer> reverseJobMapSingles = new HashMap<>();
-                int singleJobIndex = 0;
-                selfEnergy = new double[nResidues][];
-                for (int i = 0; i < nResidues; i++) {
-                    Residue resi = residues[i];
-                    Rotamer roti[] = resi.getRotamers(library);
-                    selfEnergy[i] = new double[roti.length];
-                    for (int ri = 0; ri < roti.length; ri++) {
-                        Integer selfJob[] = {i, ri};
-                        if (decomposeOriginal && ri != 0) {
-                            continue;
-                        }
-                        selfEnergyMap.put(singleJobIndex, selfJob);
-                        String revKey = format("%d %d", i, ri);
-                        reverseJobMapSingles.put(revKey, singleJobIndex);
-                        singleJobIndex++;
-                    }
-                }
+                boolean reverseMap = true;
+                HashMap<String, Integer> reverseJobMapSingles = allocateSelfJobMap(residues, nResidues, reverseMap);
                 // fill in self-energies from file while removing the corresponding jobs from selfEnergyMap
                 for (String line : singleLines) {
                     try {
@@ -7800,46 +7811,8 @@ public class RotamerOptimization implements Terminatable {
                 if (selfEnergyMap.size() > 0) {
                     logIfMaster(" Double-check that parameters match original run due to missing self-energies.");
                 }
-                twoBodyEnergyMap.clear();
-                // allocated twoBodyEnergy array and create pair jobs
-                HashMap<String, Integer> reverseJobMapPairs = new HashMap<>();
-                int pairJobIndex = 0;
-                twoBodyEnergy = new double[nResidues][][][];
-                for (int i = 0; i < nResidues; i++) {
-                    Residue resi = residues[i];
-                    Rotamer roti[] = resi.getRotamers(library);
-                    int[] nI = resNeighbors[i];
-                    int lenNI = nI.length;
-                    twoBodyEnergy[i] = new double[roti.length][lenNI][];
-
-                    for (int ri = 0; ri < roti.length; ri++) {
-                        if (check(i, ri)) {
-                            continue;
-                        }
-                        //for (int j = i + 1; j < nResidues; j++) {
-                        for (int indJ = 0; indJ < lenNI; indJ++) {
-                            int j = nI[indJ];
-                            if(checkNeighboringPair(i,j)) {
-                                Residue resj = residues[j];
-                                Rotamer rotj[] = resj.getRotamers(library);
-                                twoBodyEnergy[i][ri][indJ] = new double[rotj.length];
-                                for (int rj = 0; rj < rotj.length; rj++) {
-                                    if (check(j, rj) || check(i, ri, j, rj)) {
-                                        continue;
-                                    }
-                                    Integer pairJob[] = {i, ri, j, rj};
-                                    if (decomposeOriginal && (ri != 0 || rj != 0)) {
-                                        continue;
-                                    }
-                                    twoBodyEnergyMap.put(pairJobIndex, pairJob);
-                                    String revKey = format("%d %d %d %d", i, ri, j, rj);
-                                    reverseJobMapPairs.put(revKey, pairJobIndex);
-                                    pairJobIndex++;
-                                }
-                            }
-                        }
-                    }
-                }
+                boolean reverseMap = true;
+                HashMap<String, Integer> reverseJobMapPairs = allocate2BodyJobMap(residues, nResidues, reverseMap);
                 // fill in pair-energies from file while removing the corresponding jobs from twoBodyEnergyMap
                 for (String line : pairLines) {
                     try {
@@ -7931,69 +7904,8 @@ public class RotamerOptimization implements Terminatable {
                         logger.warning("Double-check that parameters match original run!  Found trimers in restart file, but pairs job queue is non-empty.");
                     }
                 }
-                HashMap<String, Integer> reverseJobMapTrimers = new HashMap<>();
-                threeBodyEnergyMap.clear();
-                // fill in 3-Body energies from the restart file.
-                threeBodyEnergy = new double[nResidues][][][][][];
-                int trimerJobIndex = 0;
-                for (int i = 0; i < nResidues; i++) {
-                    Residue resi = residues[i];
-                    int indexI = allResiduesList.indexOf(resi);
-                    Rotamer roti[] = resi.getRotamers(library);
-                    int lenri = roti.length;
-                    int[] nI = resNeighbors[i];
-                    int lenNI = nI.length;
-                    threeBodyEnergy[i] = new double[lenri][lenNI][][][];
-
-                    for (int ri = 0; ri < lenri; ri++) {
-                        if (check(i, ri)) {
-                            continue;
-                        }
-                        for (int indJ = 0; indJ < lenNI; indJ++) {
-                        //for (int j = i + 1; j < nResidues; j++) {
-                            int j = nI[indJ];
-                            Residue resj = residues[j];
-                            int indexJ = allResiduesList.indexOf(resj);
-                            Rotamer rotj[] = resj.getRotamers(library);
-                            int lenrj = rotj.length;
-                            int[] nJ = resNeighbors[j];
-                            int lenNJ = nJ.length;
-                            threeBodyEnergy[i][ri][indJ] = new double[lenrj][lenNJ][];
-
-                            for (int rj = 0; rj < lenrj; rj++) {
-                                if (checkToJ(i, ri, j, rj)) {
-                                    continue;
-                                }
-                                //for (int k = j + 1; k < nResidues; k++) {
-                                for (int indK = 0; indK < lenNJ; indK++) {
-                                    int k = nJ[indK];
-                                    Residue resk = residues[k];
-                                    int indexK = allResiduesList.indexOf(resk);
-                                    Rotamer rotk[] = resk.getRotamers(library);
-                                    int lenrk = rotk.length;
-                                    threeBodyEnergy[i][ri][indJ][rj][indK] = new double[lenrk];
-
-                                    for (int rk = 0; rk < lenrk; rk++) {
-                                        if (checkToK(i, ri, j, rj, k, rk)) {
-                                            continue;
-                                        }
-                                        if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
-                                            continue;
-                                        }
-                                        Integer trimerJob[] = {i, ri, j, rj, k, rk};
-                                        if (decomposeOriginal && (ri != 0 || rj != 0 || rk != 0)) {
-                                            continue;
-                                        }
-                                        threeBodyEnergyMap.put(trimerJobIndex, trimerJob);
-                                        String revKey = format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
-                                        reverseJobMapTrimers.put(revKey, trimerJobIndex);
-                                        trimerJobIndex++;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                boolean reverseMap = true;
+                HashMap<String, Integer> reverseJobMapTrimers = allocate3BodyJobMap(residues, nResidues, reverseMap);
 
                 // fill in 3-Body energies from file while removing the corresponding jobs from threeBodyEnergyMap
                 for (String line : tripleLines) {

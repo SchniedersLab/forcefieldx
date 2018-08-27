@@ -282,6 +282,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
                 break;
             case STOCHASTIC:
                 double friction = properties.getDouble("friction", 91.0);
+                logger.log(Level.INFO, String.format(" Friction set at %.3f collisions/picosecond", friction));
+                
                 Stochastic stochastic = new Stochastic(friction, numberOfVariables, x, v, a, mass);
                 if (properties.containsKey("randomseed")) {
                     stochastic.setRandomSeed(properties.getInt("randomseed", 0));

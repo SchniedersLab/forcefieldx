@@ -152,8 +152,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     private double defaultDeltaPEThresh = 1.0E6;
 
     private boolean NVE = false;
+    
+    private boolean NPT = false;
 
     private boolean quiet = true;
+    
+    private double pressure;
+    
+    private int barostatFrequency;
 
     /**
      * Constructs an MolecularDynamicsOpenMM object, to perform molecular
@@ -345,8 +351,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             case BERENDSEN:
                 logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
                 forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
+                if (NPT){
+                    setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
+                }
                 break;
             case ADIABATIC:
+                if (integratorString.equalsIgnoreCase("LANGEVIN") && NPT){
+                    setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
+                }
             default:
                 break;
             // No thermostat.
@@ -525,6 +537,22 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
                     break;
             }
         }
+    }
+    
+    public void setMonteCarloBarostat(double pressure, double temperature, int frequency){
+        forceFieldEnergyOpenMM.addMonteCarloBarostat(pressure, temperature, frequency);
+    }
+    
+    public void setPressure(double pressure){
+        this.pressure = pressure;
+    }
+    
+    public void setBarostatFrequency(int barostatFrequency){
+        this.barostatFrequency = barostatFrequency;
+    }
+    
+    public void setNPTDynamics(){
+        NPT = true;
     }
 
     public void setIntervalSteps(int intervalSteps) {
