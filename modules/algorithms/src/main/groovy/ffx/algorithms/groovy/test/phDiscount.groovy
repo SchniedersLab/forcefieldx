@@ -98,22 +98,22 @@ double cutoffs = 10.0;
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.phDiscount [options] <filename>');
-cli.h(longOpt:'help', 'Print this message.');
-cli.d(longOpt:'dt', args:1, argName:'1.0', 'Time discretization (fsec).');
-cli.l(longOpt:'log', args:1, argName:'0.01', 'Interval to log thermodyanamics (psec).');
-cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of molecular dynamics steps.');
-cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
-cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
-cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
-cli.s(longOpt:'restart', args:1, argName:'0.1', 'Interval to write out restart file (psec).');
-cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.rl(longOpt:'resList', args:1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
-cli.pH(longOpt:'pH', args:1, argName:'7.4', 'Constant simulation pH.');
-cli.mc(longOpt:'titrationFrequency', args:1, argName:'100', 'Number of steps between Monte-Carlo proton attempts.')
-cli.mcd(longOpt:'titrationDuration', args:1, argName:'100', 'Number of steps for which to run continuous proton dynamics during MC move.');
-cli.mcr(longOpt:'rotamerMoveRatio', args:1, argName:'0', 'Number of steps between Monte-Carlo rotamer attempts.')
-cli.cut(longOpt:'cutoff', args:1, argName:'1000', 'Value of vdw-cutoff and pme-cutoff.');
+def cli = new CliBuilder(usage: ' ffxc test.phDiscount [options] <filename>');
+cli.h(longOpt: 'help', 'Print this message.');
+cli.d(longOpt: 'dt', args: 1, argName: '1.0', 'Time discretization (fsec).');
+cli.l(longOpt: 'log', args: 1, argName: '0.01', 'Interval to log thermodyanamics (psec).');
+cli.n(longOpt: 'steps', args: 1, argName: '1000000', 'Number of molecular dynamics steps.');
+cli.p(longOpt: 'polarization', args: 1, argName: 'Mutual', 'Polarization: [None / Direct / Mutual]');
+cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
+cli.w(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
+cli.s(longOpt: 'restart', args: 1, argName: '0.1', 'Interval to write out restart file (psec).');
+cli.f(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [PDB/XYZ]');
+cli.rl(longOpt: 'resList', args: 1, 'Titrate a list of residues (eg A4.A8.B2.B34)');
+cli.pH(longOpt: 'pH', args: 1, argName: '7.4', 'Constant simulation pH.');
+cli.mc(longOpt: 'titrationFrequency', args: 1, argName: '100', 'Number of steps between Monte-Carlo proton attempts.')
+cli.mcd(longOpt: 'titrationDuration', args: 1, argName: '100', 'Number of steps for which to run continuous proton dynamics during MC move.');
+cli.mcr(longOpt: 'rotamerMoveRatio', args: 1, argName: '0', 'Number of steps between Monte-Carlo rotamer attempts.')
+cli.cut(longOpt: 'cutoff', args: 1, argName: '1000', 'Value of vdw-cutoff and pme-cutoff.');
 
 //cli.ra(longOpt:'resAll', 'Titrate all residues.');
 //cli.rn(longOpt:'resName', args:1, 'Titrate a list of residue names (eg "LYS,TYR,HIS")');
@@ -219,8 +219,8 @@ molDyn.setRestartFrequency(restartFrequency);
 
 // Create the DISCOuNT object, linking it to the MD.
 PhDiscount phmd = new PhDiscount(mola, esvSystem, molDyn,
-    dt, printInterval, saveInterval, initVelocities,
-    fileType, restartFrequency, dyn);
+        dt, printInterval, saveInterval, initVelocities,
+        fileType, restartFrequency, dyn);
 
 // Launch dynamics through the DISCOuNT controller.
 phmd.dynamic(nSteps, pH, temperature, moveFrequency, stepsPerMove);

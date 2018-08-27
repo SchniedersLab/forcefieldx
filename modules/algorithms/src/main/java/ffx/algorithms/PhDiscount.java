@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -74,6 +74,8 @@ import static ffx.potential.extended.ExtConstants.ns2sec;
 import static ffx.potential.extended.TitrationUtils.propagateInactiveResidues;
 
 /**
+ * <p>PhDiscount class.</p>
+ *
  * @author S. LuCore
  */
 public class PhDiscount implements MonteCarloListener {
@@ -115,15 +117,24 @@ public class PhDiscount implements MonteCarloListener {
      * For traditional discrete titration, use Protonate.
      * For traditional continuous titration, run mdesv for populations.
      *
-     * @param mola the molecular assembly
+     * @param mola                 the molecular assembly
+     * @param esvSystem            a {@link ffx.potential.extended.ExtendedSystem} object.
+     * @param molDyn               a {@link ffx.algorithms.MolecularDynamics} object.
+     * @param timeStep             a double.
+     * @param printInterval        a double.
+     * @param saveInterval         a double.
+     * @param initVelocities       a boolean.
+     * @param fileType             a {@link java.lang.String} object.
+     * @param writeRestartInterval a double.
+     * @param dyn                  a {@link java.io.File} object.
      */
     // java.lang.Double, java.lang.Integer, java.lang.Integer, java.lang.Boolean, java.lang.String, java.lang.Integer, null)
     public PhDiscount(MolecularAssembly mola, ExtendedSystem esvSystem, MolecularDynamics molDyn,
-            double timeStep, double printInterval, double saveInterval,
-            boolean initVelocities, String fileType, double writeRestartInterval, File dyn) {
+                      double timeStep, double printInterval, double saveInterval,
+                      boolean initVelocities, String fileType, double writeRestartInterval, File dyn) {
         this.config = new TitrationConfig();
         this.mola = mola;
-		this.ffe = mola.getPotentialEnergy();
+        this.ffe = mola.getPotentialEnergy();
         this.esvSystem = esvSystem;
         this.esvConfig = esvSystem.config;
         this.numESVs = esvSystem.size();
@@ -140,28 +151,36 @@ public class PhDiscount implements MonteCarloListener {
         SystemFilter.setVersioning(SystemFilter.Versioning.PREFIX_ABSOLUTE);
 
         config.print();
-		ExtUtils.printConfigSet("All Config:", System.getProperties(), keyPrefixes);
+        ExtUtils.printConfigSet("All Config:", System.getProperties(), keyPrefixes);
         logger.info(format(" Running DISCOuNT-pH dynamics @ system pH %.2f\n", esvSystem.getConstantPh()));
         ffe.reInit();
         molDyn.reInit();
-		molDyn.setMonteCarloListener(this, MonteCarloNotification.EACH_STEP);
+        molDyn.setMonteCarloListener(this, MonteCarloNotification.EACH_STEP);
     }
 
-	/**
-	 * Update the position of background atoms at each step, lest bonded term energies become inconsistent.
-	 */
-	@Override
-	public boolean mcUpdate(double temperature) {
-		esvSystem.setTemperature(temperature);
-		propagateInactiveResidues(titratingMultiResidues, true);
-		return true;
-	}
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Update the position of background atoms at each step, lest bonded term energies become inconsistent.
+     */
+    @Override
+    public boolean mcUpdate(double temperature) {
+        esvSystem.setTemperature(temperature);
+        propagateInactiveResidues(titratingMultiResidues, true);
+        return true;
+    }
 
     /**
      * Top-level driver for DISCOUNT pHMD.
+     *
+     * @param physicalSteps    a int.
+     * @param pH               a double.
+     * @param temperature      a double.
+     * @param attemptFrequency a int.
+     * @param stepsPerMove     a int.
      */
     public void dynamic(int physicalSteps, double pH, double temperature,
-            int attemptFrequency, int stepsPerMove) {
+                        int attemptFrequency, int stepsPerMove) {
         int movesAttempted = 0, movesAccepted = 0;
 
         /* Init step. */
@@ -171,7 +190,7 @@ public class PhDiscount implements MonteCarloListener {
         /* Launch first round of MD with traditional call to dynamic(). */
         logger.info(format(" Launching DISCOUNT pHMD for %d physical steps.", physicalSteps));
         logger.info(format(" (Round %d) Launching fixed-protonation dynamics for %d steps.",
-                movesAttempted+1, attemptFrequency));
+                movesAttempted + 1, attemptFrequency));
 
 //        molDyn.dynamic(attemptFrequency, dt, printInterval, saveInterval,
 //                temperature, initVelocities, fileType, writeRestartInterval, dynLoader);
@@ -182,13 +201,13 @@ public class PhDiscount implements MonteCarloListener {
             /* Attempt Monte-Carlo through fractional-protonation dynamics. */
             logger.info(format(" (Attempt %d) Launching fractional-protonation dynamics for %d steps.",
                     ++movesAttempted, attemptFrequency));
-			if (tryContinuousTitrationMove(stepsPerMove, temperature)) {
-				movesAccepted++;
-			}
+            if (tryContinuousTitrationMove(stepsPerMove, temperature)) {
+                movesAccepted++;
+            }
 
             /* Return to fixed-protonation MD with redynamic() to avoid initialization. */
             logger.info(format(" (Round %d) Launching fixed-protonation dynamics for %d steps.",
-                    movesAttempted+1, attemptFrequency));
+                    movesAttempted + 1, attemptFrequency));
             if (stepsTaken + attemptFrequency < physicalSteps) {
                 molDyn.redynamic(attemptFrequency, temperature);
                 stepsTaken += attemptFrequency;
@@ -212,9 +231,18 @@ public class PhDiscount implements MonteCarloListener {
         mola.getDescendants(BondedTerm.class).stream()
                 .filter(BondedTerm::isExtendedSystemMember)
                 .forEach(term -> {
-                    try { ((Bond) term).log(); } catch (Exception ex) {}
-                    try { ((Angle) term).log(); } catch (Exception ex) {}
-                    try { ((Torsion) term).log(); } catch (Exception ex) {}
+                    try {
+                        ((Bond) term).log();
+                    } catch (Exception ex) {
+                    }
+                    try {
+                        ((Angle) term).log();
+                    } catch (Exception ex) {
+                    }
+                    try {
+                        ((Torsion) term).log();
+                    } catch (Exception ex) {
+                    }
                 });
         if (ffe.getVanDerWaalsEnergy() > 1000) {
             extendedAtoms = esvSystem.getExtendedAtoms();
@@ -230,16 +258,16 @@ public class PhDiscount implements MonteCarloListener {
                         continue;
                     }
                     double dist = FastMath.sqrt(
-                            FastMath.pow((aj.getX()-ai.getX()),2) +
-                            FastMath.pow((aj.getY()-ai.getY()),2) +
-                            FastMath.pow((aj.getZ()-ai.getZ()),2));
-                    if (dist < 0.8*(aj.getVDWR() + ai.getVDWR())) {
+                            FastMath.pow((aj.getX() - ai.getX()), 2) +
+                                    FastMath.pow((aj.getY() - ai.getY()), 2) +
+                                    FastMath.pow((aj.getZ() - ai.getZ()), 2));
+                    if (dist < 0.8 * (aj.getVDWR() + ai.getVDWR())) {
                         logger.warning(String.format("Close vdW contact for atoms: \n   %s\n   %s", aj, ai));
                     }
                 }
             }
         }
-		throw error;
+        throw error;
     }
 
     /**
@@ -304,26 +332,26 @@ public class PhDiscount implements MonteCarloListener {
         // TODO: Need to ensure that we fully protonate the protein before entering continuous-protonation space.
         ffe.attachExtendedSystem(esvSystem);
         molDyn.attachExtendedSystem(esvSystem, 10);
-		final double Uo_prime = currentTotalEnergy();
-		logger.info(format(" %-40s %-s", "Trying continuous titration move.",
-				format("Uo,Uo': %16.8f, %16.8f", Uo, Uo_prime)));
+        final double Uo_prime = currentTotalEnergy();
+        logger.info(format(" %-40s %-s", "Trying continuous titration move.",
+                format("Uo,Uo': %16.8f, %16.8f", Uo, Uo_prime)));
 
         molDyn.redynamic(titrationDuration, targetTemperature);
-		final double Un_prime = currentTotalEnergy();
+        final double Un_prime = currentTotalEnergy();
         for (int i = 0; i < esvSystem.size(); i++) {
             esvSystem.setLambda(i, Math.rint(esvSystem.getLambda(i)));
         }
         molDyn.detachExtendedSystem();
         ffe.detachExtendedSystem();
         final double Un = currentTotalEnergy();
-		logger.info(format(" %-40s %-30s", "Move finished; detaching esvSystem.",
-				format("Un',Un: %16.8f, %16.8f", Un_prime, Un)));
+        logger.info(format(" %-40s %-30s", "Move finished; detaching esvSystem.",
+                format("Un',Un: %16.8f, %16.8f", Un_prime, Un)));
 
-		/* Calculate acceptance probability from detailed balance equation. */
+        /* Calculate acceptance probability from detailed balance equation. */
         final double beta = 1 / (ExtConstants.Boltzmann * thermostat.getCurrentTemperature());
-		final double dgDiscrete = Un - Uo;
-		final double dgContinuous = Un_prime - Uo_prime;
-		final double crit = FastMath.exp(-beta * (dgDiscrete - dgContinuous));
+        final double dgDiscrete = Un - Uo;
+        final double dgContinuous = Un_prime - Uo_prime;
+        final double crit = FastMath.exp(-beta * (dgDiscrete - dgContinuous));
         final double rand = rng.nextDouble();
         logger.info(format("   Un,Un',Uo',Uo:   %10.5f %10.5f %10.5f %10.5f", Un, Un_prime, Uo_prime, Uo));
         logger.info(format("   Crit,Rng:        %10.5f %10.5f", crit, rand));
@@ -361,16 +389,16 @@ public class PhDiscount implements MonteCarloListener {
         String filename;
         if (config.snapshots == Snapshots.INTERLEAVED) {
             if (basename.contains("_dyn")) {
-                filename = basename.replace("_dyn",format("_dyn_%d.pdb",++snapshotIndex));
+                filename = basename.replace("_dyn", format("_dyn_%d.pdb", ++snapshotIndex));
             } else {
                 filename = FilenameUtils.removeExtension(basename)
-                        + format("_dyn_%d.pdb",++snapshotIndex);
+                        + format("_dyn_%d.pdb", ++snapshotIndex);
             }
         } else {
             if (!extension.startsWith(".")) {
                 extension = "." + extension;
             }
-            filename = basename + format("_%d",++snapshotIndex) + extension;
+            filename = basename + format("_%d", ++snapshotIndex) + extension;
         }
         File file = new File(filename);
         PDBFilter writer = new PDBFilter(file, mola, null, null);

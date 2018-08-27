@@ -37,28 +37,24 @@
  */
 package ffx.algorithms.groovy;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import groovy.lang.Binding;
-
-import edu.rit.pj.Comm;
-
-import ffx.utilities.DirectoryUtils;
-import ffx.algorithms.PJDependentTest;
-import ffx.algorithms.groovy.ManyBody;
-import ffx.potential.PotentialComponent;
-
-import java.util.logging.Level;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.testng.Assert;
+
+import ffx.algorithms.PJDependentTest;
+import ffx.potential.PotentialComponent;
+import ffx.utilities.DirectoryUtils;
+
+import groovy.lang.Binding;
 
 /**
  * Tests many body optimization and the many body groovy script under global, box and monte carlo parameter conditions.
+ *
  * @author Mallory R. Tollefson
  */
 public class ManyBodyTest extends PJDependentTest {
@@ -93,7 +89,7 @@ public class ManyBodyTest extends PJDependentTest {
     public void testManyBodyGlobal() {
         // Set-up the input arguments for the script.
         String[] args = {"-a", "2", "-L", "2", "--tC", "2",
-            "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+                "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
         Path path = null;
@@ -107,8 +103,8 @@ public class ManyBodyTest extends PJDependentTest {
         // Evaluate the script.
         manyBody.run();
         double expectedTotalPotential = -219.8836543404126;
-        
-        
+
+
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-8);
 
@@ -130,7 +126,7 @@ public class ManyBodyTest extends PJDependentTest {
     public void testManyBodyBoxOptimization() {
         // Set-up the input arguments for the script.
         String[] args = {"-a", "5", "-L", "2", "--bL", "10", "--bB", "2", "--tC", "2", "--pr", "2",
-            "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+                "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
         Path path = null;
@@ -143,7 +139,7 @@ public class ManyBodyTest extends PJDependentTest {
 
         // Evaluate the script.
         manyBody.run();
-        
+
         double expectedTotalPotential = -219.8836543404126;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
@@ -163,7 +159,7 @@ public class ManyBodyTest extends PJDependentTest {
      * Tests ManyBody.groovy and RotamerOptimization.java by running a monte carlo optimization simulation on a small pdb file. Elimination criteria are not used during this test. A monte carlo search is done on the permuatations the protein experience.
      */
     @Test
-    public void testManyBodyMonteCarlo(){
+    public void testManyBodyMonteCarlo() {
 
         System.setProperty("polarization", "direct");
 

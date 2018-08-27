@@ -1,4 +1,3 @@
-
 package ffx.algorithms.groovy.test;
 
 import org.apache.commons.io.FilenameUtils
@@ -31,53 +30,64 @@ class OSRWBias extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
+        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
+        boolean help;
         /**
          * -s1 or --start1 defines the first softcored atom for the first topology.
          */
-        @Option(shortName='s1', longName='start1', defaultValue='0', description='Starting ligand atom for 1st topology') int s1;
+        @Option(shortName = 's1', longName = 'start1', defaultValue = '0', description = 'Starting ligand atom for 1st topology')
+        int s1;
         /**
          * -s2 or --start2 defines the first softcored atom for the second topology.
          */
-        @Option(shortName='s2', longName='start2', defaultValue='0', description='Starting ligand atom for 2nd topology') int s2;
+        @Option(shortName = 's2', longName = 'start2', defaultValue = '0', description = 'Starting ligand atom for 2nd topology')
+        int s2;
         /**
          * -f1 or --final1 defines the last softcored atom for the first topology.
          */
-        @Option(shortName='f1', longName='final1', defaultValue='-1', description='Final ligand atom for the 1st topology') int f1;
+        @Option(shortName = 'f1', longName = 'final1', defaultValue = '-1', description = 'Final ligand atom for the 1st topology')
+        int f1;
         /**
          * -f2 or --final2 defines the last softcored atom for the second topology.
          */
-        @Option(shortName='f2', longName='final2', defaultValue='-1', description='Final ligand atom for the 2nd topology') int f2;
+        @Option(shortName = 'f2', longName = 'final2', defaultValue = '-1', description = 'Final ligand atom for the 2nd topology')
+        int f2;
         /**
          * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
          */
-        @Option(shortName='es1', longName='noElecStart1', defaultValue='1', description='Starting no-electrostatics atom for 1st topology') int es1;
+        @Option(shortName = 'es1', longName = 'noElecStart1', defaultValue = '1', description = 'Starting no-electrostatics atom for 1st topology')
+        int es1;
         /**
          * -es2 or --noElecStart2 defines the first atom of the second topology to have no electrostatics.
          */
-        @Option(shortName='es2', longName='noElecStart2', defaultValue='1', description='Starting no-electrostatics atom for 2nd topology') int es2;
+        @Option(shortName = 'es2', longName = 'noElecStart2', defaultValue = '1', description = 'Starting no-electrostatics atom for 2nd topology')
+        int es2;
         /**
          * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
          */
-        @Option(shortName='ef1', longName='noElecFinal1', defaultValue='-1', description='Final no-electrostatics atom for 1st topology') int ef1;
+        @Option(shortName = 'ef1', longName = 'noElecFinal1', defaultValue = '-1', description = 'Final no-electrostatics atom for 1st topology')
+        int ef1;
         /**
          * -ef2 or --noElecFinal2 defines the last atom of the second topology to have no electrostatics.
          */
-        @Option(shortName='ef2', longName='noElecFinal2', defaultValue='-1', description='Final no-electrostatics atom for 2nd topology') int ef2;
+        @Option(shortName = 'ef2', longName = 'noElecFinal2', defaultValue = '-1', description = 'Final no-electrostatics atom for 2nd topology')
+        int ef2;
         /**
          * -l or --lambda sets the lambda value to minimize at.
          */
-        @Option(shortName='l', longName='lambda', defaultValue='0.5',
-            description='Initial lambda value.') double lambda;
+        @Option(shortName = 'l', longName = 'lambda', defaultValue = '0.5',
+                description = 'Initial lambda value.')
+        double lambda;
         /**
          * The final argument(s) should be one or more filenames.
          */
-        @Unparsed List<String> filenames;
+        @Unparsed
+        List<String> filenames;
     }
 
     @Override
     OSRWBias run() {
-        def cli = new CliBuilder(usage:' ffxc test.OSRWBias [options] <filename> [file2...]', header:' Options:');
+        def cli = new CliBuilder(usage: ' ffxc test.OSRWBias [options] <filename> [file2...]', header: ' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);
@@ -153,7 +163,7 @@ class OSRWBias extends Script {
         if (arguments.size() == 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
-            System.setProperty("ligand-vapor-elec","false");
+            System.setProperty("ligand-vapor-elec", "false");
         }
 
         // Open the first system
@@ -193,10 +203,10 @@ class OSRWBias extends Script {
             // Wrap the single topology ForceFieldEnergy inside an OSRW instance.
             if (temper) {
                 osrw = new ffx.algorithms.TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
-                    active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
+                        active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
             } else {
                 osrw = new ffx.algorithms.OSRW(energy, energy, lambdaRestart, histogramRestart, active.getProperties(),
-                    298.15, 1.0, 1.0, 1.0, false, sh);
+                        298.15, 1.0, 1.0, 1.0, false, sh);
             }
         } else {
             // Open the 2nd topology.
@@ -233,11 +243,11 @@ class OSRWBias extends Script {
 
             if (temper) {
                 osrw = new ffx.algorithms.TransitionTemperedOSRW(energy, energy, lambdaRestart, histogramRestart,
-                    active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
+                        active.getProperties(), 298.15, 1.0, 1.0, 1.0, false, sh);
             } else {
                 // Wrap the DualTopology potential energy inside an OSRW instance.
                 osrw = new ffx.algorithms.OSRW(dualTopologyEnergy, dualTopologyEnergy, lambdaRestart, histogramRestart, active.getProperties(),
-                    298.15, 1.0, 1.0, 1.0, false, sh);
+                        298.15, 1.0, 1.0, 1.0, false, sh);
             }
         }
 
@@ -250,20 +260,20 @@ class OSRWBias extends Script {
         osrw.setLambda(initialLambda);
         n = osrw.getNumberOfVariables();
 
-        assert(n%3 == 0);
+        assert (n % 3 == 0);
         n = n / 3;
 
         // Finite-difference step size.
         double step = 1.0e-5;
 
-        double[] x = new double[3*n];
-        double[] analytic = new double[3*n];
-        double[] g = new double[3*n];
+        double[] x = new double[3 * n];
+        double[] analytic = new double[3 * n];
+        double[] g = new double[3 * n];
         double[] numeric = new double[3];
         osrw.getCoordinates(x);
 
         // Test Lambda gradients.
-        for (int j=0; j<3; j++) {
+        for (int j = 0; j < 3; j++) {
             double lambda = initialLambda - 0.001 + 0.001 * j;
 
             if (lambda - step < 0.0) {
@@ -299,9 +309,9 @@ class OSRWBias extends Script {
             double gradientTolerance = 1.0e-3;
 
             // Calculate finite-difference coordinate gradient
-            for (int i=0; i<n; i++) {
+            for (int i = 0; i < n; i++) {
                 //Atom a0 = atoms[i];
-                int i3 = i*3;
+                int i3 = i * 3;
                 int i0 = i3 + 0;
                 int i1 = i3 + 1;
                 int i2 = i3 + 2;
@@ -312,27 +322,27 @@ class OSRWBias extends Script {
                 // Find numeric dX
                 orig = x[i0];
                 x[i0] = orig + step;
-                e = osrw.energyAndGradient(x,g);
+                e = osrw.energyAndGradient(x, g);
                 x[i0] = orig - step;
-                e = e - osrw.energyAndGradient(x,g);
+                e = e - osrw.energyAndGradient(x, g);
                 x[i0] = orig;
                 numeric[0] = e / (2.0 * step);
 
                 // Find numeric dY
                 orig = x[i1];
                 x[i1] = orig + step;
-                e = osrw.energyAndGradient(x,g);
+                e = osrw.energyAndGradient(x, g);
                 x[i1] = orig - step;
-                e = e - osrw.energyAndGradient(x,g);
+                e = e - osrw.energyAndGradient(x, g);
                 x[i1] = orig;
                 numeric[1] = e / (2.0 * step);
 
                 // Find numeric dZ
                 orig = x[i2];
                 x[i2] = orig + step;
-                e = osrw.energyAndGradient(x,g);
+                e = osrw.energyAndGradient(x, g);
                 x[i2] = orig - step;
-                e = e - osrw.energyAndGradient(x,g);
+                e = e - osrw.energyAndGradient(x, g);
                 x[i2] = orig;
                 numeric[2] = e / (2.0 * step);
 
@@ -342,13 +352,13 @@ class OSRWBias extends Script {
                 double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
                 if (len > gradientTolerance) {
                     logger.info(" Atom " + i + String.format(" failed: %10.6f.", len)
-                        + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
-                        + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
+                            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
+                            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
                     return;
                 } else {
                     logger.info(" Atom " + i + String.format(" passed: %10.6f.", len)
-                        + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
-                        + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
+                            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[i0], analytic[i1], analytic[i2])
+                            + String.format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
                 }
             }
         }

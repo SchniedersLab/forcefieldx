@@ -1,18 +1,16 @@
 package ffx.algorithms.groovy
 
-import ffx.algorithms.MolecularDynamics
-import ffx.algorithms.SimulatedAnnealing
-import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
+import ffx.algorithms.SimulatedAnnealing
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.potential.MolecularAssembly
 
+import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
-import picocli.CommandLine.Command
 
 /**
  * The Anneal script.
@@ -34,11 +32,11 @@ class Anneal extends AlgorithmsScript {
      * One or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "files",
-        description = "XYZ or PDB input files.")
+            description = "XYZ or PDB input files.")
     private List<String> filenames
-    
+
     private SimulatedAnnealing simulatedAnnealing = null;
-    
+
     private File baseDir = null
 
     void setBaseDir(File baseDir) {
@@ -69,8 +67,8 @@ class Anneal extends AlgorithmsScript {
         logger.info("\n Running simulated annealing on " + modelFilename + "\n")
 
         simulatedAnnealing = new SimulatedAnnealing(activeAssembly,
-            activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
-            algorithmListener, dynamics.thermostat, dynamics.integrator)
+                activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
+                algorithmListener, dynamics.thermostat, dynamics.integrator)
 
         simulatedAnnealing.anneal(anneal.upper, anneal.low, anneal.windows, dynamics.steps, dynamics.dt)
 
@@ -92,8 +90,8 @@ class Anneal extends AlgorithmsScript {
         }
         return this
     }
-    
-    public SimulatedAnnealing getAnnealing(){
+
+    public SimulatedAnnealing getAnnealing() {
         return simulatedAnnealing;
     }
 }

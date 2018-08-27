@@ -21,7 +21,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.groovy.Anneal;
 import ffx.algorithms.SimulatedAnnealing;
 import ffx.utilities.DirectoryUtils;
 

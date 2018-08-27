@@ -1,19 +1,19 @@
 package ffx.algorithms.groovy
 
-import ffx.algorithms.ReplicaExchange
-import ffx.algorithms.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
+import ffx.algorithms.MolecularDynamics
+import ffx.algorithms.ReplicaExchange
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.WriteoutOptions
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.parameters.ForceField
-import ffx.algorithms.MolecularDynamics
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -52,17 +52,17 @@ class Dynamics extends AlgorithmsScript {
     @Parameters(arity = "1..*", paramLabel = "files",
             description = "XYZ or PDB input files.")
     private List<String> filenames
-    
+
     // Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field. Originally it is declared in
     // the run method
     public Potential potential = null;
     public MolecularDynamics molDyn = null;
-    
-    public MolecularDynamics getMolecularDynamics(){
+
+    public MolecularDynamics getMolecularDynamics() {
         return molDyn;
     }
-    
-    public Potential getPotentialObject(){
+
+    public Potential getPotentialObject() {
         return potential;
     }
 

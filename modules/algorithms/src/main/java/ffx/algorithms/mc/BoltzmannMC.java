@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -53,7 +53,13 @@ import static org.apache.commons.math3.util.FastMath.exp;
  */
 public abstract class BoltzmannMC implements MetropolisMC {
 
+    /**
+     * Constant <code>logger</code>
+     */
     public static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
+    /**
+     * Constant <code>BOLTZMANN=0.0019872041</code>
+     */
     public static final double BOLTZMANN = 0.0019872041; // In kcal/(mol*K)
 
     private double temperature = 298.15; // Room temperature (also SATP).
@@ -67,12 +73,10 @@ public abstract class BoltzmannMC implements MetropolisMC {
     private boolean lastAccept = false;
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Criterion for accept/reject a move; intended to be used mostly
      * internally.
-     *
-     * @param e1 Initial energy
-     * @param e2 Final energy
-     * @return If move accepted
      */
     @Override
     public boolean evaluateMove(double e1, double e2) {
@@ -90,37 +94,58 @@ public abstract class BoltzmannMC implements MetropolisMC {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setTemperature(double temp) {
         temperature = temp;
         kbTinv = -1.0 / (BOLTZMANN * temperature);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPrint(boolean print) {
         this.print = print;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getE1() {
         return e1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getE2() {
         return e2;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double lastEnergy() {
         return lastE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean mcStep(MCMove move) {
         return mcStep(move, currentEnergy());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean mcStep(MCMove move, double en1) {
         List<MCMove> moveList = new ArrayList<>(1);
@@ -128,20 +153,21 @@ public abstract class BoltzmannMC implements MetropolisMC {
         return mcStep(moveList, en1);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean mcStep(List<MCMove> moves) {
         return mcStep(moves, currentEnergy());
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Performs a Boltzmann-weighted Monte Carlo step with an arbitrary list of
      * moves and a defined starting energy. The list of MCMoves should be of a
      * type with O(1) element access, as the current implementation utilizes an
      * indexed for loop.
-     *
-     * @param moves Moves to try
-     * @param en1 Starting energy
-     * @return If step accepted
      */
     @Override
     public boolean mcStep(List<MCMove> moves, double en1) {
@@ -177,11 +203,17 @@ public abstract class BoltzmannMC implements MetropolisMC {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTemperature() {
         return temperature;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean getAccept() {
         return lastAccept;

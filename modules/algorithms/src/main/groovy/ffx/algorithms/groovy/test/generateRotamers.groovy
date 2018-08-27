@@ -65,21 +65,21 @@ String inactiveAtoms = null;
 RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.generateRotamers [options] <filename>');
-cli.h(longOpt:'help', 'Print this help message.');
-cli.r(longOpt:'residue', args:1, argName:'resid', 'Required: Specify residue as ChainNumber (e.g. B71).');
-cli.n(longOpt:'nChi', args:1, argName:'1-7', 'Required: Specify number of torsions per rotamer.');
-cli.b(longOpt:'baseResidue', args:1, argName:'aa3', '3-letter code for standard amino acid to start from (or UNK for patch-defined).');
-cli.i(longOpt:'initialDepth', args:1, argName:'1', 'First chi to operate on.');
-cli.f(longOpt:'finalDepth', args:1, argName:'-1', 'Last chi to operate on (or -1 to optimize to nChi).');
-cli.a(longOpt:'angleIncrement', args:1, argName:'10', 'Angle in degrees to spin torsions by.');
-cli.w(longOpt:'width', args:1, argName:'360.0', 'Total width to scan in degrees.');
-cli.o(longOpt:'outFile', args:1, argName:'file.tor.csv', 'File to print output to.');
-cli.l(longOpt:'library', args:1, argName:'2', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
-cli.v(longOpt:'verbose', args:1, argName:'false', 'Log rotamer energies to console.');
-cli.vw(longOpt:'videoWriter', args: 1, argName:'file', 'Writes video to a file.');
-cli.e(longOpt:'electrostatics', args:1, argName:'a-b,c-d...', 'Turns off electrostatics for atoms a-b, c-d, etc.');
-cli.ia(longOpt:'inactiveAtoms', args:1, argName:'a-b,c-d...', 'Turns off all energy terms for atoms a-b, c-d, etc.');
+def cli = new CliBuilder(usage: ' ffxc test.generateRotamers [options] <filename>');
+cli.h(longOpt: 'help', 'Print this help message.');
+cli.r(longOpt: 'residue', args: 1, argName: 'resid', 'Required: Specify residue as ChainNumber (e.g. B71).');
+cli.n(longOpt: 'nChi', args: 1, argName: '1-7', 'Required: Specify number of torsions per rotamer.');
+cli.b(longOpt: 'baseResidue', args: 1, argName: 'aa3', '3-letter code for standard amino acid to start from (or UNK for patch-defined).');
+cli.i(longOpt: 'initialDepth', args: 1, argName: '1', 'First chi to operate on.');
+cli.f(longOpt: 'finalDepth', args: 1, argName: '-1', 'Last chi to operate on (or -1 to optimize to nChi).');
+cli.a(longOpt: 'angleIncrement', args: 1, argName: '10', 'Angle in degrees to spin torsions by.');
+cli.w(longOpt: 'width', args: 1, argName: '360.0', 'Total width to scan in degrees.');
+cli.o(longOpt: 'outFile', args: 1, argName: 'file.tor.csv', 'File to print output to.');
+cli.l(longOpt: 'library', args: 1, argName: '2', 'Available rotamer libraries are Ponder and Richards (1) or Richardson (2).');
+cli.v(longOpt: 'verbose', args: 1, argName: 'false', 'Log rotamer energies to console.');
+cli.vw(longOpt: 'videoWriter', args: 1, argName: 'file', 'Writes video to a file.');
+cli.e(longOpt: 'electrostatics', args: 1, argName: 'a-b,c-d...', 'Turns off electrostatics for atoms a-b, c-d, etc.');
+cli.ia(longOpt: 'inactiveAtoms', args: 1, argName: 'a-b,c-d...', 'Turns off all energy terms for atoms a-b, c-d, etc.');
 
 def options = cli.parse(args);
 List<String> arguments = options.arguments();

@@ -7,8 +7,6 @@ package ffx.algorithms.groovy;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -18,13 +16,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
-import edu.rit.pj.Comm;
 import ffx.algorithms.MolecularDynamicsOpenMM;
 import ffx.algorithms.PJDependentTest;
-
-import ffx.algorithms.groovy.DynamicsOpenMM;
 
 import groovy.lang.Binding;
 
@@ -66,7 +60,7 @@ public class DynamicsOpenMMRESPANVETest extends PJDependentTest {
     }
 
     @Before
-    public void before(){
+    public void before() {
         binding = new Binding();
         dynamics = new DynamicsOpenMM();
         dynamics.setBinding(binding);

@@ -37,26 +37,6 @@
  */
 package ffx.algorithms.groovy;
 
-import ffx.algorithms.AbstractOSRW;
-import ffx.algorithms.PJDependentTest;
-import ffx.algorithms.TransitionTemperedOSRW;
-import ffx.algorithms.groovy.NewThermodynamics;
-
-import ffx.crystal.CrystalPotential;
-import ffx.potential.bonded.LambdaInterface;
-import groovy.lang.Binding;
-import static org.junit.Assert.*;
-
-import org.apache.commons.configuration2.Configuration;
-import org.apache.commons.configuration2.MapConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -68,8 +48,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.MapConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import ffx.algorithms.AbstractOSRW;
+import ffx.algorithms.PJDependentTest;
+import ffx.algorithms.TransitionTemperedOSRW;
+import ffx.crystal.CrystalPotential;
+import ffx.potential.bonded.LambdaInterface;
+
+import groovy.lang.Binding;
 
 /**
  * Tests the functionality of the Transition-Tempered OSRW algorithm in Force Field X,
@@ -90,281 +93,281 @@ public class ThermodynamicsTest extends PJDependentTest {
          * dU/dX, d2U/dXdL, Groovy options, properties, Groovy flags
          */
         return Arrays.asList(new Object[][]{
-            {
-                "Thermodynamics Help Message Test", new String[]{}, ThermoTestMode.HELP, 0, 0, null, null,
-                null, null, null, null, new String[]{}, new String[]{}, new String[]{"-h", "true"}
-            },
-            {
-                "Acetamide Implicit Solvation Free Energy: -10.8 kcal/mol", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                ThermoTestMode.FREE, -10.8, 1.0, null, null, null, null, null, null,
-                new String[]{"-C", "10", "-d", "1.0", "-n", "50000", "-w", "5", "--bM", "0.25", "--tp", "4"},
-                new String[]{}, new String[]{}
-            },
-            {
-                "Acetamide Implicit Solvation Gradients: L = 0.9", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                ThermoTestMode.GRAD, 0, 0, intRange(1, 9),
-                new double[]{-14.3232441, -14.1547628}, new double[]{-47.0065247, 2.88020118},
-                new double[]{-626.753662, Double.NaN},
-                new double[][][]{
-                    {
-                        {
-                            0.3454325973545622,-0.3556977754400722,0.22632332784499146
-                        },
-                        {
-                            -2.243711749882479,-0.19356781608568252,-0.7607652107647813
-                        },
-                        {
-                            -0.4691314984840982,0.41778512359780806,-0.29489746509549386
-                        },
-                        {
-                            -0.13799993351680084,0.10993253720542051,-0.08060781131332917
-                        },
-                        {
-                            -0.12916866666434035,-0.1292595807344552,-0.19923738828440363
-                        },
-                        {
-                            -0.14207609439404922,0.1277438883781784,-0.09272512156557061
-                        },
-                        {
-                            -0.23004200820343945,-0.024067408991374717,0.12377960757109271
-                        },
-                        {
-                            0.7198849556438509,-0.058542226119262075,0.28168889775425177
-                        }
-                    },
-                    {
-                        {
-                            0.3245837863444,-0.3346459581204537,0.21247087522245325
-                        },
-                        {
-                            -2.1088804470365896,-0.18290359797842182,-0.7158477527631418
-                        },
-                        {
-                            -0.4416189323792037,0.3919514976823785,-0.27720438558513366
-                        },
-                        {
-                            -0.1294804178454077,0.10345020607616696,-0.07562848810923806
-                        },
-                        {
-                            -0.12170071648317575,-0.12226365328373233,-0.18708155978049676
-                        },
-                        {
-                            -0.1338286311435258,0.12067970333834456,-0.08762615563248287
-                        },
-                        {
-                            -0.21577447110516357,-0.022826463023161717,0.11687334540079644
-                        },
-                        {
-                            0.6773203131299521,-0.05386903789837927,0.26508674941152166
-                        }
-                    }
-                }, new double[][][]{
-                    {
-                        {
-                            6.925790792595476,-6.993227694785508,4.601662357689225
-                        },
-                        {
-                            -44.78976740441211,-3.542559023701438,-14.921182646958457
-                        },
-                        {
-                            -9.139431352563745,8.581702257132498,-5.877484673144383
-                        },
-                        {
-                            -2.8301078255996117,2.1533731217409113,-1.6540871699322346
-                        },
-                        {
-                            -2.4807870616248175,-2.3239852814755535,-4.03805881724825
-                        },
-                        {
-                            -2.7397344153056427,2.3466598494381614,-1.6938314273137203
-                        },
-                        {
-                            -4.7395497527455746,-0.412231285350944,2.294199267621269
-                        },
-                        {
-                            14.139598131960081,-1.5523918335908964,5.515086978981156
-                        }
-                    }, new double[8][3]
+                {
+                        "Thermodynamics Help Message Test", new String[]{}, ThermoTestMode.HELP, 0, 0, null, null,
+                        null, null, null, null, new String[]{}, new String[]{}, new String[]{"-h", "true"}
                 },
-                new String[]{"-l", "0.9"}, new String[]{}, new String[]{}
-            },
-            {
-                "Acetamide Implicit Solvation Gradients: L = 1.0", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
-                ThermoTestMode.GRAD, 0, 0, intRange(1, 9),
-                new double[]{-22.8540579, -22.4300811}, new double[]{-130.57368, -4.28073063},
-                new double[]{-1044.58944, Double.NaN},
-                new double[][][]{
-                    {
-                        {
-                            1.602335371,-1.624839098,1.06143983
-                        },
-                        {
-                            -10.37222509,-0.836476676,-3.468683543
-                        },
-                        {
-                            -2.12776904,1.975205163,-1.361552091
-                        },
-                        {
-                            -0.651612094,0.500729882,-0.380794001
-                        },
-                        {
-                            -0.579385578,-0.551019873,-0.932070285
-                        },
-                        {
-                            -0.639287155,0.553619194,-0.400124158
-                        },
-                        {
-                            -1.090182519,-0.098879753,0.540134289
-                        },
-                        {
-                            3.285960172,-0.340272596,1.282575053
-                        }
-                    },
-                    {
-                        {
-                            1.670608498,-1.693777005,1.106802141
-                        },
-                        {
-                            -10.81375409,-0.871398548,-3.61577372
-                        },
-                        {
-                            -2.217863814,2.05980195,-1.419491216
-                        },
-                        {
-                            -0.679510758,0.521957424,-0.397099678
-                        },
-                        {
-                            -0.603840704,-0.573929277,-0.9718767
-                        },
-                        {
-                            -0.666294935,0.57675212,-0.416821626
-                        },
-                        {
-                            -1.136904098,-0.102943451,0.562750069
-                        },
-                        {
-                            3.425345638,-0.355575779,1.33694173
-                        }
-                    }
-                }, new double[][][]{
-                    {
-                        {
-                            19.23830776,-19.42563249,12.78239544
-                        },
-                        {
-                            -124.4160206,-9.840441733,-41.44772957
-                        },
-                        {
-                            -25.38730931,23.83806183,-16.32634631
-                        },
-                        {
-                            -7.861410627,5.981592005,-4.594686583
-                        },
-                        {
-                            -6.891075171,-6.455514671,-11.21683005
-                        },
-                        {
-                            -7.610373376,6.518499582,-4.705087298
-                        },
-                        {
-                            -13.16541598,-1.145086904,6.372775743
-                        },
-                        {
-                            39.27666148,-4.312199538,15.31968605
-                        }
-                    }, new double[8][3]
+                {
+                        "Acetamide Implicit Solvation Free Energy: -10.8 kcal/mol", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
+                        ThermoTestMode.FREE, -10.8, 1.0, null, null, null, null, null, null,
+                        new String[]{"-C", "10", "-d", "1.0", "-n", "50000", "-w", "5", "--bM", "0.25", "--tp", "4"},
+                        new String[]{}, new String[]{}
                 },
-                new String[]{"-l", "1.0"}, new String[]{}, new String[]{}
-            },
-            /*{
-                "Acetamide Crystallization Gradients: L = 1.0", new String[]{"ffx/algorithms/structures/acetamide.xtal.xyz"},
-                ThermoTestMode.GRAD, 0, 0, intRange(1, 9),
-                new double[]{-31.0594281, -29.4146512}, new double[]{-618.267325, -621.952472},
-                new double[]{-2210.57780, Double.NaN},
-                new double[][][]{
-                    {
+                {
+                        "Acetamide Implicit Solvation Gradients: L = 0.9", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
+                        ThermoTestMode.GRAD, 0, 0, intRange(1, 9),
+                        new double[]{-14.3232441, -14.1547628}, new double[]{-47.0065247, 2.88020118},
+                        new double[]{-626.753662, Double.NaN},
+                        new double[][][]{
+                                {
+                                        {
+                                                0.3454325973545622, -0.3556977754400722, 0.22632332784499146
+                                        },
+                                        {
+                                                -2.243711749882479, -0.19356781608568252, -0.7607652107647813
+                                        },
+                                        {
+                                                -0.4691314984840982, 0.41778512359780806, -0.29489746509549386
+                                        },
+                                        {
+                                                -0.13799993351680084, 0.10993253720542051, -0.08060781131332917
+                                        },
+                                        {
+                                                -0.12916866666434035, -0.1292595807344552, -0.19923738828440363
+                                        },
+                                        {
+                                                -0.14207609439404922, 0.1277438883781784, -0.09272512156557061
+                                        },
+                                        {
+                                                -0.23004200820343945, -0.024067408991374717, 0.12377960757109271
+                                        },
+                                        {
+                                                0.7198849556438509, -0.058542226119262075, 0.28168889775425177
+                                        }
+                                },
+                                {
+                                        {
+                                                0.3245837863444, -0.3346459581204537, 0.21247087522245325
+                                        },
+                                        {
+                                                -2.1088804470365896, -0.18290359797842182, -0.7158477527631418
+                                        },
+                                        {
+                                                -0.4416189323792037, 0.3919514976823785, -0.27720438558513366
+                                        },
+                                        {
+                                                -0.1294804178454077, 0.10345020607616696, -0.07562848810923806
+                                        },
+                                        {
+                                                -0.12170071648317575, -0.12226365328373233, -0.18708155978049676
+                                        },
+                                        {
+                                                -0.1338286311435258, 0.12067970333834456, -0.08762615563248287
+                                        },
+                                        {
+                                                -0.21577447110516357, -0.022826463023161717, 0.11687334540079644
+                                        },
+                                        {
+                                                0.6773203131299521, -0.05386903789837927, 0.26508674941152166
+                                        }
+                                }
+                        }, new double[][][]{
                         {
-                            0.0035512833043158665,-0.003887887320341954,0.003235545226927705
+                                {
+                                        6.925790792595476, -6.993227694785508, 4.601662357689225
+                                },
+                                {
+                                        -44.78976740441211, -3.542559023701438, -14.921182646958457
+                                },
+                                {
+                                        -9.139431352563745, 8.581702257132498, -5.877484673144383
+                                },
+                                {
+                                        -2.8301078255996117, 2.1533731217409113, -1.6540871699322346
+                                },
+                                {
+                                        -2.4807870616248175, -2.3239852814755535, -4.03805881724825
+                                },
+                                {
+                                        -2.7397344153056427, 2.3466598494381614, -1.6938314273137203
+                                },
+                                {
+                                        -4.7395497527455746, -0.412231285350944, 2.294199267621269
+                                },
+                                {
+                                        14.139598131960081, -1.5523918335908964, 5.515086978981156
+                                }
+                        }, new double[8][3]
+                },
+                        new String[]{"-l", "0.9"}, new String[]{}, new String[]{}
+                },
+                {
+                        "Acetamide Implicit Solvation Gradients: L = 1.0", new String[]{"ffx/algorithms/structures/acetamide.gk.xyz"},
+                        ThermoTestMode.GRAD, 0, 0, intRange(1, 9),
+                        new double[]{-22.8540579, -22.4300811}, new double[]{-130.57368, -4.28073063},
+                        new double[]{-1044.58944, Double.NaN},
+                        new double[][][]{
+                                {
+                                        {
+                                                1.602335371, -1.624839098, 1.06143983
+                                        },
+                                        {
+                                                -10.37222509, -0.836476676, -3.468683543
+                                        },
+                                        {
+                                                -2.12776904, 1.975205163, -1.361552091
+                                        },
+                                        {
+                                                -0.651612094, 0.500729882, -0.380794001
+                                        },
+                                        {
+                                                -0.579385578, -0.551019873, -0.932070285
+                                        },
+                                        {
+                                                -0.639287155, 0.553619194, -0.400124158
+                                        },
+                                        {
+                                                -1.090182519, -0.098879753, 0.540134289
+                                        },
+                                        {
+                                                3.285960172, -0.340272596, 1.282575053
+                                        }
+                                },
+                                {
+                                        {
+                                                1.670608498, -1.693777005, 1.106802141
+                                        },
+                                        {
+                                                -10.81375409, -0.871398548, -3.61577372
+                                        },
+                                        {
+                                                -2.217863814, 2.05980195, -1.419491216
+                                        },
+                                        {
+                                                -0.679510758, 0.521957424, -0.397099678
+                                        },
+                                        {
+                                                -0.603840704, -0.573929277, -0.9718767
+                                        },
+                                        {
+                                                -0.666294935, 0.57675212, -0.416821626
+                                        },
+                                        {
+                                                -1.136904098, -0.102943451, 0.562750069
+                                        },
+                                        {
+                                                3.425345638, -0.355575779, 1.33694173
+                                        }
+                                }
+                        }, new double[][][]{
+                        {
+                                {
+                                        19.23830776, -19.42563249, 12.78239544
+                                },
+                                {
+                                        -124.4160206, -9.840441733, -41.44772957
+                                },
+                                {
+                                        -25.38730931, 23.83806183, -16.32634631
+                                },
+                                {
+                                        -7.861410627, 5.981592005, -4.594686583
+                                },
+                                {
+                                        -6.891075171, -6.455514671, -11.21683005
+                                },
+                                {
+                                        -7.610373376, 6.518499582, -4.705087298
+                                },
+                                {
+                                        -13.16541598, -1.145086904, 6.372775743
+                                },
+                                {
+                                        39.27666148, -4.312199538, 15.31968605
+                                }
+                        }, new double[8][3]
+                },
+                        new String[]{"-l", "1.0"}, new String[]{}, new String[]{}
+                },
+                /*{
+                    "Acetamide Crystallization Gradients: L = 1.0", new String[]{"ffx/algorithms/structures/acetamide.xtal.xyz"},
+                    ThermoTestMode.GRAD, 0, 0, intRange(1, 9),
+                    new double[]{-31.0594281, -29.4146512}, new double[]{-618.267325, -621.952472},
+                    new double[]{-2210.57780, Double.NaN},
+                    new double[][][]{
+                        {
+                            {
+                                0.0035512833043158665,-0.003887887320341954,0.003235545226927705
+                            },
+                            {
+                                0.0021285361170626516,-4.49299151844218E-4,0.0021704548936494206
+                            },
+                            {
+                                0.006734914213447851,-0.01339944324718978,6.90125313571599E-4
+                            },
+                            {
+                                0.015842367597945994,-0.0016054178146653886,0.003997206107637208
+                            },
+                            {
+                                -0.0015637067839852914,0.007092319275139369,-0.0027402606404022256
+                            },
+                            {
+                                -0.0121741042114627,-0.006474092419587185,-0.005616416838037305
+                            },
+                            {
+                                -0.01403124580288001,0.005646687947437945,-0.014774772293374261
+                            },
+                            {
+                                0.001034108856084348,0.008938210799334989,-0.0032032891059294855
+                            }
                         },
                         {
-                            0.0021285361170626516,-4.49299151844218E-4,0.0021704548936494206
-                        },
-                        {
-                            0.006734914213447851,-0.01339944324718978,6.90125313571599E-4
-                        },
-                        {
-                            0.015842367597945994,-0.0016054178146653886,0.003997206107637208
-                        },
-                        {
-                            -0.0015637067839852914,0.007092319275139369,-0.0027402606404022256
-                        },
-                        {
-                            -0.0121741042114627,-0.006474092419587185,-0.005616416838037305
-                        },
-                        {
-                            -0.01403124580288001,0.005646687947437945,-0.014774772293374261
-                        },
-                        {
-                            0.001034108856084348,0.008938210799334989,-0.0032032891059294855
-                        }
-                    },
-                    {
 
-                        {
-                            0.01230167056545174,0.013766350856164476,0.005324850693954207
-                        },
-                        {
-                            -0.01592928349640763,0.013108020828172438,-0.023387576357417714
-                        },
-                        {
-                            0.016673516267039817,0.03472511805283299,-0.029486485771014235
-                        },
-                        {
-                            -0.03579194456319919,0.002462865399243487,-0.008218460449024072
-                        },
-                        {
-                            -0.0060197970719967665,-0.0016748080087555465,-0.006106837158237614
-                        },
-                        {
-                            -0.018223478181111117,-0.010099259335422165,-0.0078850771316659
-                        },
-                        {
-                            -0.016771705343051856,-0.0033391238062166328,-0.01475968020657157
-                        },
-                        {
-                            0.029666060795302252,-0.008765333776555077,0.032179277056848456
+                            {
+                                0.01230167056545174,0.013766350856164476,0.005324850693954207
+                            },
+                            {
+                                -0.01592928349640763,0.013108020828172438,-0.023387576357417714
+                            },
+                            {
+                                0.016673516267039817,0.03472511805283299,-0.029486485771014235
+                            },
+                            {
+                                -0.03579194456319919,0.002462865399243487,-0.008218460449024072
+                            },
+                            {
+                                -0.0060197970719967665,-0.0016748080087555465,-0.006106837158237614
+                            },
+                            {
+                                -0.018223478181111117,-0.010099259335422165,-0.0078850771316659
+                            },
+                            {
+                                -0.016771705343051856,-0.0033391238062166328,-0.01475968020657157
+                            },
+                            {
+                                0.029666060795302252,-0.008765333776555077,0.032179277056848456
+                            }
                         }
-                    }
-                }, new double[][][]{
-                    {
+                    }, new double[][][]{
                         {
-                            5.249020006689424,10.590096943813828,1.2532938108026226
-                        },
-                        {
-                            -10.832189890529506,8.132513646368627,-15.331277732618949
-                        },
-                        {
-                            5.961784257198348,28.868069210936916,-18.10178573702526
-                        },
-                        {
-                            -30.97343345811145,2.440406275220606,-7.327707475959026
-                        },
-                        {
-                            -2.6730367897283713,-5.259061701045617,-2.0194794777431255
-                        },
-                        {
-                            -3.6287862521994168,-2.1745978893208817,-1.3608818574839396
-                        },
-                        {
-                            -1.6438960384957468,-5.390242084572063,0.009053161100865514
-                        },
-                        {
-                            17.175204259475937,-10.61967395213345,21.224637508480413
-                        }
-                    }, new double[8][3]
-                },
-                new String[]{"-l", "1.0", "--la1", "1-9"}, new String[]{}, new String[]{}
-            }*/
+                            {
+                                5.249020006689424,10.590096943813828,1.2532938108026226
+                            },
+                            {
+                                -10.832189890529506,8.132513646368627,-15.331277732618949
+                            },
+                            {
+                                5.961784257198348,28.868069210936916,-18.10178573702526
+                            },
+                            {
+                                -30.97343345811145,2.440406275220606,-7.327707475959026
+                            },
+                            {
+                                -2.6730367897283713,-5.259061701045617,-2.0194794777431255
+                            },
+                            {
+                                -3.6287862521994168,-2.1745978893208817,-1.3608818574839396
+                            },
+                            {
+                                -1.6438960384957468,-5.390242084572063,0.009053161100865514
+                            },
+                            {
+                                17.175204259475937,-10.61967395213345,21.224637508480413
+                            }
+                        }, new double[8][3]
+                    },
+                    new String[]{"-l", "1.0", "--la1", "1-9"}, new String[]{}, new String[]{}
+                }*/
         });
     }
 
@@ -422,7 +425,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         int nOpts = opts.length;
         Map<String, String> optMap = new HashMap<>(nOpts);
         for (int i = 0; i < nOpts; i += 2) {
-            optMap.put(opts[i], opts[i+1]);
+            optMap.put(opts[i], opts[i + 1]);
         }
         DEFAULT_OPTIONS = Collections.unmodifiableMap(optMap);
 
@@ -439,7 +442,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         int nProps = props.length;
         Map<String, String> propMap = new HashMap<>(nProps);
         for (int i = 0; i < nProps; i += 2) {
-            propMap.put(props[i], props[i+1]);
+            propMap.put(props[i], props[i + 1]);
         }
         DEFAULT_PROPERTIES = Collections.unmodifiableMap(propMap);
 
@@ -552,7 +555,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                 assertTrue(String.format("Must have 1, 2, or 4 distinct filenames, found %d for test %s", nFiles, info),
                         nFiles == 1 || nFiles == 2 || nFiles == 4);
                 for (int i = 0; i < nFiles; i++) {
-                    for (int j = i+1; j < nFiles; j++) {
+                    for (int j = i + 1; j < nFiles; j++) {
                         assertNotEquals(String.format(" Filenames %d and %d matched in test %s: files %s and %s", i, j, info, filenames[i], filenames[j]),
                                 filenames[i], filenames[j]);
                     }
@@ -584,7 +587,7 @@ public class ThermodynamicsTest extends PJDependentTest {
             String opti = options[i];
             assertTrue(String.format(" Option %s for test %s does not look like a Groovy option!", opti, info),
                     validOption.matcher(opti).find());
-            groovyOpts.put(opti, options[i+1]);
+            groovyOpts.put(opti, options[i + 1]);
         }
         this.opts = Collections.unmodifiableMap(groovyOpts);
 
@@ -593,17 +596,17 @@ public class ThermodynamicsTest extends PJDependentTest {
             String propi = properties[i];
             assertTrue(String.format(" Property %s for test %s does not look like a property!", propi, info),
                     validProperty.matcher(propi).find());
-            addedProps.put(propi, properties[i+1]);
+            addedProps.put(propi, properties[i + 1]);
         }
         algorithmConfig = new MapConfiguration(addedProps);
 
 
         Map<String, Boolean> addedFlags = new HashMap<>(DEFAULT_FLAGS);
-        for (int i = 0; i < nFlags; i+= 2) {
+        for (int i = 0; i < nFlags; i += 2) {
             String flagi = flags[i];
             assertTrue(String.format(" Flag %s for test %s does not look like a flag!", flagi, info),
                     validOption.matcher(flagi).find());
-            String vali = flags[i+1];
+            String vali = flags[i + 1];
             assertTrue(String.format(" Value %s for flag %s in test %s is not a true/false value!", vali, flagi, info),
                     vali.equalsIgnoreCase("TRUE") || vali.equalsIgnoreCase("FALSE"));
             addedFlags.put(flagi, Boolean.parseBoolean(vali));
@@ -613,7 +616,7 @@ public class ThermodynamicsTest extends PJDependentTest {
                         filter(Map.Entry::getValue).
                         map(Map.Entry::getKey).
                         collect(Collectors.toList()));
-        
+
         // Only meaningful for free energy evaluations.
         this.freeEnergy = freeEnergy;
         this.feTol = feTol;
@@ -777,7 +780,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         logger.info(" Testing the OSRW potential before bias added.");
         EnergyResult osrwPre = testGradientSet("Unbiased OSRW", osrw, x, gOSRWPre, 0);
         logger.info(" Testing the underlying CrystalPotential before bias added.");
-        EnergyResult underPre = testGradientSet("Unbiased potential",under, x, gUnderPre, 0);
+        EnergyResult underPre = testGradientSet("Unbiased potential", under, x, gUnderPre, 0);
 
         // Assert that, before biases, OSRW and underlying potential are equal.
         osrwPre.assertResultsEqual(underPre);
@@ -822,10 +825,10 @@ public class ThermodynamicsTest extends PJDependentTest {
      * Generates and tests an EnergyResult against tabulated values.
      *
      * @param description Description (such as unbiased OSRW)
-     * @param potential A CrystalPotential (either OSRW or underlying).
-     * @param x Coordinates.
-     * @param g Array to add gradients to.
-     * @param tableIndex 0 for unbiased potential, 1 for a biased potential.
+     * @param potential   A CrystalPotential (either OSRW or underlying).
+     * @param x           Coordinates.
+     * @param g           Array to add gradients to.
+     * @param tableIndex  0 for unbiased potential, 1 for a biased potential.
      * @return The generated EnergyResult.
      */
     private EnergyResult testGradientSet(String description, CrystalPotential potential, double[] x, double[] g, int tableIndex) {
@@ -847,10 +850,10 @@ public class ThermodynamicsTest extends PJDependentTest {
     /**
      * Checks a scalar value against its expected value. Mostly a convenience formatting method.
      *
-     * @param actual Value from the test.
-     * @param expected Array of expected values (see tableIndex).
-     * @param tableIndex 0 for unbiased potential, 1 for biased OSRW potential.
-     * @param tol Tolerance for this test.
+     * @param actual      Value from the test.
+     * @param expected    Array of expected values (see tableIndex).
+     * @param tableIndex  0 for unbiased potential, 1 for biased OSRW potential.
+     * @param tol         Tolerance for this test.
      * @param description Scalar to be tested.
      */
     private void checkThGradScalar(double actual, double[] expected, int tableIndex, double tol, String description) {
@@ -866,16 +869,16 @@ public class ThermodynamicsTest extends PJDependentTest {
      * Checks an array value (generally 1-D flat) against its expected value (generally 3-D; indices
      * tableIndex, then atom number, then X/Y/Z).
      *
-     * @param actual Array from the test, flat.
-     * @param expected Array of expected values, indexed by tableIndex, atoms, and XYZ.
-     * @param tableIndex 0 for unbiased potential, 1 for biased OSRW potential.
-     * @param tol Tolerance for this test.
+     * @param actual      Array from the test, flat.
+     * @param expected    Array of expected values, indexed by tableIndex, atoms, and XYZ.
+     * @param tableIndex  0 for unbiased potential, 1 for biased OSRW potential.
+     * @param tol         Tolerance for this test.
      * @param description Array to be tested.
      */
     private void checkThGradArray(double[] actual, double[][][] expected, int tableIndex, double tol, String description) {
         double[] actualSlice = new double[3];
         for (int i = 0; i < numGradAtoms; i++) {
-            int i3 = i*3;
+            int i3 = i * 3;
             System.arraycopy(actual, i3, actualSlice, 0, 3);
             if (debugMode) {
                 logger.info(String.format(" %s at atom %d is %s", description, i, Arrays.toString(actualSlice)));
@@ -891,8 +894,8 @@ public class ThermodynamicsTest extends PJDependentTest {
     /**
      * Checks if two double values are approximately equal to within a tolerance.
      *
-     * @param v1 One value to compare.
-     * @param v2 Second value to compare.
+     * @param v1     One value to compare.
+     * @param v2     Second value to compare.
      * @param absTol Tolerance for inequality (absolute, not relative).
      * @return True if v1 approximately equal to v2.
      */
@@ -914,6 +917,7 @@ public class ThermodynamicsTest extends PJDependentTest {
 
         private final double[] gradient;
         private final double[] lamGradient;
+
         public EnergyResult(String description, CrystalPotential potential, double[] x, double[] g) {
             this.description = description;
 
@@ -937,7 +941,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         /**
          * Asserts that two energy results are equivalent to each other. Always tests U, dU/dX, and dU/dL.
          * Also tests d2U/dL2 and d2U/dXdL if these second gradients are available.
-         *
+         * <p>
          * All values must be identical to tolerance.
          *
          * @param other Another EnergyResult
@@ -966,7 +970,7 @@ public class ThermodynamicsTest extends PJDependentTest {
         /**
          * Asserts that two energy results are not equivalent to each other. Always tests U, dU/dX, and dU/dL.
          * Also tests d2U/dL2 and d2U/dXdL if these second gradients are available.
-         *
+         * <p>
          * Prints all equalities, fails if no inequalities are found. At least one value must not be identical to tolerance.
          *
          * @param other Another EnergyResult

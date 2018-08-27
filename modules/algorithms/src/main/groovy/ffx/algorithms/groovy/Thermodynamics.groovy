@@ -1,4 +1,3 @@
-
 package ffx.algorithms.groovy
 
 import java.util.regex.Pattern
@@ -58,210 +57,255 @@ class Thermodynamics extends Script {
         /**
          * -h or --help to print a help message
          */
-        @Option(shortName='h', defaultValue='false', description='Print this help message.') boolean help;
+        @Option(shortName = 'h', defaultValue = 'false', description = 'Print this help message.')
+        boolean help;
         /**
          * -mc or --monteCarlo to use MC-TTOSRW
          */
-        @Option(shortName='mc', longName='monteCarlo', defaultValue='false', description='Use experimental MC-TTOSRW sampling') boolean mc;
+        @Option(shortName = 'mc', longName = 'monteCarlo', defaultValue = 'false', description = 'Use experimental MC-TTOSRW sampling')
+        boolean mc;
         /**
          * -mcL or --mcLambdaStdDev to set MC-TTOSRW Lambda move standard deviation (default is 0.1).
          */
-        @Option(shortName='mcL', longName='mcLambdaStdDev', defaultValue='0.1', description='MC lambda move standard deviation') double mcL;
+        @Option(shortName = 'mcL', longName = 'mcLambdaStdDev', defaultValue = '0.1', description = 'MC lambda move standard deviation')
+        double mcL;
         /**
          * -mcMD or --mcMDSteps to set MC-TTOSRW number of MD steps per move (default is 50).
          */
-        @Option(shortName='mcMD', longName='mcMDSteps', defaultValue='50', description='MC MD move number of steps') int mcMD;
+        @Option(shortName = 'mcMD', longName = 'mcMDSteps', defaultValue = '50', description = 'MC MD move number of steps')
+        int mcMD;
         /**
          * -a or --async sets asynchronous walker communication (recommended)
          */
-        @Option(shortName='a', defaultValue='false', description='Walker communication is asynchronous.') boolean async;
+        @Option(shortName = 'a', defaultValue = 'false', description = 'Walker communication is asynchronous.')
+        boolean async;
         /**
          * -o or --optimize saves low-energy snapshots discovered (only for single topology simulations).
          */
-        @Option(shortName='o', defaultValue='false', description='Optimize and save low-energy snapshots.') boolean optimize;
+        @Option(shortName = 'o', defaultValue = 'false', description = 'Optimize and save low-energy snapshots.')
+        boolean optimize;
         /**
          * -n or --steps sets the number of molecular dynamics steps (default is 1 nsec).
          */
-        @Option(shortName='n', defaultValue='1000000', description='Number of molecular dynamics steps') int steps;
+        @Option(shortName = 'n', defaultValue = '1000000', description = 'Number of molecular dynamics steps')
+        int steps;
         /**
          * -q or --equilibrate sets the number of equilibration steps prior to
          * production ttOSRW counts begin.
          */
-        @Option(shortName='q', longName='equilibrate', defaultValue='1000', description='Equilibration steps prior to OSRW counts.') int nEquil;
+        @Option(shortName = 'q', longName = 'equilibrate', defaultValue = '1000', description = 'Equilibration steps prior to OSRW counts.')
+        int nEquil;
         /**
          * -d or --dt sets the timestep; 1 femtosecond by default. 2.0 is
          * suggested for the RESPA integrator; otherwise, increase only if you
          * know what you are doing.
          */
-        @Option(shortName='d', defaultValue='1.0', description='Time discretization step (fsec)') double dt;
+        @Option(shortName = 'd', defaultValue = '1.0', description = 'Time discretization step (fsec)')
+        double dt;
         /**
          * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.25 psec default).
          */
-        @Option(shortName='r', longName='report', defaultValue='0.25', description='Interval to report thermodynamics (psec).') double report;
+        @Option(shortName = 'r', longName = 'report', defaultValue = '0.25', description = 'Interval to report thermodynamics (psec).')
+        double report;
         /**
          * -w or --write sets snapshot save frequency in picoseconds (10.0 psec default).
          */
-        @Option(shortName='w', longName='write', defaultValue='10.0', description='Interval to write out coordinates (psec).') double write;
+        @Option(shortName = 'w', longName = 'write', defaultValue = '10.0', description = 'Interval to write out coordinates (psec).')
+        double write;
         /**
          * -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default).
          */
-        @Option(shortName='k', longName='checkpoint', defaultValue='1.0', description='Interval to write out histogram and .dyn restart files') double checkpoint;
+        @Option(shortName = 'k', longName = 'checkpoint', defaultValue = '1.0', description = 'Interval to write out histogram and .dyn restart files')
+        double checkpoint;
         /**
          * -t or --temperature sets the simulation temperature (Kelvin).
          */
-        @Option(shortName='t', longName='temperature', defaultValue='298.15', description='Temperature (Kelvin)') double temp;
+        @Option(shortName = 't', longName = 'temperature', defaultValue = '298.15', description = 'Temperature (Kelvin)')
+        double temp;
         /**
          * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or Bussi.
          */
-        @Option(shortName='b', longName='thermostat', convert = {s -> return Thermostat.parseThermostat(s);}, defaultValue='Berendsen', description='Thermostat: [Adiabatic / Berendsen / Bussi].') ThermostatEnum tstat;
+        @Option(shortName = 'b', longName = 'thermostat', convert = { s -> return Thermostat.parseThermostat(s); }, defaultValue = 'Berendsen', description = 'Thermostat: [Adiabatic / Berendsen / Bussi].')
+        ThermostatEnum tstat;
         /**
          * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, or Stochastic (AKA Langevin dynamics).
          */
-        @Option(shortName='i', longName='integrator', convert = {s -> return Integrator.parseIntegrator(s);}, defaultValue='Beeman', description='Integrator: [Beeman / Respa / Stochastic / Verlet]') IntegratorEnum integrator;
+        @Option(shortName = 'i', longName = 'integrator', convert = { s -> return Integrator.parseIntegrator(s); }, defaultValue = 'Beeman', description = 'Integrator: [Beeman / Respa / Stochastic / Verlet]')
+        IntegratorEnum integrator;
         /**
          * -s1 or --start1 defines the first softcored atom for the first topology.
          */
-        @Option(shortName='s1', longName='start1', defaultValue='0', description='Starting ligand atom for 1st topology') int s1;
+        @Option(shortName = 's1', longName = 'start1', defaultValue = '0', description = 'Starting ligand atom for 1st topology')
+        int s1;
         /**
          * -s2 or --start2 defines the first softcored atom for the second topology.
          */
-        @Option(shortName='s2', longName='start2', defaultValue='0', description='Starting ligand atom for 2nd topology') int s2;
+        @Option(shortName = 's2', longName = 'start2', defaultValue = '0', description = 'Starting ligand atom for 2nd topology')
+        int s2;
         /**
          * -f1 or --final1 defines the last softcored atom for the first topology.
          */
-        @Option(shortName='f1', longName='final1', defaultValue='-1', description='Final ligand atom for the 1st topology') int f1;
+        @Option(shortName = 'f1', longName = 'final1', defaultValue = '-1', description = 'Final ligand atom for the 1st topology')
+        int f1;
         /**
          * -f2 or --final2 defines the last softcored atom for the second topology.
          */
-        @Option(shortName='f2', longName='final2', defaultValue='-1', description='Final ligand atom for the 2nd topology') int f2;
+        @Option(shortName = 'f2', longName = 'final2', defaultValue = '-1', description = 'Final ligand atom for the 2nd topology')
+        int f2;
         /**
          * --la1 or -ligAtoms1 allows for multiple ranges and/or singletons of ligand atoms in the first topology, separated by periods.
          */
-        @Option(shortName='la1', longName='ligAtoms1', description='Period-separated ranges of 1st toplogy ligand atoms (e.g. 40-50.72-83)') String ligAt1;
+        @Option(shortName = 'la1', longName = 'ligAtoms1', description = 'Period-separated ranges of 1st toplogy ligand atoms (e.g. 40-50.72-83)')
+        String ligAt1;
         /**
          * --la2 or -ligAtoms2 allows for multiple ranges and/or singletons of ligand atoms in the second topology, separated by periods.
          */
-        @Option(shortName='la2', longName='ligAtoms2', description='Period-separated ranges of 2nd toplogy ligand atoms (e.g. 40-50.72-83)') String ligAt2;
+        @Option(shortName = 'la2', longName = 'ligAtoms2', description = 'Period-separated ranges of 2nd toplogy ligand atoms (e.g. 40-50.72-83)')
+        String ligAt2;
         /**
          * -es1 or --noElecStart1 defines the first atom of the first topology to have no electrostatics.
          */
-        @Option(shortName='es1', longName='noElecStart1', defaultValue='1', description='Starting no-electrostatics atom for 1st topology') int es1;
+        @Option(shortName = 'es1', longName = 'noElecStart1', defaultValue = '1', description = 'Starting no-electrostatics atom for 1st topology')
+        int es1;
         /**
          * -es2 or --noElecStart2 defines the first atom of the second topology to have no electrostatics.
          */
-        @Option(shortName='es2', longName='noElecStart2', defaultValue='1', description='Starting no-electrostatics atom for 2nd topology') int es2;
+        @Option(shortName = 'es2', longName = 'noElecStart2', defaultValue = '1', description = 'Starting no-electrostatics atom for 2nd topology')
+        int es2;
         /**
          * -ef1 or --noElecFinal1 defines the last atom of the first topology to have no electrostatics.
          */
-        @Option(shortName='ef1', longName='noElecFinal1', defaultValue='-1', description='Final no-electrostatics atom for 1st topology') int ef1;
+        @Option(shortName = 'ef1', longName = 'noElecFinal1', defaultValue = '-1', description = 'Final no-electrostatics atom for 1st topology')
+        int ef1;
         /**
          * -ef2 or --noElecFinal2 defines the last atom of the second topology to have no electrostatics.
          */
-        @Option(shortName='ef2', longName='noElecFinal2', defaultValue='-1', description='Final no-electrostatics atom for 2nd topology') int ef2;
+        @Option(shortName = 'ef2', longName = 'noElecFinal2', defaultValue = '-1', description = 'Final no-electrostatics atom for 2nd topology')
+        int ef2;
         /**
          * -l or --lambda sets the lambda value to minimize at.
          */
-        @Option(shortName='l', longName='lambda', defaultValue='-1',
-            description='Initial lambda value (> 1.0 distributes lambda across walkers)') double lambda;
+        @Option(shortName = 'l', longName = 'lambda', defaultValue = '-1',
+                description = 'Initial lambda value (> 1.0 distributes lambda across walkers)')
+        double lambda;
         /**
          * -c or --count sets the number of time steps between OSRW counts.
          */
-        @Option(shortName='c', longName='count', defaultValue='10',
-            description='Time steps between OSRW counts.') int countFreq;
+        @Option(shortName = 'c', longName = 'count', defaultValue = '10',
+                description = 'Time steps between OSRW counts.')
+        int countFreq;
         /**
          * -b or --bias sets the initial Gaussian bias magnitude in kcal/mol.
          */
-        @Option(shortName='g', longName='bias', defaultValue='0.05',
-            description='Gaussian bias magnitude (kcal/mol)') double biasMag;
+        @Option(shortName = 'g', longName = 'bias', defaultValue = '0.05',
+                description = 'Gaussian bias magnitude (kcal/mol)')
+        double biasMag;
         /**
          * -m or --mass sets the lambda particle mass.
          */
-        @Option(shortName='m', longName='mass', defaultValue='1.0e-18',
-            description='Lambda particle mass') double lamMass;
+        @Option(shortName = 'm', longName = 'mass', defaultValue = '1.0e-18',
+                description = 'Lambda particle mass')
+        double lamMass;
         /**
          * -x or --friction sets the friction on the lambda particle.
          */
-        @Option(shortName='x', longName='friction', defaultValue='1.0e-18',
-            description='Lambda particle friction') double lamFric;
+        @Option(shortName = 'x', longName = 'friction', defaultValue = '1.0e-18',
+                description = 'Lambda particle friction')
+        double lamFric;
         /**
          * -p or --npt Specify use of a MC Barostat at the given pressure (default 1.0 atm).
          */
-        @Option(shortName='p', longName='npt', defaultValue='0',
-            description='Specify use of a MC Barostat at the given pressure (default of 0 = disabled)') double pressure;
+        @Option(shortName = 'p', longName = 'npt', defaultValue = '0',
+                description = 'Specify use of a MC Barostat at the given pressure (default of 0 = disabled)')
+        double pressure;
         /**
          * -sym or --symOp to apply a random Cartesian symmetry operator with the specified translation range -X .. X (no default).
          */
-        @Option(shortName='rsym', longName='randomSymOp', defaultValue='-1.0',
-            description='Apply a random Cartesian symmetry operator with a random translation in the range -X .. X.') double symScalar
+        @Option(shortName = 'rsym', longName = 'randomSymOp', defaultValue = '-1.0',
+                description = 'Apply a random Cartesian symmetry operator with a random translation in the range -X .. X.')
+        double symScalar
         /**
          * -ruc or --unitCell random unit cell axes will be used achieve the specified density (g/cc) (no default density).
          */
-        @Option(shortName='ruc', longName='randomUnitCell', defaultValue='-1.0',
-            description='Apply random unit cell axes to achieve the specified density (g/cc).') double ucDensity
+        @Option(shortName = 'ruc', longName = 'randomUnitCell', defaultValue = '-1.0',
+                description = 'Apply random unit cell axes to achieve the specified density (g/cc).')
+        double ucDensity
         /**
          * -ld or --minDensity sets a tin box constraint on the barostat, preventing over-expansion of the box (particularly in vapor phase), permitting an analytic correction.
          */
-        @Option(shortName='ld', longName='minDensity', defaultValue='0.75',
-            description='Minimum density allowed by the barostat') double minDensity;
+        @Option(shortName = 'ld', longName = 'minDensity', defaultValue = '0.75',
+                description = 'Minimum density allowed by the barostat')
+        double minDensity;
         /**
          * -hd or --maxDensity sets a maximum density on the barostat, preventing under-expansion of the box.
          */
-        @Option(shortName='hd', longName='maxDensity', defaultValue='1.6',
-            description='Maximum density allowed by the barostat') double maxDensity;
+        @Option(shortName = 'hd', longName = 'maxDensity', defaultValue = '1.6',
+                description = 'Maximum density allowed by the barostat')
+        double maxDensity;
         /**
          * -sm or --maxSideMove sets the width of proposed crystal side length moves (rectangularly distributed) in Angstroms.
          */
-        @Option(shortName='sm', longName='maxSideMove', defaultValue='0.25',
-            description='Maximum side move allowed by the barostat in Angstroms') double maxSideMove;
+        @Option(shortName = 'sm', longName = 'maxSideMove', defaultValue = '0.25',
+                description = 'Maximum side move allowed by the barostat in Angstroms')
+        double maxSideMove;
         /**
          * -am or --maxAngleMove sets the width of proposed crystal angle moves (rectangularly distributed) in degrees.
          */
-        @Option(shortName='am', longName='maxAngleMove', defaultValue='0.5',
-            description='Maximum angle move allowed by the barostat in degrees') double maxAngleMove;
+        @Option(shortName = 'am', longName = 'maxAngleMove', defaultValue = '0.5',
+                description = 'Maximum angle move allowed by the barostat in degrees')
+        double maxAngleMove;
         /**
          * -mi or --meanInterval sets the mean number of MD steps (Poisson distribution) between barostat move proposals.
          */
-        @Option(shortName='mi', longName='meanInterval', defaultValue='10',
-            description='Mean number of MD steps between barostat move proposals.') int meanInterval;
+        @Option(shortName = 'mi', longName = 'meanInterval', defaultValue = '10',
+                description = 'Mean number of MD steps between barostat move proposals.')
+        int meanInterval;
 
         /**
          * -W or --traversals sets writing lambda traversal snapshots.
          */
-        @Option(shortName='W', longName='traversals', defaultValue='false',
-            description='Write out lambda-traversal snapshots.') boolean traversals;
+        @Option(shortName = 'W', longName = 'traversals', defaultValue = 'false',
+                description = 'Write out lambda-traversal snapshots.')
+        boolean traversals;
         /**
          * -rt or --reset resets the OSRW histogram once, at lambda 0.99.
          */
-        @Option(shortName='rt', longName='reset', defaultValue='false',
-            description='Reset OSRW histogram once, when lambda reaches 0.99.') boolean reset;
+        @Option(shortName = 'rt', longName = 'reset', defaultValue = 'false',
+                description = 'Reset OSRW histogram once, when lambda reaches 0.99.')
+        boolean reset;
         /**
          * -tp or --temperingParam sets the Dama et al tempering rate parameter,
          * in multiples of kBT.
          */
-        @Option(shortName='tp', longName='temperingParam', defaultValue='8.0',
-            description='Dama et al tempering rate parameter in multiples of kBT') double temperParam;
+        @Option(shortName = 'tp', longName = 'temperingParam', defaultValue = '8.0',
+                description = 'Dama et al tempering rate parameter in multiples of kBT')
+        double temperParam;
         /**
          * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart
          * files and thus resets the histogram; use -rn false to continue from
          * the end of any prior simulation.
          */
-        @Option(shortName='rn', longName='resetNumSteps', defaultValue='true',
-            description='Ignore prior steps logged in .lam files') String resetStepsString;
+        @Option(shortName = 'rn', longName = 'resetNumSteps', defaultValue = 'true',
+                description = 'Ignore prior steps logged in .lam files')
+        String resetStepsString;
         /**
          * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, 4, or 8.
          */
-        @Option(shortName='np', longName='nParallel', defaultValue='1',
-            description='Number of topologies to evaluate in parallel') int nPar;
+        @Option(shortName = 'np', longName = 'nParallel', defaultValue = '1',
+                description = 'Number of topologies to evaluate in parallel')
+        int nPar;
         /**
          * -uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated ranges or singletons.
          */
-        @Option(shortName='uaA', longName='unsharedA',
-            description='Unshared atoms in the A dual topology (period-separated hyphenated ranges)') String unsharedA;
+        @Option(shortName = 'uaA', longName = 'unsharedA',
+                description = 'Unshared atoms in the A dual topology (period-separated hyphenated ranges)')
+        String unsharedA;
         /**
          * -uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated ranges or singletons.
          */
-        @Option(shortName='uaB', longName='unsharedB',
-            description='Unshared atoms in the B dual topology (period-separated hyphenated ranges)') String unsharedB;
+        @Option(shortName = 'uaB', longName = 'unsharedB',
+                description = 'Unshared atoms in the B dual topology (period-separated hyphenated ranges)')
+        String unsharedB;
         /**
          * -dw or --distributeWalkers allows walkers to start from multiple
          * conformations; AUTO picks up per-walker conformations as
@@ -269,15 +313,17 @@ class Thermodynamics extends Script {
          * rotamer optimization to generate side-chain configurations to start
          * from.
          */
-        @Option(shortName='dw', longName='distributeWalkers',
-            description='AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.') String distWalksString;
+        @Option(shortName = 'dw', longName = 'distributeWalkers',
+                description = 'AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.')
+        String distWalksString;
         /**
          * -le or --lambdaExponent sets the power of lambda used by dual
          * topologies. Now deprecated by numeric argument to -sf.
          */
 
-        @Option(shortName='le', longName='lambdaExponent', defaultValue='1.0',
-            description='DEPRECATED: Exponent to apply to dual topology lambda.') double lamExp;
+        @Option(shortName = 'le', longName = 'lambdaExponent', defaultValue = '1.0',
+                description = 'DEPRECATED: Exponent to apply to dual topology lambda.')
+        double lamExp;
         /**
          * -sf or --switchingFunction sets the switching function to be used by
          * dual topologies; TRIG produces the function sin^2(pi/2*lambda)*E1(lambda)
@@ -292,14 +338,15 @@ class Thermodynamics extends Script {
          * The trigonometric switch can be restated thusly, since
          * cos^2(pi/2*lambda) is identical to sin^2(pi/2*(1-lambda)), f(1-l).
          */
-        @Option(shortName='sf', longName='switchingFunction', defaultValue='1.0',
-            description='Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)') String lambdaFunction;
-
+        @Option(shortName = 'sf', longName = 'switchingFunction', defaultValue = '1.0',
+                description = 'Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)')
+        String lambdaFunction;
 
         /**
          * The final argument(s) should be one or more filenames.
          */
-        @Unparsed List<String> filenames;
+        @Unparsed
+        List<String> filenames;
     }
 
     private static final Pattern rangeregex = Pattern.compile("([0-9]+)-?([0-9]+)?");
@@ -335,7 +382,7 @@ class Thermodynamics extends Script {
      */
     private void openFile(Options options, String toOpen, File structFile, int topNum) {
         if (autoDist) {
-            String openName = String.format("%s_%d", toOpen, rank+1);
+            String openName = String.format("%s_%d", toOpen, rank + 1);
             File testFile = new File(openName);
             if (testFile.exists()) {
                 toOpen = openName;
@@ -365,97 +412,97 @@ class Thermodynamics extends Script {
         ForceFieldEnergy energy = mola.getPotentialEnergy();
         Atom[] atoms = mola.getAtomArray();
         int remainder = (topNum % 2) + 1;
-        switch(remainder) {
-        case 1:
-            /**
-             * Improve this logic once @Option annotations are more finished.
-             */
-            if (options.s1 > 0) {
-                for (int i = options.s1; i <= options.f1; i++) {
-                    Atom ai = atoms[i-1];
-                    ai.setApplyLambda(true);
-                    ai.print();
-                }
-            }
-            if (ranges1) {
-                for (range in ranges1) {
-                    def m = rangeregex.matcher(range);
-                    if (m.find()) {
-                        int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                        if (rangeStart > rangeEnd) {
-                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
-                        }
-                        // Don't need to worry about negative numbers; rangeregex just won't match.
-                        for (int i = rangeStart; i <= rangeEnd; i++) {
-                            Atom ai = atoms[i-1];
-                            ai.setApplyLambda(true);
-                            ai.print();
-                        }
-                    } else {
-                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
+        switch (remainder) {
+            case 1:
+                /**
+                 * Improve this logic once @Option annotations are more finished.
+                 */
+                if (options.s1 > 0) {
+                    for (int i = options.s1; i <= options.f1; i++) {
+                        Atom ai = atoms[i - 1];
+                        ai.setApplyLambda(true);
+                        ai.print();
                     }
                 }
-            }
-
-            // Apply the no electrostatics atom selection
-            int noElecStart = options.es1;
-            noElecStart = (noElecStart < 1) ? 1 : noElecStart;
-
-            int noElecStop = options.ef1;
-            noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
-
-            for (int i = noElecStart; i <= noElecStop; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setElectrostatics(false);
-                ai.print();
-            }
-            break;
-        case 2:
-            /**
-             * Improve this logic once @Option annotations are more finished.
-             */
-            if (options.s2 > 0) {
-                for (int i = options.s2; i <= options.f2; i++) {
-                    Atom ai = atoms[i-1];
-                    ai.setApplyLambda(true);
-                    ai.print();
-                }
-            }
-            if (ranges2) {
-                for (range in ranges2) {
-                    def m = rangeregex.matcher(range);
-                    if (m.find()) {
-                        int rangeStart = Integer.parseInt(m.group(1));
-                        int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
-                        if (rangeStart > rangeEnd) {
-                            logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                if (ranges1) {
+                    for (range in ranges1) {
+                        def m = rangeregex.matcher(range);
+                        if (m.find()) {
+                            int rangeStart = Integer.parseInt(m.group(1));
+                            int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
+                            if (rangeStart > rangeEnd) {
+                                logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                            }
+                            // Don't need to worry about negative numbers; rangeregex just won't match.
+                            for (int i = rangeStart; i <= rangeEnd; i++) {
+                                Atom ai = atoms[i - 1];
+                                ai.setApplyLambda(true);
+                                ai.print();
+                            }
+                        } else {
+                            logger.warning(" Could not recognize ${range} as a valid range; skipping");
                         }
-                        // Don't need to worry about negative numbers; rangeregex just won't match.
-                        for (int i = rangeStart; i <= rangeEnd; i++) {
-                            Atom ai = atoms[i-1];
-                            ai.setApplyLambda(true);
-                            ai.print();
-                        }
-                    } else {
-                        logger.warning(" Could not recognize ${range} as a valid range; skipping");
                     }
                 }
-            }
 
-            // Apply the no electrostatics atom selection
-            int noElecStart2 = options.es2;
-            noElecStart2 = (noElecStart2 < 1) ? 1 : noElecStart2;
+                // Apply the no electrostatics atom selection
+                int noElecStart = options.es1;
+                noElecStart = (noElecStart < 1) ? 1 : noElecStart;
 
-            int noElecStop2 = options.ef2;
-            noElecStop2 = (noElecStop2 > atoms.length) ? atoms.length : noElecStop2;
+                int noElecStop = options.ef1;
+                noElecStop = (noElecStop > atoms.length) ? atoms.length : noElecStop;
 
-            for (int i = noElecStart2; i <= noElecStop2; i++) {
-                Atom ai = atoms[i - 1];
-                ai.setElectrostatics(false);
-                ai.print();
-            }
-            break;
+                for (int i = noElecStart; i <= noElecStop; i++) {
+                    Atom ai = atoms[i - 1];
+                    ai.setElectrostatics(false);
+                    ai.print();
+                }
+                break;
+            case 2:
+                /**
+                 * Improve this logic once @Option annotations are more finished.
+                 */
+                if (options.s2 > 0) {
+                    for (int i = options.s2; i <= options.f2; i++) {
+                        Atom ai = atoms[i - 1];
+                        ai.setApplyLambda(true);
+                        ai.print();
+                    }
+                }
+                if (ranges2) {
+                    for (range in ranges2) {
+                        def m = rangeregex.matcher(range);
+                        if (m.find()) {
+                            int rangeStart = Integer.parseInt(m.group(1));
+                            int rangeEnd = (m.group(2) != null) ? Integer.parseInt(m.group(2)) : rangeStart;
+                            if (rangeStart > rangeEnd) {
+                                logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
+                            }
+                            // Don't need to worry about negative numbers; rangeregex just won't match.
+                            for (int i = rangeStart; i <= rangeEnd; i++) {
+                                Atom ai = atoms[i - 1];
+                                ai.setApplyLambda(true);
+                                ai.print();
+                            }
+                        } else {
+                            logger.warning(" Could not recognize ${range} as a valid range; skipping");
+                        }
+                    }
+                }
+
+                // Apply the no electrostatics atom selection
+                int noElecStart2 = options.es2;
+                noElecStart2 = (noElecStart2 < 1) ? 1 : noElecStart2;
+
+                int noElecStop2 = options.ef2;
+                noElecStop2 = (noElecStop2 > atoms.length) ? atoms.length : noElecStop2;
+
+                for (int i = noElecStart2; i <= noElecStop2; i++) {
+                    Atom ai = atoms[i - 1];
+                    ai.setElectrostatics(false);
+                    ai.print();
+                }
+                break;
         }
 
         // Turn off checks for overlapping atoms, which is expected for lambda=0.
@@ -558,7 +605,7 @@ class Thermodynamics extends Script {
     }
 
     def run() {
-        def cli = new CliBuilder(usage:' ffxc Thermodynamics [options] <filename> [file2...]', header:' Options:');
+        def cli = new CliBuilder(usage: ' ffxc Thermodynamics [options] <filename> [file2...]', header: ' Options:');
 
         def options = new Options();
         cli.parseFromInstance(options, args);
@@ -621,24 +668,24 @@ class Thermodynamics extends Script {
         if (options.lambdaFunction) {
             String lf = options.lambdaFunction.toUpperCase();
             switch (lf) {
-            case ~/^-?[0-9]*\.?[0-9]+/:
-                double exp = Double.parseDouble(lf);
-                sf = new PowerSwitch(1.0, exp);
-                break;
-            case "TRIG":
-                sf = new SquaredTrigSwitch(false);
-                break;
-            case "MULT":
-                sf = new MultiplicativeSwitch(0.0, 1.0);
-                break;
-            default:
-                try {
-                    double beta = Double.parseDouble(lf);
-                    sf = new PowerSwitch(1.0, beta);
-                } catch (NumberFormatException ex) {
-                    logger.warning(String.format("Argument to option -sf %s could not be properly parsed; using default linear switch", options.lambdaFunction));
-                    sf = new PowerSwitch(1.0, 1.0);
-                }
+                case ~/^-?[0-9]*\.?[0-9]+/:
+                    double exp = Double.parseDouble(lf);
+                    sf = new PowerSwitch(1.0, exp);
+                    break;
+                case "TRIG":
+                    sf = new SquaredTrigSwitch(false);
+                    break;
+                case "MULT":
+                    sf = new MultiplicativeSwitch(0.0, 1.0);
+                    break;
+                default:
+                    try {
+                        double beta = Double.parseDouble(lf);
+                        sf = new PowerSwitch(1.0, beta);
+                    } catch (NumberFormatException ex) {
+                        logger.warning(String.format("Argument to option -sf %s could not be properly parsed; using default linear switch", options.lambdaFunction));
+                        sf = new PowerSwitch(1.0, 1.0);
+                    }
             }
         } else {
             sf = new PowerSwitch(1.0, options.lamExp);
@@ -663,7 +710,7 @@ class Thermodynamics extends Script {
         if (size > 1) {
             rank = world.rank();
             File rankDirectory = new File(structureFile.getParent() + File.separator
-                + Integer.toString(rank));
+                    + Integer.toString(rank));
             if (!rankDirectory.exists()) {
                 rankDirectory.mkdir();
             }
@@ -683,7 +730,7 @@ class Thermodynamics extends Script {
         // Turn on computation of lambda derivatives if softcore atoms exist or only a single topology.
         boolean lambdaTerm = options.ligAt1 || options.ligAt2 || (options.s1 > 0) || (options.s2 > 0) || nArgs == 1;
         if (lambdaTerm) {
-            System.setProperty("lambdaterm","true");
+            System.setProperty("lambdaterm", "true");
         }
 
         // Relative free energies via the DualTopologyEnergy class require different
@@ -691,7 +738,7 @@ class Thermodynamics extends Script {
         if (nArgs >= 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
-            System.setProperty("ligand-vapor-elec","false");
+            System.setProperty("ligand-vapor-elec", "false");
         }
 
         double lambda = options.lambda;
@@ -745,12 +792,12 @@ class Thermodynamics extends Script {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
                         logger.info(String.format("Range %s for A, start %d end %d", range, rangeStart, rangeEnd));
-                        logger.info(String.format(" First atom in range: %s", atA1[rangeStart-1]));
+                        logger.info(String.format(" First atom in range: %s", atA1[rangeStart - 1]));
                         if (rangeEnd > rangeStart) {
-                            logger.info(String.format(" Last atom in range: %s", atA1[rangeEnd-1]));
+                            logger.info(String.format(" Last atom in range: %s", atA1[rangeEnd - 1]));
                         }
                         for (int i = rangeStart; i <= rangeEnd; i++) {
-                            ra.add(i-1);
+                            ra.add(i - 1);
                         }
                     }
                 }
@@ -762,13 +809,13 @@ class Thermodynamics extends Script {
                         if (ai.applyLambda()) {
                             logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                         } else {
-                            logger.fine(String.format(" Unshared A: %d variables %d-%d", i, counter, counter+2));
+                            logger.fine(String.format(" Unshared A: %d variables %d-%d", i, counter, counter + 2));
                             for (int j = 0; j < 3; j++) {
                                 raAdj.add(new Integer(counter + j));
                             }
                         }
                     }
-                    if (! ai.applyLambda()) {
+                    if (!ai.applyLambda()) {
                         counter += 3;
                     }
                 }
@@ -789,12 +836,12 @@ class Thermodynamics extends Script {
                             logger.severe(String.format(" Range %s was invalid; start was greater than end", range));
                         }
                         logger.info(String.format("Range %s for B, start %d end %d", range, rangeStart, rangeEnd));
-                        logger.info(String.format(" First atom in range: %s", atB1[rangeStart-1]));
+                        logger.info(String.format(" First atom in range: %s", atB1[rangeStart - 1]));
                         if (rangeEnd > rangeStart) {
-                            logger.info(String.format(" Last atom in range: %s", atB1[rangeEnd-1]));
+                            logger.info(String.format(" Last atom in range: %s", atB1[rangeEnd - 1]));
                         }
                         for (int i = rangeStart; i <= rangeEnd; i++) {
-                            rb.add(i-1);
+                            rb.add(i - 1);
                         }
                     }
                 }
@@ -806,13 +853,13 @@ class Thermodynamics extends Script {
                         if (bi.applyLambda()) {
                             logger.warning(String.format(" Ranges defined in uaA should not overlap with ligand atoms; they are assumed to not be shared."));
                         } else {
-                            logger.fine(String.format(" Unshared B: %d variables %d-%d", i, counter, counter+2));
+                            logger.fine(String.format(" Unshared B: %d variables %d-%d", i, counter, counter + 2));
                             for (int j = 0; j < 3; j++) {
                                 rbAdj.add(counter + j);
                             }
                         }
                     }
-                    if (! bi.applyLambda()) {
+                    if (!bi.applyLambda()) {
                         counter += 3;
                     }
                 }
@@ -826,93 +873,93 @@ class Thermodynamics extends Script {
         def dualTopologies = []; // Used for distResidues on quad/oct topologies
         StringBuilder sb = new StringBuilder("\n Running Transition-Tempered Orthogonal Space Random Walk for ");
         switch (nArgs) {
-        case 1:
-            if (options.symScalar > 0.0) {
-                SymOp symOp = SymOp.randomSymOpFactory(options.symScalar);
-                logger.info(String.format("\n Applying random Cartesian SymOp:\n%s", symOp.toString()));
-                Crystal crystal = topologies[0].getCrystal();
-                Atom[] atoms = topologies[0].getAtomArray();
-                double[] xyz = new double[3];
-                for (int i=0; i<atoms.length; i++) {
-                    atoms[i].getXYZ(xyz);
-                    crystal.applyCartesianSymOp(xyz, xyz, symOp);
-                    atoms[i].setXYZ(xyz);
-                }
-            }
-
-            if (options.ucDensity > 0.0) {
-                logger.info(String.format("\n Applying random unit cell axes with target density of %6.3f\n",
-                        options.ucDensity));
-                Crystal crystal = topologies[0].getCrystal();
-                if (!crystal.aperiodic()) {
-                    double mass = topologies[0].getMass();
-                    crystal.randomParameters(options.ucDensity, mass);
-                    energies[0].setCrystal(crystal);
-                }
-            }
-            potential = topologies[0].getPotentialEnergy();
-            break;
-        case 2:
-            sb.append("dual topology ");
-            DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-            if (numParallel == 2) {
-                dte.setParallel(true);
-            }
-            potential = dte;
-            break;
-        case 4:
-            sb.append("quad topology ");
-
-            DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-            DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
-            QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
-            if (numParallel >= 2) {
-                qte.setParallel(true);
-                if (numParallel == 4) {
-                    dta.setParallel(true);
-                    dtb.setParallel(true);
-                }
-            }
-            potential = qte;
-            dualTopologies[0] = dta;
-            dualTopologies[1] = dtb;
-            break;
-        case 8:
-            sb.append("oct-topology ");
-
-            DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
-            DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
-            QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
-
-            DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
-            DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
-            QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
-
-            OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
-            if (numParallel >= 2) {
-                ote.setParallel(true);
-                if (numParallel >= 4) {
-                    qtg.setParallel(true);
-                    qtd.setParallel(true);
-                    if (numParallel == 8) {
-                        dtga.setParallel(true);
-                        dtgb.setParallel(true);
-                        dtda.setParallel(true);
-                        dtdb.setParallel(true);
+            case 1:
+                if (options.symScalar > 0.0) {
+                    SymOp symOp = SymOp.randomSymOpFactory(options.symScalar);
+                    logger.info(String.format("\n Applying random Cartesian SymOp:\n%s", symOp.toString()));
+                    Crystal crystal = topologies[0].getCrystal();
+                    Atom[] atoms = topologies[0].getAtomArray();
+                    double[] xyz = new double[3];
+                    for (int i = 0; i < atoms.length; i++) {
+                        atoms[i].getXYZ(xyz);
+                        crystal.applyCartesianSymOp(xyz, xyz, symOp);
+                        atoms[i].setXYZ(xyz);
                     }
                 }
-            }
-            potential = ote;
-            dualTopologies[0] = dtga;
-            dualTopologies[1] = dtgb;
-            dualTopologies[2] = dtda;
-            dualTopologies[3] = dtdb;
-            break;
-        default:
-            logger.severe(" Must have 1, 2, 4, or 8 topologies!");
-            break;
+
+                if (options.ucDensity > 0.0) {
+                    logger.info(String.format("\n Applying random unit cell axes with target density of %6.3f\n",
+                            options.ucDensity));
+                    Crystal crystal = topologies[0].getCrystal();
+                    if (!crystal.aperiodic()) {
+                        double mass = topologies[0].getMass();
+                        crystal.randomParameters(options.ucDensity, mass);
+                        energies[0].setCrystal(crystal);
+                    }
+                }
+                potential = topologies[0].getPotentialEnergy();
+                break;
+            case 2:
+                sb.append("dual topology ");
+                DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                if (numParallel == 2) {
+                    dte.setParallel(true);
+                }
+                potential = dte;
+                break;
+            case 4:
+                sb.append("quad topology ");
+
+                DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
+                QuadTopologyEnergy qte = new QuadTopologyEnergy(dta, dtb, uniqueA, uniqueB);
+                if (numParallel >= 2) {
+                    qte.setParallel(true);
+                    if (numParallel == 4) {
+                        dta.setParallel(true);
+                        dtb.setParallel(true);
+                    }
+                }
+                potential = qte;
+                dualTopologies[0] = dta;
+                dualTopologies[1] = dtb;
+                break;
+            case 8:
+                sb.append("oct-topology ");
+
+                DualTopologyEnergy dtga = new DualTopologyEnergy(topologies[0], topologies[1], sf);
+                DualTopologyEnergy dtgb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
+                QuadTopologyEnergy qtg = new QuadTopologyEnergy(dtga, dtgb, uniqueA, uniqueB);
+
+                DualTopologyEnergy dtda = new DualTopologyEnergy(topologies[4], topologies[5], sf);
+                DualTopologyEnergy dtdb = new DualTopologyEnergy(topologies[7], topologies[6], sf);
+                QuadTopologyEnergy qtd = new QuadTopologyEnergy(dtda, dtdb, uniqueA, uniqueB);
+
+                OctTopologyEnergy ote = new OctTopologyEnergy(qtg, qtd, true);
+                if (numParallel >= 2) {
+                    ote.setParallel(true);
+                    if (numParallel >= 4) {
+                        qtg.setParallel(true);
+                        qtd.setParallel(true);
+                        if (numParallel == 8) {
+                            dtga.setParallel(true);
+                            dtgb.setParallel(true);
+                            dtda.setParallel(true);
+                            dtdb.setParallel(true);
+                        }
+                    }
+                }
+                potential = ote;
+                dualTopologies[0] = dtga;
+                dualTopologies[1] = dtgb;
+                dualTopologies[2] = dtda;
+                dualTopologies[3] = dtdb;
+                break;
+            default:
+                logger.severe(" Must have 1, 2, 4, or 8 topologies!");
+                break;
         }
-        sb.append(topologies.stream().map{t -> t.getFile().getName()}.collect(Collectors.joining(",", "[", "]")));
+        sb.append(topologies.stream().map { t -> t.getFile().getName() }.collect(Collectors.joining(",", "[", "]")));
         sb.append("\n");
         logger.info(sb.toString());
 
@@ -931,27 +978,27 @@ class Thermodynamics extends Script {
         if (distResidues) {
             logger.info(" Distributing walker conformations.");
             switch (nArgs) {
-            case 1:
-                optStructure(topologies[0], energies[0]);
-                break;
-            case 2:
-                if (potential.getNumSharedVariables() == potential.getNumberOfVariables()) {
-                    logger.info(" Generating starting structures based on dual-topology:");
-                    optStructure(topologies[0], potential);
-                } else {
-                    logger.info(" Generating separate starting structures for each topology of the dual toplogy:");
+                case 1:
                     optStructure(topologies[0], energies[0]);
-                    optStructure(topologies[1], energies[1]);
-                }
-                break;
-            case 4:
-                optStructure(topologies[0], dualTopologies[0]);
-                optStructure(topologies[3], dualTopologies[1]);
-                break;
+                    break;
+                case 2:
+                    if (potential.getNumSharedVariables() == potential.getNumberOfVariables()) {
+                        logger.info(" Generating starting structures based on dual-topology:");
+                        optStructure(topologies[0], potential);
+                    } else {
+                        logger.info(" Generating separate starting structures for each topology of the dual toplogy:");
+                        optStructure(topologies[0], energies[0]);
+                        optStructure(topologies[1], energies[1]);
+                    }
+                    break;
+                case 4:
+                    optStructure(topologies[0], dualTopologies[0]);
+                    optStructure(topologies[3], dualTopologies[1]);
+                    break;
             // Oct-topology is deprecated on account of not working as intended.
-            default:
-                logger.severe(" First: must have 1, 2, or 4 topologies.");
-                break;
+                default:
+                    logger.severe(" First: must have 1, 2, or 4 topologies.");
+                    break;
             }
         }
 
@@ -965,8 +1012,8 @@ class Thermodynamics extends Script {
         }
 
         osrw = new ffx.algorithms.TransitionTemperedOSRW(potential, potential, lambdaRestart, histogramRestart,
-            topologies[0].getProperties(), options.temp, options.dt, options.report,
-            options.checkpoint, options.async, resetNumSteps, aFuncts.getDefaultListener());
+                topologies[0].getProperties(), options.temp, options.dt, options.report,
+                options.checkpoint, options.async, resetNumSteps, aFuncts.getDefaultListener());
 
         osrw.setResetStatistics(options.reset);
         if (options.traversals) {
@@ -1014,7 +1061,7 @@ class Thermodynamics extends Script {
 
         if (options.mc) {
             ffx.algorithms.MonteCarloOSRW mcOSRW = new ffx.algorithms.MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-                topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, options.integrator);
+                    topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, options.integrator);
 
             if (options.nEquil > 0) {
                 logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
@@ -1033,7 +1080,7 @@ class Thermodynamics extends Script {
             // Create the MolecularDynamics instance.
             // If we switch over to using the factory method, request the FFX Dynamics engine.
             ffx.algorithms.MolecularDynamics molDyn = new ffx.algorithms.MolecularDynamics(topologies[0], potential,
-                topologies[0].getProperties(), null, options.tstat, options.integrator);
+                    topologies[0].getProperties(), null, options.tstat, options.integrator);
             for (int i = 1; i < topologies.size(); i++) {
                 molDyn.addAssembly(topologies.get(i), properties.get(i));
             }
@@ -1051,7 +1098,7 @@ class Thermodynamics extends Script {
                 logger.info(" Beginning Transition-Tempered OSRW sampling");
                 osrw.setPropagateLambda(true);
                 molDyn.dynamic(nSteps, options.dt, options.report, options.write, options.temp, false,
-                    fileType, restartInterval, dyn);
+                        fileType, restartInterval, dyn);
             } else {
                 logger.info(" Beginning Transition-Tempered OSRW sampling without equilibration");
                 boolean resetSteps = true;
@@ -1070,7 +1117,7 @@ class Thermodynamics extends Script {
                 }
                 if (nSteps > 0) {
                     molDyn.dynamic(nSteps, options.dt, options.report, options.write, options.temp, initVelocities,
-                        fileType, restartInterval, dyn);
+                            fileType, restartInterval, dyn);
                 } else {
                     logger.info(" No steps remaining for this process!");
                 }

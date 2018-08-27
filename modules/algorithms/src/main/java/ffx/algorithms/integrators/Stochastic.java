@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -48,7 +48,6 @@ import ffx.numerics.Potential;
  * Stochastic dynamics time step via a velocity Verlet integration algorithm.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class Stochastic extends Integrator {
@@ -65,15 +64,15 @@ public class Stochastic extends Integrator {
     /**
      * Constructor for Stochastic Dynamics.
      *
-     * @param friction Friction coefficient.
+     * @param friction   Friction coefficient.
      * @param nVariables Number of variables.
-     * @param x Variables current value.
-     * @param v Current velocities.
-     * @param a Current accelerations.
-     * @param mass Mass of the variables.
+     * @param x          Variables current value.
+     * @param v          Current velocities.
+     * @param a          Current accelerations.
+     * @param mass       Mass of the variables.
      */
     public Stochastic(double friction, int nVariables, double x[],
-            double v[], double a[], double mass[]) {
+                      double v[], double a[], double mass[]) {
         super(nVariables, x, v, a, mass);
         this.friction = friction;
         if (friction >= 0) {
@@ -88,11 +87,11 @@ public class Stochastic extends Integrator {
         temperature = 298.15;
         random = new Random();
     }
-    
+
     /**
+     * {@inheritDoc}
+     * <p>
      * Set the stochastic dynamics time-step.
-     *
-     * @param dt the time step.
      */
     @Override
     public void setTimeStep(double dt) {
@@ -106,6 +105,11 @@ public class Stochastic extends Integrator {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>temperature</code>.</p>
+     *
+     * @param temperature a double.
+     */
     public void setTemperature(double temperature) {
         this.temperature = temperature;
     }
@@ -121,6 +125,8 @@ public class Stochastic extends Integrator {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Set the frictional and random coefficients, store the current atom
      * positions, then find new atom positions and half-step velocities via
      * Verlet recursion.
@@ -215,6 +221,8 @@ public class Stochastic extends Integrator {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Use Newton's second law to get the next acceleration and find the
      * full-step velocities using the Verlet recursion.
      */
@@ -231,20 +239,15 @@ public class Stochastic extends Integrator {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Update the integrator to be consistent with chemical perturbations. This
      * overrides the default implementation so that the vfric and vrand arrays
      * can be resized.
-     *
-     * @param nVariables the number of variables being integrated.
-     * @param x the current value of each variable.
-     * @param v the current velocity of each variable.
-     * @param a the current acceleration of each variable.
-     * @param aPrevious the previous acceleration of each variable.
-     * @param mass the mass for each variable.
      */
     @Override
     public void setNumberOfVariables(int nVariables, double x[], double v[],
-            double a[], double aPrevious[], double mass[]) {
+                                     double a[], double aPrevious[], double mass[]) {
         super.setNumberOfVariables(nVariables, x, v, a, aPrevious, mass);
         if (nVariables > vfric.length) {
             vfric = new double[nVariables];

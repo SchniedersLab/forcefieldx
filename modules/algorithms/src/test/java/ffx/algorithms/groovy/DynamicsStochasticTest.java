@@ -49,7 +49,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.groovy.Dynamics;
 import ffx.algorithms.MolecularDynamics;
 
 import groovy.lang.Binding;
@@ -78,41 +77,41 @@ public class DynamicsStochasticTest extends ffx.algorithms.PJDependentTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-            {
-                "Acetamide Peptide Restart and Stochastic Random Seed", // info
-                "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
-                6.8546, // endKineticEnergy
-                -26.9921, // endPotentialEnergy
-                -20.1375, // endTotalEnergy
-                true, // testSeed
-                false, // testFriction00
-                false, // testFriction01
-            },
-            {
-                "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.0", // info
-                "ffx/algorithms/structures/acetamide_res_stoch.xyz", //filename
-                4.5625, // endKineticEnergy
-                -29.8043, // endPotentialEnergy
-                -25.2418, // endTotalEnergy
-                false, // testSeed
-                true, // testFriction00
-                false // testFriction01
-            },
-            {
-                "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.1", // info
-                "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
-                4.5743, // endKineticEnergy
-                -29.7373, // endPotentialEnergy
-                -25.1630, // endTotalEnergy
-                false, // testSeed
-                false, // testFriction00
-                true // testFriction01
-            }
+                {
+                        "Acetamide Peptide Restart and Stochastic Random Seed", // info
+                        "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+                        6.8546, // endKineticEnergy
+                        -26.9921, // endPotentialEnergy
+                        -20.1375, // endTotalEnergy
+                        true, // testSeed
+                        false, // testFriction00
+                        false, // testFriction01
+                },
+                {
+                        "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.0", // info
+                        "ffx/algorithms/structures/acetamide_res_stoch.xyz", //filename
+                        4.5625, // endKineticEnergy
+                        -29.8043, // endPotentialEnergy
+                        -25.2418, // endTotalEnergy
+                        false, // testSeed
+                        true, // testFriction00
+                        false // testFriction01
+                },
+                {
+                        "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.1", // info
+                        "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+                        4.5743, // endKineticEnergy
+                        -29.7373, // endPotentialEnergy
+                        -25.1630, // endTotalEnergy
+                        false, // testSeed
+                        false, // testFriction00
+                        true // testFriction01
+                }
         });
     }
 
     public DynamicsStochasticTest(String info, String filename, double endKineticEnergy,
-            double endPotentialEnergy, double endTotalEnergy, boolean testSeed, boolean testFriction00, boolean testFriction01) {
+                                  double endPotentialEnergy, double endTotalEnergy, boolean testSeed, boolean testFriction00, boolean testFriction01) {
 
         this.info = info;
         this.filename = filename;
@@ -139,8 +138,8 @@ public class DynamicsStochasticTest extends ffx.algorithms.PJDependentTest {
 
     @Test
     public void testDynamicsStochasticRandomSeed() {
-        
-        if (!testSeed){
+
+        if (!testSeed) {
             return;
         }
 
@@ -157,14 +156,14 @@ public class DynamicsStochasticTest extends ffx.algorithms.PJDependentTest {
         assertEquals(info + " Final kinetic energy", endKineticEnergy, molDyn.getKineticEnergy(), tolerance);
         assertEquals(info + " Final potential energy", endPotentialEnergy, molDyn.getPotentialEnergy(), tolerance);
         assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
-        
+
         //dynamics.destroyPotentials();
     }
 
     @Test
     public void testDynamicsStochasticRandomSeedFriction0() {
-        
-        if (!testFriction00){
+
+        if (!testFriction00) {
             return;
         }
 
@@ -185,14 +184,14 @@ public class DynamicsStochasticTest extends ffx.algorithms.PJDependentTest {
         assertEquals(info + " Final total energy", endTotalEnergy, molDyn.getTotalEnergy(), tolerance);
 
         System.clearProperty("friction");
-        
+
         //dynamics.destroyPotentials();
     }
 
     @Test
     public void testDynamicsStochasticRandomSeedFriction01() {
-        
-        if (!testFriction01){
+
+        if (!testFriction01) {
             return;
         }
 

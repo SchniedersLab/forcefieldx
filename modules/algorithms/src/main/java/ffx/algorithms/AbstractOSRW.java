@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -117,7 +117,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * The first Lambda bin is centered on 0.0 (-0.005 .. 0.005). The final
      * Lambda bin is centered on 1.0 ( 0.995 .. 1.005).
-     *
+     * <p>
      * With this scheme, the maximum of biasing Gaussians is at the edges.
      */
     protected int lambdaBins = 201;
@@ -303,7 +303,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     /**
      * Holds the lowest potential-energy parameters for loopBuilder runs from
-     * all visits to lambda > 0.9
+     * all visits to lambda &gt; 0.9
      */
     protected double osrwOptimumCoords[];
     protected double osrwOptimum = Double.MAX_VALUE;
@@ -350,8 +350,8 @@ public abstract class AbstractOSRW implements CrystalPotential {
     protected STATE state = STATE.BOTH;
     /**
      * Flag to indicate if OSRW should send and receive counts between processes
-     * synchronously or asynchronously. The latter is faster by ~40% because
-     * simulation with Lambda > 0.75 must compute two condensed phase
+     * synchronously or asynchronously. The latter can be faster by ~40% because
+     * simulation with Lambda &gt; 0.75 must compute two condensed phase
      * self-consistent fields to interpolate polarization.
      */
     protected final boolean asynchronous;
@@ -378,25 +378,25 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
+     * @param lambdaInterface    defines Lambda and dU/dL.
+     * @param potential          defines the Potential energy.
+     * @param lambdaFile         contains the current Lambda particle position and
+     *                           velocity.
+     * @param histogramFile      contains the Lambda and dU/dL histogram.
+     * @param properties         defines System properties.
+     * @param temperature        the simulation temperature.
+     * @param dt                 the time step.
+     * @param printInterval      number of steps between logging updates.
      * @param checkpointInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
-     * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     * @param asynchronous       set to true if walkers run asynchronously.
+     * @param algorithmListener  the AlgorithmListener to be notified of
+     *                           progress.
      */
     public AbstractOSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double checkpointInterval, boolean asynchronous,
-            AlgorithmListener algorithmListener) {
+                        File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                        double temperature, double dt, double printInterval,
+                        double checkpointInterval, boolean asynchronous,
+                        AlgorithmListener algorithmListener) {
         this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
                 temperature, dt, printInterval, checkpointInterval, asynchronous,
                 true, algorithmListener);
@@ -405,26 +405,26 @@ public abstract class AbstractOSRW implements CrystalPotential {
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
+     * @param lambdaInterface    defines Lambda and dU/dL.
+     * @param potential          defines the Potential energy.
+     * @param lambdaFile         contains the current Lambda particle position and
+     *                           velocity.
+     * @param histogramFile      contains the Lambda and dU/dL histogram.
+     * @param properties         defines System properties.
+     * @param temperature        the simulation temperature.
+     * @param dt                 the time step.
+     * @param printInterval      number of steps between logging updates.
      * @param checkpointInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
-     * @param resetNumSteps whether to reset energy counts to 0
-     * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     * @param asynchronous       set to true if walkers run asynchronously.
+     * @param resetNumSteps      whether to reset energy counts to 0
+     * @param algorithmListener  the AlgorithmListener to be notified of
+     *                           progress.
      */
     public AbstractOSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double checkpointInterval, boolean asynchronous, boolean resetNumSteps,
-            AlgorithmListener algorithmListener) {
+                        File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                        double temperature, double dt, double printInterval,
+                        double checkpointInterval, boolean asynchronous, boolean resetNumSteps,
+                        AlgorithmListener algorithmListener) {
         this.lambdaInterface = lambdaInterface;
         this.potential = potential;
         this.lambdaFile = lambdaFile;
@@ -526,12 +526,27 @@ public abstract class AbstractOSRW implements CrystalPotential {
         logger.info(String.format("  Save Interval:                  %6.3f psec", checkpointInterval));
     }
 
+    /**
+     * <p>Setter for the field <code>propagateLambda</code>.</p>
+     *
+     * @param propagateLambda a boolean.
+     */
     public void setPropagateLambda(boolean propagateLambda) {
         this.propagateLambda = propagateLambda;
     }
 
+    /**
+     * <p>addBias.</p>
+     *
+     * @param dUdL     a double.
+     * @param x        an array of {@link double} objects.
+     * @param gradient an array of {@link double} objects.
+     */
     public abstract void addBias(double dUdL, double[] x, double[] gradient);
 
+    /**
+     * <p>checkRecursionKernelSize.</p>
+     */
     public void checkRecursionKernelSize() {
         double[] x = new double[nVariables];
         x = potential.getCoordinates(x);
@@ -541,8 +556,19 @@ public abstract class AbstractOSRW implements CrystalPotential {
         checkRecursionKernelSize(dudl);
     }
 
+    /**
+     * <p>checkRecursionKernelSize.</p>
+     *
+     * @param dudl a double.
+     */
     protected abstract void checkRecursionKernelSize(double dudl);
 
+    /**
+     * <p>binForLambda.</p>
+     *
+     * @param lambda a double.
+     * @return a int.
+     */
     protected int binForLambda(double lambda) {
         int lambdaBin = (int) floor((lambda - minLambda) / dL);
         if (lambdaBin < 0) {
@@ -554,6 +580,12 @@ public abstract class AbstractOSRW implements CrystalPotential {
         return lambdaBin;
     }
 
+    /**
+     * <p>binForFLambda.</p>
+     *
+     * @param dEdLambda a double.
+     * @return a int.
+     */
     protected int binForFLambda(double dEdLambda) {
         int FLambdaBin = (int) floor((dEdLambda - minFLambda) / dFL);
         if (FLambdaBin == FLambdaBins) {
@@ -564,30 +596,65 @@ public abstract class AbstractOSRW implements CrystalPotential {
         return FLambdaBin;
     }
 
+    /**
+     * <p>getForceFielddEdL.</p>
+     *
+     * @return a double.
+     */
     public double getForceFielddEdL() {
         return dForceFieldEnergydL;
     }
 
+    /**
+     * <p>getTotaldEdLambda.</p>
+     *
+     * @return a double.
+     */
     public double getTotaldEdLambda() {
         return dUdLambda;
     }
 
+    /**
+     * <p>Getter for the field <code>forceFieldEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getForceFieldEnergy() {
         return forceFieldEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>biasEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getBiasEnergy() {
         return biasEnergy;
     }
 
+    /**
+     * <p>getPotentialEnergy.</p>
+     *
+     * @return a {@link ffx.numerics.Potential} object.
+     */
     public Potential getPotentialEnergy() {
         return potential;
     }
 
+    /**
+     * <p>getGofLdUdL.</p>
+     *
+     * @return a double.
+     */
     public double getGofLdUdL() {
         return gLdEdL;
     }
 
+    /**
+     * <p>currentFreeEnergy.</p>
+     *
+     * @return a double.
+     */
     protected double currentFreeEnergy() {
         double biasEnergy = 0.0;
         for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
@@ -628,18 +695,36 @@ public abstract class AbstractOSRW implements CrystalPotential {
         return -biasEnergy;
     }
 
+    /**
+     * <p>lastFreeEnergy.</p>
+     *
+     * @return a double.
+     */
     public double lastFreeEnergy() {
         return totalFreeEnergy;
     }
 
+    /**
+     * <p>movingAverageEnergy.</p>
+     *
+     * @return a double.
+     */
     public double movingAverageEnergy() {
         return lastAverage;
     }
 
+    /**
+     * <p>movingAverageSD.</p>
+     *
+     * @return a double.
+     */
     public double movingAverageSD() {
         return lastStdDev;
     }
 
+    /**
+     * <p>evaluatePMF.</p>
+     */
     public void evaluatePMF() {
         StringBuffer sb = new StringBuffer();
         for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
@@ -652,42 +737,78 @@ public abstract class AbstractOSRW implements CrystalPotential {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Shuts down resources associated with this OSRW, primarily the receive
      * thread.
-     *
-     * @return Success
      */
     @Override
     public abstract boolean destroy();
 
+    /**
+     * <p>evaluateKernel.</p>
+     *
+     * @param cLambda   a int.
+     * @param cF_Lambda a int.
+     * @return a double.
+     */
     protected abstract double evaluateKernel(int cLambda, int cF_Lambda);
 
     /**
      * Evaluates current free energy of the OSRW; intended to be called before
      * any dynamics have been run.
      *
-     * @return
+     * @return a double.
      */
     public double evaluateEnergy() {
         return updateFLambda(false);
     }
 
+    /**
+     * <p>updateFLambda.</p>
+     *
+     * @param print a boolean.
+     * @return a double.
+     */
     protected abstract double updateFLambda(boolean print);
 
+    /**
+     * <p>Setter for the field <code>lambda</code>.</p>
+     *
+     * @param lambda a double.
+     */
     public void setLambda(double lambda) {
         lambdaInterface.setLambda(lambda);
         this.lambda = lambda;
         theta = asin(sqrt(lambda));
     }
 
+    /**
+     * <p>Getter for the field <code>lambda</code>.</p>
+     *
+     * @return a double.
+     */
     public double getLambda() {
         return lambda;
     }
 
+    /**
+     * <p>Getter for the field <code>lambdaInterface</code>.</p>
+     *
+     * @return a {@link ffx.potential.bonded.LambdaInterface} object.
+     */
     public LambdaInterface getLambdaInterface() {
         return lambdaInterface;
     }
 
+    /**
+     * <p>setTraversalOutput.</p>
+     *
+     * @param lambdaOneFile  a {@link java.io.File} object.
+     * @param topology1      a {@link ffx.potential.MolecularAssembly} object.
+     * @param lambdaZeroFile a {@link java.io.File} object.
+     * @param topology2      a {@link ffx.potential.MolecularAssembly} object.
+     */
     public void setTraversalOutput(File lambdaOneFile, MolecularAssembly topology1, File lambdaZeroFile, MolecularAssembly topology2) {
         this.writeTraversalSnapshots = true;
         this.lambdaOneFile = lambdaOneFile;
@@ -696,14 +817,29 @@ public abstract class AbstractOSRW implements CrystalPotential {
         this.lambdaZeroAssembly = topology2;
     }
 
+    /**
+     * <p>Setter for the field <code>thetaMass</code>.</p>
+     *
+     * @param thetaMass a double.
+     */
     public void setThetaMass(double thetaMass) {
         this.thetaMass = thetaMass;
     }
 
+    /**
+     * <p>Setter for the field <code>resetStatistics</code>.</p>
+     *
+     * @param resetStatistics a boolean.
+     */
     public void setResetStatistics(boolean resetStatistics) {
         this.resetStatistics = resetStatistics;
     }
 
+    /**
+     * <p>setThetaFrication.</p>
+     *
+     * @param thetaFriction a double.
+     */
     public void setThetaFrication(double thetaFriction) {
         this.thetaFriction = thetaFriction;
     }
@@ -758,16 +894,25 @@ public abstract class AbstractOSRW implements CrystalPotential {
         lambdaInterface.setLambda(lambda);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setScaling(double[] scaling) {
         potential.setScaling(scaling);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getScaling() {
         return potential.getScaling();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCoordinates(double[] doubles) {
         return potential.getCoordinates(doubles);
@@ -777,8 +922,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
      * Return a copy of the parameter array containing lowest-energy parameters
      * from amongst visits to the specified end state (either 0 or 1).
      *
-     * @param endState
-     *
+     * @param endState a int.
      * @return a double array of parameters
      */
     public double[] getLowEnergyCoordinates(int endState) {
@@ -792,14 +936,29 @@ public abstract class AbstractOSRW implements CrystalPotential {
         }
     }
 
+    /**
+     * <p>setOSRWOptimum.</p>
+     *
+     * @param prevOSRWOptimum a double.
+     */
     public void setOSRWOptimum(double prevOSRWOptimum) {
         osrwOptimum = prevOSRWOptimum;
     }
 
+    /**
+     * <p>getOSRWOptimum.</p>
+     *
+     * @return a double.
+     */
     public double getOSRWOptimum() {
         return osrwOptimum;
     }
 
+    /**
+     * <p>getLowEnergyLoop.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public double[] getLowEnergyLoop() {
         if (osrwOptimum < Double.MAX_VALUE) {
             return osrwOptimumCoords;
@@ -809,6 +968,12 @@ public abstract class AbstractOSRW implements CrystalPotential {
         }
     }
 
+    /**
+     * <p>setOptimization.</p>
+     *
+     * @param osrwOptimization a boolean.
+     * @param molAss           a {@link ffx.potential.MolecularAssembly} object.
+     */
     public void setOptimization(boolean osrwOptimization, MolecularAssembly molAss) {
         this.osrwOptimization = osrwOptimization;
         this.molecularAssembly = molAss;
@@ -838,42 +1003,60 @@ public abstract class AbstractOSRW implements CrystalPotential {
         return energyCount;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMass() {
         return potential.getMass();
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return potential.getVariableTypes();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTotalEnergy() {
         return totalEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfVariables() {
         return potential.getNumberOfVariables();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
         potential.setEnergyTermState(state);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x) {
 
@@ -892,41 +1075,65 @@ public abstract class AbstractOSRW implements CrystalPotential {
         return energy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         potential.setVelocity(velocity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         potential.setAcceleration(acceleration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         potential.setPreviousAcceleration(previousAcceleration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         return potential.getVelocity(velocity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         return potential.getAcceleration(acceleration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         return potential.getPreviousAcceleration(previousAcceleration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCrystal(Crystal crystal) {
         potential.setCrystal(crystal);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Crystal getCrystal() {
         return potential.getCrystal();
@@ -934,6 +1141,7 @@ public abstract class AbstractOSRW implements CrystalPotential {
 
     /**
      * Returns the counts received by the bias-recieve thread.
+     *
      * @return Counts received.
      */
     public abstract int getCountsReceived();

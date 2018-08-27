@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -55,7 +55,7 @@ import ffx.potential.utils.PotentialsFunctions;
  * Evaluate binding affinity from an MD trajectory using MM-GKSA/MM-GBSA/MM-PBSA
  * approximation. Binding affinity is mean value of (complex - protein - ligand),
  * often weighted by component.
- * 
+ *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
@@ -81,12 +81,13 @@ public class MMgksa {
     private NonPolar nonPolar = NonPolar.NONE;
     private EnergyTerm[] terms;
     private final EnergyTerm gksaTerm;
-    
+
     /**
      * Constructs an MMgksa instance on a single assembly (not for binding).
-     * @param mola
-     * @param functs
-     * @param filter 
+     *
+     * @param mola   a {@link ffx.potential.MolecularAssembly} object.
+     * @param functs a {@link ffx.potential.utils.PotentialsFunctions} object.
+     * @param filter a {@link ffx.potential.parsers.SystemFilter} object.
      */
     public MMgksa(MolecularAssembly mola, PotentialsFunctions functs, SystemFilter filter) {
         this.mola = mola;
@@ -103,17 +104,18 @@ public class MMgksa {
             return e;
         });
     }
-    
+
     /**
      * Constructs an MMgksa instance for MM-GKSA binding scoring.
-     * @param mola
-     * @param functs
-     * @param filter
+     *
+     * @param mola         a {@link ffx.potential.MolecularAssembly} object.
+     * @param functs       a {@link ffx.potential.utils.PotentialsFunctions} object.
+     * @param filter       a {@link ffx.potential.parsers.SystemFilter} object.
      * @param proteinAtoms Atoms for first binding partner
-     * @param ligandAtoms Atoms for second binding partner
+     * @param ligandAtoms  Atoms for second binding partner
      */
-    public MMgksa(MolecularAssembly mola, PotentialsFunctions functs, SystemFilter filter, 
-            Atom[] proteinAtoms, Atom[] ligandAtoms) {
+    public MMgksa(MolecularAssembly mola, PotentialsFunctions functs, SystemFilter filter,
+                  Atom[] proteinAtoms, Atom[] ligandAtoms) {
         this.mola = mola;
         this.functs = functs;
         this.filter = filter;
@@ -130,10 +132,11 @@ public class MMgksa {
             return e;
         });
     }
-    
+
     /**
      * Sets atoms to be ignored entirely.
-     * @param ignored 
+     *
+     * @param ignored an array of {@link ffx.potential.bonded.Atom} objects.
      */
     public void setIgnoredAtoms(Atom[] ignored) {
         ignoreAtoms = new Atom[ignored.length];
@@ -142,42 +145,47 @@ public class MMgksa {
             atom.setUse(false);
         }
     }
-    
+
     /**
      * Assigns weight to electrostatics.
-     * @param eWt 
+     *
+     * @param eWt a double.
      */
     public void setElectrostaticsWeight(double eWt) {
         this.elecWt = eWt;
     }
-    
+
     /**
      * Assigns weight to solvation.
-     * @param sWt 
+     *
+     * @param sWt a double.
      */
     public void setSolvationWeight(double sWt) {
         this.solvWt = sWt;
     }
-    
+
     /**
      * Assigns weight to van der Waals energy.
-     * @param vWt 
+     *
+     * @param vWt a double.
      */
     public void setVdwWeight(double vWt) {
         this.vdwWt = vWt;
     }
-    
+
     /**
      * Evaluates binding or average protein energy.
+     *
      * @param frequency Evaluate energy every X frames
      */
     public void runMMgksa(int frequency) {
         runMMgksa(frequency, -1);
     }
-    
+
     /**
      * Sets the appropriate solvation terms.
-     * @return 
+     *
+     * @return
      */
     private List<EnergyTerm> getSolvationTerms() {
         List<EnergyTerm> termList = new ArrayList<>();
@@ -216,7 +224,7 @@ public class MMgksa {
         }
         return termList;
     }
-    
+
     /**
      * Autodetects which energy terms are to be printed.
      */
@@ -224,7 +232,7 @@ public class MMgksa {
         List<EnergyTerm> termSet = new ArrayList<>();
         //getE tot = this::weightEnergy;
         //termSet.add(new EnergyTerm("Total", tot));
-        
+
         if (elecWt != 0.0) {
             if (decompose) {
                 termSet.add(new EnergyTerm("Multipoles", energy::getPermanentMultipoleEnergy));
@@ -233,18 +241,23 @@ public class MMgksa {
                 termSet.add(new EnergyTerm("Electrostatics", energy::getElectrostaticEnergy));
             }
         }
-        
+
         if (solvWt != 0.0) {
             termSet.addAll(getSolvationTerms());
         }
-        
+
         if (vdwWt != 0.0) {
             termSet.add(new EnergyTerm("van der Waals", energy::getVanDerWaalsEnergy));
         }
         terms = new EnergyTerm[termSet.size()];
         termSet.toArray(terms);
     }
-    
+
+    /**
+     * <p>Setter for the field <code>decompose</code>.</p>
+     *
+     * @param decompose a boolean.
+     */
     public void setDecompose(boolean decompose) {
         this.decompose = decompose;
         try {
@@ -254,9 +267,10 @@ public class MMgksa {
             nonPolar = NonPolar.NONE;
         }
     }
-    
+
     /**
      * Evaluates and decomposes energy of the system.
+     *
      * @return MMGKSA energy components.
      */
     private double[] currentEnergies() {
@@ -268,7 +282,13 @@ public class MMgksa {
         }
         return energies;
     }
-    
+
+    /**
+     * <p>runMMgksa.</p>
+     *
+     * @param frequency a int.
+     * @param maxEvals  a int.
+     */
     public void runMMgksa(int frequency, int maxEvals) {
         setEnergyTerms();
         int nTerms = terms.length;
@@ -293,7 +313,7 @@ public class MMgksa {
                 for (Atom atom : ligandAtoms) {
                     atom.setUse(true);
                 }
-                
+
                 for (Atom atom : proteinAtoms) {
                     atom.setUse(false);
                 }
@@ -302,18 +322,18 @@ public class MMgksa {
                 for (Atom atom : proteinAtoms) {
                     atom.setUse(true);
                 }
-                
+
                 double[] snapE = new double[nTerms];
                 for (int i = 0; i < nTerms; i++) {
                     snapE[i] = totE[i] - (protE[i] + ligE[i]);
                 }
                 double snapGKSA = totGKSA - (protGKSA + ligGKSA);
-                
+
                 for (int i = 0; i < nTerms; i++) {
                     meanE[i] += (snapE[i] - meanE[i]) / nEvals;
                 }
                 meanGKSA += (snapGKSA - meanGKSA) / nEvals;
-                
+
                 logger.info(String.format(" %10d frames read, %10d frames "
                         + "evaluated", counter, nEvals));
                 logger.info(formatHeader());
@@ -329,7 +349,7 @@ public class MMgksa {
                 + "read, %11.6f kcal/mol mean energy", nEvals, meanGKSA));
         filter.closeReader();
     }
-    
+
     private String formatHeader() {
         StringBuilder sb = new StringBuilder(String.format("%15s%15s", " ", "GKSA"));
         for (EnergyTerm term : terms) {
@@ -337,7 +357,7 @@ public class MMgksa {
         }
         return sb.toString();
     }
-    
+
     private String formatEnergy(String title, double gksa, double[] energies) {
         StringBuilder sb = new StringBuilder(String.format("%-15s", title));
         sb.append(String.format("  %13.5f", gksa));
@@ -346,34 +366,34 @@ public class MMgksa {
         }
         return sb.toString();
     }
-    
+
     /**
      * Has a name, and some method to grab an energy.
      */
     private class EnergyTerm {
         private final String name;
         private final getE method;
-        
+
         public EnergyTerm(String name, getE method) {
             this.name = name;
             this.method = method;
         }
-        
+
         public double en() {
             //return method.getEnergy(energy);
             return method.getEnergy();
         }
-        
+
         public String getName() {
             return name;
         }
-        
+
         @Override
         public String toString() {
             return getName();
         }
     }
-    
+
     /**
      * Functional interface for above.
      */

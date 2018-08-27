@@ -315,6 +315,12 @@ public class ManyBodyOptions {
     int forceResiduesStart;
     int forceResiduesEnd;
 
+    /**
+     * <p>initRotamerOptimization.</p>
+     *
+     * @param rotamerOptimization a {@link ffx.algorithms.RotamerOptimization} object.
+     * @param activeAssembly      a {@link ffx.potential.MolecularAssembly} object.
+     */
     public void initRotamerOptimization(RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
         this.rotamerOptimization = rotamerOptimization;
 
@@ -511,6 +517,9 @@ public class ManyBodyOptions {
         }
     }
 
+    /**
+     * <p>setForcedResidue.</p>
+     */
     public void setForcedResidue() {
         /**
          * Force residues.
@@ -582,6 +591,11 @@ public class ManyBodyOptions {
         }
     }
 
+    /**
+     * <p>addListResidues.</p>
+     *
+     * @param resList a {@link java.util.List} object.
+     */
     public void addListResidues(List<String> resList) {
         if (!listResidues.equalsIgnoreCase("none")) {
             String tok[] = listResidues.split(",");
@@ -592,6 +606,11 @@ public class ManyBodyOptions {
         }
     }
 
+    /**
+     * <p>setResidues.</p>
+     *
+     * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
+     */
     public void setResidues(MolecularAssembly activeAssembly) {
         List<String> resList = new ArrayList<>();
         addListResidues(resList);
@@ -750,7 +769,7 @@ public class ManyBodyOptions {
             }
             rotamerOptimization.setResidues(residueList);
             rotamerOptimization.setBoxStart(boxStart);
-            if(finish>0){
+            if (finish > 0) {
                 rotamerOptimization.setBoxEnd(boxEnd);
             }
         }
@@ -803,11 +822,11 @@ public class ManyBodyOptions {
     /**
      * Saves all eliminated rotamers to an ouput file called "eliminated.csv"
      * when the many body command is run with the following syntax and flags:
-     * ffxc ManyBody --out ... file.pdb >> file.log.
+     * ffxc ManyBody --out ... file.pdb &gt;&gt; file.log.
      *
-     * @throws IOException Throws an exception when output is non piped to a log
-     * file. The --out flag relies on the presence of a log file where output is
-     * piped.
+     * @throws java.io.IOException Throws an exception when output is non piped to a log
+     *                             file. The --out flag relies on the presence of a log file where output is
+     *                             piped.
      */
     public void saveEliminatedRotamers() throws IOException {
         if (saveOutput) {

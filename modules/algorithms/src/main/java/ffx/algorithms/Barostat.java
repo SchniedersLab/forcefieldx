@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2016.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -55,7 +55,7 @@ import ffx.potential.bonded.Atom;
 /**
  * The Barostat class maintains constant pressure using random trial moves in
  * lattice parameters, which are consistent with the space group.
- *
+ * <p>
  * Frenkel and Smit, "Understanding Molecular Simulation, 2nd
  * Edition", Academic Press, San Diego, CA, 2002; Section 5.4
  *
@@ -244,8 +244,8 @@ public class Barostat implements CrystalPotential {
      * Initialize the Barostat.
      *
      * @param molecularAssembly The molecular assembly to apply the MC barostat
-     * to.
-     * @param potential
+     *                          to.
+     * @param potential         a {@link ffx.crystal.CrystalPotential} object.
      */
     public Barostat(MolecularAssembly molecularAssembly, CrystalPotential potential) {
 
@@ -268,32 +268,65 @@ public class Barostat implements CrystalPotential {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x) {
         // Do not apply the Barostat for energy only evaluations.
         return potential.energy(x);
     }
 
+    /**
+     * <p>Setter for the field <code>meanBarostatInterval</code>.</p>
+     *
+     * @param meanBarostatInterval a int.
+     */
     public void setMeanBarostatInterval(int meanBarostatInterval) {
         this.meanBarostatInterval = meanBarostatInterval;
     }
 
+    /**
+     * <p>Setter for the field <code>minDensity</code>.</p>
+     *
+     * @param minDensity a double.
+     */
     public void setMinDensity(double minDensity) {
         this.minDensity = minDensity;
     }
 
+    /**
+     * <p>Setter for the field <code>maxDensity</code>.</p>
+     *
+     * @param maxDensity a double.
+     */
     public void setMaxDensity(double maxDensity) {
         this.maxDensity = maxDensity;
     }
 
+    /**
+     * <p>Setter for the field <code>maxAngleMove</code>.</p>
+     *
+     * @param maxAngleMove a double.
+     */
     public void setMaxAngleMove(double maxAngleMove) {
         this.maxAngleMove = maxAngleMove;
     }
 
+    /**
+     * <p>Setter for the field <code>maxSideMove</code>.</p>
+     *
+     * @param maxSideMove a double.
+     */
     public void setMaxSideMove(double maxSideMove) {
         this.maxSideMove = maxSideMove;
     }
 
+    /**
+     * <p>Setter for the field <code>pressure</code>.</p>
+     *
+     * @param pressure a double.
+     */
     public void setPressure(double pressure) {
         this.pressure = pressure;
     }
@@ -450,6 +483,11 @@ public class Barostat implements CrystalPotential {
         molecularAssembly.moveToFractionalCoordinates();
     }
 
+    /**
+     * <p>density.</p>
+     *
+     * @return a double.
+     */
     public double density() {
         return (mass * nSymm / AVOGADRO) * (1.0e24 / unitCell.volume);
     }
@@ -608,6 +646,11 @@ public class Barostat implements CrystalPotential {
         return currentE;
     }
 
+    /**
+     * <p>setDensity.</p>
+     *
+     * @param density a double.
+     */
     public void setDensity(double density) {
         molecularAssembly.computeFractionalCoordinates();
 
@@ -791,16 +834,17 @@ public class Barostat implements CrystalPotential {
         return currentE;
     }
 
+    /**
+     * <p>Setter for the field <code>active</code>.</p>
+     *
+     * @param active a boolean.
+     */
     public void setActive(boolean active) {
         this.active = active;
     }
 
     /**
      * {@inheritDoc}
-     *
-     * @param x
-     * @param g
-     * @return
      */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
@@ -896,8 +940,6 @@ public class Barostat implements CrystalPotential {
 
     /**
      * {@inheritDoc}
-     *
-     * @param scaling
      */
     @Override
     public void setScaling(double[] scaling) {
@@ -906,8 +948,6 @@ public class Barostat implements CrystalPotential {
 
     /**
      * {@inheritDoc}
-     *
-     * @return
      */
     @Override
     public double[] getScaling() {
@@ -916,9 +956,6 @@ public class Barostat implements CrystalPotential {
 
     /**
      * {@inheritDoc}
-     *
-     * @param parameters
-     * @return
      */
     @Override
     public double[] getCoordinates(double[] parameters) {
@@ -927,8 +964,6 @@ public class Barostat implements CrystalPotential {
 
     /**
      * {@inheritDoc}
-     *
-     * @return
      */
     @Override
     public double[] getMass() {
@@ -937,8 +972,6 @@ public class Barostat implements CrystalPotential {
 
     /**
      * {@inheritDoc}
-     *
-     * @return
      */
     @Override
     public double getTotalEnergy() {
@@ -947,8 +980,6 @@ public class Barostat implements CrystalPotential {
 
     /**
      * {@inheritDoc}
-     *
-     * @return
      */
     @Override
     public int getNumberOfVariables() {
@@ -957,8 +988,6 @@ public class Barostat implements CrystalPotential {
 
     /**
      * {@inheritDoc}
-     *
-     * @return
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
@@ -967,8 +996,6 @@ public class Barostat implements CrystalPotential {
 
     /**
      * {@inheritDoc}
-     *
-     * @param state
      */
     @Override
     public void setEnergyTermState(STATE state) {
@@ -977,51 +1004,81 @@ public class Barostat implements CrystalPotential {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         potential.setVelocity(velocity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         potential.setAcceleration(acceleration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         potential.setPreviousAcceleration(previousAcceleration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         return potential.getVelocity(velocity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         return potential.getAcceleration(acceleration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         return potential.getPreviousAcceleration(previousAcceleration);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Crystal getCrystal() {
         return potential.getCrystal();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCrystal(Crystal crystal) {
         potential.setCrystal(crystal);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         // Nothing at this level to destroy.

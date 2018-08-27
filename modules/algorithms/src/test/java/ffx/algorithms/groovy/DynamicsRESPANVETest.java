@@ -49,7 +49,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import static org.junit.Assert.assertEquals;
 
-import ffx.algorithms.groovy.Dynamics;
 import ffx.algorithms.MolecularDynamics;
 import ffx.algorithms.PJDependentTest;
 

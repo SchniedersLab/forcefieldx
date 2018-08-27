@@ -39,6 +39,8 @@ package ffx.algorithms.integrators;
 
 /**
  * An enumeration of available integrators.
+ *
+ * @author Michael J. Schnieders
  */
 public enum IntegratorEnum {
 

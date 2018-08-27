@@ -40,7 +40,6 @@ package ffx.algorithms;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static java.lang.String.format;
 
 import ffx.numerics.LBFGS;
@@ -55,7 +54,6 @@ import ffx.potential.MolecularAssembly;
  * convergence criteria.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class Minimize implements OptimizationListener, Terminatable {
@@ -81,10 +79,10 @@ public class Minimize implements OptimizationListener, Terminatable {
      * Constructor for Minimize.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
-     * @param potential a {@link ffx.numerics.Potential} object.
+     *                          object.
+     * @param potential         a {@link ffx.numerics.Potential} object.
      * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
-     * object.
+     *                          object.
      */
     public Minimize(MolecularAssembly molecularAssembly, Potential potential,
                     AlgorithmListener algorithmListener) {
@@ -104,9 +102,9 @@ public class Minimize implements OptimizationListener, Terminatable {
      * Constructor for Minimize.</p>
      *
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly}
-     * object.
+     *                          object.
      * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener}
-     * object.
+     *                          object.
      */
     public Minimize(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener) {
         assert (molecularAssembly != null);
@@ -123,14 +121,29 @@ public class Minimize implements OptimizationListener, Terminatable {
         Arrays.fill(scaling, 12.0);
     }
 
+    /**
+     * <p>getGRMS.</p>
+     *
+     * @return a double.
+     */
     public double getGRMS() {
         return grms;
     }
 
+    /**
+     * <p>Getter for the field <code>status</code>.</p>
+     *
+     * @return a int.
+     */
     public int getStatus() {
         return status;
     }
 
+    /**
+     * <p>Getter for the field <code>energy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getEnergy() {
         return energy;
     }
@@ -159,7 +172,7 @@ public class Minimize implements OptimizationListener, Terminatable {
      * @return a {@link ffx.numerics.Potential} object.
      */
     public Potential minimize() {
-        return minimize(7,1.0, Integer.MAX_VALUE);
+        return minimize(7, 1.0, Integer.MAX_VALUE);
     }
 
     /**
@@ -177,7 +190,7 @@ public class Minimize implements OptimizationListener, Terminatable {
      * <p>
      * minimize</p>
      *
-     * @param eps The convergence criteria.
+     * @param eps           The convergence criteria.
      * @param maxIterations The maximum number of iterations.
      * @return a {@link ffx.numerics.Potential} object.
      */
@@ -189,10 +202,10 @@ public class Minimize implements OptimizationListener, Terminatable {
      * <p>
      * minimize</p>
      *
-     * @param m The number of previous steps used to estimate the Hessian.
-     * @param eps The convergence criteria.
+     * @param m             The number of previous steps used to estimate the Hessian.
      * @param maxIterations The maximum number of iterations.
-     *
+     * @param eps           The convergence criteria.
+     * @param maxIterations The maximum number of iterations.
      * @return a {@link ffx.numerics.Potential} object.
      */
     public Potential minimize(int m, double eps, int maxIterations) {
@@ -234,7 +247,7 @@ public class Minimize implements OptimizationListener, Terminatable {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Implement the OptimizationListener interface.
      *
      * @since 1.0
@@ -283,10 +296,10 @@ public class Minimize implements OptimizationListener, Terminatable {
      * @param nfun Number of function evaluations so far.
      * @param grms Gradient RMS at current solution.
      * @param xrms Coordinate change RMS at current solution.
-     * @param f Function value at current solution.
-     * @param df Change in the function value compared to the previous solution.
-     * @since 1.0
+     * @param f    Function value at current solution.
+     * @param df   Change in the function value compared to the previous solution.
      * @return a boolean.
+     * @since 1.0
      */
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df) {
         long currentTime = System.nanoTime();

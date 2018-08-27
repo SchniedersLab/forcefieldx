@@ -71,15 +71,15 @@ String fileType = "PDB";
 // ===============================================================================================
 
 // Create the command line parser.
-def cli = new CliBuilder(usage:' ffxc test.monteCarlo [options] <filename>');
-cli.h(longOpt:'help', 'Print this message.');
-cli.n(longOpt:'steps', args:1, argName:'1000000', 'Number of Monte Carlo steps.');
+def cli = new CliBuilder(usage: ' ffxc test.monteCarlo [options] <filename>');
+cli.h(longOpt: 'help', 'Print this message.');
+cli.n(longOpt: 'steps', args: 1, argName: '1000000', 'Number of Monte Carlo steps.');
 // cli.p(longOpt:'polarization', args:1, argName:'Mutual', 'Polarization: [None / Direct / Mutual]');
-cli.t(longOpt:'temperature', args:1, argName:'298.15', 'Temperature in degrees Kelvin.');
-cli.w(longOpt:'save', args:1, argName:'0.1', 'Interval to write out coordinates (psec).');
-cli.f(longOpt:'file', args:1, argName:'PDB', 'Choose file type to write to [PDB/XYZ]');
-cli.xf(longOpt:'xShakeFreq', args:1, argName:'1', 'Shake coordinates every n steps.');
-cli.xw(longOpt:'xShakeWidth', args:1, argName:'0.001', 'Normal distribution width for coordinate shakes.');
+cli.t(longOpt: 'temperature', args: 1, argName: '298.15', 'Temperature in degrees Kelvin.');
+cli.w(longOpt: 'save', args: 1, argName: '0.1', 'Interval to write out coordinates (psec).');
+cli.f(longOpt: 'file', args: 1, argName: 'PDB', 'Choose file type to write to [PDB/XYZ]');
+cli.xf(longOpt: 'xShakeFreq', args: 1, argName: '1', 'Shake coordinates every n steps.');
+cli.xw(longOpt: 'xShakeWidth', args: 1, argName: '0.001', 'Normal distribution width for coordinate shakes.');
 def options = cli.parse(args);
 
 if (options.h) {
@@ -161,7 +161,7 @@ String ext = FilenameUtils.getExtension(modelfilename);
 String basename = FilenameUtils.removeExtension(modelfilename);
 if (master) {
     String finalFileName = basename + "_fin.pdb";
-    
+
     if (fileType.equalsIgnoreCase("PDB")) {
         logger.info(String.format(" Printing out final structure to file %s", finalFileName));
         saveAsPDB(new File(finalFileName));
@@ -182,7 +182,7 @@ optimum.revertState();
 if (master) {
     energy();
     String finalFileName = basename + "_opt.pdb";
-    
+
     if (fileType.equalsIgnoreCase("PDB")) {
         logger.info(String.format(" Printing out optimum structure found to file %s", finalFileName));
         saveAsPDB(new File(finalFileName));

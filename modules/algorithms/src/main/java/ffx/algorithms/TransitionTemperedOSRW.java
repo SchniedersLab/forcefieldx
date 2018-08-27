@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -79,7 +79,7 @@ import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS
 /**
  * An implementation of Transition-Tempered Orthogonal Space Random Walk
  * algorithm.
- *
+ * <p>
  * Only partially implements LambdaInterface; does not return 2'nd lambda
  * derivatives, as 2'nd derivatives of the bias require 3'rd derivatives of
  * the underlying Hamiltonian.
@@ -137,7 +137,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
      * following logic: First, the simulation needs to pass through mid-range
      * [0.45 to 0.55] lambda values. Second, the simulation needs to pass
      * through both low [below 0.05] & high values [above 0.95].
-     *
+     * <p>
      * The goal is to delay tempering for a landscape that is monotonic. For
      * example, if the simulation starts at the top of the hill (i.e. lambda =
      * 0) and move quickly to the basin (i.e. lambda = 1) this will not count as
@@ -159,25 +159,25 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and
+     *                          velocity.
+     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
      * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     *                          progress.
      */
     public TransitionTemperedOSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous,
-            AlgorithmListener algorithmListener) {
+                                  File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                                  double temperature, double dt, double printInterval,
+                                  double saveInterval, boolean asynchronous,
+                                  AlgorithmListener algorithmListener) {
         this(lambdaInterface, potential, lambdaFile, histogramFile, properties,
                 temperature, dt, printInterval, saveInterval, asynchronous,
                 true, algorithmListener);
@@ -186,26 +186,26 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * OSRW Asynchronous MultiWalker Constructor.
      *
-     * @param lambdaInterface defines Lambda and dU/dL.
-     * @param potential defines the Potential energy.
-     * @param lambdaFile contains the current Lambda particle position and
-     * velocity.
-     * @param histogramFile contains the Lambda and dU/dL histogram.
-     * @param properties defines System properties.
-     * @param temperature the simulation temperature.
-     * @param dt the time step.
-     * @param printInterval number of steps between logging updates.
-     * @param saveInterval number of steps between restart file updates.
-     * @param asynchronous set to true if walkers run asynchronously.
-     * @param resetNumSteps whether to reset energy counts to 0
+     * @param lambdaInterface   defines Lambda and dU/dL.
+     * @param potential         defines the Potential energy.
+     * @param lambdaFile        contains the current Lambda particle position and
+     *                          velocity.
+     * @param histogramFile     contains the Lambda and dU/dL histogram.
+     * @param properties        defines System properties.
+     * @param temperature       the simulation temperature.
+     * @param dt                the time step.
+     * @param printInterval     number of steps between logging updates.
+     * @param saveInterval      number of steps between restart file updates.
+     * @param asynchronous      set to true if walkers run asynchronously.
+     * @param resetNumSteps     whether to reset energy counts to 0
      * @param algorithmListener the AlgorithmListener to be notified of
-     * progress.
+     *                          progress.
      */
     public TransitionTemperedOSRW(LambdaInterface lambdaInterface, CrystalPotential potential,
-            File lambdaFile, File histogramFile, CompositeConfiguration properties,
-            double temperature, double dt, double printInterval,
-            double saveInterval, boolean asynchronous, boolean resetNumSteps,
-            AlgorithmListener algorithmListener) {
+                                  File lambdaFile, File histogramFile, CompositeConfiguration properties,
+                                  double temperature, double dt, double printInterval,
+                                  double saveInterval, boolean asynchronous, boolean resetNumSteps,
+                                  AlgorithmListener algorithmListener) {
         super(lambdaInterface, potential, lambdaFile, histogramFile, properties,
                 temperature, dt, printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener);
 
@@ -309,6 +309,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double[] x, double[] gradient) {
 
@@ -433,6 +436,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return totalEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void addBias(double dEdU, double[] x, double[] gradient) {
 
@@ -656,7 +662,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
     /**
      * Tempering will begin after a transition is detected.
-     *
+     * <p>
      * The transition is defined as lambda 1) crossing the range 0.45 to 0.55
      * and then encountering reaching both less than 0.05 and greater than 0.95.
      */
@@ -692,12 +698,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Evaluate the bias at [cLambda, cF_lambda]
-     *
-     * @param cLambda the current value of lambda
-     * @param cF_Lambda the current value of dU/dL
-     *
-     * @return the magnitude of the bias.
      */
     @Override
     protected double evaluateKernel(int cLambda, int cF_Lambda) {
@@ -769,6 +772,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * If necessary, allocate more space.
      */
     @Override
@@ -830,10 +835,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     }
 
     /**
-     * Eqs. 7 & 8 from the 2012 Crystal Thermodynamics paper.
-     *
-     * @param print
-     * @return the current free energy.
+     * {@inheritDoc}
+     * <p>
+     * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
      */
     @Override
     protected double updateFLambda(boolean print) {
@@ -948,16 +952,16 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
     /**
      * Integrates dUdL over lambda using more sophisticated techniques than midpoint rectangular integration.
-     *
+     * <p>
      * The ends (from 0 to dL and 1-dL to 1) are integrated with trapezoids
      *
      * @param dUdLs dUdL at the midpoint of each bin.
-     * @param type Integration type to use.
+     * @param type  Integration type to use.
      * @return Current delta-G estimate.
      */
     private double integrateNumeric(double[] dUdLs, IntegrationType type) {
         // Integrate between the second bin midpoint and the second-to-last bin midpoint.
-        double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0-dL, (lambdaBins - 2), false);
+        double[] midLams = Integrate1DNumeric.generateXPoints(dL, 1.0 - dL, (lambdaBins - 2), false);
         double[] midVals = Arrays.copyOfRange(dUdLs, 1, (lambdaBins - 1));
         DataSet dSet = new DoublesDataSet(midLams, midVals, false);
 
@@ -977,7 +981,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
             slope *= recipSlopeLen;
             val0 = dUdLs[0] + (slope * dL_4);
 
-            slope = dUdLs[lambdaBins-1] - dUdLs[lambdaBins - 2];
+            slope = dUdLs[lambdaBins - 1] - dUdLs[lambdaBins - 2];
             slope *= recipSlopeLen;
             val1 = dUdLs[lambdaBins - 1] + (slope * dL_4);
             logger.fine(String.format(" Inferred dU/dL values at 0 and 1: %10.5g , %10.5g", val0, val1));
@@ -995,8 +999,8 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * Integrates a trapezoid.
      *
-     * @param x0 First x point
-     * @param x1 Second x point
+     * @param x0  First x point
+     * @param x1  Second x point
      * @param fX1 First f(x) point
      * @param fX2 Second f(x) point
      * @return The area under a trapezoid.
@@ -1010,7 +1014,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
     /**
      * Sets the Dama et al tempering parameter, as a multiple of kBT.
      *
-     * @param temper
+     * @param temper a double.
      */
     public void setTemperingParameter(double temper) {
         temperingFactor = temper;
@@ -1107,6 +1111,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         if (receiveThread != null && receiveThread.isAlive()) {
@@ -1128,11 +1135,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         return potential.destroy();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         return getTotaldEdLambda();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         // TODO: Add in a finite-difference implementation of d2U/dL2.
@@ -1141,6 +1154,9 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         // TODO: Add in a finite-difference implementation of d2U/dXdL.
@@ -1149,11 +1165,17 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
         throw new UnsupportedOperationException(" Second derivatives of the bias are not implemented, as they require third derivatives of the potential.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean dEdLZeroAtEnds() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getCountsReceived() {
         return receiveThread.getCountsReceived();
@@ -1237,6 +1259,7 @@ public class TransitionTemperedOSRW extends AbstractOSRW implements LambdaInterf
 
         /**
          * Return the counts received by this thread.
+         *
          * @return
          */
         int getCountsReceived() {

@@ -1,13 +1,13 @@
 package ffx.algorithms.groovy
 
-import ffx.algorithms.CrystalMinimize
-import ffx.algorithms.Minimize
-import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 import static org.apache.commons.math3.util.FastMath.abs
 
+import ffx.algorithms.CrystalMinimize
+import ffx.algorithms.Minimize
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.MolecularAssembly.FractionalMode

@@ -2,6 +2,7 @@ package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 
@@ -17,7 +18,6 @@ import picocli.CommandLine.Option
  */
 @Command(description = " The Scheduler runs Parallel jobs over nodes.", name = "ffxc Scheduler")
 class Scheduler extends AlgorithmsScript {
-
 
     /**
      * -v or --verbose to turn on verbose backend Parallel Java logging.

@@ -37,23 +37,23 @@
  */
 package ffx.algorithms.groovy;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-
-import groovy.lang.Binding;
-
-import ffx.utilities.DirectoryUtils;
-import ffx.algorithms.PJDependentTest;
-import ffx.algorithms.groovy.CrystalMin;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import ffx.algorithms.PJDependentTest;
+import ffx.utilities.DirectoryUtils;
+
+import groovy.lang.Binding;
+
 /**
  * Tests CrystalMin and CrystalMin.groovy scripts for -e -I -f and -c flags.
+ *
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */

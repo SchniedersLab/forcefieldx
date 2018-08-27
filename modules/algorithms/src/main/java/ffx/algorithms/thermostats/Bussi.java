@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -50,13 +50,11 @@ import ffx.numerics.Potential.VARIABLE_TYPE;
  * thermostat, but generates a canonical distribution.
  *
  * @author Michael J. Schnieders
- *
+ * <p>
  * Derived from TINKER temperature control by Alan Grossfield and Jay Ponder.
- *
  * @see <a href="http://dx.doi.org/10.1016/j.cpc.2008.01.006"> G. Bussi and M.
  * Parrinello, "Stochastic Thermostats: Comparison of Local and Global Schemes",
  * Computer Physics Communications, 179, 26-29 (2008)</a>
- *
  * @since 1.0
  */
 public class Bussi extends Thermostat {
@@ -74,17 +72,17 @@ public class Bussi extends Thermostat {
      * <p>
      * Constructor for Bussi.</p>
      *
-     * @param dof a int.
-     * @param x an array of double.
-     * @param v an array of double.
-     * @param mass an array of double.
-     * @param type the VARIABLE_TYPE of each variable.
+     * @param dof               a int.
+     * @param x                 an array of double.
+     * @param v                 an array of double.
+     * @param mass              an array of double.
+     * @param type              the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
-     * @param tau a double.
+     * @param tau               a double.
      */
     public Bussi(int dof, double x[], double v[], double mass[],
-            VARIABLE_TYPE type[], double targetTemperature,
-            double tau) {
+                 VARIABLE_TYPE type[], double targetTemperature,
+                 double tau) {
         super(dof, x, v, mass, type, targetTemperature);
         this.name = ThermostatEnum.BUSSI;
         this.tau = tau;
@@ -92,10 +90,10 @@ public class Bussi extends Thermostat {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Initialize the Random number generator used to apply random forces to the
      * particles.
-     *
-     * @param seed Random number generator seed.
      */
     public void setRandomSeed(long seed) {
         bussiRandom.setSeed(seed);
@@ -105,15 +103,15 @@ public class Bussi extends Thermostat {
      * <p>
      * Constructor for Bussi.</p>
      *
-     * @param dof a int.
-     * @param x an array of double.
-     * @param v an array of double.
-     * @param mass an array of double.
-     * @param type the VARIABLE_TYPE of each variable.
+     * @param dof               a int.
+     * @param x                 an array of double.
+     * @param v                 an array of double.
+     * @param mass              an array of double.
+     * @param type              the VARIABLE_TYPE of each variable.
      * @param targetTemperature a double.
      */
     public Bussi(int dof, double x[], double v[], double mass[],
-            VARIABLE_TYPE type[], double targetTemperature) {
+                 VARIABLE_TYPE type[], double targetTemperature) {
         this(dof, x, v, mass, type, targetTemperature, 0.2e0);
     }
 
@@ -147,7 +145,7 @@ public class Bussi extends Thermostat {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * No velocity modifications are made by the Bussi method at the half-step.
      */
     @Override
@@ -157,7 +155,7 @@ public class Bussi extends Thermostat {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Full step velocity modification.
      */
     @Override

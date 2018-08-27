@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -50,8 +50,8 @@ import org.apache.commons.io.FilenameUtils;
 
 import static edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_KcalPerKJ;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setStepSize;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
@@ -71,7 +71,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
-
 import static ffx.algorithms.thermostats.Thermostat.convert;
 import static ffx.algorithms.thermostats.Thermostat.kB;
 
@@ -152,13 +151,13 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     private double defaultDeltaPEThresh = 1.0E6;
 
     private boolean NVE = false;
-    
+
     private boolean NPT = false;
 
     private boolean quiet = true;
-    
+
     private double pressure;
-    
+
     private int barostatFrequency;
 
     /**
@@ -166,19 +165,19 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
      * dynamics using native OpenMM routines, avoiding the cost of communicating
      * coordinates, gradients, and energies back and forth across the PCI bus.
      *
-     * @param assembly MolecularAssembly to operate on
+     * @param assembly               MolecularAssembly to operate on
      * @param forceFieldEnergyOpenMM ForceFieldEnergyOpenMM Potential. Cannot be
-     * any other type of Potential.
-     * @param properties Associated properties
-     * @param listener
-     * @param thermostat May have to be slightly modified for native OpenMM
-     * routines
-     * @param integratorMD May have to be slightly modified for native OpenMM
-     * routines
+     *                               any other type of Potential.
+     * @param properties             Associated properties
+     * @param listener               a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param thermostat             May have to be slightly modified for native OpenMM
+     *                               routines
+     * @param integratorMD           May have to be slightly modified for native OpenMM
+     *                               routines
      */
     public MolecularDynamicsOpenMM(MolecularAssembly assembly, ForceFieldEnergyOpenMM forceFieldEnergyOpenMM,
-            CompositeConfiguration properties, AlgorithmListener listener,
-            ThermostatEnum thermostat, IntegratorEnum integratorMD) {
+                                   CompositeConfiguration properties, AlgorithmListener listener,
+                                   ThermostatEnum thermostat, IntegratorEnum integratorMD) {
         super(assembly, forceFieldEnergyOpenMM, properties, listener, thermostat, integratorMD);
 
         /**
@@ -196,7 +195,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     /**
      * Get the ForceFieldEnergyOpenMM instance used to run MD.
-     * @return
+     *
+     * @return a {@link ffx.potential.ForceFieldEnergyOpenMM} object.
      */
     public ForceFieldEnergyOpenMM getForceFieldEnergyOpenMM() {
         return forceFieldEnergyOpenMM;
@@ -334,9 +334,12 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void init(int numSteps, double timeStep, double printInterval, double saveInterval,
-            String fileType, double restartFrequency, double temperature, boolean initVelocities, File dyn) {
+                     String fileType, double restartFrequency, double temperature, boolean initVelocities, File dyn) {
         this.targetTemperature = temperature;
         this.dt = timeStep;
         this.printFrequency = (int) printInterval;
@@ -351,18 +354,18 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             case BERENDSEN:
                 logger.info(String.format(" Replacing thermostat %s with OpenMM's Andersen thermostat", thermostatType));
                 forceFieldEnergyOpenMM.addAndersenThermostat(targetTemperature);
-                if (NPT){
+                if (NPT) {
                     setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
                 }
                 break;
             case ADIABATIC:
-                if (integratorString.equalsIgnoreCase("LANGEVIN") && NPT){
+                if (integratorString.equalsIgnoreCase("LANGEVIN") && NPT) {
                     setMonteCarloBarostat(pressure, targetTemperature, barostatFrequency);
                 }
             default:
                 break;
             // No thermostat.
-            }
+        }
 
         /**
          * Convert the print interval to a print frequency.
@@ -475,14 +478,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Start sets up context, write out file name, restart file name, sets the
      * integrator and determines whether the simulation is starting out from a
      * previous molecular dynamics run (.dyn) or if the initial velocities are
      * determined by a Maxwell Boltzmann distribution. This method then calls
      * methods openMMUpdate and takeOpenMMSteps to run the molecular dynamics
      * simulation.
-     *
-     * @param numSteps
      */
     @Override
     public void dynamic(int numSteps, double timeStep, double printInterval, double saveInterval, double temperature, boolean initVelocities, File dyn) {
@@ -514,6 +517,11 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         updateFromOpenMM(i, running);
     }
 
+    /**
+     * <p>integratorToString.</p>
+     *
+     * @param integrator a {@link ffx.algorithms.integrators.IntegratorEnum} object.
+     */
     public final void integratorToString(IntegratorEnum integrator) {
         if (integrator == null) {
             integratorString = "VERLET";
@@ -538,28 +546,56 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
             }
         }
     }
-    
-    public void setMonteCarloBarostat(double pressure, double temperature, int frequency){
+
+    /**
+     * <p>setMonteCarloBarostat.</p>
+     *
+     * @param pressure    a double.
+     * @param temperature a double.
+     * @param frequency   a int.
+     */
+    public void setMonteCarloBarostat(double pressure, double temperature, int frequency) {
         forceFieldEnergyOpenMM.addMonteCarloBarostat(pressure, temperature, frequency);
     }
-    
-    public void setPressure(double pressure){
+
+    /**
+     * <p>Setter for the field <code>pressure</code>.</p>
+     *
+     * @param pressure a double.
+     */
+    public void setPressure(double pressure) {
         this.pressure = pressure;
     }
-    
-    public void setBarostatFrequency(int barostatFrequency){
+
+    /**
+     * <p>Setter for the field <code>barostatFrequency</code>.</p>
+     *
+     * @param barostatFrequency a int.
+     */
+    public void setBarostatFrequency(int barostatFrequency) {
         this.barostatFrequency = barostatFrequency;
     }
-    
-    public void setNPTDynamics(){
+
+    /**
+     * <p>setNPTDynamics.</p>
+     */
+    public void setNPTDynamics() {
         NPT = true;
     }
 
+    /**
+     * <p>Setter for the field <code>intervalSteps</code>.</p>
+     *
+     * @param intervalSteps a int.
+     */
     public void setIntervalSteps(int intervalSteps) {
         this.intervalSteps = intervalSteps;
         logger.info(String.format(" Interval Steps set at %d", intervalSteps));
     }
 
+    /**
+     * <p>updateContext.</p>
+     */
     public final void updateContext() {
         String currentIntegrator = forceFieldEnergyOpenMM.getIntegratorString();
         double currentTimeStp = forceFieldEnergyOpenMM.getTimeStep();
@@ -579,9 +615,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns the OpenMM DynamicsEngine
-     *
-     * @return OPENMM
      */
     @Override
     public DynamicsEngine getEngine() {
@@ -589,52 +625,69 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns time spent calculating the molecular dynamics trajectory on the
      * GPU
-     *
-     * @return
      */
     @Override
     public long getMDTime() {
         return mdTime;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getStartingTotalEnergy() {
         return startingTotalEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getEndTotalEnergy() {
         return endTotalEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTimeStep() {
         return dt;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getIntervalSteps() {
         return intervalSteps;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumAtoms() {
         return natoms;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setFileType(String fileType) {
         this.fileType = fileType;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
      * extended system variables. Will throw an UnsupportedOperationException.
-     *
-     * @param system
-     * @param printFrequency
      */
     @Override
     public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
@@ -642,6 +695,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling
      * extended system variables. Will throw an UnsupportedOperationException.
      */

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -39,17 +39,15 @@ package ffx.algorithms.integrators;
 
 import ffx.algorithms.thermostats.Thermostat;
 import ffx.numerics.Potential;
-import static java.lang.System.out;
 
 /**
  * Respa performs multiple time step molecular dynamics using the reversible
  * reference system propagation algorithm (r-RESPA) via a Verlet core with the
  * potential split into fast- and slow-evolving portions.
- *
+ * <p>
  * The inner RESPA loop is position Verlet.
  *
  * @author Gaurav Chattree
- *
  * @since 1.0
  */
 public class Respa extends Integrator {
@@ -75,14 +73,15 @@ public class Respa extends Integrator {
      * Initialize Respa multiple time step molecular dynamics.
      *
      * @param nVariables Number of variables.
-     * @param x Variables current value.
-     * @param v Current velocities.
-     * @param a Current accelerations.
-     * @param aPrevious Previous accelerations.
-     * @param mass Mass of the variables.
+     * @param x          Variables current value.
+     * @param v          Current velocities.
+     * @param a          Current accelerations.
+     * @param aPrevious  Previous accelerations.
+     * @param aPrevious  Previous accelerations.
+     * @param mass       Mass of the variables.
      */
     public Respa(int nVariables, double x[], double v[], double a[],
-            double aPrevious[], double mass[]) {
+                 double aPrevious[], double mass[]) {
         super(nVariables, x, v, a, aPrevious, mass);
 
         nalt = 4;
@@ -100,9 +99,9 @@ public class Respa extends Integrator {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Performs the inner RESPA loop via position Verlet.
-     *
-     * @param potential the Potential for RESPA.
      */
     @Override
     public void preForce(Potential potential) {
@@ -130,9 +129,9 @@ public class Respa extends Integrator {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * The Respa full-step integration operation.
-     *
-     * @param gradient the Gradient over all parameters.
      */
     @Override
     public void postForce(double[] gradient) {
@@ -143,9 +142,9 @@ public class Respa extends Integrator {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Set outer Respa time step.
-     *
-     * @param dt Outer time step (dt must be .GE. 0.5 fsec).
      */
     @Override
     public void setTimeStep(double dt) {
@@ -157,22 +156,23 @@ public class Respa extends Integrator {
         dt_2 = 0.5 * dt;
         dta = dt / nalt;
         dta_2 = 0.5 * dta;
-        
-        
+
+
         System.out.printf(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt, dta);
     }
-    
+
     /**
      * Set inner Respa number of time steps.
+     *
      * @param n Number of inner time steps (must be greater than or equal to 2).
      */
-    public void setInnerTimeSteps(int n){
+    public void setInnerTimeSteps(int n) {
         if (n < 2) {
             n = 2;
         }
-        
+
         nalt = n;
-        
+
         // Update inner time step
         setTimeStep(dt);
     }

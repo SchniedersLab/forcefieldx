@@ -1,13 +1,12 @@
 package ffx.algorithms.groovy
 
+import org.apache.commons.io.FilenameUtils
+
 import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.OSRW
 import ffx.algorithms.TransitionTemperedOSRW
-import ffx.numerics.Potential
-import ffx.potential.ForceFieldEnergyOpenMM
-import org.apache.commons.io.FilenameUtils
-
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 

@@ -41,23 +41,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import ffx.potential.Utilities;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import static org.junit.Assert.assertEquals;
 
-import edu.rit.pj.Comm;
-
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;

@@ -1,7 +1,13 @@
-
 package ffx.algorithms.groovy
 
+import java.util.stream.Collectors
+
+import org.apache.commons.configuration2.Configuration
+import org.apache.commons.io.FilenameUtils
+
+import edu.rit.pj.Comm
 import edu.rit.pj.ParallelTeam
+
 import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.BarostatOptions
@@ -12,19 +18,15 @@ import ffx.algorithms.cli.OSRWOptions
 import ffx.algorithms.cli.RandomSymopOptions
 import ffx.algorithms.cli.ThermodynamicsOptions
 import ffx.algorithms.cli.WriteoutOptions
-import ffx.numerics.Potential
-import ffx.potential.cli.AlchemicalOptions
-import ffx.potential.cli.TopologyOptions
-import org.apache.commons.configuration2.Configuration
-import picocli.CommandLine
-import org.apache.commons.io.FilenameUtils
-import edu.rit.pj.Comm
 import ffx.crystal.CrystalPotential
+import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.LambdaInterface
+import ffx.potential.cli.AlchemicalOptions
+import ffx.potential.cli.TopologyOptions
 import ffx.potential.parameters.ForceField
 
-import java.util.stream.Collectors
+import picocli.CommandLine
 
 /**
  * The Thermodynamics script uses the Transition-Tempered Orthogonal Space Random Walk
@@ -136,8 +138,8 @@ class NewThermodynamics extends AlgorithmsScript {
 
         // Segment of code for MultiDynamics and OSRW.
         List<File> structureFiles = arguments.stream().
-            map{fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath())}.
-            collect(Collectors.toList())
+                map { fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath()) }.
+                collect(Collectors.toList())
 
         File firstStructure = structureFiles.get(0);
         String baseFilename = FilenameUtils.removeExtension(firstStructure.getPath());
@@ -149,7 +151,7 @@ class NewThermodynamics extends AlgorithmsScript {
             List<File> rankedFiles = new ArrayList<>(nArgs);
             for (File structureFile : structureFiles) {
                 File rankDirectory = new File(structureFile.getParent() + File.separator
-                    + Integer.toString(rank));
+                        + Integer.toString(rank));
                 if (!rankDirectory.exists()) {
                     rankDirectory.mkdir();
                 }
@@ -239,31 +241,26 @@ class NewThermodynamics extends AlgorithmsScript {
         osrw.setTraversalOutput(lambdaOneFile, topologies[0], lambdaZeroFile, topologies[1]);
         }
         }*/
-        
+
 
 
         if (osrwOptions.mc) {
             osrwOptions.beginMCOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
             /**
-            MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
-            topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator);
+             MonteCarloOSRW mcOSRW = new MonteCarloOSRW(osrw.getPotentialEnergy(), osrw, topologies[0],
+             topologies[0].getProperties(), null, ThermostatEnum.ADIABATIC, dynamics.integrator);
 
-            if (thermodynamics.nEquil > 0) {
-            logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
-            mcOSRW.setEquilibration(true)
-            mcOSRW.setMDMoveParameters(thermodynamics.nEquil, options.mcMD, dynamics.dt)
-            mcOSRW.sample()
-            mcOSRW.setEquilibration(false)
-            logger.info("\n Finished MC Transition-Tempered OSRW equilibration");
-            }
-
-            logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
-            mcOSRW.setLambdaStdDev(options.mcL)
-            mcOSRW.setMDMoveParameters(dynamics.steps, options.mcMD, dynamics.dt)
-            mcOSRW.sample()
+             if (thermodynamics.nEquil > 0) {logger.info("\n Beginning MC Transition-Tempered OSRW equilibration");
+             mcOSRW.setEquilibration(true)
+             mcOSRW.setMDMoveParameters(thermodynamics.nEquil, options.mcMD, dynamics.dt)
+             mcOSRW.sample()
+             mcOSRW.setEquilibration(false)
+             logger.info("\n Finished MC Transition-Tempered OSRW equilibration");}logger.info("\n Beginning MC Transition-Tempered OSRW sampling");
+             mcOSRW.setLambdaStdDev(options.mcL)
+             mcOSRW.setMDMoveParameters(dynamics.steps, options.mcMD, dynamics.dt)
+             mcOSRW.sample()
              */
-        }
-        else {
+        } else {
             osrwOptions.beginMDOSRW(osrw, topologies, osrwPotential, dynamics, writeout, thermodynamics, dyn, algorithmListener);
         }
 
@@ -283,8 +280,6 @@ class NewThermodynamics extends AlgorithmsScript {
         return osrw == null ? Collections.emptyList() : Collections.singletonList(osrw);
     }
 }
-    
-
 
 /**
  * Title: Force Field X.

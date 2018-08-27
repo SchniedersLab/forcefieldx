@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -45,7 +45,6 @@ import static ffx.algorithms.thermostats.Thermostat.convert;
  * formula; the actual coefficients are Brooks' "Better Beeman" values.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class BetterBeeman extends Integrator {
@@ -57,20 +56,23 @@ public class BetterBeeman extends Integrator {
      * Constructor for BetterBeeman.
      *
      * @param nVariables number of Variables.
-     * @param x Cartesian coordinates (Angstroms).
-     * @param v Velocities.
-     * @param a Accelerations.
-     * @param aPrevious Previous Accelerations.
-     * @param mass Mass.
+     * @param x          Cartesian coordinates (Angstroms).
+     * @param v          Velocities.
+     * @param a          Accelerations.
+     * @param aPrevious  Previous Accelerations.
+     * @param aPrevious  Previous Accelerations.
+     * @param mass       Mass.
      */
     public BetterBeeman(int nVariables, double x[], double v[], double a[],
-            double aPrevious[], double mass[]) {
+                        double aPrevious[], double mass[]) {
         super(nVariables, x, v, a, aPrevious, mass);
         dt_8 = 0.125 * dt;
         dt2_8 = dt * dt_8;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Store the current atom positions, then find new atom positions and
      * half-step velocities via Beeman recursion.
      */
@@ -84,6 +86,8 @@ public class BetterBeeman extends Integrator {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Use Newton's second law to get the next acceleration and find the
      * full-step velocities using the Beeman recusion.
      */
@@ -99,6 +103,9 @@ public class BetterBeeman extends Integrator {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setTimeStep(double dt) {
         this.dt = dt;

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -36,6 +36,14 @@
  * exception statement from your version.
  */
 package ffx.algorithms.cli;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
@@ -51,15 +59,8 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.cli.AlchemicalOptions;
 import ffx.potential.cli.TopologyOptions;
-import picocli.CommandLine;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import picocli.CommandLine;
 
 /**
  * Represents command line options for scripts that can create multiple walkers,
@@ -71,7 +72,7 @@ import java.util.regex.Pattern;
  * @since 1.0
  */
 public class MultiDynamicsOptions {
-    
+
     private static final Logger logger = Logger.getLogger(MultiDynamicsOptions.class.getName());
 
     /**
@@ -91,6 +92,11 @@ public class MultiDynamicsOptions {
     @CommandLine.Option(names = {"--dw", "--distributeWalkers"}, paramLabel = "OFF", description = "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
     private String distributeWalkersString = "OFF";
 
+    /**
+     * <p>isSynchronous.</p>
+     *
+     * @return a boolean.
+     */
     public boolean isSynchronous() {
         return synchronous;
     }
@@ -99,19 +105,21 @@ public class MultiDynamicsOptions {
      * Opens a file and processes it. Extends the behavior of AlchemicalOptions.openFile
      * by permitting use of a rank-dependent File.
      *
-     * @param afuncts AlgorithmFunctions object.
-     * @param topOptions Optional Topology Options.
-     * @param threadsPer Threads to use per system.
-     * @param toOpen Filename to open.
-     * @param topNum Number of the topology to open.
-     * @param alchemy Alchemical Options.
-     * @param rank Rank in the world communicator.
+     * @param afuncts       AlgorithmFunctions object.
+     * @param topOptions    Optional Topology Options.
+     * @param threadsPer    Threads to use per system.
+     * @param toOpen        Filename to open.
+     * @param topNum        Number of the topology to open.
+     * @param alchemy       Alchemical Options.
+     * @param rank          Rank in the world communicator.
+     * @param structureFile a {@link java.io.File} object.
+     * @return a {@link ffx.potential.MolecularAssembly} object.
      */
     public MolecularAssembly openFile(AlgorithmFunctions afuncts, Optional<TopologyOptions> topOptions, int threadsPer, String toOpen, int topNum, AlchemicalOptions alchemy, File structureFile, int rank) {
         boolean autoDist = distributeWalkersString.equalsIgnoreCase("AUTO");
 
         if (autoDist) {
-            String openName = String.format("%s_%d", toOpen, rank+1);
+            String openName = String.format("%s_%d", toOpen, rank + 1);
             File testFile = new File(openName);
             if (testFile.exists()) {
                 toOpen = openName;
@@ -126,6 +134,7 @@ public class MultiDynamicsOptions {
 
     /**
      * Parses --dw into optimization tokens if it's not "OFF", "AUTO", or null.
+     *
      * @return
      */
     private String[] parseDistributed() {
@@ -140,11 +149,11 @@ public class MultiDynamicsOptions {
     /**
      * If residues selected for distributing initial configurations, performs many-body optimization for this distribution.
      *
-     * @param topologies
-     * @param cpot Overall CrystalPotential in use.
-     * @param afuncts
-     * @param rank
-     * @param worldSize
+     * @param topologies an array of {@link ffx.potential.MolecularAssembly} objects.
+     * @param cpot       Overall CrystalPotential in use.
+     * @param afuncts    a {@link ffx.algorithms.AlgorithmFunctions} object.
+     * @param rank       a int.
+     * @param worldSize  a int.
      */
     public void distribute(MolecularAssembly[] topologies, CrystalPotential cpot, AlgorithmFunctions afuncts, int rank, int worldSize) {
         int ntops = topologies.length;
@@ -158,12 +167,12 @@ public class MultiDynamicsOptions {
     /**
      * If residues selected for distributing initial configurations, performs many-body optimization for this distribution.
      *
-     * @param topologies
-     * @param energies ForceFieldEnergy for each topology.
-     * @param cpot Overall CrystalPotential in use.
-     * @param afuncts
-     * @param rank
-     * @param worldSize
+     * @param topologies an array of {@link ffx.potential.MolecularAssembly} objects.
+     * @param energies   ForceFieldEnergy for each topology.
+     * @param cpot       Overall CrystalPotential in use.
+     * @param afuncts    a {@link ffx.algorithms.AlgorithmFunctions} object.
+     * @param rank       a int.
+     * @param worldSize  a int.
      */
     public void distribute(MolecularAssembly[] topologies, Potential[] energies, CrystalPotential cpot, AlgorithmFunctions afuncts, int rank, int worldSize) {
         if (!distributeWalkersString.equalsIgnoreCase("AUTO") && !distributeWalkersString.equalsIgnoreCase("OFF")) {
@@ -211,7 +220,7 @@ public class MultiDynamicsOptions {
      * Distribute side-chain conformations of mola.
      *
      * @param mola To distribute
-     * @param pot Potential to use
+     * @param pot  Potential to use
      */
     private void optStructure(MolecularAssembly mola, Potential pot, AlgorithmFunctions aFuncts, int rank, int worldSize) {
         RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();

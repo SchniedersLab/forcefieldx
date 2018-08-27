@@ -47,7 +47,6 @@ import ffx.numerics.Potential;
  * post-force evaluation time points.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public abstract class Integrator {
@@ -88,11 +87,12 @@ public abstract class Integrator {
      * Constructor for Integrator.
      *
      * @param nVariables number of Variables.
-     * @param x Cartesian coordinates (Angstroms).
-     * @param v Velocities.
-     * @param a Accelerations.
-     * @param aPrevious Previous Accelerations.
-     * @param mass Mass.
+     * @param x          Cartesian coordinates (Angstroms).
+     * @param v          Velocities.
+     * @param a          Accelerations.
+     * @param aPrevious  Previous Accelerations.
+     * @param aPrevious  Previous Accelerations.
+     * @param mass       Mass.
      */
     public Integrator(int nVariables, double x[], double v[], double a[],
                       double aPrevious[], double mass[]) {
@@ -110,10 +110,10 @@ public abstract class Integrator {
      * Constructor for Integrator that do not use previous accelerations.
      *
      * @param nVariables number of Variables.
-     * @param x Cartesian coordinates (Angstroms).
-     * @param v Velocities.
-     * @param a Accelerations.
-     * @param mass Mass.
+     * @param x          Cartesian coordinates (Angstroms).
+     * @param v          Velocities.
+     * @param a          Accelerations.
+     * @param mass       Mass.
      */
     public Integrator(int nVariables, double x[], double v[], double a[], double mass[]) {
         this.nVariables = nVariables;
@@ -130,11 +130,12 @@ public abstract class Integrator {
      * Update the integrator to be consistent with chemical perturbations.
      *
      * @param nVariables the number of variables being integrated.
-     * @param x the current value of each variable.
-     * @param v the current velocity of each variable.
-     * @param a the current acceleration of each variable.
-     * @param aPrevious the previous acceleration of each variable.
-     * @param mass the mass for each variable.
+     * @param x          the current value of each variable.
+     * @param v          the current velocity of each variable.
+     * @param a          the current acceleration of each variable.
+     * @param aPrevious  the previous acceleration of each variable.
+     * @param aPrevious  the previous acceleration of each variable.
+     * @param mass       the mass for each variable.
      */
     public void setNumberOfVariables(int nVariables, double x[], double v[],
                                      double a[], double aPrevious[], double mass[]) {
@@ -150,10 +151,10 @@ public abstract class Integrator {
      * Update the integrator to be consistent with chemical perturbations.
      *
      * @param nVariables the number of variables being integrated.
-     * @param x the current value of each variable.
-     * @param v the current velocity of each variable.
-     * @param a the current acceleration of each variable.
-     * @param mass the mass for each variable.
+     * @param x          the current value of each variable.
+     * @param v          the current velocity of each variable.
+     * @param a          the current acceleration of each variable.
+     * @param mass       the mass for each variable.
      */
     public void setNumberOfVariables(int nVariables, double x[], double v[],
                                      double a[], double mass[]) {

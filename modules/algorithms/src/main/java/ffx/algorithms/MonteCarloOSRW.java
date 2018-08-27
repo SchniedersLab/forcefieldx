@@ -55,29 +55,26 @@ import static ffx.algorithms.MolecularDynamics.NS2SEC;
 /**
  * Sample a thermodynamic path using the OSRW method, with the time-dependent
  * bias built up using Metropolis Monte Carlo steps.
- *
+ * <p>
  * The algorithm generates coordinate (X) MC moves using molecular dynamics at a
  * fixed lambda value (i.e. using OpenMM), followed by MC lambda moves.
- *
+ * <p>
  * 1.) At a fixed Lambda, run a defined length MD trajectory to "move"
  * coordinates and dU/dL on an approximate potential U* (i.e. no OSRW Bias).
- *
+ * <p>
  * 2.) Accept / Reject the MD move with probability exp[-Beta(dU - dU*)]
- *     where dU is the change in AMOEBA + Bias energy
- *     and dU* is the change in AMOEBA + Kinetic energy from the MD.
- *
+ * where dU is the change in AMOEBA + Bias energy
+ * and dU* is the change in AMOEBA + Kinetic energy from the MD.
+ * <p>
  * 3.) Randomly change the value of Lambda.
- *
+ * <p>
  * 4.) Accept / Reject the Lambda move using the AMOEBA + OSRW Bias energy.
- *
+ * <p>
  * 5.) Add to the time dependent 2D bias using the current values of Lambda and dU/dL.
  *
  * @author Michael J. Schnieders
- *
  * @author Hernan Beranbe
- *
  * @author Mallory R. Tollefson
- *
  * @since 1.0
  */
 public class MonteCarloOSRW extends BoltzmannMC {
@@ -101,13 +98,15 @@ public class MonteCarloOSRW extends BoltzmannMC {
     private boolean equilibration = false;
 
     /**
-     * @param potentialEnergy
-     * @param osrw
-     * @param molecularAssembly
-     * @param properties
-     * @param listener
-     * @param requestedThermostat
-     * @param requestedIntegrator
+     * <p>Constructor for MonteCarloOSRW.</p>
+     *
+     * @param potentialEnergy     a {@link ffx.numerics.Potential} object.
+     * @param osrw                a {@link ffx.algorithms.AbstractOSRW} object.
+     * @param molecularAssembly   a {@link ffx.potential.MolecularAssembly} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @param listener            a {@link ffx.algorithms.AlgorithmListener} object.
+     * @param requestedThermostat a {@link ffx.algorithms.thermostats.ThermostatEnum} object.
+     * @param requestedIntegrator a {@link ffx.algorithms.integrators.IntegratorEnum} object.
      */
     public MonteCarloOSRW(Potential potentialEnergy, AbstractOSRW osrw,
                           MolecularAssembly molecularAssembly, CompositeConfiguration properties,
@@ -134,9 +133,9 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * the stepsPerMove and timeStep parameters to the current value in this
      * class
      *
-     * @param totalSteps
-     * @param stepsPerMove
-     * @param timeStep
+     * @param totalSteps   a int.
+     * @param stepsPerMove a int.
+     * @param timeStep     a double.
      */
     public void setMDMoveParameters(int totalSteps, int stepsPerMove, double timeStep) {
         this.totalSteps = totalSteps;
@@ -148,7 +147,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * Calls on LambdaMove class method setLambdaStdDev to update the lambda
      * standard deviation to the current value in this class
      *
-     * @param stdDev
+     * @param stdDev a double.
      */
     public void setLambdaStdDev(double stdDev) {
         lambdaMove.setStdDev(stdDev);
@@ -158,7 +157,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * Sets the value of the boolean equilibration variables to true or false to
      * either allow an equilibration step or skip it.
      *
-     * @param equilibration
+     * @param equilibration a boolean.
      */
     public void setEquilibration(boolean equilibration) {
         this.equilibration = equilibration;
@@ -168,7 +167,7 @@ public class MonteCarloOSRW extends BoltzmannMC {
      * Calls on the OSRW method set lambda to update lambda to the current value
      * in this class
      *
-     * @param lambda
+     * @param lambda a double.
      */
     public void setLambda(double lambda) {
         this.lambda = lambda;
@@ -187,16 +186,16 @@ public class MonteCarloOSRW extends BoltzmannMC {
     /**
      * The goal is to sample coordinates (X) and converge "dU/dL" for every
      * state (lambda) along the thermodynamic path.
-     *
+     * <p>
      * 1.) At a fixed lambda, run a defined length MD trajectory to "move"
      * coordinates and dU/dL.
-     *
+     * <p>
      * 2.) Accept / Reject the MD move using the OSRW energy.
-     *
+     * <p>
      * 3.) Randomly change the value of Lambda.
-     *
+     * <p>
      * 4.) Accept / Reject the Lambda move using the OSRW energy.
-     *
+     * <p>
      * 5.) Add to the bias.
      */
     public void sample() {
@@ -313,16 +312,25 @@ public class MonteCarloOSRW extends BoltzmannMC {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected double currentEnergy() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void storeState() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void revertStep() {
         throw new UnsupportedOperationException("Not supported yet.");
