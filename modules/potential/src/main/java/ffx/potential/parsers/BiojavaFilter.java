@@ -170,7 +170,6 @@ import static ffx.utilities.StringUtils.padRight;
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
  * @since 1.0
- *
  */
 public class BiojavaFilter extends ConversionFilter {
 
@@ -186,11 +185,11 @@ public class BiojavaFilter extends ConversionFilter {
     private Character currentAltLoc = 'A';
     /**
      * List of segIDs defined for the PDB file.
-     *
+     * <p>
      * The expectation is for chain naming from A-Z, then from 0-9. For large
      * systems, chain names are sometimes reused due to limitations in the PBD
      * format.
-     *
+     * <p>
      * However, we define segIDs to always be unique. For the first A-Z,0-9
      * series chainID == segID. Then, for second A-Z,0-9 series, the segID =
      * 1A-1Z,10-19, and for the third series segID = 2A-2Z,20-29, and so on.
@@ -214,6 +213,14 @@ public class BiojavaFilter extends ConversionFilter {
      */
     private boolean ignoreInactiveAtoms = false;
 
+    /**
+     * <p>Constructor for BiojavaFilter.</p>
+     *
+     * @param structure         a {@link org.biojava.bio.structure.Structure} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param forcefield        a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public BiojavaFilter(Structure structure, MolecularAssembly molecularAssembly, ForceField forcefield, CompositeConfiguration properties) {
         super(structure, molecularAssembly, forcefield, properties);
         this.structure = structure;
@@ -221,6 +228,14 @@ public class BiojavaFilter extends ConversionFilter {
         this.fileType = Utilities.FileType.PDB;
     }
 
+    /**
+     * <p>Constructor for BiojavaFilter.</p>
+     *
+     * @param structures        a {@link java.util.List} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param forcefield        a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties        a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public BiojavaFilter(List<Structure> structures, MolecularAssembly molecularAssembly, ForceField forcefield, CompositeConfiguration properties) {
         super(structures, molecularAssembly, forcefield, properties);
         if (structures != null && !structures.isEmpty()) {
@@ -232,6 +247,14 @@ public class BiojavaFilter extends ConversionFilter {
         this.fileType = Utilities.FileType.PDB;
     }
 
+    /**
+     * <p>Constructor for BiojavaFilter.</p>
+     *
+     * @param structure           a {@link org.biojava.bio.structure.Structure} object.
+     * @param molecularAssemblies a {@link java.util.List} object.
+     * @param forcefield          a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties          a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public BiojavaFilter(Structure structure, List<MolecularAssembly> molecularAssemblies, ForceField forcefield, CompositeConfiguration properties) {
         super(structure, molecularAssemblies, forcefield, properties);
         this.structure = structure;
@@ -243,8 +266,8 @@ public class BiojavaFilter extends ConversionFilter {
      * Mutate a residue at the PDB file is being parsed.
      *
      * @param chainID the Chain ID of the residue to mutate.
-     * @param resID the Residue ID of the residue to mutate.
-     * @param name the 3-letter code of the amino acid to mutate to.
+     * @param resID   the Residue ID of the residue to mutate.
+     * @param name    the 3-letter code of the amino acid to mutate to.
      */
     public void mutate(Character chainID, int resID, String name) {
         if (name != null && name.length() == 3) {
@@ -315,7 +338,7 @@ public class BiojavaFilter extends ConversionFilter {
      * Specify the alternate location.
      *
      * @param molecularAssembly The MolecularAssembly to populate.
-     * @param altLoc The alternate location to use.
+     * @param altLoc            The alternate location to use.
      */
     public void setAltID(MolecularAssembly molecularAssembly, Character altLoc) {
         setMolecularSystem(molecularAssembly);
@@ -333,10 +356,8 @@ public class BiojavaFilter extends ConversionFilter {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Parse the Biojava Structure
-     *
-     * @return true if the structure is successfully converted
      */
     @Override
     public boolean convert() {
@@ -1368,11 +1389,9 @@ public class BiojavaFilter extends ConversionFilter {
      * Assign atom types to the nucleic acid base.
      *
      * @param nucleicAcid The nucleic acid base to use.
-     * @param residue The residue node.
-     * @param C1s The CS* attachement atom.
-     *
+     * @param residue     The residue node.
+     * @param C1s         The CS* attachement atom.
      * @throws MissingHeavyAtomException
-     *
      * @since 1.0
      */
     private void assignNucleicAcidBaseAtomTypes(NucleicAcid3 nucleicAcid, Residue residue, Atom C1s,
@@ -1834,9 +1853,7 @@ public class BiojavaFilter extends ConversionFilter {
      * Assign atom types to an amino acid polymer.
      *
      * @param residues The residues to assign atom types to.
-     *
      * @throws MissingHeavyAtomException
-     *
      * @since 1.0
      */
     private void assignAminoAcidAtomTypes(List<Residue> residues)
@@ -2102,15 +2119,18 @@ public class BiojavaFilter extends ConversionFilter {
     /**
      * Assign atom types to a single amino acid side chain.
      *
-     * @param position The position of this amino acid in the chain.
+     * @param position  The position of this amino acid in the chain.
      * @param aminoAcid The amino acid to use.
-     * @param residue The residue node.
-     * @param CA The C-alpha carbon of this residue.
-     * @param N The peptide nitrogen of this residue.
-     * @param C The peptide carbonyl carbon.
-     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException this
-     * exception is thrown if when heavy is atom is missing that cannot be
-     * built.
+     * @param residue   The residue node.
+     * @param CA        The C-alpha carbon of this residue.
+     * @param CA        The C-alpha carbon of this residue.
+     * @param N         The peptide nitrogen of this residue.
+     * @param CA        The C-alpha carbon of this residue.
+     * @param CA        The C-alpha carbon of this residue.
+     * @param CA        The C-alpha carbon of this residue.
+     * @param CA        The C-alpha carbon of this residue.
+     * @param C         The peptide carbonyl carbon.
+     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
      */
     public void assignAminoAcidSideChain(ResiduePosition position, AminoAcid3 aminoAcid, Residue residue,
                                          Atom CA, Atom N, Atom C) throws MissingHeavyAtomException {
@@ -2231,7 +2251,7 @@ public class BiojavaFilter extends ConversionFilter {
      * writeFileWithHeader</p>
      *
      * @param saveFile a {@link java.io.File} object.
-     * @param header a {@link java.lang.StringBuilder} object.
+     * @param header   a {@link java.lang.StringBuilder} object.
      * @return a boolean.
      */
     public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
@@ -2261,8 +2281,8 @@ public class BiojavaFilter extends ConversionFilter {
      * <p>
      * writeFile</p>
      *
-     * @param saveFile a {@link java.io.File} object.
-     * @param append a {@link java.lang.StringBuilder} object.
+     * @param saveFile    a {@link java.io.File} object.
+     * @param append      a {@link java.lang.StringBuilder} object.
      * @param printLinear Whether to print atoms linearly or by element
      * @return Success of writing.
      */
@@ -2667,6 +2687,15 @@ public class BiojavaFilter extends ConversionFilter {
      }
      }
      }*/
+
+    /**
+     * <p>writeSIFTFile.</p>
+     *
+     * @param saveFile    a {@link java.io.File} object.
+     * @param append      a boolean.
+     * @param resAndScore an array of {@link java.lang.String} objects.
+     * @return a boolean.
+     */
     public boolean writeSIFTFile(File saveFile, boolean append, String[] resAndScore) {
         if (saveFile == null) {
             return false;
@@ -3037,7 +3066,7 @@ public class BiojavaFilter extends ConversionFilter {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Write out the Atomic information in PDB format.
      */
     @Override
@@ -3049,11 +3078,11 @@ public class BiojavaFilter extends ConversionFilter {
      * <p>
      * writeAtom</p>
      *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param serial a int.
-     * @param sb a {@link java.lang.StringBuilder} object.
+     * @param atom     a {@link ffx.potential.bonded.Atom} object.
+     * @param serial   a int.
+     * @param sb       a {@link java.lang.StringBuilder} object.
      * @param anisouSB a {@link java.lang.StringBuilder} object.
-     * @param bw a {@link java.io.BufferedWriter} object.
+     * @param bw       a {@link java.io.BufferedWriter} object.
      * @throws java.io.IOException if any.
      */
     public void writeAtom(Atom atom, int serial, StringBuilder sb,
@@ -3128,6 +3157,17 @@ public class BiojavaFilter extends ConversionFilter {
         }
     }
 
+    /**
+     * <p>writeSIFTAtom.</p>
+     *
+     * @param atom      a {@link ffx.potential.bonded.Atom} object.
+     * @param serial    a int.
+     * @param sb        a {@link java.lang.StringBuilder} object.
+     * @param anisouSB  a {@link java.lang.StringBuilder} object.
+     * @param bw        a {@link java.io.BufferedWriter} object.
+     * @param siftScore a {@link java.lang.String} object.
+     * @throws java.io.IOException if any.
+     */
     public void writeSIFTAtom(Atom atom, int serial, StringBuilder sb,
                               StringBuilder anisouSB, BufferedWriter bw, String siftScore)
             throws IOException {
@@ -3205,15 +3245,28 @@ public class BiojavaFilter extends ConversionFilter {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>listMode</code>.</p>
+     *
+     * @param set a boolean.
+     */
     public void setListMode(boolean set) {
         listMode = set;
         listOutput = new ArrayList<>();
     }
 
+    /**
+     * <p>Getter for the field <code>listOutput</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<String> getListOutput() {
         return listOutput;
     }
 
+    /**
+     * <p>clearListOutput.</p>
+     */
     public void clearListOutput() {
         listOutput.clear();
     }
@@ -3727,6 +3780,13 @@ public class BiojavaFilter extends ConversionFilter {
                 forceField, bondList);
     }
 
+    /**
+     * <p>buildBond.</p>
+     *
+     * @param a1 a {@link ffx.potential.bonded.Atom} object.
+     * @param a2 a {@link ffx.potential.bonded.Atom} object.
+     * @return a {@link ffx.potential.bonded.Bond} object.
+     */
     public Bond buildBond(Atom a1, Atom a2) {
         return BondedUtils.buildBond(a1, a2, forceField, bondList);
     }

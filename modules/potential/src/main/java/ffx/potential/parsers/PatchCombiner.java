@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -59,6 +59,7 @@ import ffx.potential.MolecularAssembly;
  * Patch Combiner merges multiple patch files.
  *
  * @author Rae Ann Corrigan
+ *
  */
 public class PatchCombiner {
 
@@ -89,13 +90,25 @@ public class PatchCombiner {
     HashMap<String, String> Map4to55;
     HashMap<String, String> Map4to56;
 
+    /**
+     * <p>Constructor for PatchCombiner.</p>
+     *
+     * @param molecularAssemblies a {@link java.util.List} object.
+     * @param mapname a {@link java.lang.String} object.
+     * @param patch a {@link java.lang.String} object.
+     */
     public PatchCombiner(List<MolecularAssembly> molecularAssemblies, String mapname,
-            String... patch) {
+                         String... patch) {
         this.molecularAssemblies = molecularAssemblies;
         this.mapname = mapname;
         this.patches = patch;
     }
 
+    /**
+     * <p>combinePatches.</p>
+     *
+     * @throws java.io.FileNotFoundException if any.
+     */
     public void combinePatches() throws FileNotFoundException {
 
         atomNameList = new ArrayList<>();
@@ -205,6 +218,11 @@ public class PatchCombiner {
          */
     }
 
+    /**
+     * <p>writeAtoms.</p>
+     *
+     * @throws java.io.FileNotFoundException if any.
+     */
     public void writeAtoms() throws FileNotFoundException {
         PrintWriter atomWriter1 = new PrintWriter("Oatom.patch");
 
@@ -322,6 +340,11 @@ public class PatchCombiner {
         System.out.println("Atom Patch: COMPLETE");
     }
 
+    /**
+     * <p>writeMultipoles.</p>
+     *
+     * @throws java.io.FileNotFoundException if any.
+     */
     public void writeMultipoles() throws FileNotFoundException {
         List<String> multipoles = new ArrayList<>();
         List<String> mCol1List = new ArrayList<>();
@@ -1025,6 +1048,11 @@ public class PatchCombiner {
         System.out.println("Multipole Patch: COMPLETE");
     }
 
+    /**
+     * <p>writePolarize.</p>
+     *
+     * @throws java.io.FileNotFoundException if any.
+     */
     public void writePolarize() throws FileNotFoundException {
         String polarAtom = null;
 
@@ -1672,6 +1700,11 @@ public class PatchCombiner {
         System.out.println("Polarize Patch: COMPLETE");
     }
 
+    /**
+     * <p>writeVDW.</p>
+     *
+     * @throws java.io.FileNotFoundException if any.
+     */
     public void writeVDW() throws FileNotFoundException {
         String vdwAtom = null;
 
@@ -1835,6 +1868,11 @@ public class PatchCombiner {
         System.out.println("van der Waals Patch: COMPLETE");
     }
 
+    /**
+     * <p>writeBonded.</p>
+     *
+     * @throws java.io.FileNotFoundException if any.
+     */
     public void writeBonded() throws FileNotFoundException {
         List<String> bonds = new ArrayList<>();
         List<String> firstNList = new ArrayList<>();

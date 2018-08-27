@@ -47,7 +47,7 @@ import java.util.List;
  * The Joint class contains the geometry produced by the FGroup Joiner method.
  *
  * @author Michael J. Schnieders
- *
+ * @since 1.0
  */
 public class Joint extends MSNode {
 
@@ -70,6 +70,11 @@ public class Joint extends MSNode {
         group1 = group2 = null;
     }
 
+    /**
+     * <p>Constructor for Joint.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     */
     public Joint(String name) {
         super(name);
         group1 = group2 = null;
@@ -78,18 +83,18 @@ public class Joint extends MSNode {
     /**
      * Constructs a Joint between Group 1 and Group 2.
      *
-     * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
-     * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
-     * @param bondNode a {@link ffx.potential.bonded.MSNode} object.
-     * @param angleNode a {@link ffx.potential.bonded.MSNode} object.
-     * @param stretchBendNode a {@link ffx.potential.bonded.MSNode} object.
-     * @param ureyBradleyNode a {@link ffx.potential.bonded.MSNode} object.
-     * @param outOfPlaneNode a {@link ffx.potential.bonded.MSNode} object.
-     * @param torsionNode a {@link ffx.potential.bonded.MSNode} object.
-     * @param stretchTorsionNode a {@link ffx.potential.bonded.MSNode} object.
-     * @param angleTorsionNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param group1               a {@link ffx.potential.bonded.MSGroup} object.
+     * @param group2               a {@link ffx.potential.bonded.MSGroup} object.
+     * @param bondNode             a {@link ffx.potential.bonded.MSNode} object.
+     * @param angleNode            a {@link ffx.potential.bonded.MSNode} object.
+     * @param stretchBendNode      a {@link ffx.potential.bonded.MSNode} object.
+     * @param ureyBradleyNode      a {@link ffx.potential.bonded.MSNode} object.
+     * @param outOfPlaneNode       a {@link ffx.potential.bonded.MSNode} object.
+     * @param torsionNode          a {@link ffx.potential.bonded.MSNode} object.
+     * @param stretchTorsionNode   a {@link ffx.potential.bonded.MSNode} object.
+     * @param angleTorsionNode     a {@link ffx.potential.bonded.MSNode} object.
      * @param piOrbitalTorsionNode a {@link ffx.potential.bonded.MSNode} object.
-     * @param torsionTorsionNode a {@link ffx.potential.bonded.MSNode} object.
+     * @param torsionTorsionNode   a {@link ffx.potential.bonded.MSNode} object.
      */
     public Joint(MSGroup group1, MSGroup group2, MSNode bondNode,
                  MSNode angleNode, MSNode stretchBendNode, MSNode ureyBradleyNode,
@@ -316,7 +321,7 @@ public class Joint extends MSNode {
             return;
         }
         refresh(j.getBonds(), j.getAngles(), j.getStretchBends(), j.getUreyBradleys(), j.getOutOfPlaneBends(),
-                j.getTorsions(), j.getStretchTorsions(), j.getAngleTorsions(),  j.getPiOrbitalTorsions(), j.getTorsionTorsions());
+                j.getTorsions(), j.getStretchTorsions(), j.getAngleTorsions(), j.getPiOrbitalTorsions(), j.getTorsionTorsions());
     }
 
     private void refresh(MSNode bonds, MSNode angles, MSNode stretchBends,
@@ -453,6 +458,11 @@ public class Joint extends MSNode {
         }
     }
 
+    /**
+     * <p>assignBonds.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
     public void assignBonds(Atom atom) {
         for (ROLS bond : getBondList()) {
             Bond b = (Bond) bond;
@@ -462,6 +472,11 @@ public class Joint extends MSNode {
         }
     }
 
+    /**
+     * <p>assignAngles.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
     public void assignAngles(Atom atom) {
         for (ROLS angle : getAngleList()) {
             Angle a = (Angle) angle;
@@ -471,6 +486,11 @@ public class Joint extends MSNode {
         }
     }
 
+    /**
+     * <p>assignTorsions.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
     public void assignTorsions(Atom atom) {
         for (ROLS torsion : getTorsionList()) {
             Torsion t = (Torsion) torsion;
@@ -480,6 +500,11 @@ public class Joint extends MSNode {
         }
     }
 
+    /**
+     * <p>assignReferences.</p>
+     *
+     * @param atom a {@link ffx.potential.bonded.Atom} object.
+     */
     public void assignReferences(Atom atom) {
         assignBonds(atom);
         assignAngles(atom);
@@ -491,7 +516,7 @@ public class Joint extends MSNode {
      * setColor</p>
      *
      * @param newColorModel a
-     * {@link ffx.potential.bonded.RendererCache.ColorModel} object.
+     *                      {@link ffx.potential.bonded.RendererCache.ColorModel} object.
      */
     public void setColor(RendererCache.ColorModel newColorModel) {
         MSNode bonds = getBonds();
@@ -523,7 +548,7 @@ public class Joint extends MSNode {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overidden toString method returns: "Joint: m1 Name - m2 Name"
      */
     @Override

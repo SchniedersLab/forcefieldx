@@ -75,7 +75,7 @@ import com.sun.j3d.utils.geometry.Sphere;
  * caches primitives for the Renderer.
  *
  * @author Michael J. Schnieders
- *
+ * @since 1.0
  */
 public class RendererCache {
 
@@ -304,9 +304,9 @@ public class RendererCache {
      * <p>
      * appearanceFactory</p>
      *
-     * @param col a {@link javax.vecmath.Color3f} object.
+     * @param col         a {@link javax.vecmath.Color3f} object.
      * @param polygonType a {@link ffx.potential.bonded.RendererCache.ViewModel}
-     * object.
+     *                    object.
      * @return a {@link javax.media.j3d.Appearance} object.
      */
     public static Appearance appearanceFactory(Color3f col,
@@ -332,7 +332,7 @@ public class RendererCache {
      * <p>
      * coneFactory</p>
      *
-     * @param ap a {@link javax.media.j3d.Appearance} object.
+     * @param ap  a {@link javax.media.j3d.Appearance} object.
      * @param res a int.
      * @return a {@link javax.media.j3d.Shape3D} object.
      */
@@ -384,7 +384,7 @@ public class RendererCache {
     /**
      * This method creates a Cylinder
      *
-     * @param ap a {@link javax.media.j3d.Appearance} object.
+     * @param ap  a {@link javax.media.j3d.Appearance} object.
      * @param res a int.
      * @return a {@link javax.media.j3d.Shape3D} object.
      */
@@ -443,8 +443,8 @@ public class RendererCache {
      * <p>
      * doubleCylinderFactory</p>
      *
-     * @param a1 a {@link ffx.potential.bonded.Atom} object.
-     * @param a2 a {@link ffx.potential.bonded.Atom} object.
+     * @param a1  a {@link ffx.potential.bonded.Atom} object.
+     * @param a2  a {@link ffx.potential.bonded.Atom} object.
      * @param div a int.
      * @return a {@link javax.media.j3d.BranchGroup} object.
      */
@@ -487,9 +487,9 @@ public class RendererCache {
      * <p>
      * getColor</p>
      *
-     * @param a a {@link ffx.potential.bonded.Atom} object.
+     * @param a    a {@link ffx.potential.bonded.Atom} object.
      * @param mode a {@link ffx.potential.bonded.RendererCache.ColorModel}
-     * object.
+     *             object.
      * @return a {@link javax.vecmath.Color3f} object.
      */
     public static final Color3f getColor(Atom a, ColorModel mode) {
@@ -589,10 +589,15 @@ public class RendererCache {
      * <p>
      * getScreenCoordinate</p>
      *
-     * @param canvas a {@link javax.media.j3d.Canvas3D} object.
-     * @param node a {@link javax.media.j3d.Node} object.
+     * @param canvas  a {@link javax.media.j3d.Canvas3D} object.
+     * @param node    a {@link javax.media.j3d.Node} object.
      * @param point3d a {@link javax.vecmath.Point3d} object.
-     * @param point a {@link javax.vecmath.Point2d} object.
+     * @param point3d a {@link javax.vecmath.Point3d} object.
+     * @param point3d a {@link javax.vecmath.Point3d} object.
+     * @param point3d a {@link javax.vecmath.Point3d} object.
+     * @param point3d a {@link javax.vecmath.Point3d} object.
+     * @param point3d a {@link javax.vecmath.Point3d} object.
+     * @param point   a {@link javax.vecmath.Point2d} object.
      */
     public static void getScreenCoordinate(Canvas3D canvas, Node node,
                                            Point3d point3d, final Point2d point) {
@@ -750,8 +755,8 @@ public class RendererCache {
      * <p>
      * sphereFactory</p>
      *
-     * @param ap a {@link javax.media.j3d.Appearance} object.
-     * @param div a int.
+     * @param ap          a {@link javax.media.j3d.Appearance} object.
+     * @param div         a int.
      * @param transform3D a {@link javax.media.j3d.Transform3D} object.
      * @return a {@link javax.media.j3d.BranchGroup} object.
      */
@@ -833,7 +838,7 @@ public class RendererCache {
      * transform3DFactory</p>
      *
      * @param position a {@link javax.vecmath.Vector3d} object.
-     * @param scale a double.
+     * @param scale    a double.
      * @return a {@link javax.media.j3d.Transform3D} object.
      */
     public static final Transform3D transform3DFactory(Vector3d position,

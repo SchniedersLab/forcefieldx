@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -43,36 +43,67 @@ import ffx.numerics.AtomicDoubleArray;
  * The BondedTerm class is extended by all Valence Geometry classes (bond,
  * angle, dihedral, torsion, etc.).
  *
- * @author slucore
+ * @author Stephen LuCore
  * @since 1.0
- *
  */
 public interface BondedEnergy {
-    
+
+    /**
+     * <p>update.</p>
+     */
     default void update() {
         energy(false);
     }
-    
+
+    /**
+     * <p>energy.</p>
+     *
+     * @param gradient a boolean.
+     * @return a double.
+     */
     default double energy(boolean gradient) {
         return energy(gradient, 0,
                 null, null, null);
     }
-    
+
+    /**
+     * <p>energy.</p>
+     *
+     * @param gradient a boolean.
+     * @param threadID a int.
+     * @param gradX    a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param gradY    a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param gradZ    a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @return a double.
+     */
     default double energy(boolean gradient, int threadID,
-            AtomicDoubleArray gradX,
-            AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ) {
+                          AtomicDoubleArray gradX,
+                          AtomicDoubleArray gradY,
+                          AtomicDoubleArray gradZ) {
         return energy(gradient, threadID,
                 gradX, gradY, gradZ,
                 null, null, null);
     }
-    
+
+    /**
+     * <p>energy.</p>
+     *
+     * @param gradient    a boolean.
+     * @param threadID    a int.
+     * @param gradX       a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param gradY       a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param gradZ       a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param lambdaGradX a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param lambdaGradY a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @param lambdaGradZ a {@link ffx.numerics.AtomicDoubleArray} object.
+     * @return a double.
+     */
     public abstract double energy(boolean gradient, int threadID,
-            AtomicDoubleArray gradX,
-            AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ,
-            AtomicDoubleArray lambdaGradX,
-            AtomicDoubleArray lambdaGradY,
-            AtomicDoubleArray lambdaGradZ);
+                                  AtomicDoubleArray gradX,
+                                  AtomicDoubleArray gradY,
+                                  AtomicDoubleArray gradZ,
+                                  AtomicDoubleArray lambdaGradX,
+                                  AtomicDoubleArray lambdaGradY,
+                                  AtomicDoubleArray lambdaGradZ);
 
 }

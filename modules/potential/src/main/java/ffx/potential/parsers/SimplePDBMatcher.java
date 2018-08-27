@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -52,7 +52,10 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 
 /**
+ * <p>SimplePDBMatcher class.</p>
+ *
  * @author Jacob Litman
+ *
  */
 public class SimplePDBMatcher {
 
@@ -61,12 +64,21 @@ public class SimplePDBMatcher {
     private final File[] sourceFiles;
     private FileDoublePair[] matchedSources;
 
+    /**
+     * <p>Constructor for SimplePDBMatcher.</p>
+     *
+     * @param matchFiles an array of {@link java.io.File} objects.
+     * @param sourceFiles an array of {@link java.io.File} objects.
+     */
     public SimplePDBMatcher(File[] matchFiles, File[] sourceFiles) {
         this.matchFiles = matchFiles;
         this.sourceFiles = sourceFiles;
         matchedSources = new FileDoublePair[matchFiles.length];
     }
 
+    /**
+     * <p>match.</p>
+     */
     public void match() {
         PDBFileReader reader = new PDBFileReader();
         StructurePairAligner aligner = new StructurePairAligner();
@@ -86,6 +98,9 @@ public class SimplePDBMatcher {
         }
     }
 
+    /**
+     * <p>matchParallel.</p>
+     */
     public void matchParallel() {
         try {
             new ParallelTeam().execute(new ParallelRegion() {

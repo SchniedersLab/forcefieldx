@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -94,7 +94,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
-     * @return
+     * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
      */
     public OutOfPlaneBendType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
@@ -153,6 +153,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
                 atomClasses[1], atomClasses[2],
                 atomClasses[3], forceConstant);
     }
+
     /**
      * Cubic coefficient in out-of-plane angle bending potential.
      */
@@ -179,9 +180,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      */
     public static final double units = 1.0 / pow(180.0 / PI, 2);
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int compare(String s1, String s2) {
         String keys1[] = s1.split(" ");
@@ -199,9 +198,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object other) {
         if (other == this) {
@@ -219,9 +216,7 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         int hash = 7;
@@ -233,13 +228,13 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
      * Average two OutOfPlaneBendType instances. The atom classes that define
      * the new type must be supplied.
      *
-     * @param outOfPlaneBendType1
-     * @param outOfPlaneBendType2
-     * @param atomClasses
-     * @return
+     * @param outOfPlaneBendType1 a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+     * @param outOfPlaneBendType2 a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+     * @param atomClasses an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
      */
     public static OutOfPlaneBendType average(OutOfPlaneBendType outOfPlaneBendType1,
-            OutOfPlaneBendType outOfPlaneBendType2, int atomClasses[]) {
+                                             OutOfPlaneBendType outOfPlaneBendType2, int atomClasses[]) {
         if (outOfPlaneBendType1 == null || outOfPlaneBendType2 == null || atomClasses == null) {
             return null;
         }

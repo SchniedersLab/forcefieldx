@@ -42,13 +42,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import static java.util.Arrays.copyOf;
 
-import static org.apache.commons.math3.util.FastMath.PI;
-
 /**
  * The StretchTorsionType class defines one stretch-torsion energy type.
  *
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public final class StretchTorsionType extends BaseType implements Comparator<String> {
@@ -69,7 +66,7 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
     /**
      * StretchTorsionType Constructor.
      *
-     * @param atomClasses int[]
+     * @param atomClasses    int[]
      * @param forceConstants double[]
      */
     public StretchTorsionType(int atomClasses[], double forceConstants[]) {
@@ -99,7 +96,7 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
      * Remap new atom classes to known internal ones.
      *
      * @param typeMap a lookup between new atom types and known atom types.
-     * @return
+     * @return a {@link ffx.potential.parameters.StretchTorsionType} object.
      */
     public StretchTorsionType patchClasses(HashMap<AtomType, AtomType> typeMap) {
         int count = 0;
@@ -179,7 +176,7 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Nicely formatted Stretch-Torsion string.
      */
     @Override
@@ -259,6 +256,14 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
         return hash;
     }
 
+    /**
+     * <p>average.</p>
+     *
+     * @param stretchTorsionType1 a {@link ffx.potential.parameters.StretchTorsionType} object.
+     * @param stretchTorsionType2 a {@link ffx.potential.parameters.StretchTorsionType} object.
+     * @param atomClasses         an array of {@link int} objects.
+     * @return a {@link ffx.potential.parameters.StretchTorsionType} object.
+     */
     public static StretchTorsionType average(StretchTorsionType stretchTorsionType1,
                                              StretchTorsionType stretchTorsionType2, int atomClasses[]) {
         if (stretchTorsionType1 == null || stretchTorsionType2 == null || atomClasses == null) {

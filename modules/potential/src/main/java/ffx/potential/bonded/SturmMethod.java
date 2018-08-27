@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -51,7 +51,10 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.PDBFilter;
 
 /**
+ * <p>SturmMethod class.</p>
+ *
  * @author Mallory R. Tollefson
+ * @since 1.0
  */
 public class SturmMethod {
 
@@ -61,7 +64,7 @@ public class SturmMethod {
      * Calculates the modulus of u(x)/v(x) leaving it in r, it returns 0 if r(x)
      * is constant. This function assumes the leading coefficient of v is 1 or
      * -1.
-     *
+     * <p>
      * Modp was originally a static int and returned r.ord as an int. The
      * buildSturm function requires that a boolean is returned from the modp
      * function, so modp is set to return a boolean. This new boolean return
@@ -71,9 +74,7 @@ public class SturmMethod {
      * @param u
      * @param v
      * @param r
-     *
      * @return true if r.ord > 0.
-     *
      */
     private static boolean modp(Polynomial u, Polynomial v, Polynomial r) {
         double nr[] = r.coefficients;
@@ -143,10 +144,10 @@ public class SturmMethod {
     /**
      * Solve using the Sturm method.
      *
-     * @param p_order
-     * @param n_root
-     * @param poly_coeffs
-     * @param roots
+     * @param p_order     an array of {@link int} objects.
+     * @param n_root      an array of {@link int} objects.
+     * @param poly_coeffs an array of {@link double} objects.
+     * @param roots       an array of {@link double} objects.
      */
     public void solveSturm(int[] p_order, int[] n_root, double[] poly_coeffs, double[] roots) {
 
@@ -323,7 +324,6 @@ public class SturmMethod {
      * @param sseq
      * @param atneg
      * @param atpos
-     *
      * @return the number of distinct real roots of sseq.
      */
     private int numRoots(int np, Polynomial[] sseq, int[] atneg, int[] atpos) {
@@ -376,7 +376,6 @@ public class SturmMethod {
      * @param np
      * @param sseq
      * @param a
-     *
      * @return the number of sign changes.
      */
     private int numChanges(int np, Polynomial[] sseq, double a) {
@@ -419,7 +418,7 @@ public class SturmMethod {
             // First try a less expensive technique
             if (modifiedRegulaFalsi(sseq[0].order, sseq[0].coefficients, min, max, roots)) {
                 fillArray(roots, this.roots);
-                return;            
+                return;
             }
 
             // When code reaches this point, the root must be evaluated using the Sturm sequence.
@@ -493,15 +492,15 @@ public class SturmMethod {
      * Inputs:
      * valuesArray: [ 10, 20, 30,  0 ]
      * targetArray: [  1,  2,  3,  4,  0,  0,  0,  0,  0,  0];
-     * 
+     *
      * Output (via array reference with later use of target array):
      * [  1,  2,  3,  4,  0,  0, 10, 20, 30, 0 ]
      * </pre>
      *
      * @param valuesArray The array that will hold the values to copy into the
-     * target array.
+     *                    target array.
      * @param targetArray The array that will receive the values in the values
-     * array.
+     *                    array.
      */
     private void fillArray(final double[] valuesArray, final double[] targetArray) {
         final int tarLen = targetArray.length;
@@ -521,7 +520,6 @@ public class SturmMethod {
      * @param ord
      * @param coef
      * @param x
-     *
      * @return value of the polynomial at x.
      */
     private double evalPoly(int ord, double[] coef, double x) {
@@ -546,7 +544,6 @@ public class SturmMethod {
      * @param a
      * @param b
      * @param val
-     *
      * @return 0 if the method does not converge.
      */
     private boolean modifiedRegulaFalsi(int ord, double[] coef, double a, double b, double[] val) {
@@ -603,15 +600,14 @@ public class SturmMethod {
     /**
      * Write out loop coordinates and determine oxygen placement.
      *
-     * @param r_n
-     * @param r_a
-     * @param r_c
-     * @param stt_res
-     * @param end_res
-     * @param molAss
-     * @param counter
-     * @param writeFile
-     *
+     * @param r_n       an array of {@link double} objects.
+     * @param r_a       an array of {@link double} objects.
+     * @param r_c       an array of {@link double} objects.
+     * @param stt_res   a int.
+     * @param end_res   a int.
+     * @param molAss    a {@link ffx.potential.MolecularAssembly} object.
+     * @param counter   a int.
+     * @param writeFile a boolean.
      * @return the File.
      */
     public File writePDBBackbone(double[][] r_n, double[][] r_a, double[][] r_c, int stt_res, int end_res, MolecularAssembly molAss, int counter, boolean writeFile) {

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -57,7 +57,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import static java.lang.String.format;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -116,10 +115,9 @@ import static ffx.utilities.StringUtils.padRight;
  *
  * @see <a href="http://www.wwpdb.org/documentation/format32/v3.2.html"> PDB
  * format 3.2</a>
- *
  * @author Michael J. Schnieders
- *
  * @since 1.0
+ *
  */
 public final class PDBFilter extends SystemFilter {
 
@@ -246,7 +244,7 @@ public final class PDBFilter extends SystemFilter {
      * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(List<File> files, MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
+                     ForceField forceField, CompositeConfiguration properties) {
         super(files, molecularAssembly, forceField, properties);
         bondList = new ArrayList<>();
         this.fileType = FileType.PDB;
@@ -263,7 +261,7 @@ public final class PDBFilter extends SystemFilter {
      * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(File file, MolecularAssembly molecularAssembly,
-            ForceField forceField, CompositeConfiguration properties) {
+                     ForceField forceField, CompositeConfiguration properties) {
         super(file, molecularAssembly, forceField, properties);
         bondList = new ArrayList<>();
         this.fileType = FileType.PDB;
@@ -279,7 +277,7 @@ public final class PDBFilter extends SystemFilter {
      * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      */
     public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies,
-            ForceField forceField, CompositeConfiguration properties) {
+                     ForceField forceField, CompositeConfiguration properties) {
         super(file, molecularAssemblies, forceField, properties);
         bondList = new ArrayList<>();
         this.fileType = FileType.PDB;
@@ -301,10 +299,20 @@ public final class PDBFilter extends SystemFilter {
         mutations.add(new Mutation(resID, chainID, name));
     }
 
+    /**
+     * <p>mutate.</p>
+     *
+     * @param mutation a {@link ffx.potential.parsers.PDBFilter.Mutation} object.
+     */
     public void mutate(Mutation mutation) {
         mutations.add(mutation);
     }
 
+    /**
+     * <p>mutate.</p>
+     *
+     * @param mutations a {@link java.util.List} object.
+     */
     public void mutate(List<Mutation> mutations) {
         this.mutations.addAll(mutations);
     }
@@ -328,6 +336,11 @@ public final class PDBFilter extends SystemFilter {
         currentAltLoc = altLoc;
     }
 
+    /**
+     * <p>setSymOp.</p>
+     *
+     * @param symOp a int.
+     */
     public void setSymOp(int symOp) {
         this.nSymOp = symOp;
     }
@@ -341,23 +354,46 @@ public final class PDBFilter extends SystemFilter {
         return altLocs;
     }
 
+    /**
+     * <p>Setter for the field <code>listMode</code>.</p>
+     *
+     * @param set a boolean.
+     */
     public void setListMode(boolean set) {
         listMode = set;
         listOutput = new ArrayList<>();
     }
 
+    /**
+     * <p>setModelNumbering.</p>
+     *
+     * @param set a boolean.
+     */
     public void setModelNumbering(boolean set) {
         modelsWritten = 0;
     }
 
+    /**
+     * <p>Setter for the field <code>noVersioning</code>.</p>
+     *
+     * @param set a boolean.
+     */
     public void setNoVersioning(boolean set) {
         noVersioning = set;
     }
 
+    /**
+     * <p>Getter for the field <code>listOutput</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<String> getListOutput() {
         return listOutput;
     }
 
+    /**
+     * <p>clearListOutput.</p>
+     */
     public void clearListOutput() {
         listOutput.clear();
     }
@@ -366,8 +402,6 @@ public final class PDBFilter extends SystemFilter {
      * {@inheritDoc}
      *
      * Parse the PDB File
-     *
-     * @return true if the file is read successfully.
      */
     @Override
     public boolean readFile() {
@@ -720,7 +754,7 @@ public final class PDBFilter extends SystemFilter {
                                     resSeq += offset;
                                     if (offset != 0) {
                                         logger.info(String.format(" Chain %c "
-                                                + "residue %s-%s renumbered to %c %s-%d",
+                                                        + "residue %s-%s renumbered to %c %s-%d",
                                                 chainID, pdbResNum.substring(1).trim(),
                                                 resName, chainID, resName, resSeq));
                                     }
@@ -852,7 +886,7 @@ public final class PDBFilter extends SystemFilter {
                                 resSeq += offset;
                                 if (offset != 0) {
                                     logger.info(String.format(" Chain %c "
-                                            + "molecule %s-%s renumbered to %c %s-%d",
+                                                    + "molecule %s-%s renumbered to %c %s-%d",
                                             chainID, pdbResNum.substring(1).trim(),
                                             resName, chainID, resName, resSeq));
                                 }
@@ -1119,15 +1153,15 @@ public final class PDBFilter extends SystemFilter {
 //                                              approximately related by the transformations of the
 //                                              molecule are contained in the entry. Otherwise, blank.
 // =================================================================================
-                            StringBuilder MTRX1 = new StringBuilder(line.substring(11,55));
+                            StringBuilder MTRX1 = new StringBuilder(line.substring(11, 55));
                             properties.addProperty("MTRIX1", MTRX1);
                             break;
                         case MTRIX2:
-                            StringBuilder MTRX2 = new StringBuilder(line.substring(11,55));
+                            StringBuilder MTRX2 = new StringBuilder(line.substring(11, 55));
                             properties.addProperty("MTRIX2", MTRX2);
                             break;
                         case MTRIX3:
-                            StringBuilder MTRX3 = new StringBuilder(line.substring(11,55));
+                            StringBuilder MTRX3 = new StringBuilder(line.substring(11, 55));
                             properties.addProperty("MTRIX3", MTRX3);
                             break;
                         case REMARK:
@@ -1202,6 +1236,11 @@ public final class PDBFilter extends SystemFilter {
         return true;
     }
 
+    /**
+     * <p>setIgnoreInactiveAtoms.</p>
+     *
+     * @param ignoreInactiveAtoms a boolean.
+     */
     public void setIgnoreInactiveAtoms(boolean ignoreInactiveAtoms) {
         this.ignoreUnusedAtoms = ignoreInactiveAtoms;
     }
@@ -1209,12 +1248,20 @@ public final class PDBFilter extends SystemFilter {
     /**
      * Sets whether this PDBFilter should log each time it saves to a file.
      *
-     * @param logWrites
+     * @param logWrites a boolean.
      */
     public void setLogWrites(boolean logWrites) {
         this.logWrites = logWrites;
     }
 
+    /**
+     * <p>writeFileWithHeader.</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param header a {@link java.lang.String} object.
+     * @param append a boolean.
+     * @return a boolean.
+     */
     public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
         FileWriter fw;
         BufferedWriter bw;
@@ -1245,10 +1292,24 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
+    /**
+     * <p>writeFileWithHeader.</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param header a {@link java.lang.String} object.
+     * @return a boolean.
+     */
     public boolean writeFileWithHeader(File saveFile, String header) {
         return writeFileWithHeader(saveFile, header, true);
     }
 
+    /**
+     * <p>writeFileWithHeader.</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param header a {@link java.lang.StringBuilder} object.
+     * @return a boolean.
+     */
     public boolean writeFileWithHeader(File saveFile, StringBuilder header) {
         return writeFileWithHeader(saveFile, header.toString());
     }
@@ -1665,6 +1726,14 @@ public final class PDBFilter extends SystemFilter {
         return true;
     }
 
+    /**
+     * <p>writeSIFTFile.</p>
+     *
+     * @param saveFile a {@link java.io.File} object.
+     * @param append a boolean.
+     * @param resAndScore an array of {@link java.lang.String} objects.
+     * @return a boolean.
+     */
     public boolean writeSIFTFile(File saveFile, boolean append, String[] resAndScore) {
         if (saveFile == null) {
             return false;
@@ -2857,11 +2926,11 @@ public final class PDBFilter extends SystemFilter {
         switch (rType) {
             case AA:
                 startAtName = "N";
-                endAtName =   "C";
+                endAtName = "C";
                 break;
             case NA:
                 startAtName = "O5\'";
-                endAtName =   "O3\'";
+                endAtName = "O3\'";
                 break;
             case UNK:
             default:
@@ -2984,7 +3053,7 @@ public final class PDBFilter extends SystemFilter {
      * @throws java.io.IOException if any.
      */
     private void writeAtom(Atom atom, int serial, StringBuilder sb,
-            StringBuilder anisouSB, BufferedWriter bw)
+                           StringBuilder anisouSB, BufferedWriter bw)
             throws IOException {
         if (ignoreUnusedAtoms && !atom.getUse()) {
             return;
@@ -3036,8 +3105,8 @@ public final class PDBFilter extends SystemFilter {
             } catch (IllegalArgumentException ex) {
                 String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
                 logger.info(String.format(" XYZ %d coordinate %8.3f for atom %s "
-                        + "overflowed bounds of 8.3f string specified by PDB "
-                        + "format; truncating value to %s", i, xyz[i], atom.toString(),
+                                + "overflowed bounds of 8.3f string specified by PDB "
+                                + "format; truncating value to %s", i, xyz[i], atom.toString(),
                         newValue));
                 decimals.append(newValue);
             }
@@ -3107,7 +3176,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     private void writeSIFTAtom(Atom atom, int serial, StringBuilder sb,
-            StringBuilder anisouSB, BufferedWriter bw, String siftScore)
+                               StringBuilder anisouSB, BufferedWriter bw, String siftScore)
             throws IOException {
         String name = atom.getName();
         if (name.length() > 4) {
@@ -3190,11 +3259,13 @@ public final class PDBFilter extends SystemFilter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean readNext() {
         return readNext(false);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean readNext(boolean resetPosition) {
         // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture one or more digits.
@@ -3300,8 +3371,8 @@ public final class PDBFilter extends SystemFilter {
                                     String segID = segIDList.get(0);
                                     if (segIDList.size() > 1) {
                                         logger.log(Level.WARNING, String.format(" "
-                                                + "Multiple segment IDs correspond to"
-                                                + "chain ID %s; assuming %s",
+                                                        + "Multiple segment IDs correspond to"
+                                                        + "chain ID %s; assuming %s",
                                                 chainID.toString(), segID));
                                     }
 
@@ -3328,7 +3399,7 @@ public final class PDBFilter extends SystemFilter {
                                         returnedAtom.getXYZ(retXYZ);
                                     } else {
                                         String message = String.format(" "
-                                                + "Could not find atom %s in assembly",
+                                                        + "Could not find atom %s in assembly",
                                                 newAtom.toString());
                                         if (dieOnMissingAtom) {
                                             logger.severe(message);
@@ -3363,6 +3434,7 @@ public final class PDBFilter extends SystemFilter {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void closeReader() {
         // Java 8 stuff that Netbeans suggested. Faster than for loop?
@@ -3876,7 +3948,7 @@ public final class PDBFilter extends SystemFilter {
     }
 
     private Atom buildHydrogen(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, int lookUp) {
+                               Atom ic, double angle2, int chiral, int lookUp) {
         return BondedUtils.buildHydrogen(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, lookUp, forceField, bondList);
     }
 
@@ -4108,7 +4180,7 @@ public final class PDBFilter extends SystemFilter {
         CH3.setName("CH3");
         List<Atom> ntermHs = findBondedAtoms(CH3, 1);
         for (int i = 0; i < 3; i++) {
-            ntermHs.get(i).setName(String.format("H%d", (i+1)));
+            ntermHs.get(i).setName(String.format("H%d", (i + 1)));
         }
     }
 
@@ -4133,7 +4205,7 @@ public final class PDBFilter extends SystemFilter {
                     findBondedAtoms(N, 1).get(0).setName("H");
                     CA.setName("CH3");
                     for (int i = 1; i <= 3; i++) {
-                        has.get(i-1).setName(String.format("H%d", i));
+                        has.get(i - 1).setName(String.format("H%d", i));
                     }
                     return;
                 case GLY:
@@ -4193,7 +4265,7 @@ public final class PDBFilter extends SystemFilter {
                 default:
                     // Should catch both N-termini and proline.
                     for (int i = 1; i <= amideProtons.size(); i++) {
-                        amideProtons.get(i-1).setName(String.format("H%d", i));
+                        amideProtons.get(i - 1).setName(String.format("H%d", i));
                     }
                     break;
             }
@@ -4213,10 +4285,10 @@ public final class PDBFilter extends SystemFilter {
                     CH3.setName("CH3");
                     List<Atom> hydrogens = findBondedAtoms(CH3, 1);
                     for (int i = 1; i <= 3; i++) {
-                        hydrogens.get(i-1).setName(String.format("H%d", i));
+                        hydrogens.get(i - 1).setName(String.format("H%d", i));
                     }
                 }
-                    break;
+                break;
                 default:
                     throw new IllegalArgumentException(String.format(" Could not find nitrogen atom for residue %s!", residue));
             }
@@ -4233,14 +4305,12 @@ public final class PDBFilter extends SystemFilter {
      */
     private static void renameCommonAminoAcids(Residue residue, AminoAcid3 aa3, Atom CA, Atom CB) {
         switch (aa3) {
-            case ALA:
-            {
+            case ALA: {
                 renameAlkyl(CB, CA, 1, 'B');
             }
             break;
             case CYS:
-            case CYD:
-            {
+            case CYD: {
                 Atom SG = renameAlkyl(CB, CA, 2, 'B').get();
                 SG.setName("SG");
                 if (hasAttachedAtom(SG, 1)) {
@@ -4252,8 +4322,7 @@ public final class PDBFilter extends SystemFilter {
             }
             break;
             case ASP:
-            case ASH:
-            {
+            case ASH: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 CG.setName("CG");
                 List<Atom> ODs = findBondedAtoms(CG, 8);
@@ -4291,8 +4360,7 @@ public final class PDBFilter extends SystemFilter {
             }
             break;
             case GLU:
-            case GLH:
-            {
+            case GLH: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
                 CD.setName("CD");
@@ -4330,15 +4398,14 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             break;
-            case PHE:
-            {
+            case PHE: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 CG.setName("CG");
                 List<Atom> CDs = findBondedAtoms(CG, CB, 6);
 
                 Atom CZ = null;
                 for (int i = 1; i <= 2; i++) {
-                    Atom CD = CDs.get(i-1);
+                    Atom CD = CDs.get(i - 1);
                     Atom CE = renameBranchedAlkyl(CD, CG, 0, i, 'D').get();
                     CZ = renameBranchedAlkyl(CE, CD, 0, i, 'E').get();
                 }
@@ -4350,8 +4417,7 @@ public final class PDBFilter extends SystemFilter {
                 break;
             case HIS:
             case HIE:
-            case HID:
-            {
+            case HID: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 CG.setName("CG");
 
@@ -4412,8 +4478,7 @@ public final class PDBFilter extends SystemFilter {
             }
             break;
             case LYS:
-            case LYD:
-            {
+            case LYD: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
                 Atom CE = renameAlkyl(CD, CG, 2, 'D').get();
@@ -4434,20 +4499,18 @@ public final class PDBFilter extends SystemFilter {
                 }
             }
             break;
-            case LEU:
-            {
+            case LEU: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 CG.setName("CG");
                 findBondedAtoms(CG, 1).get(0).setName("HG");
                 List<Atom> CDs = findBondedAtoms(CG, CB, 6);
 
                 for (int i = 0; i < 2; i++) {
-                    renameBranchedAlkyl(CDs.get(i), CG, 1, (i+1), 'D');
+                    renameBranchedAlkyl(CDs.get(i), CG, 1, (i + 1), 'D');
                 }
             }
             break;
-            case MET:
-            {
+            case MET: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 Atom SD = renameAlkyl(CG, CB, 2, 'G').get();
                 Atom CE = renameAlkyl(SD, CG, 0, 'D').get();
@@ -4485,8 +4548,7 @@ public final class PDBFilter extends SystemFilter {
                 NE2.setName("NE2");
             }
             break;
-            case ARG:
-            {
+            case ARG: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
                 Atom NE = renameAlkyl(CD, CG, 2, 'D').get();
@@ -4498,8 +4560,8 @@ public final class PDBFilter extends SystemFilter {
                 assert NHs.size() == 2;
                 for (int i = 0; i < 2; i++) {
                     Atom NHx = NHs.get(i);
-                    renameBranchedAlkyl(NHx, CZ, 1, (i+1), 'H');
-                    NHx.setName(String.format("NH%d", (i+1)));
+                    renameBranchedAlkyl(NHx, CZ, 1, (i + 1), 'H');
+                    NHx.setName(String.format("NH%d", (i + 1)));
                 }
             }
             break;
@@ -4509,8 +4571,7 @@ public final class PDBFilter extends SystemFilter {
                 OG.setName("OG");
             }
             break;
-            case THR:
-            {
+            case THR: {
                 CB.setName("CB"); // Should be unnecessary.
                 findBondedAtoms(CB, 1).get(0).setName("HB");
 
@@ -4522,8 +4583,7 @@ public final class PDBFilter extends SystemFilter {
                 renameBranchedAlkyl(CG2, CB, 1, 2, 'G');
             }
             break;
-            case VAL:
-            {
+            case VAL: {
                 CB.setName("CB"); // Should be unnecessary.
                 findBondedAtoms(CB, 1).get(0).setName("HB");
 
@@ -4532,12 +4592,11 @@ public final class PDBFilter extends SystemFilter {
                 assert CGs.size() == 2;
                 for (int i = 0; i < 2; i++) {
                     Atom CGx = CGs.get(i);
-                    renameBranchedAlkyl(CGx, CB, 1, (i+1), 'G');
+                    renameBranchedAlkyl(CGx, CB, 1, (i + 1), 'G');
                 }
             }
             break;
-            case TRP:
-            {
+            case TRP: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 CG.setName("CG");
                 List<Atom> CDs = findBondedAtoms(CG, CB, 6);
@@ -4567,8 +4626,7 @@ public final class PDBFilter extends SystemFilter {
             }
             break;
             case TYR:
-            case TYD:
-            {
+            case TYD: {
                 Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
                 CG.setName("CG");
                 List<Atom> CDs = findBondedAtoms(CG, CB, 6);
@@ -4576,7 +4634,7 @@ public final class PDBFilter extends SystemFilter {
 
                 assert CDs.size() == 2;
                 for (int i = 1; i <= 2; i++) {
-                    Atom CDx = CDs.get(i-1);
+                    Atom CDx = CDs.get(i - 1);
                     Atom CEx = renameBranchedAlkyl(CDx, CG, 0, i, 'D').get();
                     CZ = renameBranchedAlkyl(CEx, CDx, 0, i, 'E').get();
                 }
@@ -4623,7 +4681,7 @@ public final class PDBFilter extends SystemFilter {
         return carbon.getBonds().stream().
                 map((Bond b) -> b.get1_2(carbon)).
                 filter((Atom a) -> a != priorAtom).
-                filter((Atom a) -> ! hydrogens.contains(a)).
+                filter((Atom a) -> !hydrogens.contains(a)).
                 findAny();
     }
 
@@ -4656,7 +4714,7 @@ public final class PDBFilter extends SystemFilter {
         return carbon.getBonds().stream().
                 map((Bond b) -> b.get1_2(carbon)).
                 filter((Atom a) -> a != priorAtom).
-                filter((Atom a) -> ! hydrogens.contains(a)).
+                filter((Atom a) -> !hydrogens.contains(a)).
                 findAny();
     }
 
@@ -4782,7 +4840,7 @@ public final class PDBFilter extends SystemFilter {
                         theCap.setName("CH3");
                         List<Atom> capHydrogens = findBondedAtoms(theCap, 1);
                         for (int i = 0; i < 3; i++) {
-                            capHydrogens.get(i).setName(String.format("H%d", i+1));
+                            capHydrogens.get(i).setName(String.format("H%d", i + 1));
                         }
                     } else {
                         N = nitro;

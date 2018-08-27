@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -50,6 +50,7 @@ import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
  *
  * @author Ava M. Lynn
  * @author Jacob M. Litman
+ * @since 1.0
  */
 public class Rotamer {
 
@@ -87,14 +88,14 @@ public class Rotamer {
         double[] sigmas = new double[chi.length];
         return new Rotamer(res, chi, sigmas);
     }
-    
+
     /**
      * Constructs a Rotamer from a Residue, an array of torsions, and optionally
      * an array of torsion bin widths. Intended to be agnostic to AA vs. NA vs.
      * other, and not require explicitly passed-in sigmas.
-     * 
-     * @param res Residue to construct rotamer for
-     * @param chis Torsion angles
+     *
+     * @param res    Residue to construct rotamer for
+     * @param chis   Torsion angles
      * @param sigmas Torsion angle bin widths (optional)
      */
     public Rotamer(Residue res, double[] chis, double[] sigmas) {
@@ -102,12 +103,12 @@ public class Rotamer {
         angles = new double[nChi];
         Arrays.fill(angles, 0);
         System.arraycopy(chis, 0, angles, 0, nChi);
-        
+
         // Hooray, 
         double[] tempVals = new double[7];
         Arrays.fill(tempVals, 0);
         System.arraycopy(chis, 0, tempVals, 0, nChi);
-        
+
         chi1 = tempVals[0];
         chi2 = tempVals[1];
         chi3 = tempVals[2];
@@ -115,15 +116,15 @@ public class Rotamer {
         chi5 = tempVals[4];
         chi6 = tempVals[5];
         chi7 = tempVals[6];
-        
+
         this.sigmas = new double[nChi];
         if (sigmas != null) {
             System.arraycopy(sigmas, 0, this.sigmas, 0, nChi);
         } else {
             Arrays.fill(sigmas, 0);
         }
-        
-        switch(res.getResidueType()) {
+
+        switch (res.getResidueType()) {
             case AA:
                 this.name = res.getAminoAcid3();
                 this.nucleicName = null;
@@ -138,12 +139,18 @@ public class Rotamer {
                 this.nucleicName = null;
                 break;
         }
-        
+
         length = nChi;
         originalState = null;
         isState = false;
     }
 
+    /**
+     * <p>Constructor for Rotamer.</p>
+     *
+     * @param name   a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+     * @param values a double.
+     */
     public Rotamer(AminoAcid3 name, double... values) {
         length = values.length / 2;
         angles = new double[max(length, 4)];
@@ -164,6 +171,12 @@ public class Rotamer {
         isState = false;
     }
 
+    /**
+     * <p>Constructor for Rotamer.</p>
+     *
+     * @param name   a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+     * @param values a double.
+     */
     public Rotamer(NucleicAcid3 name, double... values) {
         length = values.length / 2;
         angles = new double[max(length, 7)];
@@ -185,10 +198,11 @@ public class Rotamer {
         originalState = null;
         isState = false;
     }
-    
+
     /**
      * Constructor for unknown residue types.
-     * @param values 
+     *
+     * @param values a double.
      */
     public Rotamer(double... values) {
         length = values.length / 2;
@@ -212,6 +226,13 @@ public class Rotamer {
         isState = false;
     }
 
+    /**
+     * <p>Constructor for Rotamer.</p>
+     *
+     * @param name         a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+     * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+     * @param values       a double.
+     */
     public Rotamer(AminoAcid3 name, ResidueState residueState, double... values) {
         length = values.length / 2;
         angles = new double[max(length, 4)];
@@ -232,6 +253,13 @@ public class Rotamer {
         isState = true;
     }
 
+    /**
+     * <p>Constructor for Rotamer.</p>
+     *
+     * @param name         a {@link ffx.potential.bonded.ResidueEnumerations.NucleicAcid3} object.
+     * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+     * @param values       a double.
+     */
     public Rotamer(NucleicAcid3 name, ResidueState residueState, double... values) {
         length = values.length / 2;
         angles = new double[max(length, 7)];
@@ -256,8 +284,9 @@ public class Rotamer {
 
     /**
      * Constructor for unknown residue types.
-     * @param residueState
-     * @param values 
+     *
+     * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+     * @param values       a double.
      */
     public Rotamer(ResidueState residueState, double... values) {
         length = values.length / 2;
@@ -281,6 +310,9 @@ public class Rotamer {
         isState = true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         StringBuilder sb;
@@ -296,6 +328,11 @@ public class Rotamer {
         return sb.toString();
     }
 
+    /**
+     * <p>toAngleString.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String toAngleString() {
         StringBuilder sb = new StringBuilder();
         int n = angles.length;

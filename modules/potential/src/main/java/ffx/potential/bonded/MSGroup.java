@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -55,7 +55,6 @@ import ffx.potential.parameters.ForceField;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 @SuppressWarnings({"serial", "CloneableImplementsClone"})
 public abstract class MSGroup extends MSNode {
@@ -172,7 +171,12 @@ public abstract class MSGroup extends MSNode {
      * Constructs a MultiScaleGroup object with name n and sets its AtomGroup
      * node equals to node.
      *
-     * @param n a {@link java.lang.String} object.
+     * @param n    a {@link java.lang.String} object.
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
+     * @param node a {@link ffx.potential.bonded.MSNode} object.
      * @param node a {@link ffx.potential.bonded.MSNode} object.
      */
     public MSGroup(String n, MSNode node) {
@@ -199,7 +203,7 @@ public abstract class MSGroup extends MSNode {
         int nAtoms = atomList.size();
         Atom atoms[] = new Atom[nAtoms];
         atoms = atomList.toArray(atoms);
-        
+
         boolean sorted;
         do {
             sorted = true;
@@ -215,14 +219,15 @@ public abstract class MSGroup extends MSNode {
                     a2.setXyzIndex(i1);
                     sorted = false;
                 }
-            }            
+            }
         } while (!sorted);
     }
 
     /**
      * Special-case check for if a Bond connects atoms in a hetero-group polymer linkage.
+     *
      * @param polyLinks polymerlink records from properties
-     * @param bond Bond to check
+     * @param bond      Bond to check
      * @return If bond should be special-cased
      */
     private boolean polymerLinked(String[] polyLinks, Bond bond) {
@@ -299,7 +304,7 @@ public abstract class MSGroup extends MSNode {
                 for (Bond bond : atom.getBonds()) {
                     index++;
                     if (bond.sameGroup() || polymerLinked(polyLinks, bond)) {
-                        for (ListIterator<Bond> li = atom.getBonds().listIterator(index); li.hasNext();) {
+                        for (ListIterator<Bond> li = atom.getBonds().listIterator(index); li.hasNext(); ) {
                             Bond bond2 = li.next();
                             if (bond2.sameGroup() || polymerLinked(polyLinks, bond2)) {
                                 Angle newAngle = Angle.angleFactory(bond, bond2, forceField);
@@ -496,7 +501,7 @@ public abstract class MSGroup extends MSNode {
         ArrayList<Atom> atomList = getAtomList();
         for (Atom a1 : atomList) {
             index++;
-            for (ListIterator li = atomList.listIterator(index); li.hasNext();) {
+            for (ListIterator li = atomList.listIterator(index); li.hasNext(); ) {
                 Atom a2 = (Atom) li.next();
                 a1.getXYZ(da);
                 a2.getXYZ(db);
@@ -537,13 +542,12 @@ public abstract class MSGroup extends MSNode {
     /**
      * Create a joint between two chemical groups.
      *
-     * @param bond Bond
-     * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
-     * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
+     * @param bond       Bond
+     * @param group1     a {@link ffx.potential.bonded.MSGroup} object.
+     * @param group2     a {@link ffx.potential.bonded.MSGroup} object.
      * @param forceField the ForceField parameters to use when creating the
-     * joint.
+     *                   joint.
      * @return Joint the created Joint.
-     *
      */
     public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2, ForceField forceField) {
         MSNode newBondNode = new MSNode("Bonds");
@@ -690,14 +694,27 @@ public abstract class MSGroup extends MSNode {
         return newJoint;
     }
 
+    /**
+     * <p>addJoint.</p>
+     *
+     * @param newJoint a {@link ffx.potential.bonded.Joint} object.
+     */
     public void addJoint(Joint newJoint) {
         joints.add(newJoint);
     }
 
+    /**
+     * <p>clearJoints.</p>
+     */
     public void clearJoints() {
         joints.clear();
     }
 
+    /**
+     * <p>Getter for the field <code>joints</code>.</p>
+     *
+     * @return a {@link java.util.ArrayList} object.
+     */
     public ArrayList<Joint> getJoints() {
         return joints;
     }
@@ -706,10 +723,10 @@ public abstract class MSGroup extends MSNode {
      * Joiner joins Moieties m1 and m2 and returns the Geometry objects formed
      * in a Joint.
      *
-     * @param group1 a {@link ffx.potential.bonded.MSGroup} object.
-     * @param group2 a {@link ffx.potential.bonded.MSGroup} object.
+     * @param group1     a {@link ffx.potential.bonded.MSGroup} object.
+     * @param group2     a {@link ffx.potential.bonded.MSGroup} object.
      * @param forceField the ForceField parameters to use when creating the
-     * joint.
+     *                   joint.
      * @return a {@link ffx.potential.bonded.Joint} object.
      */
     public Joint createJoint(MSGroup group1, MSGroup group2, ForceField forceField) {
@@ -738,8 +755,8 @@ public abstract class MSGroup extends MSNode {
      * Abstract method that should specify how to finalize a MSGroup
      *
      * @param finalizeGroups a boolean.
-     * @param forceField the ForceField parameters to use when finalizing the
-     * MSGroup.
+     * @param forceField     the ForceField parameters to use when finalizing the
+     *                       MSGroup.
      */
     public abstract void finalize(boolean finalizeGroups, ForceField forceField);
 
@@ -800,7 +817,14 @@ public abstract class MSGroup extends MSNode {
         }
         return null;
     }
-    
+
+    /**
+     * <p>getAtomByName.</p>
+     *
+     * @param n               a {@link java.lang.String} object.
+     * @param caseInsensitive a boolean.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public Atom getAtomByName(String n, boolean caseInsensitive) {
         ArrayList<MSNode> list = getAtomNodeList();
         for (MSNode msNode : list) {
@@ -941,7 +965,7 @@ public abstract class MSGroup extends MSNode {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Prints the MultiScaleGroup's Atoms and Bonds.
      */
     @Override
@@ -1105,7 +1129,7 @@ public abstract class MSGroup extends MSNode {
      */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
         if (newColorModel == RendererCache.ColorModel.MOLECULE && (color == null || mat == null)) {
             return;
         }
@@ -1201,14 +1225,14 @@ public abstract class MSGroup extends MSNode {
      */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         atomNode.setView(newViewModel, newShapes);
         bondNode.setView(newViewModel, newShapes);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Returns the MSGroup's name.
      */
     @Override

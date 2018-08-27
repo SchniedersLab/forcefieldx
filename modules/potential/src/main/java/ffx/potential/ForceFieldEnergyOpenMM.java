@@ -64,8 +64,8 @@ import org.apache.commons.io.FilenameUtils;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import edu.rit.pj.Comm;
 import edu.rit.mp.CharacterBuf;
+import edu.rit.pj.Comm;
 import edu.uiowa.jopenmm.AmoebaOpenMMLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMLibrary.*;
 import edu.uiowa.jopenmm.OpenMMUtils;
@@ -769,9 +769,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * is used with Strings as the variable to determine between Lengevin,
      * Brownian, Custom, Compound and Verlet integrator
      *
-     * @param integratorString
-     * @param timeStep
-     * @param temperature
+     * @param integratorString a {@link java.lang.String} object.
+     * @param timeStep         a double.
+     * @param temperature      a double.
      */
     public void createContext(String integratorString, double timeStep, double temperature) {
 
@@ -855,22 +855,47 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         //logger.info(String.format(" quietInt is %d", quietInt));
     }
 
+    /**
+     * <p>Getter for the field <code>integratorString</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getIntegratorString() {
         return integratorString;
     }
 
+    /**
+     * <p>Getter for the field <code>temperature</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTemperature() {
         return temperature;
     }
 
+    /**
+     * <p>Getter for the field <code>timeStep</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTimeStep() {
         return timeStep;
     }
 
+    /**
+     * <p>setCoeffOfFriction.</p>
+     *
+     * @param coeffOfFriction a double.
+     */
     public void setCoeffOfFriction(double coeffOfFriction) {
         this.frictionCoeff = coeffOfFriction;
     }
 
+    /**
+     * <p>Setter for the field <code>collisionFreq</code>.</p>
+     *
+     * @param collisionFreq a double.
+     */
     public void setCollisionFreq(double collisionFreq) {
         this.collisionFreq = collisionFreq;
     }
@@ -902,6 +927,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return platformPtr.getString(0);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         boolean ffxFFEDestroy = super.destroy();
@@ -910,6 +938,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return ffxFFEDestroy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void finalize() throws Throwable {
         // Safer to leave super.finalize() in, even though right now that calls Object.finalize().
@@ -3112,6 +3143,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(amoebaWcaDispersionForce, context);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
@@ -3133,7 +3167,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * the difference FFX-OpenMM.
      *
      * @param x       Coordinate array
-     * @param verbose
+     * @param verbose a boolean.
      * @return Energy discrepancy
      */
     public double energyVsFFX(double[] x, boolean verbose) {
@@ -3149,7 +3183,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param x       Coordinate array
      * @param gFFX    Array for FFX gradients to be stored in
      * @param gOMM    Array for OpenMM gradients to be stored in
-     * @param verbose
+     * @param verbose a boolean.
      * @return Energy discrepancy
      */
     public double energyAndGradVsFFX(double[] x, double[] gFFX, double[] gOMM, boolean verbose) {
@@ -3158,11 +3192,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return ffxE - thisE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x) {
         return energy(x, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x, boolean verbose) {
 
@@ -3212,11 +3252,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return e;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double x[], double g[]) {
         return energyAndGradient(x, g, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double x[], double g[], boolean verbose) {
         if (lambdaBondedTerms) {
@@ -3301,6 +3347,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return e;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCrystal(Crystal crystal) {
         super.setCrystal(crystal);
@@ -3309,11 +3358,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * <p>
      * getGradients</p>
-     *
-     * @param g an array of double.
-     * @return
      */
     @Override
     public double[] getGradients(double g[]) {
@@ -3380,8 +3428,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * reader method and appends these values to a Vec3Array. Finally this
      * method sets the created Vec3Array as the positions of the context.
      *
-     * @param x
-     * @param numberOfVariables
+     * @param x                 an array of {@link double} objects.
+     * @param numberOfVariables a int.
      */
     public void setOpenMMPositions(double x[], int numberOfVariables) {
         assert numberOfVariables == getNumberOfVariables();
@@ -3405,8 +3453,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * reader method and appends these values to a Vec3Array. Finally this
      * method sets the created Vec3Arrat as the velocities of the context.
      *
-     * @param v
-     * @param numberOfVariables
+     * @param v                 an array of {@link double} objects.
+     * @param numberOfVariables a int.
      */
     public void setOpenMMVelocities(double v[], int numberOfVariables) {
         assert numberOfVariables == getNumberOfVariables();
@@ -3432,9 +3480,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * method then adds these values to a new double array x and returns it to
      * the method call
      *
-     * @param positions
-     * @param numberOfVariables
-     * @param x
+     * @param positions         a {@link com.sun.jna.ptr.PointerByReference} object.
+     * @param numberOfVariables a int.
+     * @param x                 an array of {@link double} objects.
      * @return x
      */
     public double[] getOpenMMPositions(PointerByReference positions, int numberOfVariables, double x[]) {
@@ -3463,9 +3511,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * method then adds these values to a new double array v and returns it to
      * the method call
      *
-     * @param velocities
-     * @param numberOfVariables
-     * @return
+     * @param velocities        a {@link com.sun.jna.ptr.PointerByReference} object.
+     * @param numberOfVariables a int.
+     * @param velocities        a {@link com.sun.jna.ptr.PointerByReference} object.
+     * @param v                 an array of {@link double} objects.
+     * @return an array of {@link double} objects.
      */
     public double[] getOpenMMVelocities(PointerByReference velocities, int numberOfVariables, double v[]) {
         assert numberOfVariables == getNumberOfVariables();
@@ -3494,10 +3544,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * then adds these values (divided by mass, effectively turning them into
      * accelerations) to a new double array a and returns it to the method call
      *
-     * @param forces
-     * @param numberOfVariables
-     * @param mass
-     * @return
+     * @param forces            a {@link com.sun.jna.ptr.PointerByReference} object.
+     * @param numberOfVariables a int.
+     * @param mass              an array of {@link double} objects.
+     * @param a                 an array of {@link double} objects.
+     * @return an array of {@link double} objects.
      */
     public double[] getOpenMMAccelerations(PointerByReference forces, int numberOfVariables, double[] mass, double[] a) {
         assert numberOfVariables == getNumberOfVariables();
@@ -3559,6 +3610,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return context;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Platform getPlatform() {
         return ffxPlatform;
@@ -3703,8 +3757,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /**
      * {@inheritDoc}
-     *
-     * @param gradients
      */
     @Override
     public void getdEdXdL(double gradients[]) {
@@ -3719,6 +3771,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return 0.0;
     }
 
+    /**
+     * <p>getVDWRadius.</p>
+     *
+     * @return a double.
+     */
     public double getVDWRadius() {
         VanDerWaals vdW = super.getVdwNode();
         if (vdW == null) {
@@ -3754,6 +3811,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return radScale;
     }
 
+    /**
+     * <p>setUpHydrogenConstraints.</p>
+     *
+     * @param system a {@link com.sun.jna.ptr.PointerByReference} object.
+     */
     public void setUpHydrogenConstraints(PointerByReference system) {
         int i;
         int iAtom1;
@@ -3796,6 +3858,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
     }
 
+    /**
+     * <p>calculateDegreesOfFreedom.</p>
+     *
+     * @return a int.
+     */
     public int calculateDegreesOfFreedom() {
         int dof = numParticles * 3;
         dof = dof - OpenMM_System_getNumConstraints(system);
@@ -3805,10 +3872,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return dof;
     }
 
+    /**
+     * <p>Getter for the field <code>numParticles</code>.</p>
+     *
+     * @return a int.
+     */
     public int getNumParticles() {
         return numParticles;
     }
 
+    /**
+     * <p>addRESPA.</p>
+     *
+     * @param inner a double.
+     * @param dt    a double.
+     * @return a {@link com.sun.jna.ptr.PointerByReference} object.
+     */
     public PointerByReference addRESPA(double inner, double dt) {
 
         integrator = OpenMM_CustomIntegrator_create(dt);

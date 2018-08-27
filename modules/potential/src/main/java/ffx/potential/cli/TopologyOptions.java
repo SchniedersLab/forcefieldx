@@ -184,9 +184,9 @@ public class TopologyOptions {
     /**
      * The number of topologies to run in parallel.
      *
-     * @param threadsAvail
-     * @param nArgs
-     * @return
+     * @param threadsAvail a int.
+     * @param nArgs        a int.
+     * @return a int.
      */
     public int getNumParallel(int threadsAvail, int nArgs) {
         int numParallel = nPar;
@@ -205,7 +205,7 @@ public class TopologyOptions {
     /**
      * Set the alchemical atoms for this topology.
      *
-     * @param topology
+     * @param topology a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setSecondSystemAlchemistry(MolecularAssembly topology) {
         AlchemicalOptions.setAlchemicalAtoms(topology, s2, f2, ligAt2);
@@ -214,7 +214,7 @@ public class TopologyOptions {
     /**
      * Set uncharged atoms for this topology.
      *
-     * @param topology
+     * @param topology a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setSecondSystemUnchargedAtoms(MolecularAssembly topology) {
         AlchemicalOptions.setUnchargedAtoms(topology, es2, ef2);
@@ -244,7 +244,7 @@ public class TopologyOptions {
      * Collect unique atoms for a dual-topology.
      *
      * @param assembly A MolecularAssembly from the dual topology.
-     * @param label Either 'A' or 'B'.
+     * @param label    Either 'A' or 'B'.
      * @param unshared Atoms this dual topology isn't sharing.
      * @return A List of Integers.
      */
@@ -300,14 +300,14 @@ public class TopologyOptions {
 
     /**
      * Performs the bulk of the work of setting up a multi-topology system.
-     *
+     * <p>
      * The sb StringBuilder is often something like "Timing energy and gradients for". The
      * method will append the exact type of Potential being assembled.
      *
-     * @param assemblies Opened MolecularAssembly(s).
+     * @param assemblies   Opened MolecularAssembly(s).
      * @param threadsAvail Number of available threads.
-     * @param sb A StringBuilder describing what is to be done.
-     * @return
+     * @param sb           A StringBuilder describing what is to be done.
+     * @return a {@link ffx.numerics.Potential} object.
      */
     public Potential assemblePotential(MolecularAssembly[] assemblies, int threadsAvail, StringBuilder sb) {
         int nargs = assemblies.length;

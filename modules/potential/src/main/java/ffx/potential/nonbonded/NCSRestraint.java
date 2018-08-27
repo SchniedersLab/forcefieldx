@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -55,6 +55,7 @@ import static ffx.numerics.VectorMath.rsq;
  * to the asymmetric unit atoms.
  *
  * @author Michael J. Schnieders
+ *
  */
 public class NCSRestraint implements LambdaInterface {
 
@@ -110,6 +111,13 @@ public class NCSRestraint implements LambdaInterface {
 
     }
 
+    /**
+     * <p>residual.</p>
+     *
+     * @param gradient a boolean.
+     * @param print a boolean.
+     * @return a double.
+     */
     public double residual(boolean gradient, boolean print) {
         /**
          * Check that the number of atom is multiple of the number of symmetry
@@ -192,6 +200,7 @@ public class NCSRestraint implements LambdaInterface {
         return forceConstant * residual * lambdaPow;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
@@ -228,11 +237,13 @@ public class NCSRestraint implements LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -242,6 +253,7 @@ public class NCSRestraint implements LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         if (lambdaTerm) {
@@ -251,6 +263,7 @@ public class NCSRestraint implements LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
         if (lambdaTerm) {

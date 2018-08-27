@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -68,16 +67,28 @@ import static ffx.potential.extended.ExtConstants.RNG;
 import static ffx.potential.extended.ExtConstants.kB;
 
 /**
+ * <p>ExtUtils class.</p>
  *
- * @author slucore
+ * @author Stephen LuCore
+ * @since 1.0
  */
 public final class ExtUtils {
 
+    /**
+     * Static class.
+     */
     private ExtUtils() {
-    }   // static class
+    }
 
     private static final Logger logger = Logger.getLogger(ExtUtils.class.getName());
 
+    /**
+     * <p>setProp.</p>
+     *
+     * @param key a {@link java.lang.String} object.
+     * @param set a T object.
+     * @param <T> a T object.
+     */
     public static <T> void setProp(String key, T set) {
         if (key.startsWith("esv.")) {
             if (Arrays.asList(ExtendedSystem.ExtendedSystemConfig.class.getDeclaredFields())
@@ -88,18 +99,37 @@ public final class ExtUtils {
         System.setProperty(key, String.valueOf(set));
     }
 
+    /**
+     * <p>setProp.</p>
+     *
+     * @param set  a boolean.
+     * @param keys a {@link java.lang.String} object.
+     */
     public static void setProp(boolean set, String... keys) {
         for (String key : keys) {
             setProp(key, set);
         }
     }
 
+    /**
+     * Constant <code>debug=prop("dbg.debug", false)</code>
+     */
     public static final boolean debug = prop("dbg.debug", false);
+    /**
+     * Constant <code>verbose=prop("dbg.verbose", false)</code>
+     */
     public static final boolean verbose = prop("dbg.verbose", false);
+    /**
+     * Constant <code>doubleFormat="prop(dbg.debugFormat, %.3f)"</code>
+     */
     public static final String doubleFormat = prop("dbg.debugFormat", "%.3f");
 
     /**
      * Print the Properties defined by the given key prefixes.
+     *
+     * @param header      a {@link java.lang.String} object.
+     * @param properties  a {@link java.util.Properties} object.
+     * @param keyPrefixes an array of {@link java.lang.String} objects.
      */
     public static void printConfigSet(String header, Properties properties, String[] keyPrefixes) {
         StringBuilder SB = new StringBuilder();
@@ -123,18 +153,43 @@ public final class ExtUtils {
         }
     }
 
+    /**
+     * <p>printConfigSet.</p>
+     *
+     * @param header     a {@link java.lang.String} object.
+     * @param properties a {@link java.util.Properties} object.
+     * @param prefix     a {@link java.lang.String} object.
+     */
     public static void printConfigSet(String header, Properties properties, String prefix) {
         printConfigSet(header, properties, new String[]{prefix});
     }
 
+    /**
+     * <p>primitivizeIntegers.</p>
+     *
+     * @param list a {@link java.util.List} object.
+     * @return an array of {@link int} objects.
+     */
     public static int[] primitivizeIntegers(List<Integer> list) {
         return list.stream().mapToInt((Integer i) -> i).toArray();
     }
 
+    /**
+     * <p>primitivizeDoubles.</p>
+     *
+     * @param list a {@link java.util.List} object.
+     * @return an array of {@link double} objects.
+     */
     public static double[] primitivizeDoubles(List<Double> list) {
         return list.stream().mapToDouble((Double i) -> i).toArray();
     }
 
+    /**
+     * <p>initializeBackgroundMultipoles.</p>
+     *
+     * @param backgroundAtoms a {@link java.util.List} object.
+     * @param ff              a {@link ffx.potential.parameters.ForceField} object.
+     */
     public static void initializeBackgroundMultipoles(List<Atom> backgroundAtoms, ForceField ff) {
         for (int i = 0; i < backgroundAtoms.size(); i++) {
             Atom bg = backgroundAtoms.get(i);
@@ -158,6 +213,13 @@ public final class ExtUtils {
         });
     }
 
+    /**
+     * <p>join.</p>
+     *
+     * @param add a {@link java.util.List} object.
+     * @param <T> a T object.
+     * @return a {@link java.util.List} object.
+     */
     @SafeVarargs
     @SuppressWarnings("serial")
     public static <T> List<T> join(List<? extends T>... add) {
@@ -170,6 +232,13 @@ public final class ExtUtils {
         });
     }
 
+    /**
+     * <p>intRange.</p>
+     *
+     * @param start a int.
+     * @param end   a int.
+     * @return a {@link java.util.List} object.
+     */
     public static List<Integer> intRange(int start, int end) {
         List<Integer> intArray = new ArrayList<>();
         for (int i = start; i <= end; i++) {
@@ -178,26 +247,60 @@ public final class ExtUtils {
         return intArray;
     }
 
+    /**
+     * <p>intRangeArray.</p>
+     *
+     * @param start a int.
+     * @param end   a int.
+     * @return an array of {@link int} objects.
+     */
     public static int[] intRangeArray(int start, int end) {
         int array[] = new int[end - start + 1];
         for (int i = start; i <= end; i++) {
-            array[i-start] = i;
+            array[i - start] = i;
         }
         return array;
     }
 
+    /**
+     * <p>intRange.</p>
+     *
+     * @param single a int.
+     * @return a {@link java.util.List} object.
+     */
     public static List<Integer> intRange(int single) {
         return intRange(single, single);
     }
 
+    /**
+     * <p>view.</p>
+     *
+     * @param c   a {@link java.util.Collection} object.
+     * @param <T> a T object.
+     * @return a {@link java.util.Collection} object.
+     */
     public static <T> Collection<T> view(Collection<? extends T> c) {
         return (c != null) ? Collections.unmodifiableCollection(c) : null;
     }
 
+    /**
+     * <p>view.</p>
+     *
+     * @param c   a {@link java.util.List} object.
+     * @param <T> a T object.
+     * @return a {@link java.util.List} object.
+     */
     public static <T> List<T> view(List<? extends T> c) {
         return (c != null) ? Collections.unmodifiableList(c) : null;
     }
 
+    /**
+     * <p>arrayCopy.</p>
+     *
+     * @param from an array of T[] objects.
+     * @param <T>  a T object.
+     * @return an array of T[] objects.
+     */
     @SuppressWarnings("unchecked")
     public static <T> T[] arrayCopy(T[] from) {
         List<T> to = new ArrayList<>();
@@ -205,12 +308,21 @@ public final class ExtUtils {
         return (T[]) to.toArray();
     }
 
+    /**
+     * <p>frmt.</p>
+     *
+     * @param x an array of {@link double} objects.
+     * @return a {@link java.lang.String} object.
+     */
     public static String frmt(double[] x) {
         return formatArray(x);
     }
 
     /**
      * Helper method for logging distance and multipole arrays.
+     *
+     * @param x an array of {@link double} objects.
+     * @return a {@link java.lang.String} object.
      */
     public static String formatArray(double[] x) {
         StringBuilder sb = new StringBuilder();
@@ -227,6 +339,9 @@ public final class ExtUtils {
 
     /**
      * Helper method for logging distance and multipole arrays.
+     *
+     * @param x an array of {@link double} objects.
+     * @return a {@link java.lang.String} object.
      */
     public static String formatArray(double[][] x) {
         StringBuilder sb = new StringBuilder();
@@ -252,6 +367,16 @@ public final class ExtUtils {
      * Parse configuration properties of type String, Boolean, Integer, Double,
      * OptionalInt, OptionalDouble, and any list or array type. Default value
      * determines the return type. Provides case-insensitivity in property keys.
+     *
+     * @param key        a {@link java.lang.String} object.
+     * @param defaultVal a T object.
+     * @param properties a {@link org.apache.commons.configuration2.AbstractConfiguration} object.
+     * @param <T>        a T object.
+     * @return a T object.
+     * @throws java.util.NoSuchElementException if any.
+     * @throws java.lang.NumberFormatException  if any.
+     * @throws java.util.NoSuchElementException if any.
+     * @throws java.lang.NumberFormatException  if any.
      */
     @SuppressWarnings({"unchecked"})
     public static final <T> T prop(String key, final T defaultVal, final AbstractConfiguration properties)
@@ -343,6 +468,11 @@ public final class ExtUtils {
     /**
      * If no Configuration is supplied, default to a converted and cached copy
      * of System.getProperties().
+     *
+     * @param key        a {@link java.lang.String} object.
+     * @param defaultVal a T object.
+     * @param <T>        a T object.
+     * @return a T object.
      */
     public static final <T> T prop(String key, T defaultVal) {
         if (systemCache == null) {
@@ -357,6 +487,12 @@ public final class ExtUtils {
 
     /**
      * Parse property but warn if the default is not retured.
+     *
+     * @param key        a {@link java.lang.String} object.
+     * @param defaultVal a T object.
+     * @param warning    a {@link java.lang.String} object.
+     * @param <T>        a T object.
+     * @return a T object.
      */
     public static final <T> T prop(String key, T defaultVal, String warning) {
         T parsed = prop(key, defaultVal);
@@ -368,6 +504,13 @@ public final class ExtUtils {
 
     /**
      * Parse system properties into an Enum class.
+     *
+     * @param <T>  the Class to operate on.
+     * @param type a {@link java.lang.Class} object.
+     * @param key  a {@link java.lang.String} object.
+     * @param def  a T instance.
+     * @return a T object.
+     * @throws java.lang.IllegalArgumentException if any.
      */
     public static final <T extends Enum<T>> T prop(Class<T> type, String key, T def)
             throws IllegalArgumentException {
@@ -388,6 +531,15 @@ public final class ExtUtils {
         }
     }
 
+    /**
+     * <p>prop.</p>
+     *
+     * @param <T>  the Class to operate on.
+     * @param key  a {@link java.lang.String} object.
+     * @param type a {@link java.lang.Class} object.
+     * @param def  a T instance.
+     * @return a T object.
+     */
     public static final <T extends Enum<T>> T prop(String key, Class<T> type, T def) {
         return prop(type, key, def);
     }
@@ -395,6 +547,10 @@ public final class ExtUtils {
     /**
      * Return velocities from a Maxwell-Boltzmann distribution of momenta. The
      * variance of each independent momentum component is kT * mass.
+     *
+     * @param mass        a double.
+     * @param temperature a double.
+     * @return an array of {@link double} objects.
      */
     public static double[] maxwellVelocity(double mass, double temperature) {
         double vv[] = new double[3];
@@ -404,6 +560,11 @@ public final class ExtUtils {
         return vv;
     }
 
+    /**
+     * <p>printTreeFromNode.</p>
+     *
+     * @param target a {@link ffx.potential.bonded.MSNode} object.
+     */
     public static void printTreeFromNode(MSNode target) {
         StringBuilder sb = new StringBuilder();
         sb.append(format(" Tree Hierarchy for %s\n", target.getName()));
@@ -412,7 +573,6 @@ public final class ExtUtils {
         while (root.getParent() != null) {
             root = root.getParent();
         }
-        Enumeration<?> fromRoot = target.pathFromAncestorEnumeration(root);
         List<MSNode> toLeaves = target.getDescendants(MSNode.class);
         boolean init = false;
         for (MSNode node : toLeaves) {
@@ -472,6 +632,12 @@ public final class ExtUtils {
         return termSum;
     }
 
+    /**
+     * <p>removeFinalNewline.</p>
+     *
+     * @param sb a {@link java.lang.StringBuilder} object.
+     * @return a {@link java.lang.StringBuilder} object.
+     */
     public static StringBuilder removeFinalNewline(StringBuilder sb) {
         if (sb.lastIndexOf("\n") + 1 == sb.length()) {
             sb.replace(sb.length() - 1, sb.length(), "");
@@ -484,9 +650,12 @@ public final class ExtUtils {
      * Returned type is Object[] (rather than String[]) to support use as
      * varargs. Example: format("%s", Arrays.toString( array ); // GOOD
      * format("%s %s %s %s", Arrays.toString( array ); // FAIL
-     *
+     * <p>
      * format("%s", arrayToStrings( array ); // FAIL format("%s %s %s %s",
      * arrayToStrings( array ); // GOOD
+     *
+     * @param args an array of {@link java.lang.Object} objects.
+     * @return an array of {@link java.lang.Object} objects.
      */
     public static Object[] arrayToStrings(Object[] args) {
         return Arrays.stream(args).map(Object::toString).toArray();
@@ -496,6 +665,10 @@ public final class ExtUtils {
      * Use this to iterate easily over a collection of lists. Returns the
      * inferred parent list type. Duplicate elements allowed. "View" intentional
      * to avoid vain attempts at modifying the component lists.
+     *
+     * @param lists a {@link java.util.List} object.
+     * @param <T>   a T object.
+     * @return a {@link java.util.List} object.
      */
     @SafeVarargs
     public static final <T> List<T> joinedListView(List<? extends T>... lists) {

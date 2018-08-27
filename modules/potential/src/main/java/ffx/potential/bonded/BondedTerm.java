@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -60,7 +60,6 @@ import static ffx.utilities.HashCodeUtil.hash;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public abstract class BondedTerm extends MSNode implements BondedEnergy, Comparable<BondedTerm> {
 
@@ -77,7 +76,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     protected Bond bonds[]; // Bonds that are used to form this term
     protected double value; // Value of the term
     protected double energy; // Energy of the term
-    
+
     protected boolean esvTerm = false;
     /**
      * Lambda value of attached ESV, if present.
@@ -100,7 +99,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     /**
      * If set, derivative components are filed by source type.
      */
-    private HashMap<Class<? extends BondedTerm>,SharedDouble> decompositionMap = null;
+    private HashMap<Class<? extends BondedTerm>, SharedDouble> decompositionMap = null;
     private boolean decomposeEsvDeriv = false;
 
     /**
@@ -120,12 +119,11 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         this();
         id = i;
     }
-    
+
     /**
      * Checks if all atoms in this BondedTerm are of the given resolution.
      *
-     * @param resolution
-     *
+     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
      * @return true if all atoms in this term are at the same resolution.
      */
     public boolean isResolution(Resolution resolution) {
@@ -136,23 +134,34 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         }
         return true;
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compareTo(BondedTerm t) {
         return Objects.compare(this, t, bondedComparator);
     }
+
+    /**
+     * Constant <code>bondedComparator</code>
+     */
     public static BondedComparator bondedComparator = new BondedComparator();
+
     public static class BondedComparator implements Comparator<BondedTerm> {
-        private BondedComparator() {}   // singleton
+        private BondedComparator() {
+        }   // singleton
+
         private static final List<Class<? extends BondedTerm>> naturalOrder =
                 new ArrayList<Class<? extends BondedTerm>>() {{
-                        add(Bond.class);
-                        add(Angle.class);
-                        add(StretchBend.class);
-                        add(OutOfPlaneBend.class);
-                        add(Torsion.class);
-                        add(PiOrbitalTorsion.class);
+                    add(Bond.class);
+                    add(Angle.class);
+                    add(StretchBend.class);
+                    add(OutOfPlaneBend.class);
+                    add(Torsion.class);
+                    add(PiOrbitalTorsion.class);
                 }};
+
         /**
          * Sort using position in the naturalOrder list; fallback to alphabetical.
          */
@@ -174,8 +183,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      * Checks if at least one atom in this BondedTerm is of the given
      * resolution.
      *
-     * @param resolution
-     *
+     * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
      * @return true if at least one atom in this term is of the specified
      * resolution.
      */
@@ -241,7 +249,12 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         }
         return true;
     }
-    
+
+    /**
+     * <p>isExtendedSystemMember.</p>
+     *
+     * @return a boolean.
+     */
     public boolean isExtendedSystemMember() {
         return esvTerm;
     }
@@ -328,7 +341,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Prints the toString method to stdout
      */
     @Override
@@ -359,7 +372,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      */
     @Override
     public void setColor(RendererCache.ColorModel newColorModel, Color3f color,
-            Material mat) {
+                         Material mat) {
         if (atoms == null) {
             return;
         }
@@ -370,7 +383,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overridden method that returns true if object is equals to this, is of
      * the same Class and has the same id.
      */
@@ -401,7 +414,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     public String getID() {
         return id;
     }
-    
+
     /**
      * Sets the Term's id.
      *
@@ -419,7 +432,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      */
     public final void setID_Key(boolean reverse) {
         if (atoms == null) {
-			return;
+            return;
         }
         // Reuse the string buffers
         idtemp.delete(0, idtemp.length());
@@ -469,7 +482,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
      */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         if (atoms == null) {
             return;
         }
@@ -486,27 +499,32 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overidden toString Method returns the Term's id.
      */
     @Override
     public String toString() {
         return String.format("%s  (%7.2f,%7.2f)", id, value, energy);
     }
-    
+
     /**
      * Under a linear switching function, E=L*E1+(1-L)*E0, chainRule is +1 or -1
-     * for lambda and (1-lambda) terms, respectively. Other switches should 
+     * for lambda and (1-lambda) terms, respectively. Other switches should
      * set this to d(switch)/d(lambda) as well.
+     *
+     * @param lambda         a double.
+     * @param chainRule      a double.
+     * @param esvBondedDeriv a {@link edu.rit.pj.reduction.SharedDouble} object.
+     * @param decomposition  a {@link java.util.HashMap} object.
      */
-    public void attachExtendedVariable(double lambda, double chainRule, 
-            SharedDouble esvBondedDeriv,
-            HashMap<Class<? extends BondedTerm>,SharedDouble> decomposition) {
+    public void attachExtendedVariable(double lambda, double chainRule,
+                                       SharedDouble esvBondedDeriv,
+                                       HashMap<Class<? extends BondedTerm>, SharedDouble> decomposition) {
         esvTerm = true;
         esvLambda = lambda;
         dedesvChain = chainRule;
         esvDerivShared = esvBondedDeriv;
-        esvDerivLocal = 0.0;        
+        esvDerivLocal = 0.0;
         if (decomposition != null) {
             decompositionMap = decomposition;
             decomposeEsvDeriv = true;
@@ -515,11 +533,22 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
             decomposeEsvDeriv = false;
         }
     }
+
+    /**
+     * <p>attachExtendedVariable.</p>
+     *
+     * @param lambda         a double.
+     * @param chainRule      a double.
+     * @param esvBondedDeriv a {@link edu.rit.pj.reduction.SharedDouble} object.
+     */
     public void attachExtendedVariable(double lambda, double chainRule,
-            SharedDouble esvBondedDeriv) {
+                                       SharedDouble esvBondedDeriv) {
         attachExtendedVariable(lambda, chainRule, esvBondedDeriv, null);
     }
-    
+
+    /**
+     * <p>detachExtendedVariable.</p>
+     */
     public void detachExtendedVariable() {
         esvTerm = false;
         esvLambda = 1.0;
@@ -529,10 +558,12 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         decompositionMap = null;
         decomposeEsvDeriv = false;
     }
-    
+
     /**
      * Derivative with respect to attached ExtendedVariable lambda, if any.
      * Double.isFinite() check protects against dEdEsv=(energy*chain/lambda) for lambda=0.0
+     *
+     * @param dEdEsv a double.
      */
     protected final void setEsvDeriv(double dEdEsv) {
         if (esvTerm) {
@@ -540,6 +571,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
         }
     }
 
+    /**
+     * <p>reduceEsvDeriv.</p>
+     */
     public void reduceEsvDeriv() {
         if (esvTerm) {
 //            logf(" :: %.6f from %s", esvDerivLocal, this.toString());

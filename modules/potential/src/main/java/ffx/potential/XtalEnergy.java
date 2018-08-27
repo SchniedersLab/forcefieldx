@@ -49,6 +49,7 @@ import ffx.potential.bonded.Atom;
  * difference derivatives of lattice parameters.
  *
  * @author Jooyeon Park
+ * @since 1.0
  */
 public class XtalEnergy implements Potential {
 
@@ -75,6 +76,12 @@ public class XtalEnergy implements Potential {
 
     private FractionalMode fractionalMode = FractionalMode.OFF;
 
+    /**
+     * <p>Constructor for XtalEnergy.</p>
+     *
+     * @param forceFieldEnergy  a {@link ffx.potential.ForceFieldEnergy} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     */
     public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly) {
         this.forceFieldEnergy = forceFieldEnergy;
         this.molecularAssembly = molecularAssembly;
@@ -125,11 +132,19 @@ public class XtalEnergy implements Potential {
 
     }
 
+    /**
+     * <p>setFractionalCoordinateMode.</p>
+     *
+     * @param fractionalMode a {@link ffx.potential.MolecularAssembly.FractionalMode} object.
+     */
     public void setFractionalCoordinateMode(FractionalMode fractionalMode) {
         this.fractionalMode = fractionalMode;
         molecularAssembly.setFractionalMode(fractionalMode);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x) {
         /**
@@ -161,6 +176,9 @@ public class XtalEnergy implements Potential {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         /**
@@ -200,7 +218,6 @@ public class XtalEnergy implements Potential {
     }
 
     /**
-     *
      * @param x
      * @param g
      */
@@ -378,7 +395,6 @@ public class XtalEnergy implements Potential {
      * @param index1
      * @param index2
      * @param eps
-     *
      * @return finite-difference derivative.
      */
     private double finiteDifference2(double[] x, int index1, int index2, double eps) {
@@ -471,7 +487,7 @@ public class XtalEnergy implements Potential {
      * Sets atomic coordinates and lattice parameters.
      *
      * @param x First 3*nActive parameters are coordinates, next 6 are x
-     * parameters.
+     *          parameters.
      */
     private void setCoordinates(double x[]) {
         assert (x != null);
@@ -587,16 +603,25 @@ public class XtalEnergy implements Potential {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setScaling(double[] scaling) {
         this.scaling = scaling;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getScaling() {
         return scaling;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCoordinates(double[] x) {
         int n = getNumberOfVariables();
@@ -627,66 +652,105 @@ public class XtalEnergy implements Potential {
         return x;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMass() {
         return mass;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTotalEnergy() {
         return totalEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfVariables() {
         return nParams;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return type;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setEnergyTermState(STATE state) {
         forceFieldEnergy.setEnergyTermState(state);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return forceFieldEnergy.getEnergyTermState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         return forceFieldEnergy.destroy();

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -70,10 +70,15 @@ import static ffx.potential.parameters.MultipoleType.zeroM;
  * vdW scaling and derivatives are handled inside these classes' inner loops.
  * Softcoring follows the same form used by OSRW lambda.
  *
- * @author slucore
+ * @author Stephen LuCore
+ *
+ * @since 1.0
  */
 public abstract class ExtendedVariable {
 
+    /**
+     * Constant <code>logger</code>
+     */
     protected static final Logger logger = Logger.getLogger(ExtendedVariable.class.getName());
     public final int esvIndex;
 
@@ -81,7 +86,7 @@ public abstract class ExtendedVariable {
     private double lambda = 1.0;                    // ESVs travel on {0,1}
     private double theta;                           // Propagates lambda particle via "lambda=sin(theta)^2"
     private double halfThetaVelocity = 0.0;         // from OSRW, start theta with zero velocity
-    private double scaledPolarizability;
+
     private StringBuilder SB = new StringBuilder();
     /**
      * Magnitude of the discretization bias in kcal/mol.
@@ -124,12 +129,10 @@ public abstract class ExtendedVariable {
     /**
      * Prefer ExtendedSystem::populate to manual ESV creation.
      *
-     * @param esvConvig: the ExtendedSystem of which this will be a member
-     * @param multiRes: from TitrationUtils.titrationFactory()
-     * @param biasMag: (optional) height of the parabolic (along lambda)
-     * discretization bias energy (kcal/mol)
+     * @param multiRes:      from TitrationUtils.titrationFactory()
      * @param initialLambda: (optional) starting position of the extended
-     * particle
+     *                       particle
+     * @param esvSystem      a {@link ffx.potential.extended.ExtendedSystem} object.
      */
     public ExtendedVariable(ExtendedSystem esvSystem, MultiResidue multiRes, double initialLambda) {
         this.esvIndex = esvSystem.requestIndexing();
@@ -228,12 +231,20 @@ public abstract class ExtendedVariable {
     /**
      * Should include at least the discretization bias; add any type-specific
      * biases (eg pH).
+     *
+     * @param temperature a double.
+     * @param print       a boolean.
+     * @return a double.
      */
     protected abstract double getTotalBias(double temperature, boolean print);
 
     /**
      * Should include at least the discretization bias; add any type-specific
      * biases (eg pH).
+     *
+     * @param temperature a double.
+     * @param print       a boolean.
+     * @return a double.
      */
     protected abstract double getTotalBiasDeriv(double temperature, boolean print);
 
@@ -242,6 +253,10 @@ public abstract class ExtendedVariable {
      * the value used below (when set as a constant), even when sim is
      * decoupled. Be sure it call setLambda() rather than using direct access
      * for array resizing, etc.
+     *
+     * @param dEdEsv         a double.
+     * @param dt             a double.
+     * @param setTemperature a double.
      */
     protected void propagate(double dEdEsv, double dt, double setTemperature) {
         if (!config.propagation) {
@@ -268,6 +283,8 @@ public abstract class ExtendedVariable {
     /**
      * Should only be called by ExtendedSystem since an updateListeners() call
      * is required afterwards to notify VdW and PME.
+     *
+     * @param lambda a double.
      */
     protected void setLambda(double lambda) {
         setLambda(lambda, true);
@@ -299,7 +316,7 @@ public abstract class ExtendedVariable {
             return;
         }
         /* If not softcoring unshared atoms, then scale them as well
-		 * (with an implied zero-multipole background atom).	  */
+         * (with an implied zero-multipole background atom).	  */
         List<Atom> iterate = ExtUtils.joinedListView(atomsShared, atomsUnshared);
         for (Atom fg : iterate) {
 //            MultipoleType Ptype, Utype;
@@ -374,27 +391,52 @@ public abstract class ExtendedVariable {
 
     /**
      * The unswitched lambda value, ie input to S(L).
+     *
+     * @return a double.
      */
     public final double getLambda() {
         return lambda;
     }
 
+    /**
+     * <p>getLambdaSwitch.</p>
+     *
+     * @return a double.
+     */
     protected final double getLambdaSwitch() {
-        return (config.allowLambdaSwitch) ? lSwitch : lambda;	// S(L)
+        return (config.allowLambdaSwitch) ? lSwitch : lambda;    // S(L)
     }
 
+    /**
+     * <p>getSwitchDeriv.</p>
+     *
+     * @return a double.
+     */
     protected final double getSwitchDeriv() {
-        return (config.allowLambdaSwitch) ? dlSwitch : 1.0;		// dS(L)dL
+        return (config.allowLambdaSwitch) ? dlSwitch : 1.0;        // dS(L)dL
     }
 
+    /**
+     * <p>Getter for the field <code>esvIndex</code>.</p>
+     *
+     * @return a int.
+     */
     public final int getEsvIndex() {
         return esvIndex;
     }
 
+    /**
+     * <p>getName.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getName() {
         return String.format("Esv%d", esvIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return String.format("%s (%4.2f)",
@@ -402,7 +444,9 @@ public abstract class ExtendedVariable {
     }
 
     /**
-     * From Shen&Huang 2016; drives ESVs to zero/unity. bias = 4B*(L-0.5)^2
+     * From Shen and Huang 2016; drives ESVs to zero/unity. bias = 4B*(L-0.5)^2
+     *
+     * @return a double.
      */
     protected double getDiscrBias() {
         return discrBias;
@@ -410,11 +454,19 @@ public abstract class ExtendedVariable {
 
     /**
      * dBiasdL = -8B*(L-0.5)
+     *
+     * @return a double.
      */
     protected double getDiscrBiasDeriv() {
         return dDiscrBiasdL;
     }
 
+    /**
+     * <p>getBackgroundForAtom.</p>
+     *
+     * @param foreground a {@link ffx.potential.bonded.Atom} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     protected Atom getBackgroundForAtom(Atom foreground) {
         return fg2bg.get(foreground);
     }
@@ -444,23 +496,38 @@ public abstract class ExtendedVariable {
             }
             MSNode background = (extendedNode == null) ? null
                     : extendedNode.getChildList().stream()
-                            .filter(node -> node.toString()
+                    .filter(node -> node.toString()
                             .startsWith(term.toString().substring(0, term.toString().indexOf("("))))
-                            .findAny().orElse(null);
+                    .findAny().orElse(null);
             String bgTermString = (background != null) ? background.toString() : "";
             SB.append(format("     %-50s %-50s", term.toString(), bgTermString));
         }
         logger.info(SB.toString());
     }
 
+    /**
+     * <p>viewUnsharedAtoms.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     protected List<Atom> viewUnsharedAtoms() {
         return Collections.unmodifiableList(atomsUnshared);
     }
 
+    /**
+     * <p>viewSharedAtoms.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     protected List<Atom> viewSharedAtoms() {
         return Collections.unmodifiableList(atomsShared);
     }
 
+    /**
+     * <p>viewBackgroundAtoms.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     protected List<Atom> viewBackgroundAtoms() {
         return Collections.unmodifiableList(atomsBackground);
     }
@@ -490,20 +557,31 @@ public abstract class ExtendedVariable {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>bondedDeriv</code>.</p>
+     *
+     * @return a double.
+     */
     protected double getBondedDeriv() {
         return bondedDeriv.get();
     }
 
+    /**
+     * <p>getBondedDerivDecomp.</p>
+     *
+     * @return a {@link java.util.HashMap} object.
+     */
     protected HashMap<Class<? extends BondedTerm>, SharedDouble> getBondedDerivDecomp() {
         return fgBondedDerivDecomp;
     }
 
+    /**
+     * <p>getBackgroundBondedDerivDecomp.</p>
+     *
+     * @return a {@link java.util.HashMap} object.
+     */
     protected HashMap<Class<? extends BondedTerm>, SharedDouble> getBackgroundBondedDerivDecomp() {
         return bgBondedDerivDecomp;
-    }
-
-    protected int getMoleculeNumber() {
-        return moleculeNumber;
     }
 
 }

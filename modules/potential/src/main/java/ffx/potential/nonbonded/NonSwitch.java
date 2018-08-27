@@ -17,84 +17,93 @@ public class NonSwitch extends MultiplicativeSwitch {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Value of a non-switch is always 1.
-     * @param r Ignored.
-     * @return Always 1
      */
     public double taper(double r) {
         return 1;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Derivatives of a non-switch are always zero.
-     * @param r Ignored.
-     * @return Always 0
      */
     public double dtaper(double r) {
         return 0;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Value of a non-switch is always 1.
-     * @param r Ignored.
-     * @param r2 Ignored.
-     * @param r3 Ignored.
-     * @param r4 Ignored.
-     * @param r5 Ignored.
-     * @return Always 1
      */
     public double taper(double r, double r2, double r3, double r4, double r5) {
         return 1;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Derivatives of a non-switch are always zero.
-     * @param r Ignored.
-     * @param r2 Ignored.
-     * @param r3 Ignored.
-     * @param r4 Ignored.
-     * @return Always 0.
      */
     public double dtaper(double r, double r2, double r3, double r4) {
         return 0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getZeroBound() {
         throw new UnsupportedOperationException(" This is not actually a switching function!");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getOneBound() {
         throw new UnsupportedOperationException(" This is not actually a switching function!");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean constantOutsideBounds() {
         throw new UnsupportedOperationException(" This is not actually a switching function!");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean validOutsideBounds() {
         throw new UnsupportedOperationException(" This is not actually a switching function!");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getHighestOrderZeroDerivative() {
         throw new UnsupportedOperationException(" This is not actually a switching function!");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean symmetricToUnity() {
         throw new UnsupportedOperationException(" This is not actually a switching function!");
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Value of a non-switch is always 1.
-     *
-     * @param x Ignored.
-     * @return Always 0.
-     * @throws IllegalArgumentException Never.
      */
     @Override
     public double valueAt(double x) throws IllegalArgumentException {
@@ -102,9 +111,9 @@ public class NonSwitch extends MultiplicativeSwitch {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Derivatives of a non-switch are always zero.
-     * @param x Ignored.
-     * @return Always 0.
      */
     @Override
     public double firstDerivative(double x) {
@@ -112,9 +121,9 @@ public class NonSwitch extends MultiplicativeSwitch {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Derivatives of a non-switch are always zero.
-     * @param x Ignored.
-     * @return Always 0.
      */
     @Override
     public double secondDerivative(double x) {
@@ -122,16 +131,18 @@ public class NonSwitch extends MultiplicativeSwitch {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Derivatives of a non-switch are always zero.
-     * @param x Ignored.
-     * @param order Ignored.
-     * @return Always 0.
      */
     @Override
     public double nthDerivative(double x, int order) throws IllegalArgumentException {
         return 0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return "Constant, 1-valued non-switch that always returns 1 (for when no cutoff is desired).";

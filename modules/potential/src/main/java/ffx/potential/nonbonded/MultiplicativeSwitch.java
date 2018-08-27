@@ -140,6 +140,26 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      * @param r3 r^3
      * @param r4 r^4
      * @param r5 r^5
+     * @param r2 r^2
+     * @param r3 r^3
+     * @param r4 r^4
+     * @param r5 r^5
+     * @param r2 r^2
+     * @param r2 r^2
+     * @param r3 r^3
+     * @param r3 r^3
+     * @param r4 r^4
+     * @param r4 r^4
+     * @param r5 r^5
+     * @param r5 r^5
+     * @param r2 r^2
+     * @param r2 r^2
+     * @param r3 r^3
+     * @param r3 r^3
+     * @param r4 r^4
+     * @param r4 r^4
+     * @param r5 r^5
+     * @param r5 r^5
      * @return Value of switch at r
      */
     public double taper(double r, double r2, double r3, double r4, double r5) {
@@ -153,52 +173,94 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
      * @param r2 r^2
      * @param r3 r^3
      * @param r4 r^4
+     * @param r2 r^2
+     * @param r3 r^3
+     * @param r4 r^4
+     * @param r2 r^2
+     * @param r2 r^2
+     * @param r3 r^3
+     * @param r3 r^3
+     * @param r4 r^4
+     * @param r4 r^4
+     * @param r2 r^2
+     * @param r2 r^2
+     * @param r3 r^3
+     * @param r3 r^3
+     * @param r4 r^4
+     * @param r4 r^4
      * @return First derivative of switch at r
      */
     public double dtaper(double r, double r2, double r3, double r4) {
         return fiveC5 * r4 + fourC4 * r3 + threeC3 * r2 + twoC2 * r + c1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getZeroBound() {
         return off < cut ? off : cut;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getOneBound() {
         return cut > off ? cut : off;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean constantOutsideBounds() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean validOutsideBounds() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getHighestOrderZeroDerivative() {
         return 2;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean symmetricToUnity() {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double valueAt(double x) throws IllegalArgumentException {
         return taper(x);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double firstDerivative(double x) {
         return dtaper(x);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double secondDerivative(double x) {
         /*double val = 20.0 * c5 * x*x*x;
@@ -213,6 +275,9 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
         return val;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double nthDerivative(double x, int order) throws IllegalArgumentException {
         if (order < 1) {
@@ -239,6 +304,9 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return String.format("Multiplicative switch of form f(x) = %8.4g*x^5 + "

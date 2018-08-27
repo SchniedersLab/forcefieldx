@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -70,7 +70,6 @@ import static ffx.potential.parameters.BondType.units;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 @SuppressWarnings("CloneableImplementsClone")
 public class Bond extends BondedTerm {
@@ -117,6 +116,7 @@ public class Bond extends BondedTerm {
 
         SINGLEBOND, DOUBLEBOND, TRIPLEBOND;
     }
+
     private static final long serialVersionUID = 1L;
     /**
      * Length in Angstroms that is added to Atomic Radii when determining if two
@@ -127,11 +127,11 @@ public class Bond extends BondedTerm {
     protected double rigidScale = 1.0;
 
     private static final float a0col[] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     private static final float f4a[] = {0.0f, 0.0f, 0.0f, 0.9f};
     private static final float f4b[] = {0.0f, 0.0f, 0.0f, 0.9f};
     private static float f16[] = {0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f,
-        0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
+            0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f};
     // Some static variables used for computing cylinder orientations
     private static double d;
     private static double a13d[] = new double[3];
@@ -221,8 +221,8 @@ public class Bond extends BondedTerm {
     /**
      * Check to see if <b>this</b> Bond and another combine to form an angle
      *
-     * @return True if Bond b helps form an angle with <b>this</b> Bond
      * @param b a {@link ffx.potential.bonded.Bond} object.
+     * @return True if Bond b helps form an angle with <b>this</b> Bond
      */
     public boolean formsAngleWith(Bond b) {
         for (Bond bond : formsAngleWith) {
@@ -369,14 +369,14 @@ public class Bond extends BondedTerm {
      * <p>
      * setBondTransform3d</p>
      *
-     * @param t3d a {@link javax.media.j3d.Transform3D} object.
-     * @param pos an array of double.
+     * @param t3d    a {@link javax.media.j3d.Transform3D} object.
+     * @param pos    an array of double.
      * @param orient an array of double.
-     * @param len a double.
+     * @param len    a double.
      * @param newRot a boolean.
      */
     public void setBondTransform3d(Transform3D t3d, double[] pos,
-            double[] orient, double len, boolean newRot) {
+                                   double[] orient, double len, boolean newRot) {
         // Bond Orientation
         if (newRot) {
             angle = angle(orient, y);
@@ -413,7 +413,7 @@ public class Bond extends BondedTerm {
     /**
      * Manage cylinder visibility.
      *
-     * @param visible boolean
+     * @param visible   boolean
      * @param newShapes List
      */
     public void setCylinderVisible(boolean visible, List<BranchGroup> newShapes) {
@@ -442,12 +442,12 @@ public class Bond extends BondedTerm {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Polymorphic setView method.
      */
     @Override
     public void setView(RendererCache.ViewModel newViewModel,
-            List<BranchGroup> newShapes) {
+                        List<BranchGroup> newShapes) {
         switch (newViewModel) {
             case WIREFRAME:
                 viewModel = ViewModel.WIREFRAME;
@@ -586,7 +586,7 @@ public class Bond extends BondedTerm {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Update recomputes the bonds length, Wireframe vertices, and Cylinder
      * Transforms
      */
@@ -636,23 +636,18 @@ public class Bond extends BondedTerm {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Evaluate this Bond energy.
-     *
-     * @param gradient Evaluate the gradient.
-     * @param threadID
-     * @param gradX
-     * @param gradY
-     * @param gradZ
-     * @return Returns the energy.
      */
     @Override
     public double energy(boolean gradient, int threadID,
-            AtomicDoubleArray gradX,
-            AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ,
-            AtomicDoubleArray lambdaGradX,
-            AtomicDoubleArray lambdaGradY,
-            AtomicDoubleArray lambdaGradZ) {
+                         AtomicDoubleArray gradX,
+                         AtomicDoubleArray gradY,
+                         AtomicDoubleArray gradZ,
+                         AtomicDoubleArray lambdaGradX,
+                         AtomicDoubleArray lambdaGradY,
+                         AtomicDoubleArray lambdaGradZ) {
 
         /**
          * The vector from Atom 1 to Atom 0.
@@ -739,7 +734,7 @@ public class Bond extends BondedTerm {
         }
         value = dv;
         if (esvTerm) {
-            final double esvLambdaInv = (esvLambda != 0.0) ? 1/esvLambda : 1.0;
+            final double esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
             setEsvDeriv(energy * dedesvChain * esvLambdaInv);
         }
         return energy;

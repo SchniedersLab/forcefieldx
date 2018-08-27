@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -54,16 +54,17 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.utils.EnergyException;
 
 /**
- * Implements an error-canceling quad topology, where two large dual-topology 
- * simulation legs are run simultaneously to arrive at a small sum. This 
- * implementation permits sharing of coordinates between the dual topology; 
+ * Implements an error-canceling quad topology, where two large dual-topology
+ * simulation legs are run simultaneously to arrive at a small sum. This
+ * implementation permits sharing of coordinates between the dual topology;
  * results in energy function of E(A1, A2, B1, B2) = (1-l)A1 + l*A2 + l*B1 +
- * (1-l)B2. When coordinates are shared, this can entail atoms feeling 
+ * (1-l)B2. When coordinates are shared, this can entail atoms feeling
  * approximately twice the force as an ordinary atom, possibly requiring a
  * reduced inner timestep.
- * 
+ *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     private final static Logger logger = Logger.getLogger(QuadTopologyEnergy.class.getName());
@@ -71,23 +72,23 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     private final DualTopologyEnergy dualTopB;
     private final LambdaInterface linterA;
     private final LambdaInterface linterB;
-    
+
     private final int nVarA;
     private final int nVarB;
     private final int nShared;
     private final int uniqueA;
     private final int uniqueB;
     private final int nVarTot;
-    
+
     /**
-     * Following arrays keep track of which index in the child DualTopology is 
+     * Following arrays keep track of which index in the child DualTopology is
      * linked to which index in the QuadTopology variable array.
      */
     private final int[] indexAToGlobal;
     private final int[] indexBToGlobal;
     private final int[] indexGlobalToA;
     private final int[] indexGlobalToB;
-    
+
     private final double[] mass;
     private final double[] xA;
     private final double[] xB;
@@ -97,12 +98,12 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
      * tempA and B arrays are used to hold the result of get methods applied
      * on dual topologies A and B; this saves the time of initializing new arrays
      * to hold the data for a very short time. Not thread-safe; if multiple
-     * threads are to access this data, will need to refactor the class to 
+     * threads are to access this data, will need to refactor the class to
      * synchronize on these arrays so only one method can use them at a time.
      */
     private final double[] tempA;
     private final double[] tempB;
-    
+
     private STATE state = STATE.BOTH;
     private double lambda;
     private double totalEnergy;
@@ -110,56 +111,56 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     private double energyB;
     private double dEdL, dEdL_A, dEdL_B;
     private double d2EdL2, d2EdL2_A, d2EdL2_B;
-    
+
     private boolean inParallel = false;
     private ParallelTeam team;
     private final EnergyRegion region;
-    
+
     /**
      * Scaling and de-scaling will be applied inside DualTopologyEnergy.
      */
     private double[] scaling;
     private VARIABLE_TYPE[] types = null;
-    
-     /**
-     * General structure: first layer will be the "A/B" layer, consisting of the
-     * two dual topologies. The second layer will be the "1/2" layer, consisting
-     * of the assemblies/ForceFieldEnergies associated with each dual topology.
-     * Arrays will be addressed as [A/B=0/1][1/2=0/1].
-     * 
-     * For example, if running a dual-force-field calculation, A might be the
-     * original molecule, going from AMOEBA to a fixed-charge force field, while
-     * B is a modified molecule going from fixed-charge to AMOEBA. Within those,
-     * A1 would be AMOEBA-original, A2 would be AMBER-original, B1 would be 
-     * AMBER-modified, B2 would be AMOEBA-modified.
-     * 
-     * This constructor assumes there are no unique atoms in either topology, 
-     * and pins everything.
-     * 
-     * @param dualTopologyA A DualTopologyEnergy
-     * @param dualTopologyB A DualTopologyEnergy
-     */      
-    public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB) {
-        this(dualTopologyA, dualTopologyB, null, null);
-    }
-    
+
     /**
      * General structure: first layer will be the "A/B" layer, consisting of the
      * two dual topologies. The second layer will be the "1/2" layer, consisting
      * of the assemblies/ForceFieldEnergies associated with each dual topology.
      * Arrays will be addressed as [A/B=0/1][1/2=0/1].
-     * 
+     * <p>
      * For example, if running a dual-force-field calculation, A might be the
      * original molecule, going from AMOEBA to a fixed-charge force field, while
      * B is a modified molecule going from fixed-charge to AMOEBA. Within those,
-     * A1 would be AMOEBA-original, A2 would be AMBER-original, B1 would be 
+     * A1 would be AMOEBA-original, A2 would be AMBER-original, B1 would be
      * AMBER-modified, B2 would be AMOEBA-modified.
-     * 
+     * <p>
+     * This constructor assumes there are no unique atoms in either topology,
+     * and pins everything.
+     *
      * @param dualTopologyA A DualTopologyEnergy
      * @param dualTopologyB A DualTopologyEnergy
-     * @param uniqueAList Variables unique to A
-     * @param uniqueBList Variables unique to B
-     */        
+     */
+    public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB) {
+        this(dualTopologyA, dualTopologyB, null, null);
+    }
+
+    /**
+     * General structure: first layer will be the "A/B" layer, consisting of the
+     * two dual topologies. The second layer will be the "1/2" layer, consisting
+     * of the assemblies/ForceFieldEnergies associated with each dual topology.
+     * Arrays will be addressed as [A/B=0/1][1/2=0/1].
+     * <p>
+     * For example, if running a dual-force-field calculation, A might be the
+     * original molecule, going from AMOEBA to a fixed-charge force field, while
+     * B is a modified molecule going from fixed-charge to AMOEBA. Within those,
+     * A1 would be AMOEBA-original, A2 would be AMBER-original, B1 would be
+     * AMBER-modified, B2 would be AMOEBA-modified.
+     *
+     * @param dualTopologyA A DualTopologyEnergy
+     * @param dualTopologyB A DualTopologyEnergy
+     * @param uniqueAList   Variables unique to A
+     * @param uniqueBList   Variables unique to B
+     */
     public QuadTopologyEnergy(DualTopologyEnergy dualTopologyA, DualTopologyEnergy dualTopologyB, List<Integer> uniqueAList, List<Integer> uniqueBList) {
         this.dualTopA = dualTopologyA;
         this.dualTopB = dualTopologyB;
@@ -169,7 +170,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         linterB = (LambdaInterface) dualTopologyB;
         nVarA = dualTopA.getNumberOfVariables();
         nVarB = dualTopB.getNumberOfVariables();
-        
+
         /**
          * Following logic is to A, deal with Integer to int array
          * conversion issues, and B, ensure the set of unique variables is a 
@@ -194,7 +195,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         // Following can replace above 5 lines without constructing an intermediate List.
         //uniquesA = uniqueASet.stream().mapToInt(Integer::intValue).toArray();
         //uniqueA = uniquesA.length;
-        
+
         /**
          * Following logic is to A, deal with Integer to int array
          * conversion issues, and B, ensure the set of unique variables is a 
@@ -215,11 +216,11 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         for (int i = 0; i < uniqueB; i++) {
             uniquesB[i] = uniqueBList.get(i);
         }
-        
+
         nShared = nVarA - uniqueA;
         assert (nShared == nVarB - uniqueB);
         nVarTot = nShared + uniqueA + uniqueB;
-        
+
         indexAToGlobal = new int[nVarA];
         indexBToGlobal = new int[nVarB];
         indexGlobalToA = new int[nVarTot];
@@ -228,7 +229,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         // the dual topology.
         Arrays.fill(indexGlobalToA, -1);
         Arrays.fill(indexGlobalToB, -1);
-        
+
         if (uniqueA > 0) {
             int commonIndex = 0;
             int uniqueIndex = 0;
@@ -249,7 +250,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
                 indexGlobalToA[i] = i;
             }
         }
-        
+
         if (uniqueB > 0) {
             int commonIndex = 0;
             int uniqueIndex = 0;
@@ -270,7 +271,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
                 indexGlobalToB[i] = i;
             }
         }
-        
+
         xA = new double[nVarA];
         xB = new double[nVarB];
         gA = new double[nVarA];
@@ -279,19 +280,19 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         tempB = new double[nVarB];
         mass = new double[nVarTot];
         doublesFrom(mass, dualTopA.getMass(), dualTopB.getMass());
-        
+
         region = new EnergyRegion();
         team = new ParallelTeam(1);
     }
-    
+
     /**
-     * Copies from an object array of length nVarTot to two object arrays of 
+     * Copies from an object array of length nVarTot to two object arrays of
      * length nVarA and nVarB.
-     * 
-     * @param <T> Type of object
+     *
+     * @param <T>  Type of object
      * @param from Copy from
-     * @param toA Copy shared and A-specific to
-     * @param toB Copy shared and B-specific to
+     * @param toA  Copy shared and A-specific to
+     * @param toB  Copy shared and B-specific to
      */
     private <T> void copyTo(T[] from, T[] toA, T[] toB) {
         if (toA == null) {
@@ -316,9 +317,9 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
      * Copies from object arrays of length nVarA and nVarB to an object array of
      * length nVarTot; asserts objects in common indices are equal. Should not
      * be used when the result of the common indices should be f(A,B)
-     * 
-     * @param <T> Type of object
-     * @param to Copy to
+     *
+     * @param <T>   Type of object
+     * @param to    Copy to
      * @param fromA Copy shared and A-specific from
      * @param fromB Copy B-specific from
      */
@@ -337,14 +338,14 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
             to[index] = fromB[i];
         }
     }
-    
+
     /**
-     * Copies from an double array of length nVarTot to two double arrays of 
+     * Copies from an double array of length nVarTot to two double arrays of
      * length nVarA and nVarB.
      *
      * @param from Copy from
-     * @param toA Copy shared and A-specific to
-     * @param toB Copy shared and B-specific to
+     * @param toA  Copy shared and A-specific to
+     * @param toB  Copy shared and B-specific to
      */
     private void doublesTo(double[] from, double[] toA, double[] toB) {
         toA = (toA == null) ? new double[nVarA] : toA;
@@ -363,10 +364,10 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     /**
      * Copies from double arrays of length nVarA and nVarB to an object array of
-     * length nVarTot; asserts common indices are equal. Should not be used when 
+     * length nVarTot; asserts common indices are equal. Should not be used when
      * the result of the common indices should be f(A,B)
-     * 
-     * @param to Copy to
+     *
+     * @param to    Copy to
      * @param fromA Copy shared and A-specific from
      * @param fromB Copy B-specific from
      */
@@ -386,8 +387,8 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     /**
      * Assigns common indices of to to be sum of fromA and fromB, assigns unique
      * elements to the non-unique indices thereof.
-     * 
-     * @param to Sum to
+     *
+     * @param to    Sum to
      * @param fromA Add shared from and copy A-specific from.
      * @param fromB Add shared from and copy B-specific from.
      */
@@ -401,12 +402,18 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
             to[indexBToGlobal[i]] += fromB[i];
         }
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x) {
         return energy(x, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x, boolean verbose) {
         region.setX(x);
@@ -422,12 +429,18 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         return totalEnergy;
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double[] x, double[] g) {
         return energyAndGradient(x, g, false);
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energyAndGradient(double[] x, double[] g, boolean verbose) {
         region.setX(x);
@@ -444,7 +457,10 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
         return totalEnergy;
     }
-    
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setScaling(double[] scaling) {
         this.scaling = scaling;
@@ -460,11 +476,17 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getScaling() {
         return scaling;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getCoordinates(double[] x) {
         dualTopA.getCoordinates(xA);
@@ -473,29 +495,42 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         return x;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getMass() {
         return mass;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getTotalEnergy() {
         return totalEnergy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int getNumberOfVariables() {
         return nVarTot;
     }
-    
+
     /**
      * Returns number of shared variables.
+     *
      * @return Shared variables
      */
     public int getNumSharedVariables() {
         return nShared;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         if (types == null) {
@@ -512,6 +547,9 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         return types;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         doublesTo(velocity, tempA, tempB);
@@ -519,6 +557,9 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         dualTopB.setVelocity(tempB);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         doublesTo(acceleration, tempA, tempB);
@@ -526,6 +567,9 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         dualTopB.setVelocity(tempB);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         doublesTo(previousAcceleration, tempA, tempB);
@@ -533,24 +577,36 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         dualTopB.setPreviousAcceleration(tempB);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         doublesFrom(velocity, dualTopA.getVelocity(tempA), dualTopB.getVelocity(tempB));
         return velocity;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         doublesFrom(acceleration, dualTopA.getAcceleration(tempA), dualTopB.getAcceleration(tempB));
         return acceleration;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         doublesFrom(previousAcceleration, dualTopA.getPreviousAcceleration(tempA), dualTopB.getPreviousAcceleration(tempB));
         return previousAcceleration;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
@@ -558,11 +614,17 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         dualTopB.setEnergyTermState(state);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (!Double.isFinite(lambda) || lambda > 1.0 || lambda < 0.0) {
@@ -573,20 +635,26 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         dualTopB.setLambda(lambda);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         return dEdL;
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Returns true if both dual topologies are zero at the ends.
-     *
-     * @return If dEdL guaranteed zero at ends.
      */
     @Override
     public boolean dEdLZeroAtEnds() {
@@ -596,18 +664,29 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         return d2EdL2;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] g) {
         dualTopA.getdEdXdL(tempA);
         dualTopB.getdEdXdL(tempB);
         addDoublesFrom(g, tempA, tempB);
     }
-    
+
+    /**
+     * <p>setParallel.</p>
+     *
+     * @param parallel a boolean.
+     */
     public void setParallel(boolean parallel) {
         this.inParallel = parallel;
         if (team != null) {
@@ -620,6 +699,9 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Crystal getCrystal() {
         return dualTopA.getCrystal();
@@ -627,6 +709,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     /**
      * Returns the first component DualTopologyEnergy.
+     *
      * @return Dual topology A.
      */
     public DualTopologyEnergy getDualTopA() {
@@ -635,12 +718,16 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     /**
      * Returns the second component DualTopologyEnergy.
+     *
      * @return Dual topology B.
      */
     public DualTopologyEnergy getDualTopB() {
         return dualTopB;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCrystal(Crystal crystal) {
         dualTopA.setCrystal(crystal);
@@ -655,7 +742,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
      * unphysical self and pair configurations, so the algorithm should not
      * print out a large number of error PDBs.
      *
-     * @param onFail To set
+     * @param onFail   To set
      * @param override Override properties
      */
     public void setPrintOnFailure(boolean onFail, boolean override) {
@@ -663,6 +750,9 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         dualTopB.setPrintOnFailure(onFail, override);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         boolean dtADestroy = dualTopA.destroy();
@@ -678,35 +768,35 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
             return false;
         }
     }
-    
+
     private class EnergyRegion extends ParallelRegion {
-        
+
         private double[] x;
         private double[] g;
         private boolean gradient = false;
-        
+
         private final EnergyASection sectA;
         private final EnergyBSection sectB;
-        
+
         public EnergyRegion() {
             sectA = new EnergyASection();
             sectB = new EnergyBSection();
         }
-        
+
         public void setX(double[] x) {
             this.x = x;
         }
-        
+
         public void setG(double[] g) {
             this.g = g;
             setGradient(true);
         }
-        
+
         public void setVerbose(boolean verbose) {
             sectA.setVerbose(verbose);
             sectB.setVerbose(verbose);
         }
-        
+
         public void setGradient(boolean gradient) {
             this.gradient = gradient;
             sectA.setGradient(gradient);
@@ -717,12 +807,12 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         public void start() throws Exception {
             doublesTo(x, xA, xB);
         }
-        
+
         @Override
         public void run() throws Exception {
             execute(sectA, sectB);
         }
-        
+
         @Override
         public void finish() throws Exception {
             totalEnergy = energyA + energyB;
@@ -734,12 +824,12 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
             gradient = false;
         }
     }
-    
+
     private class EnergyASection extends ParallelSection {
 
         private boolean verbose = false;
         private boolean gradient = false;
-        
+
         @Override
         public void run() throws Exception {
             if (gradient) {
@@ -752,16 +842,16 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
             this.verbose = false;
             this.gradient = false;
         }
-        
+
         public void setVerbose(boolean verbose) {
             this.verbose = verbose;
         }
-        
+
         public void setGradient(boolean gradient) {
             this.gradient = gradient;
         }
     }
-    
+
     private class EnergyBSection extends ParallelSection {
 
         private boolean verbose = false;
@@ -779,11 +869,11 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
             this.verbose = false;
             this.gradient = false;
         }
-        
+
         public void setVerbose(boolean verbose) {
             this.verbose = verbose;
         }
-        
+
         public void setGradient(boolean gradient) {
             this.gradient = gradient;
         }

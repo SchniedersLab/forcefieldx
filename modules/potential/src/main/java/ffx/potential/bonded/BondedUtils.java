@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import static java.lang.String.format;
 
+import org.apache.commons.math3.util.FastMath;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -52,8 +53,6 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
-import org.apache.commons.math3.util.FastMath;
-
 import static ffx.numerics.VectorMath.diff;
 import static ffx.numerics.VectorMath.norm;
 import static ffx.numerics.VectorMath.r;
@@ -63,6 +62,7 @@ import static ffx.numerics.VectorMath.scalar;
  * Utilities for placing atoms.
  *
  * @author Michael Schnieders
+ * @since 1.0
  */
 public class BondedUtils {
 
@@ -72,12 +72,12 @@ public class BondedUtils {
     /**
      * This routine was derived from a similar routine in TINKER.
      *
-     * @param atom a {@link ffx.potential.bonded.Atom} object.
-     * @param ia a {@link ffx.potential.bonded.Atom} object.
-     * @param bond a double.
-     * @param ib a {@link ffx.potential.bonded.Atom} object.
+     * @param atom   a {@link ffx.potential.bonded.Atom} object.
+     * @param ia     a {@link ffx.potential.bonded.Atom} object.
+     * @param bond   a double.
+     * @param ib     a {@link ffx.potential.bonded.Atom} object.
      * @param angle1 a double.
-     * @param ic a {@link ffx.potential.bonded.Atom} object.
+     * @param ic     a {@link ffx.potential.bonded.Atom} object.
      * @param angle2 a double.
      * @param chiral a int.
      */
@@ -96,21 +96,21 @@ public class BondedUtils {
      * at what coordinates an atom would be placed without moving or calling any
      * atoms, relying solely upon coordinates. Passed arrays are copied into
      * local arrays to avoid any over-writing of the passed arrays.
-     *
+     * <p>
      * The chiral argument is 0 if angle2 is a dihedral.
      * Else, if angle2 is the atom-ia-ic angle:
      * -1 indicates left-hand-rule placement.
      * +1 indicates right-hand-rule placement.
      * +3 indicates trigonal planar placement.
-     *
+     * <p>
      * Chiral +3 replaces the angle1 and angle2 constraints with a planarity
      * constraint, and minimized, equipartitioned deviation from angle1 and angle2.
      *
-     * @param ia a double[] of atomic coordinates.
-     * @param bond a double.
-     * @param ib a double[] of atomic coordinates.
+     * @param ia     a double[] of atomic coordinates.
+     * @param bond   a double.
+     * @param ib     a double[] of atomic coordinates.
      * @param angle1 a double.
-     * @param ic a double[] of atomic coordinates.
+     * @param ic     a double[] of atomic coordinates.
      * @param angle2 a double.
      * @param chiral 0, 1, -1, or 3.
      * @return A double[] with XYZ coordinates at which an atom would be placed.
@@ -271,6 +271,13 @@ public class BondedUtils {
         return ret;
     }
 
+    /**
+     * <p>findAtomType.</p>
+     *
+     * @param key        a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @return a {@link ffx.potential.parameters.AtomType} object.
+     */
     public static AtomType findAtomType(int key, ForceField forceField) {
         BioType bioType = forceField.getBioType(Integer.toString(key));
         if (bioType != null) {
@@ -285,6 +292,15 @@ public class BondedUtils {
         return null;
     }
 
+    /**
+     * <p>buildBond.</p>
+     *
+     * @param a1         a {@link ffx.potential.bonded.Atom} object.
+     * @param a2         a {@link ffx.potential.bonded.Atom} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Bond} object.
+     */
     public static Bond buildBond(Atom a1, Atom a2, ForceField forceField, ArrayList<Bond> bondList) {
         Bond bond = new Bond(a1, a2);
         int c[] = new int[2];
@@ -305,8 +321,20 @@ public class BondedUtils {
         return bond;
     }
 
+    /**
+     * <p>buildHeavy.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName   a {@link java.lang.String} object.
+     * @param bondedTo   a {@link ffx.potential.bonded.Atom} object.
+     * @param key        a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
+     */
     public static Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo, int key, ForceField forceField,
-            ArrayList<Bond> bondList)
+                                  ArrayList<Bond> bondList)
             throws MissingHeavyAtomException {
         Atom atom = (Atom) residue.getAtomNode(atomName);
         AtomType atomType = findAtomType(key, forceField);
@@ -321,8 +349,26 @@ public class BondedUtils {
         return atom;
     }
 
+    /**
+     * <p>buildHeavyAtom.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName   a {@link java.lang.String} object.
+     * @param ia         a {@link ffx.potential.bonded.Atom} object.
+     * @param bond       a double.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param ib         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1     a double.
+     * @param ic         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2     a double.
+     * @param chiral     a int.
+     * @param atomType   a {@link ffx.potential.parameters.AtomType} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, ArrayList<Bond> bondList) {
+                                      Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, ArrayList<Bond> bondList) {
         Atom atom = (Atom) residue.getAtomNode(atomName);
         if (atomType == null) {
             return null;
@@ -345,20 +391,74 @@ public class BondedUtils {
         return atom;
     }
 
+    /**
+     * <p>buildHeavy.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName   a {@link java.lang.String} object.
+     * @param ia         a {@link ffx.potential.bonded.Atom} object.
+     * @param bond       a double.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param ib         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1     a double.
+     * @param ic         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2     a double.
+     * @param chiral     a int.
+     * @param lookUp     a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public static Atom buildHeavy(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, int lookUp, ForceField forceField, ArrayList<Bond> bondList) {
+                                  Atom ic, double angle2, int chiral, int lookUp, ForceField forceField, ArrayList<Bond> bondList) {
         AtomType atomType = findAtomType(lookUp, forceField);
         return buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType, forceField, bondList);
     }
 
+    /**
+     * <p>buildHydrogen.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName   a {@link java.lang.String} object.
+     * @param ia         a {@link ffx.potential.bonded.Atom} object.
+     * @param bond       a double.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param ib         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1     a double.
+     * @param ic         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2     a double.
+     * @param chiral     a int.
+     * @param lookUp     a int.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public static Atom buildHydrogen(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, int lookUp, ForceField forceField, ArrayList<Bond> bondList) {
+                                     Atom ic, double angle2, int chiral, int lookUp, ForceField forceField, ArrayList<Bond> bondList) {
         AtomType atomType = findAtomType(lookUp, forceField);
         return buildHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType, forceField, bondList);
     }
 
+    /**
+     * <p>buildHydrogenAtom.</p>
+     *
+     * @param residue    a {@link ffx.potential.bonded.MSGroup} object.
+     * @param atomName   a {@link java.lang.String} object.
+     * @param ia         a {@link ffx.potential.bonded.Atom} object.
+     * @param bond       a double.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @param ib         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle1     a double.
+     * @param ic         a {@link ffx.potential.bonded.Atom} object.
+     * @param angle2     a double.
+     * @param chiral     a int.
+     * @param atomType   a {@link ffx.potential.parameters.AtomType} object.
+     * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+     * @param bondList   a {@link java.util.ArrayList} object.
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public static Atom buildHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond, Atom ib, double angle1,
-            Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, ArrayList<Bond> bondList) {
+                                         Atom ic, double angle2, int chiral, AtomType atomType, ForceField forceField, ArrayList<Bond> bondList) {
         if (atomType == null) {
             return null;
         }

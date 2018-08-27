@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -63,7 +63,6 @@ import static ffx.potential.parameters.TorsionTorsionType.units;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *
  */
 public class TorsionTorsion extends BondedTerm implements LambdaInterface {
 
@@ -81,12 +80,12 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      * Torsion-Torsion constructor.
      *
      * @param firstBond a {@link ffx.potential.bonded.Bond} object.
-     * @param angle a {@link ffx.potential.bonded.Angle} object.
-     * @param lastBond a {@link ffx.potential.bonded.Bond} object.
-     * @param reversed a boolean.
+     * @param angle     a {@link ffx.potential.bonded.Angle} object.
+     * @param lastBond  a {@link ffx.potential.bonded.Bond} object.
+     * @param reversed  a boolean.
      */
     public TorsionTorsion(Bond firstBond, Angle angle, Bond lastBond,
-            boolean reversed) {
+                          boolean reversed) {
         super();
         atoms = new Atom[5];
         bonds = new Bond[4];
@@ -119,14 +118,16 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
-     * @param firstBond the first Bond.
-     * @param angle the Angle.
-     * @param lastBond the last Bond.
+     * <p>torsionTorsionFactory.</p>
+     *
+     * @param firstBond  the first Bond.
+     * @param angle      the Angle.
+     * @param lastBond   the last Bond.
      * @param forceField the ForceField parameters to apply.
      * @return the new TorsionTorsion, or null.
      */
     public static TorsionTorsion torsionTorsionFactory(Bond firstBond,
-            Angle angle, Bond lastBond, ForceField forceField) {
+                                                       Angle angle, Bond lastBond, ForceField forceField) {
         int c5[] = new int[5];
         Atom atom1 = angle.atoms[0];
         Atom atom3 = angle.atoms[2];
@@ -153,27 +154,19 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Evaluate the Torsion-Torsion energy.
-     *
-     * @param gradient Evaluate the gradient.
-     * @param threadID
-     * @param gradX
-     * @param gradY
-     * @param gradZ
-     * @param lambdaGradX
-     * @param lambdaGradY
-     * @param lambdaGradZ
-     * @return Returns the energy.
      */
     @Override
     public double energy(boolean gradient,
-            int threadID,
-            AtomicDoubleArray gradX,
-            AtomicDoubleArray gradY,
-            AtomicDoubleArray gradZ,
-            AtomicDoubleArray lambdaGradX,
-            AtomicDoubleArray lambdaGradY,
-            AtomicDoubleArray lambdaGradZ) {
+                         int threadID,
+                         AtomicDoubleArray gradX,
+                         AtomicDoubleArray gradY,
+                         AtomicDoubleArray gradZ,
+                         AtomicDoubleArray lambdaGradX,
+                         AtomicDoubleArray lambdaGradY,
+                         AtomicDoubleArray lambdaGradZ) {
 
         double a0[] = new double[3];
         double a1[] = new double[3];
@@ -524,6 +517,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     /*
      * Log details for this Torsion-Torsion energy term.
      */
+
     /**
      * <p>
      * log</p>
@@ -537,7 +531,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Overidden toString Method returns the Term's id.
      */
     @Override
@@ -546,6 +540,11 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
                 torsions[1].value, energy);
     }
 
+    /**
+     * <p>getChiralAtom.</p>
+     *
+     * @return a {@link ffx.potential.bonded.Atom} object.
+     */
     public Atom getChiralAtom() {
         Atom atom = null;
         ArrayList<Bond> bnds = atoms[2].getBonds();
@@ -678,17 +677,17 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      * @param x1u a double.
      * @param y1l a double.
      * @param y1u a double.
-     * @param t1 a double.
-     * @param t2 a double.
-     * @param e
-     * @param dx
-     * @param dy
-     * @param dxy
+     * @param t1  a double.
+     * @param t2  a double.
+     * @param e   an array of {@link double} objects.
+     * @param dx  an array of {@link double} objects.
+     * @param dy  an array of {@link double} objects.
+     * @param dxy an array of {@link double} objects.
      * @return a double.
      */
     protected double bcuint(double x1l, double x1u, double y1l, double y1u,
-            double t1, double t2,
-            double e[], double dx[], double dy[], double dxy[]) {
+                            double t1, double t2,
+                            double e[], double dx[], double dy[], double dxy[]) {
 
         double c[][] = new double[4][4];
 
@@ -708,23 +707,23 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
      * <p>
      * bcuint1</p>
      *
-     * @param x1l a double.
-     * @param x1u a double.
-     * @param y1l a double.
-     * @param y1u a double.
-     * @param t1 a double.
-     * @param t2 a double.
-     * @param e
-     * @param dx
-     * @param dy
-     * @param dxy
-     * @param ansy an array of double.
+     * @param x1l  a double.
+     * @param x1u  a double.
+     * @param y1l  a double.
+     * @param y1u  a double.
+     * @param t1   a double.
+     * @param t2   a double.
+     * @param e    an array of {@link double} objects.
+     * @param dx   an array of {@link double} objects.
+     * @param dy   an array of {@link double} objects.
+     * @param dxy  an array of {@link double} objects.
+     * @param ansy an array of {@link double} objects.
      * @return a double.
      */
     protected double bcuint1(double x1l, double x1u, double y1l, double y1u,
-            double t1, double t2,
-            double e[], double dx[], double dy[], double dxy[],
-            double ansy[]) {
+                             double t1, double t2,
+                             double e[], double dx[], double dy[], double dxy[],
+                             double ansy[]) {
 
         double c[][] = new double[4][4];
 
@@ -747,8 +746,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     }
 
     private static void bcucof(double t1, double t2,
-            double e[], double dx[], double dy[], double dxy[],
-            double c[][]) {
+                               double e[], double dx[], double dy[], double dxy[],
+                               double c[][]) {
 
         double x16[] = new double[16];
         double cl[] = new double[16];
@@ -785,39 +784,42 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     }
 
     private static final double wt[][] = {
-        {1.0, 0.0, -3.0, 2.0, 0.0, 0.0, 0.0, 0.0, -3.0, 0.0, 9.0, -6.0,
-            2.0, 0.0, -6.0, 4.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, -9.0, 6.0,
-            -2.0, 0.0, 6.0, -4.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0, -6.0, 0.0,
-            0.0, -6.0, 4.0},
-        {0.0, 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -9.0, 6.0,
-            0.0, 0.0, 6.0, -4.0},
-        {0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -3.0, 2.0, -2.0, 0.0, 6.0, -4.0,
-            1.0, 0.0, -3.0, 2.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 3.0, -2.0,
-            1.0, 0.0, -3.0, 2.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 2.0, 0.0,
-            0.0, 3.0, -2.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -2.0, 0.0, 0.0, -6.0, 4.0,
-            0.0, 0.0, 3.0, -2.0},
-        {0.0, 1.0, -2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 6.0, -3.0,
-            0.0, 2.0, -4.0, 2.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -6.0, 3.0, 0.0,
-            -2.0, 4.0, -2.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 3.0, 0.0,
-            0.0, 2.0, -2.0},
-        {0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -3.0,
-            0.0, 0.0, -2.0, 2.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -2.0, 1.0, 0.0, -2.0, 4.0, -2.0,
-            0.0, 1.0, -2.0, 1.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 2.0, -1.0,
-            0.0, 1.0, -2.0, 1.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0,
-            0.0, -1.0, 1.0},
-        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2.0, -2.0,
-            0.0, 0.0, -1.0, 1.0}};
+            {1.0, 0.0, -3.0, 2.0, 0.0, 0.0, 0.0, 0.0, -3.0, 0.0, 9.0, -6.0,
+                    2.0, 0.0, -6.0, 4.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, -9.0, 6.0,
+                    -2.0, 0.0, 6.0, -4.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0, -6.0, 0.0,
+                    0.0, -6.0, 4.0},
+            {0.0, 0.0, 3.0, -2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -9.0, 6.0,
+                    0.0, 0.0, 6.0, -4.0},
+            {0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -3.0, 2.0, -2.0, 0.0, 6.0, -4.0,
+                    1.0, 0.0, -3.0, 2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 3.0, -2.0,
+                    1.0, 0.0, -3.0, 2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 2.0, 0.0,
+                    0.0, 3.0, -2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -2.0, 0.0, 0.0, -6.0, 4.0,
+                    0.0, 0.0, 3.0, -2.0},
+            {0.0, 1.0, -2.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 6.0, -3.0,
+                    0.0, 2.0, -4.0, 2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -6.0, 3.0, 0.0,
+                    -2.0, 4.0, -2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 3.0, 0.0,
+                    0.0, 2.0, -2.0},
+            {0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, -3.0,
+                    0.0, 0.0, -2.0, 2.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -2.0, 1.0, 0.0, -2.0, 4.0, -2.0,
+                    0.0, 1.0, -2.0, 1.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 2.0, -1.0,
+                    0.0, 1.0, -2.0, 1.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0,
+                    0.0, -1.0, 1.0},
+            {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2.0, -2.0,
+                    0.0, 0.0, -1.0, 1.0}};
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setLambda(double lambda) {
         if (applyAllLambda()) {
@@ -829,11 +831,17 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -843,11 +851,17 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double getd2EdL2() {
         return 0.0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void getdEdXdL(double[] gradient) {
         return;

@@ -123,7 +123,7 @@ import static ffx.potential.parameters.MultipoleType.t300;
  *
  * @author Michael J. Schnieders<br> derived from:<br> TINKER code by Jay
  * Ponder, Pengyu Ren and Tom Darden.<br>
- * @see <a href="http://dx.doi.org/10.1021/ct300035u" target="_blank"> M. J.
+ * @see <br><a href="http://dx.doi.org/10.1021/ct300035u" target="_blank"> M. J.
  * Schnieders, J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P.
  * Ren, The Structure, Thermodynamics, and Solubility of Organic Crystals from
  * Simulation with a Polarizable Force Field, Journal of Chemical Theory and
@@ -136,7 +136,7 @@ import static ffx.potential.parameters.MultipoleType.t300;
  * Sagui, L. G. Pedersen, and T. A. Darden, Journal of Chemical Physics 120 (1),
  * 73 (2004)</a>
  * @see <br><a href="http://link.aip.org/link/?JCPSA6/98/10089/1"
- * target="_blank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
+ * target="_©lank"> T. Darden, D. York, and L. Pedersen, Journal of Chemical
  * Physics 98 (12), 10089 (1993)</a>
  * @see <br><a href="http://www.ccp5.org" target="_blank"> W. Smith, "Point
  * Multipoles in the Ewald Summation (Revisited)", CCP5 Newsletter, 46, 18-30
@@ -1157,7 +1157,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
      * Pass in atoms that have been assigned electrostatics from a fixed charge
      * force field.
      *
-     * @param atoms
+     * @param atoms An array of atoms.
      */
     @Override
     public void setFixedCharges(Atom atoms[]) {

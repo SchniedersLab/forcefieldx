@@ -52,10 +52,10 @@ import ffx.potential.parameters.PolarizeType;
 
 /**
  * This Particle Mesh Ewald class implements PME for the AMOEBA polarizable
- * mutlipole force field in parallel using a {@link NeighborList} for any
- * {@link Crystal} space group. The real space contribution is contained within
+ * mutlipole force field in parallel using a {@link ffx.potential.nonbonded.NeighborList} for any
+ * {@link ffx.crystal.Crystal} space group. The real space contribution is contained within
  * this class and the reciprocal space contribution is delegated to the
- * {@link ReciprocalSpace} class.
+ * {@link ffx.potential.nonbonded.ReciprocalSpace} class.
  *
  * @author Michael J. Schnieders
  */
@@ -162,12 +162,20 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * Default cutoff values for PME and aperiodic systems.
      */
     public static final double PERIODIC_DEFAULT_EWALD_CUTOFF = 7.0;
+    /**
+     * Constant <code>APERIODIC_DEFAULT_EWALD_CUTOFF=1000.0</code>
+     */
     public static final double APERIODIC_DEFAULT_EWALD_CUTOFF = 1000.0;
 
     public enum Polarization {
         MUTUAL, DIRECT, NONE
     }
 
+    /**
+     * <p>Setter for the field <code>polarization</code>.</p>
+     *
+     * @param set a {@link ffx.potential.nonbonded.ParticleMeshEwald.Polarization} object.
+     */
     public void setPolarization(Polarization set) {
         this.polarization = set;
     }
@@ -236,114 +244,326 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
         Permanent, PolarGroup, PolarEnergy, Polar, All;
     }
 
+    /**
+     * <p>getGK.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.GeneralizedKirkwood} object.
+     */
     public abstract GeneralizedKirkwood getGK();
 
+    /**
+     * <p>getEwaldCutoff.</p>
+     *
+     * @return a double.
+     */
     public abstract double getEwaldCutoff();
 
+    /**
+     * <p>getGradient.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     protected abstract double[][][] getGradient();
 
+    /**
+     * <p>getTorque.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     protected abstract double[][][] getTorque();
 
+    /**
+     * <p>getLambdaGradient.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     protected abstract double[][][] getLambdaGradient();
 
+    /**
+     * <p>getLambdaTorque.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     protected abstract double[][][] getLambdaTorque();
 
+    /**
+     * <p>Setter for the field <code>atoms</code>.</p>
+     *
+     * @param atoms    an array of {@link ffx.potential.bonded.Atom} objects.
+     * @param molecule an array of {@link int} objects.
+     */
     public abstract void setAtoms(Atom atoms[], int molecule[]);
 
+    /**
+     * <p>setFixedCharges.</p>
+     *
+     * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public abstract void setFixedCharges(Atom atoms[]);
 
+    /**
+     * <p>energy.</p>
+     *
+     * @param gradient a boolean.
+     * @param print    a boolean.
+     * @return a double.
+     */
     public abstract double energy(boolean gradient, boolean print);
 
+    /**
+     * <p>getInteractions.</p>
+     *
+     * @return a int.
+     */
     public abstract int getInteractions();
 
+    /**
+     * <p>getGKInteractions.</p>
+     *
+     * @return a int.
+     */
     public abstract int getGKInteractions();
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public abstract void setLambda(double lambda);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public abstract double getdEdL();
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public abstract void getdEdXdL(double[] gradients);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public abstract double getd2EdL2();
 
+    /**
+     * <p>destroy.</p>
+     *
+     * @throws java.lang.Exception if any.
+     */
     public abstract void destroy() throws Exception;
 
+    /**
+     * <p>setCrystal.</p>
+     *
+     * @param crystal a {@link ffx.crystal.Crystal} object.
+     */
     public abstract void setCrystal(Crystal crystal);
 
+    /**
+     * <p>getCavitationEnergy.</p>
+     *
+     * @param throwError a boolean.
+     * @return a double.
+     */
     public abstract double getCavitationEnergy(boolean throwError);
 
+    /**
+     * <p>getDispersionEnergy.</p>
+     *
+     * @param throwError a boolean.
+     * @return a double.
+     */
     public abstract double getDispersionEnergy(boolean throwError);
 
+    /**
+     * <p>Getter for the field <code>coordinates</code>.</p>
+     *
+     * @return an array of {@link double} objects.
+     */
     public abstract double[][][] getCoordinates();
 
+    /**
+     * <p>getPolarEps.</p>
+     *
+     * @return a double.
+     */
     public abstract double getPolarEps();
 
+    /**
+     * <p>getPolarization11.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public abstract int[][] getPolarization11();
 
+    /**
+     * <p>getPolarization12.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public abstract int[][] getPolarization12();
 
+    /**
+     * <p>getPolarization13.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public abstract int[][] getPolarization13();
 
+    /**
+     * <p>getPolarizationType.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwald.Polarization} object.
+     */
     public abstract Polarization getPolarizationType();
 
+    /**
+     * <p>getAxisAtoms.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public abstract int[][] getAxisAtoms();
 
+    /**
+     * <p>getScale14.</p>
+     *
+     * @return a double.
+     */
     public abstract double getScale14();
 
+    /**
+     * <p>getEwaldCoefficient.</p>
+     *
+     * @return a double.
+     */
     public abstract double getEwaldCoefficient();
 
+    /**
+     * <p>getReciprocalSpace.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ReciprocalSpace} object.
+     */
     public abstract ReciprocalSpace getReciprocalSpace();
 
+    /**
+     * <p>setLambdaMultipoleScale.</p>
+     *
+     * @param scale a double.
+     */
     public abstract void setLambdaMultipoleScale(double scale);
 
+    /**
+     * <p>getElecForm.</p>
+     *
+     * @return a {@link ffx.potential.nonbonded.ParticleMeshEwald.ELEC_FORM} object.
+     */
     public abstract ELEC_FORM getElecForm();
 
+    /**
+     * <p>getName.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public abstract String getName();
 
+    /**
+     * <p>Getter for the field <code>totalElectrostaticEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTotalElectrostaticEnergy() {
         return permanentMultipoleEnergy + polarizationEnergy + generalizedKirkwoodEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>totalMultipoleEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getTotalMultipoleEnergy() {
         return permanentMultipoleEnergy + polarizationEnergy;
     }
 
+    /**
+     * <p>getPermanentEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermanentEnergy() {
         return permanentMultipoleEnergy;
     }
 
+    /**
+     * <p>getPermRealEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermRealEnergy() {
         return permanentRealSpaceEnergy;
     }
 
+    /**
+     * <p>getPermSelfEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermSelfEnergy() {
         return permanentSelfEnergy;
     }
 
+    /**
+     * <p>getPermRecipEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getPermRecipEnergy() {
         return permanentReciprocalEnergy;
     }
 
+    /**
+     * <p>Getter for the field <code>polarizationEnergy</code>.</p>
+     *
+     * @return a double.
+     */
     public double getPolarizationEnergy() {
         return polarizationEnergy;
     }
 
+    /**
+     * <p>getIndRealEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getIndRealEnergy() {
         return inducedRealSpaceEnergy;
     }
 
+    /**
+     * <p>getIndSelfEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getIndSelfEnergy() {
         return inducedSelfEnergy;
     }
 
+    /**
+     * <p>getIndRecipEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getIndRecipEnergy() {
         return inducedReciprocalEnergy;
     }
 
+    /**
+     * <p>getGKEnergy.</p>
+     *
+     * @return a double.
+     */
     public double getGKEnergy() {
         return generalizedKirkwoodEnergy;
     }
@@ -357,6 +577,9 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
         return scfAlgorithm;
     }
 
+    /**
+     * <p>assignPolarizationGroups.</p>
+     */
     protected void assignPolarizationGroups() {
         /**
          * Find directly connected group members for each atom.
@@ -473,8 +696,8 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
      * found group member.
      *
      * @param group XYZ indeces of current group members.
-     * @param seed The bonds of the seed atom are queried for inclusion in the
-     * group.
+     * @param seed  The bonds of the seed atom are queried for inclusion in the
+     *              group.
      */
     private void growGroup(List<Integer> group, Atom seed) {
         List<Bond> bonds = seed.getBonds();

@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -63,11 +63,11 @@ import ffx.potential.parameters.ForceField;
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
- * 
  * @since 1.0
+ *
  */
 public abstract class ConversionFilter {
-    
+
     private static final Logger logger = Logger.getLogger(ConversionFilter.class.getName());
     private static final Pattern intrangePattern = Pattern.compile("(\\d+)-(\\d+)");
     /**
@@ -132,8 +132,16 @@ public abstract class ConversionFilter {
      */
     private List<CoordRestraint> coordRestraints;
 
+    /**
+     * <p>Constructor for ConversionFilter.</p>
+     *
+     * @param structure a {@link java.lang.Object} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param forcefield a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public ConversionFilter(Object structure, MolecularAssembly molecularAssembly,
-            ForceField forcefield, CompositeConfiguration properties) {
+                            ForceField forcefield, CompositeConfiguration properties) {
         this.currentStructure = structure;
         this.structures = new ArrayList<>();
         if (structure != null) {
@@ -150,8 +158,16 @@ public abstract class ConversionFilter {
         }
     }
 
+    /**
+     * <p>Constructor for ConversionFilter.</p>
+     *
+     * @param structures a {@link java.util.List} object.
+     * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+     * @param forcefield a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public ConversionFilter(List<Object> structures, MolecularAssembly molecularAssembly,
-            ForceField forcefield, CompositeConfiguration properties) {
+                            ForceField forcefield, CompositeConfiguration properties) {
         this.structures = structures;
         if (structures != null && !structures.isEmpty()) {
             this.currentStructure = structures.get(0);
@@ -167,8 +183,16 @@ public abstract class ConversionFilter {
         }
     }
 
+    /**
+     * <p>Constructor for ConversionFilter.</p>
+     *
+     * @param structure a {@link java.lang.Object} object.
+     * @param molecularAssemblies a {@link java.util.List} object.
+     * @param forcefield a {@link ffx.potential.parameters.ForceField} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public ConversionFilter(Object structure, List<MolecularAssembly> molecularAssemblies,
-            ForceField forcefield, CompositeConfiguration properties) {
+                            ForceField forcefield, CompositeConfiguration properties) {
         this.currentStructure = structure;
         this.structures = new ArrayList<>();
         if (structure != null) {
@@ -485,10 +509,10 @@ public abstract class ConversionFilter {
             this.currentStructure = null;
         }
     }
-    
+
     /**
-     * Automatically sets atom-specific flags, particularly nouse and inactive, 
-     * and apply harmonic restraints. Intended to be called at the end of 
+     * Automatically sets atom-specific flags, particularly nouse and inactive,
+     * and apply harmonic restraints. Intended to be called at the end of
      * convert() implementations.
      */
     public void applyAtomProperties() {
@@ -497,7 +521,7 @@ public abstract class ConversionFilter {
          * public concrete, but skeletal method, and then have convert()
          * call a protected abstract readFile method for each implementation.
          */
-        
+
         Atom[] molaAtoms = activeMolecularAssembly.getAtomArray();
         int nmolaAtoms = molaAtoms.length;
         String[] nouseKeys = properties.getStringArray("nouse");
@@ -544,7 +568,7 @@ public abstract class ConversionFilter {
             try {
                 int[] inactiveRange = parseAtNumArg("inactive", inactiveKey, nmolaAtoms);
                 logger.log(Level.INFO, String.format(" Atoms %d-%d set to be not "
-                        + "active", inactiveRange[0]+1, inactiveRange[1]+1));
+                        + "active", inactiveRange[0] + 1, inactiveRange[1] + 1));
                 for (int i = inactiveRange[0]; i <= inactiveRange[1]; i++) {
                     molaAtoms[i].setActive(false);
                 }
@@ -552,7 +576,7 @@ public abstract class ConversionFilter {
                 logger.log(Level.INFO, ex.getLocalizedMessage());
             }
         }
-        
+
         coordRestraints = new ArrayList<>();
         String[] cRestraintStrings = properties.getStringArray("restraint");
         for (String coordRestraint : cRestraintStrings) {
@@ -561,11 +585,11 @@ public abstract class ConversionFilter {
             logger.info(String.format(" Adding lambda-disabled coordinate restraint "
                     + "with force constant %10.4f", forceconst));
             Set<Atom> restraintAtoms = new HashSet<>();
-            
+
             for (int i = 1; i < toks.length; i++) {
                 try {
                     int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
-                    logger.info(String.format(" Adding atoms %d-%d to restraint", 
+                    logger.info(String.format(" Adding atoms %d-%d to restraint",
                             nouseRange[0], nouseRange[1]));
                     for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
                         restraintAtoms.add(molaAtoms[j]);
@@ -592,8 +616,8 @@ public abstract class ConversionFilter {
                 logger.warning(String.format(" Empty or unparseable restraint argument %s", coordRestraint));
             }
         }
-        
-        
+
+
         String[] lamRestraintStrings = properties.getStringArray("lamrestraint");
         for (String coordRestraint : lamRestraintStrings) {
             String[] toks = coordRestraint.split("\\s+");
@@ -601,11 +625,11 @@ public abstract class ConversionFilter {
             logger.info(String.format(" Adding lambda-enabled coordinate restraint "
                     + "with force constant %10.4f", forceconst));
             Set<Atom> restraintAtoms = new HashSet<>();
-            
+
             for (int i = 1; i < toks.length; i++) {
                 try {
                     int[] nouseRange = parseAtNumArg("restraint", toks[i], nmolaAtoms);
-                    logger.info(String.format(" Adding atoms %d-%d to restraint", 
+                    logger.info(String.format(" Adding atoms %d-%d to restraint",
                             nouseRange[0], nouseRange[1]));
                     for (int j = nouseRange[0]; j <= nouseRange[1]; j++) {
                         restraintAtoms.add(molaAtoms[j]);
@@ -676,7 +700,7 @@ public abstract class ConversionFilter {
 
                     double[] atXYZ = new double[3];
                     for (int i = 0; i < 3; i++) {
-                        atXYZ[i] = Double.parseDouble(toks[i+2]);
+                        atXYZ[i] = Double.parseDouble(toks[i + 2]);
                     }
                     int atNum = Integer.parseInt(toks[5]) - 1;
                     restraintAts.add(molaAtoms[atNum]);
@@ -732,9 +756,10 @@ public abstract class ConversionFilter {
             }
         }
     }
-    
+
     /**
      * Gets the coordinate restraints parsed by this Filter.
+     *
      * @return Coordinate restraints.
      */
     public List<CoordRestraint> getCoordRestraints() {
@@ -744,7 +769,7 @@ public abstract class ConversionFilter {
             return null;
         }
     }
-    
+
     /**
      * Parses a numerical argument for an atom-specific flag. Intended to reduce
      * the amount of repetitive code in applyAtomProperties by parsing and 
@@ -785,7 +810,7 @@ public abstract class ConversionFilter {
                             + "to end of valid range %d", st, nAtoms));
                     end = nAtoms - 1;
                 }
-                int[] indices = { start, end };
+                int[] indices = {start, end};
                 return indices;
             }
         } else {
@@ -793,10 +818,10 @@ public abstract class ConversionFilter {
                 int atNum = Integer.parseUnsignedInt(st) - 1;
                 if (atNum < 0 || atNum >= nAtoms) {
                     throw new IllegalArgumentException(String.format(" %s numerical "
-                            + "argument %s out-of-bounds for range 1 to %d", keyType, 
+                                    + "argument %s out-of-bounds for range 1 to %d", keyType,
                             st, nAtoms));
                 }
-                int[] indices = { atNum, atNum };
+                int[] indices = {atNum, atNum};
                 return indices;
             } catch (NumberFormatException ex) {
                 throw new IllegalArgumentException(String.format(" %s input %s "

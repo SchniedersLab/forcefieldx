@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -54,6 +54,7 @@ import static ffx.numerics.VectorMath.rsq;
  * Restrain atoms to their initial coordinates.
  *
  * @author Michael J. Schnieders
+ *
  */
 public class CoordRestraint implements LambdaInterface {
 
@@ -161,6 +162,7 @@ public class CoordRestraint implements LambdaInterface {
 
     /**
      * Returns a copy of the atoms array.
+     *
      * @return Copy of the atom array.
      */
     public Atom[] getAtoms() {
@@ -172,6 +174,7 @@ public class CoordRestraint implements LambdaInterface {
     /**
      * Returns the original coordinates of this restraint, indexed by atoms then x,y,z. This is the opposite order of
      * the internal storage.
+     *
      * @return Original coordinates [atoms][xyz]
      */
     public double[][] getOriginalCoordinates() {
@@ -187,12 +190,18 @@ public class CoordRestraint implements LambdaInterface {
 
     /**
      * Returns the force constant in kcal/mol/Angstrom^2.
-     * @return
+     *
+     * @return a double.
      */
     public double getForceConstant() {
         return forceConstant;
     }
 
+    /**
+     * <p>getNumAtoms.</p>
+     *
+     * @return a int.
+     */
     public int getNumAtoms() {
         return nAtoms;
     }
@@ -260,8 +269,7 @@ public class CoordRestraint implements LambdaInterface {
                     dx[0] = a1[0] - initialCoordinates[0][i];
                     dx[1] = a1[1] - initialCoordinates[1][i];
                     dx[2] = a1[2] - initialCoordinates[2][i];
-                }
-                else {
+                } else {
                     continue;
                 }
                 double r2 = rsq(dx);
@@ -293,8 +301,7 @@ public class CoordRestraint implements LambdaInterface {
                     dx[0] = a1[0] - initialCoordinates[0][i];
                     dx[1] = a1[1] - initialCoordinates[1][i];
                     dx[2] = a1[2] - initialCoordinates[2][i];
-                }
-                else {
+                } else {
                     continue;
                 }
                 double r2 = rsq(dx);
@@ -350,6 +357,7 @@ public class CoordRestraint implements LambdaInterface {
         return forceConstant * residual * lambdaPow;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setLambda(double lambda) {
         if (lambdaTerm) {
@@ -388,6 +396,7 @@ public class CoordRestraint implements LambdaInterface {
 
     /**
      * Sets the initial coordinates to new values.
+     *
      * @param newInitialCoordinates Indexed xyz,atom number.
      */
     public void setCoordinatePin(double[][] newInitialCoordinates) {
@@ -399,10 +408,18 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>ignoreHydrogen</code>.</p>
+     *
+     * @param ignoreHydrogen a boolean.
+     */
     public void setIgnoreHydrogen(boolean ignoreHydrogen) {
         this.ignoreHydrogen = ignoreHydrogen;
     }
 
+    /**
+     * <p>resetCoordinatePin.</p>
+     */
     public void resetCoordinatePin() {
         double aixyz[] = new double[3];
         for (int i = 0; i < nAtoms; i++) {
@@ -411,6 +428,12 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
+    /**
+     * <p>getCoordinatePin.</p>
+     *
+     * @param xyz an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public double[][] getCoordinatePin(double[][] xyz) {
         if (xyz == null) {
             xyz = new double[nAtoms][3];
@@ -423,11 +446,13 @@ public class CoordRestraint implements LambdaInterface {
         return xyz;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getLambda() {
         return lambda;
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getdEdL() {
         if (lambdaTerm) {
@@ -437,6 +462,7 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public double getd2EdL2() {
         if (lambdaTerm) {
@@ -446,6 +472,7 @@ public class CoordRestraint implements LambdaInterface {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void getdEdXdL(double[] gradient) {
         if (lambdaTerm) {

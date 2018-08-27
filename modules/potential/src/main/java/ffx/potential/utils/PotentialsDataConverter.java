@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -62,8 +62,8 @@ import ffx.utilities.Keyword;
  * some data structure to Force Field X MolecularAssembly(s).
  *
  * @author Jacob M. Litman
- *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public class PotentialsDataConverter implements FileOpener {
 
@@ -79,10 +79,23 @@ public class PotentialsDataConverter implements FileOpener {
     private CompositeConfiguration activeProperties;
     private final static String BIOJAVA_DEFAULT_FILENAME = "UNKNOWN_BIOJAVA_FILE";
 
+    /**
+     * <p>Constructor for PotentialsDataConverter.</p>
+     *
+     * @param data a {@link java.lang.Object} object.
+     * @throws java.io.FileNotFoundException if any.
+     */
     public PotentialsDataConverter(Object data) throws FileNotFoundException {
         this(data, null);
     }
 
+    /**
+     * <p>Constructor for PotentialsDataConverter.</p>
+     *
+     * @param data a {@link java.lang.Object} object.
+     * @param file a {@link java.io.File} object.
+     * @throws java.io.FileNotFoundException if any.
+     */
     public PotentialsDataConverter(Object data, File file) throws FileNotFoundException {
         /* If the file is provided, just use that. Else, use a static get<Type>File
          * method to find the file: if that fails, or if the data object is not
@@ -108,7 +121,7 @@ public class PotentialsDataConverter implements FileOpener {
      *
      * @param data Data structure to find file file
      * @return Source file
-     * @throws FileNotFoundException If no file could be found
+     * @throws java.io.FileNotFoundException if any.
      */
     public static File getDefaultFile(Object data) throws FileNotFoundException {
         if (data instanceof Structure) {
@@ -122,8 +135,8 @@ public class PotentialsDataConverter implements FileOpener {
      * format, mostly because Biojava can only load from PDB.
      *
      * @param structure A Biojava structure
-     * @return pdbcode.pdb, name.pdb, or a default file
-     * @throws java.io.FileNotFoundException If no file could be found.
+     * @return a {@link java.io.File} object.
+     * @throws java.io.FileNotFoundException if any.
      */
     public static File getBiojavaFile(Structure structure) throws FileNotFoundException {
         String filename = structure.getPDBCode();
@@ -147,6 +160,8 @@ public class PotentialsDataConverter implements FileOpener {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Converts the data structure to MolecularAssembly(s).
      */
     @Override
@@ -226,9 +241,9 @@ public class PotentialsDataConverter implements FileOpener {
     }
 
     /**
-     * Returns the first MolecularAssembly created by the run() function.
+     * {@inheritDoc}
      *
-     * @return A MolecularAssembly
+     * Returns the first MolecularAssembly created by the run() function.
      */
     @Override
     public MolecularAssembly getAssembly() {
@@ -246,9 +261,9 @@ public class PotentialsDataConverter implements FileOpener {
     }
 
     /**
-     * Returns all MolecularAssembly objects created by this converter.
+     * {@inheritDoc}
      *
-     * @return Array of MolecularAssemblys
+     * Returns all MolecularAssembly objects created by this converter.
      */
     @Override
     public MolecularAssembly[] getAllAssemblies() {
@@ -256,9 +271,9 @@ public class PotentialsDataConverter implements FileOpener {
     }
 
     /**
-     * Returns the properties associated with the first MolecularAssembly.
+     * {@inheritDoc}
      *
-     * @return Active properties
+     * Returns the properties associated with the first MolecularAssembly.
      */
     @Override
     public CompositeConfiguration getProperties() {
@@ -268,8 +283,7 @@ public class PotentialsDataConverter implements FileOpener {
     /**
      * Returns the properties associated with the i'th MolecularAssembly
      *
-     * @param i
-     *
+     * @param i a int.
      * @return CompositeConfiguration for MolecularAssembly i.
      */
     public CompositeConfiguration getProperties(int i) {
@@ -277,10 +291,10 @@ public class PotentialsDataConverter implements FileOpener {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Returns the properties of all MolecularAssembly objects created by this
      * converter.
-     *
-     * @return Array of all properties
      */
     @Override
     public CompositeConfiguration[] getAllProperties() {
