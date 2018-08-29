@@ -7147,7 +7147,6 @@ public class RotamerOptimization implements Terminatable {
         int indexJ = allResiduesList.indexOf(residues[j]);
         int indexK = allResiduesList.indexOf(residues[k]);
         if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
-            assert indJ == -1 || indK == -1;
             throw new IllegalArgumentException(String.format(" Residue %d not found in neighbors of %d; assumed past cutoff.", j, i));
         } else {
             try {
@@ -7230,7 +7229,6 @@ public class RotamerOptimization implements Terminatable {
         int indexJ = allResiduesList.indexOf(residues[j]);
         int indexK = allResiduesList.indexOf(residues[k]);
         if (checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
-            assert indJ == -1 || indK == -1;
             return 0;
         } else {
             try {
@@ -7949,10 +7947,11 @@ public class RotamerOptimization implements Terminatable {
                             // distance is larger than the cutoff, then the two residues are not considered 'neighbors'
                             // so that pair should not be added to the pairs map.
                             if (checkNeighboringPair(i, j)) {
-                                set2Body(i, ri, j, rj, energy);
-                                if (checkPairDistThreshold(i, ri, j, rj)) {
-                                    set2Body(i, ri, j, rj, 0);
+                                //If inside the cutoff, set energy to previously computed value.
+                                if (!checkPairDistThreshold(i, ri, j, rj)) {
+                                    set2Body(i, ri, j, rj, energy);
 
+                                    //Gather distances and indices for printing.
                                     Residue residueI = residues[i];
                                     Residue residueJ = residues[j];
                                     int indexI = allResiduesList.indexOf(residueI);
@@ -7970,7 +7969,7 @@ public class RotamerOptimization implements Terminatable {
                                         distString = format("%10.3f", dist);
                                     }
 
-                                    logger.info(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                                    logger.fine(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
                                             residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, formatEnergy(get2Body(i, ri, j, rj)), distString, resDistString));
                                 }
                             } else {
@@ -8055,10 +8054,9 @@ public class RotamerOptimization implements Terminatable {
                             // distance is larger than the cutoff, then the three residues are not considered 'neighbors'
                             // so that triple should not be added to the pairs map.
                             if (checkNeighboringTriple(i, j, k)) {
-                                set3Body(residues, i, ri, j, rj, k, rk, energy);
-                                if (checkTriDistThreshold(i, ri, j, rj, k, rk)) {
-                                    //threeBodyEnergies.put(ijk, 0.0);
-                                    set3Body(residues, i, ri, j, rj, k, rk, 0);
+                                //If within the cutoff, the energy should be set to the previously calculated energy.
+                                if (!checkTriDistThreshold(i, ri, j, rj, k, rk)) {
+                                    set3Body(residues, i, ri, j, rj, k, rk, energy);
 
                                     Residue residueI = residues[i];
                                     Residue residueJ = residues[j];
@@ -8079,7 +8077,7 @@ public class RotamerOptimization implements Terminatable {
                                         distString = format("%10.3f", rawDist);
                                     }
 
-                                    logger.info(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                                    logger.fine(format(" 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
                                             residueI.toFormattedString(false, true), ri, residueJ.toFormattedString(false, true), rj, residueK.toFormattedString(false, true), rk,
                                             formatEnergy(get3Body(residues, i, ri, j, rj, k, rk)), distString, resDistString));
                                 }

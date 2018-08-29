@@ -37,10 +37,14 @@
  */
 package ffx.algorithms.groovy;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import ffx.potential.Utilities;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +53,7 @@ import org.testng.Assert;
 import ffx.algorithms.PJDependentTest;
 import ffx.potential.PotentialComponent;
 import ffx.utilities.DirectoryUtils;
+import ffx.algorithms.groovy.ManyBody;
 
 import groovy.lang.Binding;
 
@@ -202,15 +207,17 @@ public class ManyBodyTest extends PJDependentTest {
 
 
     /**
-     * Tests the restart file functionality. The test applies a 1 angstrom 2-body and 3-body cutoff but the restart
+     * Tests the restart file functionality. The test applies a 1.5 angstrom 2-body and 3-body cutoff but the restart
      * file was generated using 2-body and 3-body cutoffs of 2 angstroms.
      */
-    /*@Test
-    public void testManyBodyRestart(){
-        System.out.println("TEST MANY BODY RESTART!");
+    @Test
+    public void testManyBodyRestart() throws IOException {
+        File restartBackup = new File("src/main/java/ffx/algorithms/structures/5awl.restartBackup");
+        File restart = new File("src/main/java/ffx/algorithms/structures/5awl.restart");
+        FileUtils.copyFile(restartBackup, restart);
 
         // Set-up the input arguments for the script.
-        String[] args = {"-a", "2", "-L", "2", "--tC", "1", "-T", "--thC", "1", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
+        String[] args = {"-a", "2", "-L", "2", "--tC", "1.5", "-T", "--thC", "1.5", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
                 "src/main/java/ffx/algorithms/structures/5awl.pdb"};
         binding.setVariable("args", args);
 
@@ -223,9 +230,13 @@ public class ManyBodyTest extends PJDependentTest {
         }
 
         // Evaluate the script.
-        manyBody.run();
-
-        double expectedTotalPotential = -216.62517180;
+        try{
+            manyBody.run();
+        } catch (Error error){
+            System.out.println(Utilities.stackTraceToString(error));
+        }
+        
+        double expectedTotalPotential = -217.86618264654527;
         double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
         Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
 
@@ -237,8 +248,6 @@ public class ManyBodyTest extends PJDependentTest {
             Assert.fail(" Exception deleting files created by ManyBodyTest.");
         }
 
-        // Clear properties and delete unneccesary files.
         manyBody.getManyBody().getRestartFile().delete();
-    } */
-
+    }
 }
