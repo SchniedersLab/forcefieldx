@@ -1,9 +1,9 @@
 package ffx.xray.groovy
 
-import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode

@@ -53,6 +53,8 @@ import ffx.potential.bonded.Residue;
  * RefinementModel class.</p>
  *
  * @author Timothy D. Fenn
+ *
+ * @since 1.0
  */
 public class RefinementModel {
 
@@ -89,7 +91,7 @@ public class RefinementModel {
      * Constructor for RefinementModel.</p>
      *
      * @param assembly an array of {@link ffx.potential.MolecularAssembly}
-     * objects.
+     *                 objects.
      */
     public RefinementModel(MolecularAssembly assembly[]) {
         this(assembly, false);
@@ -99,8 +101,8 @@ public class RefinementModel {
      * <p>
      * Constructor for RefinementModel.</p>
      *
-     * @param assembly an array of {@link ffx.potential.MolecularAssembly}
-     * objects.
+     * @param assembly     an array of {@link ffx.potential.MolecularAssembly}
+     *                     objects.
      * @param refinemolocc a boolean.
      */
     @SuppressWarnings("unchecked")
@@ -271,6 +273,8 @@ public class RefinementModel {
     }
 
     /**
+     * <p>Getter for the field <code>xIndex</code>.</p>
+     *
      * @return the xIndex
      */
     public List<Integer>[] getxIndex() {
@@ -278,6 +282,8 @@ public class RefinementModel {
     }
 
     /**
+     * <p>Getter for the field <code>altResidues</code>.</p>
+     *
      * @return the altResidues
      */
     public ArrayList<ArrayList<Residue>> getAltResidues() {
@@ -285,6 +291,8 @@ public class RefinementModel {
     }
 
     /**
+     * <p>Getter for the field <code>altMolecules</code>.</p>
+     *
      * @return the altMolecules
      */
     public ArrayList<ArrayList<Molecule>> getAltMolecules() {
@@ -292,6 +300,8 @@ public class RefinementModel {
     }
 
     /**
+     * <p>Getter for the field <code>totalAtomList</code>.</p>
+     *
      * @return the totalAtomList
      */
     public List<Atom> getTotalAtomList() {
@@ -299,6 +309,8 @@ public class RefinementModel {
     }
 
     /**
+     * <p>Getter for the field <code>totalAtomArray</code>.</p>
+     *
      * @return the totalAtomArray
      */
     public Atom[] getTotalAtomArray() {
@@ -306,6 +318,8 @@ public class RefinementModel {
     }
 
     /**
+     * <p>Getter for the field <code>activeAtomList</code>.</p>
+     *
      * @return the activeAtomList
      */
     public List<Atom> getActiveAtomList() {
@@ -313,6 +327,8 @@ public class RefinementModel {
     }
 
     /**
+     * <p>Getter for the field <code>activeAtomArray</code>.</p>
+     *
      * @return the activeAtomArray
      */
     public Atom[] getActiveAtomArray() {

@@ -1,6 +1,5 @@
 package ffx.realspace.groovy
 
-import ffx.numerics.Potential
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
@@ -8,6 +7,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.RotamerOptimization
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
+import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary

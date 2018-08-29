@@ -54,6 +54,8 @@ import ffx.potential.MolecularAssembly;
  * RealSpaceFile class.</p>
  *
  * @author Timothy D. Fenn
+ *
+ * @since 1.0
  */
 public class RealSpaceFile {
 
@@ -161,6 +163,8 @@ public class RealSpaceFile {
     }
 
     /**
+     * <p>Getter for the field <code>filename</code>.</p>
+     *
      * @return the filename
      */
     public String getFilename() {
@@ -168,6 +172,8 @@ public class RealSpaceFile {
     }
 
     /**
+     * <p>Getter for the field <code>realSpaceFileFilter</code>.</p>
+     *
      * @return the realSpaceFileFilter
      */
     public RealSpaceFileFilter getRealSpaceFileFilter() {

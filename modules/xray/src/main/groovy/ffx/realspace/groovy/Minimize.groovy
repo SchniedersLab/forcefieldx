@@ -1,12 +1,11 @@
 package ffx.realspace.groovy
 
-import ffx.numerics.Potential
-import ffx.realspace.RealSpaceData
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.potential.MolecularAssembly
+import ffx.realspace.RealSpaceData
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.realspace.parsers.RealSpaceFile
 import ffx.xray.RefinementMinimize
@@ -14,6 +13,7 @@ import ffx.xray.RefinementMinimize
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
 /**
  * The Real Space Minimize script.
  * <br>

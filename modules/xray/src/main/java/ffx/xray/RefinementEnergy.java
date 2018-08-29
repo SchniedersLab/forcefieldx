@@ -65,9 +65,10 @@ import static ffx.numerics.VectorMath.b2u;
 
 /**
  * Combine the X-ray target and chemical potential energy using the
- * {@link CrystalPotential} interface
+ * {@link ffx.crystal.CrystalPotential} interface
  *
- * @author Timothy D. Fenn and Michael J. Schnieders
+ * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
  * @since 1.0
  */
 public class RefinementEnergy implements LambdaInterface, CrystalPotential, AlgorithmListener {
@@ -175,7 +176,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * RefinementEnergy Constructor.
      *
      * @param data           input {@link DiffractionData data} for refinement
-     * @param refinementMode {@link RefinementMinimize.RefinementMode} for
+     * @param refinementMode {@link ffx.xray.RefinementMinimize.RefinementMode} for
      *                       refinement
      */
     public RefinementEnergy(DataContainer data, RefinementMode refinementMode) {
@@ -186,7 +187,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * RefinementEnergy Constructor.
      *
      * @param data                input {@link DiffractionData data} for refinement
-     * @param refinementMode      {@link RefinementMinimize.RefinementMode} for
+     * @param refinementMode      {@link ffx.xray.RefinementMinimize.RefinementMode} for
      *                            refinement
      * @param optimizationScaling scaling of refinement parameters
      */
@@ -351,10 +352,20 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         }
     }
 
+    /**
+     * <p>Getter for the field <code>dataEnergy</code>.</p>
+     *
+     * @return a {@link ffx.crystal.CrystalPotential} object.
+     */
     public CrystalPotential getDataEnergy() {
         return dataEnergy;
     }
 
+    /**
+     * <p>getActiveAtoms.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public Atom[] getActiveAtoms() {
         return activeAtomArray;
     }
@@ -388,15 +399,26 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         }
     }
 
+    /**
+     * <p>Getter for the field <code>printOnFailure</code>.</p>
+     *
+     * @return a boolean.
+     */
     public boolean getPrintOnFailure() {
         return printOnFailure;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x) {
         return energy(x, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double energy(double[] x, boolean print) {
         double weight = data.getWeight();
@@ -601,7 +623,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * @param i     The desired MolecularAssembly index for xChem.
      * @param x     All parameters.
      * @param xChem The xChem parameters for the particular MolecularAssembly
-     *              that will be passed to {@link ForceFieldEnergy}.
+     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
+     * @param xChem The xChem parameters for the particular MolecularAssembly
+     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      */
     public void getAssemblyi(int i, double x[], double xChem[]) {
         assert (x != null && xChem != null);
@@ -620,7 +644,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
      * @param i     the desired MolecularAssembly index for "setting" x.
      * @param x     All parameters.
      * @param xChem The xChem parameters for the particular MolecularAssembly
-     *              that will be passed to {@link ForceFieldEnergy}.
+     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
+     * @param xChem The xChem parameters for the particular MolecularAssembly
+     *              that will be passed to {@link ffx.potential.ForceFieldEnergy}.
      */
     public void setAssemblyi(int i, double x[], double xChem[]) {
         assert (x != null && xChem != null);
@@ -893,20 +919,26 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return dataEnergy.getVariableTypes();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
@@ -918,6 +950,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         dataEnergy.setEnergyTermState(state);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         if (this.nBFactor > 0 || this.nOccupancy > 0) {
@@ -938,6 +973,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         if (this.nBFactor > 0 || this.nOccupancy > 0) {
@@ -958,6 +996,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         if (this.nBFactor > 0 || this.nOccupancy > 0) {
@@ -978,6 +1019,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         if (this.nBFactor > 0 || this.nOccupancy > 0) {
@@ -1001,6 +1045,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         return velocity;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         if (this.nBFactor > 0 || this.nOccupancy > 0) {
@@ -1023,6 +1070,9 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         return acceleration;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         if (this.nBFactor > 0 || this.nOccupancy > 0) {
@@ -1045,16 +1095,25 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
         return previousAcceleration;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Crystal getCrystal() {
         return dataEnergy.getCrystal();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCrystal(Crystal crystal) {
         logger.severe(" RefinementEnergy does implement setCrystal yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         return dataEnergy.destroy();

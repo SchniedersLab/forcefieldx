@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -58,6 +58,7 @@ import ffx.xray.CrystalReciprocalSpace.SolventModel;
  *
  * @author Timothy D. Fenn
  *
+ * @since 1.0
  */
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
@@ -91,7 +92,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
      * @param parallelTeam the ParallelTeam to execute the ScaleBulkMinimize.
      */
     public ScaleBulkMinimize(ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs, ParallelTeam parallelTeam) {
+                             DiffractionRefinementData refinementdata, CrystalReciprocalSpace crs, ParallelTeam parallelTeam) {
         this.reflectionlist = reflectionlist;
         this.refinementData = refinementdata;
         this.crystal = reflectionlist.crystal;
@@ -125,14 +126,30 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         setInitialScale();
     }
 
+    /**
+     * <p>getScaleBulkEnergy.</p>
+     *
+     * @return a {@link ffx.xray.ScaleBulkEnergy} object.
+     */
     public ScaleBulkEnergy getScaleBulkEnergy() {
         return bulkSolventEnergy;
     }
 
+    /**
+     * <p>getNumberOfVariables.</p>
+     *
+     * @return a int.
+     */
     public int getNumberOfVariables() {
         return x.length;
     }
 
+    /**
+     * <p>getCoordinates.</p>
+     *
+     * @param x an array of {@link double} objects.
+     * @return an array of {@link double} objects.
+     */
     public double[] getCoordinates(double x[]) {
         if (x == null) {
             x = new double[this.x.length];
@@ -338,9 +355,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         return bulkSolventEnergy;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean optimizationUpdate(int iter, int nfun, double grms, double xrms, double f, double df, double angle, LineSearchResult info) {
         long currentTime = System.nanoTime();
@@ -373,9 +388,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void terminate() {
         terminate = true;

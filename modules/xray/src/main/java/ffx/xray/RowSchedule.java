@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -43,6 +43,13 @@ import static java.util.Arrays.fill;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.util.Range;
 
+/**
+ * <p>RowSchedule class.</p>
+ *
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
+ */
 public class RowSchedule extends IntegerSchedule {
 
     private static final Logger logger = Logger.getLogger(RowSchedule.class.getName());
@@ -54,7 +61,14 @@ public class RowSchedule extends IntegerSchedule {
     private final int fftZ;
     private final int fftY;
     private int weights[];
-    
+
+    /**
+     * <p>Constructor for RowSchedule.</p>
+     *
+     * @param nThreads a int.
+     * @param fftZ a int.
+     * @param fftY a int.
+     */
     protected RowSchedule(int nThreads, int fftZ, int fftY) {
         this.nThreads = nThreads;
         threadDone = new boolean[nThreads];
@@ -64,16 +78,23 @@ public class RowSchedule extends IntegerSchedule {
         this.fftZ = fftZ;
     }
 
+    /**
+     * <p>updateWeights.</p>
+     *
+     * @param weights an array of {@link int} objects.
+     */
     public void updateWeights(int weights[]) {
         this.weights = weights;
     }
-   
 
+
+    /** {@inheritDoc} */
     @Override
     public boolean isFixedSchedule() {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void start(int nThreads, Range chunkRange) {
         this.nThreads = nThreads;
@@ -90,6 +111,7 @@ public class RowSchedule extends IntegerSchedule {
         defineRanges();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Range next(int threadID) {
         if (!threadDone[threadID]) {
@@ -128,7 +150,7 @@ public class RowSchedule extends IntegerSchedule {
             ranges[0] = new Range(0, fftZ * fftY - 1);
             return;
         }
-        
+
         double targetWeight = (totalWeight / nThreads);
         int lastRow = fftZ * fftY - 1;
 
@@ -149,9 +171,8 @@ public class RowSchedule extends IntegerSchedule {
                 break;
             }
         }
-        
 
-        
+
         int lastThread = currentThread;
 
         /**
@@ -160,7 +181,7 @@ public class RowSchedule extends IntegerSchedule {
         for (currentThread = 0; currentThread < lastThread - 1; currentThread++) {
             ranges[currentThread] = new Range(lowerBounds[currentThread], lowerBounds[currentThread + 1] - 1);
             //logger.info(String.format("Range for thread %d %s.", currentThread, ranges[currentThread]));
-               
+
         }
         /**
          * Final range for the last thread that will receive work.
@@ -175,10 +196,16 @@ public class RowSchedule extends IntegerSchedule {
             ranges[it] = null;
         }
     }
-    public int[] getThreadWeights(){
-        if(lowerBounds != null){
+
+    /**
+     * <p>getThreadWeights.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
+    public int[] getThreadWeights() {
+        if (lowerBounds != null) {
             int[] weightsToReturn = new int[nThreads];
-            for (int i = 0; i<nThreads; i++){
+            for (int i = 0; i < nThreads; i++) {
                 weightsToReturn[i] = weights[i];
             }
             return weightsToReturn;
@@ -187,6 +214,11 @@ public class RowSchedule extends IntegerSchedule {
         }
     }
 
+    /**
+     * <p>Getter for the field <code>lowerBounds</code>.</p>
+     *
+     * @return an array of {@link int} objects.
+     */
     public int[] getLowerBounds() {
         if (lowerBounds != null) {
             int[] boundsToReturn = new int[nThreads];

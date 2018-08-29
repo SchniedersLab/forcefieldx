@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -66,18 +66,9 @@ import ffx.xray.DiffractionRefinementData;
  * MTZWriter class.</p>
  *
  * @author Timothy D. Fenn
- *
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
- * map format</a>
- *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
- * target="_blank">CCP4 library documentation</a>
- *
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
- * map format</a>
- *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
- * target="_blank">CCP4 library documentation</a>
+ * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4 map format</a>
+ * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html" target="_blank">CCP4 library documentation</a>
+ * @since 1.0
  */
 public class MTZWriter {
 
@@ -118,11 +109,11 @@ public class MTZWriter {
      *
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
      * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
-     * object.
-     * @param filename a {@link java.lang.String} object.
+     *                       object.
+     * @param filename       a {@link java.lang.String} object.
      */
     public MTZWriter(ReflectionList reflectionList,
-            DiffractionRefinementData refinementData, String filename) {
+                     DiffractionRefinementData refinementData, String filename) {
         this(reflectionList, refinementData, filename, MTZType.ALL);
     }
 
@@ -132,12 +123,12 @@ public class MTZWriter {
      *
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
      * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
-     * object.
-     * @param filename a {@link java.lang.String} object.
-     * @param mtzType see MTZType interface types
+     *                       object.
+     * @param filename       a {@link java.lang.String} object.
+     * @param mtzType        see MTZType interface types
      */
     public MTZWriter(ReflectionList reflectionList,
-            DiffractionRefinementData refinementData, String filename, int mtzType) {
+                     DiffractionRefinementData refinementData, String filename, int mtzType) {
         this.reflectionList = reflectionList;
         this.refinementData = refinementData;
         this.crystal = reflectionList.crystal;

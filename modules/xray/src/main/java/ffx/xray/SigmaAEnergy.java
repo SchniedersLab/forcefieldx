@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -74,33 +74,26 @@ import static ffx.numerics.VectorMath.transpose3;
 import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
- *
  * Optimize SigmaA coefficients (using spline coefficients) and structure factor
  * derivatives using a likelihood target function.
- *
+ * <p>
  * This target can also be used for structure refinement.
  *
  * @author Timothy D. Fenn<br>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2005). 38, 193-198</a>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0907444992007352" target="_blank">
  * A. T. Brunger, Acta Cryst. (1993). D49, 24-36</a>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank">
  * G. N. Murshudov, A. A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53,
  * 240-255</a>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank">
  * A. T. Brunger, Acta Cryst. (1989). A45, 42-50.</a>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank">
  * R. J. Read, Acta Cryst. (1986). A42, 140-149.</a>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank">
  * N. S. Pannu and R. J. Read, Acta Cryst. (1996). A52, 659-668.</a>
- *
+ * @since 1.0
  */
 public class SigmaAEnergy implements Potential {
 
@@ -146,12 +139,12 @@ public class SigmaAEnergy implements Potential {
      *
      * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
      * @param refinementData a {@link ffx.xray.DiffractionRefinementData}
-     * object.
-     * @param parallelTeam the ParallelTeam to execute the SigmaAEnergy.
+     *                       object.
+     * @param parallelTeam   the ParallelTeam to execute the SigmaAEnergy.
      */
     public SigmaAEnergy(ReflectionList reflectionList,
-            DiffractionRefinementData refinementData,
-            ParallelTeam parallelTeam) {
+                        DiffractionRefinementData refinementData,
+                        ParallelTeam parallelTeam) {
         this.reflectionList = reflectionList;
         this.crystal = reflectionList.crystal;
         this.refinementData = refinementData;
@@ -188,6 +181,7 @@ public class SigmaAEnergy implements Potential {
      * and i1OverI0 functions in bessel.h in scitbx module of cctbx:
      * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
      */
+
     /**
      * <p>
      * sim</p>
@@ -220,31 +214,49 @@ public class SigmaAEnergy implements Potential {
                 + sim_r * atan(z) + x + 1.0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -598,14 +610,15 @@ public class SigmaAEnergy implements Potential {
      * <p>
      * target</p>
      *
-     * @param x an array of double.
-     * @param g an array of double.
+     * @param x        an array of double.
+     * @param g        an array of double.
      * @param gradient a boolean.
-     * @param print a boolean.
+     * @param gradient a boolean.
+     * @param print    a boolean.
      * @return a double.
      */
     public double target(double x[], double g[],
-            boolean gradient, boolean print) {
+                         boolean gradient, boolean print) {
 
         try {
             sigmaARegion.init(x, g, gradient);
@@ -746,25 +759,34 @@ public class SigmaAEnergy implements Potential {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         // Should be destroyed upstream in DiffractionData.

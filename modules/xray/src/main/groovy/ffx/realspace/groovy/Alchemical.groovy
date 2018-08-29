@@ -1,15 +1,16 @@
 package ffx.realspace.groovy
 
-import ffx.algorithms.AbstractOSRW
-import ffx.algorithms.cli.AlgorithmsScript
-import ffx.realspace.parsers.RealSpaceFile
-import groovy.ui.SystemOutputInterceptor
+import java.util.logging.Logger
+
 import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
+import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.TransitionTemperedOSRW
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.integrators.IntegratorEnum
 import ffx.algorithms.thermostats.ThermostatEnum
 import ffx.numerics.Potential
@@ -17,18 +18,15 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
-import ffx.xray.RefinementEnergy
 import ffx.realspace.RealSpaceData
-
-import ffx.algorithms.cli.DynamicsOptions
 import ffx.realspace.cli.RealSpaceOptions
+import ffx.realspace.parsers.RealSpaceFile
+import ffx.xray.RefinementEnergy
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
-import picocli.CommandLine.Parameters
 import picocli.CommandLine.Option
-
-import java.util.logging.Logger
+import picocli.CommandLine.Parameters
 
 /**
  * The Alchemical Changes script.
@@ -61,7 +59,7 @@ class Alchemical extends AlgorithmsScript {
      */
     @Option(names = ["--itype", "--iontype"], paramLabel = 'null',
             description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
-    String [] iontype = null
+    String[] iontype = null
 
     /**
      * --N or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
@@ -210,7 +208,7 @@ class Alchemical extends AlgorithmsScript {
                             ionCharge += atom.multipoleType.getCharge()
                         }
                         logger.info("Ion charge is: " + ionCharge.toString())
-                        int numIons = (int) -1*(Math.ceil(crystalCharge/ionCharge))
+                        int numIons = (int) -1 * (Math.ceil(crystalCharge / ionCharge))
                         if (numIons > 0) {
                             logger.info(numIons + " " + msNode.getAtomList().name
                                     + " ions needed to neutralize the crystal.")
@@ -222,8 +220,7 @@ class Alchemical extends AlgorithmsScript {
                                 logger.info(" Alchemical atom: " + atom.toString())
                             }
                         }
-                    }
-                    else {
+                    } else {
                         ionType = msNode.getAtomList().name
                         for (Atom atom : msNode.getAtomList()) {
                             atom.setUse(true)
