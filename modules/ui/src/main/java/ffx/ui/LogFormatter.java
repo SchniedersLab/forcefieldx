@@ -57,12 +57,12 @@ public class LogFormatter extends SimpleFormatter {
     private final boolean mpiLogging;
     private static final int warningLevel = Level.WARNING.intValue();
 
-
     /**
      * Constructor for the LogFormatter.
      *
      * @param debug If debug is true, then LogFormatter is equivalent to
      *              {@link SimpleFormatter}.
+     * @param mpiLogging Configure for MPI logging.
      * @since 1.0
      */
     public LogFormatter(boolean debug, boolean mpiLogging) {

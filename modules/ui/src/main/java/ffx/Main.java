@@ -456,7 +456,6 @@ public final class Main extends JFrame {
      * Create an instance of Force Field X
      *
      * @param args an array of {@link java.lang.String} objects.
-     * @throws java.lang.Exception if any.
      */
     public static void main(String[] args) {
         /**

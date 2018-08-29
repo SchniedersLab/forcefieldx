@@ -72,7 +72,6 @@ import ffx.ui.properties.FFXLocale;
  * The MainMenu class creates the Force Field X Menu Bar
  *
  * @author Michael J. Schnieders
- *
  */
 public class MainMenu extends JMenuBar {
 

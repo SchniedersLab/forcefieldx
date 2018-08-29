@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -77,6 +77,7 @@ public class FFXExec implements Runnable {
             path = path + File.pathSeparator + ld_library_path;
         }
     }
+
     private FFXSystem system;
     private String name;
     private String args;
@@ -99,7 +100,7 @@ public class FFXExec implements Runnable {
      * @param o Load the resulting version file onto the passed FFXSystem
      */
     public FFXExec(FFXSystem s, String n, String a, String d, MainPanel m,
-            File file, boolean o) {
+                   File file, boolean o) {
         system = s;
         name = n;
         args = a;
@@ -141,7 +142,7 @@ public class FFXExec implements Runnable {
      * @return int
      */
     private native int nativeExec(String argv, String dir, String path,
-            String classpath, String jre);
+                                  String classpath, String jre);
 
     /**
      * Executes the native call to "System()" and notifies the ResultPanel upon
@@ -153,21 +154,21 @@ public class FFXExec implements Runnable {
                 || ld_library_path == null) {
             Logger.getLogger("ffx").severe(
                     "Native executable could not be executed." + "\nCommand: "
-                    + args + "\nDIR: " + dir + "\nPATH: " + path
-                    + "\nCLASSPATH: " + classpath
-                    + "\nLD_LIBRARY_PATH: " + ld_library_path);
+                            + args + "\nDIR: " + dir + "\nPATH: " + path
+                            + "\nCLASSPATH: " + classpath
+                            + "\nLD_LIBRARY_PATH: " + ld_library_path);
             return;
         }
         Logger.getLogger("ffx").info(
                 "Native command invoked." + "\nCommand: " + args + "\nDIR: "
-                + dir + "\nFFXExec - PATH: " + path + "\nCLASSPATH: "
-                + classpath + "\nLD_LIBRARY_PATH: " + ld_library_path);
+                        + dir + "\nFFXExec - PATH: " + path + "\nCLASSPATH: "
+                        + classpath + "\nLD_LIBRARY_PATH: " + ld_library_path);
         returnValue = nativeExec(args, dir, path, classpath, ld_library_path);
         // Check for a bad return value
         if (returnValue < 0) {
             Logger.getLogger("ffx").warning(
                     "The following job exited with a failure status: "
-                    + returnValue + "\n" + args);
+                            + returnValue + "\n" + args);
         }
         // Open any created file and display the log.
         if (mainPanel != null) {
