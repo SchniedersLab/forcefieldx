@@ -42,6 +42,7 @@ package ffx.realspace;
  * RealSpaceRefinementData class.</p>
  *
  * @author Timothy D. Fenn
+ * @since 1.0
  */
 public class RealSpaceRefinementData {
 
@@ -55,7 +56,6 @@ public class RealSpaceRefinementData {
     /**
      * <p>
      * Constructor for RealSpaceRefinementData.</p>
-     *
      */
     public RealSpaceRefinementData() {
         origin = new int[3];
@@ -79,6 +79,8 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>Getter for the field <code>origin</code>.</p>
+     *
      * @return the origin
      */
     public int[] getOrigin() {
@@ -86,6 +88,8 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>Getter for the field <code>extent</code>.</p>
+     *
      * @return the extent
      */
     public int[] getExtent() {
@@ -93,6 +97,8 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>Getter for the field <code>ni</code>.</p>
+     *
      * @return the ni
      */
     public int[] getNi() {
@@ -100,6 +106,8 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>Getter for the field <code>data</code>.</p>
+     *
      * @return the data
      */
     public double[] getData() {
@@ -107,6 +115,8 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>Setter for the field <code>data</code>.</p>
+     *
      * @param data the data to set
      */
     public void setData(double[] data) {
@@ -114,6 +124,8 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>Getter for the field <code>densityScore</code>.</p>
+     *
      * @return the densityScore
      */
     public double getDensityScore() {
@@ -121,6 +133,8 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>Setter for the field <code>densityScore</code>.</p>
+     *
      * @param densityScore the densityScore to set
      */
     public void setDensityScore(double densityScore) {
@@ -128,6 +142,8 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>isPeriodic.</p>
+     *
      * @return the periodic
      */
     public boolean isPeriodic() {
@@ -135,24 +151,47 @@ public class RealSpaceRefinementData {
     }
 
     /**
+     * <p>Setter for the field <code>periodic</code>.</p>
+     *
      * @param periodic the periodic to set
      */
     public void setPeriodic(boolean periodic) {
         this.periodic = periodic;
     }
 
+    /**
+     * <p>Setter for the field <code>origin</code>.</p>
+     *
+     * @param x a int.
+     * @param y a int.
+     * @param z a int.
+     */
     public void setOrigin(int x, int y, int z) {
         origin[0] = x;
         origin[1] = y;
         origin[2] = z;
     }
 
+    /**
+     * <p>Setter for the field <code>extent</code>.</p>
+     *
+     * @param x a int.
+     * @param y a int.
+     * @param z a int.
+     */
     public void setExtent(int x, int y, int z) {
         extent[0] = x;
         extent[1] = y;
         extent[2] = z;
     }
 
+    /**
+     * <p>setNI.</p>
+     *
+     * @param x a int.
+     * @param y a int.
+     * @param z a int.
+     */
     public void setNI(int x, int y, int z) {
         ni[0] = x;
         ni[1] = y;

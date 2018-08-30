@@ -49,7 +49,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import static java.util.Arrays.fill;
 
-import ffx.potential.Utilities;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -61,6 +60,7 @@ import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Residue;
@@ -79,6 +79,7 @@ import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
  *
  * @author Timothy D. Fenn
  *
+ * @since 1.0
  */
 public class DiffractionData implements DataContainer {
 
@@ -131,9 +132,8 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly, assumes an X-ray data set with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular assembly} object, used
-     * as the atomic model for comparison against the data
+     * @param assembly   {@link ffx.potential.MolecularAssembly molecular assembly} object, used
+     *                   as the atomic model for comparison against the data
      * @param properties system properties file
      */
     public DiffractionData(MolecularAssembly assembly,
@@ -145,11 +145,10 @@ public class DiffractionData implements DataContainer {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular assembly} object, used
-     * as the atomic model for comparison against the data
+     * @param assembly   {@link ffx.potential.MolecularAssembly molecular assembly} object, used
+     *                   as the atomic model for comparison against the data
      * @param properties system properties file
-     * @param datafile one or more {@link DiffractionFile} to be refined against
+     * @param datafile   one or more {@link ffx.xray.parsers.DiffractionFile} to be refined against
      */
     public DiffractionData(MolecularAssembly assembly,
                            CompositeConfiguration properties, DiffractionFile... datafile) {
@@ -161,12 +160,11 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly, assumes an X-ray data set with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular assembly} object, used
-     * as the atomic model for comparison against the data
-     * @param properties system properties file
+     * @param assembly     {@link ffx.potential.MolecularAssembly molecular assembly} object, used
+     *                     as the atomic model for comparison against the data
+     * @param properties   system properties file
      * @param solventmodel the type of solvent model desired - see
-     * {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     *                     {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
      */
     public DiffractionData(MolecularAssembly assembly,
                            CompositeConfiguration properties, SolventModel solventmodel) {
@@ -177,13 +175,12 @@ public class DiffractionData implements DataContainer {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular assembly} object, used
-     * as the atomic model for comparison against the data
-     * @param properties system properties file
+     * @param assembly     {@link ffx.potential.MolecularAssembly molecular assembly} object, used
+     *                     as the atomic model for comparison against the data
+     * @param properties   system properties file
      * @param solventmodel the type of solvent model desired - see
-     * {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
-     * @param datafile one or more {@link DiffractionFile} to be refined against
+     *                     {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     * @param datafile     one or more {@link ffx.xray.parsers.DiffractionFile} to be refined against
      */
     public DiffractionData(MolecularAssembly assembly,
                            CompositeConfiguration properties, SolventModel solventmodel,
@@ -196,10 +193,9 @@ public class DiffractionData implements DataContainer {
      * construct a diffraction data assembly, assumes an X-ray data set with a
      * weight of 1.0 using the same name as the molecular assembly
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular assembly} object array
-     * (typically containing alternate conformer assemblies), used as the atomic
-     * model for comparison against the data
+     * @param assembly   {@link ffx.potential.MolecularAssembly molecular assembly} object array
+     *                   (typically containing alternate conformer assemblies), used as the atomic
+     *                   model for comparison against the data
      * @param properties system properties file
      */
     public DiffractionData(MolecularAssembly assembly[],
@@ -211,12 +207,11 @@ public class DiffractionData implements DataContainer {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular assembly} object array
-     * (typically containing alternate conformer assemblies), used as the atomic
-     * model for comparison against the data
+     * @param assembly   {@link ffx.potential.MolecularAssembly molecular assembly} object array
+     *                   (typically containing alternate conformer assemblies), used as the atomic
+     *                   model for comparison against the data
      * @param properties system properties file
-     * @param datafile one or more {@link DiffractionFile} to be refined against
+     * @param datafile   one or more {@link ffx.xray.parsers.DiffractionFile} to be refined against
      */
     public DiffractionData(MolecularAssembly assembly[],
                            CompositeConfiguration properties, DiffractionFile... datafile) {
@@ -226,14 +221,13 @@ public class DiffractionData implements DataContainer {
     /**
      * construct a diffraction data assembly
      *
-     * @param assembly
-     * {@link ffx.potential.MolecularAssembly molecular assembly} object array
-     * (typically containing alternate conformer assemblies), used as the atomic
-     * model for comparison against the data
-     * @param properties system properties file
+     * @param assembly     {@link ffx.potential.MolecularAssembly molecular assembly} object array
+     *                     (typically containing alternate conformer assemblies), used as the atomic
+     *                     model for comparison against the data
+     * @param properties   system properties file
      * @param solventmodel the type of solvent model desired - see
-     * {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
-     * @param datafile one or more {@link DiffractionFile} to be refined against
+     *                     {@link CrystalReciprocalSpace.SolventModel bulk solvent model} selections
+     * @param datafile     one or more {@link ffx.xray.parsers.DiffractionFile} to be refined against
      */
     public DiffractionData(MolecularAssembly assembly[],
                            CompositeConfiguration properties, SolventModel solventmodel,
@@ -424,10 +418,10 @@ public class DiffractionData implements DataContainer {
      * read in a different assembly to average in structure factors
      *
      * @param assembly the
-     * {@link ffx.potential.MolecularAssembly molecular assembly} object array
-     * (typically containing alternate conformer assemblies), used as the atomic
-     * model to average in with previous assembly
-     * @param index the current data index (for cumulative average purposes)
+     *                 {@link ffx.potential.MolecularAssembly molecular assembly} object array
+     *                 (typically containing alternate conformer assemblies), used as the atomic
+     *                 model to average in with previous assembly
+     * @param index    the current data index (for cumulative average purposes)
      */
     public void AverageFc(MolecularAssembly assembly[], int index) {
         RefinementModel tmprefinementmodel = new RefinementModel(assembly, refineMolOcc);
@@ -504,7 +498,7 @@ public class DiffractionData implements DataContainer {
 
     /**
      * move the atomic coordinates for the FFT calculation - this is independent
-     * of the {@link Atom} object coordinates as it uses a linearized array
+     * of the {@link ffx.potential.bonded.Atom} object coordinates as it uses a linearized array
      *
      * @param x array of coordinates to move atoms to
      * @see CrystalReciprocalSpace#setCoordinates(double[])
@@ -536,7 +530,7 @@ public class DiffractionData implements DataContainer {
      * performs an inverse FFT
      *
      * @param refinementMode the
-     * {@link RefinementMinimize.RefinementMode refinement mode} requested
+     *                       {@link RefinementMinimize.RefinementMode refinement mode} requested
      * @see CrystalReciprocalSpace#computeAtomicGradients(double[][], int[],
      * int, ffx.xray.RefinementMinimize.RefinementMode, boolean)
      * computeAtomicGradients
@@ -568,7 +562,7 @@ public class DiffractionData implements DataContainer {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * return the atom array for the model associated with this data
      */
     @Override
@@ -576,6 +570,11 @@ public class DiffractionData implements DataContainer {
         return refinementModel.getTotalAtomArray();
     }
 
+    /**
+     * <p>getActiveAtomArray.</p>
+     *
+     * @return an array of {@link ffx.potential.bonded.Atom} objects.
+     */
     public Atom[] getActiveAtomArray() {
         return getAtomArray();
     }
@@ -672,6 +671,12 @@ public class DiffractionData implements DataContainer {
 
     /*
      * Return R value for OSRW x-ray minimization
+     */
+
+    /**
+     * <p>getRCrystalStat.</p>
+     *
+     * @return a double.
      */
     public double getRCrystalStat() {
         return crystalStats[0].getR();
@@ -792,6 +797,11 @@ public class DiffractionData implements DataContainer {
         scaled[i] = true;
     }
 
+    /**
+     * <p>setLambdaTerm.</p>
+     *
+     * @param lambdaTerm a boolean.
+     */
     protected void setLambdaTerm(boolean lambdaTerm) {
         for (int i = 0; i < n; i++) {
             crs_fc[i].setLambdaTerm(lambdaTerm);
@@ -891,7 +901,7 @@ public class DiffractionData implements DataContainer {
      * write dataset i to MTZ file
      *
      * @param filename output filename
-     * @param i dataset to write out
+     * @param i        dataset to write out
      * @see MTZWriter#write()
      */
     public void writeData(String filename, int i) {
@@ -923,7 +933,7 @@ public class DiffractionData implements DataContainer {
      * write 2Fo-Fc and Fo-Fc maps for a datasets
      *
      * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
-     * @param i a int.
+     * @param i        a int.
      */
     public void writeMaps(String filename, int i) {
         if (!scaled[i]) {
@@ -961,7 +971,7 @@ public class DiffractionData implements DataContainer {
      * write bulk solvent mask for all datasets to a CNS map file
      *
      * @param filename output filename, or output root filename for multiple
-     * datasets
+     *                 datasets
      */
     public void writeSolventMaskCNS(String filename) {
         if (n == 1) {
@@ -977,7 +987,7 @@ public class DiffractionData implements DataContainer {
      * write bulk solvent mask for dataset i to a CNS map file
      *
      * @param filename output filename
-     * @param i dataset to write out
+     * @param i        dataset to write out
      */
     public void writeSolventMaskCNS(String filename, int i) {
         if (solventModel != SolventModel.NONE) {
@@ -1005,7 +1015,7 @@ public class DiffractionData implements DataContainer {
      * write bulk solvent mask for all datasets to a CCP4 map file
      *
      * @param filename output filename, or output root filename for multiple
-     * datasets
+     *                 datasets
      * @see CCP4MapWriter#write(double[], boolean)
      */
     public void writeSolventMask(String filename) {
@@ -1022,7 +1032,7 @@ public class DiffractionData implements DataContainer {
      * write bulk solvent mask for dataset i to a CCP4 map file
      *
      * @param filename output filename
-     * @param i dataset to write out
+     * @param i        dataset to write out
      * @see CCP4MapWriter#write(double[], boolean)
      */
     public void writeSolventMask(String filename, int i) {
@@ -1035,6 +1045,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>assembly</code>.</p>
+     *
      * @return the assembly
      */
     public MolecularAssembly[] getAssembly() {
@@ -1042,6 +1054,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>modelName</code>.</p>
+     *
      * @return the modelName
      */
     public String getModelName() {
@@ -1049,6 +1063,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>dataFiles</code>.</p>
+     *
      * @return the dataFiles
      */
     public DiffractionFile[] getDataFiles() {
@@ -1056,6 +1072,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>n</code>.</p>
+     *
      * @return the n
      */
     public int getN() {
@@ -1063,6 +1081,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>crystal</code>.</p>
+     *
      * @return the crystal
      */
     public Crystal[] getCrystal() {
@@ -1070,6 +1090,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>resolution</code>.</p>
+     *
      * @return the resolution
      */
     public Resolution[] getResolution() {
@@ -1077,6 +1099,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>reflectionList</code>.</p>
+     *
      * @return the reflectionList
      */
     public ReflectionList[] getReflectionList() {
@@ -1084,6 +1108,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>refinementData</code>.</p>
+     *
      * @return the refinementData
      */
     public DiffractionRefinementData[] getRefinementData() {
@@ -1091,6 +1117,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>crs_fc</code>.</p>
+     *
      * @return the crs_fc
      */
     public CrystalReciprocalSpace[] getCrs_fc() {
@@ -1098,6 +1126,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>crs_fs</code>.</p>
+     *
      * @return the crs_fs
      */
     public CrystalReciprocalSpace[] getCrs_fs() {
@@ -1105,6 +1135,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>solventModel</code>.</p>
+     *
      * @return the solventModel
      */
     public SolventModel getSolventModel() {
@@ -1112,6 +1144,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>scaleBulkMinimize</code>.</p>
+     *
      * @return the scaleBulkMinimize
      */
     public ScaleBulkMinimize[] getScaleBulkMinimize() {
@@ -1119,6 +1153,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>sigmaAMinimize</code>.</p>
+     *
      * @return the sigmaAMinimize
      */
     public SigmaAMinimize[] getSigmaAMinimize() {
@@ -1126,6 +1162,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>splineMinimize</code>.</p>
+     *
      * @return the splineMinimize
      */
     public SplineMinimize[] getSplineMinimize() {
@@ -1133,6 +1171,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>crystalStats</code>.</p>
+     *
      * @return the crystalStats
      */
     public CrystalStats[] getCrystalStats() {
@@ -1140,6 +1180,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>parallelTeam</code>.</p>
+     *
      * @return the parallelTeam
      */
     public ParallelTeam getParallelTeam() {
@@ -1147,6 +1189,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>scaled</code>.</p>
+     *
      * @return the scaled
      */
     public boolean[] getScaled() {
@@ -1154,6 +1198,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>fsigfCutoff</code>.</p>
+     *
      * @return the fsigfCutoff
      */
     public double getFsigfCutoff() {
@@ -1161,6 +1207,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>isUse_3g.</p>
+     *
      * @return the use_3g
      */
     public boolean isUse_3g() {
@@ -1168,6 +1216,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>aRadBuff</code>.</p>
+     *
      * @return the aRadBuff
      */
     public double getaRadBuff() {
@@ -1175,6 +1225,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>xrayScaleTol</code>.</p>
+     *
      * @return the xrayScaleTol
      */
     public double getXrayScaleTol() {
@@ -1182,6 +1234,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>sigmaATol</code>.</p>
+     *
      * @return the sigmaATol
      */
     public double getSigmaATol() {
@@ -1189,6 +1243,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>xWeight</code>.</p>
+     *
      * @return the xWeight
      */
     public double getxWeight() {
@@ -1196,6 +1252,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>bSimWeight</code>.</p>
+     *
      * @return the bSimWeight
      */
     public double getbSimWeight() {
@@ -1203,6 +1261,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>bNonZeroWeight</code>.</p>
+     *
      * @return the bNonZeroWeight
      */
     public double getbNonZeroWeight() {
@@ -1210,6 +1270,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>bMass</code>.</p>
+     *
      * @return the bMass
      */
     public double getbMass() {
@@ -1217,6 +1279,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>isResidueBFactor.</p>
+     *
      * @return the residueBFactor
      */
     public boolean isResidueBFactor() {
@@ -1224,6 +1288,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>nResidueBFactor</code>.</p>
+     *
      * @return the nResidueBFactor
      */
     public int getnResidueBFactor() {
@@ -1231,6 +1297,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>isAddAnisou.</p>
+     *
      * @return the addAnisou
      */
     public boolean isAddAnisou() {
@@ -1238,6 +1306,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>isRefineMolOcc.</p>
+     *
      * @return the refineMolOcc
      */
     public boolean isRefineMolOcc() {
@@ -1245,6 +1315,8 @@ public class DiffractionData implements DataContainer {
     }
 
     /**
+     * <p>Getter for the field <code>occMass</code>.</p>
+     *
      * @return the occMass
      */
     public double getOccMass() {

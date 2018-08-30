@@ -94,9 +94,9 @@ import static ffx.xray.Rescore.RescoreStrategy.NO_RESCORE;
  * Rescoring can be based on energy evaluations, minimization, x-ray
  * minimization, or real-space minimization.
  *
- * @author Michael J. Schnieders
- * @since 1.0
+ * @author Jacob Litman
  *
+ * @since 1.0
  */
 public class Rescore {
 
@@ -120,6 +120,11 @@ public class Rescore {
     private Path resultPath;
     private boolean printModels = false;
 
+    /**
+     * <p>Constructor for Rescore.</p>
+     *
+     * @param utils a {@link ffx.algorithms.AlgorithmFunctions} object.
+     */
     public Rescore(AlgorithmFunctions utils) {
         this.pwdPath = generatePath(new File(""));
         diffractionFiles = new ArrayList<>();
@@ -127,14 +132,30 @@ public class Rescore {
         this.utils = utils;
     }
 
+    /**
+     * <p>setRefineEps.</p>
+     *
+     * @param eps a double.
+     */
     public void setRefineEps(double eps) {
         this.eps = eps;
     }
 
+    /**
+     * <p>setMaxIter.</p>
+     *
+     * @param maxiter a int.
+     */
     public void setMaxIter(int maxiter) {
         this.maxiter = maxiter;
     }
 
+    /**
+     * <p>setResultDirectory.</p>
+     *
+     * @param directory a {@link java.io.File} object.
+     * @throws java.io.IOException if any.
+     */
     public void setResultDirectory(File directory) throws IOException {
         if (directory == null) {
             resultDir = null;
@@ -147,32 +168,67 @@ public class Rescore {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>acceptThreshold</code>.</p>
+     *
+     * @param acceptThreshold a double.
+     */
     public void setAcceptThreshold(double acceptThreshold) {
         this.acceptThreshold = acceptThreshold;
     }
 
+    /**
+     * <p>Setter for the field <code>numToAccept</code>.</p>
+     *
+     * @param numToAccept a int.
+     */
     public void setNumToAccept(int numToAccept) {
         this.numToAccept = numToAccept;
     }
 
+    /**
+     * <p>Setter for the field <code>includeRejected</code>.</p>
+     *
+     * @param includeRejected a boolean.
+     */
     public void setIncludeRejected(boolean includeRejected) {
         this.includeRejected = includeRejected;
     }
 
+    /**
+     * <p>Setter for the field <code>fileSuffix</code>.</p>
+     *
+     * @param fileSuffix a {@link java.lang.String} object.
+     */
     public void setFileSuffix(String fileSuffix) {
         this.fileSuffix = fileSuffix;
     }
 
+    /**
+     * <p>Setter for the field <code>resultsFile</code>.</p>
+     *
+     * @param resultsFile a {@link java.io.File} object.
+     */
     public void setResultsFile(File resultsFile) {
         if (resultsFile != null) {
             this.resultsFile = resultsFile;
         }
     }
 
+    /**
+     * <p>Setter for the field <code>printModels</code>.</p>
+     *
+     * @param printModels a boolean.
+     */
     public void setPrintModels(boolean printModels) {
         this.printModels = printModels;
     }
 
+    /**
+     * <p>setRescoreStrategy.</p>
+     *
+     * @param rscType a {@link ffx.xray.Rescore.RescoreStrategy} object.
+     */
     public void setRescoreStrategy(RescoreStrategy rscType) {
         this.rscType = rscType;
         if (rscType != NO_RESCORE) {
@@ -182,10 +238,20 @@ public class Rescore {
         }
     }
 
+    /**
+     * <p>Setter for the field <code>diffractionFiles</code>.</p>
+     *
+     * @param diffractionFiles a {@link java.util.List} object.
+     */
     public void setDiffractionFiles(List<DiffractionFile> diffractionFiles) {
         this.diffractionFiles.addAll(diffractionFiles);
     }
 
+    /**
+     * <p>Setter for the field <code>mapFiles</code>.</p>
+     *
+     * @param mapFiles a {@link java.util.List} object.
+     */
     public void setMapFiles(List<RealSpaceFile> mapFiles) {
         this.mapFiles.addAll(mapFiles);
     }
@@ -360,6 +426,12 @@ public class Rescore {
         return retFile;
     }
 
+    /**
+     * <p>rescore.</p>
+     *
+     * @param modelFiles an array of {@link java.io.File} objects.
+     * @return an array of {@link java.io.File} objects.
+     */
     public File[] rescore(File[] modelFiles) {
         int numFiles = modelFiles.length;
         DoubleIndexPair[] energies = new DoubleIndexPair[numFiles];

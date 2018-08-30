@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -52,13 +52,13 @@ import ffx.numerics.ComplexNumber;
 import ffx.numerics.Potential;
 
 /**
- *
  * Fit structure factors using spline coefficients
  *
  * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank">
  * K. Cowtan, J. Appl. Cryst. (2002). 35, 655-663</a>
  *
+ * @since 1.0
  */
 public class SplineEnergy implements Potential {
 
@@ -82,12 +82,12 @@ public class SplineEnergy implements Potential {
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
-     * object.
-     * @param nparams a int.
-     * @param type a int.
+     *                       object.
+     * @param nparams        a int.
+     * @param type           a int.
      */
     public SplineEnergy(ReflectionList reflectionlist,
-            DiffractionRefinementData refinementdata, int nparams, int type) {
+                        DiffractionRefinementData refinementdata, int nparams, int type) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementdata = refinementdata;
@@ -112,10 +112,11 @@ public class SplineEnergy implements Potential {
      * <p>
      * target</p>
      *
-     * @param x an array of double.
-     * @param g an array of double.
+     * @param x        an array of double.
+     * @param g        an array of double.
      * @param gradient a boolean.
-     * @param print a boolean.
+     * @param gradient a boolean.
+     * @param print    a boolean.
      * @return a double.
      */
     public double target(double x[], double g[], boolean gradient, boolean print) {
@@ -347,55 +348,82 @@ public class SplineEnergy implements Potential {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setEnergyTermState(STATE state) {
         this.state = state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         // Should be handled upstream.

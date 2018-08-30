@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -63,26 +63,21 @@ import static ffx.numerics.VectorMath.transpose3;
 import static ffx.numerics.VectorMath.vec3Mat3;
 
 /**
- *
  * Fit bulk solvent and aniso B scaling terms to correct calculated structure
  * factors against data
  *
  * @author Timothy D. Fenn
- *
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank">
  * P. V. Afonine, R. W. Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005).
  * D61, 850-855</a>
- *
  * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank">
  * R. W. Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35,
  * 477-480.</a>
- *
  * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A.
  * Grant, B. T. Pickup, A. Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
- *
  * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J.
  * S. Jiang, A. T. Brunger, JMB (1994) 243, 100-115.</a>
- *
+ * @since 1.0
  */
 public class ScaleBulkEnergy implements Potential {
 
@@ -123,12 +118,12 @@ public class ScaleBulkEnergy implements Potential {
      *
      * @param reflectionlist a {@link ffx.crystal.ReflectionList} object.
      * @param refinementdata a {@link ffx.xray.DiffractionRefinementData}
-     * object.
-     * @param n a int.
-     * @param parallelTeam the ParallelTeam to execute the ScaleBulkEnergy.
+     *                       object.
+     * @param n              a int.
+     * @param parallelTeam   the ParallelTeam to execute the ScaleBulkEnergy.
      */
     public ScaleBulkEnergy(ReflectionList reflectionlist, DiffractionRefinementData refinementdata,
-            int n, ParallelTeam parallelTeam) {
+                           int n, ParallelTeam parallelTeam) {
         this.reflectionlist = reflectionlist;
         this.crystal = reflectionlist.crystal;
         this.refinementData = refinementdata;
@@ -152,31 +147,49 @@ public class ScaleBulkEnergy implements Potential {
         scaleBulkEnergyRegion = new ScaleBulkEnergyRegion(threadCount);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -479,14 +492,15 @@ public class ScaleBulkEnergy implements Potential {
      * <p>
      * target</p>
      *
-     * @param x an array of double.
-     * @param g an array of double.
+     * @param x        an array of double.
+     * @param g        an array of double.
      * @param gradient a boolean.
-     * @param print a boolean.
+     * @param gradient a boolean.
+     * @param print    a boolean.
      * @return a double.
      */
     public double target(double x[], double g[],
-            boolean gradient, boolean print) {
+                         boolean gradient, boolean print) {
 
         try {
             scaleBulkEnergyRegion.init(x, g, gradient);
@@ -630,25 +644,34 @@ public class ScaleBulkEnergy implements Potential {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
      */
     @Override
     public Potential.VARIABLE_TYPE[] getVariableTypes() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setEnergyTermState(Potential.STATE state) {
         this.state = state;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         // The parallelTeam should have been passed in by DiffractionData, which handles destroying it.

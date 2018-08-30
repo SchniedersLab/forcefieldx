@@ -64,7 +64,6 @@ import static ffx.numerics.VectorMath.u2b;
  *
  * @author Timothy D. Fenn
  * @author Michael J. Schnieders
- *
  * @since 1.0
  */
 public class XRayEnergy implements LambdaInterface, CrystalPotential {
@@ -110,13 +109,13 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     /**
      * Diffraction data energy target
      *
-     * @param diffractionData {@link DiffractionData} object to associate with
-     * the target
-     * @param nXYZ number of xyz parameters
-     * @param nB number of b factor parameters
-     * @param nOCC number of occupancy parameters
-     * @param refinementMode the {@link RefinementMinimize.RefinementMode} type
-     * of refinement requested
+     * @param diffractionData {@link ffx.xray.DiffractionData} object to associate with
+     *                        the target
+     * @param nXYZ            number of xyz parameters
+     * @param nB              number of b factor parameters
+     * @param nOCC            number of occupancy parameters
+     * @param refinementMode  the {@link ffx.xray.RefinementMinimize.RefinementMode} type
+     *                        of refinement requested
      */
     public XRayEnergy(DiffractionData diffractionData, int nXYZ, int nB, int nOCC,
                       RefinementMode refinementMode) {
@@ -404,7 +403,7 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
      * Setter for the field <code>refinementMode</code>.</p>
      *
      * @param refinementmode a
-     * {@link ffx.xray.RefinementMinimize.RefinementMode} object.
+     *                       {@link ffx.xray.RefinementMinimize.RefinementMode} object.
      */
     public void setRefinementMode(RefinementMode refinementmode) {
         this.refinementMode = refinementmode;
@@ -1098,9 +1097,9 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
      * Return a reference to each variables type.
-     *
-     * @return the type of each variable.
      */
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
@@ -1128,6 +1127,9 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         return vtypes;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public STATE getEnergyTermState() {
         return state;
@@ -1135,6 +1137,10 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
 
     /*
      * RESPA setup
+     */
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void setEnergyTermState(STATE state) {
@@ -1154,46 +1160,73 @@ public class XRayEnergy implements LambdaInterface, CrystalPotential {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getVelocity(double[] velocity) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getAcceleration(double[] acceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double[] getPreviousAcceleration(double[] previousAcceleration) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Crystal getCrystal() {
         return diffractionData.getCrystal()[0];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setCrystal(Crystal crystal) {
         logger.severe(" XRayEnergy does implement setCrystal yet.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean destroy() {
         return diffractionData.destroy();
