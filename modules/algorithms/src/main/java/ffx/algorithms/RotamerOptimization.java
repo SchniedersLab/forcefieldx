@@ -320,7 +320,7 @@ public class RotamerOptimization implements Terminatable {
      * The energy buffer applied to each elimination criteria to affect an
      * ensemble.
      */
-    private double ensembleBuffer = 0.5;
+    private double ensembleBuffer = 0.0;
     /**
      * The step value of the energy buffer for use with ensemble search.
      */
@@ -357,7 +357,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Clash energy threshold (kcal/mole).
      */
-    private double clashThreshold = 20.0;
+    private double clashThreshold = 10.0;
     /**
      * Clash energy threshold (kcal/mol) for MultiResidues, which can have much
      * more variation in self and 2-Body energies.
@@ -366,7 +366,7 @@ public class RotamerOptimization implements Terminatable {
     /**
      * Clash energy threshold (kcal/mole).
      */
-    private double pairClashThreshold = 20.0;
+    private double pairClashThreshold = 10.0;
     /**
      * Pair clash energy threshold (kcal/mol) for MultiResidues.
      */
