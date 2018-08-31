@@ -154,4 +154,62 @@ public class PrepareSpaceGroupsTest {
         }
 
     }
+    @Test
+    public void testPrepareSpaceGroupsChiral() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-c","src/main/java/ffx/potential/structures/paracetamol.xyz"};
+        binding.setVariable("args", args);
+
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("spacegroups");
+            prepareSpaceGroups.baseDir = path.toFile();
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory");
+        }
+
+        // Evaluate the script.
+        prepareSpaceGroups.run();
+
+        // Pull out the Cart2Frac results to check.
+        Assert.assertEquals(65, prepareSpaceGroups.numberCreated);
+
+        // Delete all created space group directories.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by PrepareSpaceGroups.");
+        }
+
+    }
+    @Test
+    public void testPrepareSpaceGroupsAChiral() {
+        // Set-up the input arguments for the Biotype script.
+        String[] args = {"-a","src/main/java/ffx/potential/structures/paracetamol.xyz"};
+        binding.setVariable("args", args);
+
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("spacegroups");
+            prepareSpaceGroups.baseDir = path.toFile();
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory");
+        }
+
+        // Evaluate the script.
+        prepareSpaceGroups.run();
+
+        // Pull out the Cart2Frac results to check.
+        Assert.assertEquals(165, prepareSpaceGroups.numberCreated);
+
+        // Delete all created space group directories.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by PrepareSpaceGroups.");
+        }
+
+    }
 }

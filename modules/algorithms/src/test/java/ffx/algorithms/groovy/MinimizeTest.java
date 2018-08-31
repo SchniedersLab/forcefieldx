@@ -47,6 +47,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import ffx.algorithms.PJDependentTest;
+import ffx.algorithms.groovy.Minimizer;
 import ffx.utilities.DirectoryUtils;
 
 import groovy.lang.Binding;
