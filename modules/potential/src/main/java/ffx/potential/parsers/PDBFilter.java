@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -4099,6 +4100,8 @@ public final class PDBFilter extends SystemFilter {
                         renameAminoAcidToPDBStandard(residue);
                         break;
                     case NA:
+                        renameNucleicAcidToPDBStandard(residue);
+                        break;
                     case UNK:
                     default:
                         break;
@@ -4850,6 +4853,397 @@ public final class PDBFilter extends SystemFilter {
             default:
                 throw new IllegalArgumentException(String.format(" Could not definitely identify amide nitrogen for residue %s", residue));
         }
+    }
+
+    /**
+     * Sorts toCompare by distance to the reference Atom, returning a sorted array.
+     *
+     * @param reference Atom to compare distances to.
+     * @param toCompare Atoms to sort by distance (not modified).
+     * @return Sorted array of atoms in toCompare.
+     */
+    private static Atom[] sortAtomsByDistance(Atom reference, List<Atom> toCompare) {
+        Atom[] theAtoms = toCompare.toArray(new Atom[toCompare.size()]);
+        sortAtomsByDistance(reference, theAtoms);
+        return theAtoms;
+    }
+
+    /**
+     * In-place sorts toCompare by distance to the reference Atom. Modifies toCompare.
+     *
+     * @param reference Atom to compare distances to.
+     * @param toCompare Atoms to sort (in-place) by distance.
+     */
+    private static void sortAtomsByDistance(Atom reference, Atom[] toCompare) {
+        final double[] refXYZ = reference.getXYZ(new double[3]);
+        Arrays.sort(toCompare, Comparator.comparingDouble(a -> {
+            double[] atXYZ = a.getXYZ(new double[3]);
+            return VectorMath.dist2(refXYZ, atXYZ);
+        }));
+    }
+
+    private static void renameNucleicAcidToPDBStandard(Residue residue) {
+        assert residue.getResidueType() == Residue.ResidueType.NA;
+        NucleicAcid3 na3 = residue.getNucleicAcid3();
+        logger.info(residue.toString());
+        switch (na3) {
+            case ADE:
+            case DAD:
+            case CYT:
+            case DCY:
+            case GUA:
+            case DGU:
+            case THY:
+            case DTY:
+            case URI:
+                renameCommonNucleicAcid(residue, na3);
+                break;
+            default:
+                logger.info(" Could not rename atoms for nonstandard nucleic acid " + na3.toString());
+                break;
+        }
+    }
+
+    private static void renameCommonNucleicAcid(Residue residue, NucleicAcid3 na3) {
+        Optional<Atom> optO4s = findNucleotideO4s(residue);
+        if (optO4s.isPresent()) {
+            // Name O4', which is the unique ether oxygen.
+            Atom O4s = optO4s.get();
+            O4s.setName("O4\'");
+
+            // C1' is bonded to a nitrogen (at least for non-abasic sites), C4' isn't
+            List<Atom> bondedC = findBondedAtoms(O4s, 6);
+            Atom C4s = null;
+            Atom C1s = null;
+            // Will need the first base nitrogen (N1/N9), and H1' later.
+            Atom N19 = null;
+            Atom H1s = null;
+            for (Atom c : bondedC) {
+                if (hasAttachedAtom(c, 7)) {
+                    C1s = c;
+                    C1s.setName("C1\'");
+                    H1s = findBondedAtoms(C1s, 1).get(0);
+                    H1s.setName("H1\'");
+                    N19 = findBondedAtoms(C1s, 7).get(0);
+                } else {
+                    C4s = c;
+                    C4s.setName("C4\'");
+                    findBondedAtoms(C4s, 1).get(0).setName("H4\'");
+                }
+            }
+            assert C4s != null && C1s != null;
+
+            Atom C2s = findBondedAtoms(C1s, 6).get(0);
+            C2s.setName("C2\'");
+
+            bondedC = findBondedAtoms(C4s, 6);
+            Atom C5s = null;
+            Atom C3s = null;
+            Atom O3s = null;
+            for (Atom c : bondedC) {
+                if (c.getBonds().stream().anyMatch(b -> b.get1_2(c) == C2s)) {
+                    C3s = c;
+                    C3s.setName("C3\'");
+                    O3s = findBondedAtoms(C3s, 8).get(0);
+                    O3s.setName("O3\'");
+                    findBondedAtoms(C3s, 1).get(0).setName("H3\'");
+                    if (hasAttachedAtom(O3s, 1)) {
+                        findBondedAtoms(O3s, 1).get(0).setName("HO3\'");
+                    } // Else, handle the possibility of 3'-P cap later.
+                } else {
+                    C5s = c;
+                    C5s.setName("C5\'");
+                    List<Atom> allH5List = findBondedAtoms(C5s, 1);
+                    Atom[] allH5s = allH5List.toArray(new Atom[allH5List.size()]);
+                    sortAtomsByDistance(O4s, allH5s);
+                    allH5s[0].setName("H5\'");
+                    allH5s[1].setName("H5\'\'");
+                }
+            }
+
+            boolean deoxy;
+            if (hasAttachedAtom(C2s, 8)) {
+                deoxy = false;
+                Atom O2s = findBondedAtoms(C2s, 8).get(0);
+                O2s.setName("O2\'");
+                findBondedAtoms(O2s, 1).get(0).setName("HO2\'");
+                findBondedAtoms(C2s, 1).get(0).setName("H2\'");
+            } else {
+                deoxy = true;
+                List<Atom> bothH2List = findBondedAtoms(C2s, 1);
+                Atom[] bothH2 = bothH2List.toArray(new Atom[bothH2List.size()]);
+                sortAtomsByDistance(H1s, bothH2);
+                // Best-guess assignment, but is sometimes the other way around.
+                bothH2[0].setName("H2\'\'");
+                bothH2[1].setName("H2\'");
+            }
+
+            logger.info(String.format(" C5\' null: %b", C5s == null));
+            Atom O5s = findBondedAtoms(C5s, 8).get(0);
+            O5s.setName("O5\'");
+
+            if (hasAttachedAtom(O5s, 1)) {
+                findBondedAtoms(O5s, 1).get(0).setName("HO5\'");
+            } else if (hasAttachedAtom(O5s, 15)) {
+                Atom P = findBondedAtoms(O5s, 15).get(0);
+                P.setName("P");
+                List<Atom> bondedO = findBondedAtoms(P, O5s, 8);
+                List<Atom> thisResO = bondedO.stream().
+                        filter(o -> residue.getAtomList().contains(o)).
+                        collect(Collectors.toList());
+                int nBonded = bondedO.size();
+                int nRes = thisResO.size();
+
+                if (nBonded == 0) {
+                    // Do nothing.
+                } else if (nBonded == nRes) {
+                    Atom OP1 = bondedO.get(0);
+                    OP1.setName("OP1");
+
+                    // OP2 is approximately +120 degrees from OP1, OP3 is -120 degrees.
+                    final double[] xyzC5s = C5s.getXYZ(new double[3]);
+                    final double[] xyzO5s = O5s.getXYZ(new double[3]);
+                    final double[] xyzP = P.getXYZ(new double[3]);
+                    final double[] xyzOP1 = OP1.getXYZ(new double[3]);
+                    double dihedral = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzOP1);
+                    double twoPiOver3 = 2.0 * Math.PI / 3.0;
+                    double target = Crystal.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
+                    List<Atom> otherO = bondedO.stream().
+                        filter(o -> o != OP1).
+                        sorted(Comparator.comparingDouble((Atom o) -> {
+                            double[] xyzO = o.getXYZ(new double[3]);
+                            double dihedO = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
+                            double diff = dihedO - target;
+                            double twoPi = 2 * Math.PI;
+                            diff = Crystal.modToRange(diff, 0, twoPi);
+                            diff = diff < Math.PI ? diff : twoPi - diff;
+                            return diff;
+                        })).collect(Collectors.toList());
+                    for (int i = 0; i < otherO.size(); i++) {
+                        otherO.get(i).setName(String.format("OP%d", i + 2));
+                    }
+                } else {
+                    Atom nextO3s = bondedO.stream().
+                            filter(o -> !residue.getAtomList().contains(o)).
+                            findAny().get();
+
+                    // OP1 is approximately +120 degrees from next O3', OP2 is -120 degrees.
+                    final double[] xyzC5s = C5s.getXYZ(new double[3]);
+                    final double[] xyzO5s = O5s.getXYZ(new double[3]);
+                    final double[] xyzP = P.getXYZ(new double[3]);
+                    final double[] xyzNextO3s = nextO3s.getXYZ(new double[3]);
+                    double dihedral = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzNextO3s);
+                    double twoPiOver3 = 2.0 * Math.PI / 3.0;
+                    double target = Crystal.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
+                    List<Atom> otherO = bondedO.stream().
+                            filter(o -> o != nextO3s).
+                            sorted(Comparator.comparingDouble((Atom o) -> {
+                                double[] xyzO = o.getXYZ(new double[3]);
+                                double dihedO = VectorMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
+                                double diff = dihedO - target;
+                                double twoPi = 2 * Math.PI;
+                                diff = Crystal.modToRange(diff, 0, twoPi);
+                                diff = diff < Math.PI ? diff : twoPi - diff;
+                                return diff;
+                            })).collect(Collectors.toList());
+                    for (int i = 0; i < otherO.size(); i++) {
+                        otherO.get(i).setName(String.format("OP%d", i + 1));
+                    }
+                }
+
+                for (Atom op : bondedO) {
+                    if (hasAttachedAtom(op, 1)) {
+                        findBondedAtoms(op, 1).get(0).setName("H" + op.getName());
+                    }
+                }
+                renameCommonNucleobase(residue, N19, C1s, na3);
+            }
+
+        } else {
+            logger.warning(" Could not find O4\' for residue " + residue);
+        }
+    }
+
+    /**
+     * Renames atoms common to all standard pyrimidines (C, T, U)
+     * @param N1 The N1 atom.
+     * @param C1s The C1' atom.
+     * @return A Map containing Atoms important to finding and naming base-unique atoms.
+     */
+    private static Map<String, Atom> renameCommonPyrimidine(Atom N1, Atom C1s) {
+        Map<String, Atom> keyAtoms = new HashMap<>();
+        N1.setName("N1");
+        for (Atom c : findBondedAtoms(N1, C1s, 6)) {
+            if (hasAttachedAtom(c, 8)) {
+                Atom C2 = c;
+                C2.setName("C2");
+                findBondedAtoms(C2, 8).get(0).setName("O2");
+                Atom N3 = findBondedAtoms(C2, N1, 7).get(0);
+                N3.setName("N3");
+                keyAtoms.put("N3", N3);
+                Atom C4 = findBondedAtoms(N3, C2, 6).get(0);
+                C4.setName("C4");
+                keyAtoms.put("C4", C4);
+                Atom C5 = findBondedAtoms(C4, 6).get(0);
+                C5.setName("C5");
+                keyAtoms.put("C5", C5);
+            } else {
+                Atom C6 = c;
+                C6.setName("C6");
+                findBondedAtoms(C6, 1).get(0).setName("H6");
+            }
+        }
+        /**
+         * Common atoms:
+         * N1, C2, O2, N3, C4, C5, C6, H6
+         */
+        return keyAtoms;
+    }
+
+    /**
+     * Renames atoms common to all standard purines (A, G)
+     * @param N9 The N9 atom.
+     * @param C1s The C1' atom.
+     * @return A Map containing Atoms important to finding and naming base-unique atoms.
+     */
+    private static Map<String, Atom> renameCommonPurine(Atom N9, Atom C1s) {
+        Map<String, Atom> keyAtoms = new HashMap<>(10);
+        N9.setName("N9");
+        for (Atom c : findBondedAtoms(N9, C1s, 6)) {
+            if (hasAttachedAtom(c, 1)) {
+                Atom C8 = c;
+                C8.setName("C8");
+                findBondedAtoms(C8, 1).get(0).setName("H8");
+                Atom N7 = findBondedAtoms(C8, N9, 7).get(0);
+                N7.setName("N7");
+                Atom C5 = findBondedAtoms(N7, C8, 6).get(0);
+                C5.setName("C5");
+            } else {
+                Atom C4 = c;
+                C4.setName("C4");
+                Atom N3 = findBondedAtoms(C4, N9, 7).get(0);
+                N3.setName("N3");
+                Atom C2 = findBondedAtoms(N3, C4, 6).get(0);
+                C2.setName("C2");
+                keyAtoms.put("C2", C2);
+                Atom N1 = findBondedAtoms(C2, N3, 7).get(0);
+                N1.setName("N1"); // And not, say, "largest non-nuclear explosion ever".
+                keyAtoms.put("N1", N1);
+                Atom C6 = findBondedAtoms(N1, C2, 6).get(0);
+                C6.setName("C6");
+                keyAtoms.put("C6", C6);
+            }
+        }
+        /**
+         * Common atoms:
+         * N1, C2, N3, C4, C5, C6, N7, C8, H8, N9.
+         */
+        return keyAtoms;
+    }
+
+    /**
+     * Renames the atoms of the common nucleobases (A, C, G, T, U, and deoxy variants).
+     *
+     * @param residue Nucleic acid to fix atom names of.
+     * @param N19 N1 of pyrimidines, N9 of purines.
+     * @param C1s C1' of the ribose sugar.
+     * @param na3 Identity of the nucleic acid.
+     */
+    private static void renameCommonNucleobase(Residue residue, Atom N19, Atom C1s, NucleicAcid3 na3) {
+        switch (na3) {
+            case ADE:
+            case DAD:
+            {
+                Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
+                // Unique to A: H2, N6, H6[12]
+                findBondedAtoms(purineBase.get("C2"), 1).get(0).setName("H2");
+                Atom C6 = purineBase.get("C6");
+                Atom N1 = purineBase.get("N1");
+                Atom N6 = findBondedAtoms(C6, N1, 7).get(0);
+                N6.setName("N6");
+                List<Atom> allH6List = findBondedAtoms(N6, 1);
+                Atom[] allH6 = sortAtomsByDistance(N1, allH6List);
+                allH6[0].setName("H61");
+                allH6[1].setName("H62");
+            }
+            break;
+            case CYT:
+            case DCY:
+            {
+                Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
+                // Unique to C: N4, H4[12]
+                Atom C4 = pyrimidineBase.get("C4");
+                Atom N3 = pyrimidineBase.get("N3");
+                Atom N4 = findBondedAtoms(C4, N3, 7).get(0);
+                N4.setName("N4");
+                Atom[] allH4 = sortAtomsByDistance(N3, findBondedAtoms(N4, 1));
+                allH4[0].setName("H41");
+                allH4[1].setName("H42");
+            }
+            break;
+            case GUA:
+            case DGU:
+            {
+                Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
+                // Unique to G: H1, N2, H2[12], O6
+                Atom N1 = purineBase.get("N1");
+                Atom C2 = purineBase.get("C2");
+                Atom C6 = purineBase.get("C6");
+                findBondedAtoms(N1, 1).get(0).setName("H1");
+                Atom N2 = findBondedAtoms(C2, N1, 7).
+                        stream().
+                        filter(n -> hasAttachedAtom(n, 1)).
+                        findAny().get();
+                N2.setName("N2");
+                Atom[] allH2 = sortAtomsByDistance(N1, findBondedAtoms(N2, 1));
+                allH2[0].setName("H21");
+                allH2[1].setName("H22");
+                findBondedAtoms(C6, 8).get(0).setName("O6");
+            }
+            break;
+            case URI:
+            {
+                Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
+                // Unique to U: H3, O4
+                findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
+                findBondedAtoms(pyrimidineBase.get("C4"), 8).get(0).setName("O4");
+            }
+            break;
+            case THY:
+            case DTY:
+            {
+                Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
+                // Unique to T: H3, O4, C7
+                findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
+                findBondedAtoms(pyrimidineBase.get("C4"), 8).get(0).setName("O4");
+                Atom C5 = pyrimidineBase.get("C5");
+                for (Atom c : findBondedAtoms(C5, 6)) {
+                    List<Atom> bondedH = findBondedAtoms(c, 1);
+                    if (bondedH != null && bondedH.size() == 3) {
+                        c.setName("C7");
+                        for (int i = 0; i < 3; i++) {
+                            bondedH.get(i).setName(String.format("H7%d", i+1));
+                        }
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    /**
+     * Find the O4' of a nucleic acid Residue. This is fairly unique in standard nucleotides,
+     * as O4' is the only ether oxygen (bonded to two carbons).
+     * @param residue Residue to find O4' of.
+     * @return O4'.
+     */
+    private static Optional<Atom> findNucleotideO4s(Residue residue) {
+        assert residue.getResidueType() == Residue.ResidueType.NA;
+        return findAtomsOfElement(residue, 8).
+                stream().
+                filter(o -> findBondedAtoms(o, 6).size() == 2).
+                findAny();
     }
 
     public static class Mutation {
