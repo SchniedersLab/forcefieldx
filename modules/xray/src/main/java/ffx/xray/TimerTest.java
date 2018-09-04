@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -60,7 +60,12 @@ import ffx.xray.parsers.CIFFilter;
 import ffx.xray.parsers.MTZFilter;
 
 /**
- * @author Timothy D. Fenn and Michael J. Schnieders
+ * <p>TimerTest class.</p>
+ *
+ * @author Timothy D. Fenn
+ * @author Michael J. Schnieders
+ *
+ * @since 1.0
  */
 public class TimerTest {
 
@@ -70,6 +75,11 @@ public class TimerTest {
     private static ReflectionList reflectionList;
     private static ParallelTeam parallelTeam;
 
+    /**
+     * <p>main.</p>
+     *
+     * @param args an array of {@link java.lang.String} objects.
+     */
     public static void main(String args[]) {
         // Parameters collection from original Timer script
         String pdbname = System.getProperty("pdbFile", "1N7S.pdb");
@@ -82,7 +92,7 @@ public class TimerTest {
         final double sigmaA = 0.9336853524690557;
         final double sigmaW = 0.13192537249786418;
 
-        boolean ci = System.getProperty("ffx.ci","false").equalsIgnoreCase("true");
+        boolean ci = System.getProperty("ffx.ci", "false").equalsIgnoreCase("true");
         if (!ci && ciOnly) {
             crystalStats = null;
             return;
@@ -170,7 +180,7 @@ public class TimerTest {
         crystalStats = new CrystalStats(reflectionList, refinementData);
 
         scaleBulkMinimize = new ScaleBulkMinimize(reflectionList, refinementData,
-                        refinementData.crs_fs, parallelTeam);
+                refinementData.crs_fs, parallelTeam);
         ScaleBulkEnergy scaleBulkEnergy = scaleBulkMinimize.getScaleBulkEnergy();
         int n = scaleBulkMinimize.getNumberOfVariables();
         double x[] = new double[n];
@@ -181,7 +191,7 @@ public class TimerTest {
         double delta = 1.0e-4;
         double tolerance = 1.0e-4;
 
-        logger.info(String.format("SCATTER TEST"));   
+        logger.info(String.format("SCATTER TEST"));
         for (int i = 0; i < 30; i++) {
             long time = -System.nanoTime();
             scaleBulkEnergy.energyAndGradient(x, g);

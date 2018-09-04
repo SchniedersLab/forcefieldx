@@ -38,6 +38,7 @@
 package ffx.xray.cli;
 
 import ffx.xray.RefinementMinimize;
+
 import picocli.CommandLine;
 
 /**
@@ -53,10 +54,6 @@ public abstract class DataRefinementOptions {
      */
     protected RefinementMinimize.RefinementMode refinementMode = RefinementMinimize.RefinementMode.COORDINATES;
 
-    /*public void init() {
-        refinementMode = RefinementMinimize.parseMode(modeString);
-    }*/
-
     /**
      * --wA or --dataWeight The weight of the data (wA).
      */
@@ -64,10 +61,13 @@ public abstract class DataRefinementOptions {
             description = "The weight of the real space data (wA).")
     protected double wA = 1.0;
 
+    /**
+     * <p>Getter for the field <code>wA</code>.</p>
+     *
+     * @return a double.
+     */
     public double getwA() {
         return wA;
     }
 
-    // TODO: Make DiffractionData and RealSpaceData implement the same interface.
-    // TODO: Create public abstract List<ThatFileType> processData(List<String> filenames, MolecularAssembly systems[])
 }

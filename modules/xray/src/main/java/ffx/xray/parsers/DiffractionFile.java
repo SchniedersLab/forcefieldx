@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -54,6 +54,7 @@ import ffx.potential.MolecularAssembly;
  *
  * @author Timothy D. Fenn
  *
+ * @since 1.0
  */
 public class DiffractionFile {
 
@@ -117,10 +118,10 @@ public class DiffractionFile {
 
     /**
      * read in a diffraction file based on the molecular assembly fileName,
- using a weight of 1.0 and neutron value of false
+     * using a weight of 1.0 and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
- fileName will be determined
+     * fileName will be determined
      */
     public DiffractionFile(MolecularAssembly assembly[]) {
         this(assembly[0], 1.0, false);
@@ -148,16 +149,16 @@ public class DiffractionFile {
      * @param neutron a boolean.
      */
     public DiffractionFile(MolecularAssembly assembly[], double weight,
-            boolean neutron) {
+                           boolean neutron) {
         this(assembly[0], weight, neutron);
     }
 
     /**
      * read in a diffraction file based on the molecular assembly fileName,
- using a weight of 1.0 and neutron value of false
+     * using a weight of 1.0 and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
- fileName will be determined
+     * fileName will be determined
      */
     public DiffractionFile(MolecularAssembly assembly) {
         this(assembly, 1.0, false);
@@ -165,10 +166,10 @@ public class DiffractionFile {
 
     /**
      * read in a diffraction file based on the molecular assembly fileName,
- using a neutron value of false
+     * using a neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
- fileName will be determined
+     * fileName will be determined
      * @param weight the weight of the data
      */
     public DiffractionFile(MolecularAssembly assembly, double weight) {
@@ -177,15 +178,15 @@ public class DiffractionFile {
 
     /**
      * read in a diffraction file based on the molecular assembly fileName,
- using a weight of 1.0 and neutron value of false
+     * using a weight of 1.0 and neutron value of false
      *
      * @param assembly {@link ffx.potential.MolecularAssembly} from which a
- fileName will be determined
+     * fileName will be determined
      * @param weight the weight of the data
      * @param neutron if true, this is a neutron data set
      */
     public DiffractionFile(MolecularAssembly assembly, double weight,
-            boolean neutron) {
+                           boolean neutron) {
         String name = removeExtension(assembly.getFile().getPath());
 
         File tmp = new File(name + ".mtz");
@@ -259,6 +260,8 @@ public class DiffractionFile {
     }
 
     /**
+     * <p>getFilename.</p>
+     *
      * @return the fileName
      */
     public String getFilename() {
@@ -266,6 +269,8 @@ public class DiffractionFile {
     }
 
     /**
+     * <p>getDiffractionfilter.</p>
+     *
      * @return the diffractionFilter
      */
     public DiffractionFileFilter getDiffractionfilter() {

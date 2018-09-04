@@ -420,6 +420,8 @@ public class RotamerOptimizationTest extends PJDependentTest {
         rotamerOptimization.setPruning(pruningLevel);
         rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
+        rotamerOptimization.setSingletonClashThreshold(20.0);
+        rotamerOptimization.setPairClashThreshold(20.0);
 
         double energy;
         int nRes = residueList.size();
@@ -722,6 +724,8 @@ public class RotamerOptimizationTest extends PJDependentTest {
         rotamerOptimization.setPruning(pruningLevel);
         rotamerOptimization.setEnergyRestartFile(restartFile);
         rotamerOptimization.setResidues(residueList);
+        rotamerOptimization.setSingletonClashThreshold(20.0);
+        rotamerOptimization.setPairClashThreshold(20.0);
 
         double energy;
         int nRes = residueList.size();

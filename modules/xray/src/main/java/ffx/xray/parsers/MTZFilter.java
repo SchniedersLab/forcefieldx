@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -75,17 +75,14 @@ import ffx.xray.parsers.MTZWriter.MTZType;
  * This class parses CCP4 MTZ files.<br>
  *
  * @author Timothy D. Fenn<br>
+ *
  * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
  * map format</a>
  *
  * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
  * target="_blank">CCP4 library documentation</a>
- * @see <a href="http://www.ccp4.ac.uk/html/maplib.html" target="_blank">CCP4
- * map format</a>
  *
- * @see <a href="http://www.ccp4.ac.uk/dist/html/library.html"
- * target="_blank">CCP4 library documentation</a>
- *
+ * @since 1.0
  */
 public class MTZFilter implements DiffractionFileFilter {
 
@@ -148,17 +145,13 @@ public class MTZFilter implements DiffractionFileFilter {
     public MTZFilter() {
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public ReflectionList getReflectionList(File mtzFile) {
         return getReflectionList(mtzFile, null);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public ReflectionList getReflectionList(File mtzFile, CompositeConfiguration properties) {
         ByteOrder byteOrder = ByteOrder.nativeOrder();
@@ -273,21 +266,17 @@ public class MTZFilter implements DiffractionFileFilter {
         return new ReflectionList(crystal, resolution, properties);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public double getResolution(File mtzFile, Crystal crystal) {
         ReflectionList reflectionList = getReflectionList(mtzFile, null);
         return reflectionList.maxres;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public boolean readFile(File mtzFile, ReflectionList reflectionList,
-            DiffractionRefinementData refinementData, CompositeConfiguration properties) {
+                            DiffractionRefinementData refinementData, CompositeConfiguration properties) {
         int nRead, nIgnore, nRes, nFriedel, nCut;
         ByteOrder byteOrder = ByteOrder.nativeOrder();
         FileInputStream fileInputStream;
@@ -557,7 +546,7 @@ public class MTZFilter implements DiffractionFileFilter {
      * each system.
      */
     public void averageFcs(File mtzFile1, File mtzFile2, ReflectionList reflectionlist,
-            int iter, CompositeConfiguration properties) {
+                           int iter, CompositeConfiguration properties) {
 
         DiffractionRefinementData fcdata1 = new DiffractionRefinementData(properties, reflectionlist);
         DiffractionRefinementData fcdata2 = new DiffractionRefinementData(properties, reflectionlist);
@@ -584,14 +573,14 @@ public class MTZFilter implements DiffractionFileFilter {
     /**
      * Read the structure factors.
      *
-     * @param mtzFile
-     * @param reflectionList
-     * @param fcData
-     * @param properties
-     * @return
+     * @param mtzFile a {@link java.io.File} object.
+     * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
+     * @param fcData a {@link ffx.xray.DiffractionRefinementData} object.
+     * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     * @return a boolean.
      */
     public boolean readFcs(File mtzFile, ReflectionList reflectionList,
-            DiffractionRefinementData fcData, CompositeConfiguration properties) {
+                           DiffractionRefinementData fcData, CompositeConfiguration properties) {
 
         int nRead, nIgnore, nRes, nFriedel, nCut;
         ByteOrder byteOrder = ByteOrder.nativeOrder();
@@ -1067,6 +1056,8 @@ public class MTZFilter implements DiffractionFileFilter {
     }
 
     /**
+     * <p>Getter for the field <code>nColumns</code>.</p>
+     *
      * @return the nColumns
      */
     public int getnColumns() {
@@ -1074,6 +1065,8 @@ public class MTZFilter implements DiffractionFileFilter {
     }
 
     /**
+     * <p>Getter for the field <code>nReflections</code>.</p>
+     *
      * @return the nReflections
      */
     public int getnReflections() {
@@ -1081,6 +1074,8 @@ public class MTZFilter implements DiffractionFileFilter {
     }
 
     /**
+     * <p>Getter for the field <code>spaceGroupNum</code>.</p>
+     *
      * @return the spaceGroupNum
      */
     public int getSpaceGroupNum() {

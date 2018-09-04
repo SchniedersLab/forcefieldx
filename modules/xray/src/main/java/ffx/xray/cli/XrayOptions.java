@@ -51,8 +51,8 @@ import ffx.xray.RefinementMinimize;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.DiffractionFile;
 
-import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParseResult;
 
 /**
  * Represents command line options for scripts that utilize X-ray data with a maximum likelihood target.
@@ -197,6 +197,12 @@ public class XrayOptions extends DataRefinementOptions {
         solventModel = CrystalReciprocalSpace.parseSolventModel(solventString);
     }
 
+    /**
+     * <p>setProperties.</p>
+     *
+     * @param parseResult a {@link picocli.CommandLine.ParseResult} object.
+     * @param properties  a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     */
     public void setProperties(ParseResult parseResult, CompositeConfiguration properties) {
         // wA
         if (!parseResult.hasMatchedOption("wA")) {

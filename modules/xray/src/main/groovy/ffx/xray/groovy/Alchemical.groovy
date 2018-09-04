@@ -1,7 +1,5 @@
 package ffx.xray.groovy
 
-import ffx.algorithms.AbstractOSRW
-
 import java.util.logging.Logger
 
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -9,6 +7,7 @@ import org.apache.commons.io.FilenameUtils
 
 import edu.rit.pj.Comm
 
+import ffx.algorithms.AbstractOSRW
 import ffx.algorithms.MolecularDynamics
 import ffx.algorithms.TransitionTemperedOSRW
 import ffx.algorithms.cli.AlgorithmsScript
@@ -62,7 +61,7 @@ class Alchemical extends AlgorithmsScript {
      */
     @Option(names = ["--itype", "--iontype"], paramLabel = 'null',
             description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
-    String [] iontype = null
+    String[] iontype = null
 
     /**
      * -N or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
@@ -216,7 +215,7 @@ class Alchemical extends AlgorithmsScript {
                             ionCharge += atom.multipoleType.getCharge()
                         }
                         logger.info("Ion charge is: " + ionCharge.toString())
-                        int numIons = (int) -1*(Math.ceil(crystalCharge/ionCharge))
+                        int numIons = (int) -1 * (Math.ceil(crystalCharge / ionCharge))
                         if (numIons > 0) {
                             logger.info(numIons + " " + msNode.getAtomList().name
                                     + " ions needed to neutralize the crystal.")
@@ -228,8 +227,7 @@ class Alchemical extends AlgorithmsScript {
                                 logger.info(" Alchemical atom: " + atom.toString())
                             }
                         }
-                    }
-                    else {
+                    } else {
                         ionType = msNode.getAtomList().name
                         for (Atom atom : msNode.getAtomList()) {
                             atom.setUse(true)

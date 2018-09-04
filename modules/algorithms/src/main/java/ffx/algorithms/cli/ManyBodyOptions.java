@@ -280,11 +280,11 @@ public class ManyBodyOptions {
 
     /**
      * -bB or --boxBorderSize Extent of overlap between optimization boxes in
-     * Angstroms (default: 3.0).
+     * Angstroms (default: 0.0).
      */
-    @Option(names = {"--bB", "--boxBorderSize"}, paramLabel = "3.0",
+    @Option(names = {"--bB", "--boxBorderSize"}, paramLabel = "0.0",
             description = "Extent of overlap between optimization boxes in Angstroms.")
-    double boxBorderSize = 3.0;
+    double boxBorderSize = 0.0;
 
     /**
      * -bL or --approxBoxLength Approximate side lengths of boxes to be
@@ -292,9 +292,9 @@ public class ManyBodyOptions {
      * whole number of boxes along each axis (default of 0 disables this
      * function).
      */
-    @Option(names = {"--bL", "--approxBoxLength"}, paramLabel = "10.0",
+    @Option(names = {"--bL", "--approxBoxLength"}, paramLabel = "20.0",
             description = "Approximate side lengths of boxes to be constructed (over-rides numXYZBoxes).")
-    double approxBoxLength = 10.0;
+    double approxBoxLength = 20.0;
 
     /**
      * -bC or --boxInclusionCriterion Criterion to use for adding residues to

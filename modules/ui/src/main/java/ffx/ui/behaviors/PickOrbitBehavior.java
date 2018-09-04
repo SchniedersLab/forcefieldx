@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -69,7 +69,7 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * @param pickMode a int.
      */
     public PickOrbitBehavior(BranchGroup root, Canvas3D canvas, Bounds bounds,
-            TransformGroup VPTG, int pickMode) {
+                             TransformGroup VPTG, int pickMode) {
         super(canvas, root, bounds);
         orbit = new MouseOrbit(MouseOrbit.MANUAL_WAKEUP, VPTG);
         orbit.setTransformGroup(currGrp);
@@ -82,6 +82,7 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
     /*
      * Return the pickMode component of this PickTranslateBehavior.
      */
+
     /**
      * <p>
      * getPickMode</p>
@@ -96,6 +97,7 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * Sets the pickMode component of this PickTranslateBehavior to the value of
      * the passed pickMode. @param pickMode the pickMode to be copied.
      */
+
     /**
      * <p>
      * setPickMode</p>
@@ -121,6 +123,7 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * Register the class @param callback to be called each time the picked
      * object moves
      */
+
     /**
      * <p>
      * setupCallback</p>
@@ -140,6 +143,7 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * Callback method from MouseOrbit This is used when the Picking callback is
      * enabled
      */
+
     /**
      * {@inheritDoc}
      */
@@ -167,6 +171,7 @@ public class PickOrbitBehavior extends PickMouseBehavior implements
      * you know what you are doing.
      * @param xpos Current mouse X pos. @param ypos Current mouse Y pos.
      */
+
     /**
      * {@inheritDoc}
      */

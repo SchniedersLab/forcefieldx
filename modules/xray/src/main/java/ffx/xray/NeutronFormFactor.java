@@ -1,29 +1,29 @@
 /**
  * Title: Force Field X.
- *
+ * <p>
  * Description: Force Field X - Software for Molecular Biophysics.
- *
+ * <p>
  * Copyright: Copyright (c) Michael J. Schnieders 2001-2018.
- *
+ * <p>
  * This file is part of Force Field X.
- *
+ * <p>
  * Force Field X is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
  * the Free Software Foundation.
- *
+ * <p>
  * Force Field X is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
  * details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License along with
  * Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * <p>
  * Linking this library statically or dynamically with other modules is making a
  * combined work based on this library. Thus, the terms and conditions of the
  * GNU General Public License cover the whole combination.
- *
+ * <p>
  * As a special exception, the copyright holders of this library give you
  * permission to link this library with independent modules to produce an
  * executable, regardless of the license terms of these independent modules, and
@@ -66,26 +66,7 @@ import static ffx.numerics.VectorMath.vec3Mat3;
  * chapter 4.4.4.
  *
  * @author Timothy D. Fenn<br>
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
- * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
  *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000600"
- * target="_blank"> B. T. M. Willis, Int. Tables Vol. C (2006). Chapter
- * 6.1.3</a>
- *
- * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
- * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst.
- * (2009). D65 952-965.</a>
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
- * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
- *
- * @see <a href="http://dx.doi.org/10.1107/97809553602060000600"
- * target="_blank"> B. T. M. Willis, Int. Tables Vol. C (2006). Chapter
- * 6.1.3</a>
- *
- * @see <a href="http://dx.doi.org/10.1107/S0907444909022707" target="_blank">
- * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst.
- * (2009). D65 952-965.</a>
  * @see <a href="http://dx.doi.org/10.1107/97809553602060000594"
  * target="_blank"> V. F. Sears, Int. Tables Vol. C (2006). Table 4.4.4.1</a>
  *
@@ -97,6 +78,7 @@ import static ffx.numerics.VectorMath.vec3Mat3;
  * M. J. Schnieders, T. D. Fenn, V. S. Pande and A. T. Brunger, Acta Cryst.
  * (2009). D65 952-965.</a>
  *
+ * @since 1.0
  */
 public final class NeutronFormFactor implements FormFactor {
 
@@ -114,106 +96,106 @@ public final class NeutronFormFactor implements FormFactor {
     private static final double u23[][] = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
     private static final HashMap<String, double[][]> formfactors = new HashMap<>();
     private static final String[] atoms = {"H", "D", "He", "Li", "Be", "B", "C",
-        "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K",
-        "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga",
-        "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Ru",
-        "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba",
-        "La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm",
-        "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl",
-        "Pb", "Bi", "Th", "U"};
+            "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K",
+            "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga",
+            "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Ru",
+            "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba",
+            "La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm",
+            "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl",
+            "Pb", "Bi", "Th", "U"};
     private static final String[] atomsi = {"1_1", "1_2", "2", "3", "4", "5", "6",
-        "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
-        "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31",
-        "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "44",
-        "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56",
-        "57", "58", "59", "60", "62", "63", "64", "65", "66", "67", "68", "69",
-        "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81",
-        "82", "83", "90", "92"};
+            "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
+            "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31",
+            "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "44",
+            "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56",
+            "57", "58", "59", "60", "62", "63", "64", "65", "66", "67", "68", "69",
+            "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81",
+            "82", "83", "90", "92"};
     private static final double[][][] ffactors = {
-        {{0}, {-3.7390, 0.0}},
-        {{1}, {6.671, 0.0}},
-        {{2}, {3.26, 0.0}},
-        {{3}, {-1.90, 0.0}},
-        {{4}, {7.79, 0.0}},
-        {{5}, {5.30, 0.213}},
-        {{6}, {6.6460, 0.0}},
-        {{7}, {9.36, 0.0}},
-        {{8}, {5.803, 0.0}},
-        {{9}, {5.654, 0.0}},
-        {{10}, {4.566, 0.0}},
-        {{11}, {3.63, 0.0}},
-        {{12}, {5.375, 0.0}},
-        {{13}, {3.449, 0.0}},
-        {{14}, {4.1491, 0.0}},
-        {{15}, {5.13, 0.0}},
-        {{16}, {2.847, 0.0}},
-        {{17}, {9.5770, 0.0}},
-        {{18}, {1.909, 0.0}},
-        {{19}, {3.67, 0.0}},
-        {{20}, {4.70, 0.0}},
-        {{21}, {12.29, 0.0}},
-        {{22}, {-3.370, 0.0}},
-        {{23}, {-0.3824, 0.0}},
-        {{24}, {3.635, 0.0}},
-        {{25}, {-3.750, 0.0}},
-        {{26}, {9.45, 0.0}},
-        {{27}, {2.49, 0.0}},
-        {{28}, {10.3, 0.0}},
-        {{29}, {7.718, 0.0}},
-        {{30}, {5.60, 0.0}},
-        {{31}, {7.288, 0.0}},
-        {{32}, {8.185, 0.0}},
-        {{33}, {6.58, 0.0}},
-        {{34}, {7.970, 0.0}},
-        {{35}, {6.795, 0.0}},
-        {{36}, {7.81, 0.0}},
-        {{37}, {7.09, 0.0}},
-        {{38}, {7.02, 0.0}},
-        {{39}, {7.75, 0.0}},
-        {{40}, {7.16, 0.0}},
-        {{41}, {7.054, 0.0}},
-        {{42}, {6.715, 0.0}},
-        {{43}, {7.03, 0.0}},
-        {{44}, {5.88, 0.0}},
-        {{45}, {5.91, 0.0}},
-        {{46}, {5.922, 0.0}},
-        {{47}, {4.87, -0.70}},
-        {{48}, {2.08, -0.0539}},
-        {{49}, {6.225, 0.0}},
-        {{50}, {5.57, 0.0}},
-        {{51}, {5.80, 0.0}},
-        {{52}, {5.28, 0.0}},
-        {{53}, {4.92, 0.0}},
-        {{54}, {5.42, 0.0}},
-        {{55}, {5.07, 0.0}},
-        {{56}, {8.24, 0.0}},
-        {{57}, {4.84, 0.0}},
-        {{58}, {4.58, 0.0}},
-        {{59}, {7.69, 0.0}},
-        {{60}, {0.80, -1.65}},
-        {{61}, {7.22, -1.26}},
-        {{62}, {6.5, -13.82}},
-        {{63}, {7.38, 0.0}},
-        {{64}, {16.9, -0.276}},
-        {{65}, {8.01, 0.0}},
-        {{66}, {7.79, 0.0}},
-        {{67}, {7.07, 0.0}},
-        {{68}, {12.43, 0.0}},
-        {{69}, {7.21, 0.0}},
-        {{70}, {7.77, 0.0}},
-        {{71}, {6.91, 0.0}},
-        {{72}, {4.86, 0.0}},
-        {{73}, {9.2, 0.0}},
-        {{74}, {10.7, 0.0}},
-        {{75}, {10.6, 0.0}},
-        {{76}, {9.60, 0.0}},
-        {{77}, {7.63, 0.0}},
-        {{78}, {12.692, 0.0}},
-        {{79}, {8.776, 0.0}},
-        {{80}, {9.405, 0.0}},
-        {{81}, {8.532, 0.0}},
-        {{82}, {10.31, 0.0}},
-        {{83}, {8.417, 0.0}}
+            {{0}, {-3.7390, 0.0}},
+            {{1}, {6.671, 0.0}},
+            {{2}, {3.26, 0.0}},
+            {{3}, {-1.90, 0.0}},
+            {{4}, {7.79, 0.0}},
+            {{5}, {5.30, 0.213}},
+            {{6}, {6.6460, 0.0}},
+            {{7}, {9.36, 0.0}},
+            {{8}, {5.803, 0.0}},
+            {{9}, {5.654, 0.0}},
+            {{10}, {4.566, 0.0}},
+            {{11}, {3.63, 0.0}},
+            {{12}, {5.375, 0.0}},
+            {{13}, {3.449, 0.0}},
+            {{14}, {4.1491, 0.0}},
+            {{15}, {5.13, 0.0}},
+            {{16}, {2.847, 0.0}},
+            {{17}, {9.5770, 0.0}},
+            {{18}, {1.909, 0.0}},
+            {{19}, {3.67, 0.0}},
+            {{20}, {4.70, 0.0}},
+            {{21}, {12.29, 0.0}},
+            {{22}, {-3.370, 0.0}},
+            {{23}, {-0.3824, 0.0}},
+            {{24}, {3.635, 0.0}},
+            {{25}, {-3.750, 0.0}},
+            {{26}, {9.45, 0.0}},
+            {{27}, {2.49, 0.0}},
+            {{28}, {10.3, 0.0}},
+            {{29}, {7.718, 0.0}},
+            {{30}, {5.60, 0.0}},
+            {{31}, {7.288, 0.0}},
+            {{32}, {8.185, 0.0}},
+            {{33}, {6.58, 0.0}},
+            {{34}, {7.970, 0.0}},
+            {{35}, {6.795, 0.0}},
+            {{36}, {7.81, 0.0}},
+            {{37}, {7.09, 0.0}},
+            {{38}, {7.02, 0.0}},
+            {{39}, {7.75, 0.0}},
+            {{40}, {7.16, 0.0}},
+            {{41}, {7.054, 0.0}},
+            {{42}, {6.715, 0.0}},
+            {{43}, {7.03, 0.0}},
+            {{44}, {5.88, 0.0}},
+            {{45}, {5.91, 0.0}},
+            {{46}, {5.922, 0.0}},
+            {{47}, {4.87, -0.70}},
+            {{48}, {2.08, -0.0539}},
+            {{49}, {6.225, 0.0}},
+            {{50}, {5.57, 0.0}},
+            {{51}, {5.80, 0.0}},
+            {{52}, {5.28, 0.0}},
+            {{53}, {4.92, 0.0}},
+            {{54}, {5.42, 0.0}},
+            {{55}, {5.07, 0.0}},
+            {{56}, {8.24, 0.0}},
+            {{57}, {4.84, 0.0}},
+            {{58}, {4.58, 0.0}},
+            {{59}, {7.69, 0.0}},
+            {{60}, {0.80, -1.65}},
+            {{61}, {7.22, -1.26}},
+            {{62}, {6.5, -13.82}},
+            {{63}, {7.38, 0.0}},
+            {{64}, {16.9, -0.276}},
+            {{65}, {8.01, 0.0}},
+            {{66}, {7.79, 0.0}},
+            {{67}, {7.07, 0.0}},
+            {{68}, {12.43, 0.0}},
+            {{69}, {7.21, 0.0}},
+            {{70}, {7.77, 0.0}},
+            {{71}, {6.91, 0.0}},
+            {{72}, {4.86, 0.0}},
+            {{73}, {9.2, 0.0}},
+            {{74}, {10.7, 0.0}},
+            {{75}, {10.6, 0.0}},
+            {{76}, {9.60, 0.0}},
+            {{77}, {7.63, 0.0}},
+            {{78}, {12.692, 0.0}},
+            {{79}, {8.776, 0.0}},
+            {{80}, {9.405, 0.0}},
+            {{81}, {8.532, 0.0}},
+            {{82}, {10.31, 0.0}},
+            {{83}, {8.417, 0.0}}
     };
 
     static {
@@ -221,6 +203,7 @@ public final class NeutronFormFactor implements FormFactor {
             formfactors.put(atomsi[i], ffactors[i]);
         }
     }
+
     private final Atom atom;
     protected final int ffindex;
     private final double xyz[] = new double[3];
@@ -374,9 +357,7 @@ public final class NeutronFormFactor implements FormFactor {
         return occ * sum;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public double rho(double f, double lambda, double xyz[]) {
         diff(this.xyz, xyz, xyz);
@@ -388,9 +369,7 @@ public final class NeutronFormFactor implements FormFactor {
         return f + (lambda * occ * twopi32 * sum);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void rhoGrad(double xyz[], double dfc, RefinementMode refinementmode) {
         diff(this.xyz, xyz, dxyz);
@@ -495,17 +474,13 @@ public final class NeutronFormFactor implements FormFactor {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[]) {
         update(xyz, u2b(uadd));
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public void update(double xyz[], double badd) {
         this.xyz[0] = xyz[0];

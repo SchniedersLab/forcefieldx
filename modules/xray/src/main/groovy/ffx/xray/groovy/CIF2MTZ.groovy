@@ -1,22 +1,22 @@
 package ffx.xray.groovy
 
-import ffx.numerics.Potential
-import ffx.xray.DiffractionRefinementData
+import java.util.stream.Collectors
+
 import org.apache.commons.io.FilenameUtils
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.crystal.Crystal
 import ffx.crystal.ReflectionList
 import ffx.crystal.Resolution
+import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
+import ffx.xray.DiffractionRefinementData
 import ffx.xray.parsers.CIFFilter
 import ffx.xray.parsers.MTZWriter
 import ffx.xray.parsers.MTZWriter.MTZType
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
-
-import java.util.stream.Collectors
 
 /**
  * The CIF2MTZ script saves a CIF file to MTZ format.

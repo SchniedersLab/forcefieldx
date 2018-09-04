@@ -146,7 +146,6 @@ import static ffx.utilities.StringUtils.pdbForID;
  * input/output and is used to pass references among the various sub-Panels.
  *
  * @author Michael J. Schnieders
- *
  */
 public final class MainPanel extends JPanel implements ActionListener,
         ChangeListener {
@@ -373,7 +372,7 @@ public final class MainPanel extends JPanel implements ActionListener,
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Handle most File, Selection, Trajectory, Simulation, Window and Help Menu
      * Commands This should probably be partitioned between a few different
      * handlers
@@ -621,7 +620,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * <p>
      * connectToTINKER</p>
      *
-     * @param system a {@link ffx.ui.FFXSystem} object.
+     * @param system         a {@link ffx.ui.FFXSystem} object.
      * @param modelingThread a {@link java.lang.Thread} object.
      */
     public void connectToTINKER(FFXSystem system, Thread modelingThread) {
@@ -901,7 +900,7 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Return the active SystemFilter.
      *
-     * @return
+     * @return the active SystemFilter.
      */
     public SystemFilter getFilter() {
         return activeFilter;
@@ -1318,7 +1317,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * merge</p>
      *
      * @param nodesToMerge an array of {@link ffx.potential.bonded.MSNode}
-     * objects.
+     *                     objects.
      */
     public void merge(MSNode[] nodesToMerge) {
         ArrayList<MSNode> activeNodes = new ArrayList<MSNode>();
@@ -1395,9 +1394,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Attempts to load the supplied file
      *
-     * @param file File to open
+     * @param file               File to open
      * @param commandDescription Description of the command that created this
-     * file.
+     *                           file.
      * @return a {@link java.lang.Thread} object.
      */
     private UIFileOpener openInit(File file, String commandDescription) {
@@ -1473,10 +1472,10 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Attempts to load from the supplied data structure
      *
-     * @param data Data structure to load from
-     * @param file Source file
+     * @param data               Data structure to load from
+     * @param file               Source file
      * @param commandDescription Description of the command that created this
-     * file.
+     *                           file.
      * @return A thread-based UIDataConverter
      */
     private UIDataConverter convertInit(Object data, File file, String commandDescription) {
@@ -1537,9 +1536,9 @@ public final class MainPanel extends JPanel implements ActionListener,
     /**
      * Attempts to load the supplied file
      *
-     * @param files Files to open
+     * @param files              Files to open
      * @param commandDescription Description of the command that created this
-     * file.
+     *                           file.
      * @return a {@link java.lang.Thread} object.
      */
     private UIFileOpener openInit(List<File> files, String commandDescription) {
@@ -1664,8 +1663,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      * <p>
      * openWait</p>
      *
-     * @param file a {@link java.lang.String} object.
-     * @param nThreads
+     * @param file     a {@link java.lang.String} object.
+     * @param nThreads the number of threads.
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
     public synchronized FFXSystem[] openWait(String file, int nThreads) {
@@ -1713,8 +1712,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      * <p>
      * openWait</p>
      *
-     * @param files an array of {@link java.lang.String} objects.
-     * @param nThreads
+     * @param files    an array of {@link java.lang.String} objects.
+     * @param nThreads the number of threads.
      * @return an array of {@link ffx.ui.FFXSystem} objects.
      */
     public synchronized FFXSystem[] openWait(String files[], int nThreads) {
@@ -2024,9 +2023,9 @@ public final class MainPanel extends JPanel implements ActionListener,
      * <p>
      * openOn</p>
      *
-     * @param f a {@link java.io.File} object.
+     * @param f         a {@link java.io.File} object.
      * @param oldSystem a {@link ffx.ui.FFXSystem} object.
-     * @param command a {@link java.lang.String} object.
+     * @param command   a {@link java.lang.String} object.
      */
     public void openOn(File f, FFXSystem oldSystem, String command) {
         XYZFilter.readOnto(f, oldSystem);
@@ -2355,8 +2354,8 @@ public final class MainPanel extends JPanel implements ActionListener,
      * saveAsPDB</p>
      *
      * @param activeSystems an array of {@link ffx.potential.MolecularAssembly}
-     * objects.
-     * @param file a {@link java.io.File} object.
+     *                      objects.
+     * @param file          a {@link java.io.File} object.
      */
     public void saveAsPDB(MolecularAssembly activeSystems[], File file) {
         File saveFile = file;
@@ -2666,7 +2665,7 @@ public final class MainPanel extends JPanel implements ActionListener,
      * normal execution, 1-99 will indicate fatal errors, 100-199 non-fatal
      * errors, and 200-254 other exit statuses. Presently, only 0, 1, 3, 100,
      * and 200 have been defined for FFX.
-     *
+     * <p>
      * When adding to this enumeration, avoid the ranges 2, 64-78, 126-128, 130,
      * 137, and 255 or greater (see http://tldp.org/LDP/abs/html/exitcodes.html
      * and the C/C++ standard /usr/include/sysexits.h).

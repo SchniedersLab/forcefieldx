@@ -1,13 +1,13 @@
 package ffx.xray.groovy
 
-import ffx.xray.DiffractionData
-import ffx.xray.RefinementEnergy
 import org.apache.commons.configuration2.CompositeConfiguration
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.TimerOptions
+import ffx.xray.DiffractionData
+import ffx.xray.RefinementEnergy
 import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.DiffractionFile
 

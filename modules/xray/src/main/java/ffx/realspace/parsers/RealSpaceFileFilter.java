@@ -47,6 +47,8 @@ import ffx.realspace.RealSpaceRefinementData;
  * RealSpaceFileFilter interface.</p>
  *
  * @author Timothy D. Fenn
+ *
+ * @since 1.0
  */
 public interface RealSpaceFileFilter {
 
@@ -54,9 +56,9 @@ public interface RealSpaceFileFilter {
      * <p>
      * getCrystal</p>
      *
-     * @param filename A {@link java.lang.String} object.
+     * @param filename   A {@link java.lang.String} object.
      * @param properties A
-     * {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+     *                   {@link org.apache.commons.configuration2.CompositeConfiguration} object.
      * @return A {@link ffx.crystal.Crystal} object.
      */
     Crystal getCrystal(String filename, CompositeConfiguration properties);
@@ -64,10 +66,10 @@ public interface RealSpaceFileFilter {
     /**
      * Read in a Real Space file.
      *
-     * @param filename File to read in.
-     * @param refinementData The {@link RealSpaceRefinementData} object to fill
-     * in.
-     * @param properties System properties.
+     * @param filename       File to read in.
+     * @param refinementData The {@link ffx.realspace.RealSpaceRefinementData} object to fill
+     *                       in.
+     * @param properties     System properties.
      * @return True if read in properly.
      */
     boolean readFile(String filename, RealSpaceRefinementData refinementData,
