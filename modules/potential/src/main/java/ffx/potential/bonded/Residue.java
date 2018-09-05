@@ -219,11 +219,12 @@ public class Residue extends MSGroup {
      *
      * @return Rotamers
      */
+    /**
     @Deprecated
     public Rotamer[] getRotamers() {
         logger.warning(" Deprecated code path; use Residue.getRotamers(RotamerLibrary library) instead!");
         return this.getRotamers(RotamerLibrary.getDefaultLibrary());
-    }
+    } */
 
     /**
      * Gets the Rotamers for this residue, potentially incorporating the
@@ -332,6 +333,24 @@ public class Residue extends MSGroup {
          * Return the rotamer array.
          */
         return rotamers;
+    }
+
+    /**
+     * Add a rotamer to this Residue's cached array of rotamers.
+     *
+     * @param rotamer The rotamer to add.
+     */
+    public void addRotamer(Rotamer rotamer) {
+        if (rotamers != null) {
+            Rotamer libRotamers[] = rotamers;
+            int nRots = libRotamers.length;
+            rotamers = new Rotamer[nRots + 1];
+            System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
+            rotamers[rotamers.length - 1] = rotamer;
+        } else {
+            rotamers = new Rotamer[1];
+            rotamers[0] = rotamer;
+        }
     }
 
     /**
