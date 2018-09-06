@@ -6366,12 +6366,12 @@ public class RotamerOptimization implements Terminatable {
                         double minForResK = Double.MAX_VALUE;
                         for (int rk = 0; rk < nrk; rk++) {
                             /**
-                             * If k,rk or j,rj-k,rk are not a part of valid
+                            * If k,rk or j,rj-k,rk are not a part of valid
                              * configuration space, continue. If i,riA-k,rk or
                              * i,riA-j,rj-k,rk are not valid for riA, continue.
                              */
                             if (check(k, rk) || check(j, rj, k, rk) || check(i, riA, k, rk)) {
-                                // Not yet implemented: check(i, riA, j, rj, k, rk) because no triples get eliminated.
+                               //Not yet implemented: check(i, riA, j, rj, k, rk) because no triples get eliminated.
                                 continue;
                             }
                             /**
@@ -6400,6 +6400,9 @@ public class RotamerOptimization implements Terminatable {
                         tripleDiff += minForResK;
                     }
                 }
+
+
+
                 double sumOverK = pairDiff + tripleDiff;
                 if (sumOverK < minForResJ) {
                     minForResJ = sumOverK;
@@ -7948,14 +7951,13 @@ public class RotamerOptimization implements Terminatable {
                             // so that pair should not be added to the pairs map.
                             if (checkNeighboringPair(i, j)) {
                                 //If inside the cutoff, set energy to previously computed value.
-                                if (!checkPairDistThreshold(i, ri, j, rj)) {
+                                //Gather distances and indices for printing.
+                                Residue residueI = residues[i];
+                                Residue residueJ = residues[j];
+                                int indexI = allResiduesList.indexOf(residueI);
+                                int indexJ = allResiduesList.indexOf(residueJ);
+                                if (!checkPairDistThreshold(indexI, ri, indexJ, rj)) {
                                     set2Body(i, ri, j, rj, energy);
-
-                                    //Gather distances and indices for printing.
-                                    Residue residueI = residues[i];
-                                    Residue residueJ = residues[j];
-                                    int indexI = allResiduesList.indexOf(residueI);
-                                    int indexJ = allResiduesList.indexOf(residueJ);
 
                                     double resDist = getResidueDistance(indexI, ri, indexJ, rj);
                                     String resDistString = format("large");
@@ -8055,15 +8057,15 @@ public class RotamerOptimization implements Terminatable {
                             // so that triple should not be added to the pairs map.
                             if (checkNeighboringTriple(i, j, k)) {
                                 //If within the cutoff, the energy should be set to the previously calculated energy.
-                                if (!checkTriDistThreshold(i, ri, j, rj, k, rk)) {
+                                Residue residueI = residues[i];
+                                Residue residueJ = residues[j];
+                                Residue residueK = residues[k];
+                                int indexI = allResiduesList.indexOf(residueI);
+                                int indexJ = allResiduesList.indexOf(residueJ);
+                                int indexK = allResiduesList.indexOf(residueK);
+                                if (!checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
                                     set3Body(residues, i, ri, j, rj, k, rk, energy);
 
-                                    Residue residueI = residues[i];
-                                    Residue residueJ = residues[j];
-                                    Residue residueK = residues[k];
-                                    int indexI = allResiduesList.indexOf(residueI);
-                                    int indexJ = allResiduesList.indexOf(residueJ);
-                                    int indexK = allResiduesList.indexOf(residueK);
                                     double rawDist = getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
                                     double resDist = get3BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk);
 
