@@ -250,4 +250,52 @@ public class ManyBodyTest extends PJDependentTest {
 
         manyBody.getManyBody().getRestartFile().delete();
     }
+
+
+
+    /**
+     * Tests the restart file functionality for box optimization. The test applies a 1.5 angstrom 2-body and 3-body cutoff but the restart
+     * file was generated using 2-body and 3-body cutoffs of 2 angstroms.
+     */
+    @Test
+    public void testManyBodyBoxRestart() throws IOException {
+        File restartBoxBackup = new File("src/main/java/ffx/algorithms/structures/5awl.restartBoxBackup");
+        File restart = new File("src/main/java/ffx/algorithms/structures/5awl.restart");
+        FileUtils.copyFile(restartBoxBackup, restart);
+
+        // Set-up the input arguments for the script.
+        String[] args = {"-a", "5", "--bL", "10", "--tC", "1.5", "-T", "--thC", "1.5", "--eR","src/main/java/ffx/algorithms/structures/5awl.restart",
+                "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+        binding.setVariable("args", args);
+
+        Path path = null;
+        try {
+            path = Files.createTempDirectory("ManyBodyTest");
+            manyBody.setSaveDir(path.toFile());
+        } catch (IOException e) {
+            Assert.fail(" Could not create a temporary directory.");
+        }
+
+        // Evaluate the script.
+        try{
+            manyBody.run();
+        } catch (Error error){
+            System.out.println(Utilities.stackTraceToString(error));
+        }
+
+        double expectedTotalPotential = -219.88365434;
+        double actualTotalPotential = manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+        Assert.assertEquals(actualTotalPotential, expectedTotalPotential, 1E-7);
+
+        // Delete all created directories and files.
+        try {
+            DirectoryUtils.deleteDirectoryTree(path);
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            Assert.fail(" Exception deleting files created by ManyBodyTest.");
+        }
+
+        manyBody.getManyBody().getRestartFile().delete();
+        manyBody.getManyBody().getPartial().delete();
+    }
 }
