@@ -219,11 +219,12 @@ public class Residue extends MSGroup {
      *
      * @return Rotamers
      */
+    /**
     @Deprecated
     public Rotamer[] getRotamers() {
         logger.warning(" Deprecated code path; use Residue.getRotamers(RotamerLibrary library) instead!");
         return this.getRotamers(RotamerLibrary.getDefaultLibrary());
-    }
+    } */
 
     /**
      * Gets the Rotamers for this residue, potentially incorporating the
@@ -332,6 +333,24 @@ public class Residue extends MSGroup {
          * Return the rotamer array.
          */
         return rotamers;
+    }
+
+    /**
+     * Add a rotamer to this Residue's cached array of rotamers.
+     *
+     * @param rotamer The rotamer to add.
+     */
+    public void addRotamer(Rotamer rotamer) {
+        if (rotamers != null) {
+            Rotamer libRotamers[] = rotamers;
+            int nRots = libRotamers.length;
+            rotamers = new Rotamer[nRots + 1];
+            System.arraycopy(libRotamers, 0, rotamers, 0, nRots);
+            rotamers[rotamers.length - 1] = rotamer;
+        } else {
+            rotamers = new Rotamer[1];
+            rotamers[0] = rotamer;
+        }
     }
 
     /**
@@ -755,7 +774,7 @@ public class Residue extends MSGroup {
                 na = null;
                 try {
                     if (name.length() >= 2) {
-                        na = NA3.valueOf(name);
+                        na = NA3.parse(name);
                     } else if (name.length() == 1) {
                         NA1 na1 = NA1.valueOf(name);
                         na = NA1toNA3.get(na1);
@@ -1440,6 +1459,54 @@ public class Residue extends MSGroup {
     public enum NA3 {
 
         A, C, G, U, DA, DC, DG, DT, MPO, DPO, TPO, UNK;
+
+        /**
+         * Best-guess parse of a String to an NA3.
+         * 
+         * @param name Parse to NA3.
+         * @return Corresponding NA3.
+         * @throws IllegalArgumentException For 'DU', which has no implemented NA3.
+         */
+        public static NA3 parse(String name) throws IllegalArgumentException {
+            // Only semi-abnormal cases: THY parses to DT instead of T, and DU throws an exception.
+            switch (name.toUpperCase()) {
+                case "ADE":
+                case "A":
+                    return A;
+                case "CYT":
+                case "C":
+                    return C;
+                case "GUA":
+                case "G":
+                    return G;
+                case "URI":
+                case "U":
+                    return U;
+                case "DAD":
+                case "DA":
+                    return DA;
+                case "DCY":
+                case "DC":
+                    return DC;
+                case "DGU":
+                case "DG":
+                    return DG;
+                case "DTY":
+                case "THY":
+                case "DT":
+                    return DT;
+                case "DU":
+                    throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
+                case "MPO":
+                    return MPO;
+                case "DPO":
+                    return DPO;
+                case "TPO":
+                    return TPO;
+                default:
+                    return UNK;
+            }
+        }
     }
 
     public enum ResidueType {

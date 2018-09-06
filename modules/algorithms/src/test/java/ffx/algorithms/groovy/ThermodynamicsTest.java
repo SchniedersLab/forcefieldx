@@ -69,6 +69,7 @@ import static org.junit.Assert.assertTrue;
 import ffx.algorithms.AbstractOSRW;
 import ffx.algorithms.PJDependentTest;
 import ffx.algorithms.TransitionTemperedOSRW;
+import ffx.algorithms.groovy.NewThermodynamics;
 import ffx.crystal.CrystalPotential;
 import ffx.potential.bonded.LambdaInterface;
 

@@ -8,7 +8,9 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Polymer
 import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
 
 import picocli.CommandLine.Command
@@ -67,19 +69,28 @@ class ManyBody extends AlgorithmsScript {
         activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false);
         potentialEnergy = activeAssembly.getPotentialEnergy();
 
-        RotamerOptimization rotamerOptimization = new RotamerOptimization(
-                activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener);
-        testing = getTesting();
+        // TODO: Check if a "rot" file exists; if so read it in and assign save rotamers to their respective residue.
+//        String chainName = "";
+//        int resID = 0;
+//        Polymer polymer = activeAssembly.getChain(chainName);
+//        Residue residue = polymer.getResidue(resID);
+//        Rotamer rotamer = null;
+//        residue.addRotamer(rotamer);
 
+
+        RotamerOptimization rotamerOptimization = new RotamerOptimization(
+                activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
+
+        testing = getTesting()
         if (testing) {
-            rotamerOptimization.turnRotamerSingleEliminationOff();
-            rotamerOptimization.turnRotamerPairEliminationOff();
+            rotamerOptimization.turnRotamerSingleEliminationOff()
+            rotamerOptimization.turnRotamerPairEliminationOff()
         }
 
         if (monteCarloTesting) {
-            rotamerOptimization.setMonteCarloTesting(true);
+            rotamerOptimization.setMonteCarloTesting(true)
         }
-        manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly);
+        manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
         ArrayList<Residue> residueList = rotamerOptimization.getResidues();
 
