@@ -409,7 +409,14 @@ public class JobFrontend
             System.err.println();
         }
 
-        if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
+        try {
+           Thread.sleep(10);
+        } catch (InterruptedException e) {
+           ;
+        }
+
+        // if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
+        if (false) {
             try {
                 // Remove all log handlers from the default logger.
                 java.util.logging.Logger defaultLogger = java.util.logging.LogManager.getLogManager().getLogger("");
