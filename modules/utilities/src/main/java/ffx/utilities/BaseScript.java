@@ -111,7 +111,12 @@ public class BaseScript extends Script {
         args = (String[]) context.getProperty("args");
 
         CommandLine commandLine = new CommandLine(this);
-        parseResult = commandLine.parseArgs(args);
+        try {
+            parseResult = commandLine.parseArgs(args);
+        } catch (CommandLine.UnmatchedArgumentException uae) {
+            logger.warning(" The usual source of this exception is when long-form arguments (such as --uaA) are only preceded by one dash (such as -uaA, which is an error).");
+            throw uae;
+        }
 
         if (help) {
             logger.info(helpString());
