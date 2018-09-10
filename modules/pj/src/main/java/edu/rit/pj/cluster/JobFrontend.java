@@ -58,6 +58,9 @@ import edu.rit.util.ByteSequence;
 import edu.rit.util.Timer;
 import edu.rit.util.TimerTask;
 import edu.rit.util.TimerThread;
+import java.util.logging.Logger;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
 
 /**
  * Class JobFrontend provides the message handler for the PJ job frontend
@@ -70,6 +73,13 @@ public class JobFrontend
         implements Runnable, JobFrontendRef {
 
 // Hidden data members.
+
+    // Logger
+    private static final Logger logger = Logger.getLogger(JobFrontend.class.getName());
+
+    // Logging
+    private FileHandler fileHandler = null;
+
     // User name.
     private String username;
 
@@ -399,6 +409,38 @@ public class JobFrontend
             System.err.println();
         }
 
+        if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
+            try {
+                // Remove all log handlers from the default logger.
+                java.util.logging.Logger defaultLogger = java.util.logging.LogManager.getLogManager().getLogger("");
+                java.util.logging.Handler defaultHandlers[] = defaultLogger.getHandlers();
+                for (java.util.logging.Handler h : defaultHandlers) {
+                    defaultLogger.removeHandler(h);
+                }
+
+                // Create a FileHandler that logs messages with a SimpleFormatter.
+                File file = new File(Integer.toString(rank));
+                file.mkdir();
+                fileHandler = new java.util.logging.FileHandler(file.getAbsolutePath() + "/frontend.log");
+                fileHandler.setFormatter(new java.util.logging.SimpleFormatter());
+                logger.addHandler(fileHandler);
+                logger.setLevel(java.util.logging.Level.INFO);
+            } catch (Exception e) {
+                logger.setLevel(java.util.logging.Level.OFF);
+            }
+        } else {
+            logger.setLevel(java.util.logging.Level.OFF);
+        }
+
+        logger.log(Level.INFO, " Username: " + username);
+        logger.log(Level.INFO, " Job number: " + jobnum);
+        logger.log(Level.INFO, " Nodes: " + Np);
+        logger.log(Level.INFO, " Rank: " + rank);
+        logger.log(Level.INFO, " Has Frontend Comm: " + hasFrontendComm);
+        logger.log(Level.INFO, " Frontend Host: " + myMiddlewareChannelGroup.listenAddress().getHostName());
+        logger.log(Level.INFO, " Frontend Port: " + myMiddlewareChannelGroup.listenAddress().getPort());
+        logger.log(Level.INFO, " Backend Host: " + host);
+
         try {
             // Build a command to run on the backend node.
             StringBuilder command = new StringBuilder();
@@ -453,12 +495,14 @@ public class JobFrontend
             processinfo.renewTimer.start(Constants.LEASE_RENEW_INTERVAL,
                     Constants.LEASE_RENEW_INTERVAL);
             processinfo.expireTimer.start(Constants.LEASE_EXPIRE_INTERVAL);
+
         } // If an I/O error occurs, treat it as a backend node failure.
         catch (IOException exc) {
             if (myNextRank != Np) {
                 System.err.println();
             }
             System.err.println(" Exception executing SSH command:\n" + exc.toString());
+            logger.log(Level.SEVERE, " Exception executing SSH command:\n" + exc.toString());
             terminateCancelJob(backendFailed(processinfo));
         }
     }
